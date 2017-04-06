@@ -2825,7 +2825,6 @@ LIBGRPC_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -2990,47 +2989,47 @@ LIBGRPC_SRC = \
     src/core/tsi/transport_security.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
-    src/core/ext/client_channel/channel_connectivity.c \
-    src/core/ext/client_channel/client_channel.c \
-    src/core/ext/client_channel/client_channel_factory.c \
-    src/core/ext/client_channel/client_channel_plugin.c \
-    src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/http_connect_handshaker.c \
-    src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/lb_policy.c \
-    src/core/ext/client_channel/lb_policy_factory.c \
-    src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/parse_address.c \
-    src/core/ext/client_channel/proxy_mapper.c \
-    src/core/ext/client_channel/proxy_mapper_registry.c \
-    src/core/ext/client_channel/resolver.c \
-    src/core/ext/client_channel/resolver_factory.c \
-    src/core/ext/client_channel/resolver_registry.c \
-    src/core/ext/client_channel/retry_throttle.c \
-    src/core/ext/client_channel/subchannel.c \
-    src/core/ext/client_channel/subchannel_index.c \
-    src/core/ext/client_channel/uri_parser.c \
+    src/core/ext/filters/client_channel/channel_connectivity.c \
+    src/core/ext/filters/client_channel/client_channel.c \
+    src/core/ext/filters/client_channel/client_channel_factory.c \
+    src/core/ext/filters/client_channel/client_channel_plugin.c \
+    src/core/ext/filters/client_channel/connector.c \
+    src/core/ext/filters/client_channel/http_connect_handshaker.c \
+    src/core/ext/filters/client_channel/http_proxy.c \
+    src/core/ext/filters/client_channel/lb_policy.c \
+    src/core/ext/filters/client_channel/lb_policy_factory.c \
+    src/core/ext/filters/client_channel/lb_policy_registry.c \
+    src/core/ext/filters/client_channel/parse_address.c \
+    src/core/ext/filters/client_channel/proxy_mapper.c \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
+    src/core/ext/filters/client_channel/resolver.c \
+    src/core/ext/filters/client_channel/resolver_factory.c \
+    src/core/ext/filters/client_channel/resolver_registry.c \
+    src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/subchannel.c \
+    src/core/ext/filters/client_channel/subchannel_index.c \
+    src/core/ext/filters/client_channel/uri_parser.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
-    src/core/ext/lb_policy/grpclb/grpclb.c \
-    src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c \
-    src/core/ext/lb_policy/grpclb/load_balancer_api.c \
-    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
-    src/core/ext/lb_policy/pick_first/pick_first.c \
-    src/core/ext/lb_policy/round_robin/round_robin.c \
-    src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c \
-    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
-    src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
-    src/core/ext/resolver/dns/native/dns_resolver.c \
-    src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
-    src/core/ext/load_reporting/load_reporting.c \
-    src/core/ext/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c \
+    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c \
+    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
+    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
+    src/core/ext/filters/load_reporting/load_reporting.c \
+    src/core/ext/filters/load_reporting/load_reporting_filter.c \
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
@@ -3045,6 +3044,7 @@ LIBGRPC_SRC = \
     src/core/ext/census/resource.c \
     src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
+    src/core/ext/filters/max_age/max_age_filter.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -3145,7 +3145,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -3284,26 +3283,26 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/client_channel/channel_connectivity.c \
-    src/core/ext/client_channel/client_channel.c \
-    src/core/ext/client_channel/client_channel_factory.c \
-    src/core/ext/client_channel/client_channel_plugin.c \
-    src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/http_connect_handshaker.c \
-    src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/lb_policy.c \
-    src/core/ext/client_channel/lb_policy_factory.c \
-    src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/parse_address.c \
-    src/core/ext/client_channel/proxy_mapper.c \
-    src/core/ext/client_channel/proxy_mapper_registry.c \
-    src/core/ext/client_channel/resolver.c \
-    src/core/ext/client_channel/resolver_factory.c \
-    src/core/ext/client_channel/resolver_registry.c \
-    src/core/ext/client_channel/retry_throttle.c \
-    src/core/ext/client_channel/subchannel.c \
-    src/core/ext/client_channel/subchannel_index.c \
-    src/core/ext/client_channel/uri_parser.c \
+    src/core/ext/filters/client_channel/channel_connectivity.c \
+    src/core/ext/filters/client_channel/client_channel.c \
+    src/core/ext/filters/client_channel/client_channel_factory.c \
+    src/core/ext/filters/client_channel/client_channel_plugin.c \
+    src/core/ext/filters/client_channel/connector.c \
+    src/core/ext/filters/client_channel/http_connect_handshaker.c \
+    src/core/ext/filters/client_channel/http_proxy.c \
+    src/core/ext/filters/client_channel/lb_policy.c \
+    src/core/ext/filters/client_channel/lb_policy_factory.c \
+    src/core/ext/filters/client_channel/lb_policy_registry.c \
+    src/core/ext/filters/client_channel/parse_address.c \
+    src/core/ext/filters/client_channel/proxy_mapper.c \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
+    src/core/ext/filters/client_channel/resolver.c \
+    src/core/ext/filters/client_channel/resolver_factory.c \
+    src/core/ext/filters/client_channel/resolver_registry.c \
+    src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/subchannel.c \
+    src/core/ext/filters/client_channel/subchannel_index.c \
+    src/core/ext/filters/client_channel/uri_parser.c \
     src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/security/context/security_context.c \
     src/core/lib/security/credentials/composite/composite_credentials.c \
@@ -3332,8 +3331,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
-    src/core/ext/load_reporting/load_reporting.c \
-    src/core/ext/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/load_reporting/load_reporting.c \
+    src/core/ext/filters/load_reporting/load_reporting_filter.c \
     src/core/plugin_registry/grpc_cronet_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -3453,7 +3452,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -3686,7 +3684,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -3827,42 +3824,42 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
-    src/core/ext/client_channel/channel_connectivity.c \
-    src/core/ext/client_channel/client_channel.c \
-    src/core/ext/client_channel/client_channel_factory.c \
-    src/core/ext/client_channel/client_channel_plugin.c \
-    src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/http_connect_handshaker.c \
-    src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/lb_policy.c \
-    src/core/ext/client_channel/lb_policy_factory.c \
-    src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/parse_address.c \
-    src/core/ext/client_channel/proxy_mapper.c \
-    src/core/ext/client_channel/proxy_mapper_registry.c \
-    src/core/ext/client_channel/resolver.c \
-    src/core/ext/client_channel/resolver_factory.c \
-    src/core/ext/client_channel/resolver_registry.c \
-    src/core/ext/client_channel/retry_throttle.c \
-    src/core/ext/client_channel/subchannel.c \
-    src/core/ext/client_channel/subchannel_index.c \
-    src/core/ext/client_channel/uri_parser.c \
-    src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c \
-    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
-    src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
-    src/core/ext/resolver/dns/native/dns_resolver.c \
-    src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
-    src/core/ext/load_reporting/load_reporting.c \
-    src/core/ext/load_reporting/load_reporting_filter.c \
-    src/core/ext/lb_policy/grpclb/grpclb.c \
-    src/core/ext/lb_policy/grpclb/grpclb_channel.c \
-    src/core/ext/lb_policy/grpclb/load_balancer_api.c \
-    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
+    src/core/ext/filters/client_channel/channel_connectivity.c \
+    src/core/ext/filters/client_channel/client_channel.c \
+    src/core/ext/filters/client_channel/client_channel_factory.c \
+    src/core/ext/filters/client_channel/client_channel_plugin.c \
+    src/core/ext/filters/client_channel/connector.c \
+    src/core/ext/filters/client_channel/http_connect_handshaker.c \
+    src/core/ext/filters/client_channel/http_proxy.c \
+    src/core/ext/filters/client_channel/lb_policy.c \
+    src/core/ext/filters/client_channel/lb_policy_factory.c \
+    src/core/ext/filters/client_channel/lb_policy_registry.c \
+    src/core/ext/filters/client_channel/parse_address.c \
+    src/core/ext/filters/client_channel/proxy_mapper.c \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
+    src/core/ext/filters/client_channel/resolver.c \
+    src/core/ext/filters/client_channel/resolver_factory.c \
+    src/core/ext/filters/client_channel/resolver_registry.c \
+    src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/subchannel.c \
+    src/core/ext/filters/client_channel/subchannel_index.c \
+    src/core/ext/filters/client_channel/uri_parser.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c \
+    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
+    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
+    src/core/ext/filters/load_reporting/load_reporting.c \
+    src/core/ext/filters/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
-    src/core/ext/lb_policy/pick_first/pick_first.c \
-    src/core/ext/lb_policy/round_robin/round_robin.c \
+    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c \
+    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c \
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
@@ -3877,6 +3874,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/census/resource.c \
     src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
+    src/core/ext/filters/max_age/max_age_filter.c \
     src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -4079,7 +4077,6 @@ LIBGRPC++_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -4418,7 +4415,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -4560,26 +4556,26 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/client_channel/channel_connectivity.c \
-    src/core/ext/client_channel/client_channel.c \
-    src/core/ext/client_channel/client_channel_factory.c \
-    src/core/ext/client_channel/client_channel_plugin.c \
-    src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/http_connect_handshaker.c \
-    src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/lb_policy.c \
-    src/core/ext/client_channel/lb_policy_factory.c \
-    src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/parse_address.c \
-    src/core/ext/client_channel/proxy_mapper.c \
-    src/core/ext/client_channel/proxy_mapper_registry.c \
-    src/core/ext/client_channel/resolver.c \
-    src/core/ext/client_channel/resolver_factory.c \
-    src/core/ext/client_channel/resolver_registry.c \
-    src/core/ext/client_channel/retry_throttle.c \
-    src/core/ext/client_channel/subchannel.c \
-    src/core/ext/client_channel/subchannel_index.c \
-    src/core/ext/client_channel/uri_parser.c \
+    src/core/ext/filters/client_channel/channel_connectivity.c \
+    src/core/ext/filters/client_channel/client_channel.c \
+    src/core/ext/filters/client_channel/client_channel_factory.c \
+    src/core/ext/filters/client_channel/client_channel_plugin.c \
+    src/core/ext/filters/client_channel/connector.c \
+    src/core/ext/filters/client_channel/http_connect_handshaker.c \
+    src/core/ext/filters/client_channel/http_proxy.c \
+    src/core/ext/filters/client_channel/lb_policy.c \
+    src/core/ext/filters/client_channel/lb_policy_factory.c \
+    src/core/ext/filters/client_channel/lb_policy_registry.c \
+    src/core/ext/filters/client_channel/parse_address.c \
+    src/core/ext/filters/client_channel/proxy_mapper.c \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
+    src/core/ext/filters/client_channel/resolver.c \
+    src/core/ext/filters/client_channel/resolver_factory.c \
+    src/core/ext/filters/client_channel/resolver_registry.c \
+    src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/subchannel.c \
+    src/core/ext/filters/client_channel/subchannel_index.c \
+    src/core/ext/filters/client_channel/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
@@ -5109,7 +5105,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -8231,6 +8226,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/end2end_test_utils.c \
     test/core/end2end/tests/authority_not_supported.c \
     test/core/end2end/tests/bad_hostname.c \
+    test/core/end2end/tests/bad_ping.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/call_creds.c \
     test/core/end2end/tests/cancel_after_accept.c \
@@ -8323,6 +8319,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/end2end_test_utils.c \
     test/core/end2end/tests/authority_not_supported.c \
     test/core/end2end/tests/bad_hostname.c \
+    test/core/end2end/tests/bad_ping.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/cancel_after_accept.c \
     test/core/end2end/tests/cancel_after_client_done.c \
@@ -19225,7 +19222,7 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)

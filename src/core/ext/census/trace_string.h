@@ -47,4 +47,4 @@ typedef struct trace_string {
   size_t length;
 } trace_string;
 
-#endif
+#endif /* GRPC_CORE_EXT_CENSUS_TRACE_STRING_H */
