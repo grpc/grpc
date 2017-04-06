@@ -60,7 +60,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create(NULL);
+  f.cq = grpc_completion_queue_create_for_next(NULL);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
 
   return f;
 }

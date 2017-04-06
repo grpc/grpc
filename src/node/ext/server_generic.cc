@@ -35,8 +35,8 @@
 
 #include "server.h"
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 #include "grpc/grpc.h"
 #include "grpc/support/time.h"
 
@@ -44,7 +44,7 @@ namespace grpc {
 namespace node {
 
 Server::Server(grpc_server *server) : wrapped_server(server) {
-  shutdown_queue = grpc_completion_queue_create(NULL);
+  shutdown_queue = grpc_completion_queue_create_for_pluck(NULL);
   grpc_server_register_non_listening_completion_queue(server, shutdown_queue,
                                                       NULL);
 }

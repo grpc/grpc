@@ -104,6 +104,7 @@ void grpc_run_bad_client_test(
   grpc_slice_buffer outgoing;
   grpc_closure done_write_closure;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_completion_queue *shutdown_cq;
 
   hex = gpr_dump(client_payload, client_payload_length,
                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -124,7 +125,7 @@ void grpc_run_bad_client_test(
 
   /* Create server, completion events */
   a.server = grpc_server_create(NULL, NULL);
-  a.cq = grpc_completion_queue_create(NULL);
+  a.cq = grpc_completion_queue_create_for_next(NULL);
   gpr_event_init(&a.done_thd);
   gpr_event_init(&a.done_write);
   a.validator = server_validator;
@@ -197,10 +198,13 @@ void grpc_run_bad_client_test(
     grpc_endpoint_destroy(&exec_ctx, sfd.client);
     grpc_exec_ctx_finish(&exec_ctx);
   }
-  grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
+
+  shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+  grpc_server_shutdown_and_notify(a.server, shutdown_cq, NULL);
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 a.cq, NULL, grpc_timeout_seconds_to_deadline(1), NULL)
+                 shutdown_cq, NULL, grpc_timeout_seconds_to_deadline(1), NULL)
                  .type == GRPC_OP_COMPLETE);
+  grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
   grpc_slice_buffer_destroy_internal(&exec_ctx, &outgoing);
