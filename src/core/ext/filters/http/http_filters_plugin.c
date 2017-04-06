@@ -51,7 +51,7 @@ static optional_filter compress_filter = {
 static bool is_building_http_like_transport(
     grpc_channel_stack_builder *builder) {
   grpc_transport *t = grpc_channel_stack_builder_get_transport(builder);
-  return t && strstr(t->vtable->name, "http");
+  return t != NULL && strstr(t->vtable->name, "http");
 }
 
 static bool maybe_add_optional_filter(grpc_exec_ctx *exec_ctx,
