@@ -461,6 +461,13 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   pollset->epfd = epoll_create1(EPOLL_CLOEXEC);
   if (pollset->epfd < 0) {
     GRPC_LOG_IF_ERROR("pollset_init", GRPC_OS_ERROR(errno, "epoll_create1"));
+  } else {
+    struct epoll_event ev = {.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE,
+                             .data.ptr = &global_wakeup_fd};
+    if (epoll_ctl(pollset->epfd, EPOLL_CTL_ADD, global_wakeup_fd.read_fd,
+                  &ev) != 0) {
+      GRPC_LOG_IF_ERROR("pollset_init", GRPC_OS_ERROR(errno, "epoll_ctl"));
+    }
   }
   pollset->num_pollers = 0;
   gpr_atm_no_barrier_store(&pollset->shutdown_atm, 0);
