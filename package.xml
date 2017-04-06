@@ -306,7 +306,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/http/compress/compress_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.h" role="src" />
@@ -526,7 +526,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writing.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/http/compress/compress_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/http_filters_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli_security_connector.c" role="src" />

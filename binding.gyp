@@ -792,7 +792,7 @@
         'src/core/ext/transport/chttp2/transport/writing.c',
         'src/core/ext/transport/chttp2/alpn/alpn.c',
         'src/core/ext/filters/http/client/http_client_filter.c',
-        'src/core/ext/filters/http/compress/compress_filter.c',
+        'src/core/ext/filters/http/message_compress/message_compress_filter.c',
         'src/core/ext/filters/http/http_filters_plugin.c',
         'src/core/ext/filters/http/server/http_server_filter.c',
         'src/core/lib/http/httpcli_security_connector.c',

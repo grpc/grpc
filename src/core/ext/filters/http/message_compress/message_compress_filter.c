@@ -39,7 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/http/compress/compress_filter.h"
+#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/message_compress.h"

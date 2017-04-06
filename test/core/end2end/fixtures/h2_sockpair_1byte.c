@@ -42,7 +42,7 @@
 #include <grpc/support/useful.h>
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
-#include "src/core/ext/filters/http/compress/compress_filter.h"
+#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/connected_channel.h"

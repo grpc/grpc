@@ -780,12 +780,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_http_filters",
     hdrs = [
-        "src/core/ext/filters/http/compress/compress_filter.h",
+        "src/core/ext/filters/http/message_compress/message_compress_filter.h",
         "src/core/ext/filters/http/client/http_client_filter.h",
         "src/core/ext/filters/http/server/http_server_filter.h",
     ],
     srcs = [
-        "src/core/ext/filters/http/compress/compress_filter.c",
+        "src/core/ext/filters/http/message_compress/message_compress_filter.c",
         "src/core/ext/filters/http/client/http_client_filter.c",
         "src/core/ext/filters/http/server/http_server_filter.c",
         "src/core/ext/filters/http/http_filters_plugin.c"
