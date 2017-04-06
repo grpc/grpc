@@ -33,3 +33,6 @@ cdef class Call:
   cdef grpc_call *c_call
   cdef list references
 
+cdef class CallAuthContext:
+
+  cdef grpc_auth_context *c_auth_context
