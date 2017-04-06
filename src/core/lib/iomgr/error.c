@@ -231,8 +231,8 @@ static void internal_set_int(grpc_error **err, grpc_error_ints which,
   if (slot == UINT8_MAX) {
     slot = get_placement(err, sizeof(value));
     if (slot == UINT8_MAX) {
-      gpr_log(GPR_ERROR, "Error %p is full, dropping int {\"%s\":%" PRIiPTR "}", *err,
-              error_int_name(which), value);
+      gpr_log(GPR_ERROR, "Error %p is full, dropping int {\"%s\":%" PRIiPTR "}",
+              *err, error_int_name(which), value);
       return;
     }
   }
