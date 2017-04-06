@@ -208,7 +208,7 @@ static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 static int default_size(const grpc_channel_args* args,
                         int without_minimal_stack) {
   if (grpc_channel_args_want_minimal_stack(args)) {
-    return INT_MAX;
+    return -1;
   }
   return without_minimal_stack;
 }
@@ -294,7 +294,7 @@ static bool maybe_add_message_size_filter(grpc_exec_ctx* exec_ctx,
       grpc_channel_stack_builder_get_channel_arguments(builder);
   bool enable = false;
   message_size_limits lim = get_message_size_limits(channel_args);
-  if (lim.max_send_size != INT_MAX || lim.max_recv_size != INT_MAX) {
+  if (lim.max_send_size != -1 || lim.max_recv_size != -1) {
     enable = true;
   }
   const grpc_arg* a =
