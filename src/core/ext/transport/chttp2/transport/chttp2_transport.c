@@ -543,6 +543,10 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
         exec_ctx, &t->keepalive_ping_timer,
         gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
         &t->init_keepalive_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
+  } else {
+    /* Use GRPC_CHTTP2_KEEPALIVE_STATE_DYING to indicate there are no inflight
+       keeaplive timers */
+    t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
   }
 
   grpc_chttp2_initiate_write(exec_ctx, t, false, "init");
@@ -591,20 +595,18 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
     connectivity_state_set(exec_ctx, t, GRPC_CHANNEL_SHUTDOWN,
                            GRPC_ERROR_REF(error), "close_transport");
     grpc_endpoint_shutdown(exec_ctx, t->ep, GRPC_ERROR_REF(error));
-    if (t->is_client) {
-      switch (t->keepalive_state) {
-        case GRPC_CHTTP2_KEEPALIVE_STATE_WAITING: {
-          grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
-          break;
-        }
-        case GRPC_CHTTP2_KEEPALIVE_STATE_PINGING: {
-          grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
-          grpc_timer_cancel(exec_ctx, &t->keepalive_watchdog_timer);
-          break;
-        }
-        case GRPC_CHTTP2_KEEPALIVE_STATE_DYING: {
-          break;
-        }
+    switch (t->keepalive_state) {
+      case GRPC_CHTTP2_KEEPALIVE_STATE_WAITING: {
+        grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
+        break;
+      }
+      case GRPC_CHTTP2_KEEPALIVE_STATE_PINGING: {
+        grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
+        grpc_timer_cancel(exec_ctx, &t->keepalive_watchdog_timer);
+        break;
+      }
+      case GRPC_CHTTP2_KEEPALIVE_STATE_DYING: {
+        break;
       }
     }
 
