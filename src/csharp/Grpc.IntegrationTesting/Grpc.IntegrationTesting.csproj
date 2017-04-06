@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
-    <PackageReference Include="System.Linq.Expressions" Version="4.1.0" />
+    <PackageReference Include="System.Linq.Expressions" Version="4.1.1" />
   </ItemGroup>
 
   <ItemGroup>
