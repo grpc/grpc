@@ -69,10 +69,24 @@
 #define CLOSURE_NOT_READY ((gpr_atm)0)
 #define CLOSURE_READY ((gpr_atm)2)
 
-#define FD_SHUTDOWN_BIT 1
+#define FD_SHUTDOWN_BIT ((gpr_atm)1)
 
 void grpc_lfev_init(gpr_atm *state) {
   gpr_atm_no_barrier_store(state, CLOSURE_NOT_READY);
+}
+
+void grpc_lfev_destroy(gpr_atm *state) {
+  gpr_atm curr = gpr_atm_no_barrier_load(state);
+  if (curr & FD_SHUTDOWN_BIT) {
+    GRPC_ERROR_UNREF((grpc_error *)(curr & ~FD_SHUTDOWN_BIT));
+  } else {
+    GPR_ASSERT(curr == CLOSURE_NOT_READY || curr == CLOSURE_READY);
+  }
+}
+
+bool grpc_lfev_is_shutdown(gpr_atm *state) {
+  gpr_atm curr = gpr_atm_no_barrier_load(state);
+  return (curr & FD_SHUTDOWN_BIT) != 0;
 }
 
 void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,

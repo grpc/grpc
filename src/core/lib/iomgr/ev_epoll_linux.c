@@ -969,7 +969,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
-  gpr_atm_no_barrier_store(&new_fd->shutdown_error, (gpr_atm)GRPC_ERROR_NONE);
   new_fd->orphaned = false;
   grpc_lfev_init(&new_fd->read_closure);
   grpc_lfev_init(&new_fd->write_closure);
@@ -1070,9 +1069,10 @@ static bool fd_is_shutdown(grpc_fd *fd) {
 
 /* Might be called multiple times */
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
-  if (grpc_lfev_set_shutdown(&fd->read_closure, GRPC_ERROR_REF(why))) {
+  if (grpc_lfev_set_shutdown(exec_ctx, &fd->read_closure,
+                             GRPC_ERROR_REF(why))) {
     shutdown(fd->fd, SHUT_RDWR);
-    grpc_lfev_set_shutdown(&fd->write_closure, GRPC_ERROR_REF(why));
+    grpc_lfev_set_shutdown(exec_ctx, &fd->write_closure, GRPC_ERROR_REF(why));
   }
   GRPC_ERROR_UNREF(why);
 }
@@ -1286,7 +1286,7 @@ static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  grpc_lfev_set_ready(exec_ctx, fd, &fd->write_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
 }
 
 static void pollset_release_polling_island(grpc_exec_ctx *exec_ctx,
