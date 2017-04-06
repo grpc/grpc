@@ -465,8 +465,16 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   pollset->num_pollers = 0;
   gpr_atm_no_barrier_store(&pollset->shutdown_atm, 0);
   pollset->shutdown_closure = NULL;
-  GRPC_LOG_IF_ERROR("pollset_init",
-                    grpc_wakeup_fd_init(&pollset->pollset_wakeup));
+  if (GRPC_LOG_IF_ERROR("pollset_init",
+                        grpc_wakeup_fd_init(&pollset->pollset_wakeup)) &&
+      pollset->epfd >= 0) {
+    struct epoll_event ev = {.events = EPOLLIN | EPOLLET,
+                             .data.ptr = &pollset->pollset_wakeup};
+    if (epoll_ctl(pollset->epfd, EPOLL_CTL_ADD, pollset->pollset_wakeup.read_fd,
+                  &ev) != 0) {
+      GRPC_LOG_IF_ERROR("pollset_init", GRPC_OS_ERROR(errno, "epoll_ctl"));
+    }
+  }
   pollset->root_worker = NULL;
   *mu = &pollset->mu;
 }
