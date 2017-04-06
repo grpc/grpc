@@ -58,6 +58,8 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
 
+#define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
+
 /*******************************************************************************
  * FD declarations
  */
