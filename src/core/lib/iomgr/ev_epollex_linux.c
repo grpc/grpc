@@ -165,6 +165,7 @@ struct grpc_pollset {
   pss_obj po;
   int epfd;
   int num_pollers;
+  bool kicked_without_poller;
   gpr_atm shutdown_atm;
   grpc_closure *shutdown_closure;
   grpc_wakeup_fd pollset_wakeup;
@@ -507,7 +508,12 @@ static grpc_error *pollset_kick(grpc_pollset *p,
                                 grpc_pollset_worker *specific_worker) {
   if (specific_worker == NULL) {
     if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)p) {
-      return grpc_wakeup_fd_wakeup(&p->pollset_wakeup);
+      if (p->num_pollers == 0) {
+        p->kicked_without_poller = true;
+        return GRPC_ERROR_NONE;
+      } else {
+        return grpc_wakeup_fd_wakeup(&p->pollset_wakeup);
+      }
     } else {
       return GRPC_ERROR_NONE;
     }
@@ -528,6 +534,7 @@ static grpc_error *kick_poller(void) {
 
 static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   pss_obj_init(&pollset->po);
+  pollset->kicked_without_poller = false;
   pollset->epfd = epoll_create1(EPOLL_CLOEXEC);
   if (pollset->epfd < 0) {
     GRPC_LOG_IF_ERROR("pollset_init", GRPC_OS_ERROR(errno, "epoll_create1"));
@@ -736,13 +743,21 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 gpr_timespec now, gpr_timespec deadline) {
   grpc_pollset_worker worker;
   grpc_error *error = GRPC_ERROR_NONE;
+  if (pollset->kicked_without_poller) {
+    pollset->kicked_without_poller = false;
+    return GRPC_ERROR_NONE;
+  }
   if (begin_worker(pollset, &worker, worker_hdl, deadline)) {
+    gpr_tls_set(&g_current_thread_pollset, (intptr_t)pollset);
+    gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
     GPR_ASSERT(!pollset->shutdown_closure);
     pollset->num_pollers++;
     gpr_mu_unlock(&pollset->po.mu);
     error = pollset_poll(exec_ctx, pollset, now, deadline);
     grpc_exec_ctx_flush(exec_ctx);
     gpr_mu_lock(&pollset->po.mu);
+    gpr_tls_set(&g_current_thread_pollset, 0);
+    gpr_tls_set(&g_current_thread_worker, 0);
     pollset->num_pollers--;
     if (pollset->num_pollers == 0 && pollset->shutdown_closure != NULL) {
       grpc_closure_sched(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
