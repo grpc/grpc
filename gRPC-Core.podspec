@@ -567,7 +567,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/completion_queue.c',
                       'src/core/lib/surface/completion_queue_factory.c',
                       'src/core/lib/surface/event_string.c',
-                      'src/core/lib/surface/lame_client.c',
+                      'src/core/lib/surface/lame_client.cc',
                       'src/core/lib/surface/metadata_array.c',
                       'src/core/lib/surface/server.c',
                       'src/core/lib/surface/validate_metadata.c',
