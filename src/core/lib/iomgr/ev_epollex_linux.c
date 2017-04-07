@@ -796,8 +796,16 @@ static grpc_pollset_set *pollset_set_create(void) {
   return pss;
 }
 
+static void pss_unref(grpc_pollset_set *pss);
+
 static void pss_destroy(grpc_pollset_set *pss) {
   gpr_mu_destroy(&pss->po.mu);
+  GPR_ASSERT(pss->roots[PSS_FD] == NULL);
+  GPR_ASSERT(pss->roots[PSS_POLLSET] == NULL);
+  GPR_ASSERT(pss->roots[PSS_POLLSET_SET] == &pss->po);
+  for (pss_obj *child = pss->roots[PSS_POLLSET_SET]; child != &pss->po; child = child->pss_next) {
+    pss_unref((grpc_pollset_set*)child);
+  }
   gpr_free(pss);
 }
 
@@ -924,8 +932,11 @@ static void pss_merge(grpc_exec_ctx *exec_ctx, grpc_pollset_set *a,
       pss_merge_broadcast_and_patch(exec_ctx, a, b, PSS_FD);
       pss_merge_broadcast_and_patch(exec_ctx, a, b, PSS_POLLSET);
       b->po.pss_master = a;
+      a->roots[PSS_POLLSET_SET] = pss_splice(a->roots[PSS_POLLSET_SET], b->roots[PSS_POLLSET_SET]);
       gpr_mu_unlock(&a->po.mu);
       gpr_mu_unlock(&b->po.mu);
+      pss_unref(a);
+      /* a now owns a ref to b */
       return;
     }
   }
