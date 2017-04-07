@@ -29,4 +29,4 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_health_checking/grpc_version.py.template`!!!
 
-VERSION='1.2.2'
+VERSION='1.2.3'
