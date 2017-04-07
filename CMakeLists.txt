@@ -626,6 +626,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_cq)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_cq_multiple_threads)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_error)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -918,7 +921,6 @@ add_library(grpc
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -1083,47 +1085,47 @@ add_library(grpc
   src/core/tsi/transport_security.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
-  src/core/ext/client_channel/channel_connectivity.c
-  src/core/ext/client_channel/client_channel.c
-  src/core/ext/client_channel/client_channel_factory.c
-  src/core/ext/client_channel/client_channel_plugin.c
-  src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/http_connect_handshaker.c
-  src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/lb_policy.c
-  src/core/ext/client_channel/lb_policy_factory.c
-  src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/parse_address.c
-  src/core/ext/client_channel/proxy_mapper.c
-  src/core/ext/client_channel/proxy_mapper_registry.c
-  src/core/ext/client_channel/resolver.c
-  src/core/ext/client_channel/resolver_factory.c
-  src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/retry_throttle.c
-  src/core/ext/client_channel/subchannel.c
-  src/core/ext/client_channel/subchannel_index.c
-  src/core/ext/client_channel/uri_parser.c
+  src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/client_channel.c
+  src/core/ext/filters/client_channel/client_channel_factory.c
+  src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connector.c
+  src/core/ext/filters/client_channel/http_connect_handshaker.c
+  src/core/ext/filters/client_channel/http_proxy.c
+  src/core/ext/filters/client_channel/lb_policy.c
+  src/core/ext/filters/client_channel/lb_policy_factory.c
+  src/core/ext/filters/client_channel/lb_policy_registry.c
+  src/core/ext/filters/client_channel/parse_address.c
+  src/core/ext/filters/client_channel/proxy_mapper.c
+  src/core/ext/filters/client_channel/proxy_mapper_registry.c
+  src/core/ext/filters/client_channel/resolver.c
+  src/core/ext/filters/client_channel/resolver_factory.c
+  src/core/ext/filters/client_channel/resolver_registry.c
+  src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/subchannel.c
+  src/core/ext/filters/client_channel/subchannel_index.c
+  src/core/ext/filters/client_channel/uri_parser.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
-  src/core/ext/lb_policy/grpclb/grpclb.c
-  src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c
-  src/core/ext/lb_policy/grpclb/load_balancer_api.c
-  src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/core/ext/lb_policy/pick_first/pick_first.c
-  src/core/ext/lb_policy/round_robin/round_robin.c
-  src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
-  src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
-  src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
-  src/core/ext/resolver/dns/native/dns_resolver.c
-  src/core/ext/resolver/sockaddr/sockaddr_resolver.c
-  src/core/ext/load_reporting/load_reporting.c
-  src/core/ext/load_reporting/load_reporting_filter.c
+  src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
+  src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
+  src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
+  src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
+  src/core/ext/filters/load_reporting/load_reporting.c
+  src/core/ext/filters/load_reporting/load_reporting_filter.c
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
@@ -1138,6 +1140,7 @@ add_library(grpc
   src/core/ext/census/resource.c
   src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
+  src/core/ext/filters/max_age/max_age_filter.c
   src/core/plugin_registry/grpc_plugin_registry.c
 )
 
@@ -1240,7 +1243,6 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -1379,26 +1381,26 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
-  src/core/ext/client_channel/channel_connectivity.c
-  src/core/ext/client_channel/client_channel.c
-  src/core/ext/client_channel/client_channel_factory.c
-  src/core/ext/client_channel/client_channel_plugin.c
-  src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/http_connect_handshaker.c
-  src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/lb_policy.c
-  src/core/ext/client_channel/lb_policy_factory.c
-  src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/parse_address.c
-  src/core/ext/client_channel/proxy_mapper.c
-  src/core/ext/client_channel/proxy_mapper_registry.c
-  src/core/ext/client_channel/resolver.c
-  src/core/ext/client_channel/resolver_factory.c
-  src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/retry_throttle.c
-  src/core/ext/client_channel/subchannel.c
-  src/core/ext/client_channel/subchannel_index.c
-  src/core/ext/client_channel/uri_parser.c
+  src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/client_channel.c
+  src/core/ext/filters/client_channel/client_channel_factory.c
+  src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connector.c
+  src/core/ext/filters/client_channel/http_connect_handshaker.c
+  src/core/ext/filters/client_channel/http_proxy.c
+  src/core/ext/filters/client_channel/lb_policy.c
+  src/core/ext/filters/client_channel/lb_policy_factory.c
+  src/core/ext/filters/client_channel/lb_policy_registry.c
+  src/core/ext/filters/client_channel/parse_address.c
+  src/core/ext/filters/client_channel/proxy_mapper.c
+  src/core/ext/filters/client_channel/proxy_mapper_registry.c
+  src/core/ext/filters/client_channel/resolver.c
+  src/core/ext/filters/client_channel/resolver_factory.c
+  src/core/ext/filters/client_channel/resolver_registry.c
+  src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/subchannel.c
+  src/core/ext/filters/client_channel/subchannel_index.c
+  src/core/ext/filters/client_channel/uri_parser.c
   src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/context/security_context.c
   src/core/lib/security/credentials/composite/composite_credentials.c
@@ -1427,8 +1429,8 @@ add_library(grpc_cronet
   src/core/tsi/ssl_transport_security.c
   src/core/tsi/transport_security.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
-  src/core/ext/load_reporting/load_reporting.c
-  src/core/ext/load_reporting/load_reporting_filter.c
+  src/core/ext/filters/load_reporting/load_reporting.c
+  src/core/ext/filters/load_reporting/load_reporting_filter.c
   src/core/plugin_registry/grpc_cronet_plugin_registry.c
 )
 
@@ -1549,7 +1551,6 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -1810,7 +1811,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -1951,42 +1951,42 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
-  src/core/ext/client_channel/channel_connectivity.c
-  src/core/ext/client_channel/client_channel.c
-  src/core/ext/client_channel/client_channel_factory.c
-  src/core/ext/client_channel/client_channel_plugin.c
-  src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/http_connect_handshaker.c
-  src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/lb_policy.c
-  src/core/ext/client_channel/lb_policy_factory.c
-  src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/parse_address.c
-  src/core/ext/client_channel/proxy_mapper.c
-  src/core/ext/client_channel/proxy_mapper_registry.c
-  src/core/ext/client_channel/resolver.c
-  src/core/ext/client_channel/resolver_factory.c
-  src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/retry_throttle.c
-  src/core/ext/client_channel/subchannel.c
-  src/core/ext/client_channel/subchannel_index.c
-  src/core/ext/client_channel/uri_parser.c
-  src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
-  src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
-  src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
-  src/core/ext/resolver/dns/native/dns_resolver.c
-  src/core/ext/resolver/sockaddr/sockaddr_resolver.c
-  src/core/ext/load_reporting/load_reporting.c
-  src/core/ext/load_reporting/load_reporting_filter.c
-  src/core/ext/lb_policy/grpclb/grpclb.c
-  src/core/ext/lb_policy/grpclb/grpclb_channel.c
-  src/core/ext/lb_policy/grpclb/load_balancer_api.c
-  src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/client_channel.c
+  src/core/ext/filters/client_channel/client_channel_factory.c
+  src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connector.c
+  src/core/ext/filters/client_channel/http_connect_handshaker.c
+  src/core/ext/filters/client_channel/http_proxy.c
+  src/core/ext/filters/client_channel/lb_policy.c
+  src/core/ext/filters/client_channel/lb_policy_factory.c
+  src/core/ext/filters/client_channel/lb_policy_registry.c
+  src/core/ext/filters/client_channel/parse_address.c
+  src/core/ext/filters/client_channel/proxy_mapper.c
+  src/core/ext/filters/client_channel/proxy_mapper_registry.c
+  src/core/ext/filters/client_channel/resolver.c
+  src/core/ext/filters/client_channel/resolver_factory.c
+  src/core/ext/filters/client_channel/resolver_registry.c
+  src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/subchannel.c
+  src/core/ext/filters/client_channel/subchannel_index.c
+  src/core/ext/filters/client_channel/uri_parser.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
+  src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
+  src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
+  src/core/ext/filters/load_reporting/load_reporting.c
+  src/core/ext/filters/load_reporting/load_reporting_filter.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/core/ext/lb_policy/pick_first/pick_first.c
-  src/core/ext/lb_policy/round_robin/round_robin.c
+  src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
+  src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
@@ -2001,6 +2001,7 @@ add_library(grpc_unsecure
   src/core/ext/census/resource.c
   src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
+  src/core/ext/filters/max_age/max_age_filter.c
   src/core/plugin_registry/grpc_unsecure_plugin_registry.c
 )
 
@@ -2226,7 +2227,6 @@ add_library(grpc++
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -2557,7 +2557,6 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -2699,26 +2698,26 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
-  src/core/ext/client_channel/channel_connectivity.c
-  src/core/ext/client_channel/client_channel.c
-  src/core/ext/client_channel/client_channel_factory.c
-  src/core/ext/client_channel/client_channel_plugin.c
-  src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/http_connect_handshaker.c
-  src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/lb_policy.c
-  src/core/ext/client_channel/lb_policy_factory.c
-  src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/parse_address.c
-  src/core/ext/client_channel/proxy_mapper.c
-  src/core/ext/client_channel/proxy_mapper_registry.c
-  src/core/ext/client_channel/resolver.c
-  src/core/ext/client_channel/resolver_factory.c
-  src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/retry_throttle.c
-  src/core/ext/client_channel/subchannel.c
-  src/core/ext/client_channel/subchannel_index.c
-  src/core/ext/client_channel/uri_parser.c
+  src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/client_channel.c
+  src/core/ext/filters/client_channel/client_channel_factory.c
+  src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connector.c
+  src/core/ext/filters/client_channel/http_connect_handshaker.c
+  src/core/ext/filters/client_channel/http_proxy.c
+  src/core/ext/filters/client_channel/lb_policy.c
+  src/core/ext/filters/client_channel/lb_policy_factory.c
+  src/core/ext/filters/client_channel/lb_policy_registry.c
+  src/core/ext/filters/client_channel/parse_address.c
+  src/core/ext/filters/client_channel/proxy_mapper.c
+  src/core/ext/filters/client_channel/proxy_mapper_registry.c
+  src/core/ext/filters/client_channel/resolver.c
+  src/core/ext/filters/client_channel/resolver_factory.c
+  src/core/ext/filters/client_channel/resolver_registry.c
+  src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/subchannel.c
+  src/core/ext/filters/client_channel/subchannel_index.c
+  src/core/ext/filters/client_channel/uri_parser.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
@@ -3256,7 +3255,6 @@ add_library(grpc++_unsecure
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
   src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
@@ -4391,6 +4389,7 @@ add_library(end2end_tests
   test/core/end2end/end2end_test_utils.c
   test/core/end2end/tests/authority_not_supported.c
   test/core/end2end/tests/bad_hostname.c
+  test/core/end2end/tests/bad_ping.c
   test/core/end2end/tests/binary_metadata.c
   test/core/end2end/tests/call_creds.c
   test/core/end2end/tests/cancel_after_accept.c
@@ -4488,6 +4487,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/end2end_test_utils.c
   test/core/end2end/tests/authority_not_supported.c
   test/core/end2end/tests/bad_hostname.c
+  test/core/end2end/tests/bad_ping.c
   test/core/end2end/tests/binary_metadata.c
   test/core/end2end/tests/cancel_after_accept.c
   test/core/end2end/tests/cancel_after_client_done.c
@@ -8964,6 +8964,49 @@ target_include_directories(bm_cq
 )
 
 target_link_libraries(bm_cq
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  benchmark
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(bm_cq_multiple_threads
+  test/cpp/microbenchmarks/bm_cq_multiple_threads.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+
+target_include_directories(bm_cq_multiple_threads
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_cq_multiple_threads
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark

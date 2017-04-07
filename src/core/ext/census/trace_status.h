@@ -42,4 +42,4 @@ typedef struct trace_status {
   trace_string errorMessage;
 } trace_status;
 
-#endif
+#endif /* GRPC_CORE_EXT_CENSUS_TRACE_STATUS_H */

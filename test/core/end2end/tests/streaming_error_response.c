@@ -62,16 +62,18 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_time(int n) {
+static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static gpr_timespec five_seconds_from_now(void) {
+  return n_seconds_from_now(5);
+}
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -110,7 +112,6 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   grpc_slice response_payload2_slice = grpc_slice_from_copied_string("world");
   grpc_byte_buffer *response_payload2 =
       grpc_raw_byte_buffer_create(&response_payload2_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
   grpc_end2end_test_fixture f = begin_test(config, "streaming_error_response",
                                            NULL, NULL, request_status_early);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -127,6 +128,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   grpc_slice details;
   int was_cancelled = 2;
 
+  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),

@@ -47,6 +47,7 @@
 #define MAX_CONNECTION_AGE_GRACE_MS 1000
 #define MAX_CONNECTION_IDLE_MS 9999
 
+#define MAX_CONNECTION_AGE_JITTER_MULTIPLIER 1.1
 #define CALL_DEADLINE_S 10
 /* The amount of time we wait for the connection to time out, but after it the
    connection should not use up its grace period. It should be a number between
@@ -57,7 +58,7 @@
    should be shorter than CALL_DEADLINE_S - CQ_MAX_CONNECTION_AGE_WAIT_TIME_S */
 #define CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S 2
 /* The grace period for the test to observe the channel shutdown process */
-#define IMMEDIATE_SHUTDOWN_GRACE_TIME_MS 300
+#define IMMEDIATE_SHUTDOWN_GRACE_TIME_MS 3000
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -169,8 +170,8 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   gpr_timespec expect_shutdown_time = grpc_timeout_milliseconds_to_deadline(
-      MAX_CONNECTION_AGE_MS + MAX_CONNECTION_AGE_GRACE_MS +
-      IMMEDIATE_SHUTDOWN_GRACE_TIME_MS);
+      (int)(MAX_CONNECTION_AGE_MS * MAX_CONNECTION_AGE_JITTER_MULTIPLIER) +
+      MAX_CONNECTION_AGE_GRACE_MS + IMMEDIATE_SHUTDOWN_GRACE_TIME_MS);
 
   /* Wait for the channel to reach its max age */
   cq_verify_empty_timeout(cqv, CQ_MAX_CONNECTION_AGE_WAIT_TIME_S);

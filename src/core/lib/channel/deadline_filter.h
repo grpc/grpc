@@ -83,15 +83,15 @@ void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                                gpr_timespec new_deadline);
 
-// To be called from the client-side filter's start_transport_stream_op()
+// To be called from the client-side filter's start_transport_stream_op_batch()
 // method.  Ensures that the deadline timer is cancelled when the call
 // is completed.
 //
 // Note: It is the caller's responsibility to chain to the next filter if
 // necessary after this function returns.
-void grpc_deadline_state_client_start_transport_stream_op(
+void grpc_deadline_state_client_start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-    grpc_transport_stream_op* op);
+    grpc_transport_stream_op_batch* op);
 
 // Deadline filters for direct client channels and server channels.
 // Note: Deadlines for non-direct client channels are handled by the

@@ -43,7 +43,7 @@ cd build
 mkdir %ARCHITECTURE%
 cd %ARCHITECTURE%
 @rem TODO(jtattermusch): Stop hardcoding path to yasm once Jenkins workers can locate yasm correctly
-cmake -G "Visual Studio 14 2015" -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=OFF -DCMAKE_ASM_NASM_COMPILER="C:/Program Files (x86)/yasm/yasm.exe" ../../.. || goto :error
+cmake -G "Visual Studio 14 2015" -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON -DCMAKE_ASM_NASM_COMPILER="C:/Program Files (x86)/yasm/yasm.exe" ../../.. || goto :error
 cd ..\..\..
 
 @rem Location of nuget.exe
