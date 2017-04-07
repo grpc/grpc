@@ -279,6 +279,14 @@ typedef struct {
  * possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
   "grpc.use_cronet_packet_coalescing"
+/* Channel arg (integer) setting how large a slice to try and read from the wire
+each time recvmsg (or equivalent) is called */
+#define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
+#define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
+#define GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE \
+  "grpc.experimental.tcp_min_read_chunk_size"
+#define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
+  "grpc.experimental.tcp_max_read_chunk_size"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

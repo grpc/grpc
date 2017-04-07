@@ -222,8 +222,8 @@ class SockPair : public EndpointPairFixture {
  public:
   SockPair(Service* service, const FixtureConfiguration& fixture_configuration =
                                  FixtureConfiguration())
-      : EndpointPairFixture(service, grpc_iomgr_create_endpoint_pair(
-                                         "test", Library::get().rq(), 8192),
+      : EndpointPairFixture(service,
+                            grpc_iomgr_create_endpoint_pair("test", NULL),
                             fixture_configuration) {}
 };
 
