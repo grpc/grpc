@@ -1185,7 +1185,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       if (stream_state->rs.compressed) {
         stream_state->rs.sbs.base.flags = GRPC_WRITE_INTERNAL_COMPRESS;
       }
-      *((grpc_byte_buffer **)stream_op->recv_message) =
+      *((grpc_byte_buffer **)stream_op->payload->recv_message.recv_message) =
           (grpc_byte_buffer *)&stream_state->rs.sbs;
       grpc_closure_sched(exec_ctx,
                          stream_op->payload->recv_message.recv_message_ready,

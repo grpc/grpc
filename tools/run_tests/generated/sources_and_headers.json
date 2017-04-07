@@ -2566,6 +2566,27 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "bm_cq_multiple_threads", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_cq_multiple_threads.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "bm_error", 
     "src": [
       "test/cpp/microbenchmarks/bm_error.cc"
@@ -7129,6 +7150,7 @@
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/authority_not_supported.c", 
       "test/core/end2end/tests/bad_hostname.c", 
+      "test/core/end2end/tests/bad_ping.c", 
       "test/core/end2end/tests/binary_metadata.c", 
       "test/core/end2end/tests/call_creds.c", 
       "test/core/end2end/tests/cancel_after_accept.c", 
@@ -7204,6 +7226,7 @@
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/authority_not_supported.c", 
       "test/core/end2end/tests/bad_hostname.c", 
+      "test/core/end2end/tests/bad_ping.c", 
       "test/core/end2end/tests/binary_metadata.c", 
       "test/core/end2end/tests/cancel_after_accept.c", 
       "test/core/end2end/tests/cancel_after_client_done.c", 

@@ -914,14 +914,14 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
         .arena = calld->arena};
     grpc_error *new_error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
-    if (new_error != GRPC_ERROR_NONE) {
-      new_error = grpc_error_add_child(new_error, error);
-      subchannel_call = CANCELLED_CALL;
-      fail_locked(exec_ctx, calld, new_error);
-    }
     gpr_atm_rel_store(&calld->subchannel_call,
                       (gpr_atm)(uintptr_t)subchannel_call);
-    retry_waiting_locked(exec_ctx, calld);
+    if (new_error != GRPC_ERROR_NONE) {
+      new_error = grpc_error_add_child(new_error, error);
+      fail_locked(exec_ctx, calld, new_error);
+    } else {
+      retry_waiting_locked(exec_ctx, calld);
+    }
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
 }
@@ -1152,16 +1152,16 @@ static void start_transport_stream_op_batch_locked_inner(
         .arena = calld->arena};
     grpc_error *error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
-    if (error != GRPC_ERROR_NONE) {
-      subchannel_call = CANCELLED_CALL;
-      fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
-      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
-    }
     gpr_atm_rel_store(&calld->subchannel_call,
                       (gpr_atm)(uintptr_t)subchannel_call);
-    retry_waiting_locked(exec_ctx, calld);
-    /* recurse to retry */
-    start_transport_stream_op_batch_locked_inner(exec_ctx, op, elem);
+    if (error != GRPC_ERROR_NONE) {
+      fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
+      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
+    } else {
+      retry_waiting_locked(exec_ctx, calld);
+      /* recurse to retry */
+      start_transport_stream_op_batch_locked_inner(exec_ctx, op, elem);
+    }
     /* early out */
     return;
   }

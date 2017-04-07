@@ -626,6 +626,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_cq)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_cq_multiple_threads)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_error)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -4386,6 +4389,7 @@ add_library(end2end_tests
   test/core/end2end/end2end_test_utils.c
   test/core/end2end/tests/authority_not_supported.c
   test/core/end2end/tests/bad_hostname.c
+  test/core/end2end/tests/bad_ping.c
   test/core/end2end/tests/binary_metadata.c
   test/core/end2end/tests/call_creds.c
   test/core/end2end/tests/cancel_after_accept.c
@@ -4483,6 +4487,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/end2end_test_utils.c
   test/core/end2end/tests/authority_not_supported.c
   test/core/end2end/tests/bad_hostname.c
+  test/core/end2end/tests/bad_ping.c
   test/core/end2end/tests/binary_metadata.c
   test/core/end2end/tests/cancel_after_accept.c
   test/core/end2end/tests/cancel_after_client_done.c
@@ -8959,6 +8964,49 @@ target_include_directories(bm_cq
 )
 
 target_link_libraries(bm_cq
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  benchmark
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(bm_cq_multiple_threads
+  test/cpp/microbenchmarks/bm_cq_multiple_threads.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+
+target_include_directories(bm_cq_multiple_threads
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_cq_multiple_threads
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark

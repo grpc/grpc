@@ -69,13 +69,21 @@
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
 #define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
 
-#define DEFAULT_CLIENT_KEEPALIVE_TIME_S INT_MAX
-#define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_S 20
+#define DEFAULT_CLIENT_KEEPALIVE_TIME_MS INT_MAX
+#define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS 20000 /* 20 seconds */
+#define DEFAULT_SERVER_KEEPALIVE_TIME_MS 7200000  /* 2 hours */
+#define DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS 20000 /* 20 seconds */
 #define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
+#define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
 
-static int g_default_client_keepalive_time_s = DEFAULT_CLIENT_KEEPALIVE_TIME_S;
-static int g_default_client_keepalive_timeout_s =
-    DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_S;
+static int g_default_client_keepalive_time_ms =
+    DEFAULT_CLIENT_KEEPALIVE_TIME_MS;
+static int g_default_client_keepalive_timeout_ms =
+    DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS;
+static int g_default_server_keepalive_time_ms =
+    DEFAULT_SERVER_KEEPALIVE_TIME_MS;
+static int g_default_server_keepalive_timeout_ms =
+    DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS;
 static bool g_default_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
 
@@ -158,6 +166,8 @@ static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 #define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 0
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 3
+#define DEFAULT_MAX_PING_STRIKES 2
+#define DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
 
 /** keepalive-relevant functions */
 static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -363,19 +373,35 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       .max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA,
       .min_time_between_pings =
           gpr_time_from_millis(DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, GPR_TIMESPAN),
+      .max_ping_strikes = DEFAULT_MAX_PING_STRIKES,
+      .min_ping_interval_without_data = gpr_time_from_millis(
+          DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_MS, GPR_TIMESPAN),
   };
 
-  /* client-side keepalive setting */
-  t->keepalive_time =
-      g_default_client_keepalive_time_s == INT_MAX
-          ? gpr_inf_future(GPR_TIMESPAN)
-          : gpr_time_from_seconds(g_default_client_keepalive_time_s,
-                                  GPR_TIMESPAN);
-  t->keepalive_timeout =
-      g_default_client_keepalive_timeout_s == INT_MAX
-          ? gpr_inf_future(GPR_TIMESPAN)
-          : gpr_time_from_seconds(g_default_client_keepalive_timeout_s,
-                                  GPR_TIMESPAN);
+  /* Keepalive setting */
+  if (t->is_client) {
+    t->keepalive_time =
+        g_default_client_keepalive_time_ms == INT_MAX
+            ? gpr_inf_future(GPR_TIMESPAN)
+            : gpr_time_from_millis(g_default_client_keepalive_time_ms,
+                                   GPR_TIMESPAN);
+    t->keepalive_timeout =
+        g_default_client_keepalive_timeout_ms == INT_MAX
+            ? gpr_inf_future(GPR_TIMESPAN)
+            : gpr_time_from_millis(g_default_client_keepalive_timeout_ms,
+                                   GPR_TIMESPAN);
+  } else {
+    t->keepalive_time =
+        g_default_server_keepalive_time_ms == INT_MAX
+            ? gpr_inf_future(GPR_TIMESPAN)
+            : gpr_time_from_millis(g_default_server_keepalive_time_ms,
+                                   GPR_TIMESPAN);
+    t->keepalive_timeout =
+        g_default_server_keepalive_timeout_ms == INT_MAX
+            ? gpr_inf_future(GPR_TIMESPAN)
+            : gpr_time_from_millis(g_default_server_keepalive_timeout_ms,
+                                   GPR_TIMESPAN);
+  }
   t->keepalive_permit_without_calls = g_default_keepalive_permit_without_calls;
 
   if (channel_args) {
@@ -409,12 +435,26 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
             &channel_args->args[i],
             (grpc_integer_options){DEFAULT_MAX_PINGS_BETWEEN_DATA, 0, INT_MAX});
       } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
+        t->ping_policy.max_ping_strikes = grpc_channel_arg_get_integer(
+            &channel_args->args[i],
+            (grpc_integer_options){DEFAULT_MAX_PING_STRIKES, 0, INT_MAX});
+      } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS)) {
         t->ping_policy.min_time_between_pings = gpr_time_from_millis(
             grpc_channel_arg_get_integer(
                 &channel_args->args[i],
                 (grpc_integer_options){DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, 0,
                                        INT_MAX}),
+            GPR_TIMESPAN);
+      } else if (0 ==
+                 strcmp(channel_args->args[i].key,
+                        GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS)) {
+        t->ping_policy.min_ping_interval_without_data = gpr_time_from_millis(
+            grpc_channel_arg_get_integer(
+                &channel_args->args[i],
+                (grpc_integer_options){
+                    DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_MS, 0, INT_MAX}),
             GPR_TIMESPAN);
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE)) {
@@ -426,23 +466,27 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
         t->enable_bdp_probe = grpc_channel_arg_get_integer(
             &channel_args->args[i], (grpc_integer_options){1, 0, 1});
       } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_CLIENT_KEEPALIVE_TIME_S)) {
+                             GRPC_ARG_KEEPALIVE_TIME_MS)) {
         const int value = grpc_channel_arg_get_integer(
             &channel_args->args[i],
-            (grpc_integer_options){g_default_client_keepalive_time_s, 1,
-                                   INT_MAX});
+            (grpc_integer_options){t->is_client
+                                       ? g_default_client_keepalive_time_ms
+                                       : g_default_server_keepalive_time_ms,
+                                   1, INT_MAX});
         t->keepalive_time = value == INT_MAX
                                 ? gpr_inf_future(GPR_TIMESPAN)
-                                : gpr_time_from_seconds(value, GPR_TIMESPAN);
+                                : gpr_time_from_millis(value, GPR_TIMESPAN);
       } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_CLIENT_KEEPALIVE_TIMEOUT_S)) {
+                             GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
         const int value = grpc_channel_arg_get_integer(
             &channel_args->args[i],
-            (grpc_integer_options){g_default_client_keepalive_timeout_s, 0,
-                                   INT_MAX});
+            (grpc_integer_options){t->is_client
+                                       ? g_default_client_keepalive_timeout_ms
+                                       : g_default_server_keepalive_timeout_ms,
+                                   0, INT_MAX});
         t->keepalive_timeout = value == INT_MAX
                                    ? gpr_inf_future(GPR_TIMESPAN)
-                                   : gpr_time_from_seconds(value, GPR_TIMESPAN);
+                                   : gpr_time_from_millis(value, GPR_TIMESPAN);
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)) {
         t->keepalive_permit_without_calls =
@@ -500,8 +544,11 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       t->ping_policy.max_pings_without_data;
   t->ping_state.is_delayed_ping_timer_set = false;
 
-  /** Start client-side keepalive pings */
-  if (t->is_client) {
+  t->ping_recv_state.last_ping_recv_time = gpr_inf_past(GPR_CLOCK_MONOTONIC);
+  t->ping_recv_state.ping_strikes = 0;
+
+  /* Start keepalive pings */
+  if (gpr_time_cmp(t->keepalive_time, gpr_inf_future(GPR_TIMESPAN)) != 0) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
     grpc_timer_init(
@@ -936,6 +983,26 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
   // GRPC_CHTTP2_IF_TRACING(
   //     gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
   t->seen_goaway = 1;
+
+  /* When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
+   * data equal to “too_many_pings”, it should log the occurrence at a log level
+   * that is enabled by default and double the configured KEEPALIVE_TIME used
+   * for new connections on that channel. */
+  if (t->is_client && goaway_error == GRPC_HTTP2_ENHANCE_YOUR_CALM &&
+      grpc_slice_str_cmp(goaway_text, "too_many_pings") == 0) {
+    gpr_log(GPR_ERROR,
+            "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
+            "data equal to \"too_many_pings\"");
+    double current_keepalive_time_ms =
+        gpr_timespec_to_micros(t->keepalive_time) / 1000;
+    t->keepalive_time =
+        current_keepalive_time_ms > INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER
+            ? gpr_inf_future(GPR_TIMESPAN)
+            : gpr_time_from_millis((int64_t)(current_keepalive_time_ms *
+                                             KEEPALIVE_TIME_BACKOFF_MULTIPLIER),
+                                   GPR_TIMESPAN);
+  }
+
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */
   connectivity_state_set(
@@ -1481,6 +1548,21 @@ static void send_goaway(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                             grpc_slice_ref_internal(slice), &t->qbuf);
   grpc_chttp2_initiate_write(exec_ctx, t, false, "goaway_sent");
   GRPC_ERROR_UNREF(error);
+}
+
+void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport *t) {
+  gpr_log(GPR_DEBUG, "PING strike");
+  if (++t->ping_recv_state.ping_strikes > t->ping_policy.max_ping_strikes &&
+      t->ping_policy.max_ping_strikes != 0) {
+    send_goaway(exec_ctx, t,
+                grpc_error_set_int(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("too_many_pings"),
+                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
+    /*The transport will be closed after the write is done */
+    close_transport_locked(
+        exec_ctx, t, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many pings"));
+  }
 }
 
 static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
@@ -2176,6 +2258,10 @@ static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (grpc_http_trace) {
     gpr_log(GPR_DEBUG, "%s: Start BDP ping", t->peer_string);
   }
+  /* Reset the keepalive ping timer */
+  if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
+    grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
+  }
   grpc_bdp_estimator_start_ping(&t->bdp_estimator);
 }
 
@@ -2190,20 +2276,32 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
 }
 
-void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args) {
+void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args,
+                                               bool is_client) {
   size_t i;
   if (args) {
     for (i = 0; i < args->num_args; i++) {
-      if (0 == strcmp(args->args[i].key, GRPC_ARG_CLIENT_KEEPALIVE_TIME_S)) {
-        g_default_client_keepalive_time_s = grpc_channel_arg_get_integer(
-            &args->args[i], (grpc_integer_options){
-                                g_default_client_keepalive_time_s, 1, INT_MAX});
-      } else if (0 == strcmp(args->args[i].key,
-                             GRPC_ARG_CLIENT_KEEPALIVE_TIMEOUT_S)) {
-        g_default_client_keepalive_timeout_s = grpc_channel_arg_get_integer(
+      if (0 == strcmp(args->args[i].key, GRPC_ARG_KEEPALIVE_TIME_MS)) {
+        const int value = grpc_channel_arg_get_integer(
             &args->args[i],
-            (grpc_integer_options){g_default_client_keepalive_timeout_s, 0,
+            (grpc_integer_options){g_default_client_keepalive_time_ms, 1,
                                    INT_MAX});
+        if (is_client) {
+          g_default_client_keepalive_time_ms = value;
+        } else {
+          g_default_server_keepalive_time_ms = value;
+        }
+      } else if (0 ==
+                 strcmp(args->args[i].key, GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
+        const int value = grpc_channel_arg_get_integer(
+            &args->args[i],
+            (grpc_integer_options){g_default_client_keepalive_timeout_ms, 0,
+                                   INT_MAX});
+        if (is_client) {
+          g_default_client_keepalive_timeout_ms = value;
+        } else {
+          g_default_server_keepalive_timeout_ms = value;
+        }
       } else if (0 == strcmp(args->args[i].key,
                              GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)) {
         g_default_keepalive_permit_without_calls =
@@ -2221,7 +2319,8 @@ static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_chttp2_transport *t = arg;
   GPR_ASSERT(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING);
   if (error == GRPC_ERROR_NONE && !(t->destroying || t->closed)) {
-    if (t->keepalive_permit_without_calls || t->stream_map.count > 0) {
+    if (t->keepalive_permit_without_calls ||
+        grpc_chttp2_stream_map_size(&t->stream_map) > 0) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
       GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping end");
       send_ping_locked(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE,
@@ -2234,6 +2333,13 @@ static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
           gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
           &t->init_keepalive_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
     }
+  } else if (error == GRPC_ERROR_CANCELLED && !(t->destroying || t->closed)) {
+    /* The keepalive ping timer may be cancelled by bdp */
+    GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
+    grpc_timer_init(
+        exec_ctx, &t->keepalive_ping_timer,
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), t->keepalive_time),
+        &t->init_keepalive_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "init keepalive ping");
 }
@@ -2276,8 +2382,8 @@ static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("keepalive watchdog timeout"));
     }
   } else {
-    /** The watchdog timer should have been cancelled by
-        finish_keepalive_ping_locked. */
+    /* The watchdog timer should have been cancelled by
+     * finish_keepalive_ping_locked. */
     if (error != GRPC_ERROR_CANCELLED) {
       gpr_log(GPR_ERROR, "keepalive_ping_end state error: %d (expect: %d)",
               t->keepalive_state, GRPC_CHTTP2_KEEPALIVE_STATE_PINGING);
