@@ -99,7 +99,6 @@ Local<Value> nanErrorWithCode(const char *msg, grpc_call_error code) {
 
 bool CreateMetadataArray(Local<Object> metadata, grpc_metadata_array *array) {
   HandleScope scope;
-  grpc_metadata_array_init(array);
   Local<Array> keys = Nan::GetOwnPropertyNames(metadata).ToLocalChecked();
   for (unsigned int i = 0; i < keys->Length(); i++) {
     Local<String> current_key = Nan::To<String>(
@@ -111,18 +110,20 @@ bool CreateMetadataArray(Local<Object> metadata, grpc_metadata_array *array) {
     array->capacity += Local<Array>::Cast(value_array)->Length();
   }
   array->metadata = reinterpret_cast<grpc_metadata*>(
-      gpr_malloc(array->capacity * sizeof(grpc_metadata)));
+      gpr_zalloc(array->capacity * sizeof(grpc_metadata)));
   for (unsigned int i = 0; i < keys->Length(); i++) {
     Local<String> current_key(Nan::To<String>(keys->Get(i)).ToLocalChecked());
     Local<Array> values = Local<Array>::Cast(
         Nan::Get(metadata, current_key).ToLocalChecked());
-    grpc_slice key_slice = grpc_slice_intern(CreateSliceFromString(current_key));
+    grpc_slice key_slice = CreateSliceFromString(current_key);
+    grpc_slice key_intern_slice = grpc_slice_intern(key_slice);
+    grpc_slice_unref(key_slice);
     for (unsigned int j = 0; j < values->Length(); j++) {
       Local<Value> value = Nan::Get(values, j).ToLocalChecked();
       grpc_metadata *current = &array->metadata[array->count];
-      current->key = key_slice;
+      current->key = key_intern_slice;
       // Only allow binary headers for "-bin" keys
-      if (grpc_is_binary_header(key_slice)) {
+      if (grpc_is_binary_header(key_intern_slice)) {
         if (::node::Buffer::HasInstance(value)) {
           current->value = CreateSliceFromBuffer(value);
         } else {
@@ -140,6 +141,14 @@ bool CreateMetadataArray(Local<Object> metadata, grpc_metadata_array *array) {
     }
   }
   return true;
+}
+
+void DestroyMetadataArray(grpc_metadata_array *array) {
+  for (size_t i = 0; i < array->count; i++) {
+    // Don't unref keys because they are interned
+    grpc_slice_unref(array->metadata[i].value);
+  }
+  grpc_metadata_array_destroy(array);
 }
 
 Local<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
@@ -179,6 +188,12 @@ Op::~Op() {
 
 class SendMetadataOp : public Op {
  public:
+  SendMetadataOp() {
+    grpc_metadata_array_init(&send_metadata);
+  }
+  ~SendMetadataOp() {
+    DestroyMetadataArray(&send_metadata);
+  }
   Local<Value> GetNodeValue() const {
     EscapableHandleScope scope;
     return scope.Escape(Nan::True());
@@ -187,17 +202,16 @@ class SendMetadataOp : public Op {
     if (!value->IsObject()) {
       return false;
     }
-    grpc_metadata_array array;
     MaybeLocal<Object> maybe_metadata = Nan::To<Object>(value);
     if (maybe_metadata.IsEmpty()) {
       return false;
     }
     if (!CreateMetadataArray(maybe_metadata.ToLocalChecked(),
-                             &array)) {
+                             &send_metadata)) {
       return false;
     }
-    out->data.send_initial_metadata.count = array.count;
-    out->data.send_initial_metadata.metadata = array.metadata;
+    out->data.send_initial_metadata.count = send_metadata.count;
+    out->data.send_initial_metadata.metadata = send_metadata.metadata;
     return true;
   }
   bool IsFinalOp() {
@@ -207,6 +221,8 @@ class SendMetadataOp : public Op {
   std::string GetTypeString() const {
     return "send_metadata";
   }
+ private:
+  grpc_metadata_array send_metadata;
 };
 
 class SendMessageOp : public Op {
@@ -272,8 +288,12 @@ class SendClientCloseOp : public Op {
 
 class SendServerStatusOp : public Op {
  public:
+  SendServerStatusOp() {
+    grpc_metadata_array_init(&status_metadata);
+  }
   ~SendServerStatusOp() {
     grpc_slice_unref(details);
+    DestroyMetadataArray(&status_metadata);
   }
   Local<Value> GetNodeValue() const {
     EscapableHandleScope scope;
@@ -313,12 +333,13 @@ class SendServerStatusOp : public Op {
     }
     Local<String> details = Nan::To<String>(
         maybe_details.ToLocalChecked()).ToLocalChecked();
-    grpc_metadata_array array;
-    if (!CreateMetadataArray(metadata, &array)) {
+    if (!CreateMetadataArray(metadata, &status_metadata)) {
       return false;
     }
-    out->data.send_status_from_server.trailing_metadata_count = array.count;
-    out->data.send_status_from_server.trailing_metadata = array.metadata;
+    out->data.send_status_from_server.trailing_metadata_count =
+        status_metadata.count;
+    out->data.send_status_from_server.trailing_metadata =
+        status_metadata.metadata;
     out->data.send_status_from_server.status =
         static_cast<grpc_status_code>(code);
     this->details = CreateSliceFromString(details);
@@ -335,6 +356,7 @@ class SendServerStatusOp : public Op {
 
  private:
   grpc_slice details;
+  grpc_metadata_array status_metadata;
 };
 
 class GetMetadataOp : public Op {
@@ -574,6 +596,14 @@ void Call::CompleteBatch(bool is_final_op) {
 }
 
 NAN_METHOD(Call::New) {
+  /* Arguments:
+   * 0: Channel to make the call on
+   * 1: Method
+   * 2: Deadline
+   * 3: host
+   * 4: parent Call
+   * 5: propagation flags
+   */
   if (info.IsConstructCall()) {
     Call *call;
     if (info[0]->IsExternal()) {
@@ -618,25 +648,26 @@ NAN_METHOD(Call::New) {
       double deadline = Nan::To<double>(info[2]).FromJust();
       grpc_channel *wrapped_channel = channel->GetWrappedChannel();
       grpc_call *wrapped_call;
+      grpc_slice method = CreateSliceFromString(
+          Nan::To<String>(info[1]).ToLocalChecked());
       if (info[3]->IsString()) {
         grpc_slice *host = new grpc_slice;
         *host = CreateSliceFromString(
             Nan::To<String>(info[3]).ToLocalChecked());
         wrapped_call = grpc_channel_create_call(
             wrapped_channel, parent_call, propagate_flags,
-            GetCompletionQueue(), CreateSliceFromString(
-                Nan::To<String>(info[1]).ToLocalChecked()),
+            GetCompletionQueue(), method,
             host, MillisecondsToTimespec(deadline), NULL);
         delete host;
       } else if (info[3]->IsUndefined() || info[3]->IsNull()) {
         wrapped_call = grpc_channel_create_call(
             wrapped_channel, parent_call, propagate_flags,
-            GetCompletionQueue(), CreateSliceFromString(
-                Nan::To<String>(info[1]).ToLocalChecked()),
+            GetCompletionQueue(), method,
             NULL, MillisecondsToTimespec(deadline), NULL);
       } else {
         return Nan::ThrowTypeError("Call's fourth argument must be a string");
       }
+      grpc_slice_unref(method);
       call = new Call(wrapped_call);
       Nan::Set(info.This(), Nan::New("channel_").ToLocalChecked(),
                channel_object);

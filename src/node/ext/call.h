@@ -58,6 +58,8 @@ v8::Local<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
 bool CreateMetadataArray(v8::Local<v8::Object> metadata,
                          grpc_metadata_array *array);
 
+void DestroyMetadataArray(grpc_metadata_array *array);
+
 /* Wrapper class for grpc_call structs. */
 class Call : public Nan::ObjectWrap {
  public:
