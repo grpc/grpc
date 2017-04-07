@@ -1098,12 +1098,17 @@ static const grpc_event_engine_vtable vtable = {
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create a dummy epoll_fd to make sure epoll support is available */
 static bool is_epollex_available(void) {
+  static bool logged_why_not = false;
+
   int fd = epoll_create1(EPOLL_CLOEXEC);
   if (fd < 0) {
-    gpr_log(GPR_ERROR,
-            "epoll_create1 failed with error: %d. Not using epollex polling "
-            "engine.",
-            fd);
+    if (!logged_why_not) {
+      gpr_log(GPR_ERROR,
+              "epoll_create1 failed with error: %d. Not using epollex polling "
+              "engine.",
+              fd);
+      logged_why_not = true;
+    }
     return false;
   }
   grpc_wakeup_fd wakeup;
@@ -1119,19 +1124,26 @@ static bool is_epollex_available(void) {
       .data.ptr = NULL};
   if (epoll_ctl(fd, EPOLL_CTL_ADD, wakeup.read_fd, &ev) != 0) {
     if (errno != EINVAL) {
-      gpr_log(GPR_ERROR,
-              "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT failed with error: "
-              "%d. Not using epollex polling engine.",
-              errno);
+      if (!logged_why_not) {
+        gpr_log(
+            GPR_ERROR,
+            "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT failed with error: "
+            "%d. Not using epollex polling engine.",
+            errno);
+        logged_why_not = true;
+      }
       close(fd);
       grpc_wakeup_fd_destroy(&wakeup);
       return false;
     }
   } else {
-    gpr_log(GPR_ERROR,
-            "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT succeeded. This is "
-            "evidence of no EPOLLEXCLUSIVE support. Not using "
-            "epollex polling engine.");
+    if (!logged_why_not) {
+      gpr_log(GPR_ERROR,
+              "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT succeeded. This is "
+              "evidence of no EPOLLEXCLUSIVE support. Not using "
+              "epollex polling engine.");
+      logged_why_not = true;
+    }
     close(fd);
     grpc_wakeup_fd_destroy(&wakeup);
     return false;
