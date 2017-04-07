@@ -404,7 +404,10 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
 }
 
-static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { REF_BY(fd, 2, "return_workqueue"); return (grpc_workqueue*)fd; }
+static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) {
+  REF_BY(fd, 2, "return_workqueue");
+  return (grpc_workqueue *)fd;
+}
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
@@ -574,7 +577,8 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
     return 0;
   }
 
-  static const gpr_timespec round_up = {.clock_type = GPR_TIMESPAN, .tv_sec = 0, .tv_nsec = GPR_NS_PER_MS-1};
+  static const gpr_timespec round_up = {
+      .clock_type = GPR_TIMESPAN, .tv_sec = 0, .tv_nsec = GPR_NS_PER_MS - 1};
   timeout = gpr_time_sub(deadline, now);
   int millis = gpr_time_to_millis(gpr_time_add(timeout, round_up));
   return millis >= 1 ? millis : 1;
@@ -634,9 +638,8 @@ static grpc_error *pollset_poll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
-int timeout=poll_deadline_to_millis_timeout(deadline, now);
-  int r = epoll_wait(pollset->epfd, events, MAX_EPOLL_EVENTS,
-                     timeout);
+  int timeout = poll_deadline_to_millis_timeout(deadline, now);
+  int r = epoll_wait(pollset->epfd, events, MAX_EPOLL_EVENTS, timeout);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (r < 0) return GRPC_OS_ERROR(errno, "epoll_wait");
 
@@ -803,8 +806,9 @@ static void pss_destroy(grpc_pollset_set *pss) {
   GPR_ASSERT(pss->roots[PSS_FD] == NULL);
   GPR_ASSERT(pss->roots[PSS_POLLSET] == NULL);
   GPR_ASSERT(pss->roots[PSS_POLLSET_SET] == &pss->po);
-  for (pss_obj *child = pss->roots[PSS_POLLSET_SET]; child != &pss->po; child = child->pss_next) {
-    pss_unref((grpc_pollset_set*)child);
+  for (pss_obj *child = pss->roots[PSS_POLLSET_SET]; child != &pss->po;
+       child = child->pss_next) {
+    pss_unref((grpc_pollset_set *)child);
   }
   gpr_free(pss);
 }
@@ -932,7 +936,8 @@ static void pss_merge(grpc_exec_ctx *exec_ctx, grpc_pollset_set *a,
       pss_merge_broadcast_and_patch(exec_ctx, a, b, PSS_FD);
       pss_merge_broadcast_and_patch(exec_ctx, a, b, PSS_POLLSET);
       b->po.pss_master = a;
-      a->roots[PSS_POLLSET_SET] = pss_splice(a->roots[PSS_POLLSET_SET], b->roots[PSS_POLLSET_SET]);
+      a->roots[PSS_POLLSET_SET] =
+          pss_splice(a->roots[PSS_POLLSET_SET], b->roots[PSS_POLLSET_SET]);
       gpr_mu_unlock(&a->po.mu);
       gpr_mu_unlock(&b->po.mu);
       pss_unref(a);
