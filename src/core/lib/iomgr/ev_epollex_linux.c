@@ -1026,14 +1026,12 @@ static void pollset_set_del_pollset(grpc_exec_ctx *exec_ctx,
 static void pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
                                         grpc_pollset_set *bag,
                                         grpc_pollset_set *item) {
-  pss_add_obj(exec_ctx, bag, &item->po, PSS_POLLSET_SET);
+  pss_merge(exec_ctx, bag, item);
 }
 
 static void pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
                                         grpc_pollset_set *bag,
-                                        grpc_pollset_set *item) {
-  pss_del_obj(exec_ctx, bag, &item->po, PSS_POLLSET_SET);
-}
+                                        grpc_pollset_set *item) {}
 
 /*******************************************************************************
  * Event engine binding
