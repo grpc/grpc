@@ -328,6 +328,10 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 
   fd->orphaned = true;
 
+  if (!is_fd_closed) {
+    gpr_log(GPR_DEBUG, "TODO: handle fd removal?");
+  }
+
   /* Remove the active status but keep referenced. We want this grpc_fd struct
      to be alive (and not added to freelist) until the end of this function */
   REF_BY(fd, 1, reason);
@@ -858,13 +862,27 @@ static bool is_epollex_available(void) {
                          grpc_wakeup_fd_init(&wakeup))) {
     return false;
   }
-  struct epoll_event ev = {.events = EPOLLET | EPOLLIN | EPOLLEXCLUSIVE,
-                           .data.ptr = NULL};
+  struct epoll_event ev = {
+      /* choose events that should cause an error on
+         EPOLLEXCLUSIVE enabled kernels - specifically the combination of
+         EPOLLONESHOT and EPOLLEXCLUSIVE */
+      .events = EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT,
+      .data.ptr = NULL};
   if (epoll_ctl(fd, EPOLL_CTL_ADD, wakeup.read_fd, &ev) != 0) {
+    if (errno != EINVAL) {
+      gpr_log(GPR_ERROR,
+              "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT failed with error: "
+              "%d. Not using epollex polling engine.",
+              errno);
+      close(fd);
+      grpc_wakeup_fd_destroy(&wakeup);
+      return false;
+    }
+  } else {
     gpr_log(GPR_ERROR,
-            "epoll_ctl with EPOLLEXCLUSIVE failed with error: %d. Not using "
-            "epollex polling engine",
-            fd);
+            "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT succeeded. This is "
+            "evidence of no EPOLLEXCLUSIVE support. Not using "
+            "epollex polling engine.");
     close(fd);
     grpc_wakeup_fd_destroy(&wakeup);
     return false;
@@ -897,7 +915,7 @@ const grpc_event_engine_vtable *grpc_init_epollex_linux(void) {
 #include "src/core/lib/iomgr/ev_posix.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable *grpc_init_epoll_linux(void) { return NULL; }
+const grpc_event_engine_vtable *grpc_init_epollex_linux(void) { return NULL; }
 #endif /* defined(GRPC_POSIX_SOCKET) */
 
 #endif /* !defined(GRPC_LINUX_EPOLL) */
