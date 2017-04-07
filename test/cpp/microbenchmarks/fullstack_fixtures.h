@@ -212,8 +212,8 @@ class EndpointPairFixture : public BaseFixture {
 class SockPair : public EndpointPairFixture {
  public:
   SockPair(Service* service)
-      : EndpointPairFixture(service, grpc_iomgr_create_endpoint_pair(
-                                         "test", Library::get().rq(), 8192)) {}
+      : EndpointPairFixture(service,
+                            grpc_iomgr_create_endpoint_pair("test", NULL)) {}
 };
 
 class InProcessCHTTP2 : public EndpointPairFixture {
