@@ -566,19 +566,17 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
 static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
                                            gpr_timespec now) {
   gpr_timespec timeout;
-  static const int64_t max_spin_polling_us = 10;
   if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
     return -1;
   }
 
-  if (gpr_time_cmp(deadline, gpr_time_add(now, gpr_time_from_micros(
-                                                   max_spin_polling_us,
-                                                   GPR_TIMESPAN))) <= 0) {
+  if (gpr_time_cmp(deadline, now) <= 0) {
     return 0;
   }
+
+  static const gpr_timespec round_up = {.clock_type = GPR_TIMESPAN, .tv_sec = 0, .tv_nsec = GPR_NS_PER_MS-1};
   timeout = gpr_time_sub(deadline, now);
-  int millis = gpr_time_to_millis(gpr_time_add(
-      timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
+  int millis = gpr_time_to_millis(gpr_time_add(timeout, round_up));
   return millis >= 1 ? millis : 1;
 }
 

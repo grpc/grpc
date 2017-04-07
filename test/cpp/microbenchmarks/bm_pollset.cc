@@ -136,8 +136,7 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
   gpr_mu_lock(mu);
   while (state.KeepRunning()) {
-    grpc_pollset_worker* worker;
-    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, &worker, now, deadline));
+    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, now, deadline));
   }
   grpc_closure shutdown_ps_closure;
   grpc_closure_init(&shutdown_ps_closure, shutdown_ps, ps,
@@ -233,8 +232,7 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_fd_notify_on_read(&exec_ctx, wakeup, continue_closure);
   gpr_mu_lock(mu);
   while (!done) {
-    grpc_pollset_worker* worker;
-    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, &worker, now, deadline));
+    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, now, deadline));
   }
   grpc_fd_orphan(&exec_ctx, wakeup, NULL, NULL, "done");
   wakeup_fd.read_fd = 0;
