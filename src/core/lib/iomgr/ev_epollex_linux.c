@@ -174,7 +174,6 @@ struct grpc_pollset {
 struct grpc_pollset_set {
   pss_obj po;
   gpr_refcount refs;
-  grpc_pollset_set *master;
 
   /* roots are only used if master == self */
   pss_obj *roots[PSS_OBJ_TYPE_COUNT];
@@ -789,7 +788,9 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 static grpc_pollset_set *pollset_set_create(void) {
   grpc_pollset_set *pss = gpr_zalloc(sizeof(*pss));
   gpr_mu_init(&pss->po.mu);
+  gpr_ref_init(&pss->refs, 1);
   pss->roots[PSS_POLLSET_SET] = &pss->po;
+  pss->po.pss_master = pss;
   pss->po.pss_next = pss->po.pss_prev = &pss->po;
   return pss;
 }
@@ -817,8 +818,8 @@ static grpc_pollset_set *pss_ref_and_lock_master(
     grpc_pollset_set *master_or_slave) {
   pss_ref(master_or_slave);
   gpr_mu_lock(&master_or_slave->po.mu);
-  while (master_or_slave != master_or_slave->master) {
-    grpc_pollset_set *master = pss_ref(master_or_slave->master);
+  while (master_or_slave != master_or_slave->po.pss_master) {
+    grpc_pollset_set *master = pss_ref(master_or_slave->po.pss_master);
     gpr_mu_unlock(&master_or_slave->po.mu);
     pss_unref(master_or_slave);
     master_or_slave = master;
@@ -893,7 +894,6 @@ static void pss_merge(grpc_exec_ctx *exec_ctx, grpc_pollset_set *a,
                       grpc_pollset_set *b) {
   pss_ref(a);
   pss_ref(b);
-  bool changed;
   for (;;) {
     if (a == b) {
       pss_unref(a);
@@ -906,21 +906,18 @@ static void pss_merge(grpc_exec_ctx *exec_ctx, grpc_pollset_set *a,
       gpr_mu_lock(&b->po.mu);
       gpr_mu_lock(&a->po.mu);
     }
-    changed = false;
-    if (a != a->master) {
-      grpc_pollset_set *master = pss_ref(a->master);
+    if (a != a->po.pss_master) {
+      grpc_pollset_set *master = pss_ref(a->po.pss_master);
       gpr_mu_unlock(&a->po.mu);
       gpr_mu_unlock(&b->po.mu);
       pss_unref(a);
       a = master;
-      changed = true;
-    } else if (b != b->master) {
-      grpc_pollset_set *master = pss_ref(b->master);
+    } else if (b != b->po.pss_master) {
+      grpc_pollset_set *master = pss_ref(b->po.pss_master);
       gpr_mu_unlock(&a->po.mu);
       gpr_mu_unlock(&b->po.mu);
       pss_unref(b);
       b = master;
-      changed = true;
     } else {
       /* a, b locked and are at their respective masters */
       pss_merge_broadcast_and_patch(exec_ctx, a, b, PSS_FD);
@@ -928,6 +925,7 @@ static void pss_merge(grpc_exec_ctx *exec_ctx, grpc_pollset_set *a,
       b->po.pss_master = a;
       gpr_mu_unlock(&a->po.mu);
       gpr_mu_unlock(&b->po.mu);
+      return;
     }
   }
 }
