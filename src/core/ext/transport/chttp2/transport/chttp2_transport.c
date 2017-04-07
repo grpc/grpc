@@ -2445,7 +2445,7 @@ static grpc_error *deframe_unprocessed_incoming_frames(
               &s->unprocessed_incoming_frames_buffer,
               grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
         }
-        grpc_slice_unref(slice);
+        grpc_slice_unref_internal(exec_ctx, slice);
         return GRPC_ERROR_NONE;
       case GRPC_CHTTP2_DATA_FRAME: {
         GPR_ASSERT(p->parsing_frame != NULL);
