@@ -91,6 +91,14 @@ typedef struct pss_obj {
   grpc_pollset_set *pss_master;
 } pss_obj;
 
+static void pss_obj_init(pss_obj *obj) {
+  gpr_mu_init(&obj->mu);
+  obj->pss_refs = 0;
+  obj->pss_next = NULL;
+  obj->pss_prev = NULL;
+  obj->pss_master = NULL;
+}
+
 /*******************************************************************************
  * Fd Declarations
  */
@@ -288,13 +296,9 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
   if (new_fd == NULL) {
     new_fd = gpr_malloc(sizeof(grpc_fd));
-    gpr_mu_init(&new_fd->po.mu);
   }
 
-  /* Note: It is not really needed to get the new_fd->po.mu lock here. If this
-   * is a newly created fd (or an fd we got from the freelist), no one else
-   * would be holding a lock to it anyway. */
-  gpr_mu_lock(&new_fd->po.mu);
+  pss_obj_init(&new_fd->po);
 
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
@@ -312,8 +316,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
   new_fd->freelist_next = NULL;
   new_fd->on_done_closure = NULL;
-
-  gpr_mu_unlock(&new_fd->po.mu);
 
   char *fd_name;
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
@@ -525,7 +527,7 @@ static grpc_error *kick_poller(void) {
 }
 
 static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
-  gpr_mu_init(&pollset->po.mu);
+  pss_obj_init(&pollset->po);
   pollset->epfd = epoll_create1(EPOLL_CLOEXEC);
   if (pollset->epfd < 0) {
     GRPC_LOG_IF_ERROR("pollset_init", GRPC_OS_ERROR(errno, "epoll_create1"));
@@ -787,7 +789,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 static grpc_pollset_set *pollset_set_create(void) {
   grpc_pollset_set *pss = gpr_zalloc(sizeof(*pss));
-  gpr_mu_init(&pss->po.mu);
+  pss_obj_init(&pss->po);
   gpr_ref_init(&pss->refs, 1);
   pss->roots[PSS_POLLSET_SET] = &pss->po;
   pss->po.pss_master = pss;
