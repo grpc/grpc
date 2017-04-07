@@ -404,7 +404,7 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
 }
 
-static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { abort(); }
+static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { REF_BY(fd, 2, "return_workqueue"); return (grpc_workqueue*)fd; }
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
@@ -636,8 +636,9 @@ static grpc_error *pollset_poll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
+int timeout=poll_deadline_to_millis_timeout(deadline, now);
   int r = epoll_wait(pollset->epfd, events, MAX_EPOLL_EVENTS,
-                     poll_deadline_to_millis_timeout(deadline, now));
+                     timeout);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (r < 0) return GRPC_OS_ERROR(errno, "epoll_wait");
 
@@ -873,21 +874,21 @@ static void pss_merge_broadcast_and_patch(grpc_exec_ctx *exec_ctx,
                                           pss_obj_type type) {
   pss_obj *obj;
   if (a->roots[type] != NULL) {
-    obj = a->roots[PSS_FD];
+    obj = a->roots[type];
     do {
       broadcast[type](exec_ctx, b, obj);
       obj = obj->pss_next;
-    } while (obj != a->roots[PSS_FD]);
+    } while (obj != a->roots[type]);
   }
   if (b->roots[type] != NULL) {
-    obj = b->roots[PSS_FD];
+    obj = b->roots[type];
     do {
       broadcast[type](exec_ctx, a, obj);
       gpr_mu_lock(&obj->mu);
       obj->pss_master = a;
       gpr_mu_unlock(&obj->mu);
       obj = obj->pss_next;
-    } while (obj != b->roots[PSS_FD]);
+    } while (obj != b->roots[type]);
   }
   a->roots[type] = pss_splice(a->roots[type], b->roots[type]);
 }
