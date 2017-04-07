@@ -81,11 +81,33 @@ typedef struct {
                                        size_t *max_protected_frame_size,
                                        tsi_frame_protector **protector);
   void (*destroy)(tsi_handshaker *self);
+  tsi_result (*next)(tsi_handshaker *self, const unsigned char *received_bytes,
+                     size_t received_bytes_size, unsigned char **bytes_to_send,
+                     size_t *bytes_to_send_size,
+                     tsi_handshaker_result **handshaker_result,
+                     tsi_handshaker_on_next_done_cb cb, void *user_data);
 } tsi_handshaker_vtable;
 
 struct tsi_handshaker {
   const tsi_handshaker_vtable *vtable;
   int frame_protector_created;
+  int handshaker_result_created;
+};
+
+/* Base for tsi_handshaker_result implementations.
+   See transport_security_interface.h for documentation. */
+typedef struct {
+  tsi_result (*extract_peer)(tsi_handshaker_result *self, tsi_peer *peer);
+  tsi_result (*create_frame_protector)(tsi_handshaker_result *self,
+                                       size_t *max_output_protected_frame_size,
+                                       tsi_frame_protector **protector);
+  tsi_result (*get_unused_bytes)(tsi_handshaker_result *self,
+                                 unsigned char **bytes, size_t *bytes_size);
+  void (*destroy)(tsi_handshaker_result *self);
+} tsi_handshaker_result_vtable;
+
+struct tsi_handshaker_result {
+  const tsi_handshaker_result_vtable *vtable;
 };
 
 /* Peer and property construction/destruction functions. */

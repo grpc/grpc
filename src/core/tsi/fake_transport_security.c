@@ -499,6 +499,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     fake_handshaker_extract_peer,
     fake_handshaker_create_frame_protector,
     fake_handshaker_destroy,
+    NULL,
 };
 
 tsi_handshaker *tsi_create_fake_handshaker(int is_client) {

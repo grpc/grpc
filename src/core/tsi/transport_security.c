@@ -73,6 +73,8 @@ const char *tsi_result_to_string(tsi_result result) {
       return "TSI_HANDSHAKE_IN_PROGRESS";
     case TSI_OUT_OF_RESOURCES:
       return "TSI_OUT_OF_RESOURCES";
+    case TSI_ASYNC:
+      return "TSI_ASYNC";
     default:
       return "UNKNOWN";
   }
@@ -185,7 +187,49 @@ tsi_result tsi_handshaker_create_frame_protector(
   return result;
 }
 
+tsi_result tsi_handshaker_next(
+    tsi_handshaker *self, const unsigned char *received_bytes,
+    size_t received_bytes_size, unsigned char **bytes_to_send,
+    size_t *bytes_to_send_size, tsi_handshaker_result **handshaker_result,
+    tsi_handshaker_on_next_done_cb cb, void *user_data) {
+  if (self == NULL) return TSI_INVALID_ARGUMENT;
+  if (self->handshaker_result_created) return TSI_FAILED_PRECONDITION;
+  return self->vtable->next(self, received_bytes, received_bytes_size,
+                            bytes_to_send, bytes_to_send_size,
+                            handshaker_result, cb, user_data);
+}
+
 void tsi_handshaker_destroy(tsi_handshaker *self) {
+  if (self == NULL) return;
+  self->vtable->destroy(self);
+}
+
+/* --- tsi_handshaker_result implementation. --- */
+
+tsi_result tsi_handshaker_result_extract_peer(tsi_handshaker_result *self,
+                                              tsi_peer *peer) {
+  if (self == NULL || peer == NULL) return TSI_INVALID_ARGUMENT;
+  memset(peer, 0, sizeof(tsi_peer));
+  return self->vtable->extract_peer(self, peer);
+}
+
+tsi_result tsi_handshaker_result_create_frame_protector(
+    tsi_handshaker_result *self, size_t *max_protected_frame_size,
+    tsi_frame_protector **protector) {
+  if (self == NULL || protector == NULL) return TSI_INVALID_ARGUMENT;
+  return self->vtable->create_frame_protector(self, max_protected_frame_size,
+                                              protector);
+}
+
+tsi_result tsi_handshaker_result_get_unused_bytes(
+    tsi_handshaker_result *self, unsigned char **bytes, size_t *bytes_size) {
+  if (self == NULL || bytes == NULL || bytes_size == NULL) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  return self->vtable->get_unused_bytes(self, bytes, bytes_size);
+}
+
+void tsi_handshaker_result_destroy(tsi_handshaker_result *self) {
   if (self == NULL) return;
   self->vtable->destroy(self);
 }
