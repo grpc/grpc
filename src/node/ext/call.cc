@@ -488,8 +488,10 @@ class ServerCloseResponseOp : public Op {
   int cancelled;
 };
 
-tag::tag(Callback *callback, OpVec *ops, Call *call) :
+tag::tag(Callback *callback, OpVec *ops, Call *call, Local<Value> call_value) :
     callback(callback), ops(ops), call(call){
+  HandleScope scope;
+  call_persist.Reset(call_value);
 }
 
 tag::~tag() {
@@ -535,15 +537,20 @@ void DestroyTag(void *tag) {
   delete tag_struct;
 }
 
+void Call::DestroyCall() {
+  if (this->wrapped_call != NULL) {
+    grpc_call_destroy(this->wrapped_call);
+    this->wrapped_call = NULL;
+  }
+}
+
 Call::Call(grpc_call *call) : wrapped_call(call),
                               pending_batches(0),
                               has_final_op_completed(false) {
 }
 
 Call::~Call() {
-  if (wrapped_call != NULL) {
-    grpc_call_destroy(wrapped_call);
-  }
+  DestroyCall();
 }
 
 void Call::Init(Local<Object> exports) {
@@ -590,8 +597,7 @@ void Call::CompleteBatch(bool is_final_op) {
   }
   this->pending_batches--;
   if (this->has_final_op_completed && this->pending_batches == 0) {
-    grpc_call_destroy(this->wrapped_call);
-    this->wrapped_call = NULL;
+    this->DestroyCall();
   }
 }
 
@@ -752,7 +758,7 @@ NAN_METHOD(Call::StartBatch) {
   Callback *callback = new Callback(callback_func);
   grpc_call_error error = grpc_call_start_batch(
       call->wrapped_call, &ops[0], nops, new struct tag(
-          callback, op_vector.release(), call), NULL);
+          callback, op_vector.release(), call, info.This()), NULL);
   if (error != GRPC_CALL_OK) {
     return Nan::ThrowError(nanErrorWithCode("startBatch failed", error));
   }

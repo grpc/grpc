@@ -78,6 +78,8 @@ class Call : public Nan::ObjectWrap {
   Call(const Call &);
   Call &operator=(const Call &);
 
+  void DestroyCall();
+
   static NAN_METHOD(New);
   static NAN_METHOD(StartBatch);
   static NAN_METHOD(Cancel);
@@ -111,11 +113,14 @@ class Op {
 
 typedef std::vector<unique_ptr<Op>> OpVec;
 struct tag {
-  tag(Nan::Callback *callback, OpVec *ops, Call *call);
+  tag(Nan::Callback *callback, OpVec *ops, Call *call,
+      v8::Local<v8::Value> call_value);
   ~tag();
   Nan::Callback *callback;
   OpVec *ops;
   Call *call;
+  Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>>
+      call_persist;
 };
 
 v8::Local<v8::Value> GetTagNodeValue(void *tag);
