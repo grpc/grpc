@@ -851,10 +851,10 @@ static const grpc_event_engine_vtable vtable = {
 static bool is_epollex_available(void) {
   int fd = epoll_create1(EPOLL_CLOEXEC);
   if (fd < 0) {
-    gpr_log(
-        GPR_ERROR,
-        "epoll_create1 failed with error: %d. Not using epollex polling engine",
-        fd);
+    gpr_log(GPR_ERROR,
+            "epoll_create1 failed with error: %d. Not using epollex polling "
+            "engine.",
+            fd);
     return false;
   }
   grpc_wakeup_fd wakeup;
