@@ -3217,6 +3217,27 @@ targets:
   - mac
   - linux
   - posix
+- name: bm_cq_multiple_threads
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_cq_multiple_threads.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: bm_error
   build: test
   language: c++
