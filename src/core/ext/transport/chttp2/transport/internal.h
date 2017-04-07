@@ -195,16 +195,11 @@ typedef struct grpc_chttp2_write_cb {
 struct grpc_chttp2_incoming_byte_stream {
   grpc_byte_stream base;
   gpr_refcount refs;
-  struct grpc_chttp2_incoming_byte_stream
-      *next_message; /* unused; should be removed */
-  bool push_closed;  /* protected by slice_mu */
 
   grpc_chttp2_transport *transport; /* immutable */
   grpc_chttp2_stream *stream;       /* immutable */
   bool is_tail;                     /* immutable */
 
-  gpr_mu slice_mu;
-  grpc_slice_buffer slices; /* unused; should be removed */
   uint32_t remaining_bytes; /* guaranteed one thread access */
 
   struct {

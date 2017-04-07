@@ -84,39 +84,6 @@ grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,
   return GRPC_ERROR_NONE;
 }
 
-void grpc_chttp2_incoming_frame_queue_merge(
-    grpc_chttp2_incoming_frame_queue *head_dst,
-    grpc_chttp2_incoming_frame_queue *tail_src) {
-  if (tail_src->head == NULL) {
-    return;
-  }
-
-  if (head_dst->head == NULL) {
-    *head_dst = *tail_src;
-    memset(tail_src, 0, sizeof(*tail_src));
-    return;
-  }
-
-  head_dst->tail->next_message = tail_src->head;
-  head_dst->tail = tail_src->tail;
-  memset(tail_src, 0, sizeof(*tail_src));
-}
-
-grpc_byte_stream *grpc_chttp2_incoming_frame_queue_pop(
-    grpc_chttp2_incoming_frame_queue *q) {
-  grpc_byte_stream *out;
-  if (q->head == NULL) {
-    return NULL;
-  }
-  out = &q->head->base;
-  if (q->head == q->tail) {
-    memset(q, 0, sizeof(*q));
-  } else {
-    q->head = q->head->next_message;
-  }
-  return out;
-}
-
 void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
                              uint32_t write_bytes, int is_eof,
                              grpc_transport_one_way_stats *stats,

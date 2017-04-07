@@ -2624,8 +2624,6 @@ static grpc_error *deframe_unprocessed_incoming_frames(
 static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_incoming_byte_stream *bs) {
   if (gpr_unref(&bs->refs)) {
-    grpc_slice_buffer_destroy_internal(exec_ctx, &bs->slices);
-    gpr_mu_destroy(&bs->slice_mu);
     gpr_free(bs);
   }
 }
@@ -2844,11 +2842,9 @@ grpc_error *grpc_chttp2_incoming_byte_stream_finished(
   grpc_chttp2_stream *s = bs->stream;
 
   if (error == GRPC_ERROR_NONE) {
-    gpr_mu_lock(&bs->slice_mu);
     if (bs->remaining_bytes != 0) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
     }
-    gpr_mu_unlock(&bs->slice_mu);
   }
   if (error != GRPC_ERROR_NONE && reset_on_error) {
     grpc_closure_sched(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_REF(error));
@@ -2869,15 +2865,11 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->base.next = incoming_byte_stream_next;
   incoming_byte_stream->base.pull = incoming_byte_stream_pull;
   incoming_byte_stream->base.destroy = incoming_byte_stream_destroy;
-  gpr_mu_init(&incoming_byte_stream->slice_mu);
   gpr_ref_init(&incoming_byte_stream->refs, 2);
-  incoming_byte_stream->next_message = NULL;
   incoming_byte_stream->transport = t;
   incoming_byte_stream->stream = s;
-  grpc_slice_buffer_init(&incoming_byte_stream->slices);
   incoming_byte_stream->is_tail = 1;
   s->byte_stream_error = GRPC_ERROR_NONE;
-  incoming_byte_stream->push_closed = false;
   return incoming_byte_stream;
 }
 
