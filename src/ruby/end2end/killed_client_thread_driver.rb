@@ -29,26 +29,65 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# abruptly end a process that has active calls to
-# Channel.watch_connectivity_state
-
 require_relative './end2end_common'
+
+# Service that sleeps for a long time upon receiving an 'echo request'
+# Also, this notifies @call_started_cv once it has received a request.
+class SleepingEchoServerImpl < Echo::EchoServer::Service
+  def initialize(call_started, call_started_mu, call_started_cv)
+    @call_started = call_started
+    @call_started_mu = call_started_mu
+    @call_started_cv = call_started_cv
+  end
+
+  def echo(echo_req, _)
+    @call_started_mu.synchronize do
+      @call_started.set_true
+      @call_started_cv.signal
+    end
+    sleep 1000
+    Echo::EchoReply.new(response: echo_req.request)
+  end
+end
+
+# Mutable boolean
+class BoolHolder
+  attr_reader :val
+
+  def init
+    @val = false
+  end
+
+  def set_true
+    @val = true
+  end
+end
 
 def main
   STDERR.puts 'start server'
-  server_runner = ServerRunner.new(EchoServerImpl)
+
+  call_started = BoolHolder.new
+  call_started_mu = Mutex.new
+  call_started_cv = ConditionVariable.new
+
+  service_impl = SleepingEchoServerImpl.new(call_started,
+                                            call_started_mu,
+                                            call_started_cv)
+  server_runner = ServerRunner.new(service_impl)
   server_port = server_runner.run
 
-  sleep 1
-
   STDERR.puts 'start client'
-  _, client_pid = start_client('sig_int_during_channel_watch_client.rb',
+  _, client_pid = start_client('killed_client_thread_client.rb',
                                server_port)
 
-  # give time for the client to get into the middle
-  # of a channel state watch call
-  sleep 1
+  call_started_mu.synchronize do
+    call_started_cv.wait(call_started_mu) until call_started.val
+  end
+
+  # SIGINT the child process now that it's
+  # in the middle of an RPC (happening on a non-main thread)
   Process.kill('SIGINT', client_pid)
+  STDERR.puts 'sent shutdown'
 
   begin
     Timeout.timeout(10) do
@@ -59,8 +98,14 @@ def main
     Process.kill('SIGKILL', client_pid)
     Process.wait(client_pid)
     STDERR.puts 'killed client child'
-    raise 'Timed out waiting for client process. It likely hangs when a ' \
-      'SIGINT is sent while there is an active connectivity_state call'
+    raise 'Timed out waiting for client process. ' \
+      'It likely hangs when killed while in the middle of an rpc'
+  end
+
+  client_exit_code = $CHILD_STATUS
+  if client_exit_code.termsig != 2 # SIGINT
+    fail 'expected client exit from SIGINT ' \
+      "but got child status: #{client_exit_code}"
   end
 
   server_runner.stop

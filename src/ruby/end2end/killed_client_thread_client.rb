@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,33 +29,30 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# smoke test for a grpc-using app that receives and
-# handles process-ending signals
+# Attempt to reproduce
+# https://github.com/GoogleCloudPlatform/google-cloud-ruby/issues/1327
 
 require_relative './end2end_common'
 
 def main
-  STDERR.puts 'start server'
-  server_runner = ServerRunner.new(EchoServerImpl)
-  server_port = server_runner.run
+  server_port = ''
+  OptionParser.new do |opts|
+    opts.on('--client_control_port=P', String) do
+      STDERR.puts 'client control port not used'
+    end
+    opts.on('--server_port=P', String) do |p|
+      server_port = p
+    end
+  end.parse!
 
-  sleep 1
-
-  STDERR.puts 'start client'
-  control_stub, client_pid = start_client('sig_handling_client.rb', server_port)
-
-  sleep 1
-
-  count = 0
-  while count < 5
-    control_stub.do_echo_rpc(
-      ClientControl::DoEchoRpcRequest.new(request: 'hello'))
-    Process.kill('SIGTERM', client_pid)
-    Process.kill('SIGINT', client_pid)
-    count += 1
+  thd = Thread.new do
+    stub = Echo::EchoServer::Stub.new("localhost:#{server_port}",
+                                      :this_channel_is_insecure)
+    stub.echo(Echo::EchoRequest.new(request: 'hello'))
+    fail 'the clients rpc in this test shouldnt complete. ' \
+      'expecting SIGINT to happen in the middle of the call'
   end
-
-  cleanup(control_stub, client_pid, server_runner)
+  thd.join
 end
 
 main
