@@ -46,6 +46,11 @@
 #define GROW(x) (3 * (x) / 2)
 
 static void maybe_embiggen(grpc_slice_buffer *sb) {
+  if (sb->base_slices != sb->slices) {
+    memmove(sb->base_slices, sb->slices, sb->count * sizeof(grpc_slice));
+    sb->slices = sb->base_slices;
+  }
+
   /* How far away from sb->base_slices is sb->slices pointer */
   size_t slice_offset = (size_t)(sb->slices - sb->base_slices);
   size_t slice_count = sb->count + slice_offset;
@@ -56,15 +61,12 @@ static void maybe_embiggen(grpc_slice_buffer *sb) {
     if (sb->base_slices == sb->inlined) {
       sb->base_slices = gpr_malloc(sb->capacity * sizeof(grpc_slice));
       memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
-      sb->slices = sb->base_slices + slice_offset;
     } else {
-      if (sb->base_slices != sb->slices) {
-        memmove(sb->base_slices, sb->slices, sb->count * sizeof(grpc_slice));
-      }
       sb->base_slices =
           gpr_realloc(sb->base_slices, sb->capacity * sizeof(grpc_slice));
-      sb->slices = sb->base_slices;
     }
+
+    sb->slices = sb->base_slices + slice_offset;
   }
 }
 
