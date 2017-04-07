@@ -349,11 +349,6 @@ int grpc_channel_arg_get_integer(const grpc_arg *arg,
   return arg->value.integer;
 }
 
-bool grpc_channel_arg_get_boolean(const grpc_arg *arg) {
-  const grpc_integer_options options = {0, INT_MIN, INT_MAX};
-  return grpc_channel_arg_get_integer(arg, options);
-}
-
 bool grpc_channel_args_want_minimal_stack(const grpc_channel_args *args) {
   const grpc_arg *arg = grpc_channel_args_find(args, GRPC_ARG_MINIMAL_STACK);
   if (arg == NULL) return false;

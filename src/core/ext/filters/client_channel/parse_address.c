@@ -62,7 +62,8 @@ bool grpc_parse_unix(const grpc_uri *uri,
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
 
-int grpc_parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+bool grpc_parse_unix(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
   abort();
 }
 

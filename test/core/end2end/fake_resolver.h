@@ -38,20 +38,6 @@
 
 void grpc_fake_resolver_init();
 
-// Return a \a grpc_arg enabling LB.
-grpc_arg grpc_fake_resolver_lb_enabled_arg();
-
-// Return a \a grpc_arg setting \a balancer_names a (comma-separated) string of
-// names for the load balancers.
-grpc_arg grpc_fake_resolver_balancer_names_arg(char* balancer_names);
-
-// Return whether LB is enabled in \a args.
-bool grpc_fake_resolver_get_lb_enabled(const grpc_channel_args* args);
-
-// Return the comma-separated string of balancer names in \a args or NULL.
-const char* grpc_fake_resolver_get_balancer_names(
-    const grpc_channel_args* args);
-
 // Instances of \a grpc_fake_resolver_response_generator are passed to the
 // fake resolver in a channel argument (see \a
 // grpc_fake_resolver_response_generator_arg) in order to inject and trigger
@@ -64,24 +50,33 @@ grpc_fake_resolver_response_generator_create();
 
 // Instruct the fake resolver associated with the \a response_generator instance
 // to trigger a new resolution for \a uri and \a args.
-void grpc_fake_resolver_response_generator_set_response(
+void grpc_fake_resolver_response_generator_set_response_locked(
     grpc_exec_ctx* exec_ctx,
     const grpc_fake_resolver_response_generator* response_generator,
-    const grpc_uri* uri, const grpc_channel_args* args);
-
-grpc_fake_resolver_response_generator*
-grpc_fake_resolver_response_generator_ref(
-    grpc_fake_resolver_response_generator* generator);
-
-void grpc_fake_resolver_response_generator_unref(
-    grpc_fake_resolver_response_generator* generator);
+    const grpc_channel_args* results);
 
 // Return a \a grpc_arg for a \a grpc_fake_resolver_response_generator instance.
 grpc_arg grpc_fake_resolver_response_generator_arg();
-
 // Return the \a grpc_fake_resolver_response_generator instance in \a args or
 // NULL.
 grpc_fake_resolver_response_generator*
 grpc_fake_resolver_get_response_generator(const grpc_channel_args* args);
+
+// Create a \a grpc_channel_args instance containing a \a grpc_lb_addresses
+// entry suitable to be used in \a
+// grpc_fake_resolver_response_generator_set_response_locked, or NULL upon
+// error.
+//
+// All array arguments are expected to contain \a num_items. Same-index entries
+// will be combined in the same \a grpc_lb_address instance.
+grpc_channel_args* grpc_fake_resolver_response_create(
+    const char** uris, const char** balancer_names, const bool* is_balancer,
+    size_t num_items);
+
+grpc_fake_resolver_response_generator*
+grpc_fake_resolver_response_generator_ref(
+    grpc_fake_resolver_response_generator* generator);
+void grpc_fake_resolver_response_generator_unref(
+    grpc_fake_resolver_response_generator* generator);
 
 #endif /* GRPC_TEST_CORE_END2END_FAKE_RESOLVER_H */
