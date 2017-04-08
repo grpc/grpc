@@ -99,6 +99,18 @@ grpc::string GetSourceServices(grpc_generator::File *file,
 grpc::string GetSourceEpilogue(grpc_generator::File *file,
                                const Parameters &params);
 
+// Return the prologue of the generated mock file.
+grpc::string GetMockPrologue(File *file, const Parameters &params);
+
+// Return the includes needed for generated mock file.
+grpc::string GetMockIncludes(File *file, const Parameters &params);
+
+// Return the services for generated mock file.
+grpc::string GetMockServices(File* file, const Parameters &params);
+
+// Return the epilogue of generated mock file.
+grpc::string GetMockEpilogue(File* file, const Parameters &params);
+
 }  // namespace grpc_cpp_generator
 
 #endif  // GRPC_INTERNAL_COMPILER_CPP_GENERATOR_H
