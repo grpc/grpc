@@ -934,6 +934,7 @@ filegroups:
   language: c++
   public_headers:
   - include/grpc++/test/server_context_test_spouse.h
+  - include/grpc++/test/mock_stream.h
   deps:
   - grpc++
 - name: thrift_util

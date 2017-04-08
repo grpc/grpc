@@ -245,6 +245,16 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     grpc::protobuf::io::CodedOutputStream source_coded_out(source_output.get());
     source_coded_out.WriteRaw(source_code.data(), source_code.size());
 
+    grpc::string mock_code =
+        grpc_cpp_generator::GetMockPrologue(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetMockIncludes(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetMockServices(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetMockEpilogue(&pbfile, generator_parameters);
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> mock_output(
+        context->Open(file_name + "_mock.grpc.pb.h"));
+    grpc::protobuf::io::CodedOutputStream mock_coded_out(mock_output.get());
+    mock_coded_out.WriteRaw(mock_code.data(), mock_code.size());
+
     return true;
   }
 

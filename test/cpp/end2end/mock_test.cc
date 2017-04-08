@@ -1,5 +1,5 @@
 /*
- *
+*
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -45,121 +45,37 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
+#include <grpc++/test/mock_stream.h>
 
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo_mock.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
+#include<iostream>
+
+using namespace std;
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using grpc::testing::EchoTestService;
+using grpc::testing::MockClientReaderWriter;
 using std::chrono::system_clock;
+using ::testing::AtLeast;
+using ::testing::SetArgPointee;
+using ::testing::SaveArg;
+using ::testing::_;
+using ::testing::Return;
+using ::testing::Invoke;
+using ::testing::WithArg;
+using ::testing::DoAll;
 
 namespace grpc {
 namespace testing {
 
 namespace {
-template <class W, class R>
-class MockClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
- public:
-  void WaitForInitialMetadata() override {}
-  bool NextMessageSize(uint32_t* sz) override {
-    *sz = UINT_MAX;
-    return true;
-  }
-  bool Read(R* msg) override { return true; }
-  bool Write(const W& msg) override { return true; }
-  bool WritesDone() override { return true; }
-  Status Finish() override { return Status::OK; }
-};
-template <>
-class MockClientReaderWriter<EchoRequest, EchoResponse> final
-    : public ClientReaderWriterInterface<EchoRequest, EchoResponse> {
- public:
-  MockClientReaderWriter() : writes_done_(false) {}
-  void WaitForInitialMetadata() override {}
-  bool NextMessageSize(uint32_t* sz) override {
-    *sz = UINT_MAX;
-    return true;
-  }
-  bool Read(EchoResponse* msg) override {
-    if (writes_done_) return false;
-    msg->set_message(last_message_);
-    return true;
-  }
-
-  bool Write(const EchoRequest& msg, WriteOptions options) override {
-    gpr_log(GPR_INFO, "mock recv msg %s", msg.message().c_str());
-    last_message_ = msg.message();
-    return true;
-  }
-  bool WritesDone() override {
-    writes_done_ = true;
-    return true;
-  }
-  Status Finish() override { return Status::OK; }
-
- private:
-  bool writes_done_;
-  grpc::string last_message_;
-};
-
-// Mocked stub.
-class MockStub : public EchoTestService::StubInterface {
- public:
-  MockStub() {}
-  ~MockStub() {}
-  Status Echo(ClientContext* context, const EchoRequest& request,
-              EchoResponse* response) override {
-    response->set_message(request.message());
-    return Status::OK;
-  }
-  Status Unimplemented(ClientContext* context, const EchoRequest& request,
-                       EchoResponse* response) override {
-    return Status::OK;
-  }
-
- private:
-  ClientAsyncResponseReaderInterface<EchoResponse>* AsyncEchoRaw(
-      ClientContext* context, const EchoRequest& request,
-      CompletionQueue* cq) override {
-    return nullptr;
-  }
-  ClientWriterInterface<EchoRequest>* RequestStreamRaw(
-      ClientContext* context, EchoResponse* response) override {
-    return nullptr;
-  }
-  ClientAsyncWriterInterface<EchoRequest>* AsyncRequestStreamRaw(
-      ClientContext* context, EchoResponse* response, CompletionQueue* cq,
-      void* tag) override {
-    return nullptr;
-  }
-  ClientReaderInterface<EchoResponse>* ResponseStreamRaw(
-      ClientContext* context, const EchoRequest& request) override {
-    return nullptr;
-  }
-  ClientAsyncReaderInterface<EchoResponse>* AsyncResponseStreamRaw(
-      ClientContext* context, const EchoRequest& request, CompletionQueue* cq,
-      void* tag) override {
-    return nullptr;
-  }
-  ClientReaderWriterInterface<EchoRequest, EchoResponse>* BidiStreamRaw(
-      ClientContext* context) override {
-    return new MockClientReaderWriter<EchoRequest, EchoResponse>();
-  }
-  ClientAsyncReaderWriterInterface<EchoRequest, EchoResponse>*
-  AsyncBidiStreamRaw(ClientContext* context, CompletionQueue* cq,
-                     void* tag) override {
-    return nullptr;
-  }
-  ClientAsyncResponseReaderInterface<EchoResponse>* AsyncUnimplementedRaw(
-      ClientContext* context, const EchoRequest& request,
-      CompletionQueue* cq) override {
-    return nullptr;
-  }
-};
-
 class FakeClient {
  public:
   explicit FakeClient(EchoTestService::StubInterface* stub) : stub_(stub) {}
@@ -267,16 +183,36 @@ TEST_F(MockTest, SimpleRpc) {
   ResetStub();
   FakeClient client(stub_.get());
   client.DoEcho();
-  MockStub stub;
+  MockEchoTestServiceStub stub;
+  EchoResponse resp;
+  resp.set_message("hello world");
+  EXPECT_CALL(stub, Echo(_, _, _)).Times(AtLeast(1)).WillOnce(DoAll(SetArgPointee<2>(resp), Return(Status::OK)));
   client.ResetStub(&stub);
   client.DoEcho();
+}
+
+ACTION_P(copy, msg) {
+  arg0->set_message(msg->message());
 }
 
 TEST_F(MockTest, BidiStream) {
   ResetStub();
   FakeClient client(stub_.get());
   client.DoBidiStream();
-  MockStub stub;
+  MockEchoTestServiceStub stub;
+  auto rw = new MockClientReaderWriter<EchoRequest, EchoResponse>();
+  EchoRequest msg;
+
+  EXPECT_CALL(*rw, Write(_, _)).Times(3).WillRepeatedly(DoAll(SaveArg<0>(&msg), Return(true)));
+  EXPECT_CALL(*rw, Read(_)).
+      WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true))).
+      WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true))).
+      WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true))).
+      WillOnce(Return(false));
+  EXPECT_CALL(*rw, WritesDone());
+  EXPECT_CALL(*rw, Finish()).WillOnce(Return(Status::OK));
+
+  EXPECT_CALL(stub, BidiStreamRaw(_)).WillOnce(Return(rw));
   client.ResetStub(&stub);
   client.DoBidiStream();
 }
