@@ -748,7 +748,8 @@
   CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
   LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
   ifneq ($(USE_BUILT_PROTOC),false)
-  PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
+  PROTOC = $(BINDIR)/opt/protobuf/protoc
+  PROTOC_DEP = $(PROTOC)
   PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
   else
   PROTOC_PLUGINS =
@@ -914,16 +915,22 @@
   	$(E) "[AUTOGEN] Preparing protobuf"
   	$(Q)(cd third_party/protobuf ; autoreconf -f -i -Wall,no-obsolete)
 
-  $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
+  $(BINDIR)/opt/protobuf/protoc: third_party/protobuf/configure
+  	$(E) "[MAKE]    Building protoc"
+  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_opt) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_opt) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
+  	$(Q)$(MAKE) -C third_party/protobuf clean
+  	$(Q)$(MAKE) -C third_party/protobuf
+  	$(Q)mkdir -p $(BINDIR)/opt/protobuf
+  	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/opt/protobuf
+
+  $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure $(BINDIR)/opt/protobuf/protoc
   	$(E) "[MAKE]    Building protobuf"
-  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
+  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static --with-protoc=$(BINDIR)/opt/protobuf/protoc $(PROTOBUF_CONFIG_OPTS))
   	$(Q)$(MAKE) -C third_party/protobuf clean
   	$(Q)$(MAKE) -C third_party/protobuf
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/$(CONFIG)/protobuf
+  	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
 
   static: static_c static_cxx
 
@@ -1240,12 +1247,12 @@
   $(GENDIR)/${p}.pb.cc: protoc_dep_error
   $(GENDIR)/${p}.grpc.pb.cc: protoc_dep_error
   else
-  $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
+  $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating protobuf CC file from $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-  $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
+  $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -1697,7 +1704,8 @@
 
   $(BINDIR)/$(CONFIG)/${tgt.name}: \
   % if not has_no_sources:
-  $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+  $(PROTOBUF_DEP) \
+  $(${tgt.name.upper()}_OBJS)\
   % endif
   % else:
   $(BINDIR)/$(CONFIG)/${tgt.name}: \
