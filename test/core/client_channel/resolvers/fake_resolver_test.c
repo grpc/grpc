@@ -47,101 +47,129 @@
 #include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/test_config.h"
 
-static grpc_combiner *g_combiner;
-
-typedef struct on_resolution_arg {
-  grpc_channel_args *resolver_result;
-  grpc_channel_args *expected_resolver_result;
-} on_resolution_arg;
-
 static grpc_resolver *build_fake_resolver(
-    grpc_exec_ctx *exec_ctx,
+    grpc_exec_ctx *exec_ctx, grpc_combiner *combiner,
     grpc_fake_resolver_response_generator *response_generator) {
   grpc_resolver_factory *factory = grpc_resolver_factory_lookup("test");
   grpc_arg generator_arg =
       grpc_fake_resolver_response_generator_arg(response_generator);
   grpc_resolver_args args;
   memset(&args, 0, sizeof(args));
-  grpc_channel_args *channel_args =
-      grpc_channel_args_copy_and_add(NULL, &generator_arg, 1);
-  args.args = channel_args;
-  args.combiner = g_combiner;
+  grpc_channel_args channel_args = {1, &generator_arg};
+  args.args = &channel_args;
+  args.combiner = combiner;
   grpc_resolver *resolver =
       grpc_resolver_factory_create_resolver(exec_ctx, factory, &args);
   grpc_resolver_factory_unref(factory);
-  grpc_channel_args_destroy(exec_ctx, channel_args);
   return resolver;
 }
 
+typedef struct on_resolution_arg {
+  grpc_channel_args *resolver_result;
+  grpc_channel_args *expected_resolver_result;
+  bool was_called;
+} on_resolution_arg;
+
 void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   on_resolution_arg *res = arg;
-  const grpc_arg *lb_addresses_arg =
-      grpc_channel_args_find(res->resolver_result, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(lb_addresses_arg != NULL &&
-             lb_addresses_arg->type == GRPC_ARG_POINTER);
-  const grpc_lb_addresses *addresses = lb_addresses_arg->value.pointer.p;
-
-  const grpc_arg *expected_lb_addresses_arg = grpc_channel_args_find(
-      res->expected_resolver_result, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(expected_lb_addresses_arg != NULL &&
-             expected_lb_addresses_arg->type == GRPC_ARG_POINTER);
-  const grpc_lb_addresses *expected_addresses =
-      expected_lb_addresses_arg->value.pointer.p;
-  GPR_ASSERT(grpc_lb_addresses_cmp(addresses, expected_addresses) == 0);
+  res->was_called = true;
+  const grpc_lb_addresses *actual_lb_addresses =
+      grpc_lb_addresses_find_channel_arg(res->resolver_result);
+  const grpc_lb_addresses *expected_lb_addresses =
+      grpc_lb_addresses_find_channel_arg(res->expected_resolver_result);
+  GPR_ASSERT(
+      grpc_lb_addresses_cmp(actual_lb_addresses, expected_lb_addresses) == 0);
   grpc_channel_args_destroy(exec_ctx, res->resolver_result);
   grpc_channel_args_destroy(exec_ctx, res->expected_resolver_result);
 }
 
 static void test_response_generator() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_combiner *combiner = grpc_combiner_create(NULL);
   // Create resolver.
   grpc_fake_resolver_response_generator *response_generator =
       grpc_fake_resolver_response_generator_create();
-  grpc_resolver *resolver = build_fake_resolver(&exec_ctx, response_generator);
+  grpc_resolver *resolver =
+      build_fake_resolver(&exec_ctx, combiner, response_generator);
   GPR_ASSERT(resolver != NULL);
 
   // Setup expectations.
-  const char *uris[] = {"ipv4:10.2.1.1:1234", "ipv4:127.0.0.1:4321"};
-  const char *balancer_names[] = {"name1", "name2"};
+  grpc_uri *uris[] = {grpc_uri_parse(&exec_ctx, "ipv4:10.2.1.1:1234", true),
+                      grpc_uri_parse(&exec_ctx, "ipv4:127.0.0.1:4321", true)};
+  char *balancer_names[] = {"name1", "name2"};
   const bool is_balancer[] = {true, false};
+  grpc_lb_addresses *addresses = grpc_lb_addresses_create(3, NULL);
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(uris); ++i) {
+    grpc_lb_addresses_set_uri(addresses, i, uris[i], is_balancer[i],
+                              balancer_names[i], NULL);
+    grpc_uri_destroy(uris[i]);
+  }
+  const grpc_arg addresses_arg =
+      grpc_lb_addresses_create_channel_arg(addresses);
   grpc_channel_args *results =
-      grpc_fake_resolver_response_create(uris, balancer_names, is_balancer, 2);
+      grpc_channel_args_copy_and_add(NULL, &addresses_arg, 1);
+  grpc_lb_addresses_destroy(&exec_ctx, addresses);
   on_resolution_arg on_res_arg;
   memset(&on_res_arg, 0, sizeof(on_res_arg));
   on_res_arg.expected_resolver_result = results;
   grpc_closure *on_resolution = grpc_closure_create(
-      on_resolution_cb, &on_res_arg, grpc_schedule_on_exec_ctx);
+      on_resolution_cb, &on_res_arg, grpc_combiner_scheduler(combiner, false));
 
   // Set resolver results and trigger first resolution. on_resolution_cb
   // performs the checks.
-  grpc_fake_resolver_response_generator_set_response_locked(
+  grpc_fake_resolver_response_generator_set_response(
       &exec_ctx, response_generator, results);
   grpc_resolver_next_locked(&exec_ctx, resolver, &on_res_arg.resolver_result,
                             on_resolution);
+  grpc_exec_ctx_flush(&exec_ctx);
+  GPR_ASSERT(on_res_arg.was_called);
 
   // Setup update.
-  const char *uris_update[] = {"ipv4:192.168.1.0:31416"};
-  const char *balancer_names_update[] = {"name3"};
+  grpc_uri *uris_update[] = {
+      grpc_uri_parse(&exec_ctx, "ipv4:192.168.1.0:31416", true)};
+  char *balancer_names_update[] = {"name3"};
   const bool is_balancer_update[] = {false};
-  grpc_channel_args *results_update = grpc_fake_resolver_response_create(
-      uris_update, balancer_names_update, is_balancer_update, 1);
+  grpc_lb_addresses *addresses_update = grpc_lb_addresses_create(1, NULL);
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(uris_update); ++i) {
+    grpc_lb_addresses_set_uri(addresses_update, i, uris_update[i],
+                              is_balancer_update[i], balancer_names_update[i],
+                              NULL);
+    grpc_uri_destroy(uris_update[i]);
+  }
+
+  grpc_arg addresses_update_arg =
+      grpc_lb_addresses_create_channel_arg(addresses_update);
+  grpc_channel_args *results_update =
+      grpc_channel_args_copy_and_add(NULL, &addresses_update_arg, 1);
+  grpc_lb_addresses_destroy(&exec_ctx, addresses_update);
 
   // Setup expectations for the update.
   on_resolution_arg on_res_arg_update;
   memset(&on_res_arg_update, 0, sizeof(on_res_arg_update));
   on_res_arg_update.expected_resolver_result = results_update;
   on_resolution = grpc_closure_create(on_resolution_cb, &on_res_arg_update,
-                                      grpc_schedule_on_exec_ctx);
+                                      grpc_combiner_scheduler(combiner, false));
 
   // Set updated resolver results and trigger a second resolution.
-  grpc_fake_resolver_response_generator_set_response_locked(
+  grpc_fake_resolver_response_generator_set_response(
       &exec_ctx, response_generator, results_update);
   grpc_resolver_next_locked(&exec_ctx, resolver,
                             &on_res_arg_update.resolver_result, on_resolution);
+  grpc_exec_ctx_flush(&exec_ctx);
+  GPR_ASSERT(on_res_arg.was_called);
 
-  grpc_fake_resolver_response_generator_unref(response_generator);
+  // Requesting a new resolution without re-senting the response shouldn't
+  // trigger the resolution callback.
+  memset(&on_res_arg, 0, sizeof(on_res_arg));
+  grpc_resolver_next_locked(&exec_ctx, resolver, &on_res_arg.resolver_result,
+                            on_resolution);
+  grpc_exec_ctx_flush(&exec_ctx);
+  GPR_ASSERT(!on_res_arg.was_called);
+
+  GRPC_COMBINER_UNREF(&exec_ctx, combiner, "test_response_generator");
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_response_generator");
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_fake_resolver_response_generator_unref(response_generator);
 }
 
 int main(int argc, char **argv) {
@@ -149,15 +177,8 @@ int main(int argc, char **argv) {
   grpc_fake_resolver_init();  // Registers the "test" scheme.
   grpc_init();
 
-  g_combiner = grpc_combiner_create(NULL);
-
   test_response_generator();
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GRPC_COMBINER_UNREF(&exec_ctx, g_combiner, "test");
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
-  grpc_shutdown();
 
+  grpc_shutdown();
   return 0;
 }
