@@ -71,7 +71,7 @@ static grpc_channel *client_channel_factory_create_channel(
   // Add channel arg containing the server URI.
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
-  arg.key = GRPC_ARG_SERVER_URI;
+  arg.key = gpr_strdup(GRPC_ARG_SERVER_URI);
   arg.value.string =
       grpc_resolver_factory_add_default_prefix_if_needed(exec_ctx, target);
   const char *to_remove[] = {GRPC_ARG_SERVER_URI};

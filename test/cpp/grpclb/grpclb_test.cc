@@ -112,7 +112,7 @@ typedef struct server_fixture {
   grpc_call *server_call;
   grpc_completion_queue *cq;
   char *servers_hostport;
-  char *balancer_name;
+  const char *balancer_name;
   int port;
   const char *lb_token_prefix;
   gpr_thd_id tid;
@@ -578,23 +578,46 @@ static void setup_client(const server_fixture *lb_server,
   const char *backends_name = lb_server->servers_hostport;
   gpr_asprintf(&expected_target_names, "%s;%s", backends_name, BALANCERS_NAME);
 
+  grpc_fake_resolver_response_generator *response_generator =
+      grpc_fake_resolver_response_generator_create();
+
+  grpc_lb_addresses *addresses = grpc_lb_addresses_create(1, NULL);
+  char *lb_uri_str;
+  gpr_asprintf(&lb_uri_str, "ipv4:%s", lb_server->servers_hostport);
+  grpc_uri *lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
+  GPR_ASSERT(lb_uri != NULL);
+  grpc_lb_addresses_set_uri(addresses, 0, lb_uri, true,
+                            lb_server->balancer_name, NULL);
+  grpc_uri_destroy(lb_uri);
+  gpr_free(lb_uri_str);
+
+  gpr_asprintf(&cf->server_uri, "test:///%s", lb_server->servers_hostport);
+  const grpc_arg fake_addresses =
+      grpc_lb_addresses_create_channel_arg(addresses);
+  grpc_channel_args *fake_result =
+      grpc_channel_args_copy_and_add(NULL, &fake_addresses, 1);
+  grpc_lb_addresses_destroy(&exec_ctx, addresses);
+
   const grpc_arg new_args[] = {
       grpc_fake_transport_expected_targets_arg(expected_target_names),
-      grpc_fake_resolver_balancer_names_arg(lb_server->balancer_name),
-      grpc_fake_resolver_lb_enabled_arg()};
+      grpc_fake_resolver_response_generator_arg(response_generator)};
 
   grpc_channel_args *args =
       grpc_channel_args_copy_and_add(NULL, new_args, GPR_ARRAY_SIZE(new_args));
   gpr_free(expected_target_names);
 
   cf->cq = grpc_completion_queue_create(NULL);
-  gpr_asprintf(&cf->server_uri, "test:///%s", lb_server->servers_hostport);
   grpc_channel_credentials *fake_creds =
       grpc_fake_transport_security_credentials_create();
   cf->client =
       grpc_secure_channel_create(fake_creds, cf->server_uri, args, NULL);
+  grpc_fake_resolver_response_generator_set_response(
+      &exec_ctx, response_generator, fake_result);
+  grpc_channel_args_destroy(&exec_ctx, fake_result);
   grpc_channel_credentials_unref(&exec_ctx, fake_creds);
   grpc_channel_args_destroy(&exec_ctx, args);
+  grpc_fake_resolver_response_generator_unref(response_generator);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void teardown_client(client_fixture *cf) {
@@ -651,7 +674,7 @@ static void teardown_server(server_fixture *sf) {
 
   gpr_log(GPR_INFO, "Server[%s] bye bye", sf->servers_hostport);
   gpr_free(sf->servers_hostport);
-  gpr_free(sf->balancer_name);
+  // gpr_free(sf->balancer_name);
 }
 
 static void fork_backend_server(void *arg) {
@@ -691,7 +714,7 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
   }
 
   tf.lb_server.lb_token_prefix = LB_TOKEN_PREFIX;
-  tf.lb_server.balancer_name = gpr_strdup(BALANCERS_NAME);
+  tf.lb_server.balancer_name = BALANCERS_NAME;
   setup_server("127.0.0.1", &tf.lb_server);
   gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
   setup_client(&tf.lb_server, tf.lb_backends, &tf.client);
@@ -777,8 +800,8 @@ TEST(GrpclbTest, InvalidAddressInServerlist) {}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_test_init(argc, argv);
   grpc_fake_resolver_init();
+  grpc_test_init(argc, argv);
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
