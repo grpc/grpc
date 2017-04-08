@@ -5,9 +5,6 @@
 # This file can be regenerated from the template by running
 # tools/buildgen/generate_projects.sh
 #
-# Additionally, this is currently very experimental, and unsupported.
-# Further work will happen on that file.
-#
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -308,7 +305,7 @@ function(protobuf_generate_grpc_cpp)
   foreach(FIL ${ARGN})
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
     get_filename_component(FIL_WE ${FIL} NAME_WE)
-    file(RELATIVE_PATH REL_FIL ${CMAKE_SOURCE_DIR} ${ABS_FIL})
+    file(RELATIVE_PATH REL_FIL ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL})
     get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
     set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
 
@@ -324,7 +321,7 @@ function(protobuf_generate_grpc_cpp)
            ${_protobuf_include_path}
            ${REL_FIL}
       DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       COMMENT "Running gRPC C++ protocol buffer compiler on ${FIL}"
       VERBATIM)
 
