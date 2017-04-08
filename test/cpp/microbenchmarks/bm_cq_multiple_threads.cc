@@ -51,11 +51,10 @@ struct grpc_pollset {
 namespace grpc {
 namespace testing {
 
-static void* make_tag(int i) { return (void*)(intptr_t)i; }
+static void* g_tag = (void*)(intptr_t)10;  // Some random number
 static grpc_completion_queue* g_cq;
 static grpc_event_engine_vtable g_vtable;
 
-static __thread int g_thread_idx;
 static __thread grpc_cq_completion g_cq_completion;
 
 static void pollset_shutdown(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
@@ -83,8 +82,8 @@ static grpc_error* pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
                                 grpc_pollset_worker** worker, gpr_timespec now,
                                 gpr_timespec deadline) {
   gpr_mu_unlock(&ps->mu);
-  grpc_cq_end_op(exec_ctx, g_cq, make_tag(g_thread_idx), GRPC_ERROR_NONE,
-                 cq_done_cb, NULL, &g_cq_completion);
+  grpc_cq_end_op(exec_ctx, g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, NULL,
+                 &g_cq_completion);
   grpc_exec_ctx_flush(exec_ctx);
   gpr_mu_lock(&ps->mu);
   return GRPC_ERROR_NONE;
@@ -109,26 +108,45 @@ static void setup() {
   g_cq = grpc_completion_queue_create(NULL);
 }
 
+static void teardown() {
+  grpc_completion_queue_shutdown(g_cq);
+  grpc_completion_queue_destroy(g_cq);
+}
+
+/* A few notes about Multi-theaded benchmarks:
+
+ Setup:
+  The benchmark framework ensures that none of the threads proceed beyond the
+  state.KeepRunning() call unless all the threads have called state.keepRunning
+  atleast once.  So it is safe to do the initialization in one of the threads
+  before state.KeepRunning() is called.
+
+ Teardown:
+  The benchmark framework also ensures that no thread is running the benchmark
+  code (i.e the code between two successive calls of state.KeepRunning()) if
+  state.KeepRunning() returns false. So it is safe to do the teardown in one
+  of the threads after state.keepRunning() returns false.
+*/
 static void BM_Cq_Throughput(benchmark::State& state) {
   TrackCounters track_counters;
-  gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
+  gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
 
   if (state.thread_index == 0) {
     setup();
   }
 
   while (state.KeepRunning()) {
-    g_thread_idx = state.thread_index;
-    void* dummy_tag = make_tag(g_thread_idx);
-    grpc_cq_begin_op(g_cq, dummy_tag);
+    grpc_cq_begin_op(g_cq, g_tag);
+
+    /* Note that the tag dequeued by the following might have been enqueued
+       by another thread. */
     grpc_completion_queue_next(g_cq, deadline, NULL);
   }
 
   state.SetItemsProcessed(state.iterations());
 
   if (state.thread_index == 0) {
-    grpc_completion_queue_shutdown(g_cq);
-    grpc_completion_queue_destroy(g_cq);
+    teardown();
   }
 
   track_counters.Finish(state);
