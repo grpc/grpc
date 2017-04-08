@@ -36,6 +36,8 @@
 #include <atomic>
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include "test/cpp/microbenchmarks/helpers.h"
 
 extern "C" {
@@ -55,8 +57,6 @@ static void* g_tag = (void*)(intptr_t)10;  // Some random number
 static grpc_completion_queue* g_cq;
 static grpc_event_engine_vtable g_vtable;
 
-static __thread grpc_cq_completion g_cq_completion;
-
 static void pollset_shutdown(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
                              grpc_closure* closure) {
   grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
@@ -75,15 +75,18 @@ static grpc_error* pollset_kick(grpc_pollset* p, grpc_pollset_worker* worker) {
 
 /* Callback when the tag is dequeued from the completion queue. Does nothing */
 static void cq_done_cb(grpc_exec_ctx* exec_ctx, void* done_arg,
-                       grpc_cq_completion* cq_completion) {}
+                       grpc_cq_completion* cq_completion) {
+  gpr_free(cq_completion);
+}
 
 /* Queues a completion tag. ZERO polling overhead */
 static grpc_error* pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
                                 grpc_pollset_worker** worker, gpr_timespec now,
                                 gpr_timespec deadline) {
   gpr_mu_unlock(&ps->mu);
+  grpc_cq_begin_op(g_cq, g_tag);
   grpc_cq_end_op(exec_ctx, g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, NULL,
-                 &g_cq_completion);
+                 (grpc_cq_completion*)gpr_malloc(sizeof(grpc_cq_completion)));
   grpc_exec_ctx_flush(exec_ctx);
   gpr_mu_lock(&ps->mu);
   return GRPC_ERROR_NONE;
@@ -113,7 +116,7 @@ static void teardown() {
   grpc_completion_queue_destroy(g_cq);
 }
 
-/* A few notes about Multi-theaded benchmarks:
+/* A few notes about Multi-threaded benchmarks:
 
  Setup:
   The benchmark framework ensures that none of the threads proceed beyond the
@@ -136,11 +139,8 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   }
 
   while (state.KeepRunning()) {
-    grpc_cq_begin_op(g_cq, g_tag);
-
-    /* Note that the tag dequeued by the following might have been enqueued
-       by another thread. */
-    grpc_completion_queue_next(g_cq, deadline, NULL);
+    GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, NULL).type ==
+               GRPC_OP_COMPLETE);
   }
 
   state.SetItemsProcessed(state.iterations());
