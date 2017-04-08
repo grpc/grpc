@@ -32,16 +32,25 @@ licenses(["notice"])  # 3-clause BSD
 cc_test(
     name = "noop-benchmark",
     srcs = ["noop-benchmark.cc"],
-    deps = ["//external:benchmark"],
     linkopts = ["-pthread"],
+    deps = ["//external:benchmark"],
 )
 
 cc_library(
     name = "helpers",
     srcs = ["helpers.cc"],
-    hdrs = ["helpers.h", "fullstack_fixtures.h", "fullstack_context_mutators.h"],
-    deps = ["//:grpc++", "//external:benchmark", "//test/core/util:grpc_test_util", "//src/proto/grpc/testing:echo_proto"],
+    hdrs = [
+        "fullstack_context_mutators.h",
+        "fullstack_fixtures.h",
+        "helpers.h",
+    ],
     linkopts = ["-pthread"],
+    deps = [
+        "//:grpc++",
+        "//external:benchmark",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
@@ -57,6 +66,12 @@ cc_test(
 )
 
 cc_test(
+    name = "bm_cq_multiple_threads",
+    srcs = ["bm_cq_multiple_threads.cc"],
+    deps = [":helpers"],
+)
+
+cc_test(
     name = "bm_error",
     srcs = ["bm_error.cc"],
     deps = [":helpers"],
@@ -66,8 +81,8 @@ cc_test(
     name = "bm_fullstack_streaming_ping_pong",
     srcs = ["bm_fullstack_streaming_ping_pong.cc"],
     deps = [":helpers"],
+)
 
-    )
 cc_test(
     name = "bm_fullstack_streaming_pump",
     srcs = ["bm_fullstack_streaming_pump.cc"],

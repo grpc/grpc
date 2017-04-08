@@ -40,8 +40,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/security/util/b64.h"
 #include "src/core/lib/security/util/json_util.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/support/string.h"
 
 #include <openssl/bio.h>

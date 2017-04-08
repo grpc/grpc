@@ -61,6 +61,9 @@ do
   "csharp")
     python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8 --compiler coreclr
     ;;
+  "node")
+    python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8 --iomgr_platform=uv
+    ;;
   *)
     python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
     ;;

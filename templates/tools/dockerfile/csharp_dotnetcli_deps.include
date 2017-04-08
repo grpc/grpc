@@ -1,7 +1,7 @@
 # Install dotnet SDK based on https://www.microsoft.com/net/core#debian
 RUN apt-get update && apt-get install -y curl libunwind8 gettext
-# dotnet-dev-1.0.0-preview2-003121
-RUN curl -sSL -o dotnet100.tar.gz https://go.microsoft.com/fwlink/?LinkID=809130
+# dotnet-dev-1.0.0-preview2-003131
+RUN curl -sSL -o dotnet100.tar.gz https://go.microsoft.com/fwlink/?LinkID=827530
 RUN mkdir -p /opt/dotnet && tar zxf dotnet100.tar.gz -C /opt/dotnet
 # dotnet-dev-1.0.1
 RUN curl -sSL -o dotnet101.tar.gz https://go.microsoft.com/fwlink/?LinkID=843453

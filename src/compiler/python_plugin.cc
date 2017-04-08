@@ -34,6 +34,7 @@
 // Generates a Python gRPC service interface out of Protobuf IDL.
 
 #include "src/compiler/config.h"
+#include "src/compiler/protobuf_plugin.h"
 #include "src/compiler/python_generator.h"
 
 int main(int argc, char* argv[]) {

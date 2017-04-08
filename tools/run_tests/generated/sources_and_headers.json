@@ -912,7 +912,7 @@
     "language": "c", 
     "name": "grpc_b64_test", 
     "src": [
-      "test/core/security/b64_test.c"
+      "test/core/slice/b64_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2548,6 +2548,27 @@
     "name": "bm_cq", 
     "src": [
       "test/cpp/microbenchmarks/bm_cq.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_benchmark", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_cq_multiple_threads", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_cq_multiple_threads.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5595,6 +5616,7 @@
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
+      "grpc_max_age_filter", 
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
@@ -5697,6 +5719,7 @@
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
+      "grpc_max_age_filter", 
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
@@ -5757,6 +5780,7 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
@@ -6009,11 +6033,15 @@
       "src/compiler/objective_c_generator_helpers.h", 
       "src/compiler/php_generator.h", 
       "src/compiler/php_generator_helpers.h", 
+      "src/compiler/protobuf_plugin.h", 
       "src/compiler/python_generator.h", 
+      "src/compiler/python_generator_helpers.h", 
+      "src/compiler/python_private_generator.h", 
       "src/compiler/ruby_generator.h", 
       "src/compiler/ruby_generator_helpers-inl.h", 
       "src/compiler/ruby_generator_map-inl.h", 
-      "src/compiler/ruby_generator_string-inl.h"
+      "src/compiler/ruby_generator_string-inl.h", 
+      "src/compiler/schema_interface.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -6036,13 +6064,17 @@
       "src/compiler/php_generator.cc", 
       "src/compiler/php_generator.h", 
       "src/compiler/php_generator_helpers.h", 
+      "src/compiler/protobuf_plugin.h", 
       "src/compiler/python_generator.cc", 
       "src/compiler/python_generator.h", 
+      "src/compiler/python_generator_helpers.h", 
+      "src/compiler/python_private_generator.h", 
       "src/compiler/ruby_generator.cc", 
       "src/compiler/ruby_generator.h", 
       "src/compiler/ruby_generator_helpers-inl.h", 
       "src/compiler/ruby_generator_map-inl.h", 
-      "src/compiler/ruby_generator_string-inl.h"
+      "src/compiler/ruby_generator_string-inl.h", 
+      "src/compiler/schema_interface.h"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -7137,6 +7169,7 @@
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/authority_not_supported.c", 
       "test/core/end2end/tests/bad_hostname.c", 
+      "test/core/end2end/tests/bad_ping.c", 
       "test/core/end2end/tests/binary_metadata.c", 
       "test/core/end2end/tests/call_creds.c", 
       "test/core/end2end/tests/cancel_after_accept.c", 
@@ -7212,6 +7245,7 @@
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/authority_not_supported.c", 
       "test/core/end2end/tests/bad_hostname.c", 
+      "test/core/end2end/tests/bad_ping.c", 
       "test/core/end2end/tests/binary_metadata.c", 
       "test/core/end2end/tests/cancel_after_accept.c", 
       "test/core/end2end/tests/cancel_after_client_done.c", 
@@ -7482,7 +7516,6 @@
       "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
-      "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_generic.h", 
       "include/grpc/impl/codegen/sync_posix.h", 
@@ -7499,7 +7532,6 @@
       "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
-      "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_generic.h", 
       "include/grpc/impl/codegen/sync_posix.h", 
@@ -7536,7 +7568,6 @@
       "src/core/lib/channel/handshaker_registry.h", 
       "src/core/lib/channel/http_client_filter.h", 
       "src/core/lib/channel/http_server_filter.h", 
-      "src/core/lib/channel/max_age_filter.h", 
       "src/core/lib/channel/message_size_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
@@ -7603,6 +7634,7 @@
       "src/core/lib/json/json_common.h", 
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
+      "src/core/lib/slice/b64.h", 
       "src/core/lib/slice/percent_encoding.h", 
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
@@ -7672,8 +7704,6 @@
       "src/core/lib/channel/http_client_filter.h", 
       "src/core/lib/channel/http_server_filter.c", 
       "src/core/lib/channel/http_server_filter.h", 
-      "src/core/lib/channel/max_age_filter.c", 
-      "src/core/lib/channel/max_age_filter.h", 
       "src/core/lib/channel/message_size_filter.c", 
       "src/core/lib/channel/message_size_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
@@ -7814,7 +7844,8 @@
       "src/core/lib/json/json_string.c", 
       "src/core/lib/json/json_writer.c", 
       "src/core/lib/json/json_writer.h", 
-      "src/core/lib/security/util/b64.c", 
+      "src/core/lib/slice/b64.c", 
+      "src/core/lib/slice/b64.h", 
       "src/core/lib/slice/percent_encoding.c", 
       "src/core/lib/slice/percent_encoding.h", 
       "src/core/lib/slice/slice.c", 
@@ -7894,67 +7925,67 @@
       "grpc_base"
     ], 
     "headers": [
-      "src/core/ext/client_channel/client_channel.h", 
-      "src/core/ext/client_channel/client_channel_factory.h", 
-      "src/core/ext/client_channel/connector.h", 
-      "src/core/ext/client_channel/http_connect_handshaker.h", 
-      "src/core/ext/client_channel/http_proxy.h", 
-      "src/core/ext/client_channel/lb_policy.h", 
-      "src/core/ext/client_channel/lb_policy_factory.h", 
-      "src/core/ext/client_channel/lb_policy_registry.h", 
-      "src/core/ext/client_channel/parse_address.h", 
-      "src/core/ext/client_channel/proxy_mapper.h", 
-      "src/core/ext/client_channel/proxy_mapper_registry.h", 
-      "src/core/ext/client_channel/resolver.h", 
-      "src/core/ext/client_channel/resolver_factory.h", 
-      "src/core/ext/client_channel/resolver_registry.h", 
-      "src/core/ext/client_channel/retry_throttle.h", 
-      "src/core/ext/client_channel/subchannel.h", 
-      "src/core/ext/client_channel/subchannel_index.h", 
-      "src/core/ext/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/client_channel.h", 
+      "src/core/ext/filters/client_channel/client_channel_factory.h", 
+      "src/core/ext/filters/client_channel/connector.h", 
+      "src/core/ext/filters/client_channel/http_connect_handshaker.h", 
+      "src/core/ext/filters/client_channel/http_proxy.h", 
+      "src/core/ext/filters/client_channel/lb_policy.h", 
+      "src/core/ext/filters/client_channel/lb_policy_factory.h", 
+      "src/core/ext/filters/client_channel/lb_policy_registry.h", 
+      "src/core/ext/filters/client_channel/parse_address.h", 
+      "src/core/ext/filters/client_channel/proxy_mapper.h", 
+      "src/core/ext/filters/client_channel/proxy_mapper_registry.h", 
+      "src/core/ext/filters/client_channel/resolver.h", 
+      "src/core/ext/filters/client_channel/resolver_factory.h", 
+      "src/core/ext/filters/client_channel/resolver_registry.h", 
+      "src/core/ext/filters/client_channel/retry_throttle.h", 
+      "src/core/ext/filters/client_channel/subchannel.h", 
+      "src/core/ext/filters/client_channel/subchannel_index.h", 
+      "src/core/ext/filters/client_channel/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_client_channel", 
     "src": [
-      "src/core/ext/client_channel/channel_connectivity.c", 
-      "src/core/ext/client_channel/client_channel.c", 
-      "src/core/ext/client_channel/client_channel.h", 
-      "src/core/ext/client_channel/client_channel_factory.c", 
-      "src/core/ext/client_channel/client_channel_factory.h", 
-      "src/core/ext/client_channel/client_channel_plugin.c", 
-      "src/core/ext/client_channel/connector.c", 
-      "src/core/ext/client_channel/connector.h", 
-      "src/core/ext/client_channel/http_connect_handshaker.c", 
-      "src/core/ext/client_channel/http_connect_handshaker.h", 
-      "src/core/ext/client_channel/http_proxy.c", 
-      "src/core/ext/client_channel/http_proxy.h", 
-      "src/core/ext/client_channel/lb_policy.c", 
-      "src/core/ext/client_channel/lb_policy.h", 
-      "src/core/ext/client_channel/lb_policy_factory.c", 
-      "src/core/ext/client_channel/lb_policy_factory.h", 
-      "src/core/ext/client_channel/lb_policy_registry.c", 
-      "src/core/ext/client_channel/lb_policy_registry.h", 
-      "src/core/ext/client_channel/parse_address.c", 
-      "src/core/ext/client_channel/parse_address.h", 
-      "src/core/ext/client_channel/proxy_mapper.c", 
-      "src/core/ext/client_channel/proxy_mapper.h", 
-      "src/core/ext/client_channel/proxy_mapper_registry.c", 
-      "src/core/ext/client_channel/proxy_mapper_registry.h", 
-      "src/core/ext/client_channel/resolver.c", 
-      "src/core/ext/client_channel/resolver.h", 
-      "src/core/ext/client_channel/resolver_factory.c", 
-      "src/core/ext/client_channel/resolver_factory.h", 
-      "src/core/ext/client_channel/resolver_registry.c", 
-      "src/core/ext/client_channel/resolver_registry.h", 
-      "src/core/ext/client_channel/retry_throttle.c", 
-      "src/core/ext/client_channel/retry_throttle.h", 
-      "src/core/ext/client_channel/subchannel.c", 
-      "src/core/ext/client_channel/subchannel.h", 
-      "src/core/ext/client_channel/subchannel_index.c", 
-      "src/core/ext/client_channel/subchannel_index.h", 
-      "src/core/ext/client_channel/uri_parser.c", 
-      "src/core/ext/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/channel_connectivity.c", 
+      "src/core/ext/filters/client_channel/client_channel.c", 
+      "src/core/ext/filters/client_channel/client_channel.h", 
+      "src/core/ext/filters/client_channel/client_channel_factory.c", 
+      "src/core/ext/filters/client_channel/client_channel_factory.h", 
+      "src/core/ext/filters/client_channel/client_channel_plugin.c", 
+      "src/core/ext/filters/client_channel/connector.c", 
+      "src/core/ext/filters/client_channel/connector.h", 
+      "src/core/ext/filters/client_channel/http_connect_handshaker.c", 
+      "src/core/ext/filters/client_channel/http_connect_handshaker.h", 
+      "src/core/ext/filters/client_channel/http_proxy.c", 
+      "src/core/ext/filters/client_channel/http_proxy.h", 
+      "src/core/ext/filters/client_channel/lb_policy.c", 
+      "src/core/ext/filters/client_channel/lb_policy.h", 
+      "src/core/ext/filters/client_channel/lb_policy_factory.c", 
+      "src/core/ext/filters/client_channel/lb_policy_factory.h", 
+      "src/core/ext/filters/client_channel/lb_policy_registry.c", 
+      "src/core/ext/filters/client_channel/lb_policy_registry.h", 
+      "src/core/ext/filters/client_channel/parse_address.c", 
+      "src/core/ext/filters/client_channel/parse_address.h", 
+      "src/core/ext/filters/client_channel/proxy_mapper.c", 
+      "src/core/ext/filters/client_channel/proxy_mapper.h", 
+      "src/core/ext/filters/client_channel/proxy_mapper_registry.c", 
+      "src/core/ext/filters/client_channel/proxy_mapper_registry.h", 
+      "src/core/ext/filters/client_channel/resolver.c", 
+      "src/core/ext/filters/client_channel/resolver.h", 
+      "src/core/ext/filters/client_channel/resolver_factory.c", 
+      "src/core/ext/filters/client_channel/resolver_factory.h", 
+      "src/core/ext/filters/client_channel/resolver_registry.c", 
+      "src/core/ext/filters/client_channel/resolver_registry.h", 
+      "src/core/ext/filters/client_channel/retry_throttle.c", 
+      "src/core/ext/filters/client_channel/retry_throttle.h", 
+      "src/core/ext/filters/client_channel/subchannel.c", 
+      "src/core/ext/filters/client_channel/subchannel.h", 
+      "src/core/ext/filters/client_channel/subchannel_index.c", 
+      "src/core/ext/filters/client_channel/subchannel_index.h", 
+      "src/core/ext/filters/client_channel/uri_parser.c", 
+      "src/core/ext/filters/client_channel/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -7970,6 +8001,7 @@
       "include/grpc/impl/codegen/exec_ctx_fwd.h", 
       "include/grpc/impl/codegen/grpc_types.h", 
       "include/grpc/impl/codegen/propagation_bits.h", 
+      "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/status.h"
     ], 
     "is_filegroup": true, 
@@ -7982,6 +8014,7 @@
       "include/grpc/impl/codegen/exec_ctx_fwd.h", 
       "include/grpc/impl/codegen/grpc_types.h", 
       "include/grpc/impl/codegen/propagation_bits.h", 
+      "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/status.h"
     ], 
     "third_party": false, 
@@ -7995,23 +8028,23 @@
       "nanopb"
     ], 
     "headers": [
-      "src/core/ext/lb_policy/grpclb/grpclb.h", 
-      "src/core/ext/lb_policy/grpclb/grpclb_channel.h", 
-      "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_lb_policy_grpclb", 
     "src": [
-      "src/core/ext/lb_policy/grpclb/grpclb.c", 
-      "src/core/ext/lb_policy/grpclb/grpclb.h", 
-      "src/core/ext/lb_policy/grpclb/grpclb_channel.c", 
-      "src/core/ext/lb_policy/grpclb/grpclb_channel.h", 
-      "src/core/ext/lb_policy/grpclb/load_balancer_api.c", 
-      "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8021,26 +8054,27 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_secure", 
       "nanopb"
     ], 
     "headers": [
-      "src/core/ext/lb_policy/grpclb/grpclb.h", 
-      "src/core/ext/lb_policy/grpclb/grpclb_channel.h", 
-      "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_lb_policy_grpclb_secure", 
     "src": [
-      "src/core/ext/lb_policy/grpclb/grpclb.c", 
-      "src/core/ext/lb_policy/grpclb/grpclb.h", 
-      "src/core/ext/lb_policy/grpclb/grpclb_channel.h", 
-      "src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c", 
-      "src/core/ext/lb_policy/grpclb/load_balancer_api.c", 
-      "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8056,7 +8090,7 @@
     "language": "c", 
     "name": "grpc_lb_policy_pick_first", 
     "src": [
-      "src/core/ext/lb_policy/pick_first/pick_first.c"
+      "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8072,7 +8106,7 @@
     "language": "c", 
     "name": "grpc_lb_policy_round_robin", 
     "src": [
-      "src/core/ext/lb_policy/round_robin/round_robin.c"
+      "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8083,17 +8117,35 @@
       "grpc_base"
     ], 
     "headers": [
-      "src/core/ext/load_reporting/load_reporting.h", 
-      "src/core/ext/load_reporting/load_reporting_filter.h"
+      "src/core/ext/filters/load_reporting/load_reporting.h", 
+      "src/core/ext/filters/load_reporting/load_reporting_filter.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_load_reporting", 
     "src": [
-      "src/core/ext/load_reporting/load_reporting.c", 
-      "src/core/ext/load_reporting/load_reporting.h", 
-      "src/core/ext/load_reporting/load_reporting_filter.c", 
-      "src/core/ext/load_reporting/load_reporting_filter.h"
+      "src/core/ext/filters/load_reporting/load_reporting.c", 
+      "src/core/ext/filters/load_reporting/load_reporting.h", 
+      "src/core/ext/filters/load_reporting/load_reporting_filter.c", 
+      "src/core/ext/filters/load_reporting/load_reporting_filter.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/max_age/max_age_filter.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_max_age_filter", 
+    "src": [
+      "src/core/ext/filters/max_age/max_age_filter.c", 
+      "src/core/ext/filters/max_age/max_age_filter.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8105,18 +8157,18 @@
       "grpc_client_channel"
     ], 
     "headers": [
-      "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
-      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_resolver_dns_ares", 
     "src": [
-      "src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c", 
-      "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
-      "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c", 
-      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c", 
-      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8132,7 +8184,7 @@
     "language": "c", 
     "name": "grpc_resolver_dns_native", 
     "src": [
-      "src/core/ext/resolver/dns/native/dns_resolver.c"
+      "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8148,7 +8200,7 @@
     "language": "c", 
     "name": "grpc_resolver_sockaddr", 
     "src": [
-      "src/core/ext/resolver/sockaddr/sockaddr_resolver.c"
+      "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8180,7 +8232,6 @@
       "src/core/lib/security/transport/security_connector.h", 
       "src/core/lib/security/transport/security_handshaker.h", 
       "src/core/lib/security/transport/tsi_error.h", 
-      "src/core/lib/security/util/b64.h", 
       "src/core/lib/security/util/json_util.h"
     ], 
     "is_filegroup": true, 
@@ -8228,8 +8279,6 @@
       "src/core/lib/security/transport/server_auth_filter.c", 
       "src/core/lib/security/transport/tsi_error.c", 
       "src/core/lib/security/transport/tsi_error.h", 
-      "src/core/lib/security/util/b64.c", 
-      "src/core/lib/security/util/b64.h", 
       "src/core/lib/security/util/json_util.c", 
       "src/core/lib/security/util/json_util.h", 
       "src/core/lib/surface/init_secure.c"
@@ -8390,6 +8439,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_client_channel", 
       "grpc_transport_chttp2"
     ], 
     "headers": [
@@ -8569,7 +8619,10 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen_base"
+      "gpr", 
+      "grpc++_codegen_base", 
+      "grpc_base", 
+      "nanopb"
     ], 
     "headers": [
       "include/grpc++/alarm.h", 

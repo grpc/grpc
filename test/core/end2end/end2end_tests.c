@@ -49,6 +49,8 @@ extern void authority_not_supported(grpc_end2end_test_config config);
 extern void authority_not_supported_pre_init(void);
 extern void bad_hostname(grpc_end2end_test_config config);
 extern void bad_hostname_pre_init(void);
+extern void bad_ping(grpc_end2end_test_config config);
+extern void bad_ping_pre_init(void);
 extern void binary_metadata(grpc_end2end_test_config config);
 extern void binary_metadata_pre_init(void);
 extern void call_creds(grpc_end2end_test_config config);
@@ -156,6 +158,7 @@ void grpc_end2end_tests_pre_init(void) {
   grpc_summon_debugger_macros();
   authority_not_supported_pre_init();
   bad_hostname_pre_init();
+  bad_ping_pre_init();
   binary_metadata_pre_init();
   call_creds_pre_init();
   cancel_after_accept_pre_init();
@@ -217,6 +220,7 @@ void grpc_end2end_tests(int argc, char **argv,
   if (argc <= 1) {
     authority_not_supported(config);
     bad_hostname(config);
+    bad_ping(config);
     binary_metadata(config);
     call_creds(config);
     cancel_after_accept(config);
@@ -277,6 +281,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("bad_hostname", argv[i])) {
       bad_hostname(config);
+      continue;
+    }
+    if (0 == strcmp("bad_ping", argv[i])) {
+      bad_ping(config);
       continue;
     }
     if (0 == strcmp("binary_metadata", argv[i])) {
