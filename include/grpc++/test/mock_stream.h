@@ -37,7 +37,7 @@ class MockClientWriter : public ClientWriterInterface<W> {
   MOCK_METHOD0_T(Finish, Status());
 
   // WriterInterface
-  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions&));
+  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
 
   // ClientWriterInterface
   MOCK_METHOD0_T(WritesDone, bool());
