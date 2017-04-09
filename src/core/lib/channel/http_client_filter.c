@@ -219,9 +219,11 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   uint8_t *wrptr = calld->payload_bytes;
-  while (grpc_byte_stream_next(exec_ctx, calld->send_op->payload->send_message.send_message,
-                               ~(size_t)0, &calld->got_slice)) {
-    grpc_byte_stream_pull(exec_ctx, calld->send_op->payload->send_message.send_message,
+  while (grpc_byte_stream_next(
+      exec_ctx, calld->send_op->payload->send_message.send_message, ~(size_t)0,
+      &calld->got_slice)) {
+    grpc_byte_stream_pull(exec_ctx,
+                          calld->send_op->payload->send_message.send_message,
                           &calld->incoming_slice);
     memcpy(wrptr, GRPC_SLICE_START_PTR(calld->incoming_slice),
            GRPC_SLICE_LENGTH(calld->incoming_slice));
@@ -238,9 +240,10 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
   calld->send_message_blocked = false;
-  if (GRPC_ERROR_NONE != grpc_byte_stream_pull(exec_ctx,
-                                               calld->send_op->payload->send_message.send_message,
-                                               &calld->incoming_slice)) {
+  if (GRPC_ERROR_NONE !=
+      grpc_byte_stream_pull(exec_ctx,
+                            calld->send_op->payload->send_message.send_message,
+                            &calld->incoming_slice)) {
     /* Should never reach here */
     abort();
   }

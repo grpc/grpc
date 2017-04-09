@@ -575,11 +575,10 @@ static void destroy_transport_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
-  grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_create(destroy_transport_locked, t,
-                          grpc_combiner_scheduler(t->combiner, false)),
-      GRPC_ERROR_NONE);
+  grpc_closure_sched(exec_ctx, grpc_closure_create(
+                                   destroy_transport_locked, t,
+                                   grpc_combiner_scheduler(t->combiner, false)),
+                     GRPC_ERROR_NONE);
 }
 
 static void close_transport_locked(grpc_exec_ctx *exec_ctx,
@@ -757,9 +756,8 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   s->destroy_stream_arg = then_schedule_closure;
   grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_init(&s->destroy_stream, destroy_stream_locked, s,
-                        grpc_combiner_scheduler(t->combiner, false)),
+      exec_ctx, grpc_closure_init(&s->destroy_stream, destroy_stream_locked, s,
+                                  grpc_combiner_scheduler(t->combiner, false)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("destroy_stream", 0);
 }
@@ -1618,10 +1616,9 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   op->handler_private.extra_arg = gt;
   GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");
   grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_init(&op->handler_private.closure,
-                        perform_transport_op_locked, op,
-                        grpc_combiner_scheduler(t->combiner, false)),
+      exec_ctx, grpc_closure_init(&op->handler_private.closure,
+                                  perform_transport_op_locked, op,
+                                  grpc_combiner_scheduler(t->combiner, false)),
       GRPC_ERROR_NONE);
 }
 
@@ -2377,9 +2374,8 @@ static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error == GRPC_ERROR_NONE) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
-      close_transport_locked(
-          exec_ctx, t,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("keepalive watchdog timeout"));
+      close_transport_locked(exec_ctx, t, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                              "keepalive watchdog timeout"));
     }
   } else {
     /* The watchdog timer should have been cancelled by
