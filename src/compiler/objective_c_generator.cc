@@ -160,7 +160,8 @@ void PrintSimpleImplementation(Printer *printer, const MethodDescriptor *method,
   } else {
     printer->Print(" handler:handler];\n");
   }
-  printer->Print("  [rpc setResponseDispatchQueue:_defaultResponseDispatchQueue];\n");
+  printer->Print(
+      "  [rpc setResponseDispatchQueue:_defaultResponseDispatchQueue];\n");
   printer->Print("  [rpc start];\n");
   printer->Print("}\n");
 }
@@ -169,7 +170,8 @@ void PrintAdvancedImplementation(Printer *printer,
                                  const MethodDescriptor *method,
                                  map< ::grpc::string, ::grpc::string> vars) {
   printer->Print("{\n");
-  printer->Print(vars, "  GRPCProtoCall *rpc = [self RPCToMethod:@\"$method_name$\"\n");
+  printer->Print(
+      vars, "  GRPCProtoCall *rpc = [self RPCToMethod:@\"$method_name$\"\n");
 
   printer->Print("                          requestsWriter:");
   if (method->client_streaming()) {
@@ -178,7 +180,9 @@ void PrintAdvancedImplementation(Printer *printer,
     printer->Print("[GRXWriter writerWithValue:request]\n");
   }
 
-  printer->Print(vars, "                           responseClass:[$response_class$ class]\n");
+  printer->Print(
+      vars,
+      "                           responseClass:[$response_class$ class]\n");
 
   printer->Print("                      responsesWriteable:[GRXWriteable ");
   if (method->server_streaming()) {
@@ -186,7 +190,8 @@ void PrintAdvancedImplementation(Printer *printer,
   } else {
     printer->Print("writeableWithSingleHandler:handler]];\n");
   }
-  printer->Print("  [rpc setResponseDispatchQueue:_defaultResponseDispatchQueue];\n");
+  printer->Print(
+      "  [rpc setResponseDispatchQueue:_defaultResponseDispatchQueue];\n");
   printer->Print("  return rpc;\n");
 
   printer->Print("}\n");
@@ -238,7 +243,8 @@ void PrintMethodImplementations(Printer *printer,
         "- (instancetype)initWithHost:(NSString *)host"
         " NS_DESIGNATED_INITIALIZER;\n");
     printer.Print("+ (instancetype)serviceWithHost:(NSString *)host;\n");
-    printer.Print("- (void)setDefaultResponseDispatchQueue:(dispatch_queue_t)queue;\n");
+    printer.Print(
+        "- (void)setDefaultResponseDispatchQueue:(dispatch_queue_t)queue;\n");
     printer.Print("@end\n");
   }
   return output;
@@ -279,7 +285,8 @@ void PrintMethodImplementations(Printer *printer,
     printer.Print("+ (instancetype)serviceWithHost:(NSString *)host {\n");
     printer.Print("  return [[self alloc] initWithHost:host];\n");
     printer.Print("}\n\n");
-    printer.Print("- (void)setDefaultResponseDispatchQueue:(dispatch_queue_t)queue {\n");
+    printer.Print(
+        "- (void)setDefaultResponseDispatchQueue:(dispatch_queue_t)queue {\n");
     printer.Print("  _defaultResponseDispatchQueue = queue;\n");
     printer.Print("}\n\n\n");
 
