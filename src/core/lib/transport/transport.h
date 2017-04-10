@@ -127,34 +127,36 @@ typedef struct grpc_transport_stream_op_batch {
   /** Values for the stream op (fields set are determined by flags above) */
   grpc_transport_stream_op_batch_payload *payload;
 
-  /** Is the completion of this op covered by a poller (if false: the op should
-      complete independently of some pollset being polled) */
-  bool covered_by_poller : 1;
+  struct  {
+    /** Is the completion of this op covered by a poller (if false: the op should
+        complete independently of some pollset being polled) */
+    bool covered_by_poller : 1;
 
-  /** Send initial metadata to the peer, from the provided metadata batch. */
-  bool send_initial_metadata : 1;
+    /** Send initial metadata to the peer, from the provided metadata batch. */
+    bool send_initial_metadata : 1;
 
-  /** Send trailing metadata to the peer, from the provided metadata batch. */
-  bool send_trailing_metadata : 1;
+    /** Send trailing metadata to the peer, from the provided metadata batch. */
+    bool send_trailing_metadata : 1;
 
-  /** Send message data to the peer, from the provided byte stream. */
-  bool send_message : 1;
+    /** Send message data to the peer, from the provided byte stream. */
+    bool send_message : 1;
 
-  /** Receive initial metadata from the stream, into provided metadata batch. */
-  bool recv_initial_metadata : 1;
+    /** Receive initial metadata from the stream, into provided metadata batch. */
+    bool recv_initial_metadata : 1;
 
-  /** Receive message data from the stream, into provided byte stream. */
-  bool recv_message : 1;
+    /** Receive message data from the stream, into provided byte stream. */
+    bool recv_message : 1;
 
-  /** Receive trailing metadata from the stream, into provided metadata batch.
-   */
-  bool recv_trailing_metadata : 1;
+    /** Receive trailing metadata from the stream, into provided metadata batch.
+     */
+    bool recv_trailing_metadata : 1;
 
-  /** Collect any stats into provided buffer, zero internal stat counters */
-  bool collect_stats : 1;
+    /** Collect any stats into provided buffer, zero internal stat counters */
+    bool collect_stats : 1;
 
-  /** Cancel this stream with the provided error */
-  bool cancel_stream : 1;
+    /** Cancel this stream with the provided error */
+    bool cancel_stream : 1;
+  } bits;
 
   /***************************************************************************
    * remaining fields are initialized and used at the discretion of the

@@ -84,10 +84,10 @@ static void lame_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     fill_metadata(exec_ctx, elem,
                   op->payload->recv_initial_metadata.recv_initial_metadata);
-  } else if (op->recv_trailing_metadata) {
+  } else if (op->bits.recv_trailing_metadata) {
     fill_metadata(exec_ctx, elem,
                   op->payload->recv_trailing_metadata.recv_trailing_metadata);
   }

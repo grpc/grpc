@@ -779,7 +779,7 @@ static void server_mutate_op(grpc_call_element *elem,
                              grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
 
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     GPR_ASSERT(op->payload->recv_initial_metadata.recv_flags == NULL);
     calld->recv_initial_metadata =
         op->payload->recv_initial_metadata.recv_initial_metadata;

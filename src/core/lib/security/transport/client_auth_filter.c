@@ -122,7 +122,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED);
   } else {
     GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
-    GPR_ASSERT(op->send_initial_metadata);
+    GPR_ASSERT(op->bits.send_initial_metadata);
     mdb = op->payload->send_initial_metadata.send_initial_metadata;
     for (i = 0; i < num_md; i++) {
       add_error(&error,
@@ -253,7 +253,7 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
   grpc_linked_mdelem *l;
   grpc_client_security_context *sec_ctx = NULL;
 
-  if (calld->security_context_set == 0 && !op->cancel_stream) {
+  if (calld->security_context_set == 0 && !op->bits.cancel_stream) {
     calld->security_context_set = 1;
     GPR_ASSERT(op->payload->context != NULL);
     if (op->payload->context[GRPC_CONTEXT_SECURITY].value == NULL) {
@@ -268,7 +268,7 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
         GRPC_AUTH_CONTEXT_REF(chand->auth_context, "client_auth_filter");
   }
 
-  if (op->send_initial_metadata) {
+  if (op->bits.send_initial_metadata) {
     for (l = op->payload->send_initial_metadata.send_initial_metadata->list
                  .head;
          l != NULL; l = l->next) {

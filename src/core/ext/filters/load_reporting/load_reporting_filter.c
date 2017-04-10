@@ -189,7 +189,7 @@ static void lr_start_transport_stream_op_batch(
   GPR_TIMER_BEGIN("lr_start_transport_stream_op_batch", 0);
   call_data *calld = elem->call_data;
 
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     calld->recv_initial_metadata =
         op->payload->recv_initial_metadata.recv_initial_metadata;
     /* substitute our callback for the higher callback */

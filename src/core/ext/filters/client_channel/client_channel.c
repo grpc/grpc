@@ -1085,7 +1085,7 @@ static void start_transport_stream_op_batch_locked_inner(
     return;
   }
   /* if this is a cancellation, then we can raise our cancelled flag */
-  if (op->cancel_stream) {
+  if (op->bits.cancel_stream) {
     if (!gpr_atm_rel_cas(&calld->subchannel_call, 0,
                          (gpr_atm)(uintptr_t)CANCELLED_CALL)) {
       /* recurse to retry */
@@ -1120,7 +1120,7 @@ static void start_transport_stream_op_batch_locked_inner(
   }
   /* if we don't have a subchannel, try to get one */
   if (calld->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING &&
-      calld->connected_subchannel == NULL && op->send_initial_metadata) {
+      calld->connected_subchannel == NULL && op->bits.send_initial_metadata) {
     calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL;
     grpc_closure_init(&calld->next_step, subchannel_ready_locked, elem,
                       grpc_combiner_scheduler(chand->combiner, true));
@@ -1198,7 +1198,7 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
   grpc_call_element *elem = op->handler_private.extra_arg;
   call_data *calld = elem->call_data;
 
-  if (op->recv_trailing_metadata) {
+  if (op->bits.recv_trailing_metadata) {
     GPR_ASSERT(op->on_complete != NULL);
     calld->original_on_complete = op->on_complete;
     grpc_closure_init(&calld->on_complete, on_complete, elem,

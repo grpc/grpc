@@ -216,18 +216,18 @@ grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
     grpc_error *error) {
-  if (op->recv_message) {
+  if (op->bits.recv_message) {
     grpc_closure_sched(exec_ctx, op->payload->recv_message.recv_message_ready,
                        GRPC_ERROR_REF(error));
   }
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     grpc_closure_sched(
         exec_ctx,
         op->payload->recv_initial_metadata.recv_initial_metadata_ready,
         GRPC_ERROR_REF(error));
   }
   grpc_closure_sched(exec_ctx, op->on_complete, error);
-  if (op->cancel_stream) {
+  if (op->bits.cancel_stream) {
     GRPC_ERROR_UNREF(op->payload->cancel_stream.cancel_error);
   }
 }

@@ -138,7 +138,7 @@ static void on_md_processing_done(
     error_details = error_details != NULL
                         ? error_details
                         : "Authentication metadata processing failed.";
-    if (calld->transport_op->send_message) {
+    if (calld->transport_op->bits.send_message) {
       grpc_byte_stream_destroy(
           &exec_ctx, calld->transport_op->payload->send_message.send_message);
       calld->transport_op->payload->send_message.send_message = NULL;
@@ -173,7 +173,7 @@ static void set_recv_ops_md_callbacks(grpc_call_element *elem,
                                       grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
 
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     /* substitute our callback for the higher callback */
     calld->recv_initial_metadata =
         op->payload->recv_initial_metadata.recv_initial_metadata;
