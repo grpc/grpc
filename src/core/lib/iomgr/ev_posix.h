@@ -42,6 +42,8 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/workqueue.h"
 
+extern int grpc_polling_trace; /* Disabled by default */
+
 typedef struct grpc_fd grpc_fd;
 
 typedef struct grpc_event_engine_vtable {

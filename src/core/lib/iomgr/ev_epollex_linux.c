@@ -519,7 +519,14 @@ static void pollset_global_shutdown(void) {
 /* p->po.mu must be held before calling this function */
 static grpc_error *pollset_kick(grpc_pollset *p,
                                 grpc_pollset_worker *specific_worker) {
-  gpr_log(GPR_DEBUG, "PS:%p kick %p tls_pollset=%p tls_worker=%p num_pollers=%d root_worker=%p", p, specific_worker, (void*)gpr_tls_get(&g_current_thread_pollset), (void*)gpr_tls_get(&g_current_thread_worker), p->num_pollers, p->root_worker);
+  if (grpc_polling_trace) {
+    gpr_log(GPR_DEBUG,
+            "PS:%p kick %p tls_pollset=%p tls_worker=%p num_pollers=%d "
+            "root_worker=%p",
+            p, specific_worker, (void *)gpr_tls_get(&g_current_thread_pollset),
+            (void *)gpr_tls_get(&g_current_thread_worker), p->num_pollers,
+            p->root_worker);
+  }
   if (specific_worker == NULL) {
     if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)p) {
       if (p->num_pollers == 0) {
@@ -676,19 +683,25 @@ static grpc_error *pollset_poll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (r < 0) return GRPC_OS_ERROR(errno, "epoll_wait");
 
-  gpr_log(GPR_DEBUG, "PS:%p poll got %d events", pollset, r);
+  if (grpc_polling_trace) {
+    gpr_log(GPR_DEBUG, "PS:%p poll got %d events", pollset, r);
+  }
 
   grpc_error *error = GRPC_ERROR_NONE;
   for (int i = 0; i < r; i++) {
     void *data_ptr = events[i].data.ptr;
     if (data_ptr == &global_wakeup_fd) {
-      gpr_log(GPR_DEBUG, "PS:%p poll got global_wakeup_fd", pollset);
+      if (grpc_polling_trace) {
+        gpr_log(GPR_DEBUG, "PS:%p poll got global_wakeup_fd", pollset);
+      }
 
       grpc_timer_consume_kick();
       append_error(&error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                    err_desc);
     } else if (data_ptr == &pollset->pollset_wakeup) {
-      gpr_log(GPR_DEBUG, "PS:%p poll got pollset_wakeup", pollset);
+      if (grpc_polling_trace) {
+        gpr_log(GPR_DEBUG, "PS:%p poll got pollset_wakeup", pollset);
+      }
       /* once we start shutting down we stop consuming the wakeup:
          the fd is level triggered and non-exclusive, which should result in all
          pollers waking */
@@ -702,9 +715,11 @@ static grpc_error *pollset_poll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       bool cancel = (events[i].events & (EPOLLERR | EPOLLHUP)) != 0;
       bool read_ev = (events[i].events & (EPOLLIN | EPOLLPRI)) != 0;
       bool write_ev = (events[i].events & EPOLLOUT) != 0;
-      gpr_log(GPR_DEBUG,
-              "PS:%p poll got fd: is_wq=%d cancel=%d read=%d write=%d", pollset,
-              is_workqueue, cancel, read_ev, write_ev);
+      if (grpc_polling_trace) {
+        gpr_log(GPR_DEBUG,
+                "PS:%p poll got fd: is_wq=%d cancel=%d read=%d write=%d",
+                pollset, is_workqueue, cancel, read_ev, write_ev);
+      }
       if (is_workqueue) {
         append_error(&error,
                      grpc_wakeup_fd_consume_wakeup(&fd->workqueue_wakeup_fd),
@@ -780,7 +795,13 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker **worker_hdl,
                                 gpr_timespec now, gpr_timespec deadline) {
   grpc_pollset_worker worker;
-  gpr_log(GPR_DEBUG, "PS:%p work hdl=%p worker=%p now=%"PRId64".%09d deadline=%"PRId64".%09d kwp=%d root_worker=%p", pollset, worker_hdl, &worker, now.tv_sec, now.tv_nsec, deadline.tv_sec, deadline.tv_nsec, pollset->kicked_without_poller, pollset->root_worker);
+  if (grpc_polling_trace) {
+    gpr_log(GPR_DEBUG, "PS:%p work hdl=%p worker=%p now=%" PRId64
+                       ".%09d deadline=%" PRId64 ".%09d kwp=%d root_worker=%p",
+            pollset, worker_hdl, &worker, now.tv_sec, now.tv_nsec,
+            deadline.tv_sec, deadline.tv_nsec, pollset->kicked_without_poller,
+            pollset->root_worker);
+  }
   grpc_error *error = GRPC_ERROR_NONE;
   if (pollset->kicked_without_poller) {
     pollset->kicked_without_poller = false;
@@ -820,7 +841,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     }
   }
   struct epoll_event ev_wq = {.events = EPOLLET | EPOLLIN | EPOLLEXCLUSIVE,
-                              .data.ptr = (void*)(1+(intptr_t)fd)};
+                              .data.ptr = (void *)(1 + (intptr_t)fd)};
   if (epoll_ctl(pollset->epfd, EPOLL_CTL_ADD, fd->workqueue_wakeup_fd.read_fd,
                 &ev_wq) != 0) {
     switch (errno) {
