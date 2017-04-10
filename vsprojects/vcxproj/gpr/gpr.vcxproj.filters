@@ -269,6 +269,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\memory.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>

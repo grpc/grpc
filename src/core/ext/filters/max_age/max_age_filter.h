@@ -1,3 +1,6 @@
+
+namespace grpc_core {
+
 //
 // Copyright 2017, Google Inc.
 // All rights reserved.
@@ -29,11 +32,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+}  // namespace grpc_core
 #ifndef GRPC_CORE_EXT_FILTERS_MAX_AGE_MAX_AGE_FILTER_H
 #define GRPC_CORE_EXT_FILTERS_MAX_AGE_MAX_AGE_FILTER_H
 
 #include "src/core/lib/channel/channel_stack.h"
 
+namespace grpc_core {
+
 extern const grpc_channel_filter grpc_max_age_filter;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_MAX_AGE_MAX_AGE_FILTER_H */

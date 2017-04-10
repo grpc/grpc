@@ -39,6 +39,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/transport.h"
 
+namespace grpc_core {
+
 typedef struct {
   uint8_t byte;
   uint8_t is_connection_update;
@@ -54,4 +56,5 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser, grpc_chttp2_transport *t,
     grpc_chttp2_stream *s, grpc_slice slice, int is_last);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_WINDOW_UPDATE_H */

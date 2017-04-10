@@ -31,9 +31,9 @@
  *
  */
 
-/* This header transitively includes other headers that care about include
- * order, so it should be included first. As a consequence, it should not be
- * included in any other header. */
+// This header transitively includes other headers that care about include
+//  order, so it should be included first. As a consequence, it should not be
+//  included in any other header.
 
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_H

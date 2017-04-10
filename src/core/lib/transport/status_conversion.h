@@ -37,13 +37,17 @@
 #include <grpc/grpc.h>
 #include "src/core/lib/transport/http2_errors.h"
 
-/* Conversion of grpc status codes to http2 error codes (for RST_STREAM) */
+// Conversion of grpc status codes to http2 error codes (for RST_STREAM)
+
+namespace grpc_core {
+
 grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status);
 grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
                                                  gpr_timespec deadline);
 
-/* Conversion of HTTP status codes (:status) to grpc status codes */
+// Conversion of HTTP status codes (:status) to grpc status codes
 grpc_status_code grpc_http2_status_to_grpc_status(int status);
 int grpc_status_to_http2_status(grpc_status_code status);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_TRANSPORT_STATUS_CONVERSION_H */

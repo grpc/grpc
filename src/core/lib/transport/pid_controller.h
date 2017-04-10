@@ -34,12 +34,14 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 #define GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 
-/* \file Simple PID controller.
-   Implements a proportional-integral-derivative controller.
-   Used when we want to iteratively control a variable to converge some other
-   observed value to a 'set-point'.
-   Gains can be set to adjust sensitivity to current error (p), the integral
-   of error (i), and the derivative of error (d). */
+// \file Simple PID controller.
+// Implements a proportional-integral-derivative controller.
+// Used when we want to iteratively control a variable to converge some other
+// observed value to a 'set-point'.
+// Gains can be set to adjust sensitivity to current error (p), the integral
+// of error (i), and the derivative of error (d).
+
+namespace grpc_core {
 
 typedef struct {
   double gain_p;
@@ -59,19 +61,20 @@ typedef struct {
   grpc_pid_controller_args args;
 } grpc_pid_controller;
 
-/** Initialize the controller */
+//  Initialize the controller
 void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
                               grpc_pid_controller_args args);
 
-/** Reset the controller: useful when things have changed significantly */
+//  Reset the controller: useful when things have changed significantly
 void grpc_pid_controller_reset(grpc_pid_controller *pid_controller);
 
-/** Update the controller: given a current error estimate, and the time since
-    the last update, returns a new control value */
+//  Update the controller: given a current error estimate, and the time since
+// the last update, returns a new control value
 double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
                                   double error, double dt);
 
-/** Returns the last control value calculated */
+//  Returns the last control value calculated
 double grpc_pid_controller_last(grpc_pid_controller *pid_controller);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H */

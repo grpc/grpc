@@ -1,3 +1,6 @@
+
+namespace grpc_core {
+
 //
 // Copyright 2016, Google Inc.
 // All rights reserved.
@@ -29,6 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+}  // namespace grpc_core
 #ifndef GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H
 #define GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H
 
@@ -36,6 +40,8 @@
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"
+
+namespace grpc_core {
 
 typedef struct grpc_service_config grpc_service_config;
 
@@ -74,4 +80,5 @@ void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
                                    const grpc_slice_hash_table* table,
                                    grpc_slice path);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H */

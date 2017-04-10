@@ -40,11 +40,14 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-/* Asynchronously connect to an address (specified as (addr, len)), and call
-   cb with arg and the completed connection when done (or call cb with arg and
-   NULL on failure).
-   interested_parties points to a set of pollsets that would be interested
-   in this connection being established (in order to continue their work) */
+// Asynchronously connect to an address (specified as (addr, len)), and call
+// cb with arg and the completed connection when done (or call cb with arg and
+// NULL on failure).
+// interested_parties points to a set of pollsets that would be interested
+// in this connection being established (in order to continue their work)
+
+namespace grpc_core {
+
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
                              grpc_endpoint **endpoint,
                              grpc_pollset_set *interested_parties,
@@ -52,4 +55,5 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
                              const grpc_resolved_address *addr,
                              gpr_timespec deadline);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H */

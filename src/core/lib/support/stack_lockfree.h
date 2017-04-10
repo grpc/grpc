@@ -36,18 +36,21 @@
 
 #include <stddef.h>
 
+namespace grpc_core {
+
 typedef struct gpr_stack_lockfree gpr_stack_lockfree;
 
-/* This stack must specify the maximum number of entries to track.
-   The current implementation only allows up to 65534 entries */
+// This stack must specify the maximum number of entries to track.
+// The current implementation only allows up to 65534 entries
 gpr_stack_lockfree *gpr_stack_lockfree_create(size_t entries);
 void gpr_stack_lockfree_destroy(gpr_stack_lockfree *stack);
 
-/* Pass in a valid entry number for the next stack entry */
+// Pass in a valid entry number for the next stack entry
 /* Returns 1 if this is the first element on the stack, 0 otherwise */
 int gpr_stack_lockfree_push(gpr_stack_lockfree *, int entry);
 
-/* Returns -1 on empty or the actual entry number */
+// Returns -1 on empty or the actual entry number
 int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SUPPORT_STACK_LOCKFREE_H */

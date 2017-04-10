@@ -36,7 +36,7 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-/* -- Fake transport security credentials. -- */
+// -- Fake transport security credentials. --
 
 /* Used to verify the target names given to the fake transport security
  * connector.
@@ -50,17 +50,21 @@
  * That is to say, LB channels have a heading list of LB targets separated from
  * the list of backend targets by a semicolon. For non-LB channels, only the
  * latter is present. */
-#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
-  "grpc.test_only.fake_security.expected_target"
+#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS
 
-/* Creates a fake transport security credentials object for testing. */
-grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
+namespace grpc_core {
 
-/* Creates a fake server transport security credentials object for testing. */
+"grpc.test_only.fake_security.expected_target"
+
+    // Creates a fake transport security credentials object for testing.
+    grpc_channel_credentials *
+    grpc_fake_transport_security_credentials_create(void);
+
+// Creates a fake server transport security credentials object for testing.
 grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
     void);
 
-/* --  Metadata-only Test credentials. -- */
+// --  Metadata-only Test credentials. --
 
 typedef struct {
   grpc_call_credentials base;
@@ -68,4 +72,5 @@ typedef struct {
   int is_async;
 } grpc_md_only_test_credentials;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */

@@ -39,6 +39,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/transport.h"
 
+namespace grpc_core {
+
 typedef struct {
   uint8_t byte;
   uint8_t reason_bytes[4];
@@ -55,4 +57,5 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
                                                 grpc_chttp2_stream *s,
                                                 grpc_slice slice, int is_last);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_RST_STREAM_H */

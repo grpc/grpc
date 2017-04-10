@@ -36,6 +36,8 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
+namespace grpc_core {
+
 typedef struct {
   grpc_endpoint *client;
   grpc_endpoint *server;
@@ -44,4 +46,5 @@ typedef struct {
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
                                                    grpc_channel_args *args);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H */

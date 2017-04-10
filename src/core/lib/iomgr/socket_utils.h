@@ -36,7 +36,11 @@
 
 #include <stddef.h>
 
-/* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */
+// A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems
+
+namespace grpc_core {
+
 const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H */

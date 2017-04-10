@@ -39,10 +39,14 @@
 
 #include "src/core/lib/iomgr/error.h"
 
-/* defined in internal.h */
+// defined in internal.h
+
+namespace grpc_core {
+
 typedef struct grpc_chttp2_stream grpc_chttp2_stream;
 typedef struct grpc_chttp2_transport grpc_chttp2_transport;
 
+}  // namespace grpc_core
 #define GRPC_CHTTP2_FRAME_DATA 0
 #define GRPC_CHTTP2_FRAME_HEADER 1
 #define GRPC_CHTTP2_FRAME_CONTINUATION 9

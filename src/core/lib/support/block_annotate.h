@@ -34,15 +34,24 @@
 #ifndef GRPC_CORE_LIB_SUPPORT_BLOCK_ANNOTATE_H
 #define GRPC_CORE_LIB_SUPPORT_BLOCK_ANNOTATE_H
 
-/* These annotations identify the beginning and end of regions where
-   the code may block for reasons other than synchronization functions.
-   These include poll, epoll, and getaddrinfo. */
+// These annotations identify the beginning and end of regions where
+// the code may block for reasons other than synchronization functions.
+// These include poll, epoll, and getaddrinfo.
 
-#define GRPC_SCHEDULING_START_BLOCKING_REGION \
-  do {                                        \
-  } while (0)
-#define GRPC_SCHEDULING_END_BLOCKING_REGION \
-  do {                                      \
-  } while (0)
+#define GRPC_SCHEDULING_START_BLOCKING_REGION
 
+namespace grpc_core {
+
+do {
+} while (0)
+
+}  // namespace grpc_core
+#define GRPC_SCHEDULING_END_BLOCKING_REGION
+
+namespace grpc_core {
+
+do {
+} while (0)
+
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SUPPORT_BLOCK_ANNOTATE_H */

@@ -37,29 +37,32 @@
 #include <stddef.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+namespace grpc_core {
+
 typedef struct {
   char *scheme;
   char *authority;
   char *path;
   char *query;
-  /** Query substrings separated by '&' */
+  //  Query substrings separated by '&'
   char **query_parts;
-  /** Number of elements in \a query_parts and \a query_parts_values */
+  //  Number of elements in \a query_parts and \a query_parts_values
   size_t num_query_parts;
-  /** Split each query part by '='. NULL if not present. */
+  //  Split each query part by '='. NULL if not present.
   char **query_parts_values;
   char *fragment;
 } grpc_uri;
 
-/** parse a uri, return NULL on failure */
+//  parse a uri, return NULL on failure
 grpc_uri *grpc_uri_parse(grpc_exec_ctx *exec_ctx, const char *uri_text,
                          int suppress_errors);
 
-/** return the part of a query string after the '=' in "?key=xxx&...", or NULL
- * if key is not present */
+//  return the part of a query string after the '=' in "?key=xxx&...", or NULL
+//  if key is not present
 const char *grpc_uri_get_query_arg(const grpc_uri *uri, const char *key);
 
-/** destroy a uri */
+//  destroy a uri
 void grpc_uri_destroy(grpc_uri *uri);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_URI_PARSER_H */

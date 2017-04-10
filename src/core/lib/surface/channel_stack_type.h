@@ -36,6 +36,8 @@
 
 #include <stdbool.h>
 
+namespace grpc_core {
+
 typedef enum {
   // normal top-half client channel with load-balancing, connection management
   GRPC_CLIENT_CHANNEL,
@@ -55,4 +57,5 @@ typedef enum {
 
 bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H */

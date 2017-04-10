@@ -39,11 +39,14 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-/* Asynchronously resolve addr. Use \a default_port if a port isn't designated
-   in addr, otherwise use the port in addr. grpc_ares_init() must be called at
-   least once before this function. \a on_done may be called directly in this
-   function without being scheduled with \a exec_ctx, it must not try to acquire
-   locks that are being held by the caller. */
+// Asynchronously resolve addr. Use \a default_port if a port isn't designated
+// in addr, otherwise use the port in addr. grpc_ares_init() must be called at
+// least once before this function. \a on_done may be called directly in this
+// function without being scheduled with \a exec_ctx, it must not try to acquire
+// locks that are being held by the caller.
+
+namespace grpc_core {
+
 extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
                                          const char *addr,
                                          const char *default_port,
@@ -51,14 +54,20 @@ extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
                                          grpc_closure *on_done,
                                          grpc_resolved_addresses **addresses);
 
-/* Initialize gRPC ares wrapper. Must be called at least once before
-   grpc_resolve_address_ares(). */
+// Initialize gRPC ares wrapper. Must be called at least once before
+// grpc_resolve_address_ares().
 grpc_error *grpc_ares_init(void);
 
-/* Uninitialized gRPC ares wrapper. If there was more than one previous call to
-   grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
-   it has been called the same number of times as grpc_ares_init(). */
+// Uninitialized gRPC ares wrapper. If there was more than one previous call to
+// grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
+// it has been called the same number of times as grpc_ares_init().
 void grpc_ares_cleanup(void);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
-          */
+                                                                                       \
+namespace grpc_core {                                                                  \
+                                                                                       \
+*/
+
+}  // namespace grpc_core

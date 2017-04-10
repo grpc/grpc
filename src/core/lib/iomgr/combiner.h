@@ -41,6 +41,9 @@
 #include "src/core/lib/support/mpscq.h"
 
 // Provides serialized access to some resource.
+
+namespace grpc_core {
+
 // Each action queued on a combiner is executed serially in a borrowed thread.
 // The actual thread executing actions may change over time (but there will only
 // every be one at a time).
@@ -50,21 +53,46 @@
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
 
 //#define GRPC_COMBINER_REFCOUNT_DEBUG
+
+}  // namespace grpc_core
 #ifdef GRPC_COMBINER_REFCOUNT_DEBUG
-#define GRPC_COMBINER_DEBUG_ARGS \
-  , const char *file, int line, const char *reason
-#define GRPC_COMBINER_REF(combiner, reason) \
-  grpc_combiner_ref((combiner), __FILE__, __LINE__, (reason))
-#define GRPC_COMBINER_UNREF(exec_ctx, combiner, reason) \
-  grpc_combiner_unref((exec_ctx), (combiner), __FILE__, __LINE__, (reason))
+#define GRPC_COMBINER_DEBUG_ARGS
+
+namespace grpc_core {
+
+, const char *file, int line, const char *reason
+
+}  // namespace grpc_core
+#define GRPC_COMBINER_REF(combiner, reason)
+
+namespace grpc_core {
+
+grpc_combiner_ref((combiner), __FILE__, __LINE__, (reason))
+
+}  // namespace grpc_core
+#define GRPC_COMBINER_UNREF(exec_ctx, combiner, reason)
+
+namespace grpc_core {
+
+grpc_combiner_unref((exec_ctx), (combiner), __FILE__, __LINE__, (reason))
+
+}  // namespace grpc_core
 #else
 #define GRPC_COMBINER_DEBUG_ARGS
 #define GRPC_COMBINER_REF(combiner, reason) grpc_combiner_ref((combiner))
-#define GRPC_COMBINER_UNREF(exec_ctx, combiner, reason) \
-  grpc_combiner_unref((exec_ctx), (combiner))
+#define GRPC_COMBINER_UNREF(exec_ctx, combiner, reason)
+
+namespace grpc_core {
+
+grpc_combiner_unref((exec_ctx), (combiner))
+
+}  // namespace grpc_core
 #endif
 
 // Ref/unref the lock, for when we're sharing the lock ownership
+
+namespace grpc_core {
+
 // Prefer to use the macros above
 grpc_combiner *grpc_combiner_ref(grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS);
 void grpc_combiner_unref(grpc_exec_ctx *exec_ctx,
@@ -80,4 +108,5 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx);
 
 extern int grpc_combiner_trace;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_COMBINER_H */

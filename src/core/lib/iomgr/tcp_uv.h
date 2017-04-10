@@ -48,12 +48,18 @@
 
 #include <uv.h>
 
+namespace grpc_core {
+
 extern int grpc_tcp_trace;
 
+}  // namespace grpc_core
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
+
+namespace grpc_core {
 
 grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle,
                                grpc_resource_quota *resource_quota,
                                char *peer_string);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_UV_H */

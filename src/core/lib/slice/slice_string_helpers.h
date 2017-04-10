@@ -44,20 +44,30 @@
 #include "src/core/lib/support/string.h"
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
 
-/* Calls gpr_dump on a slice. */
+// Calls gpr_dump on a slice.
+
+namespace grpc_core {
+
 char *grpc_dump_slice(grpc_slice slice, uint32_t flags);
 
-/** Split \a str by the separator \a sep. Results are stored in \a dst, which
- * should be a properly initialized instance. */
+//  Split \a str by the separator \a sep. Results are stored in \a dst, which
+//  should be a properly initialized instance.
 void grpc_slice_split(grpc_slice str, const char *sep, grpc_slice_buffer *dst);
 
 bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t *result);
 
+}  // namespace grpc_core
 #ifdef __cplusplus
-}
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H */

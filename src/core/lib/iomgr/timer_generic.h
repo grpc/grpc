@@ -37,6 +37,8 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+namespace grpc_core {
+
 struct grpc_timer {
   gpr_atm deadline;
   uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
@@ -46,4 +48,5 @@ struct grpc_timer {
   grpc_closure *closure;
 };
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_GENERIC_H */

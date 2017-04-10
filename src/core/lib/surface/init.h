@@ -34,9 +34,12 @@
 #ifndef GRPC_CORE_LIB_SURFACE_INIT_H
 #define GRPC_CORE_LIB_SURFACE_INIT_H
 
+namespace grpc_core {
+
 void grpc_register_security_filters(void);
 void grpc_security_pre_init(void);
 void grpc_security_init(void);
 int grpc_is_initialized(void);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SURFACE_INIT_H */

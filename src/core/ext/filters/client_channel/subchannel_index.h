@@ -37,41 +37,44 @@
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 
-/** \file Provides an index of active subchannels so that they can be
-    shared amongst channels */
+//  \file Provides an index of active subchannels so that they can be
+// shared amongst channels
+
+namespace grpc_core {
 
 typedef struct grpc_subchannel_key grpc_subchannel_key;
 
-/** Create a key that can be used to uniquely identify a subchannel */
+//  Create a key that can be used to uniquely identify a subchannel
 grpc_subchannel_key *grpc_subchannel_key_create(
     grpc_connector *con, const grpc_subchannel_args *args);
 
-/** Destroy a subchannel key */
+//  Destroy a subchannel key
 void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
                                  grpc_subchannel_key *key);
 
-/** Given a subchannel key, find the subchannel registered for it.
-    Returns NULL if no such channel exists.
-    Thread-safe. */
+//  Given a subchannel key, find the subchannel registered for it.
+// Returns NULL if no such channel exists.
+// Thread-safe.
 grpc_subchannel *grpc_subchannel_index_find(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel_key *key);
 
-/** Register a subchannel against a key.
-    Takes ownership of \a constructed.
-    Returns the registered subchannel. This may be different from
-    \a constructed in the case of a registration race. */
+//  Register a subchannel against a key.
+// Takes ownership of \a constructed.
+// Returns the registered subchannel. This may be different from
+// \a constructed in the case of a registration race.
 grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
                                                 grpc_subchannel_key *key,
                                                 grpc_subchannel *constructed);
 
-/** Remove \a constructed as the registered subchannel for \a key. */
+//  Remove \a constructed as the registered subchannel for \a key.
 void grpc_subchannel_index_unregister(grpc_exec_ctx *exec_ctx,
                                       grpc_subchannel_key *key,
                                       grpc_subchannel *constructed);
 
-/** Initialize the subchannel index (global) */
+//  Initialize the subchannel index (global)
 void grpc_subchannel_index_init(void);
-/** Shutdown the subchannel index (global) */
+//  Shutdown the subchannel index (global)
 void grpc_subchannel_index_shutdown(void);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INDEX_H */

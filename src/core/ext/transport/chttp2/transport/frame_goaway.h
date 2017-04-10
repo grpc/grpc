@@ -40,6 +40,8 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+namespace grpc_core {
+
 typedef enum {
   GRPC_CHTTP2_GOAWAY_LSI0,
   GRPC_CHTTP2_GOAWAY_LSI1,
@@ -75,4 +77,5 @@ void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
                                grpc_slice debug_data,
                                grpc_slice_buffer *slice_buffer);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_GOAWAY_H */

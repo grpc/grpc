@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_EXT_CENSUS_RPC_METRIC_ID_H
 #define GRPC_CORE_EXT_CENSUS_RPC_METRIC_ID_H
 
-/* Metric ID's used for RPC measurements. */
+// Metric ID's used for RPC measurements.
 /* Count of client requests sent. */
 #define CENSUS_METRIC_RPC_CLIENT_REQUESTS ((uint32_t)0)
 /* Count of server requests sent. */

@@ -36,16 +36,20 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
-/** Initialize the global executor.
- *
- * This mechanism is meant to outsource work (grpc_closure instances) to a
- * thread, for those cases where blocking isn't an option but there isn't a
- * non-blocking solution available. */
+//  Initialize the global executor.
+///
+//  This mechanism is meant to outsource work (grpc_closure instances) to a
+//  thread, for those cases where blocking isn't an option but there isn't a
+//  non-blocking solution available.
+
+namespace grpc_core {
+
 void grpc_executor_init();
 
 extern grpc_closure_scheduler *grpc_executor_scheduler;
 
-/** Shutdown the executor, running all pending work as part of the call */
+//  Shutdown the executor, running all pending work as part of the call
 void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */

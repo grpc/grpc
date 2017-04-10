@@ -41,6 +41,8 @@
 
 // A handshaker factory is used to create handshakers.
 
+namespace grpc_core {
+
 typedef struct grpc_handshaker_factory grpc_handshaker_factory;
 
 typedef struct {
@@ -63,4 +65,5 @@ void grpc_handshaker_factory_add_handshakers(
 void grpc_handshaker_factory_destroy(
     grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *handshaker_factory);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H */

@@ -39,9 +39,13 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 /// Adds a port to \a server.  Sets \a port_num to the port number.
+
+namespace grpc_core {
+
 /// Takes ownership of \a args.
 grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
                                         grpc_server *server, const char *addr,
                                         grpc_channel_args *args, int *port_num);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H */

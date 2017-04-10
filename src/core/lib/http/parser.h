@@ -38,10 +38,13 @@
 #include <grpc/support/port_platform.h>
 #include "src/core/lib/iomgr/error.h"
 
-/* Maximum length of a header string of the form 'Key: Value\r\n' */
+// Maximum length of a header string of the form 'Key: Value\r\n'
+
+namespace grpc_core {
+
 #define GRPC_HTTP_PARSER_MAX_HEADER_LENGTH 4096
 
-/* A single header to be passed in a request */
+// A single header to be passed in a request
 typedef struct grpc_http_header {
   char *key;
   char *value;
@@ -64,30 +67,30 @@ typedef enum {
   GRPC_HTTP_REQUEST,
 } grpc_http_type;
 
-/* A request */
+// A request
 typedef struct grpc_http_request {
-  /* Method of the request (e.g. GET, POST) */
+  // Method of the request (e.g. GET, POST)
   char *method;
-  /* The path of the resource to fetch */
+  // The path of the resource to fetch
   char *path;
-  /* HTTP version to use */
+  // HTTP version to use
   grpc_http_version version;
-  /* Headers attached to the request */
+  // Headers attached to the request
   size_t hdr_count;
   grpc_http_header *hdrs;
-  /* Body: length and contents; contents are NOT null-terminated */
+  // Body: length and contents; contents are NOT null-terminated
   size_t body_length;
   char *body;
 } grpc_http_request;
 
-/* A response */
+// A response
 typedef struct grpc_http_response {
-  /* HTTP status code */
+  // HTTP status code
   int status;
-  /* Headers: count and key/values */
+  // Headers: count and key/values
   size_t hdr_count;
   grpc_http_header *hdrs;
-  /* Body: length and contents; contents are NOT null-terminated */
+  // Body: length and contents; contents are NOT null-terminated
   size_t body_length;
   char *body;
 } grpc_http_response;
@@ -113,7 +116,7 @@ void grpc_http_parser_init(grpc_http_parser *parser, grpc_http_type type,
                            void *request_or_response);
 void grpc_http_parser_destroy(grpc_http_parser *parser);
 
-/* Sets \a start_of_body to the offset in \a slice of the start of the body. */
+// Sets \a start_of_body to the offset in \a slice of the start of the body.
 grpc_error *grpc_http_parser_parse(grpc_http_parser *parser, grpc_slice slice,
                                    size_t *start_of_body);
 grpc_error *grpc_http_parser_eof(grpc_http_parser *parser);
@@ -123,4 +126,5 @@ void grpc_http_response_destroy(grpc_http_response *response);
 
 extern int grpc_http1_trace;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_HTTP_PARSER_H */

@@ -38,10 +38,12 @@
 
 #include "src/core/lib/iomgr/socket_windows.h"
 
-/* There isn't really any such thing as a pollset under Windows, due to the
-   nature of the IO completion ports. A Windows "pollset" is merely a mutex
-   used to synchronize with the IOCP, and workers are condition variables
-   used to block threads until work is ready. */
+// There isn't really any such thing as a pollset under Windows, due to the
+// nature of the IO completion ports. A Windows "pollset" is merely a mutex
+// used to synchronize with the IOCP, and workers are condition variables
+// used to block threads until work is ready.
+
+namespace grpc_core {
 
 typedef enum {
   GRPC_POLLSET_WORKER_LINK_POLLSET = 0,
@@ -75,4 +77,5 @@ struct grpc_pollset {
 void grpc_pollset_global_init(void);
 void grpc_pollset_global_shutdown(void);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H */

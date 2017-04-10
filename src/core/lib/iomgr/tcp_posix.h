@@ -47,24 +47,27 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
+namespace grpc_core {
+
 extern int grpc_tcp_trace;
 
-/* Create a tcp endpoint given a file desciptor and a read slice size.
-   Takes ownership of fd. */
+// Create a tcp endpoint given a file desciptor and a read slice size.
+// Takes ownership of fd.
 grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                const grpc_channel_args *args,
                                const char *peer_string);
 
-/* Return the tcp endpoint's fd, or -1 if this is not available. Does not
-   release the fd.
-   Requires: ep must be a tcp endpoint.
- */
+// Return the tcp endpoint's fd, or -1 if this is not available. Does not
+// release the fd.
+// Requires: ep must be a tcp endpoint.
+//
 int grpc_tcp_fd(grpc_endpoint *ep);
 
-/* Destroy the tcp endpoint without closing its fd. *fd will be set and done
- * will be called when the endpoint is destroyed.
- * Requires: ep must be a tcp endpoint and fd must not be NULL. */
+// Destroy the tcp endpoint without closing its fd. *fd will be set and done
+//  will be called when the endpoint is destroyed.
+//  Requires: ep must be a tcp endpoint and fd must not be NULL.
 void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                      int *fd, grpc_closure *done);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_POSIX_H */

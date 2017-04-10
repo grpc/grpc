@@ -39,51 +39,64 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata.h"
 
-/* HPACK header table */
+// HPACK header table
 
 /* last index in the static table */
 #define GRPC_CHTTP2_LAST_STATIC_ENTRY 61
 
-/* Initial table size as per the spec */
+// Initial table size as per the spec
+
+namespace grpc_core {
+
 #define GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE 4096
-/* Maximum table size that we'll use */
+// Maximum table size that we'll use
 #define GRPC_CHTTP2_MAX_HPACK_TABLE_SIZE GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE
-/* Per entry overhead bytes as per the spec */
+// Per entry overhead bytes as per the spec
 #define GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD 32
+
+}  // namespace grpc_core
 #if 0
 /* Maximum number of entries we could possibly fit in the table, given defined
    overheads */
 #define GRPC_CHTTP2_MAX_TABLE_COUNT                                            \
-  ((GRPC_CHTTP2_MAX_HPACK_TABLE_SIZE + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD - 1) / \
+  
+namespace grpc_core {
+
+((GRPC_CHTTP2_MAX_HPACK_TABLE_SIZE + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD - 1) / \
    GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD)
+
+} // namespace grpc_core
 #endif
 
-/* hpack decoder table */
+// hpack decoder table
+
+namespace grpc_core {
+
 typedef struct {
-  /* the first used entry in ents */
+  // the first used entry in ents
   uint32_t first_ent;
-  /* how many entries are in the table */
+  // how many entries are in the table
   uint32_t num_ents;
-  /* the amount of memory used by the table, according to the hpack algorithm */
+  // the amount of memory used by the table, according to the hpack algorithm
   uint32_t mem_used;
-  /* the max memory allowed to be used by the table, according to the hpack
-     algorithm */
+  // the max memory allowed to be used by the table, according to the hpack
+  // algorithm
   uint32_t max_bytes;
-  /* the currently agreed size of the table, according to the hpack algorithm */
+  // the currently agreed size of the table, according to the hpack algorithm
   uint32_t current_table_bytes;
-  /* Maximum number of entries we could possibly fit in the table, given defined
-     overheads */
+  // Maximum number of entries we could possibly fit in the table, given defined
+  // overheads
   uint32_t max_entries;
-  /* Number of entries allocated in ents */
+  // Number of entries allocated in ents
   uint32_t cap_entries;
-  /* a circular buffer of headers - this is stored in the opposite order to
-     what hpack specifies, in order to simplify table management a little...
-     meaning lookups need to SUBTRACT from the end position */
+  // a circular buffer of headers - this is stored in the opposite order to
+  // what hpack specifies, in order to simplify table management a little...
+  // meaning lookups need to SUBTRACT from the end position
   grpc_mdelem *ents;
   grpc_mdelem static_ents[GRPC_CHTTP2_LAST_STATIC_ENTRY];
 } grpc_chttp2_hptbl;
 
-/* initialize a hpack table */
+// initialize a hpack table
 void grpc_chttp2_hptbl_init(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl);
 void grpc_chttp2_hptbl_destroy(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl);
 void grpc_chttp2_hptbl_set_max_bytes(grpc_exec_ctx *exec_ctx,
@@ -93,15 +106,15 @@ grpc_error *grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx *exec_ctx,
                                                      grpc_chttp2_hptbl *tbl,
                                                      uint32_t bytes);
 
-/* lookup a table entry based on its hpack index */
+// lookup a table entry based on its hpack index
 grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
                                      uint32_t index);
-/* add a table entry to the index */
+// add a table entry to the index
 grpc_error *grpc_chttp2_hptbl_add(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_hptbl *tbl,
                                   grpc_mdelem md) GRPC_MUST_USE_RESULT;
-/* Find a key/value pair in the table... returns the index in the table of the
-   most similar entry, or 0 if the value was not found */
+// Find a key/value pair in the table... returns the index in the table of the
+// most similar entry, or 0 if the value was not found
 typedef struct {
   uint32_t index;
   int has_value;
@@ -109,4 +122,5 @@ typedef struct {
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     const grpc_chttp2_hptbl *tbl, grpc_mdelem md);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_TABLE_H */

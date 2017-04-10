@@ -47,25 +47,27 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
+namespace grpc_core {
+
 typedef struct grpc_timer grpc_timer;
 
-/* Initialize *timer. When expired or canceled, closure will be called with
-   error set to indicate if it expired (GRPC_ERROR_NONE) or was canceled
-   (GRPC_ERROR_CANCELLED). timer_cb is guaranteed to be called exactly once, and
-   application code should check the error to determine how it was invoked. The
-   application callback is also responsible for maintaining information about
-   when to free up any user-level state. */
+// Initialize *timer. When expired or canceled, closure will be called with
+// error set to indicate if it expired (GRPC_ERROR_NONE) or was canceled
+// (GRPC_ERROR_CANCELLED). timer_cb is guaranteed to be called exactly once, and
+// application code should check the error to determine how it was invoked. The
+// application callback is also responsible for maintaining information about
+// when to free up any user-level state.
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
                      gpr_timespec deadline, grpc_closure *closure,
                      gpr_timespec now);
 
-/* Note that there is no timer destroy function. This is because the
-   timer is a one-time occurrence with a guarantee that the callback will
-   be called exactly once, either at expiration or cancellation. Thus, all
-   the internal timer event management state is destroyed just before
-   that callback is invoked. If the user has additional state associated with
-   the timer, the user is responsible for determining when it is safe to
-   destroy that state. */
+// Note that there is no timer destroy function. This is because the
+// timer is a one-time occurrence with a guarantee that the callback will
+// be called exactly once, either at expiration or cancellation. Thus, all
+// the internal timer event management state is destroyed just before
+// that callback is invoked. If the user has additional state associated with
+// the timer, the user is responsible for determining when it is safe to
+// destroy that state.
 
 /* Cancel an *timer.
    There are three cases:
@@ -87,7 +89,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
    Requires: cancel() must happen after init() on a given timer */
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer);
 
-/* iomgr internal api for dealing with timers */
+// iomgr internal api for dealing with timers
 
 /* Check for timers to be run, and run them.
    Return true if timer callbacks were executed.
@@ -101,11 +103,12 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
 void grpc_timer_list_init(gpr_timespec now);
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx);
 
-/* Consume a kick issued by grpc_kick_poller */
+// Consume a kick issued by grpc_kick_poller
 void grpc_timer_consume_kick(void);
 
-/* the following must be implemented by each iomgr implementation */
+// the following must be implemented by each iomgr implementation
 
 void grpc_kick_poller(void);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_H */

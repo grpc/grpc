@@ -39,16 +39,20 @@
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-/** Populate \a addr and \a len from \a uri, whose path is expected to contain a
- * unix socket path. Returns true upon success. */
+//  Populate \a addr and \a len from \a uri, whose path is expected to contain a
+//  unix socket path. Returns true upon success.
+
+namespace grpc_core {
+
 int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr);
 
-/** Populate /a addr and \a len from \a uri, whose path is expected to contain a
- * host:port pair. Returns true upon success. */
+//  Populate /a addr and \a len from \a uri, whose path is expected to contain a
+//  host:port pair. Returns true upon success.
 int parse_ipv4(grpc_uri *uri, grpc_resolved_address *resolved_addr);
 
-/** Populate /a addr and \a len from \a uri, whose path is expected to contain a
- * host:port pair. Returns true upon success. */
+//  Populate /a addr and \a len from \a uri, whose path is expected to contain a
+//  host:port pair. Returns true upon success.
 int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H */

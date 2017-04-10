@@ -49,31 +49,33 @@
 /* maximum table size we'll actually use */
 #define GRPC_CHTTP2_HPACKC_MAX_TABLE_SIZE (1024 * 1024)
 
+namespace grpc_core {
+
 typedef struct {
   uint32_t filter_elems_sum;
   uint32_t max_table_size;
   uint32_t max_table_elems;
   uint32_t cap_table_elems;
-  /** if non-zero, advertise to the decoder that we'll start using a table
-      of this size */
+  //  if non-zero, advertise to the decoder that we'll start using a table
+  // of this size
   uint8_t advertise_table_size_change;
-  /** maximum number of bytes we'll use for the decode table (to guard against
-      peers ooming us by setting decode table size high) */
+  //  maximum number of bytes we'll use for the decode table (to guard against
+  // peers ooming us by setting decode table size high)
   uint32_t max_usable_size;
-  /* one before the lowest usable table index */
+  // one before the lowest usable table index
   uint32_t tail_remote_index;
   uint32_t table_size;
   uint32_t table_elems;
 
-  /* filter tables for elems: this tables provides an approximate
-     popularity count for particular hashes, and are used to determine whether
-     a new literal should be added to the compression table or not.
-     They track a single integer that counts how often a particular value has
-     been seen. When that count reaches max (255), all values are halved. */
+  // filter tables for elems: this tables provides an approximate
+  // popularity count for particular hashes, and are used to determine whether
+  // a new literal should be added to the compression table or not.
+  // They track a single integer that counts how often a particular value has
+  // been seen. When that count reaches max (255), all values are halved.
   uint8_t filter_elems[GRPC_CHTTP2_HPACKC_NUM_FILTERS];
 
-  /* entry tables for keys & elems: these tables track values that have been
-     seen and *may* be in the decompressor table */
+  // entry tables for keys & elems: these tables track values that have been
+  // seen and *may* be in the decompressor table
   grpc_slice entries_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
   grpc_mdelem entries_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
   uint32_t indices_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
@@ -97,4 +99,5 @@ void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
                                grpc_transport_one_way_stats *stats,
                                grpc_slice_buffer *outbuf);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H */

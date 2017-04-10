@@ -1,3 +1,6 @@
+
+namespace grpc_core {
+
 //
 // Copyright 2016, Google Inc.
 // All rights reserved.
@@ -29,11 +32,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+}  // namespace grpc_core
 #ifndef GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H
 #define GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/timer.h"
+
+namespace grpc_core {
 
 typedef enum grpc_deadline_timer_state {
   GRPC_DEADLINE_STATE_INITIAL,
@@ -99,4 +105,5 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
 extern const grpc_channel_filter grpc_client_deadline_filter;
 extern const grpc_channel_filter grpc_server_deadline_filter;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H */

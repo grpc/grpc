@@ -40,10 +40,15 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
+
+namespace grpc_core {
 
 typedef grpc_lb_v1_Server_ip_address_t grpc_grpclb_ip_address;
 typedef grpc_lb_v1_LoadBalanceRequest grpc_grpclb_request;
@@ -56,26 +61,26 @@ typedef struct grpc_grpclb_serverlist {
   grpc_grpclb_duration expiration_interval;
 } grpc_grpclb_serverlist;
 
-/** Create a request for a gRPC LB service under \a lb_service_name */
+//  Create a request for a gRPC LB service under \a lb_service_name
 grpc_grpclb_request *grpc_grpclb_request_create(const char *lb_service_name);
 
-/** Protocol Buffers v3-encode \a request */
+//  Protocol Buffers v3-encode \a request
 grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request);
 
-/** Destroy \a request */
+//  Destroy \a request
 void grpc_grpclb_request_destroy(grpc_grpclb_request *request);
 
-/** Parse (ie, decode) the bytes in \a encoded_grpc_grpclb_response as a \a
- * grpc_grpclb_initial_response */
+//  Parse (ie, decode) the bytes in \a encoded_grpc_grpclb_response as a \a
+//  grpc_grpclb_initial_response
 grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
     grpc_slice encoded_grpc_grpclb_response);
 
-/** Parse the list of servers from an encoded \a grpc_grpclb_response */
+//  Parse the list of servers from an encoded \a grpc_grpclb_response
 grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
     grpc_slice encoded_grpc_grpclb_response);
 
-/** Return a copy of \a sl. The caller is responsible for calling \a
- * grpc_grpclb_destroy_serverlist on the returned copy. */
+//  Return a copy of \a sl. The caller is responsible for calling \a
+//  grpc_grpclb_destroy_serverlist on the returned copy.
 grpc_grpclb_serverlist *grpc_grpclb_serverlist_copy(
     const grpc_grpclb_serverlist *sl);
 
@@ -85,21 +90,30 @@ bool grpc_grpclb_serverlist_equals(const grpc_grpclb_serverlist *lhs,
 bool grpc_grpclb_server_equals(const grpc_grpclb_server *lhs,
                                const grpc_grpclb_server *rhs);
 
-/** Destroy \a serverlist */
+//  Destroy \a serverlist
 void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist *serverlist);
 
-/** Compare \a lhs against \a rhs and return 0 if \a lhs and \a rhs are equal,
- * < 0 if \a lhs represents a duration shorter than \a rhs and > 0 otherwise */
+//  Compare \a lhs against \a rhs and return 0 if \a lhs and \a rhs are equal,
+//  < 0 if \a lhs represents a duration shorter than \a rhs and > 0 otherwise
 int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
                                  const grpc_grpclb_duration *rhs);
 
-/** Destroy \a initial_response */
+//  Destroy \a initial_response
 void grpc_grpclb_initial_response_destroy(
     grpc_grpclb_initial_response *response);
 
+}  // namespace grpc_core
 #ifdef __cplusplus
-}
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H \
-          */
+                                                                                    \
+namespace grpc_core {                                                               \
+                                                                                    \
+*/
+
+}  // namespace grpc_core

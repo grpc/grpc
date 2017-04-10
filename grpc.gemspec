@@ -85,6 +85,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/backoff.h )
   s.files += %w( src/core/lib/support/block_annotate.h )
   s.files += %w( src/core/lib/support/env.h )
+  s.files += %w( src/core/lib/support/memory.h )
   s.files += %w( src/core/lib/support/mpscq.h )
   s.files += %w( src/core/lib/support/murmur_hash.h )
   s.files += %w( src/core/lib/support/spinlock.h )

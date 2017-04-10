@@ -38,8 +38,13 @@
 #include "src/core/ext/census/census_interface.h"
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
+
+namespace grpc_core {
 
 struct census_rpc_stats {
   uint64_t cnt;
@@ -52,7 +57,7 @@ struct census_rpc_stats {
   double wire_response_bytes;
 };
 
-/* Creates an empty rpc stats object on heap. */
+// Creates an empty rpc stats object on heap.
 census_rpc_stats *census_rpc_stats_create_empty(void);
 
 typedef struct census_per_method_rpc_stats {
@@ -67,35 +72,39 @@ typedef struct census_aggregated_rpc_stats {
   census_per_method_rpc_stats *stats;
 } census_aggregated_rpc_stats;
 
-/* Initializes an aggregated rpc stats object to an empty state. */
+// Initializes an aggregated rpc stats object to an empty state.
 void census_aggregated_rpc_stats_set_empty(census_aggregated_rpc_stats *data);
 
-/* Records client side stats of a rpc. */
+// Records client side stats of a rpc.
 void census_record_rpc_client_stats(census_op_id op_id,
                                     const census_rpc_stats *stats);
 
-/* Records server side stats of a rpc. */
+// Records server side stats of a rpc.
 void census_record_rpc_server_stats(census_op_id op_id,
                                     const census_rpc_stats *stats);
 
-/* The following two functions are intended for inprocess query of
-   per-service per-method stats from grpc implementations. */
+// The following two functions are intended for inprocess query of
+// per-service per-method stats from grpc implementations.
 
 /* Populates *data_map with server side aggregated per-service per-method
    stats.
    DO NOT CALL from outside of grpc code. */
 void census_get_server_stats(census_aggregated_rpc_stats *data_map);
 
-/* Populates *data_map with client side aggregated per-service per-method
-   stats.
-   DO NOT CALL from outside of grpc code. */
+// Populates *data_map with client side aggregated per-service per-method
+// stats.
+// DO NOT CALL from outside of grpc code.
 void census_get_client_stats(census_aggregated_rpc_stats *data_map);
 
 void census_stats_store_init(void);
 void census_stats_store_shutdown(void);
 
+}  // namespace grpc_core
 #ifdef __cplusplus
-}
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_CENSUS_RPC_STATS_H */

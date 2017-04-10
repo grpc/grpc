@@ -37,11 +37,15 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 
+namespace grpc_core {
+
 extern int grpc_api_trace;
 
-/* Provide unwrapping macros because we're in C89 and variadic macros weren't
-   introduced until C99... */
+// Provide unwrapping macros because we're in C89 and variadic macros weren't
+// introduced until C99...
 #define GRPC_API_TRACE_UNWRAP0()
+
+}  // namespace grpc_core
 #define GRPC_API_TRACE_UNWRAP1(a) , a
 #define GRPC_API_TRACE_UNWRAP2(a, b) , a, b
 #define GRPC_API_TRACE_UNWRAP3(a, b, c) , a, b, c
@@ -50,16 +54,28 @@ extern int grpc_api_trace;
 #define GRPC_API_TRACE_UNWRAP6(a, b, c, d, e, f) , a, b, c, d, e, f
 #define GRPC_API_TRACE_UNWRAP7(a, b, c, d, e, f, g) , a, b, c, d, e, f, g
 #define GRPC_API_TRACE_UNWRAP8(a, b, c, d, e, f, g, h) , a, b, c, d, e, f, g, h
-#define GRPC_API_TRACE_UNWRAP9(a, b, c, d, e, f, g, h, i) \
-  , a, b, c, d, e, f, g, h, i
-#define GRPC_API_TRACE_UNWRAP10(a, b, c, d, e, f, g, h, i, j) \
-  , a, b, c, d, e, f, g, h, i, j
+#define GRPC_API_TRACE_UNWRAP9(a, b, c, d, e, f, g, h, i)
 
-/* Due to the limitations of C89's preprocessor, the arity of the var-arg list
-   'nargs' must be specified. */
-#define GRPC_API_TRACE(fmt, nargs, args)                      \
-  if (grpc_api_trace) {                                       \
-    gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \
-  }
+namespace grpc_core {
 
+, a, b, c, d, e, f, g, h, i
+
+}  // namespace grpc_core
+#define GRPC_API_TRACE_UNWRAP10(a, b, c, d, e, f, g, h, i, j)
+
+namespace grpc_core {
+
+, a, b, c, d, e, f, g, h, i, j
+
+// Due to the limitations of C89's preprocessor, the arity of the var-arg list
+// 'nargs' must be specified.
+#define GRPC_API_TRACE(fmt, nargs, args) \
+  if (grpc_api_trace) {                  \
+    gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP
+}  // namespace grpc_core
+##nargs args);
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SURFACE_API_TRACE_H */

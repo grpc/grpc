@@ -41,8 +41,10 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 
-/* An endpoint caps a streaming channel between two communicating processes.
-   Examples may be: a tcp socket, <stdin+stdout>, or some shared memory. */
+// An endpoint caps a streaming channel between two communicating processes.
+// Examples may be: a tcp socket, <stdin+stdout>, or some shared memory.
+
+namespace grpc_core {
 
 typedef struct grpc_endpoint grpc_endpoint;
 typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
@@ -64,44 +66,44 @@ struct grpc_endpoint_vtable {
   int (*get_fd)(grpc_endpoint *ep);
 };
 
-/* When data is available on the connection, calls the callback with slices.
-   Callback success indicates that the endpoint can accept more reads, failure
-   indicates the endpoint is closed.
-   Valid slices may be placed into \a slices even when the callback is
-   invoked with error != GRPC_ERROR_NONE. */
+// When data is available on the connection, calls the callback with slices.
+// Callback success indicates that the endpoint can accept more reads, failure
+// indicates the endpoint is closed.
+// Valid slices may be placed into \a slices even when the callback is
+// invoked with error != GRPC_ERROR_NONE.
 void grpc_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                         grpc_slice_buffer *slices, grpc_closure *cb);
 
 char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 
-/* Get the file descriptor used by \a ep. Return -1 if \a ep is not using an fd.
-   */
+// Get the file descriptor used by \a ep. Return -1 if \a ep is not using an fd.
+//
 int grpc_endpoint_get_fd(grpc_endpoint *ep);
 
-/* Retrieve a reference to the workqueue associated with this endpoint */
+// Retrieve a reference to the workqueue associated with this endpoint
 grpc_workqueue *grpc_endpoint_get_workqueue(grpc_endpoint *ep);
 
-/* Write slices out to the socket.
-
-   If the connection is ready for more data after the end of the call, it
-   returns GRPC_ENDPOINT_DONE.
-   Otherwise it returns GRPC_ENDPOINT_PENDING and calls cb when the
-   connection is ready for more data.
-   \a slices may be mutated at will by the endpoint until cb is called.
-   No guarantee is made to the content of slices after a write EXCEPT that
-   it is a valid slice buffer.
-   */
+// Write slices out to the socket.
+//
+// If the connection is ready for more data after the end of the call, it
+// returns GRPC_ENDPOINT_DONE.
+// Otherwise it returns GRPC_ENDPOINT_PENDING and calls cb when the
+// connection is ready for more data.
+// \a slices may be mutated at will by the endpoint until cb is called.
+// No guarantee is made to the content of slices after a write EXCEPT that
+// it is a valid slice buffer.
+//
 void grpc_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                          grpc_slice_buffer *slices, grpc_closure *cb);
 
-/* Causes any pending and future read/write callbacks to run immediately with
-   success==0 */
+// Causes any pending and future read/write callbacks to run immediately with
+// success==0
 void grpc_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                             grpc_error *why);
 void grpc_endpoint_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
 
-/* Add an endpoint to a pollset, so that when the pollset is polled, events from
-   this endpoint are considered */
+// Add an endpoint to a pollset, so that when the pollset is polled, events from
+// this endpoint are considered
 void grpc_endpoint_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                   grpc_pollset *pollset);
 void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
@@ -114,4 +116,5 @@ struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;
 };
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_H */

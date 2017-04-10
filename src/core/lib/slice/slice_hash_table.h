@@ -34,17 +34,19 @@
 
 #include "src/core/lib/transport/metadata.h"
 
-/** Hash table implementation.
- *
- * This implementation uses open addressing
- * (https://en.wikipedia.org/wiki/Open_addressing) with quadratic
- * probing (https://en.wikipedia.org/wiki/Quadratic_probing).
- *
- * The keys are \a grpc_slice objects.  The values are arbitrary pointers
- * with a common vtable.
- *
- * Hash tables are intentionally immutable, to avoid the need for locking.
- */
+//  Hash table implementation.
+///
+//  This implementation uses open addressing
+//  (https://en.wikipedia.org/wiki/Open_addressing) with quadratic
+//  probing (https://en.wikipedia.org/wiki/Quadratic_probing).
+///
+//  The keys are \a grpc_slice objects.  The values are arbitrary pointers
+//  with a common vtable.
+///
+//  Hash tables are intentionally immutable, to avoid the need for locking.
+//
+
+namespace grpc_core {
 
 typedef struct grpc_slice_hash_table grpc_slice_hash_table;
 
@@ -59,9 +61,9 @@ typedef struct grpc_slice_hash_table_entry {
   const grpc_slice_hash_table_vtable *vtable;
 } grpc_slice_hash_table_entry;
 
-/** Creates a new hash table of containing \a entries, which is an array
-    of length \a num_entries.
-    Creates its own copy of all keys and values from \a entries. */
+//  Creates a new hash table of containing \a entries, which is an array
+// of length \a num_entries.
+// Creates its own copy of all keys and values from \a entries.
 grpc_slice_hash_table *grpc_slice_hash_table_create(
     size_t num_entries, grpc_slice_hash_table_entry *entries);
 
@@ -69,9 +71,10 @@ grpc_slice_hash_table *grpc_slice_hash_table_ref(grpc_slice_hash_table *table);
 void grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,
                                  grpc_slice_hash_table *table);
 
-/** Returns the value from \a table associated with \a key.
-    Returns NULL if \a key is not found. */
+//  Returns the value from \a table associated with \a key.
+// Returns NULL if \a key is not found.
 void *grpc_slice_hash_table_get(const grpc_slice_hash_table *table,
                                 const grpc_slice key);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H */

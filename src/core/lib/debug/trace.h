@@ -36,8 +36,11 @@
 
 #include <grpc/support/port_platform.h>
 
+namespace grpc_core {
+
 void grpc_register_tracer(const char *name, int *flag);
 void grpc_tracer_init(const char *env_var_name);
 void grpc_tracer_shutdown(void);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_DEBUG_TRACE_H */

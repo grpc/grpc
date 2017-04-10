@@ -36,9 +36,12 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
+namespace grpc_core {
+
 typedef struct {
   grpc_call_credentials base;
   grpc_credentials_md_store *iam_md;
 } grpc_google_iam_credentials;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_IAM_IAM_CREDENTIALS_H */

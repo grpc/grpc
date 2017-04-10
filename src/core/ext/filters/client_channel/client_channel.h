@@ -41,12 +41,14 @@
 // Channel arg key for server URI string.
 #define GRPC_ARG_SERVER_URI "grpc.server_uri"
 
-/* A client channel is a channel that begins disconnected, and can connect
-   to some endpoint on demand. If that endpoint disconnects, it will be
-   connected to again later.
+// A client channel is a channel that begins disconnected, and can connect
+// to some endpoint on demand. If that endpoint disconnects, it will be
+// connected to again later.
+//
+// Calls on a disconnected client channel are queued until a connection is
+// established.
 
-   Calls on a disconnected client channel are queued until a connection is
-   established. */
+namespace grpc_core {
 
 extern const grpc_channel_filter grpc_client_channel_filter;
 
@@ -57,8 +59,9 @@ void grpc_client_channel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
     grpc_connectivity_state *state, grpc_closure *on_complete);
 
-/* Debug helper: pull the subchannel call from a call stack element */
+// Debug helper: pull the subchannel call from a call stack element
 grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
     grpc_call_element *elem);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H */

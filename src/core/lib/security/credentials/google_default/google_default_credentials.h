@@ -39,22 +39,44 @@
 #include "src/core/lib/security/credentials/credentials.h"
 
 #define GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY "gcloud"
-#define GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE \
-  "application_default_credentials.json"
+#define GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
 
+namespace grpc_core {
+
+"application_default_credentials.json"
+
+}  // namespace grpc_core
 #ifdef GPR_WINDOWS
 #define GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR "APPDATA"
-#define GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX \
-  GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY    \
-  "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
+#define GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX
+
+namespace grpc_core {
+
+GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY
+"/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
+
+}  // namespace grpc_core
 #else
 #define GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR "HOME"
-#define GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX         \
-  ".config/" GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY \
-  "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
+#define GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX
+
+namespace grpc_core {
+
+".config/" GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY
+    "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
+
+}  // namespace grpc_core
 #endif
+
+namespace grpc_core {
 
 void grpc_flush_cached_google_default_credentials(void);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H \
-          */
+                                                                                         \
+namespace grpc_core {                                                                    \
+                                                                                         \
+*/
+
+}  // namespace grpc_core

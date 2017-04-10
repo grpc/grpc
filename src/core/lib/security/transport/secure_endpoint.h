@@ -37,13 +37,16 @@
 #include <grpc/slice.h>
 #include "src/core/lib/iomgr/endpoint.h"
 
+namespace grpc_core {
+
 struct tsi_frame_protector;
 
 extern int grpc_trace_secure_endpoint;
 
-/* Takes ownership of protector and to_wrap, and refs leftover_slices. */
+// Takes ownership of protector and to_wrap, and refs leftover_slices.
 grpc_endpoint *grpc_secure_endpoint_create(
     struct tsi_frame_protector *protector, grpc_endpoint *to_wrap,
     grpc_slice *leftover_slices, size_t leftover_nslices);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H */

@@ -44,6 +44,9 @@
 #define GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER "authorized_user"
 
 // Gets a child property from a json node.
+
+namespace grpc_core {
+
 const char *grpc_json_get_string_property(const grpc_json *json,
                                           const char *prop_name);
 
@@ -52,4 +55,5 @@ const char *grpc_json_get_string_property(const grpc_json *json,
 bool grpc_copy_json_string_property(const grpc_json *json,
                                     const char *prop_name, char **copied_value);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SECURITY_UTIL_JSON_UTIL_H */

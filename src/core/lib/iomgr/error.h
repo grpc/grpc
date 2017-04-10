@@ -42,10 +42,16 @@
 #include <grpc/support/time.h>
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
 
 /// Opaque representation of an error.
+
+namespace grpc_core {
+
 /// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
 /// full write up of this object.
 
@@ -131,9 +137,12 @@ typedef enum {
 /// They are always even so that other code (particularly combiner locks,
 /// polling engines) can safely use the lower bit for themselves.
 
+}  // namespace grpc_core
 #define GRPC_ERROR_NONE ((grpc_error *)NULL)
 #define GRPC_ERROR_OOM ((grpc_error *)2)
 #define GRPC_ERROR_CANCELLED ((grpc_error *)4)
+
+namespace grpc_core {
 
 const char *grpc_error_string(grpc_error *error);
 
@@ -148,37 +157,76 @@ grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
 /// err = grpc_error_create(x, y, z, r, nr) is equivalent to:
 ///   err = grpc_error_create(x, y, z, NULL, 0);
 ///   for (i=0; i<nr; i++) err = grpc_error_add_child(err, r[i]);
-#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc)                     \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
-                    grpc_slice_from_static_string(desc), NULL, 0)
-#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc)                     \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
-                    grpc_slice_from_copied_string(desc), NULL, 0)
+
+}  // namespace grpc_core
+#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc)
+
+namespace grpc_core {
+
+grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__,
+                  grpc_slice_from_static_string(desc), NULL, 0)
+
+}  // namespace grpc_core
+#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc)
+
+namespace grpc_core {
+
+grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__,
+                  grpc_slice_from_copied_string(desc), NULL, 0)
 
 // Create an error that references some other errors. This function adds a
 // reference to each error in errs - it does not consume an existing reference
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count) \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__,      \
-                    grpc_slice_from_static_string(desc), errs, count)
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count) \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__,      \
-                    grpc_slice_from_copied_string(desc), errs, count)
+
+}  // namespace grpc_core
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count)
+
+namespace grpc_core {
+
+grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__,
+                  grpc_slice_from_static_string(desc), errs, count)
+
+}  // namespace grpc_core
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count)
+
+namespace grpc_core {
+
+grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__,
+                  grpc_slice_from_copied_string(desc), errs, count)
 
 //#define GRPC_ERROR_REFCOUNT_DEBUG
+
+}  // namespace grpc_core
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
+
+namespace grpc_core {
+
 grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func);
 void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func);
+
+}  // namespace grpc_core
 #define GRPC_ERROR_REF(err) grpc_error_ref(err, __FILE__, __LINE__, __func__)
-#define GRPC_ERROR_UNREF(err) \
-  grpc_error_unref(err, __FILE__, __LINE__, __func__)
+#define GRPC_ERROR_UNREF(err)
+
+namespace grpc_core {
+
+grpc_error_unref(err, __FILE__, __LINE__, __func__)
+
+}  // namespace grpc_core
 #else
+
+namespace grpc_core {
+
 grpc_error *grpc_error_ref(grpc_error *err);
 void grpc_error_unref(grpc_error *err);
+
+}  // namespace grpc_core
 #define GRPC_ERROR_REF(err) grpc_error_ref(err)
 #define GRPC_ERROR_UNREF(err) grpc_error_unref(err)
 #endif
+
+namespace grpc_core {
 
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value) GRPC_MUST_USE_RESULT;
@@ -198,21 +246,40 @@ grpc_error *grpc_error_add_child(grpc_error *src,
 grpc_error *grpc_os_error(const char *file, int line, int err,
                           const char *call_name) GRPC_MUST_USE_RESULT;
 /// create an error associated with errno!=0 (an 'operating system' error)
-#define GRPC_OS_ERROR(err, call_name) \
-  grpc_os_error(__FILE__, __LINE__, err, call_name)
-grpc_error *grpc_wsa_error(const char *file, int line, int err,
-                           const char *call_name) GRPC_MUST_USE_RESULT;
+
+}  // namespace grpc_core
+#define GRPC_OS_ERROR(err, call_name)
+
+namespace grpc_core {
+
+grpc_os_error(__FILE__, __LINE__, err, call_name)
+    grpc_error *grpc_wsa_error(const char *file, int line, int err,
+                               const char *call_name) GRPC_MUST_USE_RESULT;
 /// windows only: create an error associated with WSAGetLastError()!=0
-#define GRPC_WSA_ERROR(err, call_name) \
-  grpc_wsa_error(__FILE__, __LINE__, err, call_name)
 
-bool grpc_log_if_error(const char *what, grpc_error *error, const char *file,
-                       int line);
-#define GRPC_LOG_IF_ERROR(what, error) \
-  grpc_log_if_error((what), (error), __FILE__, __LINE__)
+}  // namespace grpc_core
+#define GRPC_WSA_ERROR(err, call_name)
 
+namespace grpc_core {
+
+grpc_wsa_error(__FILE__, __LINE__, err, call_name)
+
+    bool grpc_log_if_error(const char *what, grpc_error *error,
+                           const char *file, int line);
+
+}  // namespace grpc_core
+#define GRPC_LOG_IF_ERROR(what, error)
+
+namespace grpc_core {
+
+grpc_log_if_error((what), (error), __FILE__, __LINE__)
+
+}  // namespace grpc_core
 #ifdef __cplusplus
-}
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */

@@ -37,6 +37,9 @@
 #include <stdbool.h>
 
 /// Tracks retry throttling data for an individual server name.
+
+namespace grpc_core {
+
 typedef struct grpc_server_retry_throttle_data grpc_server_retry_throttle_data;
 
 /// Records a failure.  Returns true if it's okay to send a retry.
@@ -62,4 +65,5 @@ void grpc_retry_throttle_map_shutdown();
 grpc_server_retry_throttle_data* grpc_retry_throttle_map_get_data_for_server(
     const char* server_name, int max_milli_tokens, int milli_token_ratio);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_THROTTLE_H */

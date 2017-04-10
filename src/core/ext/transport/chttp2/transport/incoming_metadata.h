@@ -36,13 +36,15 @@
 
 #include "src/core/lib/transport/transport.h"
 
+namespace grpc_core {
+
 typedef struct {
   gpr_arena *arena;
   grpc_metadata_batch batch;
   size_t size;  // total size of metadata
 } grpc_chttp2_incoming_metadata_buffer;
 
-/** assumes everything initially zeroed */
+//  assumes everything initially zeroed
 void grpc_chttp2_incoming_metadata_buffer_init(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_arena *arena);
 void grpc_chttp2_incoming_metadata_buffer_destroy(
@@ -60,4 +62,5 @@ grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H */

@@ -36,6 +36,9 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+namespace grpc_core {
+
 extern const grpc_channel_filter grpc_lame_filter;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H */

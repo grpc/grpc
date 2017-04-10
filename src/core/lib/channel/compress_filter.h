@@ -38,30 +38,34 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+namespace grpc_core {
+
 extern int grpc_compression_trace;
 
-/** Compression filter for outgoing data.
- *
- * See <grpc/compression.h> for the available compression settings.
- *
- * Compression settings may come from:
- *  - Channel configuration, as established at channel creation time.
- *  - The metadata accompanying the outgoing data to be compressed. This is
- *    taken as a request only. We may choose not to honor it. The metadata key
- *    is given by \a GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY.
- *
- * Compression can be disabled for concrete messages (for instance in order to
- * prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set in
- * the BEGIN_MESSAGE flags.
- *
- * The attempted compression mechanism is added to the resulting initial
- * metadata under the'grpc-encoding' key.
- *
- * If compression is actually performed, BEGIN_MESSAGE's flag is modified to
- * incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of the
- * aforementioned 'grpc-encoding' metadata value, data will pass through
- * uncompressed. */
+//  Compression filter for outgoing data.
+///
+//  See <grpc/compression.h> for the available compression settings.
+///
+//  Compression settings may come from:
+//   - Channel configuration, as established at channel creation time.
+//   - The metadata accompanying the outgoing data to be compressed. This is
+//     taken as a request only. We may choose not to honor it. The metadata key
+//     is given by \a GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY.
+///
+//  Compression can be disabled for concrete messages (for instance in order to
+//  prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set
+//  in
+//  the BEGIN_MESSAGE flags.
+///
+//  The attempted compression mechanism is added to the resulting initial
+//  metadata under the'grpc-encoding' key.
+///
+//  If compression is actually performed, BEGIN_MESSAGE's flag is modified to
+//  incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of the
+//  aforementioned 'grpc-encoding' metadata value, data will pass through
+//  uncompressed.
 
 extern const grpc_channel_filter grpc_compress_filter;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_CHANNEL_COMPRESS_FILTER_H */

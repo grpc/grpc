@@ -31,14 +31,22 @@
  *
  */
 
-/* Census-internal resource definition and manipluation functions. */
+// Census-internal resource definition and manipluation functions.
+
+namespace grpc_core {
+
 #ifndef GRPC_CORE_EXT_CENSUS_RESOURCE_H
+
+}  // namespace grpc_core
 #define GRPC_CORE_EXT_CENSUS_RESOURCE_H
 
 #include <grpc/grpc.h>
 #include "src/core/ext/census/gen/census.pb.h"
 
-/* Internal representation of a resource. */
+// Internal representation of a resource.
+
+namespace grpc_core {
+
 typedef struct {
   char *name;
   char *description;
@@ -49,15 +57,16 @@ typedef struct {
   google_census_Resource_BasicUnit *denominators;
 } resource;
 
-/* Initialize and shutdown the resources subsystem. */
+// Initialize and shutdown the resources subsystem.
 void initialize_resources(void);
 void shutdown_resources(void);
 
-/* Add a new resource, given a proposed resource structure. Returns the
-   resource ID, or -ve on failure.
-   TODO(aveitch): this function exists to support addition of the base
-   resources. It should be removed when we have the ability to add resources
-   from configuration files. */
+// Add a new resource, given a proposed resource structure. Returns the
+// resource ID, or -ve on failure.
+// TODO(aveitch): this function exists to support addition of the base
+// resources. It should be removed when we have the ability to add resources
+// from configuration files.
 int32_t define_resource(const resource *base);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_CENSUS_RESOURCE_H */
