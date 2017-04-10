@@ -42,6 +42,7 @@ for root, dirs, files in os.walk('src/core'):
     while src:
       m = preproc.match(src)
       if m:
+        print m.group(1)
         leave()
         dst += m.group(1)
         src = m.group(2)
