@@ -32,6 +32,7 @@ def leave():
 
 for root, dirs, files in os.walk('src/core'):
   for filename in files:
+    if '.pb.' in filename: continue
     base, ext = os.path.splitext(filename)
     print os.path.join(root, filename)
     if ext != '.c': continue
