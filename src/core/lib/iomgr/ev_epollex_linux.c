@@ -676,14 +676,19 @@ static grpc_error *pollset_poll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (r < 0) return GRPC_OS_ERROR(errno, "epoll_wait");
 
+  gpr_log(GPR_DEBUG, "PS:%p poll got %d events", pollset, r);
+
   grpc_error *error = GRPC_ERROR_NONE;
   for (int i = 0; i < r; i++) {
     void *data_ptr = events[i].data.ptr;
     if (data_ptr == &global_wakeup_fd) {
+      gpr_log(GPR_DEBUG, "PS:%p poll got global_wakeup_fd", pollset);
+
       grpc_timer_consume_kick();
       append_error(&error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                    err_desc);
     } else if (data_ptr == &pollset->pollset_wakeup) {
+      gpr_log(GPR_DEBUG, "PS:%p poll got pollset_wakeup", pollset);
       /* once we start shutting down we stop consuming the wakeup:
          the fd is level triggered and non-exclusive, which should result in all
          pollers waking */
@@ -697,6 +702,9 @@ static grpc_error *pollset_poll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       bool cancel = (events[i].events & (EPOLLERR | EPOLLHUP)) != 0;
       bool read_ev = (events[i].events & (EPOLLIN | EPOLLPRI)) != 0;
       bool write_ev = (events[i].events & EPOLLOUT) != 0;
+      gpr_log(GPR_DEBUG,
+              "PS:%p poll got fd: is_wq=%d cancel=%d read=%d write=%d", pollset,
+              is_workqueue, cancel, read_ev, write_ev);
       if (is_workqueue) {
         append_error(&error,
                      grpc_wakeup_fd_consume_wakeup(&fd->workqueue_wakeup_fd),
@@ -812,7 +820,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     }
   }
   struct epoll_event ev_wq = {.events = EPOLLET | EPOLLIN | EPOLLEXCLUSIVE,
-                              .data.ptr = fd};
+                              .data.ptr = (void*)(1+(intptr_t)fd)};
   if (epoll_ctl(pollset->epfd, EPOLL_CTL_ADD, fd->workqueue_wakeup_fd.read_fd,
                 &ev_wq) != 0) {
     switch (errno) {
