@@ -89,6 +89,9 @@ grpc::string GetOauth2AccessToken() {
   return access_token;
 }
 
+void UpdateActions(
+    std::unordered_map<grpc::string, std::function<bool()>>* actions) {}
+
 std::shared_ptr<Channel> CreateChannelForTestCase(
     const grpc::string& test_case) {
   GPR_ASSERT(FLAGS_server_port);

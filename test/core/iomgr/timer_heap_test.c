@@ -47,13 +47,7 @@
 
 #include "test/core/util/test_config.h"
 
-static gpr_timespec random_deadline(void) {
-  gpr_timespec ts;
-  ts.tv_sec = rand();
-  ts.tv_nsec = rand();
-  ts.clock_type = GPR_CLOCK_REALTIME;
-  return ts;
-}
+static gpr_atm random_deadline(void) { return rand(); }
 
 static grpc_timer *create_test_elements(size_t num_elements) {
   grpc_timer *elems = gpr_malloc(num_elements * sizeof(grpc_timer));
@@ -78,12 +72,10 @@ static void check_valid(grpc_timer_heap *pq) {
     size_t left_child = 1u + 2u * i;
     size_t right_child = left_child + 1u;
     if (left_child < pq->timer_count) {
-      GPR_ASSERT(gpr_time_cmp(pq->timers[i]->deadline,
-                              pq->timers[left_child]->deadline) <= 0);
+      GPR_ASSERT(pq->timers[i]->deadline <= pq->timers[left_child]->deadline);
     }
     if (right_child < pq->timer_count) {
-      GPR_ASSERT(gpr_time_cmp(pq->timers[i]->deadline,
-                              pq->timers[right_child]->deadline) <= 0);
+      GPR_ASSERT(pq->timers[i]->deadline <= pq->timers[right_child]->deadline);
     }
   }
 }
@@ -227,20 +219,19 @@ static void test2(void) {
     }
 
     if (num_inserted) {
-      gpr_timespec *min_deadline = NULL;
+      gpr_atm *min_deadline = NULL;
       for (size_t i = 0; i < elems_size; i++) {
         if (elems[i].inserted) {
           if (min_deadline == NULL) {
             min_deadline = &elems[i].elem.deadline;
           } else {
-            if (gpr_time_cmp(elems[i].elem.deadline, *min_deadline) < 0) {
+            if (elems[i].elem.deadline < *min_deadline) {
               min_deadline = &elems[i].elem.deadline;
             }
           }
         }
       }
-      GPR_ASSERT(
-          0 == gpr_time_cmp(grpc_timer_heap_top(&pq)->deadline, *min_deadline));
+      GPR_ASSERT(grpc_timer_heap_top(&pq)->deadline == *min_deadline);
     }
   }
 

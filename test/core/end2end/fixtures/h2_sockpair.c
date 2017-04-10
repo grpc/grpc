@@ -40,7 +40,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
-#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -90,9 +90,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   f.fixture_data = sfd;
   f.cq = grpc_completion_queue_create(NULL);
 
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create("fixture");
-  *sfd = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, 65536);
-  grpc_resource_quota_unref(resource_quota);
+  *sfd = grpc_iomgr_create_endpoint_pair("fixture", NULL);
 
   return f;
 }

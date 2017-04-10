@@ -58,7 +58,7 @@
      gpr_tls_set(&foo, new_value);
 
    Accessing a thread local:
-     current_value = gpr_tls_get(&foo, value);
+     current_value = gpr_tls_get(&foo);
 
    ALL functions here may be implemented as macros. */
 

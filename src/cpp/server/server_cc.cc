@@ -489,7 +489,9 @@ void Server::RegisterAsyncGenericService(AsyncGenericService* service) {
 int Server::AddListeningPort(const grpc::string& addr,
                              ServerCredentials* creds) {
   GPR_ASSERT(!started_);
-  return creds->AddPortToServer(addr, server_);
+  int port = creds->AddPortToServer(addr, server_);
+  global_callbacks_->AddPort(this, port);
+  return port;
 }
 
 bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
