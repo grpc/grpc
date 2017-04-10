@@ -71,6 +71,10 @@ struct grpc_completion_queue {
   /** completed events */
   grpc_cq_completion completed_head;
   grpc_cq_completion *completed_tail;
+
+  gpr_mu queue_mu;
+  gpr_mpscq queue;
+
   /** Number of pending events (+1 if we're not shutdown) */
   gpr_refcount pending_events;
   /** Once owning_refs drops to zero, we will destroy the cq */
@@ -152,6 +156,9 @@ grpc_completion_queue *grpc_completion_queue_create_internal(
 #ifndef NDEBUG
   cc->outstanding_tag_count = 0;
 #endif
+  gpr_mpscq_init(&cc->queue);
+  gpr_mu_init(&cc->queue_mu);
+
   grpc_closure_init(&cc->pollset_shutdown_done, on_pollset_shutdown_done, cc,
                     grpc_schedule_on_exec_ctx);
 
@@ -196,6 +203,7 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc) {
   if (gpr_unref(&cc->owning_refs)) {
     GPR_ASSERT(cc->completed_head.next == (uintptr_t)&cc->completed_head);
     grpc_pollset_destroy(POLLSET_FROM_CQ(cc));
+    gpr_mpscq_destroy(&cc->queue);
 #ifndef NDEBUG
     gpr_free(cc->outstanding_tags);
 #endif
@@ -217,6 +225,34 @@ void grpc_cq_begin_op(grpc_completion_queue *cc, void *tag) {
   gpr_mu_unlock(cc->mu);
 #endif
   gpr_ref(&cc->pending_events);
+}
+
+void grpc_cq_end_op_next(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
+                         grpc_cq_completion *storage) {
+  /* push completion */
+  gpr_mpscq_push(&cc->queue, &storage->node);
+
+  int shutdown = gpr_unref(&cc->pending_events);
+  gpr_atm_no_barrier_fetch_add(&cc->things_queued_ever, 1);
+  gpr_mu_lock(cc->mu);
+  if (!shutdown) {
+    grpc_error *kick_error = grpc_pollset_kick(POLLSET_FROM_CQ(cc), NULL);
+    if (kick_error != GRPC_ERROR_NONE) {
+      const char *msg = grpc_error_string(kick_error);
+      gpr_log(GPR_ERROR, "Kick failed: %s", msg);
+
+      GRPC_ERROR_UNREF(kick_error);
+    }
+
+  } else {
+    GPR_ASSERT(!cc->shutdown);
+    GPR_ASSERT(cc->shutdown_called);
+    cc->shutdown = 1;
+    grpc_pollset_shutdown(exec_ctx, POLLSET_FROM_CQ(cc),
+                          &cc->pollset_shutdown_done);
+    gpr_mu_unlock(cc->mu);
+  }
+  gpr_mu_unlock(cc->mu);
 }
 
 /* Signal the end of an operation - if this is the last waiting-to-be-queued
@@ -250,8 +286,17 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
   storage->tag = tag;
   storage->done = done;
   storage->done_arg = done_arg;
-  storage->next = ((uintptr_t)&cc->completed_head) |
-                  ((uintptr_t)(error == GRPC_ERROR_NONE));
+  if (cc->completion_type == GRPC_CQ_NEXT) {
+    storage->next = (uintptr_t)(error == GRPC_ERROR_NONE);
+  } else {
+    storage->next = ((uintptr_t)&cc->completed_head) |
+                    ((uintptr_t)(error == GRPC_ERROR_NONE));
+  }
+
+  if (cc->completion_type == GRPC_CQ_NEXT) {
+    grpc_cq_end_op_next(exec_ctx, cc, storage);
+    return; /* EARLY OUT */
+  }
 
   gpr_mu_lock(cc->mu);
 #ifndef NDEBUG
@@ -382,8 +427,9 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       "deadline=gpr_timespec { tv_sec: %" PRId64
       ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5, (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-          reserved));
+      5,
+      (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+       reserved));
   GPR_ASSERT(!reserved);
 
   dump_pending_tags(cc);
@@ -557,8 +603,9 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         "deadline=gpr_timespec { tv_sec: %" PRId64
         ", tv_nsec: %d, clock_type: %d }, "
         "reserved=%p)",
-        6, (cc, tag, deadline.tv_sec, deadline.tv_nsec,
-            (int)deadline.clock_type, reserved));
+        6,
+        (cc, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+         reserved));
   }
   GPR_ASSERT(!reserved);
 
