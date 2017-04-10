@@ -11,7 +11,7 @@ apis = re.compile(apis, flags)
 c_comment = re.compile(r'^(/[*](?:.*?)[*]/)(.*)', flags)
 split_comment = re.compile(r'^\n[ ]*/[*](.*?)[*]/\n(.*)', flags)
 cpp_comment = re.compile(r'^(\n//[^\n]*\n)(.*)', flags)
-include = re.compile(r'^(#include (?:[^\n]*)\n)(.*)', flags)
+preproc = re.compile(r'^(\n# (?:[^\n]*)\n)(.*)', flags)
 
 in_namespace = False
 dst = ''
@@ -61,7 +61,7 @@ for root, dirs, files in os.walk('src/core'):
         dst += m.group(1)
         src = m.group(2)
         continue
-      m = include.match(src)
+      m = preproc.match(src)
       if m:
         leave()
         dst += m.group(1)
