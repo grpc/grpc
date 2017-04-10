@@ -172,7 +172,7 @@ LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
 if "linux" in sys.platform or "darwin" in sys.platform:
   pymodinit_type = 'PyObject*' if PY3 else 'void'
-  pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
+  pymodinit = 'extern "C" __attribute__((visibility ("default"))) {}'.format(pymodinit_type)
   DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
 
 # By default, Python3 distutils enforces compatibility of
