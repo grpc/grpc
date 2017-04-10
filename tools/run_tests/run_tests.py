@@ -757,7 +757,7 @@ class CSharpLanguage(object):
         self._make_options = ['EMBED_OPENSSL=true']
         if self.args.compiler != 'coreclr':
           # On Mac, official distribution of mono is 32bit.
-          self._make_options += ['CFLAGS=-m32', 'LDFLAGS=-m32']
+          self._make_options += ['CFLAGS=-m32', 'CXXFLAGS=-m32', 'LDFLAGS=-m32']
       else:
         self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
