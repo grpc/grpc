@@ -973,7 +973,7 @@ static void pg_create(grpc_exec_ctx *exec_ctx, polling_obj **initial_po,
   /* assumes all polling objects in initial_po are locked */
   polling_group *pg = gpr_malloc(sizeof(*pg));
   po_init(&pg->po, PO_POLLING_GROUP);
-  gpr_ref_init(&pg->refs, initial_po_count);
+  gpr_ref_init(&pg->refs, (int)initial_po_count);
   GPR_ASSERT(initial_po[0]->group == NULL);
   initial_po[0]->next = initial_po[0]->prev = initial_po[0];
   initial_po[0]->group = pg;
