@@ -33,6 +33,7 @@ def leave():
 for root, dirs, files in os.walk('src/core'):
   for filename in files:
     base, ext = os.path.splitext(filename)
+    print os.path.join(root, filename)
     if ext != '.c': continue
     src = open(os.path.join(root, filename)).read()
     while src:
