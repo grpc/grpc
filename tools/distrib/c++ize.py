@@ -86,4 +86,5 @@ for root, dirs, files in os.walk('src/core'):
       src = src[1:]
     leave()
     open(os.path.join(root, base + ('.cc' if ext == '.c' else '.h')), 'w').write(dst)
-    os.unlink(os.path.join(root, filename))
+    if ext == '.c':
+      os.unlink(os.path.join(root, filename))
