@@ -42,7 +42,6 @@ for root, dirs, files in os.walk('src/core'):
     while src:
       m = preproc.match(src)
       if m:
-        print m.group(1)
         leave()
         dst += m.group(1)
         src = m.group(2)
@@ -82,6 +81,7 @@ for root, dirs, files in os.walk('src/core'):
           src = src[1:]
         continue
       if src[0] not in ' \t\r\n':
+        print 'enter: %s' % src[0]
         enter()
       dst += src[0]
       src = src[1:]
