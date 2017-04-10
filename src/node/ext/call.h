@@ -123,13 +123,9 @@ struct tag {
       call_persist;
 };
 
-v8::Local<v8::Value> GetTagNodeValue(void *tag);
-
-Nan::Callback *GetTagCallback(void *tag);
-
 void DestroyTag(void *tag);
 
-void CompleteTag(void *tag);
+void CompleteTag(void *tag, const char *error_message);
 
 }  // namespace node
 }  // namespace grpc
