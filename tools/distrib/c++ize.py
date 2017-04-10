@@ -16,11 +16,11 @@ preproc = re.compile(r'^(\n#[^\n]+\n)(.*)', flags)
 in_namespace = False
 dst = ''
 
-def enter():
+def enter(wtf):
   global in_namespace
   global dst
   if in_namespace: return
-  dst += '\nnamespace grpc_core {\n\n'
+  dst += '\nnamespace grpc_core { // %s\n\n' % wtf
   in_namespace = True
 
 def leave():
@@ -81,7 +81,7 @@ for root, dirs, files in os.walk('src/core'):
           src = src[1:]
         continue
       if src[0] not in ' \t\r\n':
-        enter()
+        enter('chr %d' % ord(src[0]))
       dst += src[0]
       src = src[1:]
     leave()
