@@ -40,6 +40,12 @@ for root, dirs, files in os.walk('src/core'):
     if ext != '.c': continue
     src = open(os.path.join(root, filename)).read()
     while src:
+      m = preproc.match(src)
+      if m:
+        leave()
+        dst += m.group(1)
+        src = m.group(2)
+        continue
       m = split_comment.match(src)
       if m:
         dst += '\n'
@@ -58,12 +64,6 @@ for root, dirs, files in os.walk('src/core'):
         continue
       m = cpp_comment.match(src)
       if m:
-        dst += m.group(1)
-        src = m.group(2)
-        continue
-      m = preproc.match(src)
-      if m:
-        leave()
         dst += m.group(1)
         src = m.group(2)
         continue
