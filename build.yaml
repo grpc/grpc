@@ -4288,7 +4288,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
@@ -4300,7 +4300,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
@@ -4311,7 +4311,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address
       -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
@@ -4355,7 +4355,7 @@ configs:
       -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: NDEBUG
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
@@ -4376,7 +4376,7 @@ configs:
       -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: GRPC_TSAN
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
@@ -4388,7 +4388,7 @@ configs:
       -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
     DEFINES: NDEBUG
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=undefined,unsigned-integer-overflow
     LDXX: clang++
     compile_the_world: true

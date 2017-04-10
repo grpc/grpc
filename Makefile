@@ -99,7 +99,7 @@ VALID_CONFIG_asan-trace-cmp = 1
 REQUIRE_CUSTOM_LIBRARIES_asan-trace-cmp = 1
 CC_asan-trace-cmp = clang
 CXX_asan-trace-cmp = clang++
-LD_asan-trace-cmp = clang
+LD_asan-trace-cmp = clang++
 LDXX_asan-trace-cmp = clang++
 CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-trace-cmp = -fsanitize=address
@@ -116,7 +116,7 @@ VALID_CONFIG_asan = 1
 REQUIRE_CUSTOM_LIBRARIES_asan = 1
 CC_asan = clang
 CXX_asan = clang++
-LD_asan = clang
+LD_asan = clang++
 LDXX_asan = clang++
 CPPFLAGS_asan = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan = -fsanitize=address
@@ -125,7 +125,7 @@ VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
 CC_msan = clang
 CXX_msan = clang++
-LD_msan = clang
+LD_msan = clang++
 LDXX_msan = clang++
 CPPFLAGS_msan = -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
@@ -152,7 +152,7 @@ VALID_CONFIG_asan-noleaks = 1
 REQUIRE_CUSTOM_LIBRARIES_asan-noleaks = 1
 CC_asan-noleaks = clang
 CXX_asan-noleaks = clang++
-LD_asan-noleaks = clang
+LD_asan-noleaks = clang++
 LDXX_asan-noleaks = clang++
 CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-noleaks = -fsanitize=address
@@ -161,7 +161,7 @@ VALID_CONFIG_ubsan = 1
 REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
 CC_ubsan = clang
 CXX_ubsan = clang++
-LD_ubsan = clang
+LD_ubsan = clang++
 LDXX_ubsan = clang++
 CPPFLAGS_ubsan = -O0 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
 LDFLAGS_ubsan = -fsanitize=undefined,unsigned-integer-overflow
@@ -171,7 +171,7 @@ VALID_CONFIG_tsan = 1
 REQUIRE_CUSTOM_LIBRARIES_tsan = 1
 CC_tsan = clang
 CXX_tsan = clang++
-LD_tsan = clang
+LD_tsan = clang++
 LDXX_tsan = clang++
 CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_tsan = -fsanitize=thread
@@ -4177,7 +4177,7 @@ LIBGRPC++_SRC = \
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -5205,7 +5205,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
