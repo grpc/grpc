@@ -81,7 +81,6 @@ for root, dirs, files in os.walk('src/core'):
           src = src[1:]
         continue
       if src[0] not in ' \t\r\n':
-        print 'enter: %s' % src[0]
         enter()
       dst += src[0]
       src = src[1:]
