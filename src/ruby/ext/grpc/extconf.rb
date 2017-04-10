@@ -65,6 +65,7 @@ ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 ENV['AR'] = RbConfig::CONFIG['AR'] + ' rcs'
 ENV['CC'] = RbConfig::CONFIG['CC']
+ENV['CXX'] = RbConfig::CONFIG['CXX']
 ENV['LD'] = ENV['CC']
 
 ENV['AR'] = 'libtool -o' if RUBY_PLATFORM =~ /darwin/
