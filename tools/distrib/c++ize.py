@@ -81,5 +81,5 @@ for root, dirs, files in os.walk('src/core'):
       dst += src[0]
       src = src[1:]
     leave()
-    open(os.path.join(root, base + '.cc')).write(dst)
+    open(os.path.join(root, base + '.cc'), 'w').write(dst)
     os.unlink(os.path.join(root, filename))
