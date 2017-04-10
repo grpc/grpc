@@ -2,6 +2,7 @@
 
 import sys
 import re
+import os
 
 flags = re.M + re.S
 apis = (r'^(\n[a-zA-Z_][a-zA-Z0-9]+(?: [*]*)?(?:%s)\((?:.*?){)(.*)' % '|'.join(
