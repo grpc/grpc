@@ -321,6 +321,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
 
   std::vector<grpc::string> service_list;
   if (!desc_db.GetServices(&service_list)) {
+    fprintf(stderr, "Received an error when querying services endpoint.\n");
     return false;
   }
 

@@ -122,8 +122,9 @@ class ChannelDataImpl : public ChannelData {
 
 class CallDataImpl : public CallData {
  public:
-  void StartTransportStreamOp(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              TransportStreamOp* op) override {
+  void StartTransportStreamOpBatch(grpc_exec_ctx* exec_ctx,
+                                   grpc_call_element* elem,
+                                   TransportStreamOpBatch* op) override {
     // Incrementing the counter could be done from Init(), but we want
     // to test that the individual methods are actually called correctly.
     if (op->recv_initial_metadata() != nullptr) IncrementCallCounter();

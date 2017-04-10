@@ -43,7 +43,7 @@
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
-#include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 

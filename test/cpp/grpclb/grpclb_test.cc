@@ -51,7 +51,7 @@
 
 #include <grpc++/impl/codegen/config.h>
 extern "C" {
-#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/sockaddr.h"

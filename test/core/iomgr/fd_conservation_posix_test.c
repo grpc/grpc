@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 
   for (i = 0; i < 100; i++) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    p = grpc_iomgr_create_endpoint_pair("test", resource_quota, 1);
+    p = grpc_iomgr_create_endpoint_pair("test", NULL);
     grpc_endpoint_destroy(&exec_ctx, p.client);
     grpc_endpoint_destroy(&exec_ctx, p.server);
     grpc_exec_ctx_finish(&exec_ctx);
