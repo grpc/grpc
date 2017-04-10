@@ -32,6 +32,8 @@ set -ex
 
 cd $(dirname $0)/../..
 
+./tools/run_tests/start_port_server.py || true
+
 CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
 
 make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server -j $CPUS
