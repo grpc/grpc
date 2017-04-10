@@ -182,7 +182,7 @@ tsi_result tsi_handshaker_create_frame_protector(
   result = self->vtable->create_frame_protector(self, max_protected_frame_size,
                                                 protector);
   if (result == TSI_OK) {
-    self->frame_protector_created = 1;
+    self->frame_protector_created = true;
   }
   return result;
 }
@@ -206,7 +206,7 @@ void tsi_handshaker_destroy(tsi_handshaker *self) {
 
 /* --- tsi_handshaker_result implementation. --- */
 
-tsi_result tsi_handshaker_result_extract_peer(tsi_handshaker_result *self,
+tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result *self,
                                               tsi_peer *peer) {
   if (self == NULL || peer == NULL) return TSI_INVALID_ARGUMENT;
   memset(peer, 0, sizeof(tsi_peer));
@@ -214,7 +214,7 @@ tsi_result tsi_handshaker_result_extract_peer(tsi_handshaker_result *self,
 }
 
 tsi_result tsi_handshaker_result_create_frame_protector(
-    tsi_handshaker_result *self, size_t *max_protected_frame_size,
+    const tsi_handshaker_result *self, size_t *max_protected_frame_size,
     tsi_frame_protector **protector) {
   if (self == NULL || protector == NULL) return TSI_INVALID_ARGUMENT;
   return self->vtable->create_frame_protector(self, max_protected_frame_size,
@@ -222,7 +222,8 @@ tsi_result tsi_handshaker_result_create_frame_protector(
 }
 
 tsi_result tsi_handshaker_result_get_unused_bytes(
-    tsi_handshaker_result *self, unsigned char **bytes, size_t *bytes_size) {
+    const tsi_handshaker_result *self, unsigned char **bytes,
+    size_t *bytes_size) {
   if (self == NULL || bytes == NULL || bytes_size == NULL) {
     return TSI_INVALID_ARGUMENT;
   }

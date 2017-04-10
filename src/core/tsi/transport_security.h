@@ -34,6 +34,8 @@
 #ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_H
 #define GRPC_CORE_TSI_TRANSPORT_SECURITY_H
 
+#include <stdbool.h>
+
 #include "src/core/tsi/transport_security_interface.h"
 
 #ifdef __cplusplus
@@ -90,18 +92,18 @@ typedef struct {
 
 struct tsi_handshaker {
   const tsi_handshaker_vtable *vtable;
-  int frame_protector_created;
-  int handshaker_result_created;
+  bool frame_protector_created;
+  bool handshaker_result_created;
 };
 
 /* Base for tsi_handshaker_result implementations.
    See transport_security_interface.h for documentation. */
 typedef struct {
-  tsi_result (*extract_peer)(tsi_handshaker_result *self, tsi_peer *peer);
-  tsi_result (*create_frame_protector)(tsi_handshaker_result *self,
+  tsi_result (*extract_peer)(const tsi_handshaker_result *self, tsi_peer *peer);
+  tsi_result (*create_frame_protector)(const tsi_handshaker_result *self,
                                        size_t *max_output_protected_frame_size,
                                        tsi_frame_protector **protector);
-  tsi_result (*get_unused_bytes)(tsi_handshaker_result *self,
+  tsi_result (*get_unused_bytes)(const tsi_handshaker_result *self,
                                  unsigned char **bytes, size_t *bytes_size);
   void (*destroy)(tsi_handshaker_result *self);
 } tsi_handshaker_result_vtable;

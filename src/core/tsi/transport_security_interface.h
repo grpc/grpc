@@ -220,22 +220,22 @@ typedef struct tsi_handshaker_result tsi_handshaker_result;
 /* This method extracts tsi peer. It returns TSI_OK assuming there is no fatal
    error.
    The caller is responsible for destructing the peer.  */
-tsi_result tsi_handshaker_result_extract_peer(tsi_handshaker_result *self,
+tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result *self,
                                               tsi_peer *peer);
 
 /* This method creates a tsi_frame_protector object. It returns TSI_OK assuming
    there is no fatal error.
    The caller is responsible for destroying the protector.  */
 tsi_result tsi_handshaker_result_create_frame_protector(
-    tsi_handshaker_result *self, size_t *max_output_protected_frame_size,
+    const tsi_handshaker_result *self, size_t *max_output_protected_frame_size,
     tsi_frame_protector **protector);
 
 /* This method returns the unused bytes from the handshake. It returns TSI_OK
    assuming there is no fatal error.
    The caller should not free the bytes.  */
-tsi_result tsi_handshaker_result_get_unused_bytes(tsi_handshaker_result *self,
-                                                  unsigned char **bytes,
-                                                  size_t *byte_size);
+tsi_result tsi_handshaker_result_get_unused_bytes(
+    const tsi_handshaker_result *self, unsigned char **bytes,
+    size_t *byte_size);
 
 /* This method releases the tsi_handshaker_handshaker object. After this method
    is called, no other method can be called on the object.  */
@@ -305,8 +305,8 @@ void tsi_handshaker_result_destroy(tsi_handshaker_result *self);
    ...
    ------------------------------------------------------------------------
 
-   A typical usage of the new TSI would be as follows, supporting both
-   synchronous and asynchrnous TSI handshaker implementations:
+   A typical usage supporting both synchronous and asynchronous TSI handshaker
+   implementations would be:
 
    ------------------------------------------------------------------------
 
@@ -322,17 +322,6 @@ void tsi_handshaker_result_destroy(tsi_handshaker_result *self);
      // Start the handshake by the calling do_handshake_next.
      do_handshake_next(h, NULL, 0);
      ...
-   }
-
-   // This method is a wrapper of the callback function to execute when
-   // tsi_handshaker_next finishes. It is passed to tsi_handshaker_next as
-   // the callback function.
-   void on_handshake_next_done_wrapper(
-       tsi_result status, void *user_data, const unsigned char *bytes_to_send,
-       size_t bytes_to_send_size, tsi_handshaker_result *result) {
-     security_handshaker *h = (security_handshaker *)user_data;
-     on_handshake_next_done(h, status, bytes_to_send,
-                            bytes_to_send_size, result);
    }
 
    // This method is the callback function when there are data received from
@@ -355,19 +344,22 @@ void tsi_handshaker_result_destroy(tsi_handshaker_result *self);
      tsi_handshaker_result *result = NULL;
      status = tsi_handshaker_next(
          handshaker, bytes_received, bytes_received_size, &bytes_to_send,
-         &bytes_to_send_size, &result, on_handshake_next_done_wrapper, h);
+         &bytes_to_send_size, &result, on_handshake_next_done, h);
      // If TSI handshaker is asynchronous, on_handshake_next_done will be
-     // called during the execution of the callback function.
+     // executed inside tsi_handshaker_next.
      if (status == TSI_ASYNC) return;
-     on_handshake_next_done(h, status, bytes_to_send,
+     // If TSI handshaker is synchronous, invoke callback directly in this
+     // thread.
+     on_handshake_next_done(status, (void *)h, bytes_to_send,
                             bytes_to_send_size, result);
    }
 
-   // This is the real function to execute after tsi_handshaker_next.
+   // This is the callback function to execute after tsi_handshaker_next.
+   // It is passed to tsi_handshaker_next as a function parameter.
    void on_handshake_next_done(
-       security_handshaker *h, tsi_result status,
-       const unsigned char *bytes_to_send, size_t bytes_to_send_size,
-       tsi_handshaker_result *result) {
+       tsi_result status, void *user_data, const unsigned char *bytes_to_send,
+       size_t bytes_to_send_size, tsi_handshaker_result *result) {
+     security_handshaker *h = (security_handshaker *)user_data;
      if (status == TSI_INCOMPLETE_DATA) {
        // Schedule an asynchronous read from the peer. If handshake data are
        // received, on_handshake_data_received_from_peer will be called.
@@ -386,7 +378,7 @@ void tsi_handshaker_result_destroy(tsi_handshaker_result *self);
        // Check the Peer.
        tsi_peer peer;
        status = tsi_handshaker_result_extract_peer(result, &peer);
-       if (status != TSI_OK) return status;
+       if (status != TSI_OK) return;
        status = check_peer(&peer);
        tsi_peer_destruct(&peer);
        if (status != TSI_OK) return;
