@@ -36,15 +36,19 @@
 
 #include <grpc/slice.h>
 
-/* String struct for tracing messages. Since this is a C API, we do not have
-   access to a string class.  This is intended for use by higher level
-   languages which wrap around the C API, as most of them have a string class.
-   This will also be more efficient when copying, as we have an explicitly
-   specified length.  Also, grpc_slice has reference counting which allows for
-   interning. */
+// String struct for tracing messages. Since this is a C API, we do not have
+// access to a string class.  This is intended for use by higher level
+// languages which wrap around the C API, as most of them have a string class.
+// This will also be more efficient when copying, as we have an explicitly
+// specified length.  Also, grpc_slice has reference counting which allows for
+// interning.
+
+namespace grpc_core {
+
 typedef struct trace_string {
   char *string;
   size_t length;
 } trace_string;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_CENSUS_TRACE_STRING_H */

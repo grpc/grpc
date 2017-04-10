@@ -44,63 +44,90 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/transport/security_connector.h"
 
+namespace grpc_core {
+
 struct grpc_http_response;
 
-/* --- Constants. --- */
+// --- Constants. ---
 
 typedef enum {
   GRPC_CREDENTIALS_OK = 0,
   GRPC_CREDENTIALS_ERROR
 } grpc_credentials_status;
 
+}  // namespace grpc_core
 #define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
 
 #define GRPC_CHANNEL_CREDENTIALS_TYPE_SSL "Ssl"
-#define GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY \
-  "FakeTransportSecurity"
+#define GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY
 
+namespace grpc_core {
+
+"FakeTransportSecurity"
+
+}  // namespace grpc_core
 #define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
 #define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
 #define GRPC_CALL_CREDENTIALS_TYPE_IAM "Iam"
 #define GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE "Composite"
 
 #define GRPC_AUTHORIZATION_METADATA_KEY "authorization"
-#define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
-  "x-goog-iam-authorization-token"
+#define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY
+
+namespace grpc_core {
+
+"x-goog-iam-authorization-token"
+
+}  // namespace grpc_core
 #define GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY "x-goog-iam-authority-selector"
 
 #define GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS 60
 
 #define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata"
-#define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
-  "/computeMetadata/v1/instance/service-accounts/default/token"
+#define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH
 
+namespace grpc_core {
+
+"/computeMetadata/v1/instance/service-accounts/default/token"
+
+}  // namespace grpc_core
 #define GRPC_GOOGLE_OAUTH2_SERVICE_HOST "www.googleapis.com"
 #define GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH "/oauth2/v3/token"
 
-#define GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX                         \
-  "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&" \
-  "assertion="
+#define GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX
 
-#define GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING \
-  "client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_token"
+namespace grpc_core {
 
-/* --- Google utils --- */
+"grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&"
+    "assertion="
 
-/* It is the caller's responsibility to gpr_free the result if not NULL. */
-char *grpc_get_well_known_google_credentials_file_path(void);
+}  // namespace grpc_core
+#define GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING
 
-/* Implementation function for the different platforms. */
+namespace grpc_core {
+
+"client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_token"
+
+    // --- Google utils ---
+
+    /* It is the caller's responsibility to gpr_free the result if not NULL. */
+    char *
+    grpc_get_well_known_google_credentials_file_path(void);
+
+// Implementation function for the different platforms.
 char *grpc_get_well_known_google_credentials_file_path_impl(void);
 
-/* Override for testing only. Not thread-safe */
+// Override for testing only. Not thread-safe
 typedef char *(*grpc_well_known_credentials_path_getter)(void);
 void grpc_override_well_known_credentials_path_getter(
     grpc_well_known_credentials_path_getter getter);
 
-/* --- grpc_channel_credentials. --- */
+// --- grpc_channel_credentials. ---
 
+}  // namespace grpc_core
 #define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.channel_credentials"
+
+namespace grpc_core {
 
 typedef struct {
   void (*destruct)(grpc_exec_ctx *exec_ctx, grpc_channel_credentials *c);
@@ -126,34 +153,34 @@ grpc_channel_credentials *grpc_channel_credentials_ref(
 void grpc_channel_credentials_unref(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_credentials *creds);
 
-/* Creates a security connector for the channel. May also create new channel
-   args for the channel to be used in place of the passed in const args if
-   returned non NULL. In that case the caller is responsible for destroying
-   new_args after channel creation. */
+// Creates a security connector for the channel. May also create new channel
+// args for the channel to be used in place of the passed in const args if
+// returned non NULL. In that case the caller is responsible for destroying
+// new_args after channel creation.
 grpc_security_status grpc_channel_credentials_create_security_connector(
     grpc_exec_ctx *exec_ctx, grpc_channel_credentials *creds,
     const char *target, const grpc_channel_args *args,
     grpc_channel_security_connector **sc, grpc_channel_args **new_args);
 
-/* Creates a version of the channel credentials without any attached call
-   credentials. This can be used in order to open a channel to a non-trusted
-   gRPC load balancer. */
+// Creates a version of the channel credentials without any attached call
+// credentials. This can be used in order to open a channel to a non-trusted
+// gRPC load balancer.
 grpc_channel_credentials *
 grpc_channel_credentials_duplicate_without_call_credentials(
     grpc_channel_credentials *creds);
 
-/* Util to encapsulate the channel credentials in a channel arg. */
+// Util to encapsulate the channel credentials in a channel arg.
 grpc_arg grpc_channel_credentials_to_arg(grpc_channel_credentials *credentials);
 
-/* Util to get the channel credentials from a channel arg. */
+// Util to get the channel credentials from a channel arg.
 grpc_channel_credentials *grpc_channel_credentials_from_arg(
     const grpc_arg *arg);
 
-/* Util to find the channel credentials from channel args. */
+// Util to find the channel credentials from channel args.
 grpc_channel_credentials *grpc_channel_credentials_find_in_args(
     const grpc_channel_args *args);
 
-/* --- grpc_credentials_md. --- */
+// --- grpc_credentials_md. ---
 
 typedef struct {
   grpc_slice key;
@@ -170,7 +197,7 @@ typedef struct {
 grpc_credentials_md_store *grpc_credentials_md_store_create(
     size_t initial_capacity);
 
-/* Will ref key and value. */
+// Will ref key and value.
 void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
                                    grpc_slice key, grpc_slice value);
 void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
@@ -180,7 +207,7 @@ grpc_credentials_md_store *grpc_credentials_md_store_ref(
 void grpc_credentials_md_store_unref(grpc_exec_ctx *exec_ctx,
                                      grpc_credentials_md_store *store);
 
-/* --- grpc_call_credentials. --- */
+// --- grpc_call_credentials. ---
 
 /* error_details must be NULL if status is GRPC_CREDENTIALS_OK. */
 typedef void (*grpc_credentials_metadata_cb)(
@@ -211,12 +238,12 @@ void grpc_call_credentials_get_request_metadata(
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
     grpc_credentials_metadata_cb cb, void *user_data);
 
-/* Metadata-only credentials with the specified key and value where
-   asynchronicity can be simulated for testing. */
+// Metadata-only credentials with the specified key and value where
+// asynchronicity can be simulated for testing.
 grpc_call_credentials *grpc_md_only_test_credentials_create(
     const char *md_key, const char *md_value, int is_async);
 
-/* --- grpc_server_credentials. --- */
+// --- grpc_server_credentials. ---
 
 typedef struct {
   void (*destruct)(grpc_exec_ctx *exec_ctx, grpc_server_credentials *c);
@@ -242,14 +269,17 @@ grpc_server_credentials *grpc_server_credentials_ref(
 void grpc_server_credentials_unref(grpc_exec_ctx *exec_ctx,
                                    grpc_server_credentials *creds);
 
+}  // namespace grpc_core
 #define GRPC_SERVER_CREDENTIALS_ARG "grpc.server_credentials"
+
+namespace grpc_core {
 
 grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials *c);
 grpc_server_credentials *grpc_server_credentials_from_arg(const grpc_arg *arg);
 grpc_server_credentials *grpc_find_server_credentials_in_args(
     const grpc_channel_args *args);
 
-/* -- Credentials Metadata Request. -- */
+// -- Credentials Metadata Request. --
 
 typedef struct {
   grpc_call_credentials *creds;
@@ -265,4 +295,5 @@ grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
 void grpc_credentials_metadata_request_destroy(
     grpc_exec_ctx *exec_ctx, grpc_credentials_metadata_request *r);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H */

@@ -37,6 +37,8 @@
 #include <grpc/slice.h>
 #include "src/core/lib/http/httpcli.h"
 
+namespace grpc_core {
+
 grpc_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request);
 grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
                                             const char *body_bytes,
@@ -44,4 +46,5 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
 grpc_slice grpc_httpcli_format_connect_request(
     const grpc_httpcli_request *request);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_HTTP_FORMAT_REQUEST_H */

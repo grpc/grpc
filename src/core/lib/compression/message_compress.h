@@ -37,18 +37,22 @@
 #include <grpc/compression.h>
 #include <grpc/slice_buffer.h>
 
-/* compress 'input' to 'output' using 'algorithm'.
-   On success, appends compressed slices to output and returns 1.
-   On failure, appends uncompressed slices to output and returns 0. */
+// compress 'input' to 'output' using 'algorithm'.
+// On success, appends compressed slices to output and returns 1.
+// On failure, appends uncompressed slices to output and returns 0.
+
+namespace grpc_core {
+
 int grpc_msg_compress(grpc_exec_ctx* exec_ctx,
                       grpc_compression_algorithm algorithm,
                       grpc_slice_buffer* input, grpc_slice_buffer* output);
 
-/* decompress 'input' to 'output' using 'algorithm'.
-   On success, appends slices to output and returns 1.
-   On failure, output is unchanged, and returns 0. */
+// decompress 'input' to 'output' using 'algorithm'.
+// On success, appends slices to output and returns 1.
+// On failure, output is unchanged, and returns 0.
 int grpc_msg_decompress(grpc_exec_ctx* exec_ctx,
                         grpc_compression_algorithm algorithm,
                         grpc_slice_buffer* input, grpc_slice_buffer* output);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H */

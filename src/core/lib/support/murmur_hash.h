@@ -38,7 +38,11 @@
 
 #include <stddef.h>
 
-/* compute the hash of key (length len) */
+// compute the hash of key (length len)
+
+namespace grpc_core {
+
 uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SUPPORT_MURMUR_HASH_H */

@@ -42,6 +42,8 @@
 // Channel arg key for client channel factory.
 #define GRPC_ARG_CLIENT_CHANNEL_FACTORY "grpc.client_channel_factory"
 
+namespace grpc_core {
+
 typedef struct grpc_client_channel_factory grpc_client_channel_factory;
 typedef struct grpc_client_channel_factory_vtable
     grpc_client_channel_factory_vtable;
@@ -52,8 +54,8 @@ typedef enum {
                                               balancing service */
 } grpc_client_channel_type;
 
-/** Constructor for new configured channels.
-    Creating decorators around this type is encouraged to adapt behavior. */
+//  Constructor for new configured channels.
+// Creating decorators around this type is encouraged to adapt behavior.
 struct grpc_client_channel_factory {
   const grpc_client_channel_factory_vtable *vtable;
 };
@@ -75,12 +77,12 @@ void grpc_client_channel_factory_ref(grpc_client_channel_factory *factory);
 void grpc_client_channel_factory_unref(grpc_exec_ctx *exec_ctx,
                                        grpc_client_channel_factory *factory);
 
-/** Create a new grpc_subchannel */
+//  Create a new grpc_subchannel
 grpc_subchannel *grpc_client_channel_factory_create_subchannel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
     const grpc_subchannel_args *args);
 
-/** Create a new grpc_channel */
+//  Create a new grpc_channel
 grpc_channel *grpc_client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
     const char *target, grpc_client_channel_type type,
@@ -89,4 +91,5 @@ grpc_channel *grpc_client_channel_factory_create_channel(
 grpc_arg grpc_client_channel_factory_create_channel_arg(
     grpc_client_channel_factory *factory);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H */

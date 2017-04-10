@@ -38,6 +38,8 @@
 
 #include "src/core/lib/iomgr/iomgr.h"
 
+namespace grpc_core {
+
 typedef struct grpc_iomgr_object {
   char *name;
   struct grpc_iomgr_object *next;
@@ -48,11 +50,12 @@ void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name);
 void grpc_iomgr_unregister_object(grpc_iomgr_object *obj);
 
 void grpc_iomgr_platform_init(void);
-/** flush any globally queued work from iomgr */
+//  flush any globally queued work from iomgr
 void grpc_iomgr_platform_flush(void);
-/** tear down all platform specific global iomgr structures */
+//  tear down all platform specific global iomgr structures
 void grpc_iomgr_platform_shutdown(void);
 
 bool grpc_iomgr_abort_on_leaks(void);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_INTERNAL_H */

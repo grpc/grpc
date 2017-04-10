@@ -34,9 +34,11 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HUFFSYMS_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HUFFSYMS_H
 
-/* HPACK static huffman table */
+// HPACK static huffman table
 
 #define GRPC_CHTTP2_NUM_HUFFSYMS 257
+
+namespace grpc_core {
 
 typedef struct {
   unsigned bits;
@@ -45,4 +47,5 @@ typedef struct {
 
 extern const grpc_chttp2_huffsym grpc_chttp2_huffsyms[GRPC_CHTTP2_NUM_HUFFSYMS];
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HUFFSYMS_H */

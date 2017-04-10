@@ -37,17 +37,27 @@
 #include <stdio.h>
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
 
-/* Creates a temporary file from a prefix.
-   If tmp_filename is not NULL, *tmp_filename is assigned the name of the
-   created file and it is the responsibility of the caller to gpr_free it
-   unless an error occurs in which case it will be set to NULL. */
+// Creates a temporary file from a prefix.
+// If tmp_filename is not NULL, *tmp_filename is assigned the name of the
+// created file and it is the responsibility of the caller to gpr_free it
+// unless an error occurs in which case it will be set to NULL.
+
+namespace grpc_core {
+
 FILE *gpr_tmpfile(const char *prefix, char **tmp_filename);
 
+}  // namespace grpc_core
 #ifdef __cplusplus
-}
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_LIB_SUPPORT_TMPFILE_H */

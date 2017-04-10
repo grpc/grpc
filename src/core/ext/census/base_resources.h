@@ -33,7 +33,11 @@
 #ifndef GRPC_CORE_EXT_CENSUS_BASE_RESOURCES_H
 #define GRPC_CORE_EXT_CENSUS_BASE_RESOURCES_H
 
-/* Define all base resources. This should be called by census initialization. */
+// Define all base resources. This should be called by census initialization.
+
+namespace grpc_core {
+
 void define_base_resources();
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_CENSUS_BASE_RESOURCES_H */

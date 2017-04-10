@@ -36,7 +36,10 @@
 
 #include <grpc/support/time.h>
 
+namespace grpc_core {
+
 void gpr_precise_clock_init(void);
 void gpr_precise_clock_now(gpr_timespec *clk);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SUPPORT_TIME_PRECISE_H */

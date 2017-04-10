@@ -36,6 +36,9 @@
 
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
+namespace grpc_core {
+
 extern grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_PIPE_H */

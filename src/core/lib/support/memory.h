@@ -41,6 +41,8 @@
 
 namespace grpc_core {
 
+namespace grpc_core {
+
 // Alternative to new, since we cannot use it (for fear of libstdc++)
 template <typename T, typename... Args>
 inline T* New(Args&&... args) {
@@ -71,4 +73,5 @@ inline UniquePtr<T> MakeUnique(Args&&... args) {
 
 }  // namespace grpc_core
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SUPPORT_MEMORY_H */

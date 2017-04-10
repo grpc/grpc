@@ -38,6 +38,9 @@
 #include <stddef.h>
 
 // Multiple-producer single-consumer lock free queue, based upon the
+
+namespace grpc_core {
+
 // implementation from Dmitry Vyukov here:
 // http://www.1024cores.net/home/lock-free-algorithms/queues/intrusive-mpsc-node-based-queue
 
@@ -62,4 +65,5 @@ void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n);
 // the queue is empty!!)
 gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SUPPORT_MPSCQ_H */

@@ -42,6 +42,9 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 
 /// Handshakers are used to perform initial handshakes on a connection
+
+namespace grpc_core {
+
 /// before the client sends the initial request.  Some examples of what
 /// a handshaker can be used for includes support for HTTP CONNECT on
 /// the client side and various types of security initialization.
@@ -179,4 +182,5 @@ void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
 void grpc_handshake_manager_pending_list_shutdown_all(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* head, grpc_error* why);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */

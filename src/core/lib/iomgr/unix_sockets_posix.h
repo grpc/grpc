@@ -40,6 +40,8 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
+namespace grpc_core {
+
 void grpc_create_socketpair_if_unix(int sv[2]);
 
 grpc_error *grpc_resolve_unix_domain_address(
@@ -53,4 +55,5 @@ void grpc_unlink_if_unix_domain_socket(
 char *grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address *resolved_addr);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_UNIX_SOCKETS_POSIX_H */

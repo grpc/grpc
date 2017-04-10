@@ -37,11 +37,15 @@
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include "src/core/lib/iomgr/port.h"
 
-/** Initializes the iomgr. */
+//  Initializes the iomgr.
+
+namespace grpc_core {
+
 void grpc_iomgr_init(void);
 
-/** Signals the intention to shutdown the iomgr. Expects to be able to flush
- * exec_ctx. */
+//  Signals the intention to shutdown the iomgr. Expects to be able to flush
+//  exec_ctx.
 void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_H */

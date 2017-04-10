@@ -36,8 +36,11 @@
 
 #include "src/core/lib/transport/transport.h"
 
+namespace grpc_core {
+
 grpc_transport *grpc_create_cronet_transport(void *engine, const char *target,
                                              const grpc_channel_args *args,
                                              void *reserved);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H */

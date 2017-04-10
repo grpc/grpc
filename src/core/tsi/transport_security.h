@@ -37,13 +37,21 @@
 #include "src/core/tsi/transport_security_interface.h"
 
 #ifdef __cplusplus
+
+namespace grpc_core {
+
 extern "C" {
+
+} // namespace grpc_core
 #endif
+
+
+namespace grpc_core {
 
 extern int tsi_tracing_enabled;
 
-/* Base for tsi_frame_protector implementations.
-   See transport_security_interface.h for documentation. */
+// Base for tsi_frame_protector implementations.
+// See transport_security_interface.h for documentation.
 typedef struct {
   tsi_result (*protect)(tsi_frame_protector *self,
                         const unsigned char *unprotected_bytes,
@@ -66,8 +74,8 @@ struct tsi_frame_protector {
   const tsi_frame_protector_vtable *vtable;
 };
 
-/* Base for tsi_handshaker implementations.
-   See transport_security_interface.h for documentation. */
+// Base for tsi_handshaker implementations.
+// See transport_security_interface.h for documentation.
 typedef struct {
   tsi_result (*get_bytes_to_send_to_peer)(tsi_handshaker *self,
                                           unsigned char *bytes,
@@ -88,7 +96,7 @@ struct tsi_handshaker {
   int frame_protector_created;
 };
 
-/* Peer and property construction/destruction functions. */
+// Peer and property construction/destruction functions.
 tsi_result tsi_construct_peer(size_t property_count, tsi_peer *peer);
 tsi_peer_property tsi_init_peer_property(void);
 void tsi_peer_property_destruct(tsi_peer_property *property);
@@ -101,11 +109,18 @@ tsi_result tsi_construct_allocated_string_peer_property(
 tsi_result tsi_construct_string_peer_property_from_cstring(
     const char *name, const char *value, tsi_peer_property *property);
 
-/* Utils. */
+// Utils.
 char *tsi_strdup(const char *src); /* Sadly, no strdup in C89. */
 
+
+} // namespace grpc_core
 #ifdef __cplusplus
+
+namespace grpc_core {
+
 }
+
+} // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_TSI_TRANSPORT_SECURITY_H */

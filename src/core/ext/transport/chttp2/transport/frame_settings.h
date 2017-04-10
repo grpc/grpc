@@ -39,6 +39,8 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+namespace grpc_core {
+
 typedef enum {
   GRPC_CHTTP2_SPS_ID0,
   GRPC_CHTTP2_SPS_ID1,
@@ -48,7 +50,7 @@ typedef enum {
   GRPC_CHTTP2_SPS_VAL3
 } grpc_chttp2_settings_parse_state;
 
-/* The things HTTP/2 defines as connection level settings */
+// The things HTTP/2 defines as connection level settings
 typedef enum {
   GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE = 1,
   GRPC_CHTTP2_SETTINGS_ENABLE_PUSH = 2,
@@ -82,14 +84,14 @@ typedef struct {
   uint32_t error_value;
 } grpc_chttp2_setting_parameters;
 
-/* HTTP/2 mandated connection setting parameters */
+// HTTP/2 mandated connection setting parameters
 extern const grpc_chttp2_setting_parameters
     grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS];
 
-/* Create a settings frame by diffing old & new, and updating old to be new */
+// Create a settings frame by diffing old & new, and updating old to be new
 grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *newval,
                                        uint32_t force_mask, size_t count);
-/* Create an ack settings frame */
+// Create an ack settings frame
 grpc_slice grpc_chttp2_settings_ack_create(void);
 
 grpc_error *grpc_chttp2_settings_parser_begin_frame(
@@ -101,4 +103,5 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx,
                                               grpc_chttp2_stream *s,
                                               grpc_slice slice, int is_last);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H */

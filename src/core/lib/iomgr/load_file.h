@@ -41,16 +41,26 @@
 #include "src/core/lib/iomgr/error.h"
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
 
-/* Loads the content of a file into a slice. add_null_terminator will add
-   a NULL terminator if non-zero. */
+// Loads the content of a file into a slice. add_null_terminator will add
+// a NULL terminator if non-zero.
+
+namespace grpc_core {
+
 grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
                            grpc_slice *slice);
 
+}  // namespace grpc_core
 #ifdef __cplusplus
-}
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_LOAD_FILE_H */

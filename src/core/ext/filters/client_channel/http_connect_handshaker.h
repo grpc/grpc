@@ -35,15 +35,29 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
 
 /// Channel arg indicating the server in HTTP CONNECT request (string).
+
+namespace grpc_core {
+
 /// The presence of this arg triggers the use of HTTP CONNECT.
+
+}  // namespace grpc_core
 #define GRPC_ARG_HTTP_CONNECT_SERVER "grpc.http_connect_server"
 
 /// Channel arg indicating HTTP CONNECT headers (string).
+
+namespace grpc_core {
+
 /// Multiple headers are separated by newlines.  Key/value pairs are
 /// seperated by colons.
+
+}  // namespace grpc_core
 #define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
 
 /// Registers handshaker factory.
+
+namespace grpc_core {
+
 void grpc_http_connect_register_handshaker_factory();
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */

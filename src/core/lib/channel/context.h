@@ -37,6 +37,9 @@
 /// Call object context pointers.
 
 /// Call context is represented as an array of \a grpc_call_context_elements.
+
+namespace grpc_core {
+
 /// This enum represents the indexes into the array, where each index
 /// contains a different type of value.
 typedef enum {
@@ -61,4 +64,5 @@ typedef struct {
   void (*destroy)(void *);
 } grpc_call_context_element;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_CHANNEL_CONTEXT_H */

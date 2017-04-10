@@ -37,8 +37,11 @@
 #include <grpc/slice.h>
 #include <stdbool.h>
 
+namespace grpc_core {
+
 bool grpc_slice_is_legal_header(grpc_slice s);
 bool grpc_slice_is_legal_nonbin_header(grpc_slice s);
 bool grpc_slice_is_bin_suffixed(grpc_slice s);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_TRAITS_H */

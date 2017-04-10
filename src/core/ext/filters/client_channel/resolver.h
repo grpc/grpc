@@ -37,10 +37,12 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
+namespace grpc_core {
+
 typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;
 
-/** \a grpc_resolver provides \a grpc_channel_args objects to its caller */
+//  \a grpc_resolver provides \a grpc_channel_args objects to its caller
 struct grpc_resolver {
   const grpc_resolver_vtable *vtable;
   gpr_refcount refs;
@@ -56,20 +58,34 @@ struct grpc_resolver_vtable {
                       grpc_channel_args **result, grpc_closure *on_complete);
 };
 
+}  // namespace grpc_core
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
 #define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_RESOLVER_UNREF(cl, p, r) \
-  grpc_resolver_unref((cl), (p), __FILE__, __LINE__, (r))
-void grpc_resolver_ref(grpc_resolver *policy, const char *file, int line,
-                       const char *reason);
+#define GRPC_RESOLVER_UNREF(cl, p, r)
+
+namespace grpc_core {
+
+grpc_resolver_unref((cl), (p), __FILE__, __LINE__,
+                    (r)) void grpc_resolver_ref(grpc_resolver *policy,
+                                                const char *file, int line,
+                                                const char *reason);
 void grpc_resolver_unref(grpc_resolver *policy, grpc_closure_list *closure_list,
                          const char *file, int line, const char *reason);
+
+}  // namespace grpc_core
 #else
 #define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p))
 #define GRPC_RESOLVER_UNREF(cl, p, r) grpc_resolver_unref((cl), (p))
+
+namespace grpc_core {
+
 void grpc_resolver_ref(grpc_resolver *policy);
 void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *policy);
+
+}  // namespace grpc_core
 #endif
+
+namespace grpc_core {
 
 void grpc_resolver_init(grpc_resolver *resolver,
                         const grpc_resolver_vtable *vtable,
@@ -78,24 +94,25 @@ void grpc_resolver_init(grpc_resolver *resolver,
 void grpc_resolver_shutdown_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_resolver *resolver);
 
-/** Notification that the channel has seen an error on some address.
-    Can be used as a hint that re-resolution is desirable soon.
-
-    Must be called from the combiner passed as a resolver_arg at construction
-    time.*/
+//  Notification that the channel has seen an error on some address.
+// Can be used as a hint that re-resolution is desirable soon.
+//
+// Must be called from the combiner passed as a resolver_arg at construction
+// time.
 void grpc_resolver_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
                                             grpc_resolver *resolver);
 
-/** Get the next result from the resolver.  Expected to set \a *result with
-    new channel args and then schedule \a on_complete for execution.
-
-    If resolution is fatally broken, set \a *result to NULL and
-    schedule \a on_complete.
-
-    Must be called from the combiner passed as a resolver_arg at construction
-    time.*/
+//  Get the next result from the resolver.  Expected to set \a *result with
+// new channel args and then schedule \a on_complete for execution.
+//
+// If resolution is fatally broken, set \a *result to NULL and
+// schedule \a on_complete.
+//
+// Must be called from the combiner passed as a resolver_arg at construction
+// time.
 void grpc_resolver_next_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                                grpc_channel_args **result,
                                grpc_closure *on_complete);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H */

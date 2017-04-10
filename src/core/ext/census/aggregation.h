@@ -36,31 +36,35 @@
 #ifndef GRPC_CORE_EXT_CENSUS_AGGREGATION_H
 #define GRPC_CORE_EXT_CENSUS_AGGREGATION_H
 
-/** Structure used to describe an aggregation type. */
+//  Structure used to describe an aggregation type.
+
+namespace grpc_core {
+
 struct census_aggregation_ops {
-  /* Create a new aggregation. The pointer returned can be used in future calls
-     to clone(), free(), record(), data() and reset(). */
+  // Create a new aggregation. The pointer returned can be used in future calls
+  // to clone(), free(), record(), data() and reset().
   void *(*create)(const void *create_arg);
-  /* Make a copy of an aggregation created by create() */
+  // Make a copy of an aggregation created by create()
   void *(*clone)(const void *aggregation);
-  /* Destroy an aggregation created by create() */
+  // Destroy an aggregation created by create()
   void (*free)(void *aggregation);
-  /* Record a new value against aggregation. */
+  // Record a new value against aggregation.
   void (*record)(void *aggregation, double value);
-  /* Return current aggregation data. The caller must cast this object into
-     the correct type for the aggregation result. The object returned can be
-     freed by using free_data(). */
+  // Return current aggregation data. The caller must cast this object into
+  // the correct type for the aggregation result. The object returned can be
+  // freed by using free_data().
   void *(*data)(const void *aggregation);
-  /* free data returned by data() */
+  // free data returned by data()
   void (*free_data)(void *data);
-  /* Reset an aggregation to default (zero) values. */
+  // Reset an aggregation to default (zero) values.
   void (*reset)(void *aggregation);
-  /* Merge 'from' aggregation into 'to'. Both aggregations must be compatible */
+  // Merge 'from' aggregation into 'to'. Both aggregations must be compatible
   void (*merge)(void *to, const void *from);
-  /* Fill buffer with printable string version of aggregation contents. For
-     debugging only. Returns the number of bytes added to buffer (a value == n
-     implies the buffer was of insufficient size). */
+  // Fill buffer with printable string version of aggregation contents. For
+  // debugging only. Returns the number of bytes added to buffer (a value == n
+  // implies the buffer was of insufficient size).
   size_t (*print)(const void *aggregation, char *buffer, size_t n);
 };
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_CENSUS_AGGREGATION_H */

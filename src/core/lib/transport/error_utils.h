@@ -38,6 +38,9 @@
 #include "src/core/lib/transport/http2_errors.h"
 
 /// A utility function to get the status code and message to be returned
+
+namespace grpc_core {
+
 /// to the application.  If not set in the top-level message, looks
 /// through child errors until it finds the first one with these attributes.
 /// All attributes are pulled from the same child error. If any of the
@@ -53,4 +56,5 @@ void grpc_error_get_status(grpc_error *error, gpr_timespec deadline,
 /// GRPC_ERROR_CANCELLED
 bool grpc_error_has_clear_grpc_status(grpc_error *error);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H */

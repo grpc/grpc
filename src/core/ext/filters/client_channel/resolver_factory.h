@@ -39,6 +39,8 @@
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
+namespace grpc_core {
+
 typedef struct grpc_resolver_factory grpc_resolver_factory;
 typedef struct grpc_resolver_factory_vtable grpc_resolver_factory_vtable;
 
@@ -57,29 +59,30 @@ struct grpc_resolver_factory_vtable {
   void (*ref)(grpc_resolver_factory *factory);
   void (*unref)(grpc_resolver_factory *factory);
 
-  /** Implementation of grpc_resolver_factory_create_resolver */
+  //  Implementation of grpc_resolver_factory_create_resolver
   grpc_resolver *(*create_resolver)(grpc_exec_ctx *exec_ctx,
                                     grpc_resolver_factory *factory,
                                     grpc_resolver_args *args);
 
-  /** Implementation of grpc_resolver_factory_get_default_authority */
+  //  Implementation of grpc_resolver_factory_get_default_authority
   char *(*get_default_authority)(grpc_resolver_factory *factory, grpc_uri *uri);
 
-  /** URI scheme that this factory implements */
+  //  URI scheme that this factory implements
   const char *scheme;
 };
 
 void grpc_resolver_factory_ref(grpc_resolver_factory *resolver);
 void grpc_resolver_factory_unref(grpc_resolver_factory *resolver);
 
-/** Create a resolver instance for a name */
+//  Create a resolver instance for a name
 grpc_resolver *grpc_resolver_factory_create_resolver(
     grpc_exec_ctx *exec_ctx, grpc_resolver_factory *factory,
     grpc_resolver_args *args);
 
-/** Return a (freshly allocated with gpr_malloc) string representing
-    the default authority to use for this scheme. */
+//  Return a (freshly allocated with gpr_malloc) string representing
+// the default authority to use for this scheme.
 char *grpc_resolver_factory_get_default_authority(
     grpc_resolver_factory *factory, grpc_uri *uri);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H */

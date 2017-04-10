@@ -36,7 +36,11 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-/* Processes metadata on the client side for HTTP2 transports */
+// Processes metadata on the client side for HTTP2 transports
+
+namespace grpc_core {
+
 extern const grpc_channel_filter grpc_http_server_filter;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_CHANNEL_HTTP_SERVER_FILTER_H */

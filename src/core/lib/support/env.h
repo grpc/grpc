@@ -37,22 +37,32 @@
 #include <stdio.h>
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
 
-/* Env utility functions */
+// Env utility functions
 
 /* Gets the environment variable value with the specified name.
    Returns a newly allocated string. It is the responsability of the caller to
    gpr_free the return value if not NULL (which means that the environment
    variable exists). */
+
+namespace grpc_core {
+
 char *gpr_getenv(const char *name);
 
-/* Sets the the environment with the specified name to the specified value. */
+// Sets the the environment with the specified name to the specified value.
 void gpr_setenv(const char *name, const char *value);
 
+}  // namespace grpc_core
 #ifdef __cplusplus
-}
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_LIB_SUPPORT_ENV_H */

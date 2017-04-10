@@ -36,10 +36,14 @@
 
 #include "src/core/ext/census/trace_string.h"
 
-/* Stores a status code and status message for a trace. */
+// Stores a status code and status message for a trace.
+
+namespace grpc_core {
+
 typedef struct trace_status {
   int64_t errorCode;
   trace_string errorMessage;
 } trace_status;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_CENSUS_TRACE_STATUS_H */

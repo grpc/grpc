@@ -37,28 +37,38 @@
 #include <grpc/grpc.h>
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
 
-/** Return the compression algorithm from \a call.
- *
- * \warning This function should \b only be used in test code. */
+//  Return the compression algorithm from \a call.
+///
+//  \warning This function should \b only be used in test code.
+
+namespace grpc_core {
+
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
     grpc_call *call);
 
-/** Return the message flags from \a call.
- *
- * \warning This function should \b only be used in test code. */
+//  Return the message flags from \a call.
+///
+//  \warning This function should \b only be used in test code.
 uint32_t grpc_call_test_only_get_message_flags(grpc_call *call);
 
-/** Returns a bitset for the encodings (compression algorithms) supported by \a
- * call's peer.
- *
- * To be indexed by grpc_compression_algorithm enum values. */
+//  Returns a bitset for the encodings (compression algorithms) supported by \a
+//  call's peer.
+///
+//  To be indexed by grpc_compression_algorithm enum values.
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call);
 
+}  // namespace grpc_core
 #ifdef __cplusplus
-}
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_CALL_TEST_ONLY_H */

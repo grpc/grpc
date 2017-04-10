@@ -34,57 +34,93 @@
 #ifndef GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
 #define GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
 
-/* Internal API for completion queues */
+// Internal API for completion queues
 
 #include <grpc/grpc.h>
 #include "src/core/lib/iomgr/pollset.h"
 
-/* These trace flags default to 1. The corresponding lines are only traced
-   if grpc_api_trace is also truthy */
+// These trace flags default to 1. The corresponding lines are only traced
+// if grpc_api_trace is also truthy
+
+namespace grpc_core {
+
 extern int grpc_cq_pluck_trace;
 extern int grpc_cq_event_timeout_trace;
 extern int grpc_trace_operation_failures;
+
+}  // namespace grpc_core
 #ifndef NDEBUG
+
+namespace grpc_core {
+
 extern int grpc_trace_pending_tags;
+
+}  // namespace grpc_core
 #endif
 
+namespace grpc_core {
+
 typedef struct grpc_cq_completion {
-  /** user supplied tag */
+  //  user supplied tag
   void *tag;
-  /** done callback - called when this queue element is no longer
-      needed by the completion queue */
+  //  done callback - called when this queue element is no longer
+  // needed by the completion queue
   void (*done)(grpc_exec_ctx *exec_ctx, void *done_arg,
                struct grpc_cq_completion *c);
   void *done_arg;
-  /** next pointer; low bit is used to indicate success or not */
+  //  next pointer; low bit is used to indicate success or not
   uintptr_t next;
 } grpc_cq_completion;
 
 //#define GRPC_CQ_REF_COUNT_DEBUG
 
+}  // namespace grpc_core
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
+
+namespace grpc_core {
+
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
                           const char *file, int line);
 void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason,
                             const char *file, int line);
-#define GRPC_CQ_INTERNAL_REF(cc, reason) \
-  grpc_cq_internal_ref(cc, reason, __FILE__, __LINE__)
-#define GRPC_CQ_INTERNAL_UNREF(cc, reason) \
-  grpc_cq_internal_unref(cc, reason, __FILE__, __LINE__)
+
+}  // namespace grpc_core
+#define GRPC_CQ_INTERNAL_REF(cc, reason)
+
+namespace grpc_core {
+
+grpc_cq_internal_ref(cc, reason, __FILE__, __LINE__)
+
+}  // namespace grpc_core
+#define GRPC_CQ_INTERNAL_UNREF(cc, reason)
+
+namespace grpc_core {
+
+grpc_cq_internal_unref(cc, reason, __FILE__, __LINE__)
+
+}  // namespace grpc_core
 #else
+
+namespace grpc_core {
+
 void grpc_cq_internal_ref(grpc_completion_queue *cc);
 void grpc_cq_internal_unref(grpc_completion_queue *cc);
+
+}  // namespace grpc_core
 #define GRPC_CQ_INTERNAL_REF(cc, reason) grpc_cq_internal_ref(cc)
 #define GRPC_CQ_INTERNAL_UNREF(cc, reason) grpc_cq_internal_unref(cc)
 #endif
 
-/* Flag that an operation is beginning: the completion channel will not finish
-   shutdown until a corrensponding grpc_cq_end_* call is made.
-   \a tag is currently used only in debug builds. */
+// Flag that an operation is beginning: the completion channel will not finish
+// shutdown until a corrensponding grpc_cq_end_* call is made.
+// \a tag is currently used only in debug builds.
+
+namespace grpc_core {
+
 void grpc_cq_begin_op(grpc_completion_queue *cc, void *tag);
 
-/* Queue a GRPC_OP_COMPLETED operation; tag must correspond to the tag passed to
-   grpc_cq_begin_op */
+// Queue a GRPC_OP_COMPLETED operation; tag must correspond to the tag passed to
+// grpc_cq_begin_op
 void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
                     void *tag, grpc_error *error,
                     void (*done)(grpc_exec_ctx *exec_ctx, void *done_arg,
@@ -99,4 +135,5 @@ bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc);
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc);
 int grpc_cq_is_server_cq(grpc_completion_queue *cc);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H */

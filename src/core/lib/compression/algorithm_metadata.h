@@ -37,17 +37,21 @@
 #include <grpc/compression.h>
 #include "src/core/lib/transport/metadata.h"
 
-/** Return compression algorithm based metadata value */
+//  Return compression algorithm based metadata value
+
+namespace grpc_core {
+
 grpc_slice grpc_compression_algorithm_slice(
     grpc_compression_algorithm algorithm);
 
-/** Return compression algorithm based metadata element (grpc-encoding: xxx) */
+//  Return compression algorithm based metadata element (grpc-encoding: xxx)
 grpc_mdelem grpc_compression_encoding_mdelem(
     grpc_compression_algorithm algorithm);
 
-/** Find compression algorithm based on passed in mdstr - returns
- * GRPC_COMPRESS_ALGORITHM_COUNT on failure */
+//  Find compression algorithm based on passed in mdstr - returns
+//  GRPC_COMPRESS_ALGORITHM_COUNT on failure
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
     grpc_slice str);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_COMPRESSION_ALGORITHM_METADATA_H */

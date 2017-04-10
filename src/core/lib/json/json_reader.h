@@ -37,6 +37,8 @@
 #include <grpc/support/port_platform.h>
 #include "src/core/lib/json/json_common.h"
 
+namespace grpc_core {
+
 typedef enum {
   GRPC_JSON_STATE_OBJECT_KEY_BEGIN,
   GRPC_JSON_STATE_OBJECT_KEY_STRING,
@@ -69,10 +71,10 @@ typedef enum {
 } grpc_json_reader_state;
 
 enum {
-  /* The first non-unicode value is 0x110000. But let's pick
-   * a value high enough to start our error codes from. These
-   * values are safe to return from the read_char function.
-   */
+  // The first non-unicode value is 0x110000. But let's pick
+  //  a value high enough to start our error codes from. These
+  //  values are safe to return from the read_char function.
+  //
   GRPC_JSON_READ_CHAR_EOF = 0x7ffffff0,
   GRPC_JSON_READ_CHAR_EAGAIN,
   GRPC_JSON_READ_CHAR_ERROR
@@ -81,34 +83,34 @@ enum {
 struct grpc_json_reader;
 
 typedef struct grpc_json_reader_vtable {
-  /* Clears your internal string scratchpad. */
+  // Clears your internal string scratchpad.
   void (*string_clear)(void *userdata);
-  /* Adds a char to the string scratchpad. */
+  // Adds a char to the string scratchpad.
   void (*string_add_char)(void *userdata, uint32_t c);
-  /* Adds a utf32 char to the string scratchpad. */
+  // Adds a utf32 char to the string scratchpad.
   void (*string_add_utf32)(void *userdata, uint32_t c);
-  /* Reads a character from your input. May be utf-8, 16 or 32. */
+  // Reads a character from your input. May be utf-8, 16 or 32.
   uint32_t (*read_char)(void *userdata);
-  /* Starts a container of type GRPC_JSON_ARRAY or GRPC_JSON_OBJECT. */
+  // Starts a container of type GRPC_JSON_ARRAY or GRPC_JSON_OBJECT.
   void (*container_begins)(void *userdata, grpc_json_type type);
-  /* Ends the current container. Must return the type of its parent. */
+  // Ends the current container. Must return the type of its parent.
   grpc_json_type (*container_ends)(void *userdata);
-  /* Your internal string scratchpad is an object's key. */
+  // Your internal string scratchpad is an object's key.
   void (*set_key)(void *userdata);
-  /* Your internal string scratchpad is a string value. */
+  // Your internal string scratchpad is a string value.
   void (*set_string)(void *userdata);
-  /* Your internal string scratchpad is a numerical value. Return 1 if valid. */
+  // Your internal string scratchpad is a numerical value. Return 1 if valid.
   int (*set_number)(void *userdata);
-  /* Sets the values true, false or null. */
+  // Sets the values true, false or null.
   void (*set_true)(void *userdata);
   void (*set_false)(void *userdata);
   void (*set_null)(void *userdata);
 } grpc_json_reader_vtable;
 
 typedef struct grpc_json_reader {
-  /* That structure is fully private, and initialized by grpc_json_reader_init.
-   * The definition is public so you can put it on your stack.
-   */
+  // That structure is fully private, and initialized by grpc_json_reader_init.
+  //  The definition is public so you can put it on your stack.
+  //
 
   void *userdata;
   grpc_json_reader_vtable *vtable;
@@ -121,7 +123,7 @@ typedef struct grpc_json_reader {
   grpc_json_reader_state state;
 } grpc_json_reader;
 
-/* The return type of the parser. */
+// The return type of the parser.
 typedef enum {
   GRPC_JSON_DONE,          /* The parser finished successfully. */
   GRPC_JSON_EAGAIN,        /* The parser yields to get more data. */
@@ -130,31 +132,32 @@ typedef enum {
   GRPC_JSON_INTERNAL_ERROR /* The parser got an internal error. */
 } grpc_json_reader_status;
 
-/* Call this function to start parsing the input. It will return the following:
- *    . GRPC_JSON_DONE if the input got eof, and the parsing finished
- *      successfully.
- *    . GRPC_JSON_EAGAIN if the read_char function returned again. Call the
- *      parser again as needed. It is okay to call the parser in polling mode,
- *      although a bit dull.
- *    . GRPC_JSON_READ_ERROR if the read_char function returned an error. The
- *      state isn't broken however, and the function can be called again if the
- *      error has been corrected. But please use the EAGAIN feature instead for
- *      consistency.
- *    . GRPC_JSON_PARSE_ERROR if the input was somehow invalid.
- *    . GRPC_JSON_INTERNAL_ERROR if the parser somehow ended into an invalid
- *      internal state.
- */
+// Call this function to start parsing the input. It will return the following:
+//     . GRPC_JSON_DONE if the input got eof, and the parsing finished
+//       successfully.
+//     . GRPC_JSON_EAGAIN if the read_char function returned again. Call the
+//       parser again as needed. It is okay to call the parser in polling mode,
+//       although a bit dull.
+//     . GRPC_JSON_READ_ERROR if the read_char function returned an error. The
+//       state isn't broken however, and the function can be called again if the
+//       error has been corrected. But please use the EAGAIN feature instead for
+//       consistency.
+//     . GRPC_JSON_PARSE_ERROR if the input was somehow invalid.
+//     . GRPC_JSON_INTERNAL_ERROR if the parser somehow ended into an invalid
+//       internal state.
+//
 grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader);
 
-/* Call this function to initialize the reader structure. */
+// Call this function to initialize the reader structure.
 void grpc_json_reader_init(grpc_json_reader *reader,
                            grpc_json_reader_vtable *vtable, void *userdata);
 
-/* You may call this from the read_char callback if you don't know where is the
- * end of your input stream, and you'd like the json reader to hint you that it
- * has completed reading its input, so you can return an EOF to it. Note that
- * there might still be trailing whitespaces after that point.
- */
+// You may call this from the read_char callback if you don't know where is the
+//  end of your input stream, and you'd like the json reader to hint you that it
+//  has completed reading its input, so you can return an EOF to it. Note that
+//  there might still be trailing whitespaces after that point.
+//
 int grpc_json_reader_is_complete(grpc_json_reader *reader);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_JSON_JSON_READER_H */

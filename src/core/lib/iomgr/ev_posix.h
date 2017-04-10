@@ -42,6 +42,8 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/workqueue.h"
 
+namespace grpc_core {
+
 typedef struct grpc_fd grpc_fd;
 
 typedef struct grpc_event_engine_vtable {
@@ -97,93 +99,109 @@ typedef struct grpc_event_engine_vtable {
 
   void (*shutdown_engine)(void);
 
+}  // namespace grpc_core
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-  grpc_workqueue *(*workqueue_ref)(grpc_workqueue *workqueue, const char *file,
+
+namespace grpc_core {
+
+  grpc_workqueue *(*workqueue_ref)(grpc_workqueue * workqueue, const char *file,
                                    int line, const char *reason);
-  void (*workqueue_unref)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+  void (*workqueue_unref)(grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue,
                           const char *file, int line, const char *reason);
+
+}  // namespace grpc_core
 #else
-  grpc_workqueue *(*workqueue_ref)(grpc_workqueue *workqueue);
-  void (*workqueue_unref)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
+
+namespace grpc_core {
+
+  grpc_workqueue *(*workqueue_ref)(grpc_workqueue * workqueue);
+  void (*workqueue_unref)(grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue);
+
+}  // namespace grpc_core
 #endif
-  grpc_closure_scheduler *(*workqueue_scheduler)(grpc_workqueue *workqueue);
-} grpc_event_engine_vtable;
+
+namespace grpc_core {
+
+grpc_closure_scheduler *(*workqueue_scheduler)(grpc_workqueue *workqueue);
+}
+grpc_event_engine_vtable;
 
 void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);
 
-/* Return the name of the poll strategy */
+// Return the name of the poll strategy
 const char *grpc_get_poll_strategy_name();
 
-/* Create a wrapped file descriptor.
-   Requires fd is a non-blocking file descriptor.
-   This takes ownership of closing fd. */
+// Create a wrapped file descriptor.
+// Requires fd is a non-blocking file descriptor.
+// This takes ownership of closing fd.
 grpc_fd *grpc_fd_create(int fd, const char *name);
 
-/* Get a workqueue that's associated with this fd */
+// Get a workqueue that's associated with this fd
 grpc_workqueue *grpc_fd_get_workqueue(grpc_fd *fd);
 
-/* Return the wrapped fd, or -1 if it has been released or closed. */
+// Return the wrapped fd, or -1 if it has been released or closed.
 int grpc_fd_wrapped_fd(grpc_fd *fd);
 
-/* Releases fd to be asynchronously destroyed.
-   on_done is called when the underlying file descriptor is definitely close()d.
-   If on_done is NULL, no callback will be made.
-   If release_fd is not NULL, it's set to fd and fd will not be closed.
-   Requires: *fd initialized; no outstanding notify_on_read or
-   notify_on_write.
-   MUST NOT be called with a pollset lock taken */
+// Releases fd to be asynchronously destroyed.
+// on_done is called when the underlying file descriptor is definitely close()d.
+// If on_done is NULL, no callback will be made.
+// If release_fd is not NULL, it's set to fd and fd will not be closed.
+// Requires: *fd initialized; no outstanding notify_on_read or
+// notify_on_write.
+// MUST NOT be called with a pollset lock taken
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
                     int *release_fd, const char *reason);
 
-/* Has grpc_fd_shutdown been called on an fd? */
+// Has grpc_fd_shutdown been called on an fd?
 bool grpc_fd_is_shutdown(grpc_fd *fd);
 
-/* Cause any current and future callbacks to fail. */
+// Cause any current and future callbacks to fail.
 void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why);
 
-/* Register read interest, causing read_cb to be called once when fd becomes
-   readable, on deadline specified by deadline, or on shutdown triggered by
-   grpc_fd_shutdown.
-   read_cb will be called with read_cb_arg when *fd becomes readable.
-   read_cb is Called with status of GRPC_CALLBACK_SUCCESS if readable,
-   GRPC_CALLBACK_TIMED_OUT if the call timed out,
-   and CANCELLED if the call was cancelled.
-
-   Requires:This method must not be called before the read_cb for any previous
-   call runs. Edge triggered events are used whenever they are supported by the
-   underlying platform. This means that users must drain fd in read_cb before
-   calling notify_on_read again. Users are also expected to handle spurious
-   events, i.e read_cb is called while nothing can be readable from fd  */
+// Register read interest, causing read_cb to be called once when fd becomes
+// readable, on deadline specified by deadline, or on shutdown triggered by
+// grpc_fd_shutdown.
+// read_cb will be called with read_cb_arg when *fd becomes readable.
+// read_cb is Called with status of GRPC_CALLBACK_SUCCESS if readable,
+// GRPC_CALLBACK_TIMED_OUT if the call timed out,
+// and CANCELLED if the call was cancelled.
+//
+// Requires:This method must not be called before the read_cb for any previous
+// call runs. Edge triggered events are used whenever they are supported by the
+// underlying platform. This means that users must drain fd in read_cb before
+// calling notify_on_read again. Users are also expected to handle spurious
+// events, i.e read_cb is called while nothing can be readable from fd
 void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                             grpc_closure *closure);
 
-/* Exactly the same semantics as above, except based on writable events.  */
+// Exactly the same semantics as above, except based on writable events.
 void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
 
-/* Return the read notifier pollset from the fd */
+// Return the read notifier pollset from the fd
 grpc_pollset *grpc_fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
                                                 grpc_fd *fd);
 
-/* pollset_posix functions */
+// pollset_posix functions
 
 /* Add an fd to a pollset */
 void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                          struct grpc_fd *fd);
 
-/* pollset_set_posix functions */
+// pollset_set_posix functions
 
 void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 
-/* override to allow tests to hook poll() usage */
+// override to allow tests to hook poll() usage
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
 
-/* This should be used for testing purposes ONLY */
+// This should be used for testing purposes ONLY
 void grpc_set_event_engine_test_only(const grpc_event_engine_vtable *);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */

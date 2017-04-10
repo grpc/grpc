@@ -38,6 +38,8 @@
 
 #include "src/core/lib/iomgr/socket_windows.h"
 
+namespace grpc_core {
+
 typedef enum {
   GRPC_IOCP_WORK_WORK,
   GRPC_IOCP_WORK_TIMEOUT,
@@ -52,4 +54,5 @@ void grpc_iocp_flush(void);
 void grpc_iocp_shutdown(void);
 void grpc_iocp_add_socket(grpc_winsocket *);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_IOCP_WINDOWS_H */

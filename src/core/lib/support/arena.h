@@ -32,15 +32,21 @@
  */
 
 // \file Arena based allocator
+
+namespace grpc_core {
+
 // Allows very fast allocation of memory, but that memory cannot be freed until
 // the arena as a whole is freed
 // Tracks the total memory allocated against it, so that future arenas can
 // pre-allocate the right amount of memory
 
+}  // namespace grpc_core
 #ifndef GRPC_CORE_LIB_SUPPORT_ARENA_H
 #define GRPC_CORE_LIB_SUPPORT_ARENA_H
 
 #include <stddef.h>
+
+namespace grpc_core {
 
 typedef struct gpr_arena gpr_arena;
 
@@ -51,4 +57,5 @@ void *gpr_arena_alloc(gpr_arena *arena, size_t size);
 // Destroy an arena, returning the total number of bytes allocated
 size_t gpr_arena_destroy(gpr_arena *arena);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SUPPORT_ARENA_H */

@@ -38,8 +38,11 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 
+namespace grpc_core {
+
 grpc_endpoint *grpc_tcp_client_create_from_fd(
     grpc_exec_ctx *exec_ctx, grpc_fd *fd, const grpc_channel_args *channel_args,
     const char *addr_str);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H */

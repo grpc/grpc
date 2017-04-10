@@ -35,6 +35,8 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
+namespace grpc_core {
+
 typedef struct {
   grpc_channel_credentials base;
   grpc_ssl_config config;
@@ -45,4 +47,5 @@ typedef struct {
   grpc_ssl_server_config config;
 } grpc_ssl_server_credentials;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_SSL_SSL_CREDENTIALS_H */

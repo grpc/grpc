@@ -38,42 +38,45 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-/* Forward decl of struct grpc_server */
+// Forward decl of struct grpc_server
 /* This is not typedef'ed to avoid a typedef-redefinition error */
+
+namespace grpc_core {
+
 struct grpc_server;
 
-/* Forward decl of grpc_udp_server */
+// Forward decl of grpc_udp_server
 typedef struct grpc_udp_server grpc_udp_server;
 
-/* Called when data is available to read from the socket. */
+// Called when data is available to read from the socket.
 typedef void (*grpc_udp_server_read_cb)(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
                                         void *user_data);
 
-/* Called when the socket is writeable. */
+// Called when the socket is writeable.
 typedef void (*grpc_udp_server_write_cb)(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
                                          void *user_data);
 
-/* Called when the grpc_fd is about to be orphaned (and the FD closed). */
+// Called when the grpc_fd is about to be orphaned (and the FD closed).
 typedef void (*grpc_udp_server_orphan_cb)(grpc_exec_ctx *exec_ctx,
                                           grpc_fd *emfd, void *user_data);
 
-/* Create a server, initially not bound to any ports */
+// Create a server, initially not bound to any ports
 grpc_udp_server *grpc_udp_server_create(const grpc_channel_args *args);
 
-/* Start listening to bound ports. user_data is passed to callbacks. */
+// Start listening to bound ports. user_data is passed to callbacks.
 void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *udp_server,
                            grpc_pollset **pollsets, size_t pollset_count,
                            void *user_data);
 
 int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned port_index);
 
-/* Add a port to the server, returning port number on success, or negative
-   on failure.
-
-   The :: and 0.0.0.0 wildcard addresses are treated identically, accepting
-   both IPv4 and IPv6 connections, but :: is the preferred style.  This usually
-   creates one socket, but possibly two on systems which support IPv6,
-   but not dualstack sockets. */
+// Add a port to the server, returning port number on success, or negative
+// on failure.
+//
+// The :: and 0.0.0.0 wildcard addresses are treated identically, accepting
+// both IPv4 and IPv6 connections, but :: is the preferred style.  This usually
+// creates one socket, but possibly two on systems which support IPv6,
+// but not dualstack sockets.
 
 /* TODO(ctiller): deprecate this, and make grpc_udp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
@@ -86,4 +89,5 @@ int grpc_udp_server_add_port(grpc_udp_server *s,
 void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *server,
                              grpc_closure *on_done);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_UDP_SERVER_H */

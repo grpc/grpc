@@ -34,9 +34,12 @@
 #ifndef GRPC_CORE_LIB_IOMGR_POLLSET_UV_H
 #define GRPC_CORE_LIB_IOMGR_POLLSET_UV_H
 
+namespace grpc_core {
+
 extern int grpc_pollset_work_run_loop;
 
 void grpc_pollset_global_init(void);
 void grpc_pollset_global_shutdown(void);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_UV_H */

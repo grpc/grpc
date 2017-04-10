@@ -36,10 +36,13 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
+namespace grpc_core {
+
 typedef struct {
   grpc_call_credentials base;
   grpc_metadata_credentials_plugin plugin;
   grpc_credentials_md_store *plugin_md;
 } grpc_plugin_credentials;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H */

@@ -39,6 +39,8 @@
 #include "src/core/lib/channel/handshaker_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+namespace grpc_core {
+
 typedef enum {
   HANDSHAKER_CLIENT = 0,
   HANDSHAKER_SERVER,
@@ -60,4 +62,5 @@ void grpc_handshakers_add(grpc_exec_ctx* exec_ctx,
                           const grpc_channel_args* args,
                           grpc_handshake_manager* handshake_mgr);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_REGISTRY_H */

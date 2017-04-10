@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H
 
-/* Parser for GRPC streams embedded in DATA frames */
+// Parser for GRPC streams embedded in DATA frames
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -42,6 +42,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/transport.h"
+
+namespace grpc_core {
 
 typedef enum {
   GRPC_CHTTP2_DATA_FH_0,
@@ -78,19 +80,19 @@ void grpc_chttp2_incoming_frame_queue_merge(
 grpc_byte_stream *grpc_chttp2_incoming_frame_queue_pop(
     grpc_chttp2_incoming_frame_queue *q);
 
-/* initialize per-stream state for data frame parsing */
+// initialize per-stream state for data frame parsing
 grpc_error *grpc_chttp2_data_parser_init(grpc_chttp2_data_parser *parser);
 
 void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_data_parser *parser);
 
-/* start processing a new data frame */
+// start processing a new data frame
 grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,
                                                 uint8_t flags,
                                                 uint32_t stream_id);
 
-/* handle a slice of a data frame - is_last indicates the last slice of a
-   frame */
+// handle a slice of a data frame - is_last indicates the last slice of a
+// frame
 grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
                                           grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s,
@@ -101,4 +103,5 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
                              grpc_transport_one_way_stats *stats,
                              grpc_slice_buffer *outbuf);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */

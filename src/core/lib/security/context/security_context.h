@@ -38,14 +38,19 @@
 #include "src/core/lib/security/credentials/credentials.h"
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
 
-/* --- grpc_auth_context ---
-
-   High level authentication context object. Can optionally be chained. */
+// --- grpc_auth_context ---
+//
+// High level authentication context object. Can optionally be chained.
 
 /* Property names are always NULL terminated. */
+
+namespace grpc_core {
 
 typedef struct {
   grpc_auth_property *array;
@@ -61,42 +66,61 @@ struct grpc_auth_context {
   grpc_pollset *pollset;
 };
 
-/* Creation. */
+// Creation.
 grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained);
 
-/* Refcounting. */
+// Refcounting.
 #ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
-#define GRPC_AUTH_CONTEXT_REF(p, r) \
-  grpc_auth_context_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_AUTH_CONTEXT_UNREF(p, r) \
-  grpc_auth_context_unref((p), __FILE__, __LINE__, (r))
-grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy,
-                                         const char *file, int line,
-                                         const char *reason);
+
+}  // namespace grpc_core
+#define GRPC_AUTH_CONTEXT_REF(p, r)
+
+namespace grpc_core {
+
+grpc_auth_context_ref((p), __FILE__, __LINE__, (r))
+
+}  // namespace grpc_core
+#define GRPC_AUTH_CONTEXT_UNREF(p, r)
+
+namespace grpc_core {
+
+grpc_auth_context_unref((p), __FILE__, __LINE__, (r))
+    grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy,
+                                             const char *file, int line,
+                                             const char *reason);
 void grpc_auth_context_unref(grpc_auth_context *policy, const char *file,
                              int line, const char *reason);
+
+}  // namespace grpc_core
 #else
 #define GRPC_AUTH_CONTEXT_REF(p, r) grpc_auth_context_ref((p))
 #define GRPC_AUTH_CONTEXT_UNREF(p, r) grpc_auth_context_unref((p))
+
+namespace grpc_core {
+
 grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy);
 void grpc_auth_context_unref(grpc_auth_context *policy);
+
+}  // namespace grpc_core
 #endif
+
+namespace grpc_core {
 
 void grpc_auth_property_reset(grpc_auth_property *property);
 
-/* --- grpc_security_context_extension ---
-
-   Extension to the security context that may be set in a filter and accessed
-   later by a higher level method on a grpc_call object. */
+// --- grpc_security_context_extension ---
+//
+// Extension to the security context that may be set in a filter and accessed
+// later by a higher level method on a grpc_call object.
 
 typedef struct {
   void *instance;
   void (*destroy)(void *);
 } grpc_security_context_extension;
 
-/* --- grpc_client_security_context ---
-
-   Internal client-side security context. */
+// --- grpc_client_security_context ---
+//
+// Internal client-side security context.
 
 typedef struct {
   grpc_call_credentials *creds;
@@ -107,9 +131,9 @@ typedef struct {
 grpc_client_security_context *grpc_client_security_context_create(void);
 void grpc_client_security_context_destroy(void *ctx);
 
-/* --- grpc_server_security_context ---
-
-   Internal server-side security context. */
+// --- grpc_server_security_context ---
+//
+// Internal server-side security context.
 
 typedef struct {
   grpc_auth_context *auth_context;
@@ -119,7 +143,7 @@ typedef struct {
 grpc_server_security_context *grpc_server_security_context_create(void);
 void grpc_server_security_context_destroy(void *ctx);
 
-/* --- Channel args for auth context --- */
+// --- Channel args for auth context ---
 #define GRPC_AUTH_CONTEXT_ARG "grpc.auth_context"
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context *c);
@@ -127,8 +151,12 @@ grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg);
 grpc_auth_context *grpc_find_auth_context_in_args(
     const grpc_channel_args *args);
 
+}  // namespace grpc_core
 #ifdef __cplusplus
-}
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H */

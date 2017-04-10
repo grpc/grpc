@@ -40,10 +40,16 @@
 #include "src/core/lib/channel/channel_stack.h"
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
 
 /// grpc_channel_stack_builder offers a programmatic interface to selected
+
+namespace grpc_core {
+
 /// and order channel filters
 typedef struct grpc_channel_stack_builder grpc_channel_stack_builder;
 typedef struct grpc_channel_stack_builder_iterator
@@ -163,8 +169,12 @@ void grpc_channel_stack_builder_destroy(grpc_exec_ctx *exec_ctx,
 
 extern int grpc_trace_channel_stack_builder;
 
+}  // namespace grpc_core
 #ifdef __cplusplus
-}
+
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H */

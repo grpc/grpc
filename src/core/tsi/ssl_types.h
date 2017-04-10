@@ -34,13 +34,13 @@
 #ifndef GRPC_CORE_TSI_SSL_TYPES_H
 #define GRPC_CORE_TSI_SSL_TYPES_H
 
-/* A collection of macros to cast between various integer types that are
- * used differently between BoringSSL and OpenSSL:
- * TSI_INT_AS_SIZE(x):  convert 'int x' to a length parameter for an OpenSSL
- *                      function
- * TSI_SIZE_AS_SIZE(x): convert 'size_t x' to a length parameter for an OpenSSL
- *                      function
- */
+// A collection of macros to cast between various integer types that are
+//  used differently between BoringSSL and OpenSSL:
+//  TSI_INT_AS_SIZE(x):  convert 'int x' to a length parameter for an OpenSSL
+//                       function
+//  TSI_SIZE_AS_SIZE(x): convert 'size_t x' to a length parameter for an OpenSSL
+//                       function
+// 
 
 #include <openssl/ssl.h>
 

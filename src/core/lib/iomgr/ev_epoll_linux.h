@@ -37,12 +37,20 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
+namespace grpc_core {
+
 const grpc_event_engine_vtable *grpc_init_epoll_linux(void);
 
+}  // namespace grpc_core
 #ifdef GRPC_LINUX_EPOLL
+
+namespace grpc_core {
+
 void *grpc_fd_get_polling_island(grpc_fd *fd);
 void *grpc_pollset_get_polling_island(grpc_pollset *ps);
 bool grpc_are_polling_islands_equal(void *p, void *q);
+
+}  // namespace grpc_core
 #endif /* defined(GRPC_LINUX_EPOLL) */
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLL_LINUX_H */

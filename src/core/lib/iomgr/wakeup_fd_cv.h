@@ -31,19 +31,19 @@
  *
  */
 
-/*
- * wakeup_fd_cv uses condition variables to implement wakeup fds.
- *
- * It is intended for use only in cases when eventfd() and pipe() are not
- * available.  It can only be used with the "poll" engine.
- *
- * Implementation:
- * A global table of cv wakeup fds is mantained.  A cv wakeup fd is a negative
- * file descriptor.  poll() is then run in a background thread with only the
- * real socket fds while we wait on a condition variable trigged by either the
- * poll() completion or a wakeup_fd() call.
- *
- */
+//
+//  wakeup_fd_cv uses condition variables to implement wakeup fds.
+///
+//  It is intended for use only in cases when eventfd() and pipe() are not
+//  available.  It can only be used with the "poll" engine.
+///
+//  Implementation:
+//  A global table of cv wakeup fds is mantained.  A cv wakeup fd is a negative
+//  file descriptor.  poll() is then run in a background thread with only the
+//  real socket fds while we wait on a condition variable trigged by either the
+//  poll() completion or a wakeup_fd() call.
+///
+//
 
 #ifndef GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
 #define GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
@@ -54,6 +54,8 @@
 
 #define FD_TO_IDX(fd) (-(fd)-1)
 #define IDX_TO_FD(idx) (-(idx)-1)
+
+namespace grpc_core {
 
 typedef struct cv_node {
   gpr_cv* cv;
@@ -77,4 +79,5 @@ typedef struct cv_fd_table {
   grpc_poll_function_type poll;
 } cv_fd_table;
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H */

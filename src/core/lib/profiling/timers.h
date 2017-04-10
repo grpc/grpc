@@ -35,8 +35,13 @@
 #define GRPC_CORE_LIB_PROFILING_TIMERS_H
 
 #ifdef __cplusplus
-extern "C" {
+
+namespace grpc_core {
+
+extern "C" {}  // namespace grpc_core
 #endif
+
+namespace grpc_core {
 
 void gpr_timers_global_init(void);
 void gpr_timers_global_destroy(void);
@@ -52,50 +57,80 @@ void gpr_timers_set_log_filename(const char *filename);
 
 void gpr_timer_set_enabled(int enabled);
 
+}  // namespace grpc_core
 #if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
 /* No profiling. No-op all the things. */
-#define GPR_TIMER_MARK(tag, important) \
-  do {                                 \
-  } while (0)
+#define GPR_TIMER_MARK(tag, important)
 
-#define GPR_TIMER_BEGIN(tag, important) \
-  do {                                  \
-  } while (0)
+namespace grpc_core {
 
-#define GPR_TIMER_END(tag, important) \
-  do {                                \
-  } while (0)
+do {
+} while (0)
 
+}  // namespace grpc_core
+#define GPR_TIMER_BEGIN(tag, important)
+
+namespace grpc_core {
+
+do {
+} while (0)
+
+}  // namespace grpc_core
+#define GPR_TIMER_END(tag, important)
+
+namespace grpc_core {
+
+do {
+} while (0)
+
+}  // namespace grpc_core
 #else /* at least one profiler requested... */
 /* ... hopefully only one. */
 #if defined(GRPC_STAP_PROFILER) && defined(GRPC_BASIC_PROFILER)
 #error "GRPC_STAP_PROFILER and GRPC_BASIC_PROFILER are mutually exclusive."
 #endif
 
-/* Generic profiling interface. */
+// Generic profiling interface.
+
+namespace grpc_core {
+
 #define GPR_TIMER_MARK(tag, important) \
   gpr_timer_add_mark(tag, important, __FILE__, __LINE__);
 
-#define GPR_TIMER_BEGIN(tag, important) \
-  gpr_timer_begin(tag, important, __FILE__, __LINE__);
+}  // namespace grpc_core
+#define GPR_TIMER_BEGIN(tag, important)
 
-#define GPR_TIMER_END(tag, important) \
-  gpr_timer_end(tag, important, __FILE__, __LINE__);
+namespace grpc_core {
 
+gpr_timer_begin(tag, important, __FILE__, __LINE__);
+
+}  // namespace grpc_core
+#define GPR_TIMER_END(tag, important)
+
+namespace grpc_core {
+
+gpr_timer_end(tag, important, __FILE__, __LINE__);
+
+}  // namespace grpc_core
 #ifdef GRPC_STAP_PROFILER
-/* Empty placeholder for now. */
+   /* Empty placeholder for now. */
 #endif /* GRPC_STAP_PROFILER */
 
 #ifdef GRPC_BASIC_PROFILER
-/* Empty placeholder for now. */
+   /* Empty placeholder for now. */
 #endif /* GRPC_BASIC_PROFILER */
 
 #endif /* at least one profiler requested. */
 
 #ifdef __cplusplus
-}
 
+namespace grpc_core {}
+
+}  // namespace grpc_core
 #if (defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
+
+namespace grpc_core {
+
 namespace grpc {
 class ProfileScope {
  public:
@@ -109,12 +144,23 @@ class ProfileScope {
 };
 }
 
-#define GPR_TIMER_SCOPE(tag, important) \
-  ::grpc::ProfileScope _profile_scope_##__LINE__((tag), (important))
+}  // namespace grpc_core
+#define GPR_TIMER_SCOPE(tag, important)
+
+namespace grpc_core {
+
+::grpc::ProfileScope _profile_scope_
+}  // namespace grpc_core
+##__LINE__((tag), (important))
 #else
-#define GPR_TIMER_SCOPE(tag, important) \
-  do {                                  \
-  } while (false)
+#define GPR_TIMER_SCOPE(tag, important)
+
+namespace grpc_core {
+
+do {
+} while (false)
+
+}  // namespace grpc_core
 #endif
 #endif
 

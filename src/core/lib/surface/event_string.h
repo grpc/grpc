@@ -36,7 +36,11 @@
 
 #include <grpc/grpc.h>
 
-/* Returns a string describing an event. Must be later freed with gpr_free() */
+// Returns a string describing an event. Must be later freed with gpr_free()
+
+namespace grpc_core {
+
 char *grpc_event_string(grpc_event *ev);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_SURFACE_EVENT_STRING_H */

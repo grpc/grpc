@@ -36,6 +36,9 @@
 
 #include "src/core/ext/filters/client_channel/connector.h"
 
+namespace grpc_core {
+
 grpc_connector* grpc_chttp2_connector_create();
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_CHTTP2_CONNECTOR_H */

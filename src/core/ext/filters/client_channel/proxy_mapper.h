@@ -40,6 +40,8 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
+namespace grpc_core {
+
 typedef struct grpc_proxy_mapper grpc_proxy_mapper;
 
 typedef struct {
@@ -86,4 +88,5 @@ bool grpc_proxy_mapper_map_address(grpc_exec_ctx* exec_ctx,
 
 void grpc_proxy_mapper_destroy(grpc_proxy_mapper* mapper);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_H */

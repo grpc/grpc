@@ -36,13 +36,15 @@
 
 #include "src/core/lib/iomgr/timer.h"
 
+namespace grpc_core {
+
 typedef struct {
   grpc_timer **timers;
   uint32_t timer_count;
   uint32_t timer_capacity;
 } grpc_timer_heap;
 
-/* return 1 if the new timer is the first timer in the heap */
+// return 1 if the new timer is the first timer in the heap
 int grpc_timer_heap_add(grpc_timer_heap *heap, grpc_timer *timer);
 
 void grpc_timer_heap_init(grpc_timer_heap *heap);
@@ -54,4 +56,5 @@ void grpc_timer_heap_pop(grpc_timer_heap *heap);
 
 int grpc_timer_heap_is_empty(grpc_timer_heap *heap);
 
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H */
