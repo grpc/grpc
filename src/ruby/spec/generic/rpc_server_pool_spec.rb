@@ -52,27 +52,36 @@ describe GRPC::Pool do
       expect(p.ready_for_work?).to be(false)
     end
 
-    it 'it stops being ready after all workers jobs waiting or running' do
+    it 'it stops being ready after all workers are busy, ' \
+      'and it becomes ready again after jobs complete' do
       p = Pool.new(5)
       p.start
-      job = proc { sleep(3) } # sleep so workers busy when done scheduling
-      5.times do
-        expect(p.ready_for_work?).to be(true)
-        p.schedule(&job)
-      end
-      expect(p.ready_for_work?).to be(false)
-    end
 
-    it 'it becomes ready again after jobs complete' do
-      p = Pool.new(5)
-      p.start
-      job = proc {}
+      wait_mu = Mutex.new
+      wait_cv = ConditionVariable.new
+      wait = true
+
+      job = proc do
+        wait_mu.synchronize do
+          wait_cv.wait(wait_mu) while wait
+        end
+      end
+
       5.times do
         expect(p.ready_for_work?).to be(true)
         p.schedule(&job)
       end
+
       expect(p.ready_for_work?).to be(false)
-      sleep 5 # give the pool time do get at least one task done
+
+      wait_mu.synchronize do
+        wait = false
+        wait_cv.broadcast
+      end
+
+      # There's a potential race here but it shouldn't ever be
+      # reached with a 5 second sleep.
+      sleep 5
       expect(p.ready_for_work?).to be(true)
     end
   end
@@ -105,13 +114,13 @@ describe GRPC::Pool do
     it 'stops jobs when there are long running jobs' do
       p = Pool.new(1)
       p.start
-      o, q = Object.new, Queue.new
+      job_running = Queue.new
       job = proc do
-        sleep(5)  # long running
-        q.push(o)
+        job_running.push(Object.new)
+        sleep(5000)
       end
       p.schedule(&job)
-      sleep(1)  # should ensure the long job gets scheduled
+      job_running.pop
       expect { p.stop }.not_to raise_error
     end
   end
