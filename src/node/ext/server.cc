@@ -117,6 +117,8 @@ class NewCallOp : public Op {
   bool IsFinalOp() {
     return false;
   }
+  void OnComplete() {
+  }
 
   grpc_call *call;
   grpc_call_details details;
@@ -124,6 +126,32 @@ class NewCallOp : public Op {
 
  protected:
   std::string GetTypeString() const { return "new_call"; }
+};
+
+class TryShutdownOp: public Op {
+ public:
+  TryShutdownOp(Server *server, Local<Value> server_value) : server(server) {
+    server_persist.Reset(server_value);
+  }
+  Local<Value> GetNodeValue() const {
+    EscapableHandleScope scope;
+    return scope.Escape(Nan::New(server_persist));
+  }
+  bool ParseOp(Local<Value> value, grpc_op *out) {
+    return true;
+  }
+  bool IsFinalOp() {
+    return false;
+  }
+  void OnComplete() {
+    server->DestroyWrappedServer();
+  }
+ protected:
+  std::string GetTypeString() const { return "try_shutdown"; }
+ private:
+  Server *server;
+  Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>>
+      server_persist;
 };
 
 void Server::Init(Local<Object> exports) {
@@ -145,6 +173,13 @@ void Server::Init(Local<Object> exports) {
 bool Server::HasInstance(Local<Value> val) {
   HandleScope scope;
   return Nan::New(fun_tpl)->HasInstance(val);
+}
+
+void Server::DestroyWrappedServer() {
+  if (this->wrapped_server != NULL) {
+    grpc_server_destroy(this->wrapped_server);
+    this->wrapped_server = NULL;
+  }
 }
 
 NAN_METHOD(Server::New) {
@@ -242,7 +277,9 @@ NAN_METHOD(Server::TryShutdown) {
     return Nan::ThrowTypeError("tryShutdown can only be called on a Server");
   }
   Server *server = ObjectWrap::Unwrap<Server>(info.This());
+  TryShutdownOp *op = new TryShutdownOp(server, info.This());
   unique_ptr<OpVec> ops(new OpVec());
+  ops->push_back(unique_ptr<Op>(op));
   grpc_server_shutdown_and_notify(
       server->wrapped_server, GetCompletionQueue(),
       new struct tag(new Nan::Callback(info[0].As<Function>()), ops.release(),

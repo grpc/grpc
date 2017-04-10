@@ -217,6 +217,8 @@ class SendMetadataOp : public Op {
   bool IsFinalOp() {
     return false;
   }
+  void OnComplete() {
+  }
  protected:
   std::string GetTypeString() const {
     return "send_metadata";
@@ -260,6 +262,8 @@ class SendMessageOp : public Op {
   bool IsFinalOp() {
     return false;
   }
+  void OnComplete() {
+  }
  protected:
   std::string GetTypeString() const {
     return "send_message";
@@ -279,6 +283,8 @@ class SendClientCloseOp : public Op {
   }
   bool IsFinalOp() {
     return false;
+  }
+  void OnComplete() {
   }
  protected:
   std::string GetTypeString() const {
@@ -349,6 +355,8 @@ class SendServerStatusOp : public Op {
   bool IsFinalOp() {
     return true;
   }
+  void OnComplete() {
+  }
  protected:
   std::string GetTypeString() const {
     return "send_status";
@@ -381,6 +389,8 @@ class GetMetadataOp : public Op {
   bool IsFinalOp() {
     return false;
   }
+  void OnComplete() {
+  }
 
  protected:
   std::string GetTypeString() const {
@@ -412,6 +422,8 @@ class ReadMessageOp : public Op {
   }
   bool IsFinalOp() {
     return false;
+  }
+  void OnComplete() {
   }
 
  protected:
@@ -454,6 +466,8 @@ class ClientStatusOp : public Op {
   bool IsFinalOp() {
     return true;
   }
+  void OnComplete() {
+  }
  protected:
   std::string GetTypeString() const {
     return "status";
@@ -477,6 +491,8 @@ class ServerCloseResponseOp : public Op {
   }
   bool IsFinalOp() {
     return false;
+  }
+  void OnComplete() {
   }
 
  protected:
@@ -517,15 +533,16 @@ void CompleteTag(void *tag, const char *error_message) {
     callback->Call(1, argv);
   }
   bool is_final_op = false;
-  if (tag_struct->call == NULL) {
-    return;
-  }
   for (vector<unique_ptr<Op> >::iterator it = tag_struct->ops->begin();
        it != tag_struct->ops->end(); ++it) {
     Op *op_ptr = it->get();
+    op_ptr->OnComplete();
     if (op_ptr->IsFinalOp()) {
       is_final_op = true;
     }
+  }
+  if (tag_struct->call == NULL) {
+    return;
   }
   tag_struct->call->CompleteBatch(is_final_op);
 }

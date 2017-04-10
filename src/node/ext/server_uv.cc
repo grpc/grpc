@@ -76,6 +76,8 @@ class ServerShutdownOp : public Op {
   bool IsFinalOp() {
     return false;
   }
+  void OnComplete() {
+  }
 
   grpc_server *server;
 
@@ -104,6 +106,7 @@ NAN_METHOD(ServerShutdownCallback) {
 }
 
 void Server::ShutdownServer() {
+  Nan::HandleScope scope;
   if (this->wrapped_server != NULL) {
     if (shutdown_callback == NULL) {
       Local<FunctionTemplate>callback_tpl =
