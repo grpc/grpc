@@ -52,12 +52,13 @@ extern "C" {
 
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
 
-/* --- tsi_ssl_handshaker_factory object ---
+/* --- tsi_ssl_client_handshaker_factory object ---
 
-   This object creates tsi_handshaker objects implemented in terms of the
-   TLS 1.2 specificiation.  */
+   This object creates a client tsi_handshaker objects implemented in terms of
+   the TLS 1.2 specificiation.  */
 
-typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
+typedef struct tsi_ssl_client_handshaker_factory
+    tsi_ssl_client_handshaker_factory;
 
 /* Creates a client handshaker factory.
    - pem_private_key is the buffer containing the PEM encoding of the client's
@@ -92,7 +93,33 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     const unsigned char *pem_root_certs, size_t pem_root_certs_size,
     const char *cipher_suites, const unsigned char **alpn_protocols,
     const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_handshaker_factory **factory);
+    tsi_ssl_client_handshaker_factory **factory);
+
+/* Creates a client handshaker.
+  - self is the factory from which the handshaker will be created.
+  - server_name_indication indicates the name of the server the client is
+    trying to connect to which will be relayed to the server using the SNI
+    extension.
+  - handshaker is the address of the handshaker pointer to be created.
+
+  - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
+    where a parameter is invalid.  */
+tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
+    tsi_ssl_client_handshaker_factory *self, const char *server_name_indication,
+    tsi_handshaker **handshaker);
+
+/* Destroys the handshaker factory. WARNING: it is unsafe to destroy a factory
+   while handshakers created with this factory are still in use.  */
+void tsi_ssl_client_handshaker_factory_destroy(
+    tsi_ssl_client_handshaker_factory *self);
+
+/* --- tsi_ssl_server_handshaker_factory object ---
+
+   This object creates a client tsi_handshaker objects implemented in terms of
+   the TLS 1.2 specificiation.  */
+
+typedef struct tsi_ssl_server_handshaker_factory
+    tsi_ssl_server_handshaker_factory;
 
 /* Creates a server handshaker factory.
    - version indicates which version of the specification to use.
@@ -140,7 +167,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
     size_t pem_client_root_certs_size, int force_client_auth,
     const char *cipher_suites, const unsigned char **alpn_protocols,
     const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_handshaker_factory **factory);
+    tsi_ssl_server_handshaker_factory **factory);
 
 /* Same as tsi_create_ssl_server_handshaker_factory method except uses
    tsi_client_certificate_request_type to support more ways to handle client
@@ -157,25 +184,21 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     tsi_client_certificate_request_type client_certificate_request,
     const char *cipher_suites, const unsigned char **alpn_protocols,
     const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_handshaker_factory **factory);
+    tsi_ssl_server_handshaker_factory **factory);
 
-/* Creates a handshaker.
+/* Creates a server handshaker.
   - self is the factory from which the handshaker will be created.
-  - server_name_indication indicates the name of the server the client is
-    trying to connect to which will be relayed to the server using the SNI
-    extension.
-    This parameter must be NULL for a server handshaker factory.
-  - handhshaker is the address of the handshaker pointer to be created.
+  - handshaker is the address of the handshaker pointer to be created.
 
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
-tsi_result tsi_ssl_handshaker_factory_create_handshaker(
-    tsi_ssl_handshaker_factory *self, const char *server_name_indication,
-    tsi_handshaker **handshaker);
+tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
+    tsi_ssl_server_handshaker_factory *self, tsi_handshaker **handshaker);
 
 /* Destroys the handshaker factory. WARNING: it is unsafe to destroy a factory
    while handshakers created with this factory are still in use.  */
-void tsi_ssl_handshaker_factory_destroy(tsi_ssl_handshaker_factory *self);
+void tsi_ssl_server_handshaker_factory_destroy(
+    tsi_ssl_server_handshaker_factory *self);
 
 /* Util that checks that an ssl peer matches a specific name.
    Still TODO(jboeuf):
