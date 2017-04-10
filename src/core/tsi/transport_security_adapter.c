@@ -191,7 +191,9 @@ static tsi_result tsi_adapter_next(
   *bytes_to_send_size = offset;
 
   /* If handshake completes, create tsi_handshaker_result.  */
-  if (!tsi_handshaker_is_in_progress(impl->wrapped)) {
+  if (tsi_handshaker_is_in_progress(impl->wrapped)) {
+    *handshaker_result = NULL;
+  } else {
     size_t unused_bytes_size = received_bytes_size - bytes_consumed;
     const unsigned char *unused_bytes =
         unused_bytes_size == 0 ? NULL : received_bytes + bytes_consumed;
@@ -200,8 +202,6 @@ static tsi_result tsi_adapter_next(
     if (status == TSI_OK) {
       impl->base.handshaker_result_created = true;
     }
-  } else {
-    *handshaker_result = NULL;
   }
   return status;
 }
