@@ -837,6 +837,7 @@ static grpc_pollset_set *pollset_set_create(void) {
 static void pollset_set_destroy(grpc_exec_ctx *exec_ctx,
                                 grpc_pollset_set *pss) {
   po_destroy(&pss->po);
+  gpr_free(pss);
 }
 
 static void pollset_set_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset_set *pss,
