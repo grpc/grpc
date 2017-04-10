@@ -32,6 +32,8 @@ def leave():
 
 for root, dirs, files in os.walk('src/core'):
   for filename in files:
+    in_namespace = False
+    dst = ''
     if '.pb.' in filename: continue
     base, ext = os.path.splitext(filename)
     print os.path.join(root, filename)
