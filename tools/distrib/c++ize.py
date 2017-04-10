@@ -20,7 +20,7 @@ def enter(wtf):
   global in_namespace
   global dst
   if in_namespace: return
-  dst += '\nnamespace grpc_core { // %s\n\n' % wtf
+  dst += '\nnamespace grpc_core {\n\n'
   in_namespace = True
 
 def leave():
