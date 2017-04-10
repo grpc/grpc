@@ -37,7 +37,7 @@ for root, dirs, files in os.walk('src/core'):
     if '.pb.' in filename: continue
     base, ext = os.path.splitext(filename)
     print os.path.join(root, filename)
-    if ext != '.c': continue
+    if ext != '.c' and ext != '.h': continue
     src = open(os.path.join(root, filename)).read()
     while src:
       m = preproc.match(src)
@@ -85,5 +85,5 @@ for root, dirs, files in os.walk('src/core'):
       dst += src[0]
       src = src[1:]
     leave()
-    open(os.path.join(root, base + '.cc'), 'w').write(dst)
+    open(os.path.join(root, base + ('.cc' if ext == '.c' else '.h')), 'w').write(dst)
     os.unlink(os.path.join(root, filename))
