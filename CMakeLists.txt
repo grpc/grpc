@@ -661,6 +661,7 @@ add_dependencies(buildtests_cxx cxx_slice_test)
 add_dependencies(buildtests_cxx cxx_string_ref_test)
 add_dependencies(buildtests_cxx cxx_time_test)
 add_dependencies(buildtests_cxx end2end_test)
+add_dependencies(buildtests_cxx error_details_test)
 add_dependencies(buildtests_cxx filter_end2end_test)
 add_dependencies(buildtests_cxx generic_end2end_test)
 add_dependencies(buildtests_cxx golden_file_test)
@@ -2894,6 +2895,72 @@ endforeach()
 
 if (gRPC_INSTALL)
   install(TARGETS grpc++_cronet EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_library(grpc++_error_details
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.h
+  src/cpp/util/error_details.cc
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_error_details PROPERTIES COMPILE_PDB_NAME "grpc++_error_details"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_error_details.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/status/status.proto
+)
+
+target_include_directories(grpc++_error_details
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc++_error_details
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+)
+
+foreach(_hdr
+  include/grpc++/support/error_details.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+
+if (gRPC_INSTALL)
+  install(TARGETS grpc++_error_details EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -9878,6 +9945,48 @@ target_link_libraries(end2end_test
   grpc
   gpr_test_util
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(error_details_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  test/cpp/util/error_details_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo_messages.proto
+)
+
+target_include_directories(error_details_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(error_details_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_error_details
+  grpc++
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
