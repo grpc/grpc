@@ -891,6 +891,7 @@ static void po_destroy(polling_obj *po) {
     polling_group *pg = pg_lock_latest(po->group);
     po->prev->next = po->next;
     po->next->prev = po->prev;
+    gpr_mu_unlock(&pg->po.mu);
     pg_unref(pg);
   }
   gpr_mu_destroy(&po->mu);
@@ -974,6 +975,9 @@ static void pg_create(grpc_exec_ctx *exec_ctx, polling_obj **initial_po,
   polling_group *pg = gpr_malloc(sizeof(*pg));
   po_init(&pg->po, PO_POLLING_GROUP);
   gpr_ref_init(&pg->refs, (int)initial_po_count);
+  GPR_ASSERT(initial_po[0]->group == NULL);
+  initial_po[0]->next = initial_po[0]->prev = initial_po[0];
+  initial_po[0]->group = pg;
   for (size_t i = 0; i < initial_po_count; i++) {
     GPR_ASSERT(initial_po[i]->group == NULL);
     initial_po[i]->group = pg;
