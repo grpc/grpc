@@ -11,7 +11,7 @@ apis = re.compile(apis, flags)
 c_comment = re.compile(r'^(/[*](?:.*?)[*]/)(.*)', flags)
 split_comment = re.compile(r'^\n[ ]*/[*](.*?)[*]/\n(.*)', flags)
 cpp_comment = re.compile(r'^(\n//[^\n]*\n)(.*)', flags)
-preproc = re.compile(r'^(\n# (?:[^\n]*)\n)(.*)', flags)
+preproc = re.compile(r'^(\n#[^\n]+\n)(.*)', flags)
 
 in_namespace = False
 dst = ''
