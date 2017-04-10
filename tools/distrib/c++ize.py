@@ -56,7 +56,7 @@ for root, dirs, files in os.walk('src/core'):
             continue
           if line and line[0] == '*': line = line[1:]
           dst += '// %s\n' % line
-        src = '\n' + m.group(2)
+        src = m.group(2)
       m = c_comment.match(src)
       if m:
         dst += m.group(1)
@@ -65,7 +65,7 @@ for root, dirs, files in os.walk('src/core'):
       m = cpp_comment.match(src)
       if m:
         dst += m.group(1)
-        src = '\n' + m.group(2)
+        src = m.group(2)
         continue
       m = apis.match(src)
       if m:
