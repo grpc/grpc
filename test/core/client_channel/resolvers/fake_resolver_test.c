@@ -73,6 +73,9 @@ typedef struct on_resolution_arg {
 void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   on_resolution_arg *res = arg;
   res->was_called = true;
+  // We only check the addresses channel arg because that's the only one
+  // explicitly set by the test via
+  // grpc_fake_resolver_response_generator_set_response.
   const grpc_lb_addresses *actual_lb_addresses =
       grpc_lb_addresses_find_channel_arg(res->resolver_result);
   const grpc_lb_addresses *expected_lb_addresses =
@@ -83,7 +86,7 @@ void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_channel_args_destroy(exec_ctx, res->expected_resolver_result);
 }
 
-static void test_response_generator() {
+static void test_fake_resolver() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_combiner *combiner = grpc_combiner_create(NULL);
   // Create resolver.
@@ -100,8 +103,8 @@ static void test_response_generator() {
   const bool is_balancer[] = {true, false};
   grpc_lb_addresses *addresses = grpc_lb_addresses_create(3, NULL);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(uris); ++i) {
-    grpc_lb_addresses_set_uri(addresses, i, uris[i], is_balancer[i],
-                              balancer_names[i], NULL);
+    grpc_lb_addresses_set_address_from_uri(
+        addresses, i, uris[i], is_balancer[i], balancer_names[i], NULL);
     grpc_uri_destroy(uris[i]);
   }
   const grpc_arg addresses_arg =
@@ -131,9 +134,9 @@ static void test_response_generator() {
   const bool is_balancer_update[] = {false};
   grpc_lb_addresses *addresses_update = grpc_lb_addresses_create(1, NULL);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(uris_update); ++i) {
-    grpc_lb_addresses_set_uri(addresses_update, i, uris_update[i],
-                              is_balancer_update[i], balancer_names_update[i],
-                              NULL);
+    grpc_lb_addresses_set_address_from_uri(addresses_update, i, uris_update[i],
+                                           is_balancer_update[i],
+                                           balancer_names_update[i], NULL);
     grpc_uri_destroy(uris_update[i]);
   }
 
@@ -166,8 +169,8 @@ static void test_response_generator() {
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(!on_res_arg.was_called);
 
-  GRPC_COMBINER_UNREF(&exec_ctx, combiner, "test_response_generator");
-  GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_response_generator");
+  GRPC_COMBINER_UNREF(&exec_ctx, combiner, "test_fake_resolver");
+  GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_fake_resolver");
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_fake_resolver_response_generator_unref(response_generator);
 }
@@ -177,7 +180,7 @@ int main(int argc, char **argv) {
   grpc_fake_resolver_init();  // Registers the "test" scheme.
   grpc_init();
 
-  test_response_generator();
+  test_fake_resolver();
 
   grpc_shutdown();
   return 0;

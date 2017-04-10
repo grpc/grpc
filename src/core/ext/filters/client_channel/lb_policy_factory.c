@@ -83,9 +83,11 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
   target->user_data = user_data;
 }
 
-bool grpc_lb_addresses_set_uri(grpc_lb_addresses* addresses, size_t index,
-                               const grpc_uri* uri, bool is_balancer,
-                               const char* balancer_name, void* user_data) {
+bool grpc_lb_addresses_set_address_from_uri(grpc_lb_addresses* addresses,
+                                            size_t index, const grpc_uri* uri,
+                                            bool is_balancer,
+                                            const char* balancer_name,
+                                            void* user_data) {
   grpc_resolved_address address;
   if (!grpc_parse_uri(uri, &address)) return false;
   grpc_lb_addresses_set_address(addresses, index, address.addr, address.len,

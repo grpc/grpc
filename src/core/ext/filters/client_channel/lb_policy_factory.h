@@ -95,9 +95,11 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses *addresses, size_t index,
 /** Sets the value of the address at index \a index of \a addresses from \a uri.
  * Returns true upon success, false otherwise. Takes ownership of \a
  * balancer_name. */
-bool grpc_lb_addresses_set_uri(grpc_lb_addresses *addresses, size_t index,
-                               const grpc_uri *uri, bool is_balancer,
-                               const char *balancer_name, void *user_data);
+bool grpc_lb_addresses_set_address_from_uri(grpc_lb_addresses *addresses,
+                                            size_t index, const grpc_uri *uri,
+                                            bool is_balancer,
+                                            const char *balancer_name,
+                                            void *user_data);
 
 /** Compares \a addresses1 and \a addresses2. */
 int grpc_lb_addresses_cmp(const grpc_lb_addresses *addresses1,

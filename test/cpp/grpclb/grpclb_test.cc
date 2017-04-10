@@ -586,8 +586,8 @@ static void setup_client(const server_fixture *lb_server,
   gpr_asprintf(&lb_uri_str, "ipv4:%s", lb_server->servers_hostport);
   grpc_uri *lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
   GPR_ASSERT(lb_uri != NULL);
-  grpc_lb_addresses_set_uri(addresses, 0, lb_uri, true,
-                            lb_server->balancer_name, NULL);
+  grpc_lb_addresses_set_address_from_uri(addresses, 0, lb_uri, true,
+                                         lb_server->balancer_name, NULL);
   grpc_uri_destroy(lb_uri);
   gpr_free(lb_uri_str);
 
@@ -674,7 +674,6 @@ static void teardown_server(server_fixture *sf) {
 
   gpr_log(GPR_INFO, "Server[%s] bye bye", sf->servers_hostport);
   gpr_free(sf->servers_hostport);
-  // gpr_free(sf->balancer_name);
 }
 
 static void fork_backend_server(void *arg) {

@@ -798,13 +798,7 @@ static void grpc_uri_to_sockaddr(grpc_exec_ctx *exec_ctx, const char *uri_str,
                                  grpc_resolved_address *addr) {
   grpc_uri *uri = grpc_uri_parse(exec_ctx, uri_str, 0 /* suppress_errors */);
   GPR_ASSERT(uri != NULL);
-  if (strcmp(uri->scheme, "ipv4") == 0) {
-    GPR_ASSERT(grpc_parse_ipv4(uri, addr));
-  } else if (strcmp(uri->scheme, "ipv6") == 0) {
-    GPR_ASSERT(grpc_parse_ipv6(uri, addr));
-  } else {
-    GPR_ASSERT(grpc_parse_unix(uri, addr));
-  }
+  if (!grpc_parse_uri(uri, addr)) memset(addr, 0, sizeof(*addr));
   grpc_uri_destroy(uri);
 }
 
