@@ -1671,7 +1671,6 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
                                                      &s->frame_storage);
           grpc_slice_buffer_reset_and_unref_internal(
               exec_ctx, &s->unprocessed_incoming_frames_buffer);
-          GRPC_ERROR_UNREF(error);
           break;
         } else if (*s->recv_message != NULL) {
           break;
@@ -1684,6 +1683,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
       *s->recv_message = NULL;
       null_then_run_closure(exec_ctx, &s->recv_message_ready, GRPC_ERROR_NONE);
     }
+    GRPC_ERROR_UNREF(error);
   }
 }
 
