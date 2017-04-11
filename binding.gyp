@@ -680,6 +680,7 @@
         'src/core/lib/iomgr/iomgr_uv.c',
         'src/core/lib/iomgr/iomgr_windows.c',
         'src/core/lib/iomgr/load_file.c',
+        'src/core/lib/iomgr/lockfree_event.c',
         'src/core/lib/iomgr/network_status_tracker.c',
         'src/core/lib/iomgr/polling_entity.c',
         'src/core/lib/iomgr/pollset_set_uv.c',

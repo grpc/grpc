@@ -31,6 +31,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <limits.h>
 #include <stdbool.h>
 #include <string.h>
