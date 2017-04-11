@@ -277,6 +277,12 @@ NAN_METHOD(Server::TryShutdown) {
     return Nan::ThrowTypeError("tryShutdown can only be called on a Server");
   }
   Server *server = ObjectWrap::Unwrap<Server>(info.This());
+  if (server->wrapped_server == NULL) {
+    // Server is already shut down. Call callback immediately.
+    Nan::Callback callback(info[0].As<Function>());
+    callback.Call(0, {});
+    return;
+  }
   TryShutdownOp *op = new TryShutdownOp(server, info.This());
   unique_ptr<OpVec> ops(new OpVec());
   ops->push_back(unique_ptr<Op>(op));
