@@ -124,7 +124,7 @@ class ServerInterface : public CallHook {
   /// \param num_cqs How many completion queues does \a cqs hold.
   ///
   /// \return true on a successful shutdown.
-  virtual bool Start(ServerCompletionQueue** cqs, size_t num_cqs) = 0;
+  virtual void Start(ServerCompletionQueue** cqs, size_t num_cqs) = 0;
 
   virtual void ShutdownInternal(gpr_timespec deadline) = 0;
 

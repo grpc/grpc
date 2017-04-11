@@ -44,6 +44,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/stack_lockfree.h"
@@ -1077,8 +1078,16 @@ void *grpc_server_register_method(
   return m;
 }
 
+static void start_listeners(grpc_exec_ctx *exec_ctx, void *s,
+                            grpc_error *error) {
+  grpc_server *server = s;
+  for (listener *l = server->listeners; l; l = l->next) {
+    l->start(exec_ctx, server, l->arg, server->pollsets, server->pollset_count);
+  }
+  server_unref(exec_ctx, server);
+}
+
 void grpc_server_start(grpc_server *server) {
-  listener *l;
   size_t i;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -1112,10 +1121,10 @@ void grpc_server_start(grpc_server *server) {
                          (size_t)server->max_requested_calls_per_cq, server);
   }
 
-  for (l = server->listeners; l; l = l->next) {
-    l->start(&exec_ctx, server, l->arg, server->pollsets,
-             server->pollset_count);
-  }
+  server_ref(server);
+  grpc_closure_sched(&exec_ctx, grpc_closure_create(start_listeners, server,
+                                                    grpc_executor_scheduler),
+                     GRPC_ERROR_NONE);
 
   grpc_exec_ctx_finish(&exec_ctx);
 }

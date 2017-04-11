@@ -179,7 +179,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// \param num_cqs How many completion queues does \a cqs hold.
   ///
   /// \return true on a successful shutdown.
-  bool Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
+  void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
 

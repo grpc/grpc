@@ -494,7 +494,7 @@ int Server::AddListeningPort(const grpc::string& addr,
   return port;
 }
 
-bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
+void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
   global_callbacks_->PreServerStart(this);
   started_ = true;
@@ -530,8 +530,6 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
     (*it)->Start();
   }
-
-  return true;
 }
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
