@@ -2626,10 +2626,9 @@ static void incoming_byte_stream_publish_error(
   grpc_closure_sched(exec_ctx, s->on_next, GRPC_ERROR_REF(error));
   s->on_next = NULL;
   GRPC_ERROR_UNREF(s->byte_stream_error);
-  s->byte_stream_error = GRPC_ERROR_NONE;
+  s->byte_stream_error = GRPC_ERROR_REF(error);
   grpc_chttp2_cancel_stream(exec_ctx, bs->transport, bs->stream,
                             GRPC_ERROR_REF(error));
-  s->byte_stream_error = GRPC_ERROR_REF(error);
 }
 
 grpc_error *grpc_chttp2_incoming_byte_stream_push(
