@@ -5,8 +5,8 @@ cc_library(
     ],
     hdrs = glob(["googletest/include/**/*.h", "googletest/src/*.cc", "googletest/src/*.h"]),
     includes = [
-        "googletest/include",
         "googletest",
+        "googletest/include",
     ],
     linkstatic = 1,
     visibility = [

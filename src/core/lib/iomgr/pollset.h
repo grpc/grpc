@@ -75,6 +75,10 @@ void grpc_pollset_destroy(grpc_pollset *pollset);
    and it is guaranteed that it will not be released by grpc_pollset_work
    AFTER worker has been destroyed.
 
+   It's legal for worker to be NULL: in that case, this specific thread can not
+   be directly woken with a kick, but maybe be indirectly (with a kick against
+   the pollset as a whole).
+
    Tries not to block past deadline.
    May call grpc_closure_list_run on grpc_closure_list, without holding the
    pollset
