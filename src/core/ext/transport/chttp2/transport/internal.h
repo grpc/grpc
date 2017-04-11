@@ -500,8 +500,8 @@ struct grpc_chttp2_stream {
    * Accessed only by application thread when stream->pending_byte_stream ==
    * true */
   grpc_slice_buffer unprocessed_incoming_frames_buffer;
-  grpc_closure *on_next;                  /* protected by t combiner */
-  bool pending_byte_stream;               /* protected by t combiner */
+  grpc_closure *on_next;    /* protected by t combiner */
+  bool pending_byte_stream; /* protected by t combiner */
   grpc_closure reset_byte_stream;
   grpc_error *byte_stream_error; /* protected by t combiner */
   bool received_last_frame;      /* protected by t combiner */
