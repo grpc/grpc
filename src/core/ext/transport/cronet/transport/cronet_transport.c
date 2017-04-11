@@ -957,7 +957,8 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     }
     stream_state->state_op_done[OP_SEND_INITIAL_METADATA] = true;
     if (t->use_packet_coalescing) {
-      if (!stream_op->bits.send_message && !stream_op->bits.send_trailing_metadata) {
+      if (!stream_op->bits.send_message &&
+          !stream_op->bits.send_trailing_metadata) {
         s->state.flush_cronet_when_ready = true;
       }
     }
