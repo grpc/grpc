@@ -752,14 +752,11 @@ class CSharpLanguage(object):
     if self.platform == 'windows':
       _check_compiler(self.args.compiler, ['coreclr', 'default'])
       _check_arch(self.args.arch, ['default'])
-      self._cmake_arch_option = 'x64' if self.args.compiler == 'coreclr' else 'Win32'
+      self._cmake_arch_option = 'x64'
       self._make_options = []
     else:
       _check_compiler(self.args.compiler, ['default', 'coreclr'])
-      if self.platform == 'linux' and self.args.compiler == 'coreclr':
-        self._docker_distro = 'coreclr'
-      else:
-        self._docker_distro = 'jessie'
+      self._docker_distro = 'jessie'
 
       if self.platform == 'mac':
         # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
@@ -775,7 +772,7 @@ class CSharpLanguage(object):
       tests_by_assembly = json.load(f)
 
     msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
-    nunit_args = ['--labels=All']
+    nunit_args = ['--labels=All', '--noresult', '--workers=1']
     assembly_subdir = 'bin/%s' % msbuild_config
     assembly_extension = '.exe'
 
@@ -784,7 +781,7 @@ class CSharpLanguage(object):
       runtime_cmd = ['dotnet', 'exec']
       assembly_extension = '.dll'
     else:
-      nunit_args += ['--noresult', '--workers=1']
+      assembly_subdir += '/net45'
       if self.platform == 'windows':
         runtime_cmd = []
       else:
@@ -836,18 +833,10 @@ class CSharpLanguage(object):
     return self._make_options;
 
   def build_steps(self):
-    if self.args.compiler == 'coreclr':
-      if self.platform == 'windows':
-        return [['tools\\run_tests\\helper_scripts\\build_csharp_coreclr.bat']]
-      else:
-        return [['tools/run_tests/helper_scripts/build_csharp_coreclr.sh']]
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\helper_scripts\\build_csharp.bat']]
     else:
-      if self.platform == 'windows':
-        return [['vsprojects\\build_vs2015.bat',
-                 'src/csharp/Grpc.sln',
-                 '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
-      else:
-        return [['tools/run_tests/helper_scripts/build_csharp.sh']]
+      return [['tools/run_tests/helper_scripts/build_csharp.sh']]
 
   def post_tests_steps(self):
     if self.platform == 'windows':

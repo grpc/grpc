@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- Ensures that native libraries are copied to the output directory for Exe targets -->
+<Project>
 
   <PropertyGroup Condition=" '$(NativeDependenciesConfiguration)' == '' ">
     <NativeDependenciesConfiguration Condition=" '$(Configuration)' == 'Debug' ">Debug</NativeDependenciesConfiguration>
@@ -22,5 +22,6 @@
     <NativeDepsPlatform>Linux</NativeDepsPlatform>
   </PropertyGroup>
 
-  <Import Project="NativeDeps.$(NativeDepsPlatform).targets" />
+  <Import Project="NativeDeps.$(NativeDepsPlatform).csproj.include" />
+
 </Project>
