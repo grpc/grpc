@@ -1226,6 +1226,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
   grpc_byte_stream *bs = call->receiving_stream;
+  bool release_error = false;
 
   if (error == GRPC_ERROR_NONE) {
     grpc_slice slice;
@@ -1234,6 +1235,10 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
       grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
                             slice);
       continue_receiving_slices(exec_ctx, bctl);
+    } else {
+      /* Error returned by grpc_byte_stream_pull needs to be released manually
+       */
+      release_error = true;
     }
   }
 
@@ -1247,6 +1252,9 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     *call->receiving_buffer = NULL;
     call->receiving_message = 0;
     finish_batch_step(exec_ctx, bctl);
+    if (release_error) {
+      GRPC_ERROR_UNREF(error);
+    }
   }
 }
 

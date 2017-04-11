@@ -2665,7 +2665,6 @@ grpc_error *grpc_chttp2_incoming_byte_stream_finished(
   if (error != GRPC_ERROR_NONE && reset_on_error) {
     grpc_closure_sched(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_REF(error));
   }
-  GRPC_ERROR_UNREF(error);
   incoming_byte_stream_unref(exec_ctx, bs);
   return error;
 }
