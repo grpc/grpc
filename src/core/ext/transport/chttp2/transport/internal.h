@@ -198,15 +198,20 @@ struct grpc_chttp2_incoming_byte_stream {
 
   grpc_chttp2_transport *transport; /* immutable */
   grpc_chttp2_stream *stream;       /* immutable */
-  bool is_tail;                     /* immutable */
 
-  uint32_t remaining_bytes; /* guaranteed one thread access */
+  /* Accessed only by transport thread when stream->pending_byte_stream == false
+   * Accessed only by application thread when stream->pending_byte_stream ==
+   * true */
+  uint32_t remaining_bytes;
 
+  /* Accessed only by transport thread when stream->pending_byte_stream == false
+   * Accessed only by application thread when stream->pending_byte_stream ==
+   * true */
   struct {
     grpc_closure closure;
     size_t max_size_hint;
     grpc_closure *on_complete;
-  } next_action; /* guaranteed one thread access */
+  } next_action;
   grpc_closure destroy_action;
   grpc_closure finished_action;
 };
@@ -490,13 +495,16 @@ struct grpc_chttp2_stream {
   grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];
 
   grpc_slice_buffer frame_storage; /* protected by t combiner */
-  grpc_slice_buffer
-      unprocessed_incoming_frames_buffer; /* guaranteed one thread access */
+
+  /* Accessed only by transport thread when stream->pending_byte_stream == false
+   * Accessed only by application thread when stream->pending_byte_stream ==
+   * true */
+  grpc_slice_buffer unprocessed_incoming_frames_buffer;
   grpc_closure *on_next;                  /* protected by t combiner */
   bool pending_byte_stream;               /* protected by t combiner */
   grpc_closure reset_byte_stream;
   grpc_error *byte_stream_error; /* protected by t combiner */
-  bool received_last_frame;      /* proected by t combiner */
+  bool received_last_frame;      /* protected by t combiner */
 
   gpr_timespec deadline;
 
@@ -509,7 +517,10 @@ struct grpc_chttp2_stream {
    * incoming_window = incoming_window_delta + transport.initial_window_size */
   int64_t incoming_window_delta;
   /** parsing state for data frames */
-  grpc_chttp2_data_parser data_parser; /* guaranteed one thread access */
+  /* Accessed only by transport thread when stream->pending_byte_stream == false
+   * Accessed only by application thread when stream->pending_byte_stream ==
+   * true */
+  grpc_chttp2_data_parser data_parser;
   /** number of bytes received - reset at end of parse thread execution */
   int64_t received_bytes;
 
