@@ -68,10 +68,20 @@ struct grpc_completion_queue {
   grpc_cq_completion_type completion_type;
   grpc_cq_polling_type polling_type;
 
-  /** completed events */
+  /** TODO: sreek - We should be moving the 'completed events' to a different
+   * structure (co-allocated with cq) which can change depending on the type
+   * of completion queue. */
+
+  /** Completed events (Only relevant if the completion_type is NOT
+   * GRPC_CQ_NEXT) */
   grpc_cq_completion completed_head;
   grpc_cq_completion *completed_tail;
 
+  /** Completed events for completion-queues of type GRPC_CQ_NEXT are stored in
+   a lockfree queue multi-producer/single-consumer queue.
+   So if the completion queue has more than one thread concurrently calling
+   grpc_completion_queue_next(), we need a mutex (i.e queue_mu) to serialize
+   those calls */
   gpr_mu queue_mu;
   gpr_mpscq queue;
 
@@ -428,8 +438,9 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       "deadline=gpr_timespec { tv_sec: %" PRId64
       ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5, (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-          reserved));
+      5,
+      (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+       reserved));
   GPR_ASSERT(!reserved);
 
   dump_pending_tags(cc);
@@ -600,8 +611,9 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         "deadline=gpr_timespec { tv_sec: %" PRId64
         ", tv_nsec: %d, clock_type: %d }, "
         "reserved=%p)",
-        6, (cc, tag, deadline.tv_sec, deadline.tv_nsec,
-            (int)deadline.clock_type, reserved));
+        6,
+        (cc, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+         reserved));
   }
   GPR_ASSERT(!reserved);
 
