@@ -56,11 +56,6 @@ typedef enum {
 typedef struct grpc_chttp2_incoming_byte_stream
     grpc_chttp2_incoming_byte_stream;
 
-typedef struct grpc_chttp2_incoming_frame_queue {
-  grpc_chttp2_incoming_byte_stream *head;
-  grpc_chttp2_incoming_byte_stream *tail;
-} grpc_chttp2_incoming_frame_queue;
-
 typedef struct {
   grpc_chttp2_stream_state state;
   uint8_t frame_type;
@@ -70,12 +65,6 @@ typedef struct {
   bool is_frame_compressed;
   grpc_chttp2_incoming_byte_stream *parsing_frame;
 } grpc_chttp2_data_parser;
-
-void grpc_chttp2_incoming_frame_queue_merge(
-    grpc_chttp2_incoming_frame_queue *head_dst,
-    grpc_chttp2_incoming_frame_queue *tail_src);
-grpc_byte_stream *grpc_chttp2_incoming_frame_queue_pop(
-    grpc_chttp2_incoming_frame_queue *q);
 
 /* initialize per-stream state for data frame parsing */
 grpc_error *grpc_chttp2_data_parser_init(grpc_chttp2_data_parser *parser);
