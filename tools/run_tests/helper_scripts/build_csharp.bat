@@ -27,27 +27,11 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-@rem Performs nuget restore step for C#.
-
 setlocal
 
-set ARCHITECTURE=%1
+cd /d %~dp0\..\..\..\src\csharp
 
-@rem enter repo root
-cd /d %~dp0\..\..\..
-
-mkdir cmake
-cd cmake
-mkdir build
-cd build
-mkdir %ARCHITECTURE%
-cd %ARCHITECTURE%
-@rem TODO(jtattermusch): Stop hardcoding path to yasm once Jenkins workers can locate yasm correctly
-cmake -G "Visual Studio 14 2015" -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON -DCMAKE_ASM_NASM_COMPILER="C:/Program Files (x86)/yasm/yasm.exe" ../../.. || goto :error
-
-cd ..\..\..\src\csharp
-
-dotnet restore Grpc.sln || goto :error
+dotnet build --configuration %MSBUILD_CONFIG% Grpc.sln || goto :error
 
 endlocal
 

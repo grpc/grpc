@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,46 +27,46 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -e
+FROM alpine:3.3
 
-# directories to run against
-DIRS="src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler"
+# Install Git and basic packages.
+RUN apk update && apk add \
+  autoconf \
+  automake \
+  bzip2 \
+  build-base \
+  cmake \
+  ccache \
+  curl \
+  gcc \
+  git \
+  libtool \
+  make \
+  perl \
+  strace \
+  python-dev \
+  py-pip \
+  unzip \
+  wget \
+  zip
 
-# file matching patterns to check
-GLOB="*.h *.c *.cc"
+# Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
 
-# clang format command
-CLANG_FORMAT=clang-format-3.8
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc 
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 
-files=
-for dir in $DIRS
-do
-  for glob in $GLOB
-  do
-    files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c -and -not -name *.pb.cc`"
-  done
-done
+# Install gflags
+RUN git clone https://github.com/gflags/gflags.git && cd gflags && git checkout v2.2.0
+RUN cd gflags && cmake . && make && make install
+RUN ln -s /usr/local/include/gflags /usr/include/gflags
 
-# The CHANGED_FILES variable is used to restrict the set of files to check.
-# Here we set files to the intersection of files and CHANGED_FILES
-if [ -n "$CHANGED_FILES" ]; then
-  files=$(comm -12 <(echo $files | tr ' ' '\n' | sort -u) <(echo $CHANGED_FILES | tr ' ' '\n' | sort -u))
-fi
+RUN mkdir -p /var/local/jenkins
 
-if [ "$TEST" == "" ]
-then
-  echo $files | xargs $CLANG_FORMAT -i
-else
-  ok=yes
-  for file in $files
-  do
-    tmp=`mktemp`
-    $CLANG_FORMAT $file > $tmp
-    diff -u $file $tmp || ok=no
-    rm $tmp
-  done
-  if [ $ok == no ]
-  then
-    false
-  fi
-fi
+# Define the default command.
+CMD ["bash"]

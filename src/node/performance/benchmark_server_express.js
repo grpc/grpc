@@ -46,7 +46,7 @@ var EventEmitter = require('events');
 var util = require('util');
 
 var express = require('express');
-var bodyParser = require('body-parser')
+var bodyParser = require('body-parser');
 
 function unaryCall(req, res) {
   var reqObj = req.body;
@@ -56,7 +56,7 @@ function unaryCall(req, res) {
 
 function BenchmarkServer(host, port, tls, generic, response_size) {
   var app = express();
-  app.use(bodyParser.json())
+  app.use(bodyParser.json());
   app.put('/serviceProto.BenchmarkService.service/unaryCall', unaryCall);
   this.input_host = host;
   this.input_port = port;
