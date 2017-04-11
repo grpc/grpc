@@ -530,20 +530,38 @@ static grpc_error *pollset_kick(grpc_pollset *p,
   if (specific_worker == NULL) {
     if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)p) {
       if (p->num_pollers == 0) {
+        if (grpc_polling_trace) {
+          gpr_log(GPR_DEBUG, "PS:%p kicked_without_poller", p);
+        }
         p->kicked_without_poller = true;
         return GRPC_ERROR_NONE;
       } else {
+        if (grpc_polling_trace) {
+          gpr_log(GPR_DEBUG, "PS:%p kicked_via_wakeup_fd", p);
+        }
         return grpc_wakeup_fd_wakeup(&p->pollset_wakeup);
       }
     } else {
+      if (grpc_polling_trace) {
+        gpr_log(GPR_DEBUG, "PS:%p kicked_but_awake", p);
+      }
       return GRPC_ERROR_NONE;
     }
   } else if (gpr_tls_get(&g_current_thread_worker) ==
              (intptr_t)specific_worker) {
+    if (grpc_polling_trace) {
+      gpr_log(GPR_DEBUG, "PS:%p kicked_but_awake", p);
+    }
     return GRPC_ERROR_NONE;
   } else if (specific_worker == p->root_worker) {
+    if (grpc_polling_trace) {
+      gpr_log(GPR_DEBUG, "PS:%p kicked_via_wakeup_fd", p);
+    }
     return grpc_wakeup_fd_wakeup(&p->pollset_wakeup);
   } else {
+    if (grpc_polling_trace) {
+      gpr_log(GPR_DEBUG, "PS:%p kicked_via_cv", p);
+    }
     gpr_cv_signal(&specific_worker->cv);
     return GRPC_ERROR_NONE;
   }
@@ -716,9 +734,11 @@ static grpc_error *pollset_poll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       bool read_ev = (events[i].events & (EPOLLIN | EPOLLPRI)) != 0;
       bool write_ev = (events[i].events & EPOLLOUT) != 0;
       if (grpc_polling_trace) {
-        gpr_log(GPR_DEBUG,
-                "PS:%p poll got fd: is_wq=%d cancel=%d read=%d write=%d",
-                pollset, is_workqueue, cancel, read_ev, write_ev);
+        gpr_log(
+            GPR_DEBUG,
+            "PS:%p poll got fd %p(%d/%d): is_wq=%d cancel=%d read=%d write=%d",
+            pollset, fd, fd->fd, fd->workqueue_wakeup_fd.read_fd, is_workqueue,
+            cancel, read_ev, write_ev);
       }
       if (is_workqueue) {
         append_error(&error,
