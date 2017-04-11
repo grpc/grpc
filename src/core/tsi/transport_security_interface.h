@@ -232,7 +232,8 @@ tsi_result tsi_handshaker_result_create_frame_protector(
 
 /* This method returns the unused bytes from the handshake. It returns TSI_OK
    assuming there is no fatal error.
-   The caller should not free the bytes.  */
+   Ownership of the bytes is retained by the handshaker result. As a
+   consequence, the caller must not free the bytes.  */
 tsi_result tsi_handshaker_result_get_unused_bytes(
     const tsi_handshaker_result *self, unsigned char **bytes,
     size_t *byte_size);
@@ -245,64 +246,6 @@ void tsi_handshaker_result_destroy(tsi_handshaker_result *self);
 
    Implementations of this object must be thread compatible.
 
-   ------------------------------------------------------------------------
-
-   A typical usage of the synchronous TSI handshaker would be:
-
-   ------------------------------------------------------------------------
-   tsi_result status = TSI_OK;
-   unsigned char buf[4096];
-   const size_t buf_size = 4906;
-   size_t bytes_received_size = 0;
-   unsigned char *bytes_to_send = NULL;
-   size_t bytes_to_send_size = 0;
-   tsi_handshaker_result *result = NULL;
-
-   while (1) {
-     status = tsi_handshaker_next(
-         handshaker, buf, bytes_received_size,
-         &bytes_to_send, &bytes_to_send_size, &result, NULL, NULL);
-     if (status == TSI_INCOMPLETE_DATA) {
-       // Need more data from the peer.
-       bytes_received_size = buf_size;
-       read_bytes_from_peer(buf, &bytes_received_size);
-       continue;
-     }
-     if (status != TSI_OK) return status;
-     if (bytes_to_send_size > 0) {
-       send_bytes_to_peer(bytes_to_send, bytes_to_send_size);
-     }
-     if (result != NULL) break;
-     bytes_received_size = buf_size;
-     read_bytes_from_peer(buf, &bytes_received_size);
-   }
-
-   // Check the Peer.
-   tsi_peer peer;
-   status = tsi_handshaker_result_extract_peer(result, &peer);
-   if (status != TSI_OK) return status;
-   status = check_peer(&peer);
-   tsi_peer_destruct(&peer);
-   if (status != TSI_OK) return status;
-
-   // Create the protector.
-   tsi_frame_protector* protector = NULL;
-   status = tsi_handshaker_result_create_frame_protector(result, NULL,
-                                                         &protector);
-   if (status != TSI_OK) return status;
-
-   // Do not forget to unprotect outstanding data if any.
-   unsigned char *unused_bytes = NULL;
-   size_t unused_bytes_size = 0;
-   status = tsi_handshaker_result_get_unused_bytes(result, &unused_bytes,
-                                                   &unused_bytes_size);
-   if (status != TSI_OK) return status;
-   if (unused_bytes_size > 0) {
-     status = tsi_frame_protector_unprotect(protector, unused_bytes,
-                                            unused_bytes_size, ..., ...);
-     ....
-   }
-   ...
    ------------------------------------------------------------------------
 
    A typical usage supporting both synchronous and asynchronous TSI handshaker
@@ -324,8 +267,8 @@ void tsi_handshaker_result_destroy(tsi_handshaker_result *self);
      ...
    }
 
-   // This method is the callback function when there are data received from
-   // the peer. This method will read bytes into the handshake buffer and call
+   // This method is the callback function when data is received from the
+   // peer. This method will read bytes into the handshake buffer and call
    // do_handshake_next.
    void on_handshake_data_received_from_peer(void *user_data) {
      security_handshaker *h = (security_handshaker *)user_data;
@@ -396,7 +339,7 @@ void tsi_handshaker_result_destroy(tsi_handshaker_result *self);
    ------------------------------------------------------------------------   */
 typedef struct tsi_handshaker tsi_handshaker;
 
-/* TO BE DEPRECATED SOON.
+/* TO BE DEPRECATED SOON. Use tsi_handshaker_next instead.
    Gets bytes that need to be sent to the peer.
    - bytes is the buffer that will be written with the data to be sent to the
      peer.
@@ -412,7 +355,7 @@ tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker *self,
                                                     unsigned char *bytes,
                                                     size_t *bytes_size);
 
-/* TO BE DEPRECATED SOON.
+/* TO BE DEPRECATED SOON. Use tsi_handshaker_next instead.
    Processes bytes received from the peer.
    - bytes is the buffer containing the data.
    - bytes_size is an input/output parameter specifying the size of the data as
@@ -439,14 +382,15 @@ tsi_result tsi_handshaker_get_result(tsi_handshaker *self);
 #define tsi_handshaker_is_in_progress(h) \
   (tsi_handshaker_get_result((h)) == TSI_HANDSHAKE_IN_PROGRESS)
 
-/* TO BE DEPRECATED SOON.
+/* TO BE DEPRECATED SOON. Use tsi_handshaker_result_extract_peer instead.
    This method may return TSI_FAILED_PRECONDITION if
    tsi_handshaker_is_in_progress returns 1, it returns TSI_OK otherwise
    assuming the handshaker is not in a fatal error state.
    The caller is responsible for destructing the peer.  */
 tsi_result tsi_handshaker_extract_peer(tsi_handshaker *self, tsi_peer *peer);
 
-/* TO BE DEPRECATED SOON.
+/* TO BE DEPRECATED SOON. Use tsi_handshaker_result_create_frame_protector
+   instead.
    This method creates a tsi_frame_protector object after the handshake phase
    is done. After this method has been called successfully, the only method
    that can be called on this object is Destroy.
@@ -488,13 +432,14 @@ typedef void (*tsi_handshaker_on_next_done_cb)(
      TSI handshaker implementation.
    - user_data is the argument to callback function passed from the caller.
    This method returns TSI_ASYNC if the TSI handshaker implementation is
-   asynchronous. It returns TSI_OK if the handshake completes or if there are
-   data to send to the peer, otherwise returns TSI_INCOMPLETE_DATA which
-   indicates that this method needs to be called again with more data from the
-   peer. In case of a fatal error in the handshake, another specific error code
-   is returned.
-   The caller is responsible for destroying the handshaker_result. However, the
-   caller should not free bytes_to_send, as the buffer is owned by the
+   asynchronous, and in this case, the callback is guaranteed to run in another
+   thread owned by TSI. It returns TSI_OK if the handshake completes or if
+   there are data to send to the peer, otherwise returns TSI_INCOMPLETE_DATA
+   which indicates that this method needs to be called again with more data
+   from the peer. In case of a fatal error in the handshake, another specific
+   error code is returned.
+   The caller is responsible for destroying the handshaker_result. However,
+   the caller should not free bytes_to_send, as the buffer is owned by the
    tsi_handshaker object.  */
 tsi_result tsi_handshaker_next(
     tsi_handshaker *self, const unsigned char *received_bytes,

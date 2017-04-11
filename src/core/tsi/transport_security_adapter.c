@@ -45,26 +45,26 @@
 
 typedef struct {
   tsi_handshaker_result base;
-  tsi_handshaker *handshaker;
+  tsi_handshaker *wrapped;
   unsigned char *unused_bytes;
   size_t unused_bytes_size;
 } tsi_adapter_handshaker_result;
 
-static tsi_result tsi_adapter_result_extract_peer(
-    const tsi_handshaker_result *self, tsi_peer *peer) {
+static tsi_result adapter_result_extract_peer(const tsi_handshaker_result *self,
+                                              tsi_peer *peer) {
   tsi_adapter_handshaker_result *impl = (tsi_adapter_handshaker_result *)self;
-  return tsi_handshaker_extract_peer(impl->handshaker, peer);
+  return tsi_handshaker_extract_peer(impl->wrapped, peer);
 }
 
-static tsi_result tsi_adapter_result_create_frame_protector(
+static tsi_result adapter_result_create_frame_protector(
     const tsi_handshaker_result *self, size_t *max_output_protected_frame_size,
     tsi_frame_protector **protector) {
   tsi_adapter_handshaker_result *impl = (tsi_adapter_handshaker_result *)self;
   return tsi_handshaker_create_frame_protector(
-      impl->handshaker, max_output_protected_frame_size, protector);
+      impl->wrapped, max_output_protected_frame_size, protector);
 }
 
-static tsi_result tsi_adapter_result_get_unused_bytes(
+static tsi_result adapter_result_get_unused_bytes(
     const tsi_handshaker_result *self, unsigned char **bytes,
     size_t *byte_size) {
   tsi_adapter_handshaker_result *impl = (tsi_adapter_handshaker_result *)self;
@@ -73,26 +73,26 @@ static tsi_result tsi_adapter_result_get_unused_bytes(
   return TSI_OK;
 }
 
-static void tsi_adapter_result_destroy(tsi_handshaker_result *self) {
+static void adapter_result_destroy(tsi_handshaker_result *self) {
   tsi_adapter_handshaker_result *impl = (tsi_adapter_handshaker_result *)self;
   gpr_free(impl->unused_bytes);
   gpr_free(self);
 }
 
 static const tsi_handshaker_result_vtable result_vtable = {
-    tsi_adapter_result_extract_peer, tsi_adapter_result_create_frame_protector,
-    tsi_adapter_result_get_unused_bytes, tsi_adapter_result_destroy,
+    adapter_result_extract_peer, adapter_result_create_frame_protector,
+    adapter_result_get_unused_bytes, adapter_result_destroy,
 };
 
 tsi_result tsi_adapter_create_handshaker_result(
-    tsi_handshaker *handshaker, const unsigned char *unused_bytes,
+    tsi_handshaker *wrapped, const unsigned char *unused_bytes,
     size_t unused_bytes_size, tsi_handshaker_result **handshaker_result) {
-  if (handshaker == NULL || (unused_bytes_size > 0 && unused_bytes == NULL)) {
+  if (wrapped == NULL || (unused_bytes_size > 0 && unused_bytes == NULL)) {
     return TSI_INVALID_ARGUMENT;
   }
   tsi_adapter_handshaker_result *impl = gpr_zalloc(sizeof(*impl));
   impl->base.vtable = &result_vtable;
-  impl->handshaker = handshaker;
+  impl->wrapped = wrapped;
   impl->unused_bytes_size = unused_bytes_size;
   if (unused_bytes_size > 0) {
     impl->unused_bytes = gpr_malloc(unused_bytes_size);
@@ -113,30 +113,30 @@ typedef struct {
   size_t adapter_buffer_size;
 } tsi_adapter_handshaker;
 
-static tsi_result tsi_adapter_get_bytes_to_send_to_peer(tsi_handshaker *self,
-                                                        unsigned char *bytes,
-                                                        size_t *bytes_size) {
+static tsi_result adapter_get_bytes_to_send_to_peer(tsi_handshaker *self,
+                                                    unsigned char *bytes,
+                                                    size_t *bytes_size) {
   return tsi_handshaker_get_bytes_to_send_to_peer(
       tsi_adapter_handshaker_get_wrapped(self), bytes, bytes_size);
 }
 
-static tsi_result tsi_adapter_process_bytes_from_peer(
-    tsi_handshaker *self, const unsigned char *bytes, size_t *bytes_size) {
+static tsi_result adapter_process_bytes_from_peer(tsi_handshaker *self,
+                                                  const unsigned char *bytes,
+                                                  size_t *bytes_size) {
   return tsi_handshaker_process_bytes_from_peer(
       tsi_adapter_handshaker_get_wrapped(self), bytes, bytes_size);
 }
 
-static tsi_result tsi_adapter_get_result(tsi_handshaker *self) {
+static tsi_result adapter_get_result(tsi_handshaker *self) {
   return tsi_handshaker_get_result(tsi_adapter_handshaker_get_wrapped(self));
 }
 
-static tsi_result tsi_adapter_extract_peer(tsi_handshaker *self,
-                                           tsi_peer *peer) {
+static tsi_result adapter_extract_peer(tsi_handshaker *self, tsi_peer *peer) {
   return tsi_handshaker_extract_peer(tsi_adapter_handshaker_get_wrapped(self),
                                      peer);
 }
 
-static tsi_result tsi_adapter_create_frame_protector(
+static tsi_result adapter_create_frame_protector(
     tsi_handshaker *self, size_t *max_protected_frame_size,
     tsi_frame_protector **protector) {
   return tsi_handshaker_create_frame_protector(
@@ -144,14 +144,14 @@ static tsi_result tsi_adapter_create_frame_protector(
       protector);
 }
 
-static void tsi_adapter_destroy(tsi_handshaker *self) {
+static void adapter_destroy(tsi_handshaker *self) {
   tsi_adapter_handshaker *impl = (tsi_adapter_handshaker *)self;
   tsi_handshaker_destroy(impl->wrapped);
   gpr_free(impl->adapter_buffer);
   gpr_free(self);
 }
 
-static tsi_result tsi_adapter_next(
+static tsi_result adapter_next(
     tsi_handshaker *self, const unsigned char *received_bytes,
     size_t received_bytes_size, unsigned char **bytes_to_send,
     size_t *bytes_to_send_size, tsi_handshaker_result **handshaker_result,
@@ -207,13 +207,13 @@ static tsi_result tsi_adapter_next(
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
-    tsi_adapter_get_bytes_to_send_to_peer,
-    tsi_adapter_process_bytes_from_peer,
-    tsi_adapter_get_result,
-    tsi_adapter_extract_peer,
-    tsi_adapter_create_frame_protector,
-    tsi_adapter_destroy,
-    tsi_adapter_next,
+    adapter_get_bytes_to_send_to_peer,
+    adapter_process_bytes_from_peer,
+    adapter_get_result,
+    adapter_extract_peer,
+    adapter_create_frame_protector,
+    adapter_destroy,
+    adapter_next,
 };
 
 tsi_handshaker *tsi_create_adapter_handshaker(tsi_handshaker *wrapped) {
