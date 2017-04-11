@@ -1333,7 +1333,7 @@ static grpc_error *pollset_worker_kick(grpc_pollset_worker *worker) {
   if (gpr_atm_no_barrier_cas(&worker->is_kicked, (gpr_atm)0, (gpr_atm)1)) {
     GRPC_POLLING_TRACE(
         "pollset_worker_kick: Kicking worker: %p (thread id: %ld)",
-        (void *)worker, worker->pt_id);
+        (void *)worker, (long int)worker->pt_id);
     int err_num = pthread_kill(worker->pt_id, grpc_wakeup_signal);
     if (err_num != 0) {
       err = GRPC_OS_ERROR(err_num, "pthread_kill");
@@ -1717,7 +1717,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   worker.pt_id = pthread_self();
   gpr_atm_no_barrier_store(&worker.is_kicked, (gpr_atm)0);
 
-  *worker_hdl = &worker;
+  if (worker_hdl) *worker_hdl = &worker;
 
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)pollset);
   gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
@@ -1795,7 +1795,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     gpr_mu_lock(&pollset->po.mu);
   }
 
-  *worker_hdl = NULL;
+  if (worker_hdl) *worker_hdl = NULL;
 
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)0);
   gpr_tls_set(&g_current_thread_worker, (intptr_t)0);

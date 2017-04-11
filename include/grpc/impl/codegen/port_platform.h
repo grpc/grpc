@@ -157,7 +157,6 @@
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #elif defined(__linux__)
-#define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_PLATFORM_STRING "linux"
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
@@ -187,6 +186,11 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#ifdef __GLIBC__
+#define GPR_POSIX_CRASH_HANDLER 1
+#else /* musl libc */
+#define GRPC_MSG_IOVLEN_TYPE int
+#endif
 #elif defined(__APPLE__)
 #include <Availability.h>
 #include <TargetConditionals.h>
