@@ -76,7 +76,9 @@ class ServerShutdownOp : public Op {
   bool IsFinalOp() {
     return false;
   }
-  void OnComplete() {
+  void OnComplete(bool success) {
+    /* Because cancel_all_calls was called, we assume that shutdown_and_notify
+       completes successfully */
     grpc_server_destroy(server);
   }
 

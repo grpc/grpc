@@ -117,7 +117,7 @@ class NewCallOp : public Op {
   bool IsFinalOp() {
     return false;
   }
-  void OnComplete() {
+  void OnComplete(bool success) {
   }
 
   grpc_call *call;
@@ -143,8 +143,10 @@ class TryShutdownOp: public Op {
   bool IsFinalOp() {
     return false;
   }
-  void OnComplete() {
-    server->DestroyWrappedServer();
+  void OnComplete(bool success) {
+    if (success) {
+      server->DestroyWrappedServer();
+    }
   }
  protected:
   std::string GetTypeString() const { return "try_shutdown"; }

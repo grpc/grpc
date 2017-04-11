@@ -217,7 +217,7 @@ class SendMetadataOp : public Op {
   bool IsFinalOp() {
     return false;
   }
-  void OnComplete() {
+  void OnComplete(bool success) {
   }
  protected:
   std::string GetTypeString() const {
@@ -262,7 +262,7 @@ class SendMessageOp : public Op {
   bool IsFinalOp() {
     return false;
   }
-  void OnComplete() {
+  void OnComplete(bool success) {
   }
  protected:
   std::string GetTypeString() const {
@@ -284,7 +284,7 @@ class SendClientCloseOp : public Op {
   bool IsFinalOp() {
     return false;
   }
-  void OnComplete() {
+  void OnComplete(bool success) {
   }
  protected:
   std::string GetTypeString() const {
@@ -355,7 +355,7 @@ class SendServerStatusOp : public Op {
   bool IsFinalOp() {
     return true;
   }
-  void OnComplete() {
+  void OnComplete(bool success) {
   }
  protected:
   std::string GetTypeString() const {
@@ -389,7 +389,7 @@ class GetMetadataOp : public Op {
   bool IsFinalOp() {
     return false;
   }
-  void OnComplete() {
+  void OnComplete(bool success) {
   }
 
  protected:
@@ -423,7 +423,7 @@ class ReadMessageOp : public Op {
   bool IsFinalOp() {
     return false;
   }
-  void OnComplete() {
+  void OnComplete(bool success) {
   }
 
  protected:
@@ -466,7 +466,7 @@ class ClientStatusOp : public Op {
   bool IsFinalOp() {
     return true;
   }
-  void OnComplete() {
+  void OnComplete(bool success) {
   }
  protected:
   std::string GetTypeString() const {
@@ -492,7 +492,7 @@ class ServerCloseResponseOp : public Op {
   bool IsFinalOp() {
     return false;
   }
-  void OnComplete() {
+  void OnComplete(bool success) {
   }
 
  protected:
@@ -532,11 +532,12 @@ void CompleteTag(void *tag, const char *error_message) {
     Local<Value> argv[] = {Nan::Error(error_message)};
     callback->Call(1, argv);
   }
+  bool success = (error_message == NULL);
   bool is_final_op = false;
   for (vector<unique_ptr<Op> >::iterator it = tag_struct->ops->begin();
        it != tag_struct->ops->end(); ++it) {
     Op *op_ptr = it->get();
-    op_ptr->OnComplete();
+    op_ptr->OnComplete(success);
     if (op_ptr->IsFinalOp()) {
       is_final_op = true;
     }

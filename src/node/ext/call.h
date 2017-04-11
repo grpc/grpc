@@ -106,7 +106,7 @@ class Op {
   virtual ~Op();
   v8::Local<v8::Value> GetOpType() const;
   virtual bool IsFinalOp() = 0;
-  virtual void OnComplete() = 0;
+  virtual void OnComplete(bool success) = 0;
 
  protected:
   virtual std::string GetTypeString() const = 0;
