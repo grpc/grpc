@@ -39,6 +39,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/support/atomic.h"
+
 extern "C" {
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/support/string.h"
@@ -56,7 +58,7 @@ namespace {
 struct CallData {
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
-  std::atomic<bool> filled_metadata;
+  grpc_core::atomic<bool> filled_metadata;
 };
 
 struct ChannelData {
@@ -69,8 +71,8 @@ static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   CallData *calld = static_cast<CallData *>(elem->call_data);
   bool expected = false;
   if (!calld->filled_metadata.compare_exchange_strong(
-          expected, true, std::memory_order_relaxed,
-          std::memory_order_relaxed)) {
+          expected, true, grpc_core::memory_order_relaxed,
+          grpc_core::memory_order_relaxed)) {
     return;
   }
   ChannelData *chand = static_cast<ChannelData *>(elem->channel_data);
