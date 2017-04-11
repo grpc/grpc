@@ -85,6 +85,7 @@ def test_options(needs_fullstack=False, needs_dns=False, proxyable=True,
 # maps test names to options
 END2END_TESTS = {
     'bad_hostname': test_options(),
+    'bad_ping': test_options(),
     'binary_metadata': test_options(),
     'resource_quota_server': test_options(proxyable=False),
     'call_creds': test_options(secure=True),

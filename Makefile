@@ -409,7 +409,7 @@ AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
 USE_BUILT_PROTOC = false
 endif
 
-GTEST_LIB = -Ithird_party/googletest/include -Ithird_party/googletest third_party/googletest/src/gtest-all.cc
+GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc
 GTEST_LIB += -lgflags
 ifeq ($(V),1)
 E = @:
@@ -784,7 +784,7 @@ PROTOBUF_PKG_CONFIG = false
 PC_REQUIRES_GRPCXX =
 PC_LIBS_GRPCXX =
 
-CPPFLAGS := -Ithird_party/googletest/include $(CPPFLAGS)
+CPPFLAGS := -Ithird_party/googletest/googletest/include $(CPPFLAGS)
 
 PROTOC_PLUGINS_ALL = $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(BINDIR)/$(CONFIG)/grpc_node_plugin $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(BINDIR)/$(CONFIG)/grpc_php_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 PROTOC_PLUGINS_DIR = $(BINDIR)/$(CONFIG)
@@ -1105,6 +1105,7 @@ bm_chttp2_hpack: $(BINDIR)/$(CONFIG)/bm_chttp2_hpack
 bm_chttp2_transport: $(BINDIR)/$(CONFIG)/bm_chttp2_transport
 bm_closure: $(BINDIR)/$(CONFIG)/bm_closure
 bm_cq: $(BINDIR)/$(CONFIG)/bm_cq
+bm_cq_multiple_threads: $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads
 bm_error: $(BINDIR)/$(CONFIG)/bm_error
 bm_fullstack_streaming_ping_pong: $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong
 bm_fullstack_streaming_pump: $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump
@@ -1530,6 +1531,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_chttp2_transport \
   $(BINDIR)/$(CONFIG)/bm_closure \
   $(BINDIR)/$(CONFIG)/bm_cq \
+  $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads \
   $(BINDIR)/$(CONFIG)/bm_error \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump \
@@ -1648,6 +1650,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_chttp2_transport \
   $(BINDIR)/$(CONFIG)/bm_closure \
   $(BINDIR)/$(CONFIG)/bm_cq \
+  $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads \
   $(BINDIR)/$(CONFIG)/bm_error \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump \
@@ -1997,6 +2000,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_closure || ( echo test bm_closure failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_cq"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_cq || ( echo test bm_cq failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_cq_multiple_threads"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads || ( echo test bm_cq_multiple_threads failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_error"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_error || ( echo test bm_error failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_streaming_ping_pong"
@@ -2383,12 +2388,12 @@ ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/testing/services.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc
+$(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc
+$(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -2820,7 +2825,6 @@ LIBGRPC_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -2846,6 +2850,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_uv.c \
@@ -2985,47 +2990,47 @@ LIBGRPC_SRC = \
     src/core/tsi/transport_security.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
-    src/core/ext/client_channel/channel_connectivity.c \
-    src/core/ext/client_channel/client_channel.c \
-    src/core/ext/client_channel/client_channel_factory.c \
-    src/core/ext/client_channel/client_channel_plugin.c \
-    src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/http_connect_handshaker.c \
-    src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/lb_policy.c \
-    src/core/ext/client_channel/lb_policy_factory.c \
-    src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/parse_address.c \
-    src/core/ext/client_channel/proxy_mapper.c \
-    src/core/ext/client_channel/proxy_mapper_registry.c \
-    src/core/ext/client_channel/resolver.c \
-    src/core/ext/client_channel/resolver_factory.c \
-    src/core/ext/client_channel/resolver_registry.c \
-    src/core/ext/client_channel/retry_throttle.c \
-    src/core/ext/client_channel/subchannel.c \
-    src/core/ext/client_channel/subchannel_index.c \
-    src/core/ext/client_channel/uri_parser.c \
+    src/core/ext/filters/client_channel/channel_connectivity.c \
+    src/core/ext/filters/client_channel/client_channel.c \
+    src/core/ext/filters/client_channel/client_channel_factory.c \
+    src/core/ext/filters/client_channel/client_channel_plugin.c \
+    src/core/ext/filters/client_channel/connector.c \
+    src/core/ext/filters/client_channel/http_connect_handshaker.c \
+    src/core/ext/filters/client_channel/http_proxy.c \
+    src/core/ext/filters/client_channel/lb_policy.c \
+    src/core/ext/filters/client_channel/lb_policy_factory.c \
+    src/core/ext/filters/client_channel/lb_policy_registry.c \
+    src/core/ext/filters/client_channel/parse_address.c \
+    src/core/ext/filters/client_channel/proxy_mapper.c \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
+    src/core/ext/filters/client_channel/resolver.c \
+    src/core/ext/filters/client_channel/resolver_factory.c \
+    src/core/ext/filters/client_channel/resolver_registry.c \
+    src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/subchannel.c \
+    src/core/ext/filters/client_channel/subchannel_index.c \
+    src/core/ext/filters/client_channel/uri_parser.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
-    src/core/ext/lb_policy/grpclb/grpclb.c \
-    src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c \
-    src/core/ext/lb_policy/grpclb/load_balancer_api.c \
-    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
-    src/core/ext/lb_policy/pick_first/pick_first.c \
-    src/core/ext/lb_policy/round_robin/round_robin.c \
-    src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c \
-    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
-    src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
-    src/core/ext/resolver/dns/native/dns_resolver.c \
-    src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
-    src/core/ext/load_reporting/load_reporting.c \
-    src/core/ext/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c \
+    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c \
+    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
+    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
+    src/core/ext/filters/load_reporting/load_reporting.c \
+    src/core/ext/filters/load_reporting/load_reporting_filter.c \
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
@@ -3040,6 +3045,7 @@ LIBGRPC_SRC = \
     src/core/ext/census/resource.c \
     src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
+    src/core/ext/filters/max_age/max_age_filter.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -3140,7 +3146,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -3166,6 +3171,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_uv.c \
@@ -3279,26 +3285,26 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/client_channel/channel_connectivity.c \
-    src/core/ext/client_channel/client_channel.c \
-    src/core/ext/client_channel/client_channel_factory.c \
-    src/core/ext/client_channel/client_channel_plugin.c \
-    src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/http_connect_handshaker.c \
-    src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/lb_policy.c \
-    src/core/ext/client_channel/lb_policy_factory.c \
-    src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/parse_address.c \
-    src/core/ext/client_channel/proxy_mapper.c \
-    src/core/ext/client_channel/proxy_mapper_registry.c \
-    src/core/ext/client_channel/resolver.c \
-    src/core/ext/client_channel/resolver_factory.c \
-    src/core/ext/client_channel/resolver_registry.c \
-    src/core/ext/client_channel/retry_throttle.c \
-    src/core/ext/client_channel/subchannel.c \
-    src/core/ext/client_channel/subchannel_index.c \
-    src/core/ext/client_channel/uri_parser.c \
+    src/core/ext/filters/client_channel/channel_connectivity.c \
+    src/core/ext/filters/client_channel/client_channel.c \
+    src/core/ext/filters/client_channel/client_channel_factory.c \
+    src/core/ext/filters/client_channel/client_channel_plugin.c \
+    src/core/ext/filters/client_channel/connector.c \
+    src/core/ext/filters/client_channel/http_connect_handshaker.c \
+    src/core/ext/filters/client_channel/http_proxy.c \
+    src/core/ext/filters/client_channel/lb_policy.c \
+    src/core/ext/filters/client_channel/lb_policy_factory.c \
+    src/core/ext/filters/client_channel/lb_policy_registry.c \
+    src/core/ext/filters/client_channel/parse_address.c \
+    src/core/ext/filters/client_channel/proxy_mapper.c \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
+    src/core/ext/filters/client_channel/resolver.c \
+    src/core/ext/filters/client_channel/resolver_factory.c \
+    src/core/ext/filters/client_channel/resolver_registry.c \
+    src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/subchannel.c \
+    src/core/ext/filters/client_channel/subchannel_index.c \
+    src/core/ext/filters/client_channel/uri_parser.c \
     src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/security/context/security_context.c \
     src/core/lib/security/credentials/composite/composite_credentials.c \
@@ -3327,8 +3333,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
-    src/core/ext/load_reporting/load_reporting.c \
-    src/core/ext/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/load_reporting/load_reporting.c \
+    src/core/ext/filters/load_reporting/load_reporting_filter.c \
     src/core/plugin_registry/grpc_cronet_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -3448,7 +3454,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -3474,6 +3479,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_uv.c \
@@ -3681,7 +3687,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -3707,6 +3712,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_uv.c \
@@ -3822,42 +3828,42 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
-    src/core/ext/client_channel/channel_connectivity.c \
-    src/core/ext/client_channel/client_channel.c \
-    src/core/ext/client_channel/client_channel_factory.c \
-    src/core/ext/client_channel/client_channel_plugin.c \
-    src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/http_connect_handshaker.c \
-    src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/lb_policy.c \
-    src/core/ext/client_channel/lb_policy_factory.c \
-    src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/parse_address.c \
-    src/core/ext/client_channel/proxy_mapper.c \
-    src/core/ext/client_channel/proxy_mapper_registry.c \
-    src/core/ext/client_channel/resolver.c \
-    src/core/ext/client_channel/resolver_factory.c \
-    src/core/ext/client_channel/resolver_registry.c \
-    src/core/ext/client_channel/retry_throttle.c \
-    src/core/ext/client_channel/subchannel.c \
-    src/core/ext/client_channel/subchannel_index.c \
-    src/core/ext/client_channel/uri_parser.c \
-    src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c \
-    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
-    src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
-    src/core/ext/resolver/dns/native/dns_resolver.c \
-    src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
-    src/core/ext/load_reporting/load_reporting.c \
-    src/core/ext/load_reporting/load_reporting_filter.c \
-    src/core/ext/lb_policy/grpclb/grpclb.c \
-    src/core/ext/lb_policy/grpclb/grpclb_channel.c \
-    src/core/ext/lb_policy/grpclb/load_balancer_api.c \
-    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
+    src/core/ext/filters/client_channel/channel_connectivity.c \
+    src/core/ext/filters/client_channel/client_channel.c \
+    src/core/ext/filters/client_channel/client_channel_factory.c \
+    src/core/ext/filters/client_channel/client_channel_plugin.c \
+    src/core/ext/filters/client_channel/connector.c \
+    src/core/ext/filters/client_channel/http_connect_handshaker.c \
+    src/core/ext/filters/client_channel/http_proxy.c \
+    src/core/ext/filters/client_channel/lb_policy.c \
+    src/core/ext/filters/client_channel/lb_policy_factory.c \
+    src/core/ext/filters/client_channel/lb_policy_registry.c \
+    src/core/ext/filters/client_channel/parse_address.c \
+    src/core/ext/filters/client_channel/proxy_mapper.c \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
+    src/core/ext/filters/client_channel/resolver.c \
+    src/core/ext/filters/client_channel/resolver_factory.c \
+    src/core/ext/filters/client_channel/resolver_registry.c \
+    src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/subchannel.c \
+    src/core/ext/filters/client_channel/subchannel_index.c \
+    src/core/ext/filters/client_channel/uri_parser.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c \
+    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
+    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
+    src/core/ext/filters/load_reporting/load_reporting.c \
+    src/core/ext/filters/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
-    src/core/ext/lb_policy/pick_first/pick_first.c \
-    src/core/ext/lb_policy/round_robin/round_robin.c \
+    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c \
+    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c \
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
@@ -3872,6 +3878,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/census/resource.c \
     src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
+    src/core/ext/filters/max_age/max_age_filter.c \
     src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -4074,7 +4081,6 @@ LIBGRPC++_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -4100,6 +4106,7 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_uv.c \
@@ -4413,7 +4420,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -4439,6 +4445,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_uv.c \
@@ -4555,26 +4562,26 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/client_channel/channel_connectivity.c \
-    src/core/ext/client_channel/client_channel.c \
-    src/core/ext/client_channel/client_channel_factory.c \
-    src/core/ext/client_channel/client_channel_plugin.c \
-    src/core/ext/client_channel/connector.c \
-    src/core/ext/client_channel/http_connect_handshaker.c \
-    src/core/ext/client_channel/http_proxy.c \
-    src/core/ext/client_channel/lb_policy.c \
-    src/core/ext/client_channel/lb_policy_factory.c \
-    src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/parse_address.c \
-    src/core/ext/client_channel/proxy_mapper.c \
-    src/core/ext/client_channel/proxy_mapper_registry.c \
-    src/core/ext/client_channel/resolver.c \
-    src/core/ext/client_channel/resolver_factory.c \
-    src/core/ext/client_channel/resolver_registry.c \
-    src/core/ext/client_channel/retry_throttle.c \
-    src/core/ext/client_channel/subchannel.c \
-    src/core/ext/client_channel/subchannel_index.c \
-    src/core/ext/client_channel/uri_parser.c \
+    src/core/ext/filters/client_channel/channel_connectivity.c \
+    src/core/ext/filters/client_channel/client_channel.c \
+    src/core/ext/filters/client_channel/client_channel_factory.c \
+    src/core/ext/filters/client_channel/client_channel_plugin.c \
+    src/core/ext/filters/client_channel/connector.c \
+    src/core/ext/filters/client_channel/http_connect_handshaker.c \
+    src/core/ext/filters/client_channel/http_proxy.c \
+    src/core/ext/filters/client_channel/lb_policy.c \
+    src/core/ext/filters/client_channel/lb_policy_factory.c \
+    src/core/ext/filters/client_channel/lb_policy_registry.c \
+    src/core/ext/filters/client_channel/parse_address.c \
+    src/core/ext/filters/client_channel/proxy_mapper.c \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
+    src/core/ext/filters/client_channel/resolver.c \
+    src/core/ext/filters/client_channel/resolver_factory.c \
+    src/core/ext/filters/client_channel/resolver_registry.c \
+    src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/subchannel.c \
+    src/core/ext/filters/client_channel/subchannel_index.c \
+    src/core/ext/filters/client_channel/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
@@ -5104,7 +5111,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/max_age_filter.c \
     src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
@@ -5130,6 +5136,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_uv.c \
@@ -8226,6 +8233,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/end2end_test_utils.c \
     test/core/end2end/tests/authority_not_supported.c \
     test/core/end2end/tests/bad_hostname.c \
+    test/core/end2end/tests/bad_ping.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/call_creds.c \
     test/core/end2end/tests/cancel_after_accept.c \
@@ -8318,6 +8326,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/end2end_test_utils.c \
     test/core/end2end/tests/authority_not_supported.c \
     test/core/end2end/tests/bad_hostname.c \
+    test/core/end2end/tests/bad_ping.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/cancel_after_accept.c \
     test/core/end2end/tests/cancel_after_client_done.c \
@@ -13359,6 +13368,50 @@ deps_bm_cq: $(BM_CQ_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BM_CQ_OBJS:.o=.dep)
+endif
+endif
+
+
+BM_CQ_MULTIPLE_THREADS_SRC = \
+    test/cpp/microbenchmarks/bm_cq_multiple_threads.cc \
+
+BM_CQ_MULTIPLE_THREADS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_CQ_MULTIPLE_THREADS_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_cq_multiple_threads: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/bm_cq_multiple_threads: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_cq_multiple_threads: $(PROTOBUF_DEP) $(BM_CQ_MULTIPLE_THREADS_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_CQ_MULTIPLE_THREADS_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads
+
+endif
+
+endif
+
+$(BM_CQ_MULTIPLE_THREADS_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_cq_multiple_threads.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bm_cq_multiple_threads: $(BM_CQ_MULTIPLE_THREADS_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_CQ_MULTIPLE_THREADS_OBJS:.o=.dep)
 endif
 endif
 
@@ -19176,7 +19229,7 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)

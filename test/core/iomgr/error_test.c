@@ -182,8 +182,6 @@ static void print_error_string_reference() {
   grpc_error* parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", children, 2);
 
-  gpr_log(GPR_DEBUG, "%s", grpc_error_string(parent));
-
   for (size_t i = 0; i < 2; ++i) {
     GRPC_ERROR_UNREF(children[i]);
   }
@@ -216,6 +214,33 @@ static void test_special() {
   GRPC_ERROR_UNREF(error);
 }
 
+static void test_overflow() {
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Overflow");
+
+  for (size_t i = 0; i < 150; ++i) {
+    error = grpc_error_add_child(error,
+                                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child"));
+  }
+
+  error = grpc_error_set_int(error, GRPC_ERROR_INT_HTTP2_ERROR, 5);
+  error =
+      grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                         grpc_slice_from_static_string("message for child 2"));
+  error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, 5);
+
+  intptr_t i;
+  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
+  GPR_ASSERT(i == 5);
+  GPR_ASSERT(!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &i));
+
+  error = grpc_error_set_int(error, GRPC_ERROR_INT_HTTP2_ERROR, 10);
+  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
+  GPR_ASSERT(i == 10);
+
+  GRPC_ERROR_UNREF(error);
+  ;
+}
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -228,6 +253,7 @@ int main(int argc, char** argv) {
   test_create_referencing();
   test_create_referencing_many();
   test_special();
+  test_overflow();
   grpc_shutdown();
 
   return 0;

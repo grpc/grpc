@@ -103,7 +103,8 @@ struct grpc_tcp_server {
   /* next pollset to assign a channel to */
   gpr_atm next_pollset_to_assign;
 
-  grpc_resource_quota *resource_quota;
+  /* channel args for this server */
+  grpc_channel_args *channel_args;
 };
 
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the

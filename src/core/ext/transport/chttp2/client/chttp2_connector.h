@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_CHTTP2_CONNECTOR_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_CHTTP2_CONNECTOR_H
 
-#include "src/core/ext/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/connector.h"
 
 grpc_connector* grpc_chttp2_connector_create();
 
