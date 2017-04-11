@@ -543,6 +543,32 @@ typedef struct {
 
 typedef struct grpc_resource_quota grpc_resource_quota;
 
+/** Completion queues internally MAY maintain a set of file descriptors in a
+    structure called 'pollset'. This enum specifies if a completion queue has an
+    associated pollset and any restrictions on the type of file descriptors that
+    can be present in the pollset.
+
+    I/O progress can only be made when grpc_completion_queue_next() or
+    grpc_completion_queue_pluck() are called on the completion queue (unless the
+    grpc_cq_polling_type is GRPC_CQ_NON_POLLING) and hence it is very important
+    to actively call these APIs */
+typedef enum {
+  /** The completion queue will have an associated pollset and there is no
+      restriction on the type of file descriptors the pollset may contain */
+  GRPC_CQ_DEFAULT_POLLING,
+
+  /** Similar to GRPC_CQ_DEFAULT_POLLING except that the completion queues will
+      not contain any 'listening file descriptors' (i.e file descriptors used to
+      listen to incoming channels) */
+  GRPC_CQ_NON_LISTENING,
+
+  /** The completion queue will not have an associated pollset. Note that
+      grpc_completion_queue_next() or grpc_completion_queue_pluck() MUST still
+      be called to pop events from the completion queue; it is not required to
+      call them actively to make I/O progress */
+  GRPC_CQ_NON_POLLING
+} grpc_cq_polling_type;
+
 #ifdef __cplusplus
 }
 #endif

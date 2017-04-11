@@ -83,7 +83,8 @@ ServerBuilder::~ServerBuilder() {
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
     bool is_frequently_polled) {
-  ServerCompletionQueue* cq = new ServerCompletionQueue(is_frequently_polled);
+  ServerCompletionQueue* cq = new ServerCompletionQueue(
+      is_frequently_polled ? GRPC_CQ_DEFAULT_POLLING : GRPC_CQ_NON_LISTENING);
   cqs_.push_back(cq);
   return std::unique_ptr<ServerCompletionQueue>(cq);
 }
@@ -251,9 +252,12 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
             sync_server_settings_.max_pollers,
             sync_server_settings_.cq_timeout_msec);
 
+    grpc_cq_polling_type polling_type =
+        cqs_.empty() ? GRPC_CQ_DEFAULT_POLLING : GRPC_CQ_NON_POLLING;
+
     // Create completion queues to listen to incoming rpc requests
     for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
-      sync_server_cqs->emplace_back(new ServerCompletionQueue());
+      sync_server_cqs->emplace_back(new ServerCompletionQueue(polling_type));
     }
   }
 

@@ -289,17 +289,21 @@ class CompletionQueue : private GrpcLibraryCodegen {
 /// by servers. Instantiated by \a ServerBuilder.
 class ServerCompletionQueue : public CompletionQueue {
  public:
-  bool IsFrequentlyPolled() { return is_frequently_polled_; }
+  bool IsFrequentlyPolled() { return polling_type_ != GRPC_CQ_NON_LISTENING; }
 
  private:
-  bool is_frequently_polled_;
+  grpc_cq_polling_type polling_type_;
   friend class ServerBuilder;
   /// \param is_frequently_polled Informs the GRPC library about whether the
   /// server completion queue would be actively polled (by calling Next() or
   /// AsyncNext()). By default all server completion queues are assumed to be
   /// frequently polled.
-  ServerCompletionQueue(bool is_frequently_polled = true)
-      : is_frequently_polled_(is_frequently_polled) {}
+  ServerCompletionQueue(grpc_cq_polling_type polling_type)
+      : CompletionQueue(MakeCompletionQueue(polling_type)),
+        polling_type_(polling_type) {}
+
+  static grpc_completion_queue* MakeCompletionQueue(
+      grpc_cq_polling_type polling_type);
 };
 
 }  // namespace grpc
