@@ -75,6 +75,7 @@ static tsi_result adapter_result_get_unused_bytes(
 
 static void adapter_result_destroy(tsi_handshaker_result *self) {
   tsi_adapter_handshaker_result *impl = (tsi_adapter_handshaker_result *)self;
+  tsi_handshaker_destroy(impl->wrapped);
   gpr_free(impl->unused_bytes);
   gpr_free(self);
 }
@@ -84,7 +85,8 @@ static const tsi_handshaker_result_vtable result_vtable = {
     adapter_result_get_unused_bytes, adapter_result_destroy,
 };
 
-tsi_result tsi_adapter_create_handshaker_result(
+/* Ownership of wrapped tsi_handshaker is transferred to the result object.  */
+static tsi_result tsi_adapter_create_handshaker_result(
     tsi_handshaker *wrapped, const unsigned char *unused_bytes,
     size_t unused_bytes_size, tsi_handshaker_result **handshaker_result) {
   if (wrapped == NULL || (unused_bytes_size > 0 && unused_bytes == NULL)) {
@@ -201,6 +203,7 @@ static tsi_result adapter_next(
         impl->wrapped, unused_bytes, unused_bytes_size, handshaker_result);
     if (status == TSI_OK) {
       impl->base.handshaker_result_created = true;
+      impl->wrapped = NULL;
     }
   }
   return status;
