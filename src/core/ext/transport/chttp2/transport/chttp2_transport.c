@@ -2654,7 +2654,7 @@ grpc_error *grpc_chttp2_incoming_byte_stream_push(
 
 grpc_error *grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
-    grpc_error *error, int reset_on_error) {
+    grpc_error *error, bool reset_on_error) {
   grpc_chttp2_stream *s = bs->stream;
 
   if (error == GRPC_ERROR_NONE) {

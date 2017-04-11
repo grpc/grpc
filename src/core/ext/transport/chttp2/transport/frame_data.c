@@ -56,7 +56,7 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
   if (parser->parsing_frame != NULL) {
     grpc_chttp2_incoming_byte_stream_finished(
         exec_ctx, parser->parsing_frame,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Parser destroyed"), 0);
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Parser destroyed"), false);
   }
   GRPC_ERROR_UNREF(parser->error);
 }
@@ -214,7 +214,7 @@ grpc_error *deframe_unprocessed_incoming_frames(grpc_exec_ctx *exec_ctx,
         *stream_out = &p->parsing_frame->base;
         if (p->parsing_frame->remaining_bytes == 0) {
           grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
-                                                    GRPC_ERROR_NONE, 1);
+                                                    GRPC_ERROR_NONE, true);
           p->parsing_frame = NULL;
           p->state = GRPC_CHTTP2_DATA_FH_0;
         }
@@ -245,7 +245,7 @@ grpc_error *deframe_unprocessed_incoming_frames(grpc_exec_ctx *exec_ctx,
             return error;
           }
           grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
-                                                    GRPC_ERROR_NONE, 1);
+                                                    GRPC_ERROR_NONE, true);
           p->parsing_frame = NULL;
           p->state = GRPC_CHTTP2_DATA_FH_0;
           grpc_slice_unref_internal(exec_ctx, slice);
@@ -273,7 +273,7 @@ grpc_error *deframe_unprocessed_incoming_frames(grpc_exec_ctx *exec_ctx,
             return error;
           }
           grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
-                                                    GRPC_ERROR_NONE, 1);
+                                                    GRPC_ERROR_NONE, true);
           p->parsing_frame = NULL;
           p->state = GRPC_CHTTP2_DATA_FH_0;
           cur += p->frame_size;
