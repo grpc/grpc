@@ -1072,7 +1072,7 @@ static batch_control *allocate_batch_control(grpc_call *call,
   if (bctl->call != NULL) {
     return NULL;
   }
-  memset(bctl, 0, sizeof(*bctl));
+  memset(&bctl->op.bits, 0, sizeof(bctl->op.bits));
   bctl->call = call;
   bctl->op.payload = &call->stream_op_payload;
   return bctl;
