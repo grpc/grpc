@@ -943,6 +943,7 @@ add_library(grpc
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -1265,6 +1266,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -1573,6 +1575,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -1833,6 +1836,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -2249,6 +2253,7 @@ add_library(grpc++
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -2579,6 +2584,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -3277,6 +3283,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
