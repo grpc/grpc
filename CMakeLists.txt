@@ -2934,8 +2934,8 @@ target_include_directories(grpc++_proto_reflection_desc_db
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3053,8 +3053,8 @@ target_include_directories(grpc++_test_config
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3130,8 +3130,8 @@ target_include_directories(grpc++_test_util
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3562,8 +3562,8 @@ target_include_directories(grpc_benchmark
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3621,8 +3621,8 @@ target_include_directories(grpc_cli_libs
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3760,8 +3760,8 @@ target_include_directories(http2_client_main
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3815,8 +3815,8 @@ target_include_directories(interop_client_helper
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3885,8 +3885,8 @@ target_include_directories(interop_client_main
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3936,8 +3936,8 @@ target_include_directories(interop_server_helper
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -4005,8 +4005,8 @@ target_include_directories(interop_server_lib
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -4056,8 +4056,8 @@ target_include_directories(interop_server_main
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -4144,8 +4144,8 @@ target_include_directories(qps
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8607,7 +8607,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(alarm_cpp_test
   test/cpp/common/alarm_cpp_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -8624,8 +8624,8 @@ target_include_directories(alarm_cpp_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8646,7 +8646,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(async_end2end_test
   test/cpp/end2end/async_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -8663,8 +8663,8 @@ target_include_directories(async_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8685,7 +8685,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(auth_property_iterator_test
   test/cpp/common/auth_property_iterator_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -8702,8 +8702,8 @@ target_include_directories(auth_property_iterator_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8725,7 +8725,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_arena
   test/cpp/microbenchmarks/bm_arena.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -8742,8 +8742,8 @@ target_include_directories(bm_arena
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8768,7 +8768,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_call_create
   test/cpp/microbenchmarks/bm_call_create.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -8785,8 +8785,8 @@ target_include_directories(bm_call_create
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8811,7 +8811,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_chttp2_hpack
   test/cpp/microbenchmarks/bm_chttp2_hpack.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -8828,8 +8828,8 @@ target_include_directories(bm_chttp2_hpack
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8854,7 +8854,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_chttp2_transport
   test/cpp/microbenchmarks/bm_chttp2_transport.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -8871,8 +8871,8 @@ target_include_directories(bm_chttp2_transport
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8897,7 +8897,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_closure
   test/cpp/microbenchmarks/bm_closure.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -8914,8 +8914,8 @@ target_include_directories(bm_closure
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8940,7 +8940,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_cq
   test/cpp/microbenchmarks/bm_cq.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -8957,8 +8957,8 @@ target_include_directories(bm_cq
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9026,7 +9026,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_error
   test/cpp/microbenchmarks/bm_error.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9043,8 +9043,8 @@ target_include_directories(bm_error
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9069,7 +9069,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_fullstack_streaming_ping_pong
   test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9086,8 +9086,8 @@ target_include_directories(bm_fullstack_streaming_ping_pong
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9112,7 +9112,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_fullstack_streaming_pump
   test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9129,8 +9129,8 @@ target_include_directories(bm_fullstack_streaming_pump
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9155,7 +9155,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_fullstack_trickle
   test/cpp/microbenchmarks/bm_fullstack_trickle.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9172,8 +9172,8 @@ target_include_directories(bm_fullstack_trickle
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9198,7 +9198,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_fullstack_unary_ping_pong
   test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9215,8 +9215,8 @@ target_include_directories(bm_fullstack_unary_ping_pong
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9241,7 +9241,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_metadata
   test/cpp/microbenchmarks/bm_metadata.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9258,8 +9258,8 @@ target_include_directories(bm_metadata
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9284,7 +9284,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_pollset
   test/cpp/microbenchmarks/bm_pollset.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9301,8 +9301,8 @@ target_include_directories(bm_pollset
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9326,7 +9326,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(channel_arguments_test
   test/cpp/common/channel_arguments_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9343,8 +9343,8 @@ target_include_directories(channel_arguments_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9362,7 +9362,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(channel_filter_test
   test/cpp/common/channel_filter_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9379,8 +9379,8 @@ target_include_directories(channel_filter_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9398,7 +9398,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(cli_call_test
   test/cpp/util/cli_call_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9415,8 +9415,8 @@ target_include_directories(cli_call_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9439,7 +9439,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(client_crash_test
   test/cpp/end2end/client_crash_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9456,8 +9456,8 @@ target_include_directories(client_crash_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9479,7 +9479,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(client_crash_test_server
   test/cpp/end2end/client_crash_test_server.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9496,8 +9496,8 @@ target_include_directories(client_crash_test_server
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9538,7 +9538,7 @@ add_executable(codegen_test_full
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
   test/cpp/codegen/codegen_test_full.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -9570,8 +9570,8 @@ target_include_directories(codegen_test_full
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9610,7 +9610,7 @@ add_executable(codegen_test_minimal
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
   test/cpp/codegen/codegen_test_minimal.cc
   src/cpp/codegen/codegen_init.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -9642,8 +9642,8 @@ target_include_directories(codegen_test_minimal
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9658,7 +9658,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(credentials_test
   test/cpp/client/credentials_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9675,8 +9675,8 @@ target_include_directories(credentials_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9694,7 +9694,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(cxx_byte_buffer_test
   test/cpp/util/byte_buffer_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9711,8 +9711,8 @@ target_include_directories(cxx_byte_buffer_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9732,7 +9732,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(cxx_slice_test
   test/cpp/util/slice_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9749,8 +9749,8 @@ target_include_directories(cxx_slice_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9770,7 +9770,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(cxx_string_ref_test
   test/cpp/util/string_ref_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9787,8 +9787,8 @@ target_include_directories(cxx_string_ref_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9804,7 +9804,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(cxx_time_test
   test/cpp/util/time_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9821,8 +9821,8 @@ target_include_directories(cxx_time_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9842,7 +9842,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(end2end_test
   test/cpp/end2end/end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9859,8 +9859,8 @@ target_include_directories(end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9881,7 +9881,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(filter_end2end_test
   test/cpp/end2end/filter_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9898,8 +9898,8 @@ target_include_directories(filter_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9920,7 +9920,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(generic_end2end_test
   test/cpp/end2end/generic_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9937,8 +9937,8 @@ target_include_directories(generic_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9963,7 +9963,7 @@ add_executable(golden_file_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.h
   test/cpp/codegen/golden_file_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -9983,8 +9983,8 @@ target_include_directories(golden_file_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10002,7 +10002,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_cli
   test/cpp/util/grpc_cli.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10019,8 +10019,8 @@ target_include_directories(grpc_cli
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10315,7 +10315,7 @@ add_executable(grpc_tool_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
   test/cpp/util/grpc_tool_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -10338,8 +10338,8 @@ target_include_directories(grpc_tool_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10367,7 +10367,7 @@ add_executable(grpclb_api_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
   test/cpp/grpclb/grpclb_api_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -10387,8 +10387,8 @@ target_include_directories(grpclb_api_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10411,7 +10411,7 @@ add_executable(grpclb_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
   test/cpp/grpclb/grpclb_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -10431,8 +10431,8 @@ target_include_directories(grpclb_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10453,7 +10453,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(health_service_end2end_test
   test/cpp/end2end/health_service_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10470,8 +10470,8 @@ target_include_directories(health_service_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10492,7 +10492,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(http2_client
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10509,8 +10509,8 @@ target_include_directories(http2_client
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10532,7 +10532,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(hybrid_end2end_test
   test/cpp/end2end/hybrid_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10549,8 +10549,8 @@ target_include_directories(hybrid_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10571,7 +10571,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(interop_client
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10588,8 +10588,8 @@ target_include_directories(interop_client
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10614,7 +10614,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(interop_server
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10631,8 +10631,8 @@ target_include_directories(interop_server
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10659,7 +10659,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(interop_test
   test/cpp/interop/interop_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10676,8 +10676,8 @@ target_include_directories(interop_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10699,7 +10699,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(json_run_localhost
   test/cpp/qps/json_run_localhost.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10716,8 +10716,8 @@ target_include_directories(json_run_localhost
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10744,7 +10744,7 @@ add_executable(metrics_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.h
   test/cpp/interop/metrics_client.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -10764,8 +10764,8 @@ target_include_directories(metrics_client
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10784,7 +10784,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(mock_test
   test/cpp/end2end/mock_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10801,8 +10801,8 @@ target_include_directories(mock_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10823,7 +10823,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(noop-benchmark
   test/cpp/microbenchmarks/noop-benchmark.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10840,8 +10840,8 @@ target_include_directories(noop-benchmark
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10857,7 +10857,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(proto_server_reflection_test
   test/cpp/end2end/proto_server_reflection_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10874,8 +10874,8 @@ target_include_directories(proto_server_reflection_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10898,7 +10898,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(proto_utils_test
   test/cpp/codegen/proto_utils_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10915,8 +10915,8 @@ target_include_directories(proto_utils_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10934,7 +10934,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(qps_interarrival_test
   test/cpp/qps/qps_interarrival_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10951,8 +10951,8 @@ target_include_directories(qps_interarrival_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10975,7 +10975,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(qps_json_driver
   test/cpp/qps/qps_json_driver.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10992,8 +10992,8 @@ target_include_directories(qps_json_driver
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11017,7 +11017,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(qps_openloop_test
   test/cpp/qps/qps_openloop_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11034,8 +11034,8 @@ target_include_directories(qps_openloop_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11059,7 +11059,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(qps_worker
   test/cpp/qps/worker.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11076,8 +11076,8 @@ target_include_directories(qps_worker
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11112,7 +11112,7 @@ add_executable(reconnect_interop_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
   test/cpp/interop/reconnect_interop_client.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -11138,8 +11138,8 @@ target_include_directories(reconnect_interop_client
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11173,7 +11173,7 @@ add_executable(reconnect_interop_server
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
   test/cpp/interop/reconnect_interop_server.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -11199,8 +11199,8 @@ target_include_directories(reconnect_interop_server
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11224,7 +11224,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(round_robin_end2end_test
   test/cpp/end2end/round_robin_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11241,8 +11241,8 @@ target_include_directories(round_robin_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11263,7 +11263,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(secure_auth_context_test
   test/cpp/common/secure_auth_context_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11280,8 +11280,8 @@ target_include_directories(secure_auth_context_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11303,7 +11303,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(secure_sync_unary_ping_pong_test
   test/cpp/qps/secure_sync_unary_ping_pong_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11320,8 +11320,8 @@ target_include_directories(secure_sync_unary_ping_pong_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11344,7 +11344,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(server_builder_plugin_test
   test/cpp/end2end/server_builder_plugin_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11361,8 +11361,8 @@ target_include_directories(server_builder_plugin_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11391,7 +11391,7 @@ add_executable(server_builder_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
   test/cpp/server/server_builder_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -11414,8 +11414,8 @@ target_include_directories(server_builder_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11436,7 +11436,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(server_context_test_spouse_test
   test/cpp/test/server_context_test_spouse_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11453,8 +11453,8 @@ target_include_directories(server_context_test_spouse_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11475,7 +11475,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(server_crash_test
   test/cpp/end2end/server_crash_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11492,8 +11492,8 @@ target_include_directories(server_crash_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11515,7 +11515,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(server_crash_test_client
   test/cpp/end2end/server_crash_test_client.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11532,8 +11532,8 @@ target_include_directories(server_crash_test_client
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11554,7 +11554,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(shutdown_test
   test/cpp/end2end/shutdown_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11571,8 +11571,8 @@ target_include_directories(shutdown_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11593,7 +11593,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(status_test
   test/cpp/util/status_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11610,8 +11610,8 @@ target_include_directories(status_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11632,7 +11632,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(streaming_throughput_test
   test/cpp/end2end/streaming_throughput_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11649,8 +11649,8 @@ target_include_directories(streaming_throughput_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11691,7 +11691,7 @@ add_executable(stress_test
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
   test/cpp/util/metrics_server.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -11720,8 +11720,8 @@ target_include_directories(stress_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11743,7 +11743,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(thread_manager_test
   test/cpp/thread_manager/thread_manager_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11760,8 +11760,8 @@ target_include_directories(thread_manager_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11780,7 +11780,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(thread_stress_test
   test/cpp/end2end/thread_stress_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11797,8 +11797,8 @@ target_include_directories(thread_stress_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11820,7 +11820,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(writes_per_rpc_test
   test/cpp/performance/writes_per_rpc_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -11837,8 +11837,8 @@ target_include_directories(writes_per_rpc_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
