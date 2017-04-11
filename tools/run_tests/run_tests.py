@@ -763,7 +763,7 @@ class CSharpLanguage(object):
       tests_by_assembly = json.load(f)
 
     msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
-    nunit_args = ['--labels=All','--noresult', '--workers=1']
+    nunit_args = ['--labels=All', '--noresult', '--workers=1']
     assembly_subdir = 'bin/%s' % msbuild_config
     assembly_extension = '.exe'
 
