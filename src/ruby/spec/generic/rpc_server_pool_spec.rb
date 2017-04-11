@@ -52,8 +52,7 @@ describe GRPC::Pool do
       expect(p.ready_for_work?).to be(false)
     end
 
-    it 'it stops being ready after all workers are busy, ' \
-      'and it becomes ready again after jobs complete' do
+    it 'it stops being ready after all workers are busy' do
       p = Pool.new(5)
       p.start
 
@@ -78,11 +77,6 @@ describe GRPC::Pool do
         wait = false
         wait_cv.broadcast
       end
-
-      # There's a potential race here but it shouldn't ever be
-      # reached with a 5 second sleep.
-      sleep 5
-      expect(p.ready_for_work?).to be(true)
     end
   end
 
@@ -114,10 +108,17 @@ describe GRPC::Pool do
     it 'stops jobs when there are long running jobs' do
       p = Pool.new(1)
       p.start
+
+      wait_forever_mu = Mutex.new
+      wait_forever_cv = ConditionVariable.new
+      wait_forever = true
+
       job_running = Queue.new
       job = proc do
         job_running.push(Object.new)
-        sleep(5000)
+        wait_forever_mu.synchronize do
+          wait_forever_cv.wait while wait_forever
+        end
       end
       p.schedule(&job)
       job_running.pop
