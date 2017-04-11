@@ -86,6 +86,7 @@ void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
 static void tee_byte_stream_on_complete(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
   grpc_tee_byte_stream *stream = arg;
+  stream->bytes_read += GRPC_SLICE_LENGTH(*stream->slice);
   stream->cb(exec_ctx, stream->cb_arg, *stream->slice);
   grpc_closure_run(exec_ctx, stream->original_on_complete, error);
 }
@@ -100,6 +101,7 @@ static int tee_byte_stream_next(grpc_exec_ctx *exec_ctx,
   int retval = grpc_byte_stream_next(exec_ctx, stream->underlying_stream, slice,
                                      max_size_hint, &stream->on_complete);
   if (retval) {
+    stream->bytes_read += GRPC_SLICE_LENGTH(*stream->slice);
     stream->cb(exec_ctx, stream->cb_arg, *slice);
   }
   return retval;
@@ -108,12 +110,15 @@ static int tee_byte_stream_next(grpc_exec_ctx *exec_ctx,
 static void tee_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                                     grpc_byte_stream *byte_stream) {
   grpc_tee_byte_stream *stream = (grpc_tee_byte_stream *)byte_stream;
-  grpc_byte_stream_destroy(exec_ctx, stream->underlying_stream);
+  stream->destroy_cb(exec_ctx, stream->cb_arg, stream->bytes_read,
+                     stream->underlying_stream);
 }
 
 void grpc_tee_byte_stream_init(grpc_tee_byte_stream *stream,
                                grpc_byte_stream *underlying_stream,
-                               tee_byte_stream_cb cb, void *cb_arg) {
+                               tee_byte_stream_cb cb,
+                               tee_byte_stream_destroy_cb destroy_cb,
+                               void *cb_arg) {
   memset(stream, 0, sizeof(*stream));
   stream->base.length = underlying_stream->length;
   stream->base.flags = underlying_stream->flags;
@@ -121,6 +126,7 @@ void grpc_tee_byte_stream_init(grpc_tee_byte_stream *stream,
   stream->base.destroy = tee_byte_stream_destroy;
   stream->underlying_stream = underlying_stream;
   stream->cb = cb;
+  stream->destroy_cb = destroy_cb;
   stream->cb_arg = cb_arg;
   grpc_closure_init(&stream->on_complete, tee_byte_stream_on_complete, stream,
                     grpc_schedule_on_exec_ctx);

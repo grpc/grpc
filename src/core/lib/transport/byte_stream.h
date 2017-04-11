@@ -89,19 +89,31 @@ void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
 /* Callback does NOT take ownership of \a slice. */
 typedef void (*tee_byte_stream_cb)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_slice slice);
+/* Callback is responsible for destroying \a underlying_stream. */
+typedef void (*tee_byte_stream_destroy_cb)(grpc_exec_ctx *exec_ctx, void *arg,
+                                           size_t bytes_read,
+                                           grpc_byte_stream *underlying_stream);
 
 typedef struct {
   grpc_byte_stream base;
   grpc_byte_stream *underlying_stream;
   tee_byte_stream_cb cb;
+  tee_byte_stream_destroy_cb destroy_cb;
   void *cb_arg;
+  size_t bytes_read;
   grpc_slice *slice;
   grpc_closure on_complete;
   grpc_closure *original_on_complete;
 } grpc_tee_byte_stream;
 
+/* \a destroy_cb gives the caller an opportunity to finish draining the
+ * underlying stream if a call fails in the middle of a write.
+ * \a cb_arg is passed to both \a cb and \a destroy_cb.
+ */
 void grpc_tee_byte_stream_init(grpc_tee_byte_stream *stream,
                                grpc_byte_stream *underlying_stream,
-                               tee_byte_stream_cb cb, void *cb_arg);
+                               tee_byte_stream_cb cb,
+                               tee_byte_stream_destroy_cb destroy_cb,
+                               void *cb_arg);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H */
