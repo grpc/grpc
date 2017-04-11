@@ -409,7 +409,7 @@ AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
 USE_BUILT_PROTOC = false
 endif
 
-GTEST_LIB = -Ithird_party/googletest/include -Ithird_party/googletest third_party/googletest/src/gtest-all.cc
+GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc
 GTEST_LIB += -lgflags
 ifeq ($(V),1)
 E = @:
@@ -784,7 +784,7 @@ PROTOBUF_PKG_CONFIG = false
 PC_REQUIRES_GRPCXX =
 PC_LIBS_GRPCXX =
 
-CPPFLAGS := -Ithird_party/googletest/include $(CPPFLAGS)
+CPPFLAGS := -Ithird_party/googletest/googletest/include $(CPPFLAGS)
 
 PROTOC_PLUGINS_ALL = $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(BINDIR)/$(CONFIG)/grpc_node_plugin $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(BINDIR)/$(CONFIG)/grpc_php_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 PROTOC_PLUGINS_DIR = $(BINDIR)/$(CONFIG)
@@ -1105,6 +1105,7 @@ bm_chttp2_hpack: $(BINDIR)/$(CONFIG)/bm_chttp2_hpack
 bm_chttp2_transport: $(BINDIR)/$(CONFIG)/bm_chttp2_transport
 bm_closure: $(BINDIR)/$(CONFIG)/bm_closure
 bm_cq: $(BINDIR)/$(CONFIG)/bm_cq
+bm_cq_multiple_threads: $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads
 bm_error: $(BINDIR)/$(CONFIG)/bm_error
 bm_fullstack_streaming_ping_pong: $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong
 bm_fullstack_streaming_pump: $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump
@@ -1530,6 +1531,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_chttp2_transport \
   $(BINDIR)/$(CONFIG)/bm_closure \
   $(BINDIR)/$(CONFIG)/bm_cq \
+  $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads \
   $(BINDIR)/$(CONFIG)/bm_error \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump \
@@ -1648,6 +1650,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_chttp2_transport \
   $(BINDIR)/$(CONFIG)/bm_closure \
   $(BINDIR)/$(CONFIG)/bm_cq \
+  $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads \
   $(BINDIR)/$(CONFIG)/bm_error \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump \
@@ -1997,6 +2000,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_closure || ( echo test bm_closure failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_cq"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_cq || ( echo test bm_cq failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_cq_multiple_threads"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads || ( echo test bm_cq_multiple_threads failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_error"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_error || ( echo test bm_error failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_streaming_ping_pong"
@@ -2383,12 +2388,12 @@ ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/testing/services.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc
+$(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc
+$(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -13370,6 +13375,50 @@ deps_bm_cq: $(BM_CQ_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BM_CQ_OBJS:.o=.dep)
+endif
+endif
+
+
+BM_CQ_MULTIPLE_THREADS_SRC = \
+    test/cpp/microbenchmarks/bm_cq_multiple_threads.cc \
+
+BM_CQ_MULTIPLE_THREADS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_CQ_MULTIPLE_THREADS_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_cq_multiple_threads: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/bm_cq_multiple_threads: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_cq_multiple_threads: $(PROTOBUF_DEP) $(BM_CQ_MULTIPLE_THREADS_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_CQ_MULTIPLE_THREADS_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads
+
+endif
+
+endif
+
+$(BM_CQ_MULTIPLE_THREADS_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_cq_multiple_threads.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bm_cq_multiple_threads: $(BM_CQ_MULTIPLE_THREADS_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_CQ_MULTIPLE_THREADS_OBJS:.o=.dep)
 endif
 endif
 
