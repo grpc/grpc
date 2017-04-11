@@ -95,6 +95,16 @@ static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
 #endif
 }
 
+static __inline int gpr_atm_full_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
+#ifdef GPR_ARCH_64
+  return o == (gpr_atm)InterlockedCompareExchange64((volatile LONGLONG *)p,
+                                                    (LONGLONG)n, (LONGLONG)o);
+#else
+  return o == (gpr_atm)InterlockedCompareExchange((volatile LONG *)p, (LONG)n,
+                                                  (LONG)o);
+#endif
+}
+
 static __inline gpr_atm gpr_atm_no_barrier_fetch_add(gpr_atm *p,
                                                      gpr_atm delta) {
   /* Use the CAS operation to get pointer-sized fetch and add */

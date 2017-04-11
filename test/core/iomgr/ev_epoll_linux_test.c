@@ -346,11 +346,13 @@ static void test_threading_wakeup(grpc_exec_ctx *exec_ctx, void *arg,
   threading_shared *shared = arg;
   ++shared->wakeups;
   ++thread_wakeups;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "consume_wakeup", grpc_wakeup_fd_consume_wakeup(shared->wakeup_fd)));
-  grpc_fd_notify_on_read(exec_ctx, shared->wakeup_desc, &shared->on_wakeup);
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_next",
-                               grpc_wakeup_fd_wakeup(shared->wakeup_fd)));
+  if (error == GRPC_ERROR_NONE) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "consume_wakeup", grpc_wakeup_fd_consume_wakeup(shared->wakeup_fd)));
+    grpc_fd_notify_on_read(exec_ctx, shared->wakeup_desc, &shared->on_wakeup);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_next",
+                                 grpc_wakeup_fd_wakeup(shared->wakeup_fd)));
+  }
 }
 
 static void test_threading(void) {
@@ -387,6 +389,7 @@ static void test_threading(void) {
   grpc_wakeup_fd_destroy(&fd);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_fd_shutdown(&exec_ctx, shared.wakeup_desc, GRPC_ERROR_CANCELLED);
     grpc_fd_orphan(&exec_ctx, shared.wakeup_desc, NULL, NULL, "done");
     grpc_pollset_shutdown(&exec_ctx, shared.pollset,
                           grpc_closure_create(destroy_pollset, shared.pollset,
