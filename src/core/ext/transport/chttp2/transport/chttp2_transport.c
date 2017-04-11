@@ -2536,16 +2536,16 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   incoming_byte_stream_unref(exec_ctx, bs);
 }
 
-static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                                     grpc_byte_stream *byte_stream,
-                                     size_t max_size_hint,
-                                     grpc_closure *on_complete) {
+static bool incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
+                                      grpc_byte_stream *byte_stream,
+                                      size_t max_size_hint,
+                                      grpc_closure *on_complete) {
   GPR_TIMER_BEGIN("incoming_byte_stream_next", 0);
   grpc_chttp2_incoming_byte_stream *bs =
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
   grpc_chttp2_stream *s = bs->stream;
   if (s->unprocessed_incoming_frames_buffer.length > 0) {
-    return 1;
+    return true;
   } else {
     gpr_ref(&bs->refs);
     bs->next_action.max_size_hint = max_size_hint;
@@ -2557,7 +2557,7 @@ static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
             grpc_combiner_scheduler(bs->transport->combiner, false)),
         GRPC_ERROR_NONE);
     GPR_TIMER_END("incoming_byte_stream_next", 0);
-    return 0;
+    return false;
   }
 }
 

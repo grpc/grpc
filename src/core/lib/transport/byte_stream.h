@@ -49,8 +49,8 @@ typedef struct grpc_byte_stream grpc_byte_stream;
 struct grpc_byte_stream {
   uint32_t length;
   uint32_t flags;
-  int (*next)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-              size_t max_size_hint, grpc_closure *on_complete);
+  bool (*next)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
+               size_t max_size_hint, grpc_closure *on_complete);
   grpc_error *(*pull)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
                       grpc_slice *slice);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);

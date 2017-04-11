@@ -58,13 +58,13 @@ void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
 
 /* slice_buffer_stream */
 
-static int slice_buffer_stream_next(grpc_exec_ctx *exec_ctx,
-                                    grpc_byte_stream *byte_stream,
-                                    size_t max_size_hint,
-                                    grpc_closure *on_complete) {
+static bool slice_buffer_stream_next(grpc_exec_ctx *exec_ctx,
+                                     grpc_byte_stream *byte_stream,
+                                     size_t max_size_hint,
+                                     grpc_closure *on_complete) {
   grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
   GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
-  return 1;
+  return true;
 }
 
 static grpc_error *slice_buffer_stream_pull(grpc_exec_ctx *exec_ctx,
