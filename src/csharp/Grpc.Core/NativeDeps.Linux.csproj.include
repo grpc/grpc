@@ -1,0 +1,9 @@
+<Project>
+  <ItemGroup>
+    <Content Include="..\..\..\libs\$(NativeDependenciesConfigurationUnix)\libgrpc_csharp_ext.so">
+      <Link>libgrpc_csharp_ext.x64.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>false</Pack>
+    </Content>
+  </ItemGroup>
+</Project>
