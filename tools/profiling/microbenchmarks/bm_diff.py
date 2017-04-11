@@ -45,6 +45,16 @@ import jobset
 import itertools
 import speedup
 
+_INTERESTING = (
+  'cpu_time',
+  'real_time',
+  'locks_per_iteration',
+  'allocs_per_iteration',
+  'writes_per_iteration',
+  'atm_cas_per_iteration',
+  'atm_add_per_iteration',
+)
+
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
   if float(n) <= .0001: n = 0
@@ -63,26 +73,6 @@ def median(ary):
 def min_change(pct):
   return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
 
-nanos = {
-  'abs_diff': 5,
-  'pct_diff': 10,
-}
-counter = {
-  'abs_diff': 0.5,
-  'pct_diff': 10,
-}
-
-_INTERESTING = {
-  'cpu_time': nanos,
-  'real_time': nanos,
-  'locks_per_iteration': counter,
-  'allocs_per_iteration': counter,
-  'writes_per_iteration': counter,
-  'atm_cas_per_iteration': counter,
-  'atm_add_per_iteration': counter,
-}
-
-
 _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
                               'bm_fullstack_streaming_ping_pong',
                               'bm_fullstack_streaming_pump',
@@ -98,9 +88,9 @@ _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
 
 argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
 argp.add_argument('-t', '--track',
-                  choices=sorted(_INTERESTING.keys()),
+                  choices=sorted(_INTERESTING),
                   nargs='+',
-                  default=sorted(_INTERESTING.keys()),
+                  default=sorted(_INTERESTING),
                   help='Which metrics to track')
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
@@ -181,9 +171,11 @@ class Benchmark:
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
+      mdn_diff = abs(median(new) - median(old))
+      print '%s: new=%r old=%r mdn_diff=%r' % (f, new, old, mdn_diff)
       s = speedup.speedup(new, old)
-      if s:
-        self.final[f] = '%d%%' % s
+      if s and mdn_diff > 0.5:
+        self.final[f] = '%+d%%' % s
     return self.final.keys()
 
   def skip(self):
