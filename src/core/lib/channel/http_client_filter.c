@@ -332,10 +332,8 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
          */
         char *t = (char *)GRPC_SLICE_START_PTR(path_with_query_slice);
         /* safe to use strlen since base64_encode will always add '\0' */
-        size_t path_length = strlen(t) + 1;
-        *(t + path_length) = '\0';
         path_with_query_slice =
-            grpc_slice_sub(path_with_query_slice, 0, path_length);
+            grpc_slice_sub(path_with_query_slice, 0, strlen(t));
 
         /* substitute previous path with the new path+query */
         grpc_mdelem mdelem_path_and_query = grpc_mdelem_from_slices(
