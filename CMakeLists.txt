@@ -8988,7 +8988,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_cq_multiple_threads
   test/cpp/microbenchmarks/bm_cq_multiple_threads.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -9005,8 +9005,8 @@ target_include_directories(bm_cq_multiple_threads
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
