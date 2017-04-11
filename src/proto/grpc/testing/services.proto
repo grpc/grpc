@@ -33,6 +33,7 @@ syntax = "proto3";
 
 import "src/proto/grpc/testing/messages.proto";
 import "src/proto/grpc/testing/control.proto";
+import "src/proto/grpc/testing/stats.proto";
 
 package grpc.testing;
 
@@ -68,4 +69,9 @@ service WorkerService {
 
   // Quit this worker
   rpc QuitWorker(Void) returns (Void);
+}
+
+service ReportQpsScenarioService {
+  // Report results of a QPS test benchmark scenario.
+  rpc ReportScenario(ScenarioResult) returns (Void);
 }
