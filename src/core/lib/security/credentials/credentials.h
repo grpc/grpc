@@ -71,7 +71,7 @@ typedef enum {
 
 #define GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS 60
 
-#define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata"
+#define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata.google.internal"
 #define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
   "/computeMetadata/v1/instance/service-accounts/default/token"
 
