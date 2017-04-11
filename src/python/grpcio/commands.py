@@ -260,7 +260,7 @@ class BuildExt(build_ext.build_ext):
     """Custom build_ext command to enable compiler-specific flags."""
 
     C_OPTIONS = {
-        'unix': ('-pthread', '-std=gnu99'),
+        'unix': ('-pthread',),
         'msvc': (),
     }
     LINK_OPTIONS = {}
