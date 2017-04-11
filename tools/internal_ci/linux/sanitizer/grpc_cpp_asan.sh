@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,13 +28,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_portability.sh"
-timeout_mins: 1440
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-  }
-}
+# change to grpc repo root
+cd $(dirname $0)/../../../..
+
+git submodule update --init
+
+# download docker images from dockerhub
+export DOCKERHUB_ORGANIZATION=grpctesting
+tools/run_tests/run_tests_matrix.py -f cpp asan
