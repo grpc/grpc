@@ -148,10 +148,10 @@ grpc_error *deframe_unprocessed_incoming_frames(grpc_exec_ctx *exec_ctx,
         p->frame_type = *cur;
         switch (p->frame_type) {
           case 0:
-            p->is_frame_compressed = 0; /* GPR_FALSE */
+            p->is_frame_compressed = false; /* GPR_FALSE */
             break;
           case 1:
-            p->is_frame_compressed = 1; /* GPR_TRUE */
+            p->is_frame_compressed = true; /* GPR_TRUE */
             break;
           default:
             gpr_asprintf(&msg, "Bad GRPC frame type 0x%02x", p->frame_type);
