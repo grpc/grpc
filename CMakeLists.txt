@@ -943,6 +943,7 @@ add_library(grpc
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -1045,6 +1046,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -1265,6 +1267,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -1370,6 +1373,7 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -1573,6 +1577,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -1833,6 +1838,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -1936,6 +1942,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -2249,6 +2256,7 @@ add_library(grpc++
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -2579,6 +2587,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -2687,6 +2696,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -3277,6 +3287,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c

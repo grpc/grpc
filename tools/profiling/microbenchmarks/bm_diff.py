@@ -226,7 +226,7 @@ really_interesting = set()
 for name, bm in benchmarks.items():
   print name
   really_interesting.update(bm.process())
-fields = [f for f in args.track if f in args.track]
+fields = [f for f in args.track if f in really_interesting]
 
 headers = ['Benchmark'] + fields
 rows = []

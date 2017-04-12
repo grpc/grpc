@@ -218,14 +218,14 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) == 0) {
       const grpc_integer_options options = {
-          GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, 0, INT_MAX};
+          GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, -1, INT_MAX};
       chand->max_send_size =
           grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
       const grpc_integer_options options = {
-          GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, 0, INT_MAX};
+          GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, -1, INT_MAX};
       chand->max_recv_size =
           grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
