@@ -197,6 +197,7 @@ grpc_slice grpc_slice_new_with_len(void *p, size_t len,
 }
 
 grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t length) {
+  if (length == 0) return grpc_empty_slice();
   grpc_slice slice = grpc_slice_malloc(length);
   memcpy(GRPC_SLICE_START_PTR(slice), source, length);
   return slice;
