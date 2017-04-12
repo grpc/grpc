@@ -54,6 +54,18 @@ struct grpc_byte_buffer;
 
 namespace grpc {
 
+const grpc_completion_queue_factory*
+CoreCodegen::grpc_completion_queue_factory_lookup(
+    const grpc_completion_queue_attributes* attributes) {
+  return ::grpc_completion_queue_factory_lookup(attributes);
+}
+
+grpc_completion_queue* CoreCodegen::grpc_completion_queue_create(
+    const grpc_completion_queue_factory* factory,
+    const grpc_completion_queue_attributes* attributes, void* reserved) {
+  return ::grpc_completion_queue_create(factory, attributes, reserved);
+}
+
 grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_next(
     void* reserved) {
   return ::grpc_completion_queue_create_for_next(reserved);

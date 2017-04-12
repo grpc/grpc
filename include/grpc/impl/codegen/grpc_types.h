@@ -569,6 +569,29 @@ typedef enum {
   GRPC_CQ_NON_POLLING
 } grpc_cq_polling_type;
 
+/** Specifies the type of APIs to use to pop events from the completion queue */
+typedef enum {
+  /** Events are popped out by calling grpc_completion_queue_next() API ONLY */
+  GRPC_CQ_NEXT = 1,
+
+  /** Events are popped out by calling grpc_completion_queue_pluck() API ONLY*/
+  GRPC_CQ_PLUCK
+} grpc_cq_completion_type;
+
+#define GRPC_CQ_CURRENT_VERSION 1
+typedef struct grpc_completion_queue_attributes {
+  /* The version number of this structure. More fields might be added to this
+     structure in future. */
+  int version; /* Set to GRPC_CQ_CURRENT_VERSION */
+
+  grpc_cq_completion_type cq_completion_type;
+
+  grpc_cq_polling_type cq_polling_type;
+} grpc_completion_queue_attributes;
+
+/** The completion queue factory structure is opaque to the callers of grpc */
+typedef struct grpc_completion_queue_factory grpc_completion_queue_factory;
+
 #ifdef __cplusplus
 }
 #endif

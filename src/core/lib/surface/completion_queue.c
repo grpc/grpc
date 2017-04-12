@@ -61,6 +61,7 @@ typedef struct {
 } plucker;
 
 typedef struct {
+  bool can_get_pollset;
   size_t (*size)(void);
   void (*init)(grpc_pollset *pollset, gpr_mu **mu);
   grpc_error *(*kick)(grpc_pollset *pollset,
@@ -107,9 +108,10 @@ static grpc_error *non_polling_poller_work(grpc_exec_ctx *exec_ctx,
                                            gpr_timespec now,
                                            gpr_timespec deadline) {
   non_polling_poller *npp = (non_polling_poller *)pollset;
+  if (npp->shutdown) return GRPC_ERROR_NONE;
   non_polling_worker w;
   gpr_cv_init(&w.cv);
-  *worker = (grpc_pollset_worker *)&w;
+  if (worker != NULL) *worker = (grpc_pollset_worker *)&w;
   if (npp->root == NULL) {
     npp->root = w.next = w.prev = &w;
   } else {
@@ -128,11 +130,11 @@ static grpc_error *non_polling_poller_work(grpc_exec_ctx *exec_ctx,
       }
       npp->root = NULL;
     }
-    w.next->prev = w.prev;
-    w.prev->next = w.next;
   }
+  w.next->prev = w.prev;
+  w.prev->next = w.next;
   gpr_cv_destroy(&w.cv);
-  *worker = NULL;
+  if (worker != NULL) *worker = NULL;
   return GRPC_ERROR_NONE;
 }
 
@@ -169,21 +171,24 @@ static void non_polling_poller_shutdown(grpc_exec_ctx *exec_ctx,
 
 static const cq_poller_vtable g_poller_vtable_by_poller_type[] = {
     /* GRPC_CQ_DEFAULT_POLLING */
-    {.size = grpc_pollset_size,
+    {.can_get_pollset = true,
+     .size = grpc_pollset_size,
      .init = grpc_pollset_init,
      .kick = grpc_pollset_kick,
      .work = grpc_pollset_work,
      .shutdown = grpc_pollset_shutdown,
      .destroy = grpc_pollset_destroy},
     /* GRPC_CQ_NON_LISTENING */
-    {.size = grpc_pollset_size,
+    {.can_get_pollset = true,
+     .size = grpc_pollset_size,
      .init = grpc_pollset_init,
      .kick = grpc_pollset_kick,
      .work = grpc_pollset_work,
      .shutdown = grpc_pollset_shutdown,
      .destroy = grpc_pollset_destroy},
     /* GRPC_CQ_NON_POLLING */
-    {.size = non_polling_poller_size,
+    {.can_get_pollset = false,
+     .size = non_polling_poller_size,
      .init = non_polling_poller_init,
      .kick = non_polling_poller_kick,
      .work = non_polling_poller_work,
@@ -837,7 +842,7 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
 }
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
-  return POLLSET_FROM_CQ(cc);
+  return cc->poller_vtable->can_get_pollset ? POLLSET_FROM_CQ(cc) : NULL;
 }
 
 grpc_completion_queue *grpc_cq_from_pollset(grpc_pollset *ps) {

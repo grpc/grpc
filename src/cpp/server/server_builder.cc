@@ -243,6 +243,16 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       sync_server_cqs(std::make_shared<
                       std::vector<std::unique_ptr<ServerCompletionQueue>>>());
 
+  int num_frequently_polled_cqs = 0;
+  for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
+    if ((*it)->IsFrequentlyPolled()) {
+      num_frequently_polled_cqs++;
+    }
+  }
+
+  const bool is_hybrid_server =
+      has_sync_methods && num_frequently_polled_cqs > 0;
+
   if (has_sync_methods) {
     // This is a Sync server
     gpr_log(GPR_INFO,
@@ -253,7 +263,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
             sync_server_settings_.cq_timeout_msec);
 
     grpc_cq_polling_type polling_type =
-        cqs_.empty() ? GRPC_CQ_DEFAULT_POLLING : GRPC_CQ_NON_POLLING;
+        is_hybrid_server ? GRPC_CQ_NON_POLLING : GRPC_CQ_DEFAULT_POLLING;
 
     // Create completion queues to listen to incoming rpc requests
     for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
@@ -273,12 +283,15 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   //     server
   //  2. cqs_: Completion queues added via AddCompletionQueue() call
 
-  // All sync cqs (if any) are frequently polled by ThreadManager
-  int num_frequently_polled_cqs = sync_server_cqs->size();
-
   for (auto it = sync_server_cqs->begin(); it != sync_server_cqs->end(); ++it) {
-    grpc_server_register_completion_queue(server->server_, (*it)->cq(),
-                                          nullptr);
+    if (is_hybrid_server) {
+      grpc_server_register_non_listening_completion_queue(server->server_,
+                                                          (*it)->cq(), nullptr);
+    } else {
+      grpc_server_register_completion_queue(server->server_, (*it)->cq(),
+                                            nullptr);
+    }
+    num_frequently_polled_cqs++;
   }
 
   // cqs_ contains the completion queue added by calling the ServerBuilder's
@@ -290,7 +303,6 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     if ((*it)->IsFrequentlyPolled()) {
       grpc_server_register_completion_queue(server->server_, (*it)->cq(),
                                             nullptr);
-      num_frequently_polled_cqs++;
     } else {
       grpc_server_register_non_listening_completion_queue(server->server_,
                                                           (*it)->cq(), nullptr);
