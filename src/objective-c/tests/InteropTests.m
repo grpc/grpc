@@ -100,6 +100,15 @@
   return 0;
 }
 
++ (void)setUp {
+#ifdef GRPC_COMPILE_WITH_CRONET
+  // Cronet setup
+  [Cronet setHttp2Enabled:YES];
+  [Cronet start];
+  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
+#endif
+}
+
 - (void)setUp {
   self.continueAfterFailure = NO;
 
