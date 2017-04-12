@@ -54,6 +54,7 @@ bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id *out) {
   return h < GPR_ARRAY_SIZE(grpc_setting_id_to_wire_id) &&
          grpc_setting_id_to_wire_id[h] == wire_id;
 }
+
 const grpc_chttp2_setting_parameters
     grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS] = {
         {"HEADER_TABLE_SIZE", 4096u, 0u, 4294967295u,

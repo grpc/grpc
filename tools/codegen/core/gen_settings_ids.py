@@ -140,7 +140,8 @@ print >>C, """
   }
   *out = (grpc_chttp2_setting_id)h;
   return h < GPR_ARRAY_SIZE(grpc_setting_id_to_wire_id) && grpc_setting_id_to_wire_id[h] == wire_id;
-}""" % cgargs
+}
+""" % cgargs
 
 print >>H, """
 typedef enum {
@@ -156,8 +157,9 @@ typedef struct {
   grpc_chttp2_invalid_value_behavior invalid_value_behavior;
   uint32_t error_value;
 } grpc_chttp2_setting_parameters;
+
+extern const grpc_chttp2_setting_parameters grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS];
 """
-print >>H, "extern const grpc_chttp2_setting_parameters grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS];"
 print >>C, "const grpc_chttp2_setting_parameters grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS] = {"
 i = 0
 for decorated_setting in sorted(decorated_settings):
