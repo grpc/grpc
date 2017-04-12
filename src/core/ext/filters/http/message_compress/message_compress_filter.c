@@ -295,9 +295,9 @@ static void compress_start_transport_stream_op_batch(
         if ((cur & CANCELLED_BIT) == 0) {
           grpc_transport_stream_op_batch_finish_with_failure(
               exec_ctx, (grpc_transport_stream_op_batch *)cur,
-              op->payload->cancel_stream.cancel_error);
+              GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error));
         } else {
-          GRPC_ERROR_UNREF((grpc_error*)(cur & ~CANCELLED_BIT));
+          GRPC_ERROR_UNREF((grpc_error *)(cur & ~CANCELLED_BIT));
         }
         break;
     }
@@ -354,7 +354,8 @@ static void compress_start_transport_stream_op_batch(
       default:
         if (cur & CANCELLED_BIT) {
           grpc_transport_stream_op_batch_finish_with_failure(
-              exec_ctx, op, (grpc_error *)(cur & ~CANCELLED_BIT));
+              exec_ctx, op,
+              GRPC_ERROR_REF((grpc_error *)(cur & ~CANCELLED_BIT)));
         } else {
           /* >1 send_message concurrently */
           GPR_UNREACHABLE_CODE(break);
