@@ -1009,8 +1009,6 @@ void grpc_server_register_completion_queue(grpc_server *server,
        calls grpc_completion_queue_pluck() on server completion queues */
   }
 
-  GPR_ASSERT(grpc_cq_pollset(cq));
-
   register_completion_queue(server, cq, false, reserved);
 }
 
@@ -1105,8 +1103,7 @@ void grpc_server_start(grpc_server *server) {
   for (i = 0; i < server->cq_count; i++) {
     if (!grpc_cq_is_non_listening_server_cq(server->cqs[i])) {
       grpc_pollset *pollset = grpc_cq_pollset(server->cqs[i]);
-      GPR_ASSERT(pollset);
-      server->pollsets[server->pollset_count++] = pollset;
+      if (pollset != NULL) server->pollsets[server->pollset_count++] = pollset;
     }
     server->request_freelist_per_cq[i] =
         gpr_stack_lockfree_create((size_t)server->max_requested_calls_per_cq);
