@@ -32,20 +32,35 @@ licenses(["notice"])  # 3-clause BSD
 cc_test(
     name = "dns_resolver_connectivity_test",
     srcs = ["dns_resolver_connectivity_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "dns_resolver_test",
     srcs = ["dns_resolver_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "sockaddr_resolver_test",
     srcs = ["sockaddr_resolver_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )

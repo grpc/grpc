@@ -30,13 +30,13 @@
 cc_binary(
     name = "greeter_client",
     srcs = ["greeter_client.cc"],
-    deps = ["//examples/protos:helloworld"],
     defines = ["BAZEL_BUILD"],
+    deps = ["//examples/protos:helloworld"],
 )
 
 cc_binary(
     name = "greeter_server",
     srcs = ["greeter_server.cc"],
-    deps = ["//examples/protos:helloworld"],
     defines = ["BAZEL_BUILD"],
+    deps = ["//examples/protos:helloworld"],
 )

@@ -866,13 +866,13 @@ grpc_cc_library(
         "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h",
         "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
+    external_deps = [
+        "cares",
+    ],
     language = "c",
     deps = [
         "grpc_base",
         "grpc_client_channel",
-    ],
-    external_deps = [
-        "cares",
     ],
 )
 

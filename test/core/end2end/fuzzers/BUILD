@@ -32,25 +32,38 @@ licenses(["notice"])  # 3-clause BSD
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
-  name = "api_fuzzer",
-  srcs = ["api_fuzzer.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util", "//test/core/end2end:ssl_test_data"],
-  corpus = "api_fuzzer_corpus",
-  copts = ["-std=c99"],
+    name = "api_fuzzer",
+    srcs = ["api_fuzzer.c"],
+    copts = ["-std=c99"],
+    corpus = "api_fuzzer_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_fuzzer(
-  name = "client_fuzzer",
-  srcs = ["client_fuzzer.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "client_fuzzer_corpus",
-  copts = ["-std=c99"],
+    name = "client_fuzzer",
+    srcs = ["client_fuzzer.c"],
+    copts = ["-std=c99"],
+    corpus = "client_fuzzer_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_fuzzer(
-  name = "server_fuzzer",
-  srcs = ["server_fuzzer.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "server_fuzzer_corpus",
-  copts = ["-std=c99"],
+    name = "server_fuzzer",
+    srcs = ["server_fuzzer.c"],
+    copts = ["-std=c99"],
+    corpus = "server_fuzzer_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )

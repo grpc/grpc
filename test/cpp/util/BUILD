@@ -29,7 +29,11 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_library(
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library")
+
+package(default_visibility = ["//test:__subpackages__"])
+
+grpc_cc_library(
     name = "test_config",
     srcs = [
         "test_config_cc.cc",
@@ -37,14 +41,15 @@ cc_library(
     hdrs = [
         "test_config.h",
     ],
-    visibility = ["//test:__subpackages__"],
+    external_deps = [
+        "gflags",
+    ],
     deps = [
         "//:gpr",
-        "//external:gflags",
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "grpc++_proto_reflection_desc_db",
     srcs = [
         "proto_reflection_descriptor_database.cc",
@@ -52,17 +57,16 @@ cc_library(
     hdrs = [
         "proto_reflection_descriptor_database.h",
     ],
-    visibility = ["//test:__subpackages__"],
     deps = [
         "//:grpc++_config_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "test_util",
     srcs = [
-        #        "test/cpp/end2end/test_service_impl.cc",
+        # "test/cpp/end2end/test_service_impl.cc",
         "byte_buffer_proto_helper.cc",
         "create_test_channel.cc",
         "string_ref_helper.cc",
@@ -76,7 +80,6 @@ cc_library(
         "subprocess.h",
         "test_credentials_provider.h",
     ],
-    visibility = ["//test:__subpackages__"],
     deps = [
         "//:grpc++",
         "//test/core/end2end:ssl_test_data",

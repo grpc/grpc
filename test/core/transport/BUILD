@@ -32,48 +32,83 @@ licenses(["notice"])  # 3-clause BSD
 cc_test(
     name = "bdp_estimator_test",
     srcs = ["bdp_estimator_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "connectivity_state_test",
     srcs = ["connectivity_state_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "metadata_test",
     srcs = ["metadata_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "pid_controller_test",
     srcs = ["pid_controller_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "status_conversion_test",
     srcs = ["status_conversion_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "stream_owned_slice_test",
     srcs = ["stream_owned_slice_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "timeout_encoding_test",
     srcs = ["timeout_encoding_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )

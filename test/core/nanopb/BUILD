@@ -32,18 +32,25 @@ licenses(["notice"])  # 3-clause BSD
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
-  name = "fuzzer_response",
-  srcs = ["fuzzer_response.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "corpus_response",
-  copts = ["-std=c99"],
+    name = "fuzzer_response",
+    srcs = ["fuzzer_response.c"],
+    copts = ["-std=c99"],
+    corpus = "corpus_response",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_fuzzer(
-  name = "fuzzer_serverlist",
-  srcs = ["fuzzer_serverlist.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "corpus_serverlist",
-  copts = ["-std=c99"],
+    name = "fuzzer_serverlist",
+    srcs = ["fuzzer_serverlist.c"],
+    copts = ["-std=c99"],
+    corpus = "corpus_serverlist",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
-

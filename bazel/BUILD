@@ -41,6 +41,6 @@ proto_library(
 cc_grpc_library(
     name = "well_known_protos",
     srcs = "well_known_protos_list",
-    deps = [],
     proto_only = True,
+    deps = [],
 )

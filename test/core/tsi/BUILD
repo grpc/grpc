@@ -32,6 +32,11 @@ licenses(["notice"])  # 3-clause BSD
 cc_test(
     name = "transport_security_test",
     srcs = ["transport_security_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )

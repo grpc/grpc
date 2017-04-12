@@ -29,25 +29,28 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_library(
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
+
+grpc_cc_library(
     name = "test_service_impl",
     srcs = ["test_service_impl.cc"],
     hdrs = ["test_service_impl.h"],
     deps = [
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_proto",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "async_end2end_test",
     srcs = ["async_end2end_test.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -55,16 +58,18 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "client_crash_test",
     srcs = ["client_crash_test.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -72,17 +77,18 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "client_crash_test_server",
     srcs = ["client_crash_test_server.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gflags",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -90,9 +96,13 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gflags",
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "end2end_test",
     srcs = ["end2end_test.cc"],
     deps = [
@@ -100,7 +110,6 @@ cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -108,16 +117,18 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "filter_end2end_test",
     srcs = ["filter_end2end_test.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -125,16 +136,18 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "generic_end2end_test",
     srcs = ["generic_end2end_test.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -142,9 +155,12 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "hybrid_end2end_test",
     srcs = ["hybrid_end2end_test.cc"],
     deps = [
@@ -152,7 +168,6 @@ cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -160,16 +175,18 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "mock_test",
     srcs = ["mock_test.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -177,9 +194,12 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "round_robin_end2end_test",
     srcs = ["round_robin_end2end_test.cc"],
     deps = [
@@ -187,7 +207,6 @@ cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -195,9 +214,12 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "proto_server_reflection_test",
     srcs = ["proto_server_reflection_test.cc"],
     deps = [
@@ -206,8 +228,6 @@ cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc++_reflection",
-        "//external:gflags",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -216,9 +236,13 @@ cc_test(
         "//test/cpp/util:grpc++_proto_reflection_desc_db",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+        "gflags",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "server_builder_plugin_test",
     srcs = ["server_builder_plugin_test.cc"],
     deps = [
@@ -226,7 +250,6 @@ cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -234,16 +257,18 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "server_crash_test",
     srcs = ["server_crash_test.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -251,17 +276,18 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "server_crash_test_client",
     srcs = ["server_crash_test_client.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gflags",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -269,16 +295,19 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gflags",
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "shutdown_test",
     srcs = ["shutdown_test.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -286,16 +315,18 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "streaming_throughput_test",
     srcs = ["streaming_throughput_test.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -303,21 +334,26 @@ cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "thread_stress_test",
     srcs = ["thread_stress_test.cc"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )

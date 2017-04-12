@@ -32,15 +32,15 @@ licenses(["notice"])  # 3-clause BSD
 cc_library(
     name = "gpr_test_util",
     srcs = [
-        "test_config.c",
         "memory_counters.c",
+        "test_config.c",
     ],
     hdrs = [
-        "test_config.h",
         "memory_counters.h",
+        "test_config.h",
     ],
-    deps = ["//:gpr"],
     visibility = ["//:__subpackages__"],
+    deps = ["//:gpr"],
 )
 
 cc_library(
@@ -60,7 +60,6 @@ cc_library(
     ],
     hdrs = [
         "debugger_macros.h",
-        "trickle_endpoint.h",
         "grpc_profiler.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
@@ -70,21 +69,28 @@ cc_library(
         "reconnect_server.h",
         "slice_splitter.h",
         "test_tcp_server.h",
+        "trickle_endpoint.h",
     ],
-    deps = [":gpr_test_util", "//:grpc"],
-    visibility = ["//test:__subpackages__"],
     copts = ["-std=c99"],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        ":gpr_test_util",
+        "//:grpc",
+    ],
 )
 
 cc_library(
-  name = "one_corpus_entry_fuzzer",
-  srcs = ["one_corpus_entry_fuzzer.c"],
-  deps = [":gpr_test_util", "//:grpc"],
-  visibility = ["//test:__subpackages__"],
+    name = "one_corpus_entry_fuzzer",
+    srcs = ["one_corpus_entry_fuzzer.c"],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        ":gpr_test_util",
+        "//:grpc",
+    ],
 )
 
 sh_library(
-  name = "fuzzer_one_entry_runner",
-  srcs = ["fuzzer_one_entry_runner.sh"],
-  visibility = ["//test:__subpackages__"],
+    name = "fuzzer_one_entry_runner",
+    srcs = ["fuzzer_one_entry_runner.sh"],
+    visibility = ["//test:__subpackages__"],
 )

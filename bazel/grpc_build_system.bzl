@@ -69,3 +69,22 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = None,
     use_external = use_external,
   )
 
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = []):
+  native.cc_test(
+    name = name,
+    srcs = srcs,
+    args = args,
+    data = data,
+    deps = deps + ["//external:" + dep for dep in external_deps],
+    linkopts = ["-pthread"],
+  )
+
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = []):
+  native.cc_binary(
+    name = name,
+    srcs = srcs,
+    args = args,
+    data = data,
+    deps = deps + ["//external:" + dep for dep in external_deps],
+    linkopts = ["-pthread"],
+  )

@@ -32,30 +32,49 @@ licenses(["notice"])  # 3-clause BSD
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
-  name = "percent_decode_fuzzer",
-  srcs = ["percent_decode_fuzzer.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "response_corpus",
-  copts = ["-std=c99"],
+    name = "percent_decode_fuzzer",
+    srcs = ["percent_decode_fuzzer.c"],
+    copts = ["-std=c99"],
+    corpus = "response_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "percent_encoding_test",
     srcs = ["percent_encoding_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_string_helpers_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 cc_test(
     name = "b64_test",
     srcs = ["b64_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
