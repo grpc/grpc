@@ -34,7 +34,6 @@
 #include <grpc/grpc.h>
 
 #include <string.h>
-#include <atomic>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

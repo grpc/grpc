@@ -41,17 +41,21 @@ namespace grpc_core {
 enum MemoryOrderRelaxed { memory_order_relaxed };
 
 template <class T>
-class atomic {
- public:
-  static_assert(sizeof(T) <= sizeof(gpr_atm),
-                "Atomics of size > sizeof(gpr_atm) are not supported");
-  atomic() { gpr_atm_no_barrier_store(&x_, static_cast<gpr_atm>(T())); }
+class atomic;
 
-  bool compare_exchange_strong(T& expected, T update, MemoryOrderRelaxed,
+template <>
+class atomic<bool> {
+ public:
+  atomic() { gpr_atm_no_barrier_store(&x_, static_cast<gpr_atm>(false)); }
+  explicit atomic(bool x) {
+    gpr_atm_no_barrier_store(&x_, static_cast<gpr_atm>(x));
+  }
+
+  bool compare_exchange_strong(bool& expected, bool update, MemoryOrderRelaxed,
                                MemoryOrderRelaxed) {
     if (!gpr_atm_no_barrier_cas(&x_, static_cast<gpr_atm>(expected),
                                 static_cast<gpr_atm>(update))) {
-      expected = static_cast<T>(gpr_atm_no_barrier_load(&x_));
+      expected = gpr_atm_no_barrier_load(&x_) != 0;
       return false;
     }
     return true;
@@ -63,4 +67,4 @@ class atomic {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SUPPORT_ATOMIC_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_ATOMIC_WITH_ATM_H */
