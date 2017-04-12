@@ -366,10 +366,10 @@ grpc_cc_library(
         "src/core/lib/support/backoff.h",
         "src/core/lib/support/block_annotate.h",
         "src/core/lib/support/env.h",
-        "src/core/lib/support/memory.h"
-        "src/core/lib/support/atomic.h"
-        "src/core/lib/support/atomic_with_atm.h"
-        "src/core/lib/support/atomic_with_std.h"
+        "src/core/lib/support/memory.h",
+        "src/core/lib/support/atomic.h",
+        "src/core/lib/support/atomic_with_atm.h",
+        "src/core/lib/support/atomic_with_std.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
         "src/core/lib/support/spinlock.h",
