@@ -10746,7 +10746,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(memory_test
   test/core/support/memory_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
 )
 
 
@@ -10763,8 +10763,8 @@ target_include_directories(memory_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
