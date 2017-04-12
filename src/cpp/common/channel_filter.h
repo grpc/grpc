@@ -149,19 +149,19 @@ class TransportStreamOpBatch {
   explicit TransportStreamOpBatch(grpc_transport_stream_op_batch *op)
       : op_(op),
         send_initial_metadata_(
-            op->send_initial_metadata
+            op->bits.send_initial_metadata
                 ? op->payload->send_initial_metadata.send_initial_metadata
                 : nullptr),
         send_trailing_metadata_(
-            op->send_trailing_metadata
+            op->bits.send_trailing_metadata
                 ? op->payload->send_trailing_metadata.send_trailing_metadata
                 : nullptr),
         recv_initial_metadata_(
-            op->recv_initial_metadata
+            op->bits.recv_initial_metadata
                 ? op->payload->recv_initial_metadata.recv_initial_metadata
                 : nullptr),
         recv_trailing_metadata_(
-            op->recv_trailing_metadata
+            op->bits.recv_trailing_metadata
                 ? op->payload->recv_trailing_metadata.recv_trailing_metadata
                 : nullptr) {}
 
@@ -171,27 +171,29 @@ class TransportStreamOpBatch {
   void set_on_complete(grpc_closure *closure) { op_->on_complete = closure; }
 
   MetadataBatch *send_initial_metadata() {
-    return op_->send_initial_metadata ? &send_initial_metadata_ : nullptr;
+    return op_->bits.send_initial_metadata ? &send_initial_metadata_ : nullptr;
   }
   MetadataBatch *send_trailing_metadata() {
-    return op_->send_trailing_metadata ? &send_trailing_metadata_ : nullptr;
+    return op_->bits.send_trailing_metadata ? &send_trailing_metadata_
+                                            : nullptr;
   }
   MetadataBatch *recv_initial_metadata() {
-    return op_->recv_initial_metadata ? &recv_initial_metadata_ : nullptr;
+    return op_->bits.recv_initial_metadata ? &recv_initial_metadata_ : nullptr;
   }
   MetadataBatch *recv_trailing_metadata() {
-    return op_->recv_trailing_metadata ? &recv_trailing_metadata_ : nullptr;
+    return op_->bits.recv_trailing_metadata ? &recv_trailing_metadata_
+                                            : nullptr;
   }
 
   uint32_t *send_initial_metadata_flags() const {
-    return op_->send_initial_metadata
+    return op_->bits.send_initial_metadata
                ? &op_->payload->send_initial_metadata
                       .send_initial_metadata_flags
                : nullptr;
   }
 
   grpc_closure *recv_initial_metadata_ready() const {
-    return op_->recv_initial_metadata
+    return op_->bits.recv_initial_metadata
                ? op_->payload->recv_initial_metadata.recv_initial_metadata_ready
                : nullptr;
   }
@@ -200,11 +202,11 @@ class TransportStreamOpBatch {
   }
 
   grpc_byte_stream *send_message() const {
-    return op_->send_message ? op_->payload->send_message.send_message
-                             : nullptr;
+    return op_->bits.send_message ? op_->payload->send_message.send_message
+                                  : nullptr;
   }
   void set_send_message(grpc_byte_stream *send_message) {
-    op_->send_message = true;
+    op_->bits.send_message = true;
     op_->payload->send_message.send_message = send_message;
   }
 

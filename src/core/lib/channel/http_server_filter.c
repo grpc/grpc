@@ -322,7 +322,7 @@ static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
 
-  if (op->send_initial_metadata) {
+  if (op->bits.send_initial_metadata) {
     grpc_error *error = GRPC_ERROR_NONE;
     static const char *error_name = "Failed sending initial metadata";
     add_error(
@@ -346,7 +346,7 @@ static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     }
   }
 
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     /* substitute our callback for the higher callback */
     GPR_ASSERT(op->payload->recv_initial_metadata.recv_flags != NULL);
     calld->recv_initial_metadata =
@@ -359,7 +359,7 @@ static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
         &calld->hs_on_recv;
   }
 
-  if (op->recv_message) {
+  if (op->bits.recv_message) {
     calld->recv_message_ready = op->payload->recv_message.recv_message_ready;
     calld->pp_recv_message = op->payload->recv_message.recv_message;
     if (op->payload->recv_message.recv_message_ready) {
@@ -372,7 +372,7 @@ static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     }
   }
 
-  if (op->send_trailing_metadata) {
+  if (op->bits.send_trailing_metadata) {
     grpc_error *error = server_filter_outgoing_metadata(
         exec_ctx, elem,
         op->payload->send_trailing_metadata.send_trailing_metadata);

@@ -222,7 +222,7 @@ static void start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     calld->recv_im_ready =
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =

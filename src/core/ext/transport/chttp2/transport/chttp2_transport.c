@@ -1217,11 +1217,11 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     gpr_log(GPR_DEBUG, "perform_stream_op_locked: %s; on_complete = %p", str,
             op->on_complete);
     gpr_free(str);
-    if (op->send_initial_metadata) {
+    if (op->bits.send_initial_metadata) {
       log_metadata(op_payload->send_initial_metadata.send_initial_metadata,
                    s->id, t->is_client, true);
     }
-    if (op->send_trailing_metadata) {
+    if (op->bits.send_trailing_metadata) {
       log_metadata(op_payload->send_trailing_metadata.send_trailing_metadata,
                    s->id, t->is_client, false);
     }
@@ -1238,18 +1238,18 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
   on_complete->error_data.error = GRPC_ERROR_NONE;
 
-  if (op->collect_stats) {
+  if (op->bits.collect_stats) {
     GPR_ASSERT(s->collecting_stats == NULL);
     s->collecting_stats = op_payload->collect_stats.collect_stats;
     on_complete->next_data.scratch |= CLOSURE_BARRIER_STATS_BIT;
   }
 
-  if (op->cancel_stream) {
+  if (op->bits.cancel_stream) {
     grpc_chttp2_cancel_stream(exec_ctx, t, s,
                               op_payload->cancel_stream.cancel_error);
   }
 
-  if (op->send_initial_metadata) {
+  if (op->bits.send_initial_metadata) {
     GPR_ASSERT(s->send_initial_metadata_finished == NULL);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
@@ -1297,7 +1297,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
           GPR_ASSERT(s->id != 0);
           grpc_chttp2_stream_write_type write_type =
               GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
-          if (op->send_message &&
+          if (op->bits.send_message &&
               (op->payload->send_message.send_message->flags &
                GRPC_WRITE_BUFFER_HINT)) {
             write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
@@ -1317,7 +1317,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     }
   }
 
-  if (op->send_message) {
+  if (op->bits.send_message) {
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
@@ -1343,7 +1343,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       s->next_message_end_offset = s->flow_controlled_bytes_written +
                                    (int64_t)s->flow_controlled_buffer.length +
                                    (int64_t)len;
-      s->complete_fetch_covered_by_poller = op->covered_by_poller;
+      s->complete_fetch_covered_by_poller = op->bits.covered_by_poller;
       if (flags & GRPC_WRITE_BUFFER_HINT) {
         s->next_message_end_offset -= t->write_buffer_size;
         s->write_buffering = true;
@@ -1355,7 +1355,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     }
   }
 
-  if (op->send_trailing_metadata) {
+  if (op->bits.send_trailing_metadata) {
     GPR_ASSERT(s->send_trailing_metadata_finished == NULL);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_trailing_metadata_finished = add_closure_barrier(on_complete);
@@ -1404,7 +1404,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     }
   }
 
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     GPR_ASSERT(s->recv_initial_metadata_ready == NULL);
     s->recv_initial_metadata_ready =
         op_payload->recv_initial_metadata.recv_initial_metadata_ready;
@@ -1413,7 +1413,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
   }
 
-  if (op->recv_message) {
+  if (op->bits.recv_message) {
     GPR_ASSERT(s->recv_message_ready == NULL);
     s->recv_message_ready = op_payload->recv_message.recv_message_ready;
     s->recv_message = op_payload->recv_message.recv_message;
@@ -1424,7 +1424,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   }
 
-  if (op->recv_trailing_metadata) {
+  if (op->bits.recv_trailing_metadata) {
     GPR_ASSERT(s->recv_trailing_metadata_finished == NULL);
     s->recv_trailing_metadata_finished = add_closure_barrier(on_complete);
     s->recv_trailing_metadata =
@@ -1459,7 +1459,7 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
       exec_ctx,
       grpc_closure_init(
           &op->handler_private.closure, perform_stream_op_locked, op,
-          grpc_combiner_scheduler(t->combiner, op->covered_by_poller)),
+          grpc_combiner_scheduler(t->combiner, op->bits.covered_by_poller)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("perform_stream_op", 0);
 }

@@ -250,7 +250,7 @@ static void compress_start_transport_stream_op_batch(
 
   GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);
 
-  if (op->send_initial_metadata) {
+  if (op->bits.send_initial_metadata) {
     grpc_error *error = process_send_initial_metadata(
         exec_ctx, elem,
         op->payload->send_initial_metadata.send_initial_metadata);
@@ -259,7 +259,7 @@ static void compress_start_transport_stream_op_batch(
       return;
     }
   }
-  if (op->send_message &&
+  if (op->bits.send_message &&
       !skip_compression(elem, op->payload->send_message.send_message->flags)) {
     calld->send_op = op;
     calld->send_length = op->payload->send_message.send_message->length;

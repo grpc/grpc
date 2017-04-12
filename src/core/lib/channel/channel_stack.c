@@ -285,7 +285,7 @@ void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *elem,
                                     grpc_error *error) {
   grpc_transport_stream_op_batch *op = grpc_make_transport_stream_op(NULL);
-  op->cancel_stream = true;
+  op->bits.cancel_stream = true;
   op->payload->cancel_stream.cancel_error = error;
   elem->filter->start_transport_stream_op_batch(exec_ctx, elem, op);
 }

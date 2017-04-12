@@ -141,7 +141,7 @@ static void start_transport_stream_op_batch(
     grpc_transport_stream_op_batch* op) {
   call_data* calld = elem->call_data;
   // Check max send message size.
-  if (op->send_message && calld->max_send_size >= 0 &&
+  if (op->bits.send_message && calld->max_send_size >= 0 &&
       op->payload->send_message.send_message->length >
           (size_t)calld->max_send_size) {
     char* message_string;
@@ -157,7 +157,7 @@ static void start_transport_stream_op_batch(
     return;
   }
   // Inject callback for receiving a message.
-  if (op->recv_message) {
+  if (op->bits.recv_message) {
     calld->next_recv_message_ready =
         op->payload->recv_message.recv_message_ready;
     calld->recv_message = op->payload->recv_message.recv_message;

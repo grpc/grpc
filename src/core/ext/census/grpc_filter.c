@@ -77,7 +77,7 @@ static void client_mutate_op(grpc_call_element *elem,
                              grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  if (op->send_initial_metadata) {
+  if (op->bits.send_initial_metadata) {
     extract_and_annotate_method_tag(
         op->payload->send_initial_metadata.send_initial_metadata, calld, chand);
   }
@@ -106,7 +106,7 @@ static void server_on_done_recv(grpc_exec_ctx *exec_ctx, void *ptr,
 static void server_mutate_op(grpc_call_element *elem,
                              grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     /* substitute our callback for the op callback */
     calld->recv_initial_metadata =
         op->payload->recv_initial_metadata.recv_initial_metadata;

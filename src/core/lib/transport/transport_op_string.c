@@ -80,9 +80,9 @@ char *grpc_transport_stream_op_batch_string(
   gpr_strvec_init(&b);
 
   gpr_strvec_add(
-      &b, gpr_strdup(op->covered_by_poller ? "[COVERED]" : "[UNCOVERED]"));
+      &b, gpr_strdup(op->bits.covered_by_poller ? "[COVERED]" : "[UNCOVERED]"));
 
-  if (op->send_initial_metadata) {
+  if (op->bits.send_initial_metadata) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("SEND_INITIAL_METADATA{"));
     put_metadata_list(
@@ -90,7 +90,7 @@ char *grpc_transport_stream_op_batch_string(
     gpr_strvec_add(&b, gpr_strdup("}"));
   }
 
-  if (op->send_message) {
+  if (op->bits.send_message) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_asprintf(&tmp, "SEND_MESSAGE:flags=0x%08x:len=%d",
                  op->payload->send_message.send_message->flags,
@@ -98,7 +98,7 @@ char *grpc_transport_stream_op_batch_string(
     gpr_strvec_add(&b, tmp);
   }
 
-  if (op->send_trailing_metadata) {
+  if (op->bits.send_trailing_metadata) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("SEND_TRAILING_METADATA{"));
     put_metadata_list(
@@ -106,22 +106,22 @@ char *grpc_transport_stream_op_batch_string(
     gpr_strvec_add(&b, gpr_strdup("}"));
   }
 
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("RECV_INITIAL_METADATA"));
   }
 
-  if (op->recv_message) {
+  if (op->bits.recv_message) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("RECV_MESSAGE"));
   }
 
-  if (op->recv_trailing_metadata) {
+  if (op->bits.recv_trailing_metadata) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("RECV_TRAILING_METADATA"));
   }
 
-  if (op->cancel_stream) {
+  if (op->bits.cancel_stream) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     const char *msg =
         grpc_error_string(op->payload->cancel_stream.cancel_error);

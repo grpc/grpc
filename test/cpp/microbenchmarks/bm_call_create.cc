@@ -348,7 +348,7 @@ class SendEmptyMetadata {
     memset(&op_, 0, sizeof(op_));
     op_.on_complete = grpc_closure_init(&closure_, DoNothing, nullptr,
                                         grpc_schedule_on_exec_ctx);
-    op_.send_initial_metadata = true;
+    op_.bits.send_initial_metadata = true;
     op_.payload = &op_payload_;
   }
 
@@ -495,13 +495,13 @@ namespace isolated_call_filter {
 static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
                                    grpc_transport_stream_op_batch *op) {
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     grpc_closure_sched(
         exec_ctx,
         op->payload->recv_initial_metadata.recv_initial_metadata_ready,
         GRPC_ERROR_NONE);
   }
-  if (op->recv_message) {
+  if (op->bits.recv_message) {
     grpc_closure_sched(exec_ctx, op->payload->recv_message.recv_message_ready,
                        GRPC_ERROR_NONE);
   }

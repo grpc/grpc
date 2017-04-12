@@ -260,13 +260,13 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
   channel_data *channeld = elem->channel_data;
   grpc_error *error;
 
-  if (op->send_initial_metadata) {
+  if (op->bits.send_initial_metadata) {
     /* Decide which HTTP VERB to use. We use GET if the request is marked
     cacheable, and the operation contains both initial metadata and send
     message, and the payload is below the size threshold, and all the data
     for this request is immediately available. */
     grpc_mdelem method = GRPC_MDELEM_METHOD_POST;
-    if (op->send_message &&
+    if (op->bits.send_message &&
         (op->payload->send_initial_metadata.send_initial_metadata_flags &
          GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) &&
         op->payload->send_message.send_message->length <
@@ -348,7 +348,7 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
 
         calld->on_complete = op->on_complete;
         op->on_complete = &calld->hc_on_complete;
-        op->send_message = false;
+        op->bits.send_message = false;
         grpc_slice_unref_internal(exec_ctx, path_with_query_slice);
       } else {
         /* Not all data is available. Fall back to POST. */
@@ -399,7 +399,7 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
     if (error != GRPC_ERROR_NONE) return error;
   }
 
-  if (op->recv_initial_metadata) {
+  if (op->bits.recv_initial_metadata) {
     /* substitute our callback for the higher callback */
     calld->recv_initial_metadata =
         op->payload->recv_initial_metadata.recv_initial_metadata;
@@ -409,7 +409,7 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
         &calld->hc_on_recv_initial_metadata;
   }
 
-  if (op->recv_trailing_metadata) {
+  if (op->bits.recv_trailing_metadata) {
     /* substitute our callback for the higher callback */
     calld->recv_trailing_metadata =
         op->payload->recv_trailing_metadata.recv_trailing_metadata;
@@ -430,7 +430,7 @@ static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
   } else {
     call_data *calld = elem->call_data;
-    if (op->send_message && calld->send_message_blocked) {
+    if (op->bits.send_message && calld->send_message_blocked) {
       /* Don't forward the op. send_message contains slices that aren't ready
          yet. The call will be forwarded by the op_complete of slice read call.
       */
