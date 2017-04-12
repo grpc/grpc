@@ -38,6 +38,7 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/ext/health_check_service_server_builder_option.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -49,6 +50,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/port.h"
+#include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -224,13 +226,15 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
 
 class TestScenario {
  public:
-  TestScenario(bool non_block, const grpc::string& creds_type,
+  TestScenario(bool non_block, const grpc::string& creds_type, bool hcs,
                const grpc::string& content)
       : disable_blocking(non_block),
+        health_check_service(hcs),
         credentials_type(creds_type),
         message_content(content) {}
   void Log() const;
   bool disable_blocking;
+  bool health_check_service;
   // Although the below grpc::string's are logically const, we can't declare
   // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
   // manage vector insertion using a copy constructor
@@ -243,6 +247,8 @@ static std::ostream& operator<<(std::ostream& out,
   return out << "TestScenario{disable_blocking="
              << (scenario.disable_blocking ? "true" : "false")
              << ", credentials='" << scenario.credentials_type
+             << ", health_check_service="
+             << (scenario.health_check_service ? "true" : "false")
              << "', message_size=" << scenario.message_content.size() << "}";
 }
 
@@ -251,6 +257,8 @@ void TestScenario::Log() const {
   out << *this;
   gpr_log(GPR_DEBUG, "%s", out.str().c_str());
 }
+
+class HealthCheck : public health::v1::Health::Service {};
 
 class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
@@ -268,6 +276,9 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
         GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
+    if (GetParam().health_check_service) {
+      builder.RegisterService(&health_check_);
+    }
     cq_ = builder.AddCompletionQueue();
 
     // TODO(zyc): make a test option to choose wheather sync plugins should be
@@ -340,6 +351,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   grpc::testing::EchoTestService::AsyncService service_;
+  HealthCheck health_check_;
   std::ostringstream server_address_;
   int port_;
 
@@ -1754,12 +1766,14 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
     messages.push_back(big_msg);
   }
 
-  for (auto cred = credentials_types.begin(); cred != credentials_types.end();
-       ++cred) {
-    for (auto msg = messages.begin(); msg != messages.end(); msg++) {
-      scenarios.emplace_back(false, *cred, *msg);
-      if (test_disable_blocking) {
-        scenarios.emplace_back(true, *cred, *msg);
+  for (auto health_check_service : {false, true}) {
+    for (auto cred = credentials_types.begin(); cred != credentials_types.end();
+         ++cred) {
+      for (auto msg = messages.begin(); msg != messages.end(); msg++) {
+        scenarios.emplace_back(false, *cred, health_check_service, *msg);
+        if (test_disable_blocking) {
+          scenarios.emplace_back(true, *cred, health_check_service, *msg);
+        }
       }
     }
   }
