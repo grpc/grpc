@@ -309,7 +309,7 @@ void check_tag_in_cq(grpc_completion_queue *cc, void *tag, bool lock_cq) {}
 /* Queue a GRPC_OP_COMPLETED operation to a completion queue (with a completion
  * type of GRPC_CQ_NEXT) */
 void grpc_cq_end_op_for_next(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
-                             void *tag, grpc_error *error,
+                             void *tag, int is_success,
                              void (*done)(grpc_exec_ctx *exec_ctx,
                                           void *done_arg,
                                           grpc_cq_completion *storage),
@@ -317,7 +317,7 @@ void grpc_cq_end_op_for_next(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
   storage->tag = tag;
   storage->done = done;
   storage->done_arg = done_arg;
-  storage->next = (uintptr_t)(error == GRPC_ERROR_NONE);
+  storage->next = (uintptr_t)(is_success);
 
   check_tag_in_cq(cc, tag, true); /* Used in debug builds only */
 
@@ -348,15 +348,13 @@ void grpc_cq_end_op_for_next(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
                           &cc->pollset_shutdown_done);
     gpr_mu_unlock(cc->mu);
   }
-
-  GRPC_ERROR_UNREF(error);
 }
 
 /* Queue a GRPC_OP_COMPLETED operation to a completion queue (with a completion
  * type of GRPC_CQ_PLUCK) */
 void grpc_cq_end_op_for_pluck(grpc_exec_ctx *exec_ctx,
                               grpc_completion_queue *cc, void *tag,
-                              grpc_error *error,
+                              int is_success,
                               void (*done)(grpc_exec_ctx *exec_ctx,
                                            void *done_arg,
                                            grpc_cq_completion *storage),
@@ -364,8 +362,7 @@ void grpc_cq_end_op_for_pluck(grpc_exec_ctx *exec_ctx,
   storage->tag = tag;
   storage->done = done;
   storage->done_arg = done_arg;
-  storage->next = ((uintptr_t)&cc->completed_head) |
-                  ((uintptr_t)(error == GRPC_ERROR_NONE));
+  storage->next = ((uintptr_t)&cc->completed_head) | ((uintptr_t)(is_success));
 
   gpr_mu_lock(cc->mu);
   check_tag_in_cq(cc, tag, false); /* Used in debug builds only */
@@ -404,8 +401,6 @@ void grpc_cq_end_op_for_pluck(grpc_exec_ctx *exec_ctx,
                           &cc->pollset_shutdown_done);
     gpr_mu_unlock(cc->mu);
   }
-
-  GRPC_ERROR_UNREF(error);
 }
 
 /* Signal the end of an operation - if this is the last waiting-to-be-queued
@@ -432,10 +427,13 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
 
   /* Call the appropriate function to queue the completion based on the
      completion queue type */
+  int is_success = (error == GRPC_ERROR_NONE);
   if (cc->completion_type == GRPC_CQ_NEXT) {
-    grpc_cq_end_op_for_next(exec_ctx, cc, tag, error, done, done_arg, storage);
+    grpc_cq_end_op_for_next(exec_ctx, cc, tag, is_success, done, done_arg,
+                            storage);
   } else if (cc->completion_type == GRPC_CQ_PLUCK) {
-    grpc_cq_end_op_for_pluck(exec_ctx, cc, tag, error, done, done_arg, storage);
+    grpc_cq_end_op_for_pluck(exec_ctx, cc, tag, is_success, done, done_arg,
+                             storage);
   } else {
     gpr_log(GPR_ERROR, "Unexpected completion type %d", cc->completion_type);
     abort();
