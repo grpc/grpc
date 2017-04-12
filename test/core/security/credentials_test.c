@@ -582,7 +582,7 @@ static void on_oauth2_creds_get_metadata_failure(
 static void validate_compute_engine_http_request(
     const grpc_httpcli_request *request) {
   GPR_ASSERT(request->handshaker != &grpc_httpcli_ssl);
-  GPR_ASSERT(strcmp(request->host, "metadata") == 0);
+  GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
   GPR_ASSERT(
       strcmp(request->http.path,
              "/computeMetadata/v1/instance/service-accounts/default/token") ==
