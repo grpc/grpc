@@ -1890,6 +1890,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_slice hdr;
   grpc_slice status_hdr;
   grpc_slice http_status_hdr;
+  grpc_slice content_type_hdr;
   grpc_slice message_pfx;
   uint8_t *p;
   uint32_t len = 0;
@@ -1923,6 +1924,42 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     *p++ = '0';
     GPR_ASSERT(p == GRPC_SLICE_END_PTR(http_status_hdr));
     len += (uint32_t)GRPC_SLICE_LENGTH(http_status_hdr);
+
+    content_type_hdr = grpc_slice_malloc(31);
+    p = GRPC_SLICE_START_PTR(content_type_hdr);
+    *p++ = 0x00;
+    *p++ = 12;
+    *p++ = 'c';
+    *p++ = 'o';
+    *p++ = 'n';
+    *p++ = 't';
+    *p++ = 'e';
+    *p++ = 'n';
+    *p++ = 't';
+    *p++ = '-';
+    *p++ = 't';
+    *p++ = 'y';
+    *p++ = 'p';
+    *p++ = 'e';
+    *p++ = 16;
+    *p++ = 'a';
+    *p++ = 'p';
+    *p++ = 'p';
+    *p++ = 'l';
+    *p++ = 'i';
+    *p++ = 'c';
+    *p++ = 'a';
+    *p++ = 't';
+    *p++ = 'i';
+    *p++ = 'o';
+    *p++ = 'n';
+    *p++ = '/';
+    *p++ = 'g';
+    *p++ = 'r';
+    *p++ = 'p';
+    *p++ = 'c';
+    GPR_ASSERT(p == GRPC_SLICE_END_PTR(content_type_hdr));
+    len += (uint32_t)GRPC_SLICE_LENGTH(content_type_hdr);
   }
 
   status_hdr = grpc_slice_malloc(15 + (grpc_status >= 10));
@@ -1992,6 +2029,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_slice_buffer_add(&t->qbuf, hdr);
   if (!s->sent_initial_metadata) {
     grpc_slice_buffer_add(&t->qbuf, http_status_hdr);
+    grpc_slice_buffer_add(&t->qbuf, content_type_hdr);
   }
   grpc_slice_buffer_add(&t->qbuf, status_hdr);
   grpc_slice_buffer_add(&t->qbuf, message_pfx);
