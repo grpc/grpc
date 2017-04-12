@@ -228,6 +228,8 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
     if (offset < path_length) {
       grpc_slice query_slice =
           grpc_slice_sub(path_slice, offset + 1, path_length);
+      /* add a trailing '\0' before decoding */
+      const char *b64_data = grpc_slice_to_c_string(query_slice);
 
       /* substitute path metadata with just the path (not query) */
       grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
@@ -238,14 +240,12 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
 
       /* decode payload from query and add to the slice buffer to be returned */
       const int k_url_safe = 1;
-      grpc_slice_buffer_add(
-          &calld->read_slice_buffer,
-          grpc_base64_decode(exec_ctx,
-                             (const char *)GRPC_SLICE_START_PTR(query_slice),
-                             k_url_safe));
+      grpc_slice_buffer_add(&calld->read_slice_buffer,
+                            grpc_base64_decode(exec_ctx, b64_data, k_url_safe));
       grpc_slice_buffer_stream_init(&calld->read_stream,
                                     &calld->read_slice_buffer, 0);
       calld->seen_path_with_query = true;
+      gpr_free((void *)b64_data);
       grpc_slice_unref_internal(exec_ctx, query_slice);
     } else {
       gpr_log(GPR_ERROR, "GET request without QUERY");
