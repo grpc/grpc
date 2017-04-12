@@ -94,7 +94,8 @@ argp.add_argument('-t', '--track',
                   help='Which metrics to track')
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
-argp.add_argument('-r', '--repetitions', type=int, default=30)
+argp.add_argument('-r', '--repetitions', type=int, default=5)
+argp.add_argument('-l', '--loops', type=int, default=5)
 argp.add_argument('-p', '--p_threshold', type=float, default=0.01)
 argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
 args = argp.parse_args()
@@ -123,33 +124,34 @@ def build():
     subprocess.check_call(make_cmd('opt'))
     subprocess.check_call(make_cmd('counters'))
 
-def collect1(bm, cfg, ver):
+def collect1(bm, cfg, ver, idx):
   cmd = ['bins/%s/%s' % (cfg, bm),
-         '--benchmark_out=%s.%s.%s.json' % (bm, cfg, ver),
+         '--benchmark_out=%s.%s.%s.%d.json' % (bm, cfg, ver, idx),
          '--benchmark_out_format=json',
          '--benchmark_repetitions=%d' % (args.repetitions)
          ]
   return jobset.JobSpec(cmd, shortname='%s %s %s' % (bm, cfg, ver),
                              verbose_success=True, timeout_seconds=None)
 
-build()
-jobset.run(itertools.chain(
-  (collect1(bm, 'opt', 'new') for bm in args.benchmarks),
-  (collect1(bm, 'counters', 'new') for bm in args.benchmarks),
-), maxjobs=args.jobs)
-
-where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
-subprocess.check_call(['git', 'checkout', args.diff_base])
-
-try:
+for loop in range(0, args.loops):
   build()
   jobset.run(itertools.chain(
-    (collect1(bm, 'opt', 'old') for bm in args.benchmarks),
-    (collect1(bm, 'counters', 'old') for bm in args.benchmarks),
+    (collect1(bm, 'opt', 'new', loop) for bm in args.benchmarks),
+    (collect1(bm, 'counters', 'new', loop) for bm in args.benchmarks),
   ), maxjobs=args.jobs)
-finally:
-  subprocess.check_call(['git', 'checkout', where_am_i])
-  subprocess.check_call(['git', 'submodule', 'update'])
+
+  where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+  subprocess.check_call(['git', 'checkout', args.diff_base])
+
+  try:
+    build()
+    jobset.run(itertools.chain(
+      (collect1(bm, 'opt', 'old', loop) for bm in args.benchmarks),
+      (collect1(bm, 'counters', 'old', loop) for bm in args.benchmarks),
+    ), maxjobs=args.jobs)
+  finally:
+    subprocess.check_call(['git', 'checkout', where_am_i])
+    subprocess.check_call(['git', 'submodule', 'update'])
 
 
 class Benchmark:
@@ -174,7 +176,7 @@ class Benchmark:
       mdn_diff = abs(median(new) - median(old))
       print '%s: new=%r old=%r mdn_diff=%r' % (f, new, old, mdn_diff)
       s = speedup.speedup(new, old)
-      if s and mdn_diff > 0.5 and abs(s) >= 10:
+      if s and mdn_diff > 0.5:
         self.final[f] = '%+d%%' % s
     return self.final.keys()
 
@@ -188,25 +190,26 @@ class Benchmark:
 benchmarks = collections.defaultdict(Benchmark)
 
 for bm in args.benchmarks:
-  with open('%s.counters.new.json' % bm) as f:
-    js_new_ctr = json.loads(f.read())
-  with open('%s.opt.new.json' % bm) as f:
-    js_new_opt = json.loads(f.read())
-  with open('%s.counters.old.json' % bm) as f:
-    js_old_ctr = json.loads(f.read())
-  with open('%s.opt.old.json' % bm) as f:
-    js_old_opt = json.loads(f.read())
+  for loop in args.loops:
+    with open('%s.counters.new.%d.json' % (bm, loop)) as f:
+      js_new_ctr = json.loads(f.read())
+    with open('%s.opt.new.%d.json' % (bm, loop)) as f:
+      js_new_opt = json.loads(f.read())
+    with open('%s.counters.old.%d.json' % (bm, loop)) as f:
+      js_old_ctr = json.loads(f.read())
+    with open('%s.opt.old.%d.json' % (bm, loop)) as f:
+      js_old_opt = json.loads(f.read())
 
-  for row in bm_json.expand_json(js_new_ctr, js_new_opt):
-    print row
-    name = row['cpp_name']
-    if name.endswith('_mean') or name.endswith('_stddev'): continue
-    benchmarks[name].add_sample(row, True)
-  for row in bm_json.expand_json(js_old_ctr, js_old_opt):
-    print row
-    name = row['cpp_name']
-    if name.endswith('_mean') or name.endswith('_stddev'): continue
-    benchmarks[name].add_sample(row, False)
+    for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+      print row
+      name = row['cpp_name']
+      if name.endswith('_mean') or name.endswith('_stddev'): continue
+      benchmarks[name].add_sample(row, True)
+    for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+      print row
+      name = row['cpp_name']
+      if name.endswith('_mean') or name.endswith('_stddev'): continue
+      benchmarks[name].add_sample(row, False)
 
 really_interesting = set()
 for name, bm in benchmarks.items():
