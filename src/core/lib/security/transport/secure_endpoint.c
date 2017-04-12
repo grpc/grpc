@@ -130,7 +130,7 @@ static void secure_endpoint_ref(secure_endpoint *ep) { gpr_ref(&ep->ref); }
 static void flush_read_staging_buffer(secure_endpoint *ep, uint8_t **cur,
                                       uint8_t **end) {
   grpc_slice_buffer_add(ep->read_buffer, ep->read_staging_buffer);
-  ep->read_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
+  ep->read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   *cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
   *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 }
@@ -252,7 +252,7 @@ static void endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
 static void flush_write_staging_buffer(secure_endpoint *ep, uint8_t **cur,
                                        uint8_t **end) {
   grpc_slice_buffer_add(&ep->output_buffer, ep->write_staging_buffer);
-  ep->write_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
+  ep->write_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   *cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
   *end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 }
@@ -415,8 +415,8 @@ grpc_endpoint *grpc_secure_endpoint_create(
     grpc_slice_buffer_add(&ep->leftover_bytes,
                           grpc_slice_ref_internal(leftover_slices[i]));
   }
-  ep->write_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
-  ep->read_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
+  ep->write_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
+  ep->read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   grpc_slice_buffer_init(&ep->output_buffer);
   grpc_slice_buffer_init(&ep->source_buffer);
   ep->read_buffer = NULL;

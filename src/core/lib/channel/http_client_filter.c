@@ -312,7 +312,7 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
             op->payload->send_message.send_message->length, k_url_safe,
             k_multi_line);
         estimated_len += 1; /* for the trailing 0 */
-        grpc_slice path_with_query_slice = grpc_slice_malloc(estimated_len);
+        grpc_slice path_with_query_slice = GRPC_SLICE_MALLOC(estimated_len);
 
         /* memcopy individual pieces into this slice */
         uint8_t *write_ptr =

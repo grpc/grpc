@@ -50,7 +50,7 @@ static int zlib_body(grpc_exec_ctx* exec_ctx, z_stream* zs,
   int r;
   int flush;
   size_t i;
-  grpc_slice outbuf = grpc_slice_malloc(OUTPUT_BLOCK_SIZE);
+  grpc_slice outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
   const uInt uint_max = ~(uInt)0;
 
   GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
@@ -65,7 +65,7 @@ static int zlib_body(grpc_exec_ctx* exec_ctx, z_stream* zs,
     do {
       if (zs->avail_out == 0) {
         grpc_slice_buffer_add_indexed(output, outbuf);
-        outbuf = grpc_slice_malloc(OUTPUT_BLOCK_SIZE);
+        outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
         GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
         zs->avail_out = (uInt)GRPC_SLICE_LENGTH(outbuf);
         zs->next_out = GRPC_SLICE_START_PTR(outbuf);

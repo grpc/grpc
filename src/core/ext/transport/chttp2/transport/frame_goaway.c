@@ -163,7 +163,7 @@ grpc_error *grpc_chttp2_goaway_parser_parse(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
                                grpc_slice debug_data,
                                grpc_slice_buffer *slice_buffer) {
-  grpc_slice header = grpc_slice_malloc(9 + 4 + 4);
+  grpc_slice header = GRPC_SLICE_MALLOC(9 + 4 + 4);
   uint8_t *p = GRPC_SLICE_START_PTR(header);
   uint32_t frame_length;
   GPR_ASSERT(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);

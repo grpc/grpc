@@ -43,7 +43,7 @@
 static bool g_disable_ping_ack = false;
 
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
-  grpc_slice slice = grpc_slice_malloc(9 + 8);
+  grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
   uint8_t *p = GRPC_SLICE_START_PTR(slice);
 
   *p++ = 0;

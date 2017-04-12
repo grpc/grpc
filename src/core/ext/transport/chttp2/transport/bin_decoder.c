@@ -169,7 +169,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_exec_ctx *exec_ctx,
       }
     }
   }
-  output = grpc_slice_malloc(output_length);
+  output = GRPC_SLICE_MALLOC(output_length);
 
   ctx.input_cur = GRPC_SLICE_START_PTR(input);
   ctx.input_end = GRPC_SLICE_END_PTR(input);
@@ -193,7 +193,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_exec_ctx *exec_ctx,
                                                  grpc_slice input,
                                                  size_t output_length) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
-  grpc_slice output = grpc_slice_malloc(output_length);
+  grpc_slice output = GRPC_SLICE_MALLOC(output_length);
   struct grpc_base64_decode_context ctx;
 
   // The length of a base64 string cannot be 4 * n + 1

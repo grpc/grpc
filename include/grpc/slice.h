@@ -75,6 +75,13 @@ GPRAPI grpc_slice grpc_slice_new_with_len(void *p, size_t len,
    call.
    Aborts if malloc() fails. */
 GPRAPI grpc_slice grpc_slice_malloc(size_t length);
+GPRAPI grpc_slice grpc_slice_malloc_large(size_t length);
+
+#define GRPC_SLICE_MALLOC(len)                                    \
+  ((len) <= GRPC_SLICE_INLINED_SIZE                               \
+       ? (grpc_slice){.refcount = NULL,                           \
+                      .data.inlined = {.length = (uint8_t)(len)}} \
+       : grpc_slice_malloc_large((len)))
 
 /* Intern a slice:
 
@@ -116,6 +123,9 @@ GPRAPI grpc_slice grpc_slice_sub_no_ref(grpc_slice s, size_t begin, size_t end);
    sharing a refcount with s, that contains s[split:s.length].
    Requires s intialized, split <= s.length */
 GPRAPI grpc_slice grpc_slice_split_tail(grpc_slice *s, size_t split);
+
+/* The same as grpc_slice_split_tail, but without altering refcounts */
+GPRAPI grpc_slice grpc_slice_split_tail_no_ref(grpc_slice *s, size_t split);
 
 /* Splits s into two: modifies s to be s[split:s.length], and returns a new
    slice, sharing a refcount with s, that contains s[0:split].
