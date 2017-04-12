@@ -284,13 +284,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   //  2. cqs_: Completion queues added via AddCompletionQueue() call
 
   for (auto it = sync_server_cqs->begin(); it != sync_server_cqs->end(); ++it) {
-    if (is_hybrid_server) {
-      grpc_server_register_non_listening_completion_queue(server->server_,
-                                                          (*it)->cq(), nullptr);
-    } else {
-      grpc_server_register_completion_queue(server->server_, (*it)->cq(),
-                                            nullptr);
-    }
+    grpc_server_register_completion_queue(server->server_, (*it)->cq(),
+                                          nullptr);
     num_frequently_polled_cqs++;
   }
 
@@ -300,13 +295,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   // listening to incoming channels. Such completion queues must be registered
   // as non-listening queues
   for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
-    if ((*it)->IsFrequentlyPolled()) {
-      grpc_server_register_completion_queue(server->server_, (*it)->cq(),
-                                            nullptr);
-    } else {
-      grpc_server_register_non_listening_completion_queue(server->server_,
-                                                          (*it)->cq(), nullptr);
-    }
+    grpc_server_register_completion_queue(server->server_, (*it)->cq(),
+                                          nullptr);
   }
 
   if (num_frequently_polled_cqs == 0) {

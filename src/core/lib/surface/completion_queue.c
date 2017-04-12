@@ -62,6 +62,7 @@ typedef struct {
 
 typedef struct {
   bool can_get_pollset;
+  bool can_listen;
   size_t (*size)(void);
   void (*init)(grpc_pollset *pollset, gpr_mu **mu);
   grpc_error *(*kick)(grpc_pollset *pollset,
@@ -172,6 +173,7 @@ static void non_polling_poller_shutdown(grpc_exec_ctx *exec_ctx,
 static const cq_poller_vtable g_poller_vtable_by_poller_type[] = {
     /* GRPC_CQ_DEFAULT_POLLING */
     {.can_get_pollset = true,
+     .can_listen = true,
      .size = grpc_pollset_size,
      .init = grpc_pollset_init,
      .kick = grpc_pollset_kick,
@@ -180,6 +182,7 @@ static const cq_poller_vtable g_poller_vtable_by_poller_type[] = {
      .destroy = grpc_pollset_destroy},
     /* GRPC_CQ_NON_LISTENING */
     {.can_get_pollset = true,
+     .can_listen = false,
      .size = grpc_pollset_size,
      .init = grpc_pollset_init,
      .kick = grpc_pollset_kick,
@@ -188,6 +191,7 @@ static const cq_poller_vtable g_poller_vtable_by_poller_type[] = {
      .destroy = grpc_pollset_destroy},
     /* GRPC_CQ_NON_POLLING */
     {.can_get_pollset = false,
+     .can_listen = false,
      .size = non_polling_poller_size,
      .init = non_polling_poller_init,
      .kick = non_polling_poller_kick,
@@ -863,4 +867,10 @@ bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc) {
 
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc) { cc->is_server_cq = 1; }
 
-int grpc_cq_is_server_cq(grpc_completion_queue *cc) { return cc->is_server_cq; }
+bool grpc_cq_is_server_cq(grpc_completion_queue *cc) {
+  return cc->is_server_cq;
+}
+
+bool grpc_cq_can_listen(grpc_completion_queue *cc) {
+  return cc->poller_vtable->can_listen;
+}
