@@ -54,6 +54,7 @@ int grpc_compression_trace = 0;
 #define INITIAL_METADATA_UNSEEN 0
 #define HAS_COMPRESSION_ALGORITHM 1
 #define NO_COMPRESSION_ALGORITHM 2
+#define CANCELLED 3
 
 typedef struct call_data {
   grpc_slice_buffer slices; /**< Buffers up input slices to be compressed */
@@ -70,6 +71,7 @@ typedef struct call_data {
                                  set
      NO_COMPRESSION_ALGORITHM - initial metadata seen; no compression algorithm
                                 set
+     CANCELLED - request was cancelled
      pointer - a stalled op containing a send_message that's waiting on initial
                metadata */
   gpr_atm send_initial_metadata_state;
@@ -265,6 +267,26 @@ static void compress_start_transport_stream_op_batch(
 
   GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);
 
+  if (op->cancel_stream) {
+    gpr_atm cur;
+    do {
+      cur = gpr_atm_acq_load(&calld->send_initial_metadata_state);
+    } while (
+        !gpr_atm_rel_cas(&calld->send_initial_metadata_state, cur, CANCELLED));
+    switch (cur) {
+      case HAS_COMPRESSION_ALGORITHM:
+      case NO_COMPRESSION_ALGORITHM:
+      case INITIAL_METADATA_UNSEEN:
+      case CANCELLED:
+        break;
+      default:
+        grpc_transport_stream_op_batch_finish_with_failure(
+            exec_ctx, (grpc_transport_stream_op_batch *)cur,
+            GRPC_ERROR_CANCELLED);
+        break;
+    }
+  }
+
   if (op->send_initial_metadata) {
     bool has_compression_algorithm;
     grpc_error *error = process_send_initial_metadata(
@@ -278,11 +300,14 @@ static void compress_start_transport_stream_op_batch(
     gpr_atm cur = gpr_atm_acq_load(&calld->send_initial_metadata_state);
     GPR_ASSERT(cur != HAS_COMPRESSION_ALGORITHM &&
                cur != NO_COMPRESSION_ALGORITHM);
-    gpr_atm_rel_store(&calld->send_initial_metadata_state,
-                      has_compression_algorithm ? HAS_COMPRESSION_ALGORITHM
-                                                : NO_COMPRESSION_ALGORITHM);
-    if (cur != INITIAL_METADATA_UNSEEN) {
-      grpc_call_next_op(exec_ctx, elem, (grpc_transport_stream_op_batch *)op);
+    if (cur != CANCELLED) {
+      gpr_atm_rel_store(&calld->send_initial_metadata_state,
+                        has_compression_algorithm ? HAS_COMPRESSION_ALGORITHM
+                                                  : NO_COMPRESSION_ALGORITHM);
+      if (cur != INITIAL_METADATA_UNSEEN) {
+        grpc_call_next_op(exec_ctx, elem,
+                          (grpc_transport_stream_op_batch *)cur);
+      }
     }
   }
   if (op->send_message) {
@@ -295,6 +320,10 @@ static void compress_start_transport_stream_op_batch(
                              (gpr_atm)op)) {
           goto retry_send;
         }
+        break;
+      case CANCELLED:
+        grpc_transport_stream_op_batch_finish_with_failure(
+            exec_ctx, op, GRPC_ERROR_CANCELLED);
         break;
       case HAS_COMPRESSION_ALGORITHM:
       case NO_COMPRESSION_ALGORITHM:
