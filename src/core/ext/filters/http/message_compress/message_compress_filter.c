@@ -286,6 +286,8 @@ static void compress_start_transport_stream_op_batch(
           grpc_transport_stream_op_batch_finish_with_failure(
               exec_ctx, (grpc_transport_stream_op_batch *)cur,
               op->payload->cancel_stream.cancel_error);
+        } else {
+          GRPC_ERROR_UNREF((grpc_error*)(cur & ~CANCELLED_BIT));
         }
         break;
     }
