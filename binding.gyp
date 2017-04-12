@@ -784,6 +784,7 @@
         'src/core/ext/transport/chttp2/transport/hpack_encoder.c',
         'src/core/ext/transport/chttp2/transport/hpack_parser.c',
         'src/core/ext/transport/chttp2/transport/hpack_table.c',
+        'src/core/ext/transport/chttp2/transport/http2_settings.c',
         'src/core/ext/transport/chttp2/transport/huffsyms.c',
         'src/core/ext/transport/chttp2/transport/incoming_metadata.c',
         'src/core/ext/transport/chttp2/transport/parsing.c',
