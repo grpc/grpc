@@ -769,7 +769,7 @@ grpc_error *grpc_connected_subchannel_create_call(
   *call = gpr_arena_alloc(
       args->arena, sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
-  (*call)->connection = con;  // Ref is added below.
+  (*call)->connection = GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   const grpc_call_element_args call_args = {.call_stack = callstk,
                                             .server_transport_data = NULL,
                                             .context = NULL,
@@ -782,11 +782,8 @@ grpc_error *grpc_connected_subchannel_create_call(
   if (error != GRPC_ERROR_NONE) {
     const char *error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
-
-    gpr_free(*call);
     return error;
   }
-  GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   grpc_call_stack_set_pollset_or_pollset_set(exec_ctx, callstk, args->pollent);
   return GRPC_ERROR_NONE;
 }

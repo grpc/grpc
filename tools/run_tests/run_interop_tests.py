@@ -114,8 +114,8 @@ class CXXLanguage:
 class CSharpLanguage:
 
   def __init__(self):
-    self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug'
-    self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug'
+    self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/net45'
+    self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/net45'
     self.safename = str(self)
 
   def client_cmd(self, args):

@@ -54,6 +54,7 @@ extern "C" {
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
 }
@@ -152,6 +153,7 @@ static void BM_LameChannelCallCreateCpp(benchmark::State &state) {
   grpc::testing::EchoResponse recv_response;
   grpc::Status recv_status;
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc::ClientContext cli_ctx;
     auto reader = stub->AsyncEcho(&cli_ctx, send_request, &cq);
     reader->Finish(&recv_response, &recv_status, tag(0));
@@ -429,6 +431,7 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   const int kArenaSize = 4096;
   call_args.arena = gpr_arena_create(kArenaSize);
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(grpc_call_stack_init(&exec_ctx, channel_stack, 1,
                                           DoNothing, NULL, &call_args));
     typename TestOp::Op op(&exec_ctx, &test_op_data, call_stack);
@@ -596,6 +599,7 @@ static void BM_IsolatedCall_NoOp(benchmark::State &state) {
   void *method_hdl =
       grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call_destroy(grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, NULL));
@@ -636,6 +640,7 @@ static void BM_IsolatedCall_Unary(benchmark::State &state) {
   ops[5].data.recv_status_on_client.trailing_metadata_count =
       &recv_trailing_metadata_count;
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call *call = grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, NULL);
@@ -674,6 +679,7 @@ static void BM_IsolatedCall_StreamingSend(benchmark::State &state) {
   ops[0].op = GRPC_OP_SEND_MESSAGE;
   ops[0].data.send_message.send_message = send_message;
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call_start_batch(call, ops, 1, tag(2), NULL);
     grpc_completion_queue_next(fixture.cq(),
                                gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
