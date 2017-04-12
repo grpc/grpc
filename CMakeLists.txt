@@ -1046,6 +1046,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -1372,6 +1373,7 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -1940,6 +1942,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -2693,6 +2696,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
