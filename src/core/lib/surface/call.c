@@ -961,9 +961,15 @@ static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
 
 static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
                                  int is_trailing) {
-  if (b->list.count == 0) return;
   GPR_TIMER_BEGIN("publish_app_metadata", 0);
   output_metadata *dest = &call->output_metadata[is_trailing];
+  if (b->list.count == 0) {
+    if (call->is_client) {
+      *dest->metadata = NULL;
+      *dest->count = 0;
+    }
+    return;
+  }
   *dest->metadata =
       gpr_arena_alloc(call->arena, b->list.count * sizeof(grpc_metadata));
   *dest->count = b->list.count;

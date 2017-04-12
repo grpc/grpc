@@ -386,6 +386,8 @@ static void on_new_call(void *arg, int success) {
     op.flags = 0;
     op.data.recv_status_on_client.trailing_metadata =
         &pc->p2s_trailing_metadata;
+    op.data.recv_status_on_client.trailing_metadata_count =
+        &pc->p2s_trailing_metadata_count;
     op.data.recv_status_on_client.status = &pc->p2s_status;
     op.data.recv_status_on_client.status_details = &pc->p2s_status_details;
     refpc(pc, "on_p2s_status");
