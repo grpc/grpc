@@ -403,6 +403,8 @@ static void test_recv_status_on_client_twice() {
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata =
       &g_state.trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &g_state.initial_metadata_recv_count;
   op->data.recv_status_on_client.status = &g_state.status;
   op->data.recv_status_on_client.status_details = &g_state.details;
   op->flags = 0;
@@ -417,6 +419,7 @@ static void test_recv_status_on_client_twice() {
   op = g_state.ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = NULL;
+  op->data.recv_status_on_client.trailing_metadata_count = NULL;
   op->data.recv_status_on_client.status = NULL;
   op->data.recv_status_on_client.status_details = NULL;
   op->flags = 0;
