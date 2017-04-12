@@ -91,6 +91,9 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/arena.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atomic.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atomic_with_atm.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atomic_with_std.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />

@@ -1246,6 +1246,9 @@ src/core/lib/support/alloc.c \
 src/core/lib/support/arena.c \
 src/core/lib/support/arena.h \
 src/core/lib/support/atm.c \
+src/core/lib/support/atomic.h \
+src/core/lib/support/atomic_with_atm.h \
+src/core/lib/support/atomic_with_std.h \
 src/core/lib/support/avl.c \
 src/core/lib/support/backoff.c \
 src/core/lib/support/backoff.h \

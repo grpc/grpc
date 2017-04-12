@@ -63,4 +63,4 @@ class atomic {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SUPPORT_ATOMIC_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_ATOMIC_WITH_ATM_H */

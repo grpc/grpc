@@ -293,8 +293,8 @@
 #if defined(__has_include)
 #if __has_include(<atomic>)
 #define GRPC_HAS_CXX11_ATOMIC
-#endif  /* __has_include(<atomic>) */
-#endif  /* defined(__has_include) */
+#endif /* __has_include(<atomic>) */
+#endif /* defined(__has_include) */
 
 #ifndef GPR_PLATFORM_STRING
 #warning "GPR_PLATFORM_STRING not auto-detected"

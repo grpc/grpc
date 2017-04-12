@@ -197,6 +197,9 @@ Pod::Spec.new do |s|
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
                       'src/core/lib/support/arena.h',
+                      'src/core/lib/support/atomic.h',
+                      'src/core/lib/support/atomic_with_atm.h',
+                      'src/core/lib/support/atomic_with_std.h',
                       'src/core/lib/support/backoff.h',
                       'src/core/lib/support/block_annotate.h',
                       'src/core/lib/support/env.h',
@@ -696,6 +699,9 @@ Pod::Spec.new do |s|
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
                               'src/core/lib/support/arena.h',
+                              'src/core/lib/support/atomic.h',
+                              'src/core/lib/support/atomic_with_atm.h',
+                              'src/core/lib/support/atomic_with_std.h',
                               'src/core/lib/support/backoff.h',
                               'src/core/lib/support/block_annotate.h',
                               'src/core/lib/support/env.h',
