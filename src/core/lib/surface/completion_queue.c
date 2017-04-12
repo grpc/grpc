@@ -434,6 +434,7 @@ static bool cq_is_next_finished(grpc_exec_ctx *exec_ctx, void *arg) {
      * is ok and doesn't affect correctness. Might effect the tail latencies a
      * bit) */
     a->stolen_completion = (grpc_cq_completion *)gpr_mpscq_pop(&cq->queue);
+    return true;
   }
 
   return !a->first_loop &&
