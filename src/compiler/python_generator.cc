@@ -101,6 +101,14 @@ PrivateGenerator::PrivateGenerator(const GeneratorConfiguration& config,
 void PrivateGenerator::PrintAllComments(StringVector comments,
                                         grpc_generator::Printer* out) {
   if (comments.empty()) {
+    // Python requires code structures like class and def to have
+    // a body, even if it is just "pass" or a docstring.  We need
+    // to ensure not to generate empty bodies. We could do something
+    // smarter and more sophisticated, but at the moment, if there is
+    // no docstring to print, we simply emit "pass" to ensure validity
+    // of the generated code.
+    out->Print("# missing associated documentation comment in .proto file\n");
+    out->Print("pass\n");
     return;
   }
   out->Print("\"\"\"");
