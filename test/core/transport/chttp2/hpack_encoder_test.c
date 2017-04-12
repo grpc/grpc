@@ -106,7 +106,7 @@ static void verify(grpc_exec_ctx *exec_ctx, size_t window_available, bool eof,
   grpc_encode_header_options hopt = {
       .stream_id = 0xdeadbeef,
       .is_eof = eof,
-      .use_true_binary_metadata = false,
+      .use_true_binary_metadata = use_true_binary_metadata,
       .max_frame_size = 16384,
       .stats = &stats,
   };
