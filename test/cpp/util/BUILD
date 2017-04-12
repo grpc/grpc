@@ -89,8 +89,9 @@ cc_test(
         "error_details_test.cc",
     ],
     deps = [
-        "//external:gtest",
         "//:grpc++_error_details",
+        "//external:gtest",
+        "//src/proto/grpc/testing:echo_messages_proto",
     ],
 )
 
