@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
   s.files += Dir.glob('include/grpc/**/*')
   s.test_files = Dir.glob('src/ruby/spec/**/*')
   s.bindir = 'src/ruby/bin'
-  s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
+  s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'google-protobuf', '~> 3.1'
@@ -206,6 +206,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iomgr_internal.h )
   s.files += %w( src/core/lib/iomgr/iomgr_posix.h )
   s.files += %w( src/core/lib/iomgr/load_file.h )
+  s.files += %w( src/core/lib/iomgr/lockfree_event.h )
   s.files += %w( src/core/lib/iomgr/network_status_tracker.h )
   s.files += %w( src/core/lib/iomgr/polling_entity.h )
   s.files += %w( src/core/lib/iomgr/pollset.h )
@@ -411,6 +412,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iomgr_uv.c )
   s.files += %w( src/core/lib/iomgr/iomgr_windows.c )
   s.files += %w( src/core/lib/iomgr/load_file.c )
+  s.files += %w( src/core/lib/iomgr/lockfree_event.c )
   s.files += %w( src/core/lib/iomgr/network_status_tracker.c )
   s.files += %w( src/core/lib/iomgr/polling_entity.c )
   s.files += %w( src/core/lib/iomgr/pollset_set_uv.c )

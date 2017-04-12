@@ -41,3 +41,20 @@ message SequenceValues {
   bytes bytes_field = 1;
   repeated int32 repeated_field = 2;
 }
+
+message OneOfValues {
+  oneof oneof_choice {
+    int32 int_choice = 1;
+    string string_choice = 2;
+  }
+}
+
+enum TestEnum {
+  ZERO = 0;
+  ONE = 1;
+  TWO = 2;
+}
+
+message EnumValues {
+  TestEnum enum_value = 1;
+}

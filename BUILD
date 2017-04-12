@@ -41,7 +41,7 @@ g_stands_for = "green"
 
 core_version = "3.0.0-dev"
 
-version = "1.2.0"
+version = "1.3.0-dev"
 
 grpc_cc_library(
     name = "gpr",
@@ -67,6 +67,7 @@ grpc_cc_library(
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
+        "grpc_max_age_filter",
         "grpc_resolver_dns_ares",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
@@ -75,7 +76,6 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_chttp2_server_secure",
-        "grpc_max_age_filter",
     ],
 )
 
@@ -109,11 +109,11 @@ grpc_cc_library(
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
+        "grpc_max_age_filter",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
-        "grpc_max_age_filter",
     ],
 )
 
@@ -177,8 +177,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/compiler/config.h",
-        "src/compiler/schema_interface.h",
-        "src/compiler/protobuf_plugin.h",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
         "src/compiler/csharp_generator.h",
@@ -190,6 +188,7 @@ grpc_cc_library(
         "src/compiler/objective_c_generator_helpers.h",
         "src/compiler/php_generator.h",
         "src/compiler/php_generator_helpers.h",
+        "src/compiler/protobuf_plugin.h",
         "src/compiler/python_generator.h",
         "src/compiler/python_generator_helpers.h",
         "src/compiler/python_private_generator.h",
@@ -197,6 +196,7 @@ grpc_cc_library(
         "src/compiler/ruby_generator_helpers-inl.h",
         "src/compiler/ruby_generator_map-inl.h",
         "src/compiler/ruby_generator_string-inl.h",
+        "src/compiler/schema_interface.h",
     ],
     external_deps = [
         "protobuf_clib",
@@ -457,6 +457,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair_windows.c",
         "src/core/lib/iomgr/error.c",
         "src/core/lib/iomgr/ev_epoll_linux.c",
+        "src/core/lib/iomgr/lockfree_event.c",
         "src/core/lib/iomgr/ev_poll_posix.c",
         "src/core/lib/iomgr/ev_posix.c",
         "src/core/lib/iomgr/exec_ctx.c",
@@ -583,6 +584,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/iomgr/ev_epoll_linux.h",
+        "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/exec_ctx.h",
@@ -884,13 +886,13 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
+    external_deps = [
+        "cares",
+    ],
     language = "c",
     deps = [
         "grpc_base",
         "grpc_client_channel",
-    ],
-    external_deps = [
-        "cares",
     ],
 )
 

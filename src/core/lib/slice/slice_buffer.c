@@ -46,27 +46,29 @@
 #define GROW(x) (3 * (x) / 2)
 
 static void maybe_embiggen(grpc_slice_buffer *sb) {
-  if (sb->base_slices != sb->slices) {
-    memmove(sb->base_slices, sb->slices, sb->count * sizeof(grpc_slice));
-    sb->slices = sb->base_slices;
-  }
-
   /* How far away from sb->base_slices is sb->slices pointer */
   size_t slice_offset = (size_t)(sb->slices - sb->base_slices);
   size_t slice_count = sb->count + slice_offset;
 
   if (slice_count == sb->capacity) {
-    sb->capacity = GROW(sb->capacity);
-    GPR_ASSERT(sb->capacity > slice_count);
-    if (sb->base_slices == sb->inlined) {
-      sb->base_slices = gpr_malloc(sb->capacity * sizeof(grpc_slice));
-      memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
+    if (sb->base_slices != sb->slices) {
+      /* Make room by moving elements if there's still space unused */
+      memmove(sb->base_slices, sb->slices, sb->count * sizeof(grpc_slice));
+      sb->slices = sb->base_slices;
     } else {
-      sb->base_slices =
-          gpr_realloc(sb->base_slices, sb->capacity * sizeof(grpc_slice));
-    }
+      /* Allocate more memory if no more space is available */
+      sb->capacity = GROW(sb->capacity);
+      GPR_ASSERT(sb->capacity > slice_count);
+      if (sb->base_slices == sb->inlined) {
+        sb->base_slices = gpr_malloc(sb->capacity * sizeof(grpc_slice));
+        memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
+      } else {
+        sb->base_slices =
+            gpr_realloc(sb->base_slices, sb->capacity * sizeof(grpc_slice));
+      }
 
-    sb->slices = sb->base_slices + slice_offset;
+      sb->slices = sb->base_slices + slice_offset;
+    }
   }
 }
 

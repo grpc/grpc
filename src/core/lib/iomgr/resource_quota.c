@@ -142,6 +142,8 @@ struct grpc_resource_quota {
   /* Amount of free memory in the resource quota */
   int64_t free_pool;
 
+  gpr_atm last_size;
+
   /* Has rq_step been scheduled to occur? */
   bool step_scheduled;
   /* Are we currently reclaiming memory */
@@ -581,6 +583,7 @@ grpc_resource_quota *grpc_resource_quota_create(const char *name) {
   resource_quota->combiner = grpc_combiner_create(NULL);
   resource_quota->free_pool = INT64_MAX;
   resource_quota->size = INT64_MAX;
+  gpr_atm_no_barrier_store(&resource_quota->last_size, GPR_ATM_MAX);
   resource_quota->step_scheduled = false;
   resource_quota->reclaiming = false;
   gpr_atm_no_barrier_store(&resource_quota->memory_usage_estimation, 0);
@@ -643,9 +646,15 @@ void grpc_resource_quota_resize(grpc_resource_quota *resource_quota,
   rq_resize_args *a = gpr_malloc(sizeof(*a));
   a->resource_quota = grpc_resource_quota_ref_internal(resource_quota);
   a->size = (int64_t)size;
+  gpr_atm_no_barrier_store(&resource_quota->last_size,
+                           (gpr_atm)GPR_MIN((size_t)GPR_ATM_MAX, size));
   grpc_closure_init(&a->closure, rq_resize, a, grpc_schedule_on_exec_ctx);
   grpc_closure_sched(&exec_ctx, &a->closure, GRPC_ERROR_NONE);
   grpc_exec_ctx_finish(&exec_ctx);
+}
+
+size_t grpc_resource_quota_peek_size(grpc_resource_quota *resource_quota) {
+  return (size_t)gpr_atm_no_barrier_load(&resource_quota->last_size);
 }
 
 /*******************************************************************************
