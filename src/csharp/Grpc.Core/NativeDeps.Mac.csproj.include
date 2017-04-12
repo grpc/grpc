@@ -1,0 +1,17 @@
+<Project>
+  <ItemGroup>
+    <!-- We are relying on run_tests.py to build grpc_csharp_ext with the right bitness
+    and we copy it as both x86 (needed by net45) and x64 (needed by netcoreapp1.0) as we don't
+    know which one will be needed to run the tests. -->
+    <Content Include="..\..\..\libs\$(NativeDependenciesConfigurationUnix)\libgrpc_csharp_ext.dylib">
+      <Link>libgrpc_csharp_ext.x86.dylib</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>false</Pack>
+    </Content>
+    <Content Include="..\..\..\libs\$(NativeDependenciesConfigurationUnix)\libgrpc_csharp_ext.dylib">
+      <Link>libgrpc_csharp_ext.x64.dylib</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>false</Pack>
+    </Content>
+  </ItemGroup>
+</Project>

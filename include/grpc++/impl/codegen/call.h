@@ -65,20 +65,30 @@ class CallHook;
 class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
 
+const char kBinaryErrorDetailsKey[] = "grpc-status-details-bin";
+
 // TODO(yangg) if the map is changed before we send, the pointers will be a
 // mess. Make sure it does not happen.
 inline grpc_metadata* FillMetadataArray(
-    const std::multimap<grpc::string, grpc::string>& metadata) {
-  if (metadata.empty()) {
+    const std::multimap<grpc::string, grpc::string>& metadata,
+    size_t* metadata_count, const grpc::string& optional_error_details) {
+  *metadata_count = metadata.size() + (optional_error_details.empty() ? 0 : 1);
+  if (*metadata_count == 0) {
     return nullptr;
   }
   grpc_metadata* metadata_array =
       (grpc_metadata*)(g_core_codegen_interface->gpr_malloc(
-          metadata.size() * sizeof(grpc_metadata)));
+          (*metadata_count) * sizeof(grpc_metadata)));
   size_t i = 0;
   for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
     metadata_array[i].key = SliceReferencingString(iter->first);
     metadata_array[i].value = SliceReferencingString(iter->second);
+  }
+  if (!optional_error_details.empty()) {
+    metadata_array[i].key =
+        g_core_codegen_interface->grpc_slice_from_static_buffer(
+            kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
+    metadata_array[i].value = SliceReferencingString(optional_error_details);
   }
   return metadata_array;
 }
@@ -218,8 +228,8 @@ class CallOpSendInitialMetadata {
     maybe_compression_level_.is_set = false;
     send_ = true;
     flags_ = flags;
-    initial_metadata_count_ = metadata.size();
-    initial_metadata_ = FillMetadataArray(metadata);
+    initial_metadata_ =
+        FillMetadataArray(metadata, &initial_metadata_count_, "");
   }
 
   void set_compression_level(grpc_compression_level level) {
@@ -456,11 +466,12 @@ class CallOpServerSendStatus {
   void ServerSendStatus(
       const std::multimap<grpc::string, grpc::string>& trailing_metadata,
       const Status& status) {
-    trailing_metadata_count_ = trailing_metadata.size();
-    trailing_metadata_ = FillMetadataArray(trailing_metadata);
+    send_error_details_ = status.error_details();
+    trailing_metadata_ = FillMetadataArray(
+        trailing_metadata, &trailing_metadata_count_, send_error_details_);
     send_status_available_ = true;
     send_status_code_ = static_cast<grpc_status_code>(GetCanonicalCode(status));
-    send_status_details_ = status.error_message();
+    send_error_message_ = status.error_message();
   }
 
  protected:
@@ -472,9 +483,9 @@ class CallOpServerSendStatus {
         trailing_metadata_count_;
     op->data.send_status_from_server.trailing_metadata = trailing_metadata_;
     op->data.send_status_from_server.status = send_status_code_;
-    status_details_slice_ = SliceReferencingString(send_status_details_);
+    error_message_slice_ = SliceReferencingString(send_error_message_);
     op->data.send_status_from_server.status_details =
-        send_status_details_.empty() ? nullptr : &status_details_slice_;
+        send_error_message_.empty() ? nullptr : &error_message_slice_;
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -488,10 +499,11 @@ class CallOpServerSendStatus {
  private:
   bool send_status_available_;
   grpc_status_code send_status_code_;
-  grpc::string send_status_details_;
+  grpc::string send_error_details_;
+  grpc::string send_error_message_;
   size_t trailing_metadata_count_;
   grpc_metadata* trailing_metadata_;
-  grpc_slice status_details_slice_;
+  grpc_slice error_message_slice_;
 };
 
 class CallOpRecvInitialMetadata {
@@ -530,7 +542,7 @@ class CallOpClientRecvStatus {
   void ClientRecvStatus(ClientContext* context, Status* status) {
     metadata_map_ = &context->trailing_metadata_;
     recv_status_ = status;
-    status_details_ = g_core_codegen_interface->grpc_empty_slice();
+    error_message_ = g_core_codegen_interface->grpc_empty_slice();
   }
 
  protected:
@@ -540,7 +552,7 @@ class CallOpClientRecvStatus {
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
     op->data.recv_status_on_client.status = &status_code_;
-    op->data.recv_status_on_client.status_details = &status_details_;
+    op->data.recv_status_on_client.status_details = &error_message_;
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -548,10 +560,17 @@ class CallOpClientRecvStatus {
   void FinishOp(bool* status) {
     if (recv_status_ == nullptr) return;
     metadata_map_->FillMap();
+    grpc::string binary_error_details;
+    auto iter = metadata_map_->map()->find(kBinaryErrorDetailsKey);
+    if (iter != metadata_map_->map()->end()) {
+      binary_error_details =
+          grpc::string(iter->second.begin(), iter->second.length());
+    }
     *recv_status_ = Status(static_cast<StatusCode>(status_code_),
-                           grpc::string(GRPC_SLICE_START_PTR(status_details_),
-                                        GRPC_SLICE_END_PTR(status_details_)));
-    g_core_codegen_interface->grpc_slice_unref(status_details_);
+                           grpc::string(GRPC_SLICE_START_PTR(error_message_),
+                                        GRPC_SLICE_END_PTR(error_message_)),
+                           binary_error_details);
+    g_core_codegen_interface->grpc_slice_unref(error_message_);
     recv_status_ = nullptr;
   }
 
@@ -559,7 +578,7 @@ class CallOpClientRecvStatus {
   MetadataMap* metadata_map_;
   Status* recv_status_;
   grpc_status_code status_code_;
-  grpc_slice status_details_;
+  grpc_slice error_message_;
 };
 
 /// An abstract collection of call ops, used to generate the

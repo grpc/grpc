@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/ext/filters/max_age/max_age_filter.h"
 
 #include <limits.h>
 #include <string.h>
@@ -41,7 +41,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/service_config.h"
 
 #define DEFAULT_MAX_CONNECTION_AGE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_AGE_GRACE_MS INT_MAX
@@ -168,8 +167,9 @@ static void start_max_age_grace_timer_after_goaway_op(grpc_exec_ctx* exec_ctx,
 static void close_max_idle_channel(grpc_exec_ctx* exec_ctx, void* arg,
                                    grpc_error* error) {
   channel_data* chand = arg;
-  gpr_atm_no_barrier_fetch_add(&chand->call_count, 1);
   if (error == GRPC_ERROR_NONE) {
+    /* Prevent the max idle timer from being set again */
+    gpr_atm_no_barrier_fetch_add(&chand->call_count, 1);
     grpc_transport_op* op = grpc_make_transport_op(NULL);
     op->goaway_error =
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_idle"),

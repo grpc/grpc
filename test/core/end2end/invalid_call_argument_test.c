@@ -31,6 +31,8 @@
  *
  */
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <limits.h>
 #include <string.h>
 
