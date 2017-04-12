@@ -217,7 +217,8 @@ typedef struct {
 /** How much data are we willing to queue up per stream if
     GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
-/** Should we allow receipt of true-binary data on http2 connections? */
+/** Should we allow receipt of true-binary data on http2 connections?
+    Defaults to on (1) */
 #define GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY "grpc.http2.true_binary"
 /** After a duration of this time the client/server pings its peer to see if the
     transport is still alive. Int valued, milliseconds. */
