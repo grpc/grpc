@@ -3,11 +3,11 @@
 
 #include <stdint.h>
 
+#include <gmock/gmock.h>
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/support/async_stream.h>
 #include <grpc++/support/async_unary_call.h>
 #include <grpc++/support/sync_stream.h>
-#include <gmock/gmock.h>
 
 namespace grpc {
 namespace testing {

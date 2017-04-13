@@ -1,5 +1,5 @@
 /*
-*
+ *
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -34,6 +34,7 @@
 #include <climits>
 #include <thread>
 
+#include <gmock/gmock.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -45,7 +46,6 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 
 #include <grpc++/test/mock_stream.h>
 
@@ -55,7 +55,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#include<iostream>
+#include <iostream>
 
 using namespace std;
 using grpc::testing::EchoRequest;
@@ -98,8 +98,8 @@ class FakeClient {
     grpc::string msg("hello");
     grpc::string exp(msg);
 
-    std::unique_ptr<ClientWriterInterface<EchoRequest>>
-        cstream = stub_->RequestStream(&context, &response);
+    std::unique_ptr<ClientWriterInterface<EchoRequest>> cstream =
+        stub_->RequestStream(&context, &response);
 
     request.set_message(msg);
     EXPECT_TRUE(cstream->Write(request));
@@ -122,8 +122,8 @@ class FakeClient {
     request.set_message("hello world");
 
     ClientContext context;
-    std::unique_ptr<ClientReaderInterface<EchoResponse>>
-        cstream = stub_->ResponseStream(&context, request);
+    std::unique_ptr<ClientReaderInterface<EchoResponse>> cstream =
+        stub_->ResponseStream(&context, request);
 
     grpc::string exp = "";
     EXPECT_TRUE(cstream->Read(&response));
@@ -197,8 +197,7 @@ class TestServiceImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status ResponseStream(ServerContext* context,
-                        const EchoRequest* request,
+  Status ResponseStream(ServerContext* context, const EchoRequest* request,
                         ServerWriter<EchoResponse>* writer) {
     EchoResponse response;
     vector<grpc::string> tokens = split(request->message());
@@ -221,23 +220,22 @@ class TestServiceImpl : public EchoTestService::Service {
     }
     return Status::OK;
   }
+
  private:
   const vector<grpc::string> split(const grpc::string& input) {
     grpc::string buff("");
     vector<grpc::string> result;
 
-    for (auto n:input) {
+    for (auto n : input) {
       if (n != ' ') {
         buff += n;
         continue;
       }
-      if (buff == "")
-        continue;
+      if (buff == "") continue;
       result.push_back(buff);
       buff = "";
     }
-    if (buff != "")
-      result.push_back(buff);
+    if (buff != "") result.push_back(buff);
 
     return result;
   }
@@ -280,7 +278,9 @@ TEST_F(MockTest, SimpleRpc) {
   MockEchoTestServiceStub stub;
   EchoResponse resp;
   resp.set_message("hello world");
-  EXPECT_CALL(stub, Echo(_, _, _)).Times(AtLeast(1)).WillOnce(DoAll(SetArgPointee<2>(resp), Return(Status::OK)));
+  EXPECT_CALL(stub, Echo(_, _, _))
+      .Times(AtLeast(1))
+      .WillOnce(DoAll(SetArgPointee<2>(resp), Return(Status::OK)));
   client.ResetStub(&stub);
   client.DoEcho();
 }
@@ -299,7 +299,8 @@ TEST_F(MockTest, ClientStream) {
   EXPECT_CALL(*w, WritesDone());
   EXPECT_CALL(*w, Finish()).WillOnce(Return(Status::OK));
 
-  EXPECT_CALL(stub, RequestStreamRaw(_, _)).WillOnce(DoAll(SetArgPointee<1>(resp), Return(w)));
+  EXPECT_CALL(stub, RequestStreamRaw(_, _))
+      .WillOnce(DoAll(SetArgPointee<1>(resp), Return(w)));
   client.ResetStub(&stub);
   client.DoRequestStream();
 }
@@ -316,10 +317,10 @@ TEST_F(MockTest, ServerStream) {
   EchoResponse resp2;
   resp2.set_message("world");
 
-  EXPECT_CALL(*r, Read(_)).
-      WillOnce(DoAll(SetArgPointee<0>(resp1), Return(true))).
-      WillOnce(DoAll(SetArgPointee<0>(resp2), Return(true))).
-      WillOnce(Return(false));
+  EXPECT_CALL(*r, Read(_))
+      .WillOnce(DoAll(SetArgPointee<0>(resp1), Return(true)))
+      .WillOnce(DoAll(SetArgPointee<0>(resp2), Return(true)))
+      .WillOnce(Return(false));
   EXPECT_CALL(*r, Finish()).WillOnce(Return(Status::OK));
 
   EXPECT_CALL(stub, ResponseStreamRaw(_, _)).WillOnce(Return(r));
@@ -328,9 +329,7 @@ TEST_F(MockTest, ServerStream) {
   client.DoResponseStream();
 }
 
-ACTION_P(copy, msg) {
-  arg0->set_message(msg->message());
-}
+ACTION_P(copy, msg) { arg0->set_message(msg->message()); }
 
 TEST_F(MockTest, BidiStream) {
   ResetStub();
@@ -340,12 +339,14 @@ TEST_F(MockTest, BidiStream) {
   auto rw = new MockClientReaderWriter<EchoRequest, EchoResponse>();
   EchoRequest msg;
 
-  EXPECT_CALL(*rw, Write(_, _)).Times(3).WillRepeatedly(DoAll(SaveArg<0>(&msg), Return(true)));
-  EXPECT_CALL(*rw, Read(_)).
-      WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true))).
-      WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true))).
-      WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true))).
-      WillOnce(Return(false));
+  EXPECT_CALL(*rw, Write(_, _))
+      .Times(3)
+      .WillRepeatedly(DoAll(SaveArg<0>(&msg), Return(true)));
+  EXPECT_CALL(*rw, Read(_))
+      .WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true)))
+      .WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true)))
+      .WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true)))
+      .WillOnce(Return(false));
   EXPECT_CALL(*rw, WritesDone());
   EXPECT_CALL(*rw, Finish()).WillOnce(Return(Status::OK));
 

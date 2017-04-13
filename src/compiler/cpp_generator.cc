@@ -1408,7 +1408,8 @@ grpc::string GetSourceEpilogue(grpc_generator::File *file,
 }
 
 // TODO(mmukhi): Make sure we need parameters or not.
-grpc::string GetMockPrologue(grpc_generator::File *file, const Parameters & /*params*/ ) {
+grpc::string GetMockPrologue(grpc_generator::File *file,
+                             const Parameters & /*params*/) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -1434,7 +1435,8 @@ grpc::string GetMockPrologue(grpc_generator::File *file, const Parameters & /*pa
 }
 
 // TODO(mmukhi): Add client-stream and completion-queue headers.
-grpc::string GetMockIncludes(grpc_generator::File *file, const Parameters &params) {
+grpc::string GetMockIncludes(grpc_generator::File *file,
+                             const Parameters &params) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -1442,9 +1444,8 @@ grpc::string GetMockIncludes(grpc_generator::File *file, const Parameters &param
     std::map<grpc::string, grpc::string> vars;
 
     static const char *headers_strs[] = {
-      "grpc++/impl/codegen/async_stream.h",
-      "grpc++/impl/codegen/sync_stream.h",
-      "gmock/gmock.h",
+        "grpc++/impl/codegen/async_stream.h",
+        "grpc++/impl/codegen/sync_stream.h", "gmock/gmock.h",
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
@@ -1452,7 +1453,7 @@ grpc::string GetMockIncludes(grpc_generator::File *file, const Parameters &param
     if (!file->package().empty()) {
       std::vector<grpc::string> parts = file->package_parts();
 
-      for(auto part = parts.begin(); part != parts.end(); part++) {
+      for (auto part = parts.begin(); part != parts.end(); part++) {
         vars["part"] = *part;
         printer->Print(vars, "namespace $part$ {\n");
       }
@@ -1475,36 +1476,33 @@ void PrintMockClientMethods(grpc_generator::Printer *printer,
         *vars,
         "MOCK_METHOD3($Method$, ::grpc::Status(::grpc::ClientContext* context, "
         "const $Request$& request, $Response$* response));\n");
-    printer->Print(
-        *vars,
-        "MOCK_METHOD3(Async$Method$Raw, "
-        "::grpc::ClientAsyncResponseReaderInterface< $Response$>*"
-        "(::grpc::ClientContext* context, const $Request$& request, "
-        "::grpc::CompletionQueue* cq));\n");
+    printer->Print(*vars,
+                   "MOCK_METHOD3(Async$Method$Raw, "
+                   "::grpc::ClientAsyncResponseReaderInterface< $Response$>*"
+                   "(::grpc::ClientContext* context, const $Request$& request, "
+                   "::grpc::CompletionQueue* cq));\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,
         "MOCK_METHOD2($Method$Raw, "
         "::grpc::ClientWriterInterface< $Request$>*"
         "(::grpc::ClientContext* context, $Response$* response));\n");
-    printer->Print(
-        *vars,
-        "MOCK_METHOD4(Async$Method$Raw, "
-        "::grpc::ClientAsyncWriterInterface< $Request$>*"
-        "(::grpc::ClientContext* context, $Response$* response, "
-        "::grpc::CompletionQueue* cq, void* tag));\n");
+    printer->Print(*vars,
+                   "MOCK_METHOD4(Async$Method$Raw, "
+                   "::grpc::ClientAsyncWriterInterface< $Request$>*"
+                   "(::grpc::ClientContext* context, $Response$* response, "
+                   "::grpc::CompletionQueue* cq, void* tag));\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
         *vars,
         "MOCK_METHOD2($Method$Raw, "
         "::grpc::ClientReaderInterface< $Response$>*"
         "(::grpc::ClientContext* context, const $Request$& request));\n");
-    printer->Print(
-        *vars,
-        "MOCK_METHOD4(Async$Method$Raw, "
-        "::grpc::ClientAsyncReaderInterface< $Response$>*"
-        "(::grpc::ClientContext* context, const $Request$& request, "
-        "::grpc::CompletionQueue* cq, void* tag));\n");
+    printer->Print(*vars,
+                   "MOCK_METHOD4(Async$Method$Raw, "
+                   "::grpc::ClientAsyncReaderInterface< $Response$>*"
+                   "(::grpc::ClientContext* context, const $Request$& request, "
+                   "::grpc::CompletionQueue* cq, void* tag));\n");
   } else if (method->BidiStreaming()) {
     printer->Print(
         *vars,
@@ -1521,8 +1519,8 @@ void PrintMockClientMethods(grpc_generator::Printer *printer,
 }
 
 void PrintMockService(grpc_generator::Printer *printer,
-                              const grpc_generator::Service *service,
-                              std::map<grpc::string, grpc::string> *vars) {
+                      const grpc_generator::Service *service,
+                      std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Service"] = service->name();
 
   printer->Print(service->GetLeadingComments("//").c_str());
@@ -1540,7 +1538,6 @@ void PrintMockService(grpc_generator::Printer *printer,
   }
   printer->Outdent();
   printer->Print("};\n");
-
 }
 
 grpc::string GetMockServices(grpc_generator::File *file,
@@ -1557,12 +1554,12 @@ grpc::string GetMockServices(grpc_generator::File *file,
       vars["Package"].append(".");
     }
 
-    if(!params.services_namespace.empty()) {
+    if (!params.services_namespace.empty()) {
       vars["services_namespace"] = params.services_namespace;
       printer->Print(vars, "\nnamespace $services_namespace$ {\n\n");
     }
 
-    for (int i =0; i < file->service_count(); i++) {
+    for (int i = 0; i < file->service_count(); i++) {
       PrintMockService(printer.get(), file->service(i).get(), &vars);
       printer->Print("\n");
     }
@@ -1574,13 +1571,14 @@ grpc::string GetMockServices(grpc_generator::File *file,
   return output;
 }
 
-grpc::string GetMockEpilogue(grpc_generator::File *file, const Parameters & /*params*/) {
+grpc::string GetMockEpilogue(grpc_generator::File *file,
+                             const Parameters & /*params*/) {
   grpc::string temp;
 
   if (!file->package().empty()) {
     std::vector<grpc::string> parts = file->package_parts();
 
-    for (auto part = parts.begin(); part != parts.end(); part++){
+    for (auto part = parts.begin(); part != parts.end(); part++) {
       temp.append("} // namespace ");
       temp.append(*part);
       temp.append("\n");
