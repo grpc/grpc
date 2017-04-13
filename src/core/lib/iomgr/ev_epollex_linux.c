@@ -184,11 +184,6 @@ struct grpc_pollset {
   grpc_closure *shutdown_closure;
   grpc_wakeup_fd pollset_wakeup;
   grpc_pollset_worker *root_worker;
-
-  grpc_pollset *pss_next;
-  grpc_pollset *pss_prev;
-  int pss_refs;
-  grpc_pollset_set *pss_master;
 };
 
 /*******************************************************************************
