@@ -223,7 +223,9 @@ size_t allocate_resource(void) {
   if (n_resources == n_defined_resources) {
     size_t new_n_resources = n_resources ? n_resources * 2 : 2;
     resource **new_resources = gpr_malloc(new_n_resources * sizeof(resource *));
-    memcpy(new_resources, resources, n_resources * sizeof(resource *));
+    if (n_resources != 0) {
+      memcpy(new_resources, resources, n_resources * sizeof(resource *));
+    }
     memset(new_resources + n_resources, 0,
            (new_n_resources - n_resources) * sizeof(resource *));
     gpr_free(resources);
