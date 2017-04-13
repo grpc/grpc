@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,73 +28,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-licenses(["notice"])  # 3-clause BSD
+set -ex
 
-cc_library(
-    name = "test_config",
-    srcs = [
-        "test_config_cc.cc",
-    ],
-    hdrs = [
-        "test_config.h",
-    ],
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "//:gpr",
-        "//external:gflags",
-    ],
-)
+# change to grpc repo root
+cd $(dirname $0)/../../../..
 
-cc_library(
-    name = "grpc++_proto_reflection_desc_db",
-    srcs = [
-        "proto_reflection_descriptor_database.cc",
-    ],
-    hdrs = [
-        "proto_reflection_descriptor_database.h",
-    ],
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "//:grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
-    ],
-)
+git submodule update --init
 
-cc_library(
-    name = "test_util",
-    srcs = [
-        "byte_buffer_proto_helper.cc",
-        "create_test_channel.cc",
-        "string_ref_helper.cc",
-        "subprocess.cc",
-        "test_credentials_provider.cc",
-    ],
-    hdrs = [
-        "byte_buffer_proto_helper.h",
-        "create_test_channel.h",
-        "string_ref_helper.h",
-        "subprocess.h",
-        "test_credentials_provider.h",
-    ],
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "//:grpc++",
-        "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
-    ],
-)
-
-cc_test(
-    name = "error_details_test",
-    srcs = [
-        "error_details_test.cc",
-    ],
-    deps = [
-        "//:grpc++_error_details",
-        "//external:gtest",
-        "//src/proto/grpc/testing:echo_messages_proto",
-    ],
-)
-
-
-
+# download docker images from dockerhub
+export DOCKERHUB_ORGANIZATION=grpctesting
+tools/run_tests/run_tests_matrix.py -f c++ asan
