@@ -193,7 +193,7 @@ NAN_METHOD(Server::RequestCall) {
       GetCompletionQueue(),
       GetCompletionQueue(),
       new struct tag(new Callback(info[0].As<Function>()), ops.release(),
-                     NULL));
+                     NULL, Nan::Null()));
   if (error != GRPC_CALL_OK) {
     return Nan::ThrowError(nanErrorWithCode("requestCall failed", error));
   }
@@ -246,7 +246,7 @@ NAN_METHOD(Server::TryShutdown) {
   grpc_server_shutdown_and_notify(
       server->wrapped_server, GetCompletionQueue(),
       new struct tag(new Nan::Callback(info[0].As<Function>()), ops.release(),
-                     NULL));
+                     NULL, Nan::Null()));
   CompletionQueueNext();
 }
 
