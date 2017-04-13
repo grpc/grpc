@@ -247,7 +247,7 @@ static gpr_avl_node *in_order_tail(gpr_avl_node *node) {
   return node;
 }
 
-static gpr_avl_node *remove(const gpr_avl_vtable *vtable, gpr_avl_node *node,
+static gpr_avl_node *_remove(const gpr_avl_vtable *vtable, gpr_avl_node *node,
                             void *key) {
   long cmp;
   if (node == NULL) {
@@ -263,27 +263,27 @@ static gpr_avl_node *remove(const gpr_avl_vtable *vtable, gpr_avl_node *node,
       gpr_avl_node *h = in_order_head(node->right);
       return rebalance(vtable, vtable->copy_key(h->key),
                        vtable->copy_value(h->value), ref_node(node->left),
-                       remove(vtable, node->right, h->key));
+                       _remove(vtable, node->right, h->key));
     } else {
       gpr_avl_node *h = in_order_tail(node->left);
       return rebalance(
           vtable, vtable->copy_key(h->key), vtable->copy_value(h->value),
-          remove(vtable, node->left, h->key), ref_node(node->right));
+          _remove(vtable, node->left, h->key), ref_node(node->right));
     }
   } else if (cmp > 0) {
     return rebalance(vtable, vtable->copy_key(node->key),
                      vtable->copy_value(node->value),
-                     remove(vtable, node->left, key), ref_node(node->right));
+                     _remove(vtable, node->left, key), ref_node(node->right));
   } else {
     return rebalance(vtable, vtable->copy_key(node->key),
                      vtable->copy_value(node->value), ref_node(node->left),
-                     remove(vtable, node->right, key));
+                     _remove(vtable, node->right, key));
   }
 }
 
 gpr_avl gpr_avl_remove(gpr_avl avl, void *key) {
   gpr_avl_node *old_root = avl.root;
-  avl.root = remove(avl.vtable, avl.root, key);
+  avl.root = _remove(avl.vtable, avl.root, key);
   assert_invariants(avl.root);
   unref_node(avl.vtable, old_root);
   return avl;
