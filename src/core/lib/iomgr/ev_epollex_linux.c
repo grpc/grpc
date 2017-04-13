@@ -697,6 +697,11 @@ static grpc_error *pollset_poll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   int timeout = poll_deadline_to_millis_timeout(deadline, now);
+
+  if (grpc_polling_trace) {
+    gpr_log(GPR_DEBUG, "PS:%p poll for %dms", pollset, timeout);
+  }
+
   int r = epoll_wait(pollset->epfd, events, MAX_EPOLL_EVENTS, timeout);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (r < 0) return GRPC_OS_ERROR(errno, "epoll_wait");
