@@ -113,6 +113,8 @@ _EXEMPT = frozenset((
   'src/php/tests/bootstrap.php',
   # census.proto copied from github
   'tools/grpcz/census.proto',
+  # status.proto copied from googleapis
+  'src/proto/grpc/status/status.proto',
 ))
 
 

@@ -170,6 +170,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc++_error_details",
+    srcs = [
+        "src/cpp/util/error_details.cc",
+    ],
+    hdrs = [
+        "include/grpc++/support/error_details.h",
+    ],
+    language = "c++",
+    standalone = True,
+    deps = [
+        "grpc++",
+        "//src/proto/grpc/status:status_proto",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_plugin_support",
     srcs = [
         "src/compiler/cpp_generator.cc",
