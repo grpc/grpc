@@ -157,6 +157,15 @@ LDXX_asan-noleaks = clang++
 CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-noleaks = -fsanitize=address
 
+VALID_CONFIG_c++-compat = 1
+CC_c++-compat = $(DEFAULT_CC)
+CXX_c++-compat = $(DEFAULT_CXX)
+LD_c++-compat = $(DEFAULT_CC)
+LDXX_c++-compat = $(DEFAULT_CXX)
+CFLAGS_c++-compat = -Wc++-compat
+CPPFLAGS_c++-compat = -O0
+DEFINES_c++-compat = _DEBUG DEBUG
+
 VALID_CONFIG_ubsan = 1
 REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
 CC_ubsan = clang

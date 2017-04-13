@@ -39,6 +39,9 @@
     }
   }, 
   {
+    "config": "c++-compat"
+  }, 
+  {
     "config": "ubsan", 
     "environ": {
       "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt"
