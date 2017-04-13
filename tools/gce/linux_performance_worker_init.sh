@@ -40,11 +40,6 @@ sudo apt-get update
 sudo apt-get install -y openjdk-8-jdk
 sudo apt-get install -y unzip lsof
 
-# Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
-# This needs to happen as the last step to prevent Jenkins master from connecting
-# to a machine that hasn't been properly setup yet.
-cat jenkins_master.pub | sudo tee --append ~jenkins/.ssh/authorized_keys
-
 sudo apt-get install -y \
   autoconf \
   autotools-dev \
@@ -169,3 +164,21 @@ git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 
 # Install scipy and numpy for benchmarking scripts
 sudo apt-get install python-scipy python-numpy
+
+# Update Linux kernel to 4.9
+wget \
+  kernel.ubuntu.com/~kernel-ppa/mainline/v4.9.20/linux-headers-4.9.20-040920_4.9.20-040920.201703310531_all.deb \
+  kernel.ubuntu.com/~kernel-ppa/mainline/v4.9.20/linux-headers-4.9.20-040920-generic_4.9.20-040920.201703310531_amd64.deb \
+  kernel.ubuntu.com/~kernel-ppa/mainline/v4.9.20/linux-image-4.9.20-040920-generic_4.9.20-040920.201703310531_amd64.deb
+sudo dpkg -i linux-headers-4.9*.deb linux-image-4.9*.deb
+rm linux-*
+
+# Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
+# This needs to happen as the last step to prevent Jenkins master from connecting
+# to a machine that hasn't been properly setup yet.
+cat jenkins_master.pub | sudo tee --append ~jenkins/.ssh/authorized_keys
+
+# Restart for VM to pick up kernel update
+echo 'Successfully initialized the linux worker, going for reboot in 10 seconds'
+sleep 10
+sudo reboot
