@@ -519,9 +519,10 @@
           # the OpenSSL headers, from the downloaded Node development package,
           # which is typically located in `.node-gyp` in your home directory.
           'target_name': 'WINDOWS_BUILD_WARNING',
-          'actions': [
+          'rules': [
             {
-              'action_name': 'WINDOWS_BUILD_WARNING',
+              'rule_name': 'WINDOWS_BUILD_WARNING',
+              'extension': 'S',
               'inputs': [
                 'package.json'
               ],
@@ -789,6 +790,7 @@
         'src/core/ext/transport/chttp2/transport/hpack_encoder.c',
         'src/core/ext/transport/chttp2/transport/hpack_parser.c',
         'src/core/ext/transport/chttp2/transport/hpack_table.c',
+        'src/core/ext/transport/chttp2/transport/http2_settings.c',
         'src/core/ext/transport/chttp2/transport/huffsyms.c',
         'src/core/ext/transport/chttp2/transport/incoming_metadata.c',
         'src/core/ext/transport/chttp2/transport/parsing.c',
