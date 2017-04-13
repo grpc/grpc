@@ -181,17 +181,16 @@ static void BM_LameChannelCallCreateCore(benchmark::State &state) {
   grpc::testing::EchoRequest send_request;
   grpc_slice send_request_slice =
       grpc_slice_new(&send_request, sizeof(send_request), do_nothing);
-  grpc_slice host = grpc_slice_from_static_string("localhost");
 
   channel = grpc_lame_client_channel_create(
       "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah");
   cq = grpc_completion_queue_create(NULL);
-
+  void *rc = grpc_channel_register_call(
+      channel, "/grpc.testing.EchoTestService/Echo", NULL, NULL);
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    grpc_call *call = grpc_channel_create_call(
-        channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-        grpc_slice_from_static_string("/EchoTestService/AsyncEcho"), &host,
+    grpc_call *call = grpc_channel_create_registered_call(
+        channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq, rc,
         gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     grpc_metadata_array_init(&initial_metadata_recv);
     grpc_metadata_array_init(&trailing_metadata_recv);
