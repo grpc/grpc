@@ -543,6 +543,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       GRPC_EXEC_CTX_INITIALIZER(0, cq_is_next_finished, &is_finished_arg);
 
   for (;;) {
+    gpr_timespec iteration_deadline = deadline;
+
     if (is_finished_arg.stolen_completion != NULL) {
       grpc_cq_completion *c = is_finished_arg.stolen_completion;
       is_finished_arg.stolen_completion = NULL;
@@ -555,16 +557,21 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
 
     grpc_cq_completion *c = cq_event_queue_pop(&cc->queue);
 
-    /* TODO: sreek - If c == NULL it means either the queue is empty OR in an
-       transient inconsistent state. Consider doing a 0-timeout poll if
-       (cc->num_queue_items > 0 and c == NULL) so that the thread comes back
-       quickly from poll to make a second attempt at popping */
     if (c != NULL) {
       ret.type = GRPC_OP_COMPLETE;
       ret.success = c->next & 1u;
       ret.tag = c->tag;
       c->done(&exec_ctx, c->done_arg, c);
       break;
+    } else {
+      /* If c == NULL it means either the queue is empty OR in an transient
+         inconsistent state. If it is the latter, we shold do a 0-timeout poll
+         so that the thread comes back quickly from poll to make a second
+         attempt at popping. Not doing this can potentially deadlock this thread
+         forever (if the deadline is infinity) */
+      if (cq_event_queue_num_items(&cc->queue) > 0) {
+        iteration_deadline = gpr_time_0(GPR_CLOCK_MONOTONIC);
+      }
     }
 
     if (gpr_atm_no_barrier_load(&cc->shutdown)) {
@@ -594,7 +601,6 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
 
     /* Check alarms - these are a global resource so we just ping each time
        through on every pollset. May update deadline to ensure timely wakeups.*/
-    gpr_timespec iteration_deadline = deadline;
     if (grpc_timer_check(&exec_ctx, now, &iteration_deadline)) {
       GPR_TIMER_MARK("alarm_triggered", 0);
       grpc_exec_ctx_flush(&exec_ctx);
