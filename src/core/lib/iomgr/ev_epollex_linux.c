@@ -1003,17 +1003,11 @@ static void po_join(grpc_exec_ctx *exec_ctx, polling_obj *a, polling_obj *b) {
   }
 }
 
-#define POTYPES(a, b) (((a)*PO_COUNT) + (b))
-
 static void pg_notify(grpc_exec_ctx *exec_ctx, polling_obj *a, polling_obj *b) {
-  GPR_ASSERT(a != b);
-  switch (POTYPES(a->type, b->type)) {
-    case POTYPES(PO_FD, PO_POLLSET):
-      pollset_add_fd(exec_ctx, (grpc_pollset *)b, (grpc_fd *)a);
-      break;
-    case POTYPES(PO_POLLSET, PO_FD):
-      pollset_add_fd(exec_ctx, (grpc_pollset *)a, (grpc_fd *)b);
-      break;
+  if (a->type == PO_FD && b->type == PO_POLLSET) {
+    pollset_add_fd(exec_ctx, (grpc_pollset *)b, (grpc_fd *)a);
+  } else if (a->type == PO_POLLSET && b->type == PO_FD) {
+    pollset_add_fd(exec_ctx, (grpc_pollset *)a, (grpc_fd *)b);
   }
 }
 
@@ -1064,7 +1058,7 @@ static void pg_join(grpc_exec_ctx *exec_ctx, polling_group *pg,
     polling_group *po_group = pg_ref(po->group);
     gpr_mu_unlock(&po->mu);
     pg_merge(exec_ctx, pg, po_group);
-    /* early exit: polling obj picked up a group before joining: we now need
+    /* early exit: polling obj picked up a group before joining: we needed
        to do a full merge */
     return;
   }
