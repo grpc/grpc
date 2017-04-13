@@ -50,17 +50,15 @@
 static void ssl_config_pem_key_cert_pair_destroy(
     tsi_ssl_pem_key_cert_pair *kp) {
   if (kp == NULL) return;
-  if (kp->private_key != NULL) gpr_free((void *)kp->private_key);
-  if (kp->cert_chain != NULL) gpr_free((void *)kp->cert_chain);
+  gpr_free((void *)kp->private_key);
+  gpr_free((void *)kp->cert_chain);
 }
 
 static void ssl_destruct(grpc_exec_ctx *exec_ctx,
                          grpc_channel_credentials *creds) {
   grpc_ssl_credentials *c = (grpc_ssl_credentials *)creds;
-  if (c->config.pem_root_certs != NULL) gpr_free(c->config.pem_root_certs);
-  if (c->config.has_key_cert_pair) {
-    ssl_config_pem_key_cert_pair_destroy(&c->config.pem_key_cert_pair);
-  }
+  gpr_free(c->config.pem_root_certs);
+  ssl_config_pem_key_cert_pair_destroy(&c->config.pem_key_cert_pair);
 }
 
 static grpc_security_status ssl_create_security_connector(

@@ -825,12 +825,10 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     c->overridden_target_name = gpr_strdup(overridden_target_name);
   }
 
-  tsi_ssl_pem_key_cert_pair cert_key_pair = {
-      config->pem_key_cert_pair.private_key,
-      config->pem_key_cert_pair.cert_chain};
-
+  bool has_key_cert_pair = config->pem_key_cert_pair.private_key != NULL &&
+                           config->pem_key_cert_pair.cert_chain != NULL;
   result = tsi_create_ssl_client_handshaker_factory(
-      config->has_key_cert_pair ? &cert_key_pair : NULL, pem_root_certs,
+      has_key_cert_pair ? &config->pem_key_cert_pair : NULL, pem_root_certs,
       ssl_cipher_suites(), alpn_protocol_strings, (uint16_t)num_alpn_protocols,
       &c->handshaker_factory);
   if (result != TSI_OK) {

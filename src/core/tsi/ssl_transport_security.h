@@ -72,7 +72,7 @@ typedef struct {
 } tsi_ssl_pem_key_cert_pair;
 
 /* Creates a client handshaker factory.
-   - pem_key_cert_pair is a pointer on the object containing client's private
+   - pem_key_cert_pair is a pointer to the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair.
    - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
