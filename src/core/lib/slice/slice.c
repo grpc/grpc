@@ -312,7 +312,8 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
   return subset;
 }
 
-grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
+grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice *source, size_t split,
+                                           bool incref) {
   grpc_slice tail;
 
   if (source->refcount == NULL) {
@@ -334,9 +335,13 @@ grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
              tail_length);
     } else {
       /* Build the result */
-      tail.refcount = source->refcount->sub_refcount;
-      /* Bump the refcount */
-      tail.refcount->vtable->ref(tail.refcount);
+      if (incref) {
+        tail.refcount = source->refcount->sub_refcount;
+        /* Bump the refcount */
+        tail.refcount->vtable->ref(tail.refcount);
+      } else {
+        tail.refcount = &noop_refcount;
+      }
       /* Point into the source array */
       tail.data.refcounted.bytes = source->data.refcounted.bytes + split;
       tail.data.refcounted.length = tail_length;
@@ -348,38 +353,8 @@ grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
   return tail;
 }
 
-grpc_slice grpc_slice_split_tail_no_ref(grpc_slice *source, size_t split) {
-  grpc_slice tail;
-
-  if (source->refcount == NULL) {
-    /* inlined data, copy it out */
-    GPR_ASSERT(source->data.inlined.length >= split);
-    tail.refcount = NULL;
-    tail.data.inlined.length = (uint8_t)(source->data.inlined.length - split);
-    memcpy(tail.data.inlined.bytes, source->data.inlined.bytes + split,
-           tail.data.inlined.length);
-    source->data.inlined.length = (uint8_t)split;
-  } else {
-    size_t tail_length = source->data.refcounted.length - split;
-    GPR_ASSERT(source->data.refcounted.length >= split);
-    if (tail_length < sizeof(tail.data.inlined.bytes)) {
-      /* Copy out the bytes - it'll be cheaper than refcounting */
-      tail.refcount = NULL;
-      tail.data.inlined.length = (uint8_t)tail_length;
-      memcpy(tail.data.inlined.bytes, source->data.refcounted.bytes + split,
-             tail_length);
-    } else {
-      /* Build the result */
-      tail.refcount = &noop_refcount;
-      /* Point into the source array */
-      tail.data.refcounted.bytes = source->data.refcounted.bytes + split;
-      tail.data.refcounted.length = tail_length;
-    }
-    source->refcount = source->refcount->sub_refcount;
-    source->data.refcounted.length = split;
-  }
-
-  return tail;
+grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
+  return grpc_slice_split_tail_maybe_ref(source, split, true);
 }
 
 grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
