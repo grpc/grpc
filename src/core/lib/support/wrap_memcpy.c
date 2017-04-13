@@ -40,7 +40,7 @@
  */
 
 #ifdef __linux__
-#if defined(__x86_64__) && defined(__GNU_LIBRARY__)
+#ifdef __x86_64__
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
 void *__wrap_memcpy(void *destination, const void *source, size_t num) {
   return memcpy(destination, source, num);

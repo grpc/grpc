@@ -409,7 +409,7 @@ AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
 USE_BUILT_PROTOC = false
 endif
 
-GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc
+GTEST_LIB = -Ithird_party/googletest/include -Ithird_party/googletest third_party/googletest/src/gtest-all.cc
 GTEST_LIB += -lgflags
 ifeq ($(V),1)
 E = @:
@@ -784,7 +784,7 @@ PROTOBUF_PKG_CONFIG = false
 PC_REQUIRES_GRPCXX =
 PC_LIBS_GRPCXX =
 
-CPPFLAGS := -Ithird_party/googletest/googletest/include $(CPPFLAGS)
+CPPFLAGS := -Ithird_party/googletest/include $(CPPFLAGS)
 
 PROTOC_PLUGINS_ALL = $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(BINDIR)/$(CONFIG)/grpc_node_plugin $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(BINDIR)/$(CONFIG)/grpc_php_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 PROTOC_PLUGINS_DIR = $(BINDIR)/$(CONFIG)

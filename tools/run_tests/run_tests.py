@@ -395,8 +395,6 @@ class CLanguage(object):
       return ('jessie', self._gcc_make_options(version_suffix='-4.8'))
     elif compiler == 'gcc5.3':
       return ('ubuntu1604', [])
-    elif compiler == 'gcc_musl':
-      return ('alpine', [])
     elif compiler == 'clang3.4':
       # on ubuntu1404, clang-3.4 alias doesn't exist, just use 'clang'
       return ('ubuntu1404', self._clang_make_options())
@@ -628,12 +626,7 @@ class PythonLanguage(object):
     return 'tools/dockerfile/test/python_%s_%s' % (self.python_manager_name(), _docker_arch_suffix(self.args.arch))
 
   def python_manager_name(self):
-    if self.args.compiler in ['python3.5', 'python3.6']:
-      return 'pyenv'
-    elif self.args.compiler == 'python_alpine':
-      return 'alpine'
-    else:
-      return 'jessie'
+    return 'pyenv' if self.args.compiler in ['python3.5', 'python3.6'] else 'jessie'
 
   def _get_pythons(self, args):
     if args.arch == 'x86':
@@ -691,8 +684,6 @@ class PythonLanguage(object):
       return (pypy27_config,)
     elif args.compiler == 'pypy3':
       return (pypy32_config,)
-    elif args.compiler == 'python_alpine':
-      return (python27_config,)
     else:
       raise Exception('Compiler %s not supported.' % args.compiler)
 
@@ -1173,10 +1164,10 @@ argp.add_argument('--arch',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
                   choices=['default',
-                           'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc_musl',
+                           'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2013', 'vs2015',
-                           'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
+                           'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
                            'node0.12', 'node4', 'node5', 'node6', 'node7',
                            'electron1.3',
                            'coreclr',

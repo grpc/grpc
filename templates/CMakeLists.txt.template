@@ -510,8 +510,8 @@
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
-    PRIVATE third_party/googletest/googletest/include
-    PRIVATE third_party/googletest/googletest
+    PRIVATE third_party/googletest/include
+    PRIVATE third_party/googletest
   % endif
   % if lib.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
@@ -554,7 +554,7 @@
   % endif
   % endfor
   % if tgt.build == 'test' and tgt.language == 'c++':
-    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/src/gtest-all.cc
   % endif
   )
 
@@ -580,8 +580,8 @@
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
-    PRIVATE third_party/googletest/googletest/include
-    PRIVATE third_party/googletest/googletest
+    PRIVATE third_party/googletest/include
+    PRIVATE third_party/googletest
   % endif
   % if tgt.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
