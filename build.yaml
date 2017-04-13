@@ -670,6 +670,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_table.h
+  - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
@@ -689,6 +690,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/hpack_encoder.c
   - src/core/ext/transport/chttp2/transport/hpack_parser.c
   - src/core/ext/transport/chttp2/transport/hpack_table.c
+  - src/core/ext/transport/chttp2/transport/http2_settings.c
   - src/core/ext/transport/chttp2/transport/huffsyms.c
   - src/core/ext/transport/chttp2/transport/incoming_metadata.c
   - src/core/ext/transport/chttp2/transport/parsing.c
@@ -1179,6 +1181,18 @@ libs:
   platforms:
   - linux
   secure: true
+- name: grpc++_error_details
+  build: all
+  language: c++
+  public_headers:
+  - include/grpc++/support/error_details.h
+  src:
+  - src/proto/grpc/status/status.proto
+  - src/cpp/util/error_details.cc
+  deps:
+  - grpc++
+  baselib: true
+  vs_project_guid: '{9F58AD72-49E1-4D10-B826-9E190AB0AAC0}'
 - name: grpc++_proto_reflection_desc_db
   build: private
   language: c++
@@ -3571,6 +3585,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: error_details_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/echo_messages.proto
+  - test/cpp/util/error_details_test.cc
+  deps:
+  - grpc++_error_details
+  - grpc++
 - name: filter_end2end_test
   gtest: true
   build: test

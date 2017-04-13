@@ -203,4 +203,5 @@ def expand_json(js, js2 = None):
           row['real_time'] = bm2['real_time']
           row['iterations'] = bm2['iterations']
           bm2['already_used'] = True
+          break
     yield row

@@ -2969,6 +2969,24 @@
   }, 
   {
     "deps": [
+      "grpc++", 
+      "grpc++_error_details"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "error_details_test", 
+    "src": [
+      "test/cpp/util/error_details_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "gpr_test_util", 
       "grpc", 
@@ -5839,6 +5857,25 @@
   }, 
   {
     "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "include/grpc++/support/error_details.h", 
+      "src/proto/grpc/status/status.grpc.pb.h", 
+      "src/proto/grpc/status/status.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_error_details", 
+    "src": [
+      "include/grpc++/support/error_details.h", 
+      "src/cpp/util/error_details.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "grpc++", 
       "grpc++_config_proto", 
       "grpc++_reflection_proto"
@@ -8375,6 +8412,7 @@
       "src/core/ext/transport/chttp2/transport/hpack_encoder.h", 
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.h", 
+      "src/core/ext/transport/chttp2/transport/http2_settings.h", 
       "src/core/ext/transport/chttp2/transport/huffsyms.h", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
       "src/core/ext/transport/chttp2/transport/internal.h", 
@@ -8411,6 +8449,8 @@
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.c", 
       "src/core/ext/transport/chttp2/transport/hpack_table.h", 
+      "src/core/ext/transport/chttp2/transport/http2_settings.c", 
+      "src/core/ext/transport/chttp2/transport/http2_settings.h", 
       "src/core/ext/transport/chttp2/transport/huffsyms.c", 
       "src/core/ext/transport/chttp2/transport/huffsyms.h", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.c", 

@@ -118,7 +118,8 @@ void Server::ShutdownServer() {
 
     grpc_server_shutdown_and_notify(
         this->wrapped_server, GetCompletionQueue(),
-        new struct tag(new Callback(**shutdown_callback), ops.release(), NULL));
+        new struct tag(new Callback(**shutdown_callback), ops.release(), NULL,
+                       Nan::Null()));
     grpc_server_cancel_all_calls(this->wrapped_server);
     CompletionQueueNext();
     this->wrapped_server = NULL;
