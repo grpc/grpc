@@ -122,7 +122,7 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
                  (*calld->recv_message)->length, calld->max_recv_size);
     grpc_error* new_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT);
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
     if (error == GRPC_ERROR_NONE) {
       error = new_error;
     } else {
@@ -152,7 +152,7 @@ static void start_transport_stream_op_batch(
         exec_ctx, op,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
                            GRPC_ERROR_INT_GRPC_STATUS,
-                           GRPC_STATUS_INVALID_ARGUMENT));
+                           GRPC_STATUS_RESOURCE_EXHAUSTED));
     gpr_free(message_string);
     return;
   }
