@@ -197,6 +197,7 @@ grpc_slice grpc_slice_new_with_len(void *p, size_t len,
 }
 
 grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t length) {
+  if (length == 0) return grpc_empty_slice();
   grpc_slice slice = grpc_slice_malloc(length);
   memcpy(GRPC_SLICE_START_PTR(slice), source, length);
   return slice;
@@ -382,8 +383,9 @@ grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
 }
 
 int grpc_slice_default_eq_impl(grpc_slice a, grpc_slice b) {
-  return GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b) &&
-         0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
+  if (GRPC_SLICE_LENGTH(a) != GRPC_SLICE_LENGTH(b)) return false;
+  if (GRPC_SLICE_LENGTH(a) == 0) return true;
+  return 0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
                      GRPC_SLICE_LENGTH(a));
 }
 
