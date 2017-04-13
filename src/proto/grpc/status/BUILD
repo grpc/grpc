@@ -29,71 +29,15 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_library(
-    name = "test_config",
-    srcs = [
-        "test_config_cc.cc",
-    ],
-    hdrs = [
-        "test_config.h",
-    ],
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "//:gpr",
-        "//external:gflags",
-    ],
-)
+package(default_visibility = ["//visibility:public"])
 
-cc_library(
-    name = "grpc++_proto_reflection_desc_db",
-    srcs = [
-        "proto_reflection_descriptor_database.cc",
-    ],
-    hdrs = [
-        "proto_reflection_descriptor_database.h",
-    ],
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "//:grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
-    ],
-)
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 
-cc_library(
-    name = "test_util",
-    srcs = [
-        "byte_buffer_proto_helper.cc",
-        "create_test_channel.cc",
-        "string_ref_helper.cc",
-        "subprocess.cc",
-        "test_credentials_provider.cc",
-    ],
-    hdrs = [
-        "byte_buffer_proto_helper.h",
-        "create_test_channel.h",
-        "string_ref_helper.h",
-        "subprocess.h",
-        "test_credentials_provider.h",
-    ],
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "//:grpc++",
-        "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
-    ],
+grpc_proto_library(
+    name = "status_proto",
+    srcs = ["status.proto"],
+    has_services = False,
+    well_known_protos = "@submodule_protobuf//:well_known_protos",
 )
-
-cc_test(
-    name = "error_details_test",
-    srcs = [
-        "error_details_test.cc",
-    ],
-    deps = [
-        "//:grpc++_error_details",
-        "//external:gtest",
-        "//src/proto/grpc/testing:echo_messages_proto",
-    ],
-)
-
 
 
