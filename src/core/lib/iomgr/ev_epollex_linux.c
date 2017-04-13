@@ -1078,7 +1078,11 @@ static void pg_join(grpc_exec_ctx *exec_ctx, polling_group *pg,
 static void pg_merge(grpc_exec_ctx *exec_ctx, polling_group *a,
                      polling_group *b) {
   for (;;) {
-    if (a == b) return;
+    if (a == b) {
+      pg_unref(a);
+      pg_unref(b);
+      return;
+    }
     if (a > b) GPR_SWAP(polling_group *, a, b);
     gpr_mu_lock(&a->po.mu);
     gpr_mu_lock(&b->po.mu);
@@ -1128,6 +1132,7 @@ static void pg_merge(grpc_exec_ctx *exec_ctx, polling_group *a,
     pg_unref(unref[i]);
   }
   gpr_free(unref);
+  pg_unref(b);
 }
 
 /*******************************************************************************
