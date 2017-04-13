@@ -31,7 +31,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL'
-  version = '8.0'
+  version = '8.1'
   s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.'
   # Adapted from the homepage:
@@ -95,7 +95,7 @@ Pod::Spec.new do |s|
   # The module map and umbrella header created automatically by Cocoapods don't work for C libraries
   # like this one. The following file, and a correct umbrella header, are created on the fly by the
   # `prepare_command` of this pod.
-  s.module_map = 'include/openssl/module.modulemap'
+  s.module_map = 'include/openssl/BoringSSL.modulemap'
 
   # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
   # want that for some reason.
@@ -186,7 +186,7 @@ Pod::Spec.new do |s|
       #include "x509.h"
       #include "x509v3.h"
     EOF
-    cat > include/openssl/module.modulemap <<EOF
+    cat > include/openssl/BoringSSL.modulemap <<EOF
       framework module openssl {
         umbrella header "umbrella.h"
         export *
