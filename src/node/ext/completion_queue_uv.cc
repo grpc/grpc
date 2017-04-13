@@ -61,17 +61,13 @@ void drain_completion_queue(uv_prepare_t *handle) {
         queue, gpr_inf_past(GPR_CLOCK_MONOTONIC), NULL);
 
     if (event.type == GRPC_OP_COMPLETE) {
-      Nan::Callback *callback = grpc::node::GetTagCallback(event.tag);
+      const char *error_message;
       if (event.success) {
-        Local<Value> argv[] = {Nan::Null(),
-                             grpc::node::GetTagNodeValue(event.tag)};
-        callback->Call(2, argv);
+        error_message = NULL;
       } else {
-        Local<Value> argv[] = {Nan::Error(
-            "The async function encountered an error")};
-        callback->Call(1, argv);
+        error_message = "The async function encountered an error";
       }
-      grpc::node::CompleteTag(event.tag);
+      CompleteTag(event.tag, error_message);
       grpc::node::DestroyTag(event.tag);
       pending_batches--;
       if (pending_batches == 0) {
