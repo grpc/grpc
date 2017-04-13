@@ -62,7 +62,6 @@ cc_library(
 cc_library(
     name = "test_util",
     srcs = [
-        #        "test/cpp/end2end/test_service_impl.cc",
         "byte_buffer_proto_helper.cc",
         "create_test_channel.cc",
         "string_ref_helper.cc",
@@ -83,3 +82,18 @@ cc_library(
         "//test/core/util:gpr_test_util",
     ],
 )
+
+cc_test(
+    name = "error_details_test",
+    srcs = [
+        "error_details_test.cc",
+    ],
+    deps = [
+        "//:grpc++_error_details",
+        "//external:gtest",
+        "//src/proto/grpc/testing:echo_messages_proto",
+    ],
+)
+
+
+

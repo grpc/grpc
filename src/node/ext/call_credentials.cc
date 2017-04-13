@@ -211,6 +211,7 @@ NAN_METHOD(PluginCallback) {
   Utf8String details_utf8_str(info[1]);
   char *details = *details_utf8_str;
   grpc_metadata_array array;
+  grpc_metadata_array_init(&array);
   Local<Object> callback_data = Nan::To<Object>(info[3]).ToLocalChecked();
   if (!CreateMetadataArray(Nan::To<Object>(info[2]).ToLocalChecked(),
                            &array)){
@@ -226,6 +227,7 @@ NAN_METHOD(PluginCallback) {
                Nan::New("user_data").ToLocalChecked()
                ).ToLocalChecked().As<External>()->Value();
   cb(user_data, array.metadata, array.count, code, details);
+  DestroyMetadataArray(&array);
 }
 
 NAUV_WORK_CB(SendPluginCallback) {
