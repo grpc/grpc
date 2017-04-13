@@ -165,6 +165,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc++_error_details",
+    srcs = [
+        "src/cpp/util/error_details.cc",
+    ],
+    hdrs = [
+        "include/grpc++/support/error_details.h",
+    ],
+    language = "c++",
+    standalone = True,
+    deps = [
+        "grpc++",
+        "//src/proto/grpc/status:status_proto",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_plugin_support",
     srcs = [
         "src/compiler/cpp_generator.cc",
@@ -457,7 +473,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair_windows.c",
         "src/core/lib/iomgr/error.c",
         "src/core/lib/iomgr/ev_epoll_linux.c",
-        "src/core/lib/iomgr/lockfree_event.c",
         "src/core/lib/iomgr/ev_poll_posix.c",
         "src/core/lib/iomgr/ev_posix.c",
         "src/core/lib/iomgr/exec_ctx.c",
@@ -468,6 +483,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_uv.c",
         "src/core/lib/iomgr/iomgr_windows.c",
         "src/core/lib/iomgr/load_file.c",
+        "src/core/lib/iomgr/lockfree_event.c",
         "src/core/lib/iomgr/network_status_tracker.c",
         "src/core/lib/iomgr/polling_entity.c",
         "src/core/lib/iomgr/pollset_set_uv.c",
@@ -584,7 +600,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/iomgr/ev_epoll_linux.h",
-        "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/exec_ctx.h",
@@ -594,6 +609,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_internal.h",
         "src/core/lib/iomgr/iomgr_posix.h",
         "src/core/lib/iomgr/load_file.h",
+        "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/network_status_tracker.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",
@@ -980,6 +996,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/frame_ping.c",
         "src/core/ext/transport/chttp2/transport/frame_rst_stream.c",
         "src/core/ext/transport/chttp2/transport/frame_settings.c",
+        "src/core/ext/transport/chttp2/transport/http2_settings.c",
         "src/core/ext/transport/chttp2/transport/frame_window_update.c",
         "src/core/ext/transport/chttp2/transport/hpack_encoder.c",
         "src/core/ext/transport/chttp2/transport/hpack_parser.c",
@@ -1002,6 +1019,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/frame_ping.h",
         "src/core/ext/transport/chttp2/transport/frame_rst_stream.h",
         "src/core/ext/transport/chttp2/transport/frame_settings.h",
+        "src/core/ext/transport/chttp2/transport/http2_settings.h",
         "src/core/ext/transport/chttp2/transport/frame_window_update.h",
         "src/core/ext/transport/chttp2/transport/hpack_encoder.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser.h",

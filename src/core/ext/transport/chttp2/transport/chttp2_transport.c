@@ -356,6 +356,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                DEFAULT_WINDOW);
   push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                DEFAULT_MAX_HEADER_LIST_SIZE);
+  push_setting(exec_ctx, t,
+               GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
 
   t->ping_policy = (grpc_chttp2_repeated_ping_policy){
       .max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA,
@@ -486,26 +488,31 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           grpc_chttp2_setting_id setting_id;
           grpc_integer_options integer_options;
           bool availability[2] /* server, client */;
-        } settings_map[] = {{GRPC_ARG_MAX_CONCURRENT_STREAMS,
-                             GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
-                             {-1, 0, INT32_MAX},
-                             {true, false}},
-                            {GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER,
-                             GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
-                             {-1, 0, INT32_MAX},
-                             {true, true}},
-                            {GRPC_ARG_MAX_METADATA_SIZE,
-                             GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
-                             {-1, 0, INT32_MAX},
-                             {true, true}},
-                            {GRPC_ARG_HTTP2_MAX_FRAME_SIZE,
-                             GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
-                             {-1, 16384, 16777215},
-                             {true, true}},
-                            {GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES,
-                             GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-                             {-1, 5, INT32_MAX},
-                             {true, true}}};
+        } settings_map[] = {
+            {GRPC_ARG_MAX_CONCURRENT_STREAMS,
+             GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
+             {-1, 0, INT32_MAX},
+             {true, false}},
+            {GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER,
+             GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
+             {-1, 0, INT32_MAX},
+             {true, true}},
+            {GRPC_ARG_MAX_METADATA_SIZE,
+             GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+             {-1, 0, INT32_MAX},
+             {true, true}},
+            {GRPC_ARG_HTTP2_MAX_FRAME_SIZE,
+             GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+             {-1, 16384, 16777215},
+             {true, true}},
+            {GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY,
+             GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA,
+             {1, 0, 1},
+             {true, true}},
+            {GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES,
+             GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+             {-1, 5, INT32_MAX},
+             {true, true}}};
         for (j = 0; j < (int)GPR_ARRAY_SIZE(settings_map); j++) {
           if (0 == strcmp(channel_args->args[i].key,
                           settings_map[j].channel_arg_name)) {
