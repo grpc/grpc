@@ -63,6 +63,8 @@ class MockClientReaderWriter : public ClientReaderWriterInterface<W, R> {
   MOCK_METHOD0_T(WritesDone, bool());
 };
 
+// TODO: We do not support mocking an async RPC for now.
+
 template <class R>
 class MockClientAsyncResponseReader
     : public ClientAsyncResponseReaderInterface<R> {
