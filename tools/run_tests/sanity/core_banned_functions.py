@@ -50,6 +50,7 @@ BANNED_EXCEPT = {
     'grpc_os_error(': ['src/core/lib/iomgr/error.c'],
     'grpc_wsa_error(': ['src/core/lib/iomgr/error.c'],
     'grpc_log_if_error(': ['src/core/lib/iomgr/error.c'],
+    'grpc_slice_malloc(': ['src/core/lib/slice/slice.c'],
 }
 
 errors = 0

@@ -313,7 +313,7 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
 }
 
 grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice *source, size_t split,
-                                           bool incref) {
+                                           int incref) {
   grpc_slice tail;
 
   if (source->refcount == NULL) {
