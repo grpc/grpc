@@ -177,8 +177,6 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// caller is required to keep all completion queues live until the server is
   /// destroyed.
   /// \param num_cqs How many completion queues does \a cqs hold.
-  ///
-  /// \return true on a successful shutdown.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;

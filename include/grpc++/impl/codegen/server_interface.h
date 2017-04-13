@@ -122,8 +122,6 @@ class ServerInterface : public CallHook {
   /// caller is required to keep all completion queues live until the server is
   /// destroyed.
   /// \param num_cqs How many completion queues does \a cqs hold.
-  ///
-  /// \return true on a successful shutdown.
   virtual void Start(ServerCompletionQueue** cqs, size_t num_cqs) = 0;
 
   virtual void ShutdownInternal(gpr_timespec deadline) = 0;
