@@ -94,8 +94,8 @@ argp.add_argument('-t', '--track',
                   help='Which metrics to track')
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
-argp.add_argument('-r', '--repetitions', type=int, default=5)
-argp.add_argument('-l', '--loops', type=int, default=5)
+argp.add_argument('-r', '--repetitions', type=int, default=3)
+argp.add_argument('-l', '--loops', type=int, default=7)
 argp.add_argument('-p', '--p_threshold', type=float, default=0.01)
 argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
 args = argp.parse_args()
@@ -190,7 +190,7 @@ class Benchmark:
 benchmarks = collections.defaultdict(Benchmark)
 
 for bm in args.benchmarks:
-  for loop in args.loops:
+  for loop in range(0, args.loops):
     with open('%s.counters.new.%d.json' % (bm, loop)) as f:
       js_new_ctr = json.loads(f.read())
     with open('%s.opt.new.%d.json' % (bm, loop)) as f:
