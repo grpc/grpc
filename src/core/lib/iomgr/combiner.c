@@ -319,6 +319,9 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
     GPR_TIMER_BEGIN("combiner.exec1", 0);
     grpc_closure *cl = (grpc_closure *)n;
     error_data err = unpack_error_data(cl->error_data.scratch);
+#ifndef NDEBUG
+    cl->scheduled = false;
+#endif
     cl->cb(exec_ctx, cl->cb_arg, err.error);
     if (err.covered_by_poller) {
       gpr_atm_no_barrier_fetch_add(&lock->elements_covered_by_poller, -1);
@@ -337,6 +340,9 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
           gpr_log(GPR_DEBUG, "C:%p execute_final[%d] c=%p", lock, loops, c));
       grpc_closure *next = c->next_data.next;
       grpc_error *error = c->error_data.error;
+#ifndef NDEBUG
+      c->scheduled = false;
+#endif
       c->cb(exec_ctx, c->cb_arg, error);
       GRPC_ERROR_UNREF(error);
       c = next;
