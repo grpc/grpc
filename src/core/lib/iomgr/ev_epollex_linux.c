@@ -177,7 +177,11 @@ struct grpc_pollset_worker {
 
 struct grpc_pollset {
   polling_obj po;
-  int epfd;
+  /* Pollable set - possible values:
+     0              - nothing is pollable
+     pointer | 1    - a single pollable file descriptor
+     (fd << 1) | 0  - an epoll fd */
+  gpr_atm pollable_set_atm;
   int num_pollers;
   bool kicked_without_poller;
   gpr_atm shutdown_atm;
