@@ -1277,6 +1277,9 @@ grpc_cc_library(
         "src/cpp/server/thread_pool_interface.h",
         "src/cpp/thread_manager/thread_manager.h",
     ],
+    external_deps = [
+        "nanopb",
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpc++/alarm.h",
@@ -1328,7 +1331,7 @@ grpc_cc_library(
         "include/grpc++/support/time.h",
     ],
     deps = [
-        "grpc",
+        "grpc_base",
         "grpc++_codegen_base",
     ],
 )
