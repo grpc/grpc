@@ -1441,12 +1441,19 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   }
 
   if (op->recv_message) {
+    size_t already_received;
     GPR_ASSERT(s->recv_message_ready == NULL);
+    GPR_ASSERT(!s->pending_byte_stream);
     s->recv_message_ready = op_payload->recv_message.recv_message_ready;
     s->recv_message = op_payload->recv_message.recv_message;
-    if (s->id != 0 && s->frame_storage.length == 0) {
-      incoming_byte_stream_update_flow_control(exec_ctx, t, s, 5, 0);
+    if (s->pending_byte_stream) {
+      already_received = s->frame_storage.length;
+    } else {
+      already_received = s->frame_storage.length +
+                         s->unprocessed_incoming_frames_buffer.length;
     }
+    incoming_byte_stream_update_flow_control(exec_ctx, t, s, 5,
+                                             already_received);
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   }
 
