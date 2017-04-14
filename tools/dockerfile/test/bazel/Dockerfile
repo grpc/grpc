@@ -72,12 +72,12 @@ RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
 RUN apt-get -y update
 RUN apt-get -y install bazel
 
-# Pin Bazel to 0.4.4
-# Installing Bazel via apt-get first is required before installing 0.4.4 to
+# Pin Bazel to 0.4.5
+# Installing Bazel via apt-get first is required before installing 0.4.5 to
 # allow gRPC to build without errors. See https://github.com/grpc/grpc/issues/10553
-RUN curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.4.4/bazel-0.4.4-installer-linux-x86_64.sh
-RUN chmod +x ./bazel-0.4.4-installer-linux-x86_64.sh
-RUN ./bazel-0.4.4-installer-linux-x86_64.sh
+RUN curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.4.5/bazel-0.4.5-installer-linux-x86_64.sh
+RUN chmod +x ./bazel-0.4.5-installer-linux-x86_64.sh
+RUN ./bazel-0.4.5-installer-linux-x86_64.sh
 
 RUN mkdir -p /var/local/jenkins
 
