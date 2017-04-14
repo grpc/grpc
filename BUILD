@@ -77,6 +77,8 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_chttp2_server_secure",
+        "grpc_message_size_filter",
+        "grpc_deadline_filter",
     ],
 )
 
@@ -91,6 +93,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_cronet_client_secure",
+        "grpc_http_filters",
     ],
 )
 
@@ -115,6 +118,8 @@ grpc_cc_library(
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
+        "grpc_message_size_filter",
+        "grpc_deadline_filter",
     ],
 )
 
@@ -451,15 +456,10 @@ grpc_cc_library(
         "src/core/lib/channel/channel_args.c",
         "src/core/lib/channel/channel_stack.c",
         "src/core/lib/channel/channel_stack_builder.c",
-        "src/core/lib/channel/compress_filter.c",
         "src/core/lib/channel/connected_channel.c",
-        "src/core/lib/channel/deadline_filter.c",
         "src/core/lib/channel/handshaker.c",
         "src/core/lib/channel/handshaker_factory.c",
         "src/core/lib/channel/handshaker_registry.c",
-        "src/core/lib/channel/http_client_filter.c",
-        "src/core/lib/channel/http_server_filter.c",
-        "src/core/lib/channel/message_size_filter.c",
         "src/core/lib/compression/compression.c",
         "src/core/lib/compression/message_compress.c",
         "src/core/lib/debug/trace.c",
@@ -578,16 +578,11 @@ grpc_cc_library(
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
-        "src/core/lib/channel/compress_filter.h",
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
-        "src/core/lib/channel/deadline_filter.h",
         "src/core/lib/channel/handshaker.h",
         "src/core/lib/channel/handshaker_factory.h",
         "src/core/lib/channel/handshaker_registry.h",
-        "src/core/lib/channel/http_client_filter.h",
-        "src/core/lib/channel/http_server_filter.h",
-        "src/core/lib/channel/message_size_filter.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/debug/trace.h",
@@ -756,6 +751,7 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
+        "grpc_deadline_filter",
     ],
 )
 
@@ -766,6 +762,53 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/max_age/max_age_filter.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_deadline_filter",
+    srcs = [
+        "src/core/ext/filters/deadline/deadline_filter.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/deadline/deadline_filter.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_message_size_filter",
+    srcs = [
+        "src/core/ext/filters/message_size/message_size_filter.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/message_size/message_size_filter.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_http_filters",
+    hdrs = [
+        "src/core/ext/filters/http/message_compress/message_compress_filter.h",
+        "src/core/ext/filters/http/client/http_client_filter.h",
+        "src/core/ext/filters/http/server/http_server_filter.h",
+    ],
+    srcs = [
+        "src/core/ext/filters/http/message_compress/message_compress_filter.c",
+        "src/core/ext/filters/http/client/http_client_filter.c",
+        "src/core/ext/filters/http/server/http_server_filter.c",
+        "src/core/ext/filters/http/http_filters_plugin.c"
     ],
     language = "c",
     deps = [
@@ -1035,6 +1078,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_transport_chttp2_alpn",
+        "grpc_http_filters",
     ],
 )
 

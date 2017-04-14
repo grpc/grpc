@@ -102,10 +102,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
-  CompletionQueue() {
-    cq_ = g_core_codegen_interface->grpc_completion_queue_create(nullptr);
-    InitialAvalanching();  // reserve this for the future shutdown
-  }
+  CompletionQueue() : CompletionQueue(false) {}
 
   /// Wrap \a take, taking ownership of the instance.
   ///
@@ -218,6 +215,18 @@ class CompletionQueue : private GrpcLibraryCodegen {
                                   const InputMessage& request,
                                   OutputMessage* result);
 
+  /// Private constructor of CompletionQueue only visible to friend classes
+  CompletionQueue(bool is_pluck) {
+    if (is_pluck) {
+      cq_ = g_core_codegen_interface->grpc_completion_queue_create_for_pluck(
+          nullptr);
+    } else {
+      cq_ = g_core_codegen_interface->grpc_completion_queue_create_for_next(
+          nullptr);
+    }
+    InitialAvalanching();  // reserve this for the future shutdown
+  }
+
   NextStatus AsyncNextInternal(void** tag, bool* ok, gpr_timespec deadline);
 
   /// Wraps \a grpc_completion_queue_pluck.
@@ -237,6 +246,12 @@ class CompletionQueue : private GrpcLibraryCodegen {
 
   /// Performs a single polling pluck on \a tag.
   /// \warning Must not be mixed with calls to \a Next.
+  ///
+  /// TODO: sreek - This calls tag->FinalizeResult() even if the cq_ is already
+  /// shutdown. This is most likely a bug and if it is a bug, then change this
+  /// implementation to simple call the other TryPluck function with a zero
+  /// timeout. i.e:
+  ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
   void TryPluck(CompletionQueueTag* tag) {
     auto deadline = g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
@@ -245,6 +260,23 @@ class CompletionQueue : private GrpcLibraryCodegen {
     bool ok = ev.success != 0;
     void* ignored = tag;
     // the tag must be swallowed if using TryPluck
+    GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
+  }
+
+  /// Performs a single polling pluck on \a tag. Calls tag->FinalizeResult if
+  /// the pluck() was successful and returned the tag.
+  ///
+  /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
+  /// that the tag is internal not something that is returned to the user.
+  void TryPluck(CompletionQueueTag* tag, gpr_timespec deadline) {
+    auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
+        cq_, tag, deadline, nullptr);
+    if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
+      return;
+    }
+
+    bool ok = ev.success != 0;
+    void* ignored = tag;
     GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
 

@@ -34,14 +34,14 @@
 /* I don't like using #ifndef, but I don't see a better way to do this */
 #ifndef GRPC_UV
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 
+#include "call.h"
+#include "completion_queue.h"
 #include "grpc/grpc.h"
 #include "grpc/support/log.h"
 #include "grpc/support/time.h"
-#include "completion_queue.h"
-#include "call.h"
 
 namespace grpc {
 namespace node {
@@ -111,8 +111,8 @@ CompletionQueueAsyncWorker::CompletionQueueAsyncWorker()
 CompletionQueueAsyncWorker::~CompletionQueueAsyncWorker() {}
 
 void CompletionQueueAsyncWorker::Execute() {
-  result =
-      grpc_completion_queue_next(queue, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  result = grpc_completion_queue_next(queue, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                      NULL);
   if (!result.success) {
     SetErrorMessage("The async function encountered an error");
   }
@@ -141,7 +141,7 @@ void CompletionQueueAsyncWorker::Init(Local<Object> exports) {
   Nan::HandleScope scope;
   current_threads = 0;
   waiting_next_calls = 0;
-  queue = grpc_completion_queue_create(NULL);
+  queue = grpc_completion_queue_create_for_next(NULL);
 }
 
 void CompletionQueueAsyncWorker::HandleOKCallback() {
@@ -168,9 +168,7 @@ grpc_completion_queue *GetCompletionQueue() {
   return CompletionQueueAsyncWorker::GetQueue();
 }
 
-void CompletionQueueNext() {
-  CompletionQueueAsyncWorker::Next();
-}
+void CompletionQueueNext() { CompletionQueueAsyncWorker::Next(); }
 
 void CompletionQueueInit(Local<Object> exports) {
   CompletionQueueAsyncWorker::Init(exports);
@@ -179,4 +177,4 @@ void CompletionQueueInit(Local<Object> exports) {
 }  // namespace node
 }  // namespace grpc
 
-#endif  /* GRPC_UV */
+#endif /* GRPC_UV */

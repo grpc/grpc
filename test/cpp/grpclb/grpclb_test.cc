@@ -593,7 +593,7 @@ static void setup_client(const server_fixture *lb_server,
       grpc_channel_args_copy_and_add(NULL, &expected_target_arg, 1);
   gpr_free(expected_target_names);
 
-  cf->cq = grpc_completion_queue_create(NULL);
+  cf->cq = grpc_completion_queue_create_for_next(NULL);
   cf->server_uri = lb_uri;
   grpc_channel_credentials *fake_creds =
       grpc_fake_transport_security_credentials_create();
@@ -616,7 +616,7 @@ static void teardown_client(client_fixture *cf) {
 static void setup_server(const char *host, server_fixture *sf) {
   int assigned_port;
 
-  sf->cq = grpc_completion_queue_create(NULL);
+  sf->cq = grpc_completion_queue_create_for_next(NULL);
   const char *colon_idx = strchr(host, ':');
   if (colon_idx) {
     const char *port_str = colon_idx + 1;
@@ -643,10 +643,15 @@ static void teardown_server(server_fixture *sf) {
   if (!sf->server) return;
 
   gpr_log(GPR_INFO, "Server[%s] shutting down", sf->servers_hostport);
-  grpc_server_shutdown_and_notify(sf->server, sf->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 sf->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
+
+  grpc_completion_queue *shutdown_cq =
+      grpc_completion_queue_create_for_pluck(NULL);
+  grpc_server_shutdown_and_notify(sf->server, shutdown_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
+                                         grpc_timeout_seconds_to_deadline(5),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
+  grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(sf->server);
   gpr_thd_join(sf->tid);
 

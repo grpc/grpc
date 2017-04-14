@@ -735,7 +735,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   g_active_call = new_call(NULL, ROOT);
   g_resource_quota = grpc_resource_quota_create("api_fuzzer");
 
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
 
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
          pending_channel_watches > 0 || pending_pings > 0 ||
