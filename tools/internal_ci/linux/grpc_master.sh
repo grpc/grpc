@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,13 @@ gcc --version || true
 clang --version || true
 docker --version || true
 
+# Need to increase open files limit for c tests
+ulimit -n 2000
+
 git submodule update --init
 
+# download docker images from dockerhub
+export DOCKERHUB_ORGANIZATION=grpctesting
 tools/run_tests/run_tests.py -l c -t -x sponge_log.xml || FAILED="true"
 
 # kill port_server.py to prevent the build from hanging

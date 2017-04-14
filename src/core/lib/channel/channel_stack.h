@@ -56,6 +56,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/transport.h"
 
 #ifdef __cplusplus
@@ -84,6 +85,7 @@ typedef struct {
   grpc_slice path;
   gpr_timespec start_time;
   gpr_timespec deadline;
+  gpr_arena *arena;
 } grpc_call_element_args;
 
 typedef struct {
@@ -110,9 +112,9 @@ typedef struct {
 typedef struct {
   /* Called to eg. send/receive data on a call.
      See grpc_call_next_op on how to call the next element in the stack */
-  void (*start_transport_stream_op)(grpc_exec_ctx *exec_ctx,
-                                    grpc_call_element *elem,
-                                    grpc_transport_stream_op *op);
+  void (*start_transport_stream_op_batch)(grpc_exec_ctx *exec_ctx,
+                                          grpc_call_element *elem,
+                                          grpc_transport_stream_op_batch *op);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
@@ -128,22 +130,23 @@ typedef struct {
      server_transport_data is an opaque pointer. If it is NULL, this call is
      on a client; if it is non-NULL, then it points to memory owned by the
      transport and is on the server. Most filters want to ignore this
-     argument. */
+     argument.
+     Implementations may assume that elem->call_data is all zeros. */
   grpc_error *(*init_call_elem)(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem,
-                                grpc_call_element_args *args);
+                                const grpc_call_element_args *args);
   void (*set_pollset_or_pollset_set)(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_polling_entity *pollent);
   /* Destroy per call data.
      The filter does not need to do any chaining.
      The bottom filter of a stack will be passed a non-NULL pointer to
-     \a and_free_memory that should be passed to gpr_free when destruction
-     is complete. \a final_info contains data about the completed call, mainly
-     for reporting purposes. */
+     \a then_schedule_closure that should be passed to grpc_closure_sched when
+     destruction is complete. \a final_info contains data about the completed
+     call, mainly for reporting purposes. */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             const grpc_call_final_info *final_info,
-                            void *and_free_memory);
+                            grpc_closure *then_schedule_closure);
 
   /* sizeof(per channel data) */
   size_t sizeof_channel_data;
@@ -152,7 +155,8 @@ typedef struct {
      is what needs initializing.
      is_first, is_last designate this elements position in the stack, and are
      useful for asserting correct configuration by upper layer code.
-     The filter does not need to do any chaining */
+     The filter does not need to do any chaining.
+     Implementations may assume that elem->call_data is all zeros. */
   grpc_error *(*init_channel_elem)(grpc_exec_ctx *exec_ctx,
                                    grpc_channel_element *elem,
                                    grpc_channel_element_args *args);
@@ -234,12 +238,11 @@ void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
 /* Initialize a call stack given a channel stack. transport_server_data is
    expected to be NULL on a client, or an opaque transport owned pointer on the
    server. */
-grpc_error *grpc_call_stack_init(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
-    int initial_refs, grpc_iomgr_cb_func destroy, void *destroy_arg,
-    grpc_call_context_element *context, const void *transport_server_data,
-    grpc_slice path, gpr_timespec start_time, gpr_timespec deadline,
-    grpc_call_stack *call_stack);
+grpc_error *grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_stack *channel_stack,
+                                 int initial_refs, grpc_iomgr_cb_func destroy,
+                                 void *destroy_arg,
+                                 const grpc_call_element_args *elem_args);
 /* Set a pollset or a pollset_set for a call stack: must occur before the first
  * op is started */
 void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
@@ -269,7 +272,7 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
                              const grpc_call_final_info *final_info,
-                             void *and_free_memory);
+                             grpc_closure *then_schedule_closure);
 
 /* Ignore set pollset{_set} - used by filters if they don't care about pollsets
  * at all. Does nothing. */
@@ -278,7 +281,7 @@ void grpc_call_stack_ignore_set_pollset_or_pollset_set(
     grpc_polling_entity *pollent);
 /* Call the next operation in a call stack */
 void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                       grpc_transport_stream_op *op);
+                       grpc_transport_stream_op_batch *op);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
 void grpc_channel_next_op(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
@@ -297,7 +300,8 @@ grpc_channel_stack *grpc_channel_stack_from_top_element(
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem, grpc_transport_stream_op *op);
+                      grpc_call_element *elem,
+                      grpc_transport_stream_op_batch *op);
 
 void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *cur_elem,

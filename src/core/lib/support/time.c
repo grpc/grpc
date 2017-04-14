@@ -42,7 +42,7 @@
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
   GPR_ASSERT(a.clock_type == b.clock_type);
-  if (cmp == 0) {
+  if (cmp == 0 && a.tv_sec != INT64_MAX && a.tv_sec != INT64_MIN) {
     cmp = (a.tv_nsec > b.tv_nsec) - (a.tv_nsec < b.tv_nsec);
   }
   return cmp;
@@ -244,15 +244,9 @@ gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
     return t;
   }
 
-  if (t.tv_nsec == 0) {
-    if (t.tv_sec == INT64_MAX) {
-      t.clock_type = clock_type;
-      return t;
-    }
-    if (t.tv_sec == INT64_MIN) {
-      t.clock_type = clock_type;
-      return t;
-    }
+  if (t.tv_sec == INT64_MAX || t.tv_sec == INT64_MIN) {
+    t.clock_type = clock_type;
+    return t;
   }
 
   if (clock_type == GPR_TIMESPAN) {

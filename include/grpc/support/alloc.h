@@ -44,6 +44,7 @@ extern "C" {
 
 typedef struct gpr_allocation_functions {
   void *(*malloc_fn)(size_t size);
+  void *(*zalloc_fn)(size_t size); /* if NULL, uses malloc_fn then memset */
   void *(*realloc_fn)(void *ptr, size_t size);
   void (*free_fn)(void *ptr);
 } gpr_allocation_functions;
@@ -54,6 +55,8 @@ typedef struct gpr_allocation_functions {
  * contain.
  */
 GPRAPI void *gpr_malloc(size_t size);
+/* like malloc, but zero all bytes before returning them */
+GPRAPI void *gpr_zalloc(size_t size);
 /* free */
 GPRAPI void gpr_free(void *ptr);
 /* realloc, never returns NULL */
@@ -65,7 +68,8 @@ GPRAPI void gpr_free_aligned(void *ptr);
 
 /** Request the family of allocation functions in \a functions be used. NOTE
  * that this request will be honored in a *best effort* basis and that no
- * guarantees are made about the default functions (eg, malloc) being called. */
+ * guarantees are made about the default functions (eg, malloc) being called.
+ * The functions.free_fn implementation must be a no-op for NULL input. */
 GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions);
 
 /** Return the family of allocation functions currently in effect. */

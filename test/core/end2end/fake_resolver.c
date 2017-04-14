@@ -42,9 +42,9 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/lb_policy_factory.h"
-#include "src/core/ext/client_channel/parse_address.h"
-#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -213,7 +213,7 @@ static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
   r->channel_args = grpc_channel_args_copy(args->args);
   r->addresses = addresses;
   gpr_mu_init(&r->mu);
-  grpc_resolver_init(&r->base, &fake_resolver_vtable);
+  grpc_resolver_init(&r->base, &fake_resolver_vtable, args->combiner);
   return &r->base;
 }
 

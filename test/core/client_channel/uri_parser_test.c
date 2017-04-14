@@ -31,35 +31,41 @@
  *
  */
 
-#include "src/core/ext/client_channel/uri_parser.h"
+#include "src/core/ext/filters/client_channel/uri_parser.h"
 
 #include <string.h>
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 static void test_succeeds(const char *uri_text, const char *scheme,
                           const char *authority, const char *path,
                           const char *query, const char *fragment) {
-  grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
   GPR_ASSERT(uri);
   GPR_ASSERT(0 == strcmp(scheme, uri->scheme));
   GPR_ASSERT(0 == strcmp(authority, uri->authority));
   GPR_ASSERT(0 == strcmp(path, uri->path));
   GPR_ASSERT(0 == strcmp(query, uri->query));
   GPR_ASSERT(0 == strcmp(fragment, uri->fragment));
+  grpc_exec_ctx_finish(&exec_ctx);
   grpc_uri_destroy(uri);
 }
 
 static void test_fails(const char *uri_text) {
-  GPR_ASSERT(NULL == grpc_uri_parse(uri_text, 0));
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GPR_ASSERT(NULL == grpc_uri_parse(&exec_ctx, uri_text, 0));
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_query_parts() {
   {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     const char *uri_text = "http://foo/path?a&b=B&c=&#frag";
-    grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+    grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
     GPR_ASSERT(uri);
 
     GPR_ASSERT(0 == strcmp("http", uri->scheme));
@@ -86,12 +92,14 @@ static void test_query_parts() {
     GPR_ASSERT(NULL == grpc_uri_get_query_arg(uri, ""));
 
     GPR_ASSERT(0 == strcmp("frag", uri->fragment));
+    grpc_exec_ctx_finish(&exec_ctx);
     grpc_uri_destroy(uri);
   }
   {
     /* test the current behavior of multiple query part values */
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     const char *uri_text = "http://auth/path?foo=bar=baz&foobar==";
-    grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+    grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
     GPR_ASSERT(uri);
 
     GPR_ASSERT(0 == strcmp("http", uri->scheme));
@@ -103,12 +111,14 @@ static void test_query_parts() {
     GPR_ASSERT(0 == strcmp("bar", grpc_uri_get_query_arg(uri, "foo")));
     GPR_ASSERT(0 == strcmp("", grpc_uri_get_query_arg(uri, "foobar")));
 
+    grpc_exec_ctx_finish(&exec_ctx);
     grpc_uri_destroy(uri);
   }
   {
     /* empty query */
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     const char *uri_text = "http://foo/path";
-    grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+    grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
     GPR_ASSERT(uri);
 
     GPR_ASSERT(0 == strcmp("http", uri->scheme));
@@ -119,6 +129,7 @@ static void test_query_parts() {
     GPR_ASSERT(NULL == uri->query_parts);
     GPR_ASSERT(NULL == uri->query_parts_values);
     GPR_ASSERT(0 == strcmp("", uri->fragment));
+    grpc_exec_ctx_finish(&exec_ctx);
     grpc_uri_destroy(uri);
   }
 }
@@ -142,6 +153,8 @@ int main(int argc, char **argv) {
   test_succeeds("http:?legit#twice", "http", "", "", "legit", "twice");
   test_succeeds("http://foo?bar#lol?", "http", "foo", "", "bar", "lol?");
   test_succeeds("http://foo?bar#lol?/", "http", "foo", "", "bar", "lol?/");
+  test_succeeds("ipv6:[2001:db8::1%252]:12345", "ipv6", "",
+                "[2001:db8::1%2]:12345", "", "");
 
   test_fails("xyz");
   test_fails("http:?dangling-pct-%0");

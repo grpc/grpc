@@ -87,6 +87,9 @@ typedef struct grpc_call grpc_call;
 /** The Socket Mutator interface allows changes on socket options */
 typedef struct grpc_socket_mutator grpc_socket_mutator;
 
+/** The Socket Factory interface creates and binds sockets */
+typedef struct grpc_socket_factory grpc_socket_factory;
+
 /** Type specifier for grpc_arg */
 typedef enum {
   GRPC_ARG_STRING,
@@ -149,6 +152,9 @@ typedef struct {
 #define GRPC_ARG_ENABLE_CENSUS "grpc.census"
 /** If non-zero, enable load reporting. */
 #define GRPC_ARG_ENABLE_LOAD_REPORTING "grpc.loadreporting"
+/** Request that optional features default to off (regardless of what they
+    usually default to) - to enable tight control over what gets enabled */
+#define GRPC_ARG_MINIMAL_STACK "grpc.minimal_stack"
 /** Maximum number of concurrent incoming streams to allow on a http2
     connection. Int valued. */
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
@@ -160,6 +166,15 @@ typedef struct {
 /** Maximum message length that the channel can send. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
+/** Maximum time that a channel may have no outstanding rpcs. Int valued,
+    milliseconds. INT_MAX means unlimited. */
+#define GRPC_ARG_MAX_CONNECTION_IDLE_MS "grpc.max_connection_idle_ms"
+/** Maximum time that a channel may exist. Int valued, milliseconds. INT_MAX
+   means unlimited. */
+#define GRPC_ARG_MAX_CONNECTION_AGE_MS "grpc.max_connection_age_ms"
+/** Grace period after the chennel reaches its max age. Int valued,
+   milliseconds. INT_MAX means unlimited. */
+#define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
 /** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
@@ -190,9 +205,32 @@ typedef struct {
      a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
+/** How many misbehaving pings the server can bear before sending goaway and
+    closing the transport?
+    (0 indicates that the server can bear an infinite number of misbehaving
+     pings) */
+#define GRPC_ARG_HTTP2_MAX_PING_STRIKES "grpc.http2.max_ping_strikes"
+/** Minimum allowed time between two pings without sending any data frame. Int
+    valued, seconds */
+#define GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS \
+  "grpc.http2.min_ping_interval_without_data_ms"
 /** How much data are we willing to queue up per stream if
     GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
+/** Should we allow receipt of true-binary data on http2 connections?
+    Defaults to on (1) */
+#define GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY "grpc.http2.true_binary"
+/** After a duration of this time the client/server pings its peer to see if the
+    transport is still alive. Int valued, milliseconds. */
+#define GRPC_ARG_KEEPALIVE_TIME_MS "grpc.keepalive_time_ms"
+/** After waiting for a duration of this time, if the keepalive ping sender does
+    not receive the ping ack, it will close the transport. Int valued,
+    milliseconds. */
+#define GRPC_ARG_KEEPALIVE_TIMEOUT_MS "grpc.keepalive_timeout_ms"
+/** Is it permissible to send keepalive pings without any outstanding streams.
+    Int valued, 0(false)/1(true). */
+#define GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS \
+  "grpc.keepalive_permit_without_calls"
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
@@ -230,6 +268,20 @@ typedef struct {
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
+/** The grpc_socket_factory instance to create and bind sockets. A pointer. */
+#define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
+/** If non-zero, Cronet transport will coalesce packets to fewer frames when
+ * possible. */
+#define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
+  "grpc.use_cronet_packet_coalescing"
+/* Channel arg (integer) setting how large a slice to try and read from the wire
+each time recvmsg (or equivalent) is called */
+#define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
+#define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
+#define GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE \
+  "grpc.experimental.tcp_min_read_chunk_size"
+#define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
+  "grpc.experimental.tcp_max_read_chunk_size"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -297,13 +349,16 @@ typedef enum grpc_call_error {
 /** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
     by the calling application. */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
+/** Signal that the initial metadata should be corked */
+#define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK       \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY |     \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |  \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
+#define GRPC_INITIAL_METADATA_USED_MASK                  \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |            \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
+   GRPC_INITIAL_METADATA_CORKED)
 
 /** A single metadata element */
 typedef struct grpc_metadata {

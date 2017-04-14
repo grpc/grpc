@@ -33,13 +33,16 @@
 
 #include <grpc++/server_context.h>
 
+#include <algorithm>
 #include <mutex>
+#include <utility>
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/support/time.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -133,8 +136,7 @@ ServerContext::ServerContext()
       sent_initial_metadata_(false),
       compression_level_set_(false) {}
 
-ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
-                             size_t metadata_count)
+ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
     : completion_op_(nullptr),
       has_notify_when_done_tag_(false),
       async_notify_when_done_tag_(nullptr),
@@ -143,12 +145,8 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
       cq_(nullptr),
       sent_initial_metadata_(false),
       compression_level_set_(false) {
-  for (size_t i = 0; i < metadata_count; i++) {
-    client_metadata_.map()->insert(
-        std::pair<grpc::string_ref, grpc::string_ref>(
-            StringRefFromSlice(&metadata[i].key),
-            StringRefFromSlice(&metadata[i].value)));
-  }
+  std::swap(*client_metadata_.arr(), *arr);
+  client_metadata_.FillMap();
 }
 
 ServerContext::~ServerContext() {
@@ -222,6 +220,22 @@ grpc::string ServerContext::peer() const {
 
 const struct census_context* ServerContext::census_context() const {
   return grpc_census_call_get_context(call_);
+}
+
+void ServerContext::SetLoadReportingCosts(
+    const std::vector<grpc::string>& cost_data) {
+  if (call_ == nullptr) return;
+  grpc_load_reporting_cost_context* cost_ctx =
+      static_cast<grpc_load_reporting_cost_context*>(
+          gpr_malloc(sizeof(*cost_ctx)));
+  cost_ctx->values_count = cost_data.size();
+  cost_ctx->values = static_cast<grpc_slice*>(
+      gpr_malloc(sizeof(*cost_ctx->values) * cost_ctx->values_count));
+  for (size_t i = 0; i < cost_ctx->values_count; ++i) {
+    cost_ctx->values[i] =
+        grpc_slice_from_copied_buffer(cost_data[i].data(), cost_data[i].size());
+  }
+  grpc_call_set_load_reporting_cost_context(call_, cost_ctx);
 }
 
 }  // namespace grpc

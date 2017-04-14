@@ -212,10 +212,19 @@ void plugin_destroy_state(void *ptr) {
   efree(state);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_createComposite, 0, 0, 2)
+  ZEND_ARG_INFO(0, creds1)
+  ZEND_ARG_INFO(0, creds2)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_createFromPlugin, 0, 0, 1)
+  ZEND_ARG_INFO(0, callback)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry call_credentials_methods[] = {
-  PHP_ME(CallCredentials, createComposite, NULL,
+  PHP_ME(CallCredentials, createComposite, arginfo_createComposite,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(CallCredentials, createFromPlugin, NULL,
+  PHP_ME(CallCredentials, createFromPlugin, arginfo_createFromPlugin,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_FE_END
 };

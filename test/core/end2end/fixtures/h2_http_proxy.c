@@ -42,14 +42,14 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
-#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
-#include "test/core/end2end/fixtures/http_proxy.h"
+#include "test/core/end2end/fixtures/http_proxy_fixture.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

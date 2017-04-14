@@ -109,7 +109,8 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *vargs, grpc_endpoint *tcp,
                        grpc_tcp_server_acceptor *acceptor) {
   gpr_free(acceptor);
   struct server_thread_args *args = (struct server_thread_args *)vargs;
-  grpc_endpoint_shutdown(exec_ctx, tcp, GRPC_ERROR_CREATE("Connected"));
+  grpc_endpoint_shutdown(exec_ctx, tcp,
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(exec_ctx, tcp);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
 }
@@ -215,7 +216,7 @@ int main(int argc, char **argv) {
 
   /* Third round, bogus tcp server */
   gpr_log(GPR_DEBUG, "Wave 3");
-  args.pollset = gpr_malloc(grpc_pollset_size());
+  args.pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(args.pollset, &args.mu);
   gpr_event_init(&args.ready);
   gpr_thd_new(&server, bad_server_thread, &args, &options);

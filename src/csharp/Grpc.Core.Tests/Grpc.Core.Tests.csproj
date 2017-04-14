@@ -1,102 +1,37 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Grpc.Core\Version.csproj.include" />
+  <Import Project="..\Grpc.Core\Common.csproj.include" />
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{86EC5CB4-4EA2-40A2-8057-86542A0353BB}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>Grpc.Core.Tests</RootNamespace>
+    <TargetFrameworks>net45;netcoreapp1.0</TargetFrameworks>
     <AssemblyName>Grpc.Core.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <OutputType>Exe</OutputType>
+    <PackageId>Grpc.Core.Tests</PackageId>
+    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">$(PackageTargetFallback);portable-net45</PackageTargetFallback>
+    <RuntimeFrameworkVersion Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">1.0.4</RuntimeFrameworkVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="NUnit" Version="3.6.0" />
+    <PackageReference Include="NUnitLite" Version="3.6.0" />
+    <PackageReference Include="NUnit.ConsoleRunner" Version="3.6.0" />
+    <PackageReference Include="OpenCover" Version="4.6.519" />
+    <PackageReference Include="ReportGenerator" Version="2.4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.3.2.0\lib\net45\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="nunitlite">
-      <HintPath>..\packages\NUnitLite.3.2.0\lib\net45\nunitlite.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Interactive.Async">
-      <HintPath>..\packages\System.Interactive.Async.3.1.1\lib\net45\System.Interactive.Async.dll</HintPath>
-    </Reference>
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="..\Grpc.Core\Version.cs">
-      <Link>Version.cs</Link>
-    </Compile>
-    <Compile Include="CallCredentialsTest.cs" />
-    <Compile Include="CallOptionsTest.cs" />
-    <Compile Include="UserAgentStringTest.cs" />
-    <Compile Include="FakeCredentials.cs" />
-    <Compile Include="MarshallingErrorsTest.cs" />
-    <Compile Include="ChannelCredentialsTest.cs" />
-    <Compile Include="ShutdownTest.cs" />
-    <Compile Include="Internal\AsyncCallTest.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ClientServerTest.cs" />
-    <Compile Include="ServerTest.cs" />
-    <Compile Include="GrpcEnvironmentTest.cs" />
-    <Compile Include="PInvokeTest.cs" />
-    <Compile Include="Internal\MetadataArraySafeHandleTest.cs" />
-    <Compile Include="Internal\CompletionQueueSafeHandleTest.cs" />
-    <Compile Include="Internal\CompletionQueueEventTest.cs" />
-    <Compile Include="Internal\ChannelArgsSafeHandleTest.cs" />
-    <Compile Include="ChannelOptionsTest.cs" />
-    <Compile Include="Internal\TimespecTest.cs" />
-    <Compile Include="TimeoutsTest.cs" />
-    <Compile Include="NUnitVersionTest.cs" />
-    <Compile Include="ChannelTest.cs" />
-    <Compile Include="MockServiceHelper.cs" />
-    <Compile Include="ResponseHeadersTest.cs" />
-    <Compile Include="CompressionTest.cs" />
-    <Compile Include="ContextPropagationTest.cs" />
-    <Compile Include="MetadataTest.cs" />
-    <Compile Include="PerformanceTest.cs" />
-    <Compile Include="SanityTest.cs" />
-    <Compile Include="HalfcloseTest.cs" />
-    <Compile Include="NUnitMain.cs" />
-    <Compile Include="Internal\FakeNativeCall.cs" />
-    <Compile Include="Internal\AsyncCallServerTest.cs" />
-    <Compile Include="ShutdownHookServerTest.cs" />
-    <Compile Include="ShutdownHookPendingCallTest.cs" />
-    <Compile Include="ShutdownHookClientTest.cs" />
-    <Compile Include="AppDomainUnloadTest.cs" />
+    <Compile Include="..\Grpc.Core\Version.cs" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <ProjectReference Include="..\Grpc.Core\Grpc.Core.csproj">
-      <Project>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</Project>
-      <Name>Grpc.Core</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Grpc.Core.Tests.project.json" />
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
-  </ItemGroup>
-  <ItemGroup />
+
 </Project>

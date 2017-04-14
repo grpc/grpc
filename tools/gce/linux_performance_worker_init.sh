@@ -40,11 +40,6 @@ sudo apt-get update
 sudo apt-get install -y openjdk-8-jdk
 sudo apt-get install -y unzip lsof
 
-# Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
-# This needs to happen as the last step to prevent Jenkins master from connecting
-# to a machine that hasn't been properly setup yet.
-cat jenkins_master.pub | sudo tee --append ~jenkins/.ssh/authorized_keys
-
 sudo apt-get install -y \
   autoconf \
   autotools-dev \
@@ -126,6 +121,7 @@ sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotne
 sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
 sudo apt-get update
 sudo apt-get install -y dotnet-dev-1.0.0-preview2-003131
+sudo apt-get install -y dotnet-dev-1.0.1
 
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
@@ -142,7 +138,7 @@ gem install bundler
 # Significant performance improvements with grpc-go have been observed after
 # upgrading from go 1.5 to a later version, so a later go version is preferred.
 # Following go install instructions from https://golang.org/doc/install
-GO_VERSION=1.7.1
+GO_VERSION=1.8
 OS=linux
 ARCH=amd64
 curl -O https://storage.googleapis.com/golang/go${GO_VERSION}.${OS}-${ARCH}.tar.gz
@@ -166,3 +162,23 @@ echo 4096 | sudo tee /proc/sys/kernel/perf_event_mlock_kb
 # on benchmarks
 git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 
+# Install scipy and numpy for benchmarking scripts
+sudo apt-get install python-scipy python-numpy
+
+# Update Linux kernel to 4.9
+wget \
+  kernel.ubuntu.com/~kernel-ppa/mainline/v4.9.20/linux-headers-4.9.20-040920_4.9.20-040920.201703310531_all.deb \
+  kernel.ubuntu.com/~kernel-ppa/mainline/v4.9.20/linux-headers-4.9.20-040920-generic_4.9.20-040920.201703310531_amd64.deb \
+  kernel.ubuntu.com/~kernel-ppa/mainline/v4.9.20/linux-image-4.9.20-040920-generic_4.9.20-040920.201703310531_amd64.deb
+sudo dpkg -i linux-headers-4.9*.deb linux-image-4.9*.deb
+rm linux-*
+
+# Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
+# This needs to happen as the last step to prevent Jenkins master from connecting
+# to a machine that hasn't been properly setup yet.
+cat jenkins_master.pub | sudo tee --append ~jenkins/.ssh/authorized_keys
+
+# Restart for VM to pick up kernel update
+echo 'Successfully initialized the linux worker, going for reboot in 10 seconds'
+sleep 10
+sudo reboot

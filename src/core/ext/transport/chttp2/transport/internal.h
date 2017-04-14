@@ -50,6 +50,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/pid_controller.h"
@@ -96,12 +97,21 @@ typedef struct {
 typedef struct {
   gpr_timespec min_time_between_pings;
   int max_pings_without_data;
+  int max_ping_strikes;
+  gpr_timespec min_ping_interval_without_data;
 } grpc_chttp2_repeated_ping_policy;
 
 typedef struct {
   gpr_timespec last_ping_sent_time;
   int pings_before_data_required;
+  grpc_timer delayed_ping_timer;
+  bool is_delayed_ping_timer_set;
 } grpc_chttp2_repeated_ping_state;
+
+typedef struct {
+  gpr_timespec last_ping_recv_time;
+  int ping_strikes;
+} grpc_chttp2_server_ping_recv_state;
 
 /* deframer state for the overall http2 stream of bytes */
 typedef enum {
@@ -208,6 +218,12 @@ struct grpc_chttp2_incoming_byte_stream {
   grpc_closure finished_action;
 };
 
+typedef enum {
+  GRPC_CHTTP2_KEEPALIVE_STATE_WAITING,
+  GRPC_CHTTP2_KEEPALIVE_STATE_PINGING,
+  GRPC_CHTTP2_KEEPALIVE_STATE_DYING,
+} grpc_chttp2_keepalive_state;
+
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   gpr_refcount refs;
@@ -271,10 +287,6 @@ struct grpc_chttp2_transport {
   /** data to write next write */
   grpc_slice_buffer qbuf;
 
-  /** window available to announce to peer */
-  int64_t announce_incoming_window;
-  /** how much window would we like to have for incoming_window */
-  uint32_t connection_window_target;
   /** how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
    */
   uint32_t write_buffer_size;
@@ -305,11 +317,13 @@ struct grpc_chttp2_transport {
   grpc_chttp2_repeated_ping_policy ping_policy;
   grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr; /* unique id for pings */
+  grpc_closure retry_initiate_ping_locked;
 
   /** ping acks */
   size_t ping_ack_count;
   size_t ping_ack_capacity;
   uint64_t *ping_acks;
+  grpc_chttp2_server_ping_recv_state ping_recv_state;
 
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
@@ -328,6 +342,16 @@ struct grpc_chttp2_transport {
 
   /** window available for peer to send to us */
   int64_t incoming_window;
+  /** calculating what we should give for incoming window:
+      we track the total amount of flow control over initial window size
+      across all streams: this is data that we want to receive right now (it
+      has an outstanding read)
+      and the total amount of flow control under initial window size across all
+      streams: this is data we've read early
+      we want to adjust incoming_window such that:
+      incoming_window = total_over - max(bdp - total_under, 0) */
+  int64_t stream_total_over_incoming_window;
+  int64_t stream_total_under_incoming_window;
 
   /* deframing */
   grpc_chttp2_deframe_transport_state deframe_state;
@@ -376,6 +400,28 @@ struct grpc_chttp2_transport {
   grpc_closure benign_reclaimer_locked;
   /** destructive cleanup closure */
   grpc_closure destructive_reclaimer_locked;
+
+  /* keep-alive ping support */
+  /** Closure to initialize a keepalive ping */
+  grpc_closure init_keepalive_ping_locked;
+  /** Closure to run when the keepalive ping is sent */
+  grpc_closure start_keepalive_ping_locked;
+  /** Cousure to run when the keepalive ping ack is received */
+  grpc_closure finish_keepalive_ping_locked;
+  /** Closrue to run when the keepalive ping timeouts */
+  grpc_closure keepalive_watchdog_fired_locked;
+  /** timer to initiate ping events */
+  grpc_timer keepalive_ping_timer;
+  /** watchdog to kill the transport when waiting for the keepalive ping */
+  grpc_timer keepalive_watchdog_timer;
+  /** time duration in between pings */
+  gpr_timespec keepalive_time;
+  /** grace period for a ping to complete before watchdog kicks in */
+  gpr_timespec keepalive_timeout;
+  /** if keepalive pings are allowed when there's no outstanding streams */
+  bool keepalive_permit_without_calls;
+  /** keep-alive state machine state */
+  grpc_chttp2_keepalive_state keepalive_state;
 };
 
 typedef enum {
@@ -390,7 +436,7 @@ struct grpc_chttp2_stream {
   grpc_stream_refcount *refcount;
 
   grpc_closure destroy_stream;
-  void *destroy_stream_arg;
+  grpc_closure *destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
   uint8_t included[STREAM_LIST_COUNT];
@@ -414,7 +460,6 @@ struct grpc_chttp2_stream {
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
   bool complete_fetch_covered_by_poller;
-  grpc_closure complete_fetch;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
 
@@ -634,6 +679,44 @@ typedef enum {
   GRPC_CHTTP2_FLOW_CREDIT_COMMON(phase, dst_context, 0, dst_context, dst_var,  \
                                  amount)
 
+#define GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_PREUPDATE( \
+    phase, transport, dst_context)                               \
+  if (dst_context->incoming_window_delta < 0) {                  \
+    transport->stream_total_under_incoming_window +=             \
+        dst_context->incoming_window_delta;                      \
+  } else if (dst_context->incoming_window_delta > 0) {           \
+    transport->stream_total_over_incoming_window -=              \
+        dst_context->incoming_window_delta;                      \
+  }
+
+#define GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_POSTUPDATE( \
+    phase, transport, dst_context)                                \
+  if (dst_context->incoming_window_delta < 0) {                   \
+    transport->stream_total_under_incoming_window -=              \
+        dst_context->incoming_window_delta;                       \
+  } else if (dst_context->incoming_window_delta > 0) {            \
+    transport->stream_total_over_incoming_window +=               \
+        dst_context->incoming_window_delta;                       \
+  }
+
+#define GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA(                 \
+    phase, transport, dst_context, amount)                                   \
+  GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_PREUPDATE(phase, transport,  \
+                                                          dst_context);      \
+  GRPC_CHTTP2_FLOW_DEBIT_STREAM(phase, transport, dst_context,               \
+                                incoming_window_delta, amount);              \
+  GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_POSTUPDATE(phase, transport, \
+                                                           dst_context);
+
+#define GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA(                \
+    phase, transport, dst_context, amount)                                   \
+  GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_PREUPDATE(phase, transport,  \
+                                                          dst_context);      \
+  GRPC_CHTTP2_FLOW_CREDIT_STREAM(phase, transport, dst_context,              \
+                                 incoming_window_delta, amount);             \
+  GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_POSTUPDATE(phase, transport, \
+                                                           dst_context);
+
 #define GRPC_CHTTP2_FLOW_DEBIT_COMMON(phase, transport, id, dst_context,       \
                                       dst_var, amount)                         \
   do {                                                                         \
@@ -717,6 +800,13 @@ void grpc_chttp2_incoming_byte_stream_finished(
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                           uint64_t id);
 
+/** Add a new ping strike to ping_recv_state.ping_strikes. If
+    ping_recv_state.ping_strikes > ping_policy.max_ping_strikes, it sends GOAWAY
+    with error code ENHANCE_YOUR_CALM and additional debug data resembling
+    “too_many_pings” followed by immediately closing the connection. */
+void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport *t);
+
 typedef enum {
   /* don't initiate a transport write, but piggyback on the next one */
   GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK,
@@ -751,5 +841,12 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      grpc_chttp2_stream *s, grpc_error *error);
+
+uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t);
+
+/** Set the default keepalive configurations, must only be called at
+    initialization */
+void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args,
+                                               bool is_client);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

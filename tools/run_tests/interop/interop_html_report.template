@@ -106,6 +106,30 @@
   % endfor
 % endif
 
+% if http2_server_cases:
+  <h2>HTTP/2 Server Tests</h2>
+  ## Each column header is the client language.
+  <table style="width:100%" border="1">
+  <tr bgcolor="#00BFFF">
+  <th>Client languages &#9658;<br/>Test Cases &#9660;</th>
+  % for client_lang in client_langs:
+    <th>${client_lang}</th>
+  % endfor
+  </tr>
+  % for test_case in http2_server_cases:
+    <tr><td><b>${test_case}</b></td>
+    % for client_lang in client_langs:
+      <% 
+        shortname = 'cloud_to_cloud:%s:http2_server:%s' % (client_lang, 
+                                                           test_case)
+      %>
+      ${fill_one_test_result(shortname, resultset)}
+    % endfor
+    </tr> 
+  % endfor
+  </table>
+% endif
+
 % if http2_interop:
   ## Each column header is the server language.
   <h2>HTTP/2 Interop</h2> 

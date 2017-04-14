@@ -22,7 +22,7 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
       <Filter>test\core\end2end</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.c">
       <Filter>test\core\end2end\fixtures</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
@@ -49,19 +49,16 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_server_client.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_uv.c">
-      <Filter>test\core\util</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
-      <Filter>test\core\util</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
@@ -172,6 +169,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -203,6 +203,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.c">
@@ -239,6 +242,15 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_posix.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_common.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_ifaddrs.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_noifaddrs.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_uv.c">
@@ -307,6 +319,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
       <Filter>src\core\lib\json</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\b64.c">
+      <Filter>src\core\lib\slice</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
       <Filter>src\core\lib\slice</Filter>
     </ClCompile>
@@ -359,6 +374,9 @@
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.c">
+      <Filter>src\core\lib\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
@@ -438,6 +456,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\load_reporting.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\slice.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
@@ -465,6 +486,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -487,9 +511,6 @@
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
@@ -518,7 +539,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h">
       <Filter>test\core\end2end</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.h">
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.h">
       <Filter>test\core\end2end\fixtures</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h">
@@ -552,6 +573,9 @@
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
@@ -659,6 +683,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -701,6 +728,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -723,6 +753,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_uv.h">
@@ -782,6 +815,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h">
       <Filter>src\core\lib\json</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\b64.h">
+      <Filter>src\core\lib\slice</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h">
       <Filter>src\core\lib\slice</Filter>
     </ClInclude>
@@ -813,6 +849,9 @@
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.h">
+      <Filter>src\core\lib\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\event_string.h">

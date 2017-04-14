@@ -159,6 +159,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_hostname.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_ping.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\binary_metadata.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\call_creds.c">
@@ -201,11 +203,17 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\invoke_large_request.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\keepalive_timeout.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\large_metadata.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\load_reporting_hook.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_concurrent_streams.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_connection_age.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_connection_idle.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_message_length.c">
     </ClCompile>

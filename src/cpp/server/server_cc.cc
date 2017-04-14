@@ -37,6 +37,7 @@
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/generic/async_generic_service.h>
+#include <grpc++/impl/codegen/async_unary_call.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/method_handler_impl.h>
@@ -51,6 +52,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/profiling/timers.h"
+#include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
@@ -186,9 +188,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
    public:
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
-          call_(mrd->call_, server, &cq_),
-          ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
-               mrd->request_metadata_.count),
+          call_(mrd->call_, server, &cq_, server->max_receive_message_size()),
+          ctx_(mrd->deadline_, &mrd->request_metadata_),
           has_request_payload_(mrd->has_request_payload_),
           request_payload_(mrd->request_payload_),
           method_(mrd->method_) {
@@ -342,6 +343,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   int cq_timeout_msec_;
   std::vector<std::unique_ptr<SyncRequest>> sync_requests_;
   std::unique_ptr<RpcServiceMethod> unknown_method_;
+  std::unique_ptr<RpcServiceMethod> health_check_;
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
 
@@ -358,7 +360,8 @@ Server::Server(
       shutdown_notified_(false),
       has_generic_service_(false),
       server_(nullptr),
-      server_initializer_(new ServerInitializer(this)) {
+      server_initializer_(new ServerInitializer(this)),
+      health_check_service_disabled_(false) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
@@ -373,6 +376,19 @@ Server::Server(
 
   grpc_channel_args channel_args;
   args->SetChannelArgs(&channel_args);
+
+  for (size_t i = 0; i < channel_args.num_args; i++) {
+    if (0 ==
+        strcmp(channel_args.args[i].key, kHealthCheckServiceInterfaceArg)) {
+      if (channel_args.args[i].value.pointer.p == nullptr) {
+        health_check_service_disabled_ = true;
+      } else {
+        health_check_service_.reset(static_cast<HealthCheckServiceInterface*>(
+            channel_args.args[i].value.pointer.p));
+      }
+      break;
+    }
+  }
 
   server_ = grpc_server_create(&channel_args, nullptr);
 }
@@ -473,13 +489,30 @@ void Server::RegisterAsyncGenericService(AsyncGenericService* service) {
 int Server::AddListeningPort(const grpc::string& addr,
                              ServerCredentials* creds) {
   GPR_ASSERT(!started_);
-  return creds->AddPortToServer(addr, server_);
+  int port = creds->AddPortToServer(addr, server_);
+  global_callbacks_->AddPort(this, port);
+  return port;
 }
 
 bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
   global_callbacks_->PreServerStart(this);
   started_ = true;
+
+  // Only create default health check service when user did not provide an
+  // explicit one.
+  if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
+      DefaultHealthCheckServiceEnabled()) {
+    if (sync_server_cqs_->empty()) {
+      gpr_log(GPR_ERROR,
+              "Default health check service disabled at async-only server.");
+    } else {
+      auto* default_hc_service = new DefaultHealthCheckService;
+      health_check_service_.reset(default_hc_service);
+      RegisterService(nullptr, default_hc_service->GetHealthCheckService());
+    }
+  }
+
   grpc_server_start(server_);
 
   if (!has_generic_service_) {
@@ -503,7 +536,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
   std::unique_lock<std::mutex> lock(mu_);
-  if (started_ && !shutdown_) {
+  if (!shutdown_) {
     shutdown_ = true;
 
     /// The completion queue to use for server shutdown completion notification
@@ -590,7 +623,7 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   }
   context_->set_call(call_);
   context_->cq_ = call_cq_;
-  Call call(call_, server_, call_cq_);
+  Call call(call_, server_, call_cq_, server_->max_receive_message_size());
   if (*status && call_) {
     context_->BeginCompletionOp(&call);
   }

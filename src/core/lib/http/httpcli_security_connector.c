@@ -43,11 +43,11 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 typedef struct {
   grpc_channel_security_connector base;
-  tsi_ssl_handshaker_factory *handshaker_factory;
+  tsi_ssl_client_handshaker_factory *handshaker_factory;
   char *secure_peer_name;
 } grpc_httpcli_ssl_channel_security_connector;
 
@@ -56,7 +56,7 @@ static void httpcli_ssl_destroy(grpc_exec_ctx *exec_ctx,
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
-    tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
+    tsi_ssl_client_handshaker_factory_destroy(c->handshaker_factory);
   }
   if (c->secure_peer_name != NULL) gpr_free(c->secure_peer_name);
   gpr_free(sc);
@@ -69,7 +69,7 @@ static void httpcli_ssl_add_handshakers(grpc_exec_ctx *exec_ctx,
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   tsi_handshaker *handshaker = NULL;
   if (c->handshaker_factory != NULL) {
-    tsi_result result = tsi_ssl_handshaker_factory_create_handshaker(
+    tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         c->handshaker_factory, c->secure_peer_name, &handshaker);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
@@ -95,7 +95,7 @@ static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
     char *msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
                  c->secure_peer_name);
-    error = GRPC_ERROR_CREATE(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
   }
   grpc_closure_sched(exec_ctx, on_peer_checked, error);
@@ -118,8 +118,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     return GRPC_SECURITY_ERROR;
   }
 
-  c = gpr_malloc(sizeof(grpc_httpcli_ssl_channel_security_connector));
-  memset(c, 0, sizeof(grpc_httpcli_ssl_channel_security_connector));
+  c = gpr_zalloc(sizeof(grpc_httpcli_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &httpcli_ssl_vtable;

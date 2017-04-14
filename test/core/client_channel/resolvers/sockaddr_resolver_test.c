@@ -37,10 +37,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/combiner.h"
 
 #include "test/core/util/test_config.h"
+
+static grpc_combiner *g_combiner;
 
 typedef struct on_resolution_arg {
   char *expected_server_name;
@@ -54,7 +57,7 @@ void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(string, 0);
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, string, 0);
   grpc_resolver_args args;
   grpc_resolver *resolver;
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
@@ -62,6 +65,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
+  args.combiner = g_combiner;
   resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   GPR_ASSERT(resolver != NULL);
 
@@ -71,8 +75,8 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   grpc_closure *on_resolution = grpc_closure_create(
       on_resolution_cb, &on_res_arg, grpc_schedule_on_exec_ctx);
 
-  grpc_resolver_next(&exec_ctx, resolver, &on_res_arg.resolver_result,
-                     on_resolution);
+  grpc_resolver_next_locked(&exec_ctx, resolver, &on_res_arg.resolver_result,
+                            on_resolution);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_succeeds");
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_uri_destroy(uri);
@@ -80,7 +84,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
 
 static void test_fails(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(string, 0);
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, string, 0);
   grpc_resolver_args args;
   grpc_resolver *resolver;
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
@@ -88,6 +92,7 @@ static void test_fails(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
+  args.combiner = g_combiner;
   resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   GPR_ASSERT(resolver == NULL);
   grpc_uri_destroy(uri);
@@ -98,6 +103,8 @@ int main(int argc, char **argv) {
   grpc_resolver_factory *ipv4, *ipv6;
   grpc_test_init(argc, argv);
   grpc_init();
+
+  g_combiner = grpc_combiner_create(NULL);
 
   ipv4 = grpc_resolver_factory_lookup("ipv4");
   ipv6 = grpc_resolver_factory_lookup("ipv6");
@@ -118,6 +125,12 @@ int main(int argc, char **argv) {
 
   grpc_resolver_factory_unref(ipv4);
   grpc_resolver_factory_unref(ipv6);
+
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    GRPC_COMBINER_UNREF(&exec_ctx, g_combiner, "test");
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   grpc_shutdown();
 
   return 0;

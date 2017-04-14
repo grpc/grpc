@@ -390,9 +390,9 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
     *r->addrs = addrs;
     grpc_closure_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE);
   } else {
-    grpc_closure_sched(
-        exec_ctx, r->on_done,
-        GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1));
+    grpc_closure_sched(exec_ctx, r->on_done,
+                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                           "Resolution failed", &error, 1));
   }
 
   gpr_free(r->addr);
@@ -461,8 +461,8 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = NULL;
-    grpc_closure_sched(exec_ctx, closure,
-                       GRPC_ERROR_CREATE("Connect deadline exceeded"));
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                              "Connect deadline exceeded"));
     return;
   }
 
@@ -719,10 +719,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
-  grpc_resolve_address = my_resolve_address;
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;
   grpc_init();
+  grpc_resolve_address = my_resolve_address;
 
   GPR_ASSERT(g_channel == NULL);
   GPR_ASSERT(g_server == NULL);

@@ -83,7 +83,11 @@ grpc_proto_library(
 grpc_proto_library(
     name = "services_proto",
     srcs = ["services.proto"],
-    deps = ["control_proto", "messages_proto"],
+    deps = [
+        "control_proto",
+        "messages_proto",
+        "stats_proto",
+    ],
 )
 
 grpc_proto_library(

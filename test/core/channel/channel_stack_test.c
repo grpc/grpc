@@ -57,7 +57,7 @@ static grpc_error *channel_init_func(grpc_exec_ctx *exec_ctx,
 
 static grpc_error *call_init_func(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   ++*(int *)(elem->channel_data);
   *(int *)(elem->call_data) = 0;
   return GRPC_ERROR_NONE;
@@ -68,12 +68,12 @@ static void channel_destroy_func(grpc_exec_ctx *exec_ctx,
 
 static void call_destroy_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {
+                              grpc_closure *ignored) {
   ++*(int *)(elem->channel_data);
 }
 
 static void call_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                      grpc_transport_stream_op *op) {
+                      grpc_transport_stream_op_batch *op) {
   ++*(int *)(elem->call_data);
 }
 
@@ -139,10 +139,16 @@ static void test_create_channel_stack(void) {
   GPR_ASSERT(*channel_data == 0);
 
   call_stack = gpr_malloc(channel_stack->call_stack_size);
-  grpc_error *error =
-      grpc_call_stack_init(&exec_ctx, channel_stack, 1, free_call, call_stack,
-                           NULL, NULL, path, gpr_now(GPR_CLOCK_MONOTONIC),
-                           gpr_inf_future(GPR_CLOCK_MONOTONIC), call_stack);
+  const grpc_call_element_args args = {
+      .call_stack = call_stack,
+      .server_transport_data = NULL,
+      .context = NULL,
+      .path = path,
+      .start_time = gpr_now(GPR_CLOCK_MONOTONIC),
+      .deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC),
+      .arena = NULL};
+  grpc_error *error = grpc_call_stack_init(&exec_ctx, channel_stack, 1,
+                                           free_call, call_stack, &args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);

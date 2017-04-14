@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     goto end;
   }
 
-  grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &sync.mu);
   sync.pops = grpc_polling_entity_create_from_pollset(pollset);
   sync.is_done = 0;

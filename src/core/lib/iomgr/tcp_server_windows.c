@@ -46,6 +46,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -102,7 +103,7 @@ struct grpc_tcp_server {
   /* shutdown callback */
   grpc_closure *shutdown_complete;
 
-  grpc_resource_quota *resource_quota;
+  grpc_channel_args *channel_args;
 };
 
 /* Public function. Allocates the proper data structures to hold a
@@ -112,21 +113,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
                                    const grpc_channel_args *args,
                                    grpc_tcp_server **server) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
-  s->resource_quota = grpc_resource_quota_create(NULL);
-  for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
-    if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
-        s->resource_quota =
-            grpc_resource_quota_ref_internal(args->args[i].value.pointer.p);
-      } else {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
-        gpr_free(s);
-        return GRPC_ERROR_CREATE(GRPC_ARG_RESOURCE_QUOTA
-                                 " must be a pointer to a buffer pool");
-      }
-    }
-  }
+  s->channel_args = grpc_channel_args_copy(args);
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
@@ -155,7 +142,7 @@ static void destroy_server(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_winsocket_destroy(sp->socket);
     gpr_free(sp);
   }
-  grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
+  grpc_channel_args_destroy(exec_ctx, s->channel_args);
   gpr_free(s);
 }
 
@@ -248,9 +235,10 @@ failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   char *tgtaddr = grpc_sockaddr_to_uri(addr);
   grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING(
+      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failed to prepare server socket", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS, tgtaddr),
+                         GRPC_ERROR_STR_TARGET_ADDRESS,
+                         grpc_slice_from_copied_string(tgtaddr)),
       GRPC_ERROR_INT_FD, (intptr_t)sock);
   gpr_free(tgtaddr);
   GRPC_ERROR_UNREF(error);
@@ -382,8 +370,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
         gpr_free(utf8_message);
       }
       gpr_asprintf(&fd_name, "tcp_server:%s", peer_name_string);
-      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name),
-                           sp->server->resource_quota, peer_name_string);
+      ep = grpc_tcp_create(exec_ctx, grpc_winsocket_create(sock, fd_name),
+                           sp->server->channel_args, peer_name_string);
       gpr_free(fd_name);
       gpr_free(peer_name_string);
     } else {
@@ -533,7 +521,7 @@ done:
   gpr_free(allocated_addr);
 
   if (error != GRPC_ERROR_NONE) {
-    grpc_error *error_out = GRPC_ERROR_CREATE_REFERENCING(
+    grpc_error *error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Failed to add port to server", &error, 1);
     GRPC_ERROR_UNREF(error);
     error = error_out;

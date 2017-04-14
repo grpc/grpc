@@ -53,8 +53,8 @@ static void stop_uv_timer(uv_timer_t *handle) {
 void run_expired_timer(uv_timer_t *handle) {
   grpc_timer *timer = (grpc_timer *)handle->data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GPR_ASSERT(!timer->triggered);
-  timer->triggered = 1;
+  GPR_ASSERT(timer->pending);
+  timer->pending = 0;
   grpc_closure_sched(&exec_ctx, timer->closure, GRPC_ERROR_NONE);
   stop_uv_timer(handle);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -67,22 +67,26 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   uv_timer_t *uv_timer;
   timer->closure = closure;
   if (gpr_time_cmp(deadline, now) <= 0) {
-    timer->triggered = 1;
+    timer->pending = 0;
     grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_NONE);
     return;
   }
-  timer->triggered = 0;
+  timer->pending = 1;
   timeout = (uint64_t)gpr_time_to_millis(gpr_time_sub(deadline, now));
   uv_timer = gpr_malloc(sizeof(uv_timer_t));
   uv_timer_init(uv_default_loop(), uv_timer);
   uv_timer->data = timer;
   timer->uv_timer = uv_timer;
   uv_timer_start(uv_timer, run_expired_timer, timeout, 0);
+  /* We assume that gRPC timers are only used alongside other active gRPC
+     objects, and that there will therefore always be something else keeping
+     the uv loop alive whenever there is a timer */
+  uv_unref((uv_handle_t *)uv_timer);
 }
 
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
-  if (!timer->triggered) {
-    timer->triggered = 1;
+  if (timer->pending) {
+    timer->pending = 0;
     grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
     stop_uv_timer((uv_timer_t *)timer->uv_timer);
   }

@@ -45,10 +45,10 @@
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/ssl_types.h"
+#include "src/core/tsi/ssl_types.h"
 
 /* --- Utils. --- */
 
@@ -144,8 +144,7 @@ static void jose_header_destroy(grpc_exec_ctx *exec_ctx, jose_header *h) {
 static jose_header *jose_header_from_json(grpc_exec_ctx *exec_ctx,
                                           grpc_json *json, grpc_slice buffer) {
   grpc_json *cur;
-  jose_header *h = gpr_malloc(sizeof(jose_header));
-  memset(h, 0, sizeof(jose_header));
+  jose_header *h = gpr_zalloc(sizeof(jose_header));
   h->buffer = buffer;
   for (cur = json->child; cur != NULL; cur = cur->next) {
     if (strcmp(cur->key, "alg") == 0) {
@@ -363,8 +362,7 @@ static verifier_cb_ctx *verifier_cb_ctx_create(
     const char *signed_jwt, size_t signed_jwt_len, void *user_data,
     grpc_jwt_verification_done_cb cb) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  verifier_cb_ctx *ctx = gpr_malloc(sizeof(verifier_cb_ctx));
-  memset(ctx, 0, sizeof(verifier_cb_ctx));
+  verifier_cb_ctx *ctx = gpr_zalloc(sizeof(verifier_cb_ctx));
   ctx->verifier = verifier;
   ctx->pollent = grpc_polling_entity_create_from_pollset(pollset);
   ctx->header = header;
@@ -878,8 +876,7 @@ error:
 grpc_jwt_verifier *grpc_jwt_verifier_create(
     const grpc_jwt_verifier_email_domain_key_url_mapping *mappings,
     size_t num_mappings) {
-  grpc_jwt_verifier *v = gpr_malloc(sizeof(grpc_jwt_verifier));
-  memset(v, 0, sizeof(grpc_jwt_verifier));
+  grpc_jwt_verifier *v = gpr_zalloc(sizeof(grpc_jwt_verifier));
   grpc_httpcli_context_init(&v->http_ctx);
 
   /* We know at least of one mapping. */
@@ -898,10 +895,10 @@ grpc_jwt_verifier *grpc_jwt_verifier_create(
   return v;
 }
 
-void grpc_jwt_verifier_destroy(grpc_jwt_verifier *v) {
+void grpc_jwt_verifier_destroy(grpc_exec_ctx *exec_ctx, grpc_jwt_verifier *v) {
   size_t i;
   if (v == NULL) return;
-  grpc_httpcli_context_destroy(&v->http_ctx);
+  grpc_httpcli_context_destroy(exec_ctx, &v->http_ctx);
   if (v->mappings != NULL) {
     for (i = 0; i < v->num_mappings; i++) {
       gpr_free(v->mappings[i].email_domain);

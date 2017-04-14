@@ -84,6 +84,39 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
   }
 }
 
+#define STREAM_REF_FROM_SLICE_REF(p)         \
+  ((grpc_stream_refcount *)(((uint8_t *)p) - \
+                            offsetof(grpc_stream_refcount, slice_refcount)))
+
+static void slice_stream_ref(void *p) {
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+  grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(p), "slice");
+#else
+  grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(p));
+#endif
+}
+
+static void slice_stream_unref(grpc_exec_ctx *exec_ctx, void *p) {
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+  grpc_stream_unref(exec_ctx, STREAM_REF_FROM_SLICE_REF(p), "slice");
+#else
+  grpc_stream_unref(exec_ctx, STREAM_REF_FROM_SLICE_REF(p));
+#endif
+}
+
+grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount *refcount,
+                                               void *buffer, size_t length) {
+  slice_stream_ref(&refcount->slice_refcount);
+  return (grpc_slice){.refcount = &refcount->slice_refcount,
+                      .data.refcounted = {.bytes = buffer, .length = length}};
+}
+
+static const grpc_slice_refcount_vtable stream_ref_slice_vtable = {
+    .ref = slice_stream_ref,
+    .unref = slice_stream_unref,
+    .eq = grpc_slice_default_eq_impl,
+    .hash = grpc_slice_default_hash_impl};
+
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg,
@@ -95,6 +128,8 @@ void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
 #endif
   gpr_ref_init(&refcount->refs, initial_refs);
   grpc_closure_init(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
+  refcount->slice_refcount.vtable = &stream_ref_slice_vtable;
+  refcount->slice_refcount.sub_refcount = &refcount->slice_refcount;
 }
 
 static void move64(uint64_t *from, uint64_t *to) {
@@ -127,15 +162,15 @@ void grpc_transport_destroy(grpc_exec_ctx *exec_ctx,
 int grpc_transport_init_stream(grpc_exec_ctx *exec_ctx,
                                grpc_transport *transport, grpc_stream *stream,
                                grpc_stream_refcount *refcount,
-                               const void *server_data) {
+                               const void *server_data, gpr_arena *arena) {
   return transport->vtable->init_stream(exec_ctx, transport, stream, refcount,
-                                        server_data);
+                                        server_data, arena);
 }
 
 void grpc_transport_perform_stream_op(grpc_exec_ctx *exec_ctx,
                                       grpc_transport *transport,
                                       grpc_stream *stream,
-                                      grpc_transport_stream_op *op) {
+                                      grpc_transport_stream_op_batch *op) {
   transport->vtable->perform_stream_op(exec_ctx, transport, stream, op);
 }
 
@@ -162,9 +197,10 @@ void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
 
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *transport,
-                                   grpc_stream *stream, void *and_free_memory) {
+                                   grpc_stream *stream,
+                                   grpc_closure *then_schedule_closure) {
   transport->vtable->destroy_stream(exec_ctx, transport, stream,
-                                    and_free_memory);
+                                    then_schedule_closure);
 }
 
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
@@ -177,14 +213,23 @@ grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
   return transport->vtable->get_endpoint(exec_ctx, transport);
 }
 
-void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
-                                                  grpc_transport_stream_op *op,
-                                                  grpc_error *error) {
-  grpc_closure_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error));
-  grpc_closure_sched(exec_ctx, op->recv_initial_metadata_ready,
-                     GRPC_ERROR_REF(error));
+void grpc_transport_stream_op_batch_finish_with_failure(
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
+    grpc_error *error) {
+  if (op->recv_message) {
+    grpc_closure_sched(exec_ctx, op->payload->recv_message.recv_message_ready,
+                       GRPC_ERROR_REF(error));
+  }
+  if (op->recv_initial_metadata) {
+    grpc_closure_sched(
+        exec_ctx,
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_REF(error));
+  }
   grpc_closure_sched(exec_ctx, op->on_complete, error);
-  GRPC_ERROR_UNREF(op->cancel_error);
+  if (op->cancel_stream) {
+    GRPC_ERROR_UNREF(op->payload->cancel_stream.cancel_error);
+  }
 }
 
 typedef struct {
@@ -213,23 +258,25 @@ grpc_transport_op *grpc_make_transport_op(grpc_closure *on_complete) {
 typedef struct {
   grpc_closure outer_on_complete;
   grpc_closure *inner_on_complete;
-  grpc_transport_stream_op op;
+  grpc_transport_stream_op_batch op;
+  grpc_transport_stream_op_batch_payload payload;
 } made_transport_stream_op;
 
 static void destroy_made_transport_stream_op(grpc_exec_ctx *exec_ctx, void *arg,
                                              grpc_error *error) {
   made_transport_stream_op *op = arg;
-  grpc_closure_sched(exec_ctx, op->inner_on_complete, GRPC_ERROR_REF(error));
+  grpc_closure *c = op->inner_on_complete;
   gpr_free(op);
+  grpc_closure_run(exec_ctx, c, GRPC_ERROR_REF(error));
 }
 
-grpc_transport_stream_op *grpc_make_transport_stream_op(
+grpc_transport_stream_op_batch *grpc_make_transport_stream_op(
     grpc_closure *on_complete) {
-  made_transport_stream_op *op = gpr_malloc(sizeof(*op));
+  made_transport_stream_op *op = gpr_zalloc(sizeof(*op));
+  op->op.payload = &op->payload;
   grpc_closure_init(&op->outer_on_complete, destroy_made_transport_stream_op,
                     op, grpc_schedule_on_exec_ctx);
   op->inner_on_complete = on_complete;
-  memset(&op->op, 0, sizeof(op->op));
   op->op.on_complete = &op->outer_on_complete;
   return &op->op;
 }

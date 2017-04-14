@@ -28,20 +28,69 @@ bind(
     actual = "@submodule_protobuf//:protoc",
 )
 
+bind(
+    name = "cares",
+    actual = "@submodule_cares//:ares",
+)
+
+bind(
+    name = "gtest",
+    actual = "@submodule_gtest//:gtest",
+)
+
+bind(
+    name = "benchmark",
+    actual = "@submodule_benchmark//:benchmark",
+)
+
+bind(
+    name = "gflags",
+    actual = "@com_github_gflags_gflags//:gflags",
+)
+
 new_local_repository(
     name = "submodule_boringssl",
-    path = "third_party/boringssl-with-bazel",
     build_file = "third_party/boringssl-with-bazel/BUILD",
+    path = "third_party/boringssl-with-bazel",
 )
 
 new_local_repository(
     name = "submodule_zlib",
-    path = "third_party/zlib",
     build_file = "third_party/zlib.BUILD",
+    path = "third_party/zlib",
 )
 
 new_local_repository(
     name = "submodule_protobuf",
-    path = "third_party/protobuf",
     build_file = "third_party/protobuf/BUILD",
+    path = "third_party/protobuf",
+)
+
+new_local_repository(
+    name = "submodule_gtest",
+    build_file = "third_party/gtest.BUILD",
+    path = "third_party/googletest",
+)
+
+local_repository(
+    name = "com_github_gflags_gflags",
+    path = "third_party/gflags",
+)
+
+git_repository(
+    name   = "mongoose_repo",
+    commit = "4120a97945b41195a6223a600dae8e3b19bed19e",
+    remote = "https://github.com/makdharma/mongoose.git"
+)
+
+new_local_repository(
+    name = "submodule_benchmark",
+    path = "third_party/benchmark",
+    build_file = "third_party/benchmark.BUILD",
+)
+
+new_local_repository(
+    name = "submodule_cares",
+    path = "third_party/cares",
+    build_file = "third_party/cares/cares.BUILD",
 )

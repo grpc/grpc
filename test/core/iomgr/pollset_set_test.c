@@ -59,10 +59,11 @@ void init_test_pollset_sets(test_pollset_set *pollset_sets, const int num_pss) {
   }
 }
 
-void cleanup_test_pollset_sets(test_pollset_set *pollset_sets,
+void cleanup_test_pollset_sets(grpc_exec_ctx *exec_ctx,
+                               test_pollset_set *pollset_sets,
                                const int num_pss) {
   for (int i = 0; i < num_pss; i++) {
-    grpc_pollset_set_destroy(pollset_sets[i].pss);
+    grpc_pollset_set_destroy(exec_ctx, pollset_sets[i].pss);
     pollset_sets[i].pss = NULL;
   }
 }
@@ -78,7 +79,7 @@ typedef struct test_pollset {
 
 static void init_test_pollsets(test_pollset *pollsets, const int num_pollsets) {
   for (int i = 0; i < num_pollsets; i++) {
-    pollsets[i].ps = gpr_malloc(grpc_pollset_size());
+    pollsets[i].ps = gpr_zalloc(grpc_pollset_size());
     grpc_pollset_init(pollsets[i].ps, &pollsets[i].mu);
   }
 }
@@ -142,7 +143,8 @@ static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
   int release_fd;
 
   for (int i = 0; i < num_fds; i++) {
-    grpc_fd_shutdown(exec_ctx, tfds[i].fd, GRPC_ERROR_CREATE("fd cleanup"));
+    grpc_fd_shutdown(exec_ctx, tfds[i].fd,
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("fd cleanup"));
     grpc_exec_ctx_flush(exec_ctx);
 
     /* grpc_fd_orphan frees the memory allocated for grpc_fd. Normally it also
@@ -297,7 +299,7 @@ static void pollset_set_test_basic() {
 
   cleanup_test_fds(&exec_ctx, tfds, num_fds);
   cleanup_test_pollsets(&exec_ctx, pollsets, num_ps);
-  cleanup_test_pollset_sets(pollset_sets, num_pss);
+  cleanup_test_pollset_sets(&exec_ctx, pollset_sets, num_pss);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -372,7 +374,7 @@ void pollset_set_test_dup_fds() {
 
   cleanup_test_fds(&exec_ctx, tfds, num_fds);
   cleanup_test_pollsets(&exec_ctx, &pollset, num_ps);
-  cleanup_test_pollset_sets(pollset_sets, num_pss);
+  cleanup_test_pollset_sets(&exec_ctx, pollset_sets, num_pss);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -437,7 +439,7 @@ void pollset_set_test_empty_pollset() {
 
   cleanup_test_fds(&exec_ctx, tfds, num_fds);
   cleanup_test_pollsets(&exec_ctx, pollsets, num_ps);
-  cleanup_test_pollset_sets(&pollset_set, num_pss);
+  cleanup_test_pollset_sets(&exec_ctx, &pollset_set, num_pss);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

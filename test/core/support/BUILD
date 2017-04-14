@@ -27,6 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+licenses(["notice"])  # 3-clause BSD
+
 cc_test(
     name = "alloc_test",
     srcs = ["alloc_test.c"],
@@ -114,6 +116,13 @@ cc_test(
 cc_test(
     name = "string_test",
     srcs = ["string_test.c"],
+    deps = ["//:gpr", "//test/core/util:gpr_test_util"],
+    copts = ['-std=c99']
+)
+
+cc_test(
+    name = "spinlock_test",
+    srcs = ["spinlock_test.c"],
     deps = ["//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )

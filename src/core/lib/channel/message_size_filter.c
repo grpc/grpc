@@ -121,8 +121,8 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
                  "Received message larger than max (%u vs. %d)",
                  (*calld->recv_message)->length, calld->max_recv_size);
     grpc_error* new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE(message_string), GRPC_ERROR_INT_GRPC_STATUS,
-        GRPC_STATUS_INVALID_ARGUMENT);
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
     if (error == GRPC_ERROR_NONE) {
       error = new_error;
     } else {
@@ -132,32 +132,36 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
     gpr_free(message_string);
   }
   // Invoke the next callback.
-  grpc_closure_sched(exec_ctx, calld->next_recv_message_ready, error);
+  grpc_closure_run(exec_ctx, calld->next_recv_message_ready, error);
 }
 
 // Start transport stream op.
-static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
-                                      grpc_call_element* elem,
-                                      grpc_transport_stream_op* op) {
+static void start_transport_stream_op_batch(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    grpc_transport_stream_op_batch* op) {
   call_data* calld = elem->call_data;
   // Check max send message size.
-  if (op->send_message != NULL && calld->max_send_size >= 0 &&
-      op->send_message->length > (size_t)calld->max_send_size) {
+  if (op->send_message && calld->max_send_size >= 0 &&
+      op->payload->send_message.send_message->length >
+          (size_t)calld->max_send_size) {
     char* message_string;
     gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
-                 op->send_message->length, calld->max_send_size);
-    grpc_transport_stream_op_finish_with_failure(
-        exec_ctx, op, grpc_error_set_int(GRPC_ERROR_CREATE(message_string),
-                                         GRPC_ERROR_INT_GRPC_STATUS,
-                                         GRPC_STATUS_INVALID_ARGUMENT));
+                 op->payload->send_message.send_message->length,
+                 calld->max_send_size);
+    grpc_transport_stream_op_batch_finish_with_failure(
+        exec_ctx, op,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_RESOURCE_EXHAUSTED));
     gpr_free(message_string);
     return;
   }
   // Inject callback for receiving a message.
-  if (op->recv_message_ready != NULL) {
-    calld->next_recv_message_ready = op->recv_message_ready;
-    calld->recv_message = op->recv_message;
-    op->recv_message_ready = &calld->recv_message_ready;
+  if (op->recv_message) {
+    calld->next_recv_message_ready =
+        op->payload->recv_message.recv_message_ready;
+    calld->recv_message = op->payload->recv_message.recv_message;
+    op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
   }
   // Chain to the next filter.
   grpc_call_next_op(exec_ctx, elem, op);
@@ -166,7 +170,7 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
 // Constructor for call_data.
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
-                                  grpc_call_element_args* args) {
+                                  const grpc_call_element_args* args) {
   channel_data* chand = elem->channel_data;
   call_data* calld = elem->call_data;
   calld->next_recv_message_ready = NULL;
@@ -200,7 +204,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
 // Destructor for call_data.
 static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
-                              void* ignored) {}
+                              grpc_closure* ignored) {}
 
 // Constructor for channel_data.
 static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
@@ -208,21 +212,20 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
-  memset(chand, 0, sizeof(*chand));
   chand->max_send_size = GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH;
   chand->max_recv_size = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) == 0) {
       const grpc_integer_options options = {
-          GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, 0, INT_MAX};
+          GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, -1, INT_MAX};
       chand->max_send_size =
           grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
       const grpc_integer_options options = {
-          GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, 0, INT_MAX};
+          GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, -1, INT_MAX};
       chand->max_recv_size =
           grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
@@ -253,7 +256,7 @@ static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
 }
 
 const grpc_channel_filter grpc_message_size_filter = {
-    start_transport_stream_op,
+    start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

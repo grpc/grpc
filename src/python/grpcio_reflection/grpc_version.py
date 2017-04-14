@@ -29,4 +29,4 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_reflection/grpc_version.py.template`!!!
 
-VERSION='1.2.0.dev0'
+VERSION='1.4.0.dev0'

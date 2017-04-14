@@ -38,11 +38,6 @@
 #include <stddef.h>
 #include <string.h>
 
-/* This is here for grpc_is_binary_header
- * TODO(murgatroid99): Remove this
- */
-#include <grpc/grpc.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -55,13 +50,11 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-/* TODO(ctiller): remove before submission */
-#include "src/core/lib/slice/slice_string_helpers.h"
-
 extern int grpc_http_trace;
 
 typedef enum {
   NOT_BINARY,
+  BINARY_BEGIN,
   B64_BYTE0,
   B64_BYTE1,
   B64_BYTE2,
@@ -693,7 +686,7 @@ static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
   }
   if (p->on_header == NULL) {
     GRPC_MDELEM_UNREF(exec_ctx, md);
-    return GRPC_ERROR_CREATE("on_header callback not set");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("on_header callback not set");
   }
   p->on_header(exec_ctx, p->on_header_user_data, md);
   return GRPC_ERROR_NONE;
@@ -810,7 +803,8 @@ static grpc_error *finish_indexed_field(grpc_exec_ctx *exec_ctx,
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   if (GRPC_MDISNULL(md)) {
     return grpc_error_set_int(
-        grpc_error_set_int(GRPC_ERROR_CREATE("Invalid HPACK index received"),
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "Invalid HPACK index received"),
                            GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
         GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
@@ -1074,7 +1068,7 @@ static grpc_error *parse_max_tbl_size(grpc_exec_ctx *exec_ctx,
   if (p->dynamic_table_update_allowed == 0) {
     return parse_error(
         exec_ctx, p, cur, end,
-        GRPC_ERROR_CREATE(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "More than two max table size changes in a single frame"));
   }
   p->dynamic_table_update_allowed--;
@@ -1092,7 +1086,7 @@ static grpc_error *parse_max_tbl_size_x(grpc_exec_ctx *exec_ctx,
   if (p->dynamic_table_update_allowed == 0) {
     return parse_error(
         exec_ctx, p, cur, end,
-        GRPC_ERROR_CREATE(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "More than two max table size changes in a single frame"));
   }
   p->dynamic_table_update_allowed--;
@@ -1126,7 +1120,7 @@ static grpc_error *parse_illegal_op(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(cur != end);
   char *msg;
   gpr_asprintf(&msg, "Illegal hpack op code %d", *cur);
-  grpc_error *err = GRPC_ERROR_CREATE(msg);
+  grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
   gpr_free(msg);
   return parse_error(exec_ctx, p, cur, end, err);
 }
@@ -1246,7 +1240,7 @@ error:
                "integer overflow in hpack integer decoding: have 0x%08x, "
                "got byte 0x%02x on byte 5",
                *p->parsing.value, *cur);
-  grpc_error *err = GRPC_ERROR_CREATE(msg);
+  grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
   gpr_free(msg);
   return parse_error(exec_ctx, p, cur, end, err);
 }
@@ -1275,7 +1269,7 @@ static grpc_error *parse_value5up(grpc_exec_ctx *exec_ctx,
                "integer overflow in hpack integer decoding: have 0x%08x, "
                "got byte 0x%02x sometime after byte 5",
                *p->parsing.value, *cur);
-  grpc_error *err = GRPC_ERROR_CREATE(msg);
+  grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
   gpr_free(msg);
   return parse_error(exec_ctx, p, cur, end, err);
 }
@@ -1324,6 +1318,19 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
     case NOT_BINARY:
       append_bytes(str, cur, (size_t)(end - cur));
       return GRPC_ERROR_NONE;
+    case BINARY_BEGIN:
+      if (cur == end) {
+        p->binary = BINARY_BEGIN;
+        return GRPC_ERROR_NONE;
+      }
+      if (*cur == 0) {
+        /* 'true-binary' case */
+        ++cur;
+        p->binary = NOT_BINARY;
+        append_bytes(str, cur, (size_t)(end - cur));
+        return GRPC_ERROR_NONE;
+      }
+    /* fallthrough */
     b64_byte0:
     case B64_BYTE0:
       if (cur == end) {
@@ -1333,8 +1340,9 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       bits = inverse_base64[*cur];
       ++cur;
       if (bits == 255)
-        return parse_error(exec_ctx, p, cur, end,
-                           GRPC_ERROR_CREATE("Illegal base64 character"));
+        return parse_error(
+            exec_ctx, p, cur, end,
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
       else if (bits == 64)
         goto b64_byte0;
       p->base64_buffer = bits << 18;
@@ -1348,8 +1356,9 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       bits = inverse_base64[*cur];
       ++cur;
       if (bits == 255)
-        return parse_error(exec_ctx, p, cur, end,
-                           GRPC_ERROR_CREATE("Illegal base64 character"));
+        return parse_error(
+            exec_ctx, p, cur, end,
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
       else if (bits == 64)
         goto b64_byte1;
       p->base64_buffer |= bits << 12;
@@ -1363,8 +1372,9 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       bits = inverse_base64[*cur];
       ++cur;
       if (bits == 255)
-        return parse_error(exec_ctx, p, cur, end,
-                           GRPC_ERROR_CREATE("Illegal base64 character"));
+        return parse_error(
+            exec_ctx, p, cur, end,
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
       else if (bits == 64)
         goto b64_byte2;
       p->base64_buffer |= bits << 6;
@@ -1378,8 +1388,9 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       bits = inverse_base64[*cur];
       ++cur;
       if (bits == 255)
-        return parse_error(exec_ctx, p, cur, end,
-                           GRPC_ERROR_CREATE("Illegal base64 character"));
+        return parse_error(
+            exec_ctx, p, cur, end,
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
       else if (bits == 64)
         goto b64_byte3;
       p->base64_buffer |= bits;
@@ -1391,7 +1402,8 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       goto b64_byte0;
   }
   GPR_UNREACHABLE_CODE(return parse_error(
-      exec_ctx, p, cur, end, GRPC_ERROR_CREATE("Should never reach here")));
+      exec_ctx, p, cur, end,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Should never reach here")));
 }
 
 static grpc_error *finish_str(grpc_exec_ctx *exec_ctx,
@@ -1403,19 +1415,21 @@ static grpc_error *finish_str(grpc_exec_ctx *exec_ctx,
   switch ((binary_state)p->binary) {
     case NOT_BINARY:
       break;
+    case BINARY_BEGIN:
+      break;
     case B64_BYTE0:
       break;
     case B64_BYTE1:
-      return parse_error(
-          exec_ctx, p, cur, end,
-          GRPC_ERROR_CREATE("illegal base64 encoding")); /* illegal encoding */
+      return parse_error(exec_ctx, p, cur, end,
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                             "illegal base64 encoding")); /* illegal encoding */
     case B64_BYTE2:
       bits = p->base64_buffer;
       if (bits & 0xffff) {
         char *msg;
         gpr_asprintf(&msg, "trailing bits in base64 encoding: 0x%04x",
                      bits & 0xffff);
-        grpc_error *err = GRPC_ERROR_CREATE(msg);
+        grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
         gpr_free(msg);
         return parse_error(exec_ctx, p, cur, end, err);
       }
@@ -1428,7 +1442,7 @@ static grpc_error *finish_str(grpc_exec_ctx *exec_ctx,
         char *msg;
         gpr_asprintf(&msg, "trailing bits in base64 encoding: 0x%02x",
                      bits & 0xff);
-        grpc_error *err = GRPC_ERROR_CREATE(msg);
+        grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
         gpr_free(msg);
         return parse_error(exec_ctx, p, cur, end, err);
       }
@@ -1550,7 +1564,8 @@ static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
   grpc_mdelem elem = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   if (GRPC_MDISNULL(elem)) {
     return grpc_error_set_int(
-        grpc_error_set_int(GRPC_ERROR_CREATE("Invalid HPACK index received"),
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "Invalid HPACK index received"),
                            GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
         GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
@@ -1564,7 +1579,7 @@ static grpc_error *parse_value_string(grpc_exec_ctx *exec_ctx,
                                       const uint8_t *cur, const uint8_t *end,
                                       bool is_binary) {
   return begin_parse_string(exec_ctx, p, cur, end,
-                            is_binary ? B64_BYTE0 : NOT_BINARY, &p->value);
+                            is_binary ? BINARY_BEGIN : NOT_BINARY, &p->value);
 }
 
 static grpc_error *parse_value_string_with_indexed_key(
@@ -1620,13 +1635,18 @@ void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx *exec_ctx,
 grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_hpack_parser *p,
                                            grpc_slice slice) {
-  /* TODO(ctiller): limit the distance of end from beg, and perform multiple
-     steps in the event of a large chunk of data to limit
-     stack space usage when no tail call optimization is
-     available */
+/* max number of bytes to parse at a time... limits call stack depth on
+ * compilers without TCO */
+#define MAX_PARSE_LENGTH 1024
   p->current_slice_refcount = slice.refcount;
-  grpc_error *error = p->state(exec_ctx, p, GRPC_SLICE_START_PTR(slice),
-                               GRPC_SLICE_END_PTR(slice));
+  uint8_t *start = GRPC_SLICE_START_PTR(slice);
+  uint8_t *end = GRPC_SLICE_END_PTR(slice);
+  grpc_error *error = GRPC_ERROR_NONE;
+  while (start != end && error == GRPC_ERROR_NONE) {
+    uint8_t *target = start + GPR_MIN(MAX_PARSE_LENGTH, end - start);
+    error = p->state(exec_ctx, p, start, target);
+    start = target;
+  }
   p->current_slice_refcount = NULL;
   return error;
 }
@@ -1670,7 +1690,7 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
   if (is_last) {
     if (parser->is_boundary && parser->state != parse_begin) {
       GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
-      return GRPC_ERROR_CREATE(
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "end of header frame not aligned with a hpack record boundary");
     }
     /* need to check for null stream: this can occur if we receive an invalid
@@ -1678,7 +1698,8 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
     if (s != NULL) {
       if (parser->is_boundary) {
         if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
-          return GRPC_ERROR_CREATE("Too many trailer frames");
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Too many trailer frames");
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;

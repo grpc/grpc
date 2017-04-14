@@ -35,6 +35,7 @@
 #define GRPC_TEST_CPP_INTEROP_CLIENT_HELPER_H
 
 #include <memory>
+#include <unordered_map>
 
 #include <grpc++/channel.h>
 
@@ -46,6 +47,9 @@ namespace testing {
 grpc::string GetServiceAccountJsonKey();
 
 grpc::string GetOauth2AccessToken();
+
+void UpdateActions(
+    std::unordered_map<grpc::string, std::function<bool()>>* actions);
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
     const grpc::string& test_case);

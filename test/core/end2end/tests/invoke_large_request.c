@@ -59,14 +59,14 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_time(int n) {
+static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, n_seconds_time(5), NULL);
+    ev = grpc_completion_queue_next(cq, n_seconds_from_now(5), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -132,7 +132,6 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_timespec deadline = n_seconds_time(30);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -147,6 +146,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   grpc_slice details;
   int was_cancelled = 2;
 
+  gpr_timespec deadline = n_seconds_from_now(30);
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),

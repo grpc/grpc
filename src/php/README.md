@@ -1,5 +1,5 @@
 
-#Overview
+# Overview
 
 This directory contains source code for PHP implementation of gRPC layered on
 shared C library.
@@ -13,12 +13,24 @@ shared C library.
 * `phpunit` (optional)
 
 **Install PHP and PECL on Ubuntu/Debian:**
+
+For PHP5:
+
 ```sh
-$ sudo apt-get install php5 php5-dev php-pear
+$ sudo apt-get install php5 php5-dev php-pear phpunit
+```
 
-OR
+For PHP7:
 
-$ sudo apt-get install php7.0 php7.0-dev php-pear
+```sh
+$ sudo apt-get install php7.0 php7.0-dev php-pear phpunit
+```
+
+**Install PHP and PECL on CentOS/RHEL 7:**
+```sh
+$ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+$ sudo rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+$ sudo yum install php56w php56w-devel php-pear phpunit gcc zlib-devel
 ```
 
 **Install PECL on Mac:**
@@ -51,6 +63,10 @@ sudo pecl install grpc
 This will compile and install the gRPC PHP extension into the standard PHP
 extension directory. You should be able to run the [unit tests](#unit-tests),
 with the PHP extension installed.
+
+Note: For users on CentOS/RHEL 6, unfortunately this step won't work. Please
+follow the instructions below to compile the extension from source.
+
 
 **Update php.ini**
 
@@ -142,7 +158,7 @@ $ composer install
 ### Protobuf compiler
 
 Again if you don't have it already, you need to install the protobuf compiler
-`protoc`, version 3.2.0+.
+`protoc`, version 3.1.0+ (the newer the better).
 
 If `protoc` hasn't been installed, you can download the `protoc` binaries from
 [the protocol buffers Github repository](https://github.com/google/protobuf/releases).

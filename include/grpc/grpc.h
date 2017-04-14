@@ -93,6 +93,71 @@ GRPCAPI const char *grpc_version_string(void);
 /** Return a string specifying what the 'g' in gRPC stands for */
 GRPCAPI const char *grpc_g_stands_for(void);
 
+/** Specifies the type of APIs to use to pop events from the completion queue */
+typedef enum {
+  /* Events are popped out by calling grpc_completion_queue_next() API ONLY */
+  GRPC_CQ_NEXT = 1,
+
+  /* Events are popped out by calling grpc_completion_queue_pluck() API ONLY */
+  GRPC_CQ_PLUCK
+} grpc_cq_completion_type;
+
+/** Completion queues internally MAY maintain a set of file descriptors in a
+    structure called 'pollset'. This enum specifies if a completion queue has an
+    associated pollset and any restrictions on the type of file descriptors that
+    can be present in the pollset.
+
+    I/O progress can only be made when grpc_completion_queue_next() or
+    grpc_completion_queue_pluck() are called on the completion queue (unless the
+    grpc_cq_polling_type is GRPC_CQ_NON_POLLING) and hence it is very important
+    to actively call these APIs */
+typedef enum {
+  /** The completion queue will have an associated pollset and there is no
+      restriction on the type of file descriptors the pollset may contain */
+  GRPC_CQ_DEFAULT_POLLING,
+
+  /* Similar to GRPC_CQ_DEFAULT_POLLING except that the completion queues will
+     not contain any 'listening file descriptors' (i.e file descriptors used to
+     listen to incoming channels) */
+  GRPC_CQ_NON_LISTENING,
+
+  /* The completion queue will not have an associated pollset. Note that
+     grpc_completion_queue_next() or grpc_completion_queue_pluck() MUST still be
+     called to pop events from the completion queue; it is not required to call
+     them actively to make I/O progress */
+  GRPC_CQ_NON_POLLING
+} grpc_cq_polling_type;
+
+#define GRPC_CQ_CURRENT_VERSION 1
+typedef struct grpc_completion_queue_attributes {
+  /* The version number of this structure. More fields might be added to this
+     structure in future. */
+  int version; /* Set to GRPC_CQ_CURRENT_VERSION */
+
+  grpc_cq_completion_type cq_completion_type;
+
+  grpc_cq_polling_type cq_polling_type;
+} grpc_completion_queue_attributes;
+
+/** The completion queue factory structure is opaque to the callers of grpc */
+typedef struct grpc_completion_queue_factory grpc_completion_queue_factory;
+
+/** Returns the completion queue factory based on the attributes. MAY return a
+    NULL if no factory can be found */
+GRPCAPI const grpc_completion_queue_factory *
+grpc_completion_queue_factory_lookup(
+    const grpc_completion_queue_attributes *attributes);
+
+/** Helper function to create a completion queue with grpc_cq_completion_type
+    of GRPC_CQ_NEXT and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING */
+GRPCAPI grpc_completion_queue *grpc_completion_queue_create_for_next(
+    void *reserved);
+
+/** Helper function to create a completion queue with grpc_cq_completion_type
+    of GRPC_CQ_PLUCK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING */
+GRPCAPI grpc_completion_queue *grpc_completion_queue_create_for_pluck(
+    void *reserved);
+
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue *grpc_completion_queue_create(void *reserved);
 
@@ -229,14 +294,20 @@ GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call *call,
     functionality. Instead, use grpc_auth_context. */
 GRPCAPI char *grpc_call_get_peer(grpc_call *call);
 
+struct grpc_load_reporting_cost_context;
+
+/* Associate costs contained in \a cost_context to \a call. */
+GRPCAPI void grpc_call_set_load_reporting_cost_context(
+    grpc_call *call, struct grpc_load_reporting_cost_context *context);
+
 struct census_context;
 
-/* Set census context for a call; Must be called before first call to
+/** Set census context for a call; Must be called before first call to
    grpc_call_start_batch(). */
 GRPCAPI void grpc_census_call_set_context(grpc_call *call,
                                           struct census_context *context);
 
-/* Retrieve the calls current census context. */
+/** Retrieve the calls current census context. */
 GRPCAPI struct census_context *grpc_census_call_get_context(grpc_call *call);
 
 /** Return a newly allocated string representing the target a channel was
