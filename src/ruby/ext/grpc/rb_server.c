@@ -222,8 +222,6 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
     return Qnil;
   }
 
-
-
   /* build the NewServerRpc struct result */
   deadline = gpr_convert_clock_type(st.details.deadline, GPR_CLOCK_REALTIME);
   result = rb_struct_new(

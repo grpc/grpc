@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env ruby
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,16 +29,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Prompted by and minimal repro of https://github.com/grpc/grpc/issues/10658
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+require_relative './end2end_common'
 
-EXIT_CODE=0
-ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_closing_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/sig_int_during_channel_watch_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/killed_client_thread_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/forking_client_driver.rb || EXIT_CODE=1
-exit $EXIT_CODE
+def main
+  server_port = ''
+  OptionParser.new do |opts|
+    opts.on('--client_control_port=P', String) do
+      STDERR.puts 'client control port not used'
+    end
+    opts.on('--server_port=P', String) do |p|
+      server_port = p
+    end
+  end.parse!
+
+  p = fork do
+    stub = Echo::EchoServer::Stub.new("localhost:#{server_port}",
+                                      :this_channel_is_insecure)
+    stub.echo(Echo::EchoRequest.new(request: 'hello'))
+  end
+
+  begin
+    Timeout.timeout(10) do
+      Process.wait(p)
+    end
+  rescue Timeout::Error
+    STDERR.puts "timeout waiting for forked process #{p}"
+    Process.kill('SIGKILL', p)
+    Process.wait(p)
+    raise 'Timed out waiting for client process. ' \
+      'It likely hangs when killed while in the middle of an rpc'
+  end
+
+  client_exit_code = $CHILD_STATUS
+  fail "forked process failed #{client_exit_code}" if client_exit_code != 0
+end
+
+main
