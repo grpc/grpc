@@ -267,9 +267,12 @@ class BuildExt(build_ext.build_ext):
 
     def build_extensions(self):
         if "darwin" in sys.platform:
+            config = os.environ['CONFIG']
+            if config is None:
+              config = 'opt'
             target_path = os.path.abspath(
                 os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                             '..', '..', '..', 'libs', 'opt'))
+                             '..', '..', '..', 'libs', config))
             targets = [os.path.join(target_path, 'libboringssl.a'),
                        os.path.join(target_path, 'libares.a'),
                        os.path.join(target_path, 'libgpr.a'),
