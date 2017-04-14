@@ -54,9 +54,14 @@ struct grpc_byte_buffer;
 
 namespace grpc {
 
-grpc_completion_queue* CoreCodegen::grpc_completion_queue_create(
+grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_next(
     void* reserved) {
-  return ::grpc_completion_queue_create(reserved);
+  return ::grpc_completion_queue_create_for_next(reserved);
+}
+
+grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_pluck(
+    void* reserved) {
+  return ::grpc_completion_queue_create_for_pluck(reserved);
 }
 
 void CoreCodegen::grpc_completion_queue_destroy(grpc_completion_queue* cq) {

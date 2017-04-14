@@ -67,7 +67,7 @@ class ServerShutdownOp : public Op {
   }
 
   Local<Value> GetNodeValue() const {
-    return Nan::New<External>(reinterpret_cast<void *>(server));
+    return Nan::Null();
   }
 
   bool ParseOp(Local<Value> value, grpc_op *out) {
@@ -75,6 +75,11 @@ class ServerShutdownOp : public Op {
   }
   bool IsFinalOp() {
     return false;
+  }
+  void OnComplete(bool success) {
+    /* Because cancel_all_calls was called, we assume that shutdown_and_notify
+       completes successfully */
+    grpc_server_destroy(server);
   }
 
   grpc_server *server;
@@ -94,16 +99,10 @@ NAN_METHOD(ServerShutdownCallback) {
   if (!info[0]->IsNull()) {
     return Nan::ThrowError("forceShutdown failed somehow");
   }
-  MaybeLocal<Object> maybe_result = Nan::To<Object>(info[1]);
-  Local<Object> result = maybe_result.ToLocalChecked();
-  Local<Value> server_val = Nan::Get(
-      result, Nan::New("shutdown").ToLocalChecked()).ToLocalChecked();
-  Local<External> server_extern = server_val.As<External>();
-  grpc_server *server = reinterpret_cast<grpc_server *>(server_extern->Value());
-  grpc_server_destroy(server);
 }
 
 void Server::ShutdownServer() {
+  Nan::HandleScope scope;
   if (this->wrapped_server != NULL) {
     if (shutdown_callback == NULL) {
       Local<FunctionTemplate>callback_tpl =

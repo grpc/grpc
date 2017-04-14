@@ -59,6 +59,7 @@ typedef struct servers_fixture {
   grpc_server **servers;
   grpc_call **server_calls;
   grpc_completion_queue *cq;
+  grpc_completion_queue *shutdown_cq;
   char **servers_hostports;
   grpc_metadata_array *request_metadata_recv;
 } servers_fixture;
@@ -146,10 +147,10 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void kill_server(const servers_fixture *f, size_t i) {
   gpr_log(GPR_INFO, "KILLING SERVER %" PRIuPTR, i);
   GPR_ASSERT(f->servers[i] != NULL);
-  grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-  GPR_ASSERT(
-      grpc_completion_queue_pluck(f->cq, tag(10000), n_millis_time(5000), NULL)
-          .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->servers[i], f->shutdown_cq, tag(10000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(10000),
+                                         n_millis_time(5000), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->servers[i]);
   f->servers[i] = NULL;
 }
@@ -196,7 +197,8 @@ static servers_fixture *setup_servers(const char *server_host,
   /* Create servers. */
   f->servers = gpr_malloc(sizeof(grpc_server *) * num_servers);
   f->servers_hostports = gpr_malloc(sizeof(char *) * num_servers);
-  f->cq = grpc_completion_queue_create(NULL);
+  f->cq = grpc_completion_queue_create_for_next(NULL);
+  f->shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
   for (i = 0; i < num_servers; i++) {
     grpc_metadata_array_init(&f->request_metadata_recv[i]);
     gpr_join_host_port(&f->servers_hostports[i], server_host,
@@ -212,8 +214,8 @@ static void teardown_servers(servers_fixture *f) {
   /* Destroy server. */
   for (i = 0; i < f->num_servers; i++) {
     if (f->servers[i] == NULL) continue;
-    grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-    GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000),
+    grpc_server_shutdown_and_notify(f->servers[i], f->shutdown_cq, tag(10000));
+    GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(10000),
                                            n_millis_time(5000), NULL)
                    .type == GRPC_OP_COMPLETE);
     grpc_server_destroy(f->servers[i]);
@@ -221,6 +223,7 @@ static void teardown_servers(servers_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 
   gpr_free(f->servers);
 

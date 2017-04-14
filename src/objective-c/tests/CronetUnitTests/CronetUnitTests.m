@@ -160,7 +160,7 @@ unsigned int parse_h2_length(const char *field) {
   int port = grpc_pick_unused_port_or_die();
   char *addr;
   gpr_join_host_port(&addr, "127.0.0.1", port);
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
   grpc_channel *client =
       grpc_cronet_secure_channel_create(cronetEngine, addr, NULL, NULL);
@@ -295,7 +295,7 @@ unsigned int parse_h2_length(const char *field) {
   int port = grpc_pick_unused_port_or_die();
   char *addr;
   gpr_join_host_port(&addr, "127.0.0.1", port);
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
   grpc_channel *client =
       grpc_cronet_secure_channel_create(cronetEngine, addr, args, NULL);

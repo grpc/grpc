@@ -309,7 +309,8 @@ cdef extern from "grpc/grpc.h":
   void grpc_init() nogil
   void grpc_shutdown() nogil
 
-  grpc_completion_queue *grpc_completion_queue_create(void *reserved) nogil
+  grpc_completion_queue *grpc_completion_queue_create_for_next(void *reserved) nogil
+
   grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
                                         gpr_timespec deadline,
                                         void *reserved) nogil

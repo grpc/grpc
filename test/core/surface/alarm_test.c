@@ -58,7 +58,7 @@ static void test_alarm(void) {
   grpc_completion_queue *cc;
 
   LOG_TEST("test_alarm");
-  cc = grpc_completion_queue_create(NULL);
+  cc = grpc_completion_queue_create_for_next(NULL);
   {
     /* regular expiry */
     grpc_event ev;

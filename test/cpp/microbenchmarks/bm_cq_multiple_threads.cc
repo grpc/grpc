@@ -108,7 +108,7 @@ static void setup() {
   init_engine_vtable();
   grpc_set_event_engine_test_only(&g_vtable);
 
-  g_cq = grpc_completion_queue_create(NULL);
+  g_cq = grpc_completion_queue_create_for_next(NULL);
 }
 
 static void teardown() {
