@@ -429,7 +429,7 @@ class NodeLanguage(object):
     # we should specify in the compiler argument
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         'node7', 'electron1.3'])
+                                         'node7', 'electron1.3', 'electron1.6'])
     if args.iomgr_platform == "uv":
       self.use_uv = True
     else:
@@ -1178,7 +1178,7 @@ argp.add_argument('--compiler',
                            'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
                            'node0.12', 'node4', 'node5', 'node6', 'node7',
-                           'electron1.3',
+                           'electron1.3', 'electron1.6',
                            'coreclr',
                            'cmake'],
                   default='default',
