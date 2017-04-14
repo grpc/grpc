@@ -1438,6 +1438,8 @@ const grpc_event_engine_vtable *grpc_init_epollex_linux(void) {
   fd_global_init();
 
   if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
+    pollset_global_shutdown();
+    fd_global_shutdown();
     return NULL;
   }
 
