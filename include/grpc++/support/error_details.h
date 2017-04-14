@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,31 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_HTTP_SERVER_FILTER_H
-#define GRPC_CORE_LIB_CHANNEL_HTTP_SERVER_FILTER_H
+#ifndef GRPCXX_SUPPORT_ERROR_DETAILS_H
+#define GRPCXX_SUPPORT_ERROR_DETAILS_H
 
-#include "src/core/lib/channel/channel_stack.h"
+#include <grpc++/support/status.h>
 
-/* Processes metadata on the client side for HTTP2 transports */
-extern const grpc_channel_filter grpc_http_server_filter;
+namespace google {
+namespace rpc {
+class Status;
+}  // namespace rpc
+}  // namespace google
 
-#endif /* GRPC_CORE_LIB_CHANNEL_HTTP_SERVER_FILTER_H */
+namespace grpc {
+
+// Maps a grpc::Status to a google::rpc::Status.
+// The given \a to object will be cleared.
+// On success, returns status with OK.
+// Returns status with INVALID_ARGUMENT, if failed to deserialize.
+// Returns status with FAILED_PRECONDITION, if \a to is nullptr.
+Status ExtractErrorDetails(const Status& from, ::google::rpc::Status* to);
+
+// Maps google::rpc::Status to a grpc::Status.
+// Returns OK on success.
+// Returns status with FAILED_PRECONDITION if \a to is nullptr.
+Status SetErrorDetails(const ::google::rpc::Status& from, Status* to);
+
+}  // namespace grpc
+
+#endif  // GRPCXX_SUPPORT_ERROR_DETAILS_H

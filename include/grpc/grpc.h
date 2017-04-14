@@ -95,10 +95,10 @@ GRPCAPI const char *grpc_g_stands_for(void);
 
 /** Specifies the type of APIs to use to pop events from the completion queue */
 typedef enum {
-  /* Events are popped out by calling grpc_completion_queue_next() API ONLY */
+  /** Events are popped out by calling grpc_completion_queue_next() API ONLY */
   GRPC_CQ_NEXT = 1,
 
-  /* Events are popped out by calling grpc_completion_queue_pluck() API ONLY */
+  /** Events are popped out by calling grpc_completion_queue_pluck() API ONLY*/
   GRPC_CQ_PLUCK
 } grpc_cq_completion_type;
 
@@ -116,15 +116,15 @@ typedef enum {
       restriction on the type of file descriptors the pollset may contain */
   GRPC_CQ_DEFAULT_POLLING,
 
-  /* Similar to GRPC_CQ_DEFAULT_POLLING except that the completion queues will
-     not contain any 'listening file descriptors' (i.e file descriptors used to
-     listen to incoming channels) */
+  /** Similar to GRPC_CQ_DEFAULT_POLLING except that the completion queues will
+      not contain any 'listening file descriptors' (i.e file descriptors used to
+      listen to incoming channels) */
   GRPC_CQ_NON_LISTENING,
 
-  /* The completion queue will not have an associated pollset. Note that
-     grpc_completion_queue_next() or grpc_completion_queue_pluck() MUST still be
-     called to pop events from the completion queue; it is not required to call
-     them actively to make I/O progress */
+  /** The completion queue will not have an associated pollset. Note that
+      grpc_completion_queue_next() or grpc_completion_queue_pluck() MUST still
+      be called to pop events from the completion queue; it is not required to
+      call them actively to make I/O progress */
   GRPC_CQ_NON_POLLING
 } grpc_cq_polling_type;
 
@@ -159,7 +159,9 @@ GRPCAPI grpc_completion_queue *grpc_completion_queue_create_for_pluck(
     void *reserved);
 
 /** Create a completion queue */
-GRPCAPI grpc_completion_queue *grpc_completion_queue_create(void *reserved);
+GRPCAPI grpc_completion_queue *grpc_completion_queue_create(
+    const grpc_completion_queue_factory *factory,
+    const grpc_completion_queue_attributes *attributes, void *reserved);
 
 /** Blocks until an event is available, the completion queue is being shut down,
     or deadline is reached.
