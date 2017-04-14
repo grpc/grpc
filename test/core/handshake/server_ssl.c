@@ -104,7 +104,7 @@ static void server_thread(void *arg) {
   GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
   free(addr);
 
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
 
   grpc_server_register_completion_queue(server, cq, NULL);
   grpc_server_start(server);
