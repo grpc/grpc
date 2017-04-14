@@ -42,7 +42,7 @@ g_stands_for = "gentle"
 
 core_version = "3.0.0-dev"
 
-version = "1.3.0-dev"
+version = "1.4.0-dev"
 
 grpc_cc_library(
     name = "gpr",
