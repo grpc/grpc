@@ -83,6 +83,11 @@ static char *decode_and_copy_component(grpc_exec_ctx *exec_ctx, const char *src,
   return out;
 }
 
+static bool valid_hex(char c) {
+  return ((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) ||
+         ((c >= '0') && (c <= '9'));
+}
+
 /** Returns how many chars to advance if \a uri_text[i] begins a valid \a pchar
  * production. If \a uri_text[i] introduces an invalid \a pchar (such as percent
  * sign not followed by two hex digits), NOT_SET is returned. */
@@ -93,27 +98,36 @@ static size_t parse_pchar(const char *uri_text, size_t i) {
    * sub-delims = "!" / "$" / "&" / "'" / "(" / ")"
    / "*" / "+" / "," / ";" / "=" */
   char c = uri_text[i];
-  if (((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z')) ||
-      ((c >= '0') && (c <= '9')) ||
-      (c == '-' || c == '.' || c == '_' || c == '~') || /* unreserved */
-      (c == '!' || c == '$' || c == '&' || c == '\'' || c == '$' || c == '&' ||
-       c == '(' || c == ')' || c == '*' || c == '+' || c == ',' || c == ';' ||
-       c == '=') /* sub-delims */) {
-    return 1;
-  }
-  if (c == '%') { /* pct-encoded */
-    size_t j;
-    if (uri_text[i + 1] == 0 || uri_text[i + 2] == 0) {
-      return NOT_SET;
-    }
-    for (j = i + 1; j < 2; j++) {
-      c = uri_text[j];
-      if (!(((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')) ||
-            ((c >= 'A') && (c <= 'F')))) {
-        return NOT_SET;
+  switch (c) {
+    default:
+      if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) ||
+          ((c >= '0') && (c <= '9'))) {
+        return 1;
       }
-    }
-    return 2;
+      break;
+    case ':':
+    case '@':
+    case '-':
+    case '.':
+    case '_':
+    case '~':
+    case '!':
+    case '$':
+    case '&':
+    case '\'':
+    case '(':
+    case ')':
+    case '*':
+    case '+':
+    case ',':
+    case ';':
+    case '=':
+      return 1;
+    case '%': /* pct-encoded */
+      if (valid_hex(uri_text[i + 1]) && valid_hex(uri_text[i + 2])) {
+        return 2;
+      }
+      return NOT_SET;
   }
   return 0;
 }
