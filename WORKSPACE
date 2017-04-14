@@ -5,7 +5,7 @@ bind(
 
 bind(
     name = "libssl",
-    actual = "@submodule_boringssl//:ssl",
+    actual = "@boringssl//:ssl",
 )
 
 bind(
@@ -49,7 +49,7 @@ bind(
 )
 
 local_repository(
-    name = "submodule_boringssl",
+    name = "boringssl",
     path = "third_party/boringssl-with-bazel",
 )
 
