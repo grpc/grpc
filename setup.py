@@ -199,13 +199,14 @@ def cython_extensions_and_necessity():
                      'libs/opt/libboringssl.a',
                      'libs/opt/libgpr.a',
                      'libs/opt/libgrpc.a']
-    CORE_C_FILES = []
+    core_c_files = []
   else:
+    core_c_files = list(CORE_C_FILES)
     extra_objects = []
   extensions = [
       _extension.Extension(
           name=module_name,
-          sources=[module_file] + list(CYTHON_HELPER_C_FILES) + list(CORE_C_FILES),
+          sources=[module_file] + list(CYTHON_HELPER_C_FILES) + core_c_files,
           include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
           libraries=list(EXTENSION_LIBRARIES),
           define_macros=list(DEFINE_MACROS),
