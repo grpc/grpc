@@ -236,6 +236,10 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
                                                   grpc_connectivity_state state,
                                                   grpc_error *error,
                                                   const char *reason) {
+  /* TODO: Improve failure handling:
+   * - Make it possible for policies to return GRPC_CHANNEL_TRANSIENT_FAILURE.
+   * - Hand over pending picks from old policies during the switch that happens
+   *   when resolver provides an update. */
   if (chand->lb_policy != NULL) {
     if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       /* cancel picks with wait_for_ready=false */
@@ -364,22 +368,18 @@ typedef struct wrapped_on_pick_closure_arg {
 
   /* The policy instance related to the closure */
   grpc_lb_policy *lb_policy;
-
-  /* heap memory to be freed upon closure execution. Usually this arg. */
-  void *free_when_done;
 } wrapped_on_pick_closure_arg;
 
-// Invoke \a arg->wrapped_closure, unref \a arg->lb_policy and free
-// arg->free_when_done (usually \a arg itself).
+// Invoke \a arg->wrapped_closure, unref \a arg->lb_policy and free \a arg.
 static void wrapped_on_pick_closure_cb(grpc_exec_ctx *exec_ctx, void *arg,
                                        grpc_error *error) {
   wrapped_on_pick_closure_arg *wc_arg = arg;
+  GPR_ASSERT(wc_arg != NULL);
   GPR_ASSERT(wc_arg->wrapped_closure != NULL);
   GPR_ASSERT(wc_arg->lb_policy != NULL);
-  GPR_ASSERT(wc_arg->free_when_done != NULL);
-  grpc_closure_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error));
+  grpc_closure_run(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error));
   GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->lb_policy, "pick_subchannel_wrapping");
-  gpr_free(wc_arg->free_when_done);
+  gpr_free(wc_arg);
 }
 
 static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
@@ -1078,7 +1078,6 @@ static bool pick_subchannel_locked(
     w_on_pick_arg->wrapped_closure = on_ready;
     GRPC_LB_POLICY_REF(lb_policy, "pick_subchannel_wrapping");
     w_on_pick_arg->lb_policy = lb_policy;
-    w_on_pick_arg->free_when_done = w_on_pick_arg;
     const bool pick_done = grpc_lb_policy_pick_locked(
         exec_ctx, lb_policy, &inputs, connected_subchannel, NULL,
         &w_on_pick_arg->wrapper_closure);
@@ -1086,7 +1085,7 @@ static bool pick_subchannel_locked(
       /* synchronous grpc_lb_policy_pick call. Unref the LB policy. */
       GRPC_LB_POLICY_UNREF(exec_ctx, w_on_pick_arg->lb_policy,
                            "pick_subchannel_wrapping");
-      gpr_free(w_on_pick_arg->free_when_done);
+      gpr_free(w_on_pick_arg);
     }
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "pick_subchannel");
     GPR_TIMER_END("pick_subchannel", 0);
