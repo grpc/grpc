@@ -124,10 +124,10 @@ def build(dest):
     subprocess.check_call(['make', 'clean'])
     subprocess.check_call(make_cmd('opt'))
     subprocess.check_call(make_cmd('counters'))
-  os.rename('bin', dest)
+  os.rename('bins', dest)
 
 def collect1(bm, cfg, ver, idx):
-  cmd = ['bins/%s/%s' % (cfg, bm),
+  cmd = ['%s/%s/%s' % (ver, cfg, bm),
          '--benchmark_out=%s.%s.%s.%d.json' % (bm, cfg, ver, idx),
          '--benchmark_out_format=json',
          '--benchmark_repetitions=%d' % (args.repetitions)
@@ -139,7 +139,6 @@ build('new')
 
 where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
 subprocess.check_call(['git', 'checkout', args.diff_base])
-
 try:
   build('old')
 finally:
