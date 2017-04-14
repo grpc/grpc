@@ -170,7 +170,7 @@ static grpc_cq_completion *cq_event_queue_pop(grpc_cq_event_queue *q) {
 /* Note: The counter is not incremented/decremented atomically with push/pop.
  * The count is only eventually consistent */
 static long cq_event_queue_num_items(grpc_cq_event_queue *q) {
-  return gpr_atm_no_barrier_load(&q->num_queue_items);
+  return (long) gpr_atm_no_barrier_load(&q->num_queue_items);
 }
 
 grpc_completion_queue *grpc_completion_queue_create_internal(
