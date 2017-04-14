@@ -166,6 +166,8 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
 
+  grpc_ruby_once_init();
+
   /* "3" == 3 mandatory args */
   rb_scan_args(argc, argv, "3", &target, &channel_args, &credentials);
 
@@ -521,10 +523,12 @@ static VALUE run_poll_channels_loop(VALUE arg) {
  * calls - so that c-core can reconnect if needed, when there aren't any RPC's.
  * TODO(apolcyn) remove this when core handles new RPCs on dead connections.
  */
-static void start_poll_channels_loop() {
-  channel_polling_cq = grpc_completion_queue_create(NULL);
+void grpc_rb_channel_polling_thread_start() {
+  GPR_ASSERT(!abort_channel_polling);
+  GPR_ASSERT(channel_polling_cq == NULL);
+
   gpr_mu_init(&global_connection_polling_mu);
-  abort_channel_polling = 0;
+  channel_polling_cq = grpc_completion_queue_create(NULL);
   rb_thread_create(run_poll_channels_loop, NULL);
 }
 
@@ -597,7 +601,6 @@ void Init_grpc_channel() {
   id_insecure_channel = rb_intern("this_channel_is_insecure");
   Init_grpc_propagate_masks();
   Init_grpc_connectivity_states();
-  start_poll_channels_loop();
 }
 
 /* Gets the wrapped channel from the ruby wrapper */

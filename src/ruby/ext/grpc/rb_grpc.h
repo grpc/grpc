@@ -82,4 +82,6 @@ VALUE grpc_rb_cannot_init_copy(VALUE copy, VALUE self);
 /* grpc_rb_time_timeval creates a gpr_timespec from a ruby time object. */
 gpr_timespec grpc_rb_time_timeval(VALUE time, int interval);
 
+void grpc_ruby_once_init();
+
 #endif /* GRPC_RB_H_ */
