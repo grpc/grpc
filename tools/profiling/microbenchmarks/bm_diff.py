@@ -45,6 +45,7 @@ import jobset
 import itertools
 import speedup
 import random
+import shutil
 
 _INTERESTING = (
   'cpu_time',
@@ -116,6 +117,7 @@ def make_cmd(cfg):
       'CONFIG=%s' % cfg, '-j', '%d' % args.jobs]
 
 def build(dest):
+  shutil.rmtree('bm_diff_%s' % dest, ignore_errors=True)
   subprocess.check_call(['git', 'submodule', 'update'])
   try:
     subprocess.check_call(make_cmd('opt'))
@@ -124,10 +126,10 @@ def build(dest):
     subprocess.check_call(['make', 'clean'])
     subprocess.check_call(make_cmd('opt'))
     subprocess.check_call(make_cmd('counters'))
-  os.rename('bins', dest)
+  os.rename('bins', 'bm_diff_%s' % dest)
 
 def collect1(bm, cfg, ver, idx):
-  cmd = ['%s/%s/%s' % (ver, cfg, bm),
+  cmd = ['bm_diff_%s/%s/%s' % (ver, cfg, bm),
          '--benchmark_out=%s.%s.%s.%d.json' % (bm, cfg, ver, idx),
          '--benchmark_out_format=json',
          '--benchmark_repetitions=%d' % (args.repetitions)
