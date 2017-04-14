@@ -61,7 +61,7 @@ static void run_test(const char *target, size_t nops) {
   grpc_status_code status;
   grpc_call_error error;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   cq_verifier *cqv = cq_verifier_create(cq);
 
   grpc_op ops[6];
