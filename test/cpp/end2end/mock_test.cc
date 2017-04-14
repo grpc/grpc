@@ -186,7 +186,7 @@ class TestServiceImpl : public EchoTestService::Service {
 
   Status RequestStream(ServerContext* context,
                        ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) {
+                       EchoResponse* response) override {
     EchoRequest request;
     grpc::string resp("");
     while (reader->Read(&request)) {
@@ -198,7 +198,7 @@ class TestServiceImpl : public EchoTestService::Service {
   }
 
   Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) {
+                        ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
     vector<grpc::string> tokens = split(request->message());
     for (grpc::string token : tokens) {

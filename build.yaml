@@ -3630,7 +3630,7 @@ targets:
   - grpc
   - gpr
   args:
-  - --generated_file_path=gens/src/proto/grpc/testing/compiler_test.grpc.pb.h
+  - --generated_file_path=gens/src/proto/grpc/testing
 - name: grpc_cli
   build: test
   run: false
