@@ -97,8 +97,7 @@ argp.add_argument('-t', '--track',
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
 argp.add_argument('-r', '--repetitions', type=int, default=1)
-argp.add_argument('-l', '--loops', type=int, default=30)
-argp.add_argument('-p', '--p_threshold', type=float, default=0.01)
+argp.add_argument('-l', '--loops', type=int, default=12)
 argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
 args = argp.parse_args()
 
@@ -155,7 +154,7 @@ for loop in range(0, args.loops):
     (collect1(bm, 'opt', 'old', loop) for bm in args.benchmarks),
     (collect1(bm, 'counters', 'old', loop) for bm in args.benchmarks),
   ))
-random.shuffle(jobs)
+random.shuffle(jobs, random.SystemRandom().random)
 
 jobset.run(jobs, maxjobs=args.jobs)
 
