@@ -44,6 +44,7 @@ import comment_on_pr
 import jobset
 import itertools
 import speedup
+import random
 
 _INTERESTING = (
   'cpu_time',
@@ -114,7 +115,7 @@ def make_cmd(cfg):
   return ['make'] + args.benchmarks + [
       'CONFIG=%s' % cfg, '-j', '%d' % args.jobs]
 
-def build():
+def build(dest):
   subprocess.check_call(['git', 'submodule', 'update'])
   try:
     subprocess.check_call(make_cmd('opt'))
@@ -123,6 +124,7 @@ def build():
     subprocess.check_call(['make', 'clean'])
     subprocess.check_call(make_cmd('opt'))
     subprocess.check_call(make_cmd('counters'))
+  os.rename('bin', dest)
 
 def collect1(bm, cfg, ver, idx):
   cmd = ['bins/%s/%s' % (cfg, bm),
@@ -130,29 +132,30 @@ def collect1(bm, cfg, ver, idx):
          '--benchmark_out_format=json',
          '--benchmark_repetitions=%d' % (args.repetitions)
          ]
-  return jobset.JobSpec(cmd, shortname='%s %s %s' % (bm, cfg, ver),
+  return jobset.JobSpec(cmd, shortname='%s %s %s %d/%d' % (bm, cfg, ver, idx+1, args.loops),
                              verbose_success=True, timeout_seconds=None)
 
-for loop in range(0, args.loops):
-  build()
-  jobset.run(itertools.chain(
+build('new')
+
+where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+subprocess.check_call(['git', 'checkout', args.diff_base])
+
+try:
+  build('old')
+finally:
+  subprocess.check_call(['git', 'checkout', where_am_i])
+  subprocess.check_call(['git', 'submodule', 'update'])
+
+for loop in args.loops:
+  jobs.extend(x for x in itertools.chain(
     (collect1(bm, 'opt', 'new', loop) for bm in args.benchmarks),
     (collect1(bm, 'counters', 'new', loop) for bm in args.benchmarks),
-  ), maxjobs=args.jobs)
+    (collect1(bm, 'opt', 'old', loop) for bm in args.benchmarks),
+    (collect1(bm, 'counters', 'old', loop) for bm in args.benchmarks),
+  ))
+random.shuffle(jobs)
 
-  where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
-  subprocess.check_call(['git', 'checkout', args.diff_base])
-
-  try:
-    build()
-    jobset.run(itertools.chain(
-      (collect1(bm, 'opt', 'old', loop) for bm in args.benchmarks),
-      (collect1(bm, 'counters', 'old', loop) for bm in args.benchmarks),
-    ), maxjobs=args.jobs)
-  finally:
-    subprocess.check_call(['git', 'checkout', where_am_i])
-    subprocess.check_call(['git', 'submodule', 'update'])
-
+jobset.run(jobs, maxjobs=args.jobs)
 
 class Benchmark:
 
