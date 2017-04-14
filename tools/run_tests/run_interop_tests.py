@@ -947,9 +947,13 @@ if not args.use_docker and servers:
   print('Running interop servers is only supported with --use_docker option enabled.')
   sys.exit(1)
 
+
+# we want to include everything but objc in 'all'
+# because objc won't run on non-mac platforms
+all_but_objc = set(six.iterkeys(_LANGUAGES)) - set(['objc'])
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                    six.iterkeys(_LANGUAGES) if x == 'all' else [x]
+                    all_but_objc if x == 'all' else [x]
                     for x in args.language))
 
 languages_http2_clients_for_http2_server_interop = set()
