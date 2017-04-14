@@ -176,7 +176,7 @@ class Benchmark:
       mdn_diff = abs(median(new) - median(old))
       print '%s: new=%r old=%r mdn_diff=%r' % (f, new, old, mdn_diff)
       s = speedup.speedup(new, old)
-      if s and mdn_diff > 0.5:
+      if abs(s) > 3 and mdn_diff > 0.5:
         self.final[f] = '%+d%%' % s
     return self.final.keys()
 
