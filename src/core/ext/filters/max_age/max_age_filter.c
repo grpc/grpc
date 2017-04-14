@@ -47,6 +47,11 @@
 #define DEFAULT_MAX_CONNECTION_IDLE_MS INT_MAX
 #define MAX_CONNECTION_AGE_JITTER 0.1
 
+#define MAX_CONNECTION_AGE_INTEGER_OPTIONS \
+  (grpc_integer_options) { DEFAULT_MAX_CONNECTION_AGE_MS, 1, INT_MAX }
+#define MAX_CONNECTION_IDLE_INTEGER_OPTIONS \
+  (grpc_integer_options) { DEFAULT_MAX_CONNECTION_IDLE_MS, 1, INT_MAX }
+
 typedef struct channel_data {
   /* We take a reference to the channel stack for the timer callback */
   grpc_channel_stack* channel_stack;
@@ -315,8 +320,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
     if (0 == strcmp(args->channel_args->args[i].key,
                     GRPC_ARG_MAX_CONNECTION_AGE_MS)) {
       const int value = grpc_channel_arg_get_integer(
-          &args->channel_args->args[i],
-          (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_MS, 1, INT_MAX});
+          &args->channel_args->args[i], MAX_CONNECTION_AGE_INTEGER_OPTIONS);
       chand->max_connection_age =
           value == INT_MAX
               ? gpr_inf_future(GPR_TIMESPAN)
@@ -334,8 +338,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
     } else if (0 == strcmp(args->channel_args->args[i].key,
                            GRPC_ARG_MAX_CONNECTION_IDLE_MS)) {
       const int value = grpc_channel_arg_get_integer(
-          &args->channel_args->args[i],
-          (grpc_integer_options){DEFAULT_MAX_CONNECTION_IDLE_MS, 1, INT_MAX});
+          &args->channel_args->args[i], MAX_CONNECTION_IDLE_INTEGER_OPTIONS);
       chand->max_connection_idle =
           value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
                            : gpr_time_from_millis(value, GPR_TIMESPAN);
@@ -412,16 +415,13 @@ static bool maybe_add_max_age_filter(grpc_exec_ctx* exec_ctx,
                                      void* arg) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  const grpc_arg* a =
-      grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS);
-  bool enable = false;
-  if (a != NULL && a->type == GRPC_ARG_INTEGER && a->value.integer != INT_MAX) {
-    enable = true;
-  }
-  a = grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS);
-  if (a != NULL && a->type == GRPC_ARG_INTEGER && a->value.integer != INT_MAX) {
-    enable = true;
-  }
+  bool enable =
+      grpc_channel_arg_get_integer(
+          grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS),
+          MAX_CONNECTION_AGE_INTEGER_OPTIONS) != INT_MAX &&
+      grpc_channel_arg_get_integer(
+          grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS),
+          MAX_CONNECTION_IDLE_INTEGER_OPTIONS) != INT_MAX;
   if (enable) {
     return grpc_channel_stack_builder_prepend_filter(
         builder, &grpc_max_age_filter, NULL, NULL);

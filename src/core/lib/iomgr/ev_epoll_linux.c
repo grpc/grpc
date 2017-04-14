@@ -1348,6 +1348,9 @@ static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
       }
       grpc_closure *c = (grpc_closure *)n;
       grpc_error *error = c->error_data.error;
+#ifndef NDEBUG
+      c->scheduled = false;
+#endif
       c->cb(exec_ctx, c->cb_arg, error);
       GRPC_ERROR_UNREF(error);
       return true;

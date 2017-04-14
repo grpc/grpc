@@ -1,4 +1,4 @@
-#Internal continuous integration
+# Internal continuous integration
 
 gRPC's externally facing testing is managed by Jenkins CI (see `tools/jenkins`
 directory). Nevertheless, some of the tests are better suited for being run
