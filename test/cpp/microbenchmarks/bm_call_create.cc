@@ -119,7 +119,7 @@ template <class Fixture>
 static void BM_CallCreateDestroy(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture fixture;
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   void *method_hdl =
       grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);
@@ -576,7 +576,7 @@ class IsolatedCallFixture : public TrackCounters {
                                                   GRPC_CLIENT_CHANNEL);
       grpc_exec_ctx_finish(&exec_ctx);
     }
-    cq_ = grpc_completion_queue_create(NULL);
+    cq_ = grpc_completion_queue_create_for_next(NULL);
   }
 
   void Finish(benchmark::State &state) {

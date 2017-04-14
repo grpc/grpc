@@ -40,6 +40,7 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 
+#include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
 #include <grpc++/impl/codegen/metadata_map.h>
@@ -211,6 +212,8 @@ class ServerContext {
   class CompletionOp;
 
   void BeginCompletionOp(Call* call);
+  // Return the tag queued by BeginCompletionOp()
+  CompletionQueueTag* GetCompletionOpTag();
 
   ServerContext(gpr_timespec deadline, grpc_metadata_array* arr);
 

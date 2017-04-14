@@ -28,5 +28,5 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 module GrpcBuildConfig
-  CORE_WINDOWS_DLL = '/tmp/libs/opt/grpc-3.dll'
+  CORE_WINDOWS_DLL = '/tmp/libs/opt/grpc-4.dll'
 end

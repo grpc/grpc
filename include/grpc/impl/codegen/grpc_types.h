@@ -401,8 +401,11 @@ typedef enum grpc_completion_type {
 typedef struct grpc_event {
   /** The type of the completion. */
   grpc_completion_type type;
-  /** non-zero if the operation was successful, 0 upon failure.
-      Only GRPC_OP_COMPLETE can succeed or fail. */
+  /** If the grpc_completion_type is GRPC_OP_COMPLETE, this field indicates
+      whether the operation was successful or not; 0 in case of failure and
+      non-zero in case of success.
+      If grpc_completion_type is GRPC_QUEUE_SHUTDOWN or GRPC_QUEUE_TIMEOUT, this
+      field is guaranteed to be 0 */
   int success;
   /** The tag passed to grpc_call_start_batch etc to start this operation.
       Only GRPC_OP_COMPLETE has a tag. */
