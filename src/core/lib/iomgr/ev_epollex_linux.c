@@ -82,6 +82,7 @@ typedef enum {
   PO_POLLSET,
   PO_FD, /* ordering is important: we always want to lock pollsets before fds:
             this guarantees that using an fd as a pollable is safe */
+  PO_EMPTY_POLLABLE,
   PO_COUNT
 } polling_obj_type;
 
@@ -612,16 +613,23 @@ static grpc_error *pollable_add_fd(pollable *p, grpc_fd *fd) {
 
 GPR_TLS_DECL(g_current_thread_pollset);
 GPR_TLS_DECL(g_current_thread_worker);
+static bool global_wakeup_fd_initialized = false;
 
 /* Global state management */
 static grpc_error *pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_pollset);
   gpr_tls_init(&g_current_thread_worker);
-  return grpc_wakeup_fd_init(&global_wakeup_fd);
+  grpc_error *error = GRPC_ERROR_NONE;
+  static const char *err_desc = "pollset_global_init";
+  global_wakeup_fd_initialized =
+      append_error(&error, grpc_wakeup_fd_init(&global_wakeup_fd), err_desc);
+  pollable_init(&g_empty_pollable, PO_EMPTY_POLLABLE);
+  return error;
 }
 
 static void pollset_global_shutdown(void) {
-  grpc_wakeup_fd_destroy(&global_wakeup_fd);
+  if (global_wakeup_fd_initialized) grpc_wakeup_fd_destroy(&global_wakeup_fd);
+  pollable_destroy(&g_empty_pollable);
   gpr_tls_destroy(&g_current_thread_pollset);
   gpr_tls_destroy(&g_current_thread_worker);
 }
