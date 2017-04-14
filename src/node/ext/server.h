@@ -53,6 +53,8 @@ class Server : public Nan::ObjectWrap {
      JavaScript constructor */
   static bool HasInstance(v8::Local<v8::Value> val);
 
+  void DestroyWrappedServer();
+
  private:
   explicit Server(grpc_server *server);
   ~Server();

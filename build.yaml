@@ -6,7 +6,7 @@ settings:
   '#02': ===
   '#03': Please update the 'g_stands_for' field periodically with a new g word
   '#04': not listed in doc/g_stands_for.md - and update that document to list the
-  '#05': new word.
+  '#05': new word. When doing so, please also update BUILD.
   '#06': ===
   '#07': Master always has a "-dev" suffix
   '#08': Use "-preN" suffixes to identify pre-release versions
@@ -14,7 +14,7 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 3.0.0-dev
   g_stands_for: gentle
-  version: 1.3.0-dev
+  version: 1.4.0-dev
 filegroups:
 - name: census
   public_headers:
