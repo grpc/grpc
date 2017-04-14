@@ -30,7 +30,7 @@
  *
  */
 
-#include "src/core/lib/channel/http_client_filter.h"
+#include "src/core/ext/filters/http/client/http_client_filter.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -222,8 +222,10 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
   while (grpc_byte_stream_next(
       exec_ctx, calld->send_op->payload->send_message.send_message,
       &calld->incoming_slice, ~(size_t)0, &calld->got_slice)) {
-    memcpy(wrptr, GRPC_SLICE_START_PTR(calld->incoming_slice),
-           GRPC_SLICE_LENGTH(calld->incoming_slice));
+    if (GRPC_SLICE_LENGTH(calld->incoming_slice) > 0) {
+      memcpy(wrptr, GRPC_SLICE_START_PTR(calld->incoming_slice),
+             GRPC_SLICE_LENGTH(calld->incoming_slice));
+    }
     wrptr += GRPC_SLICE_LENGTH(calld->incoming_slice);
     grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
     if (calld->send_length == calld->slices.length) {
@@ -332,10 +334,8 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
          */
         char *t = (char *)GRPC_SLICE_START_PTR(path_with_query_slice);
         /* safe to use strlen since base64_encode will always add '\0' */
-        size_t path_length = strlen(t) + 1;
-        *(t + path_length) = '\0';
         path_with_query_slice =
-            grpc_slice_sub(path_with_query_slice, 0, path_length);
+            grpc_slice_sub(path_with_query_slice, 0, strlen(t));
 
         /* substitute previous path with the new path+query */
         grpc_mdelem mdelem_path_and_query = grpc_mdelem_from_slices(
