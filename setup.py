@@ -194,9 +194,7 @@ def cython_extensions_and_necessity():
   cython_module_files = [os.path.join(PYTHON_STEM,
                                name.replace('.', '/') + '.pyx')
                   for name in CYTHON_EXTENSION_MODULE_NAMES]
-  config = os.environ['CONFIG']
-  if config is None:
-    config = 'opt'
+  config = os.environ.get('CONFIG', 'opt')
   prefix = 'libs/' + config + '/'
   if "darwin" in sys.platform:
     extra_objects = [prefix + 'libares.a',
