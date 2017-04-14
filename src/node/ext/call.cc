@@ -217,6 +217,8 @@ class SendMetadataOp : public Op {
   bool IsFinalOp() {
     return false;
   }
+  void OnComplete(bool success) {
+  }
  protected:
   std::string GetTypeString() const {
     return "send_metadata";
@@ -260,6 +262,8 @@ class SendMessageOp : public Op {
   bool IsFinalOp() {
     return false;
   }
+  void OnComplete(bool success) {
+  }
  protected:
   std::string GetTypeString() const {
     return "send_message";
@@ -279,6 +283,8 @@ class SendClientCloseOp : public Op {
   }
   bool IsFinalOp() {
     return false;
+  }
+  void OnComplete(bool success) {
   }
  protected:
   std::string GetTypeString() const {
@@ -349,6 +355,8 @@ class SendServerStatusOp : public Op {
   bool IsFinalOp() {
     return true;
   }
+  void OnComplete(bool success) {
+  }
  protected:
   std::string GetTypeString() const {
     return "send_status";
@@ -381,6 +389,8 @@ class GetMetadataOp : public Op {
   bool IsFinalOp() {
     return false;
   }
+  void OnComplete(bool success) {
+  }
 
  protected:
   std::string GetTypeString() const {
@@ -412,6 +422,8 @@ class ReadMessageOp : public Op {
   }
   bool IsFinalOp() {
     return false;
+  }
+  void OnComplete(bool success) {
   }
 
  protected:
@@ -454,6 +466,8 @@ class ClientStatusOp : public Op {
   bool IsFinalOp() {
     return true;
   }
+  void OnComplete(bool success) {
+  }
  protected:
   std::string GetTypeString() const {
     return "status";
@@ -478,6 +492,8 @@ class ServerCloseResponseOp : public Op {
   bool IsFinalOp() {
     return false;
   }
+  void OnComplete(bool success) {
+  }
 
  protected:
   std::string GetTypeString() const {
@@ -499,35 +515,35 @@ tag::~tag() {
   delete ops;
 }
 
-Local<Value> GetTagNodeValue(void *tag) {
-  EscapableHandleScope scope;
+void CompleteTag(void *tag, const char *error_message) {
+  HandleScope scope;
   struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
-  Local<Object> tag_obj = Nan::New<Object>();
-  for (vector<unique_ptr<Op> >::iterator it = tag_struct->ops->begin();
-       it != tag_struct->ops->end(); ++it) {
-    Op *op_ptr = it->get();
-    Nan::Set(tag_obj, op_ptr->GetOpType(), op_ptr->GetNodeValue());
+  Callback *callback = tag_struct->callback;
+  if (error_message == NULL) {
+    Local<Object> tag_obj = Nan::New<Object>();
+    for (vector<unique_ptr<Op> >::iterator it = tag_struct->ops->begin();
+         it != tag_struct->ops->end(); ++it) {
+      Op *op_ptr = it->get();
+      Nan::Set(tag_obj, op_ptr->GetOpType(), op_ptr->GetNodeValue());
+    }
+    Local<Value> argv[] = {Nan::Null(), tag_obj};
+    callback->Call(2, argv);
+  } else {
+    Local<Value> argv[] = {Nan::Error(error_message)};
+    callback->Call(1, argv);
   }
-  return scope.Escape(tag_obj);
-}
-
-Callback *GetTagCallback(void *tag) {
-  struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
-  return tag_struct->callback;
-}
-
-void CompleteTag(void *tag) {
-  struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
+  bool success = (error_message == NULL);
   bool is_final_op = false;
-  if (tag_struct->call == NULL) {
-    return;
-  }
   for (vector<unique_ptr<Op> >::iterator it = tag_struct->ops->begin();
        it != tag_struct->ops->end(); ++it) {
     Op *op_ptr = it->get();
+    op_ptr->OnComplete(success);
     if (op_ptr->IsFinalOp()) {
       is_final_op = true;
     }
+  }
+  if (tag_struct->call == NULL) {
+    return;
   }
   tag_struct->call->CompleteBatch(is_final_op);
 }
