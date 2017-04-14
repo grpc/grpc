@@ -61,10 +61,16 @@ typedef struct grpc_chttp2_incoming_frame_queue {
   grpc_chttp2_incoming_byte_stream *tail;
 } grpc_chttp2_incoming_frame_queue;
 
+#define GRPC_CHTTP2_DATA_PAD_STATE_INITIAL 65535
+
 typedef struct {
   grpc_chttp2_stream_state state;
   uint8_t is_last_frame;
   uint8_t frame_type;
+  /* GRPC_CHTTP2_DATA_PAD_STATE_INITIAL ==> need to read # of pad bytes,
+     0 ==> done with padding
+     >0 ==> need to read this many pad bytes */
+  uint16_t pad_state;
   uint32_t frame_size;
   grpc_error *error;
 
