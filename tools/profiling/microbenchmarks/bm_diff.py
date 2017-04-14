@@ -46,6 +46,7 @@ import itertools
 import speedup
 import random
 import shutil
+import errno
 
 _INTERESTING = (
   'cpu_time',
@@ -191,18 +192,26 @@ class Benchmark:
     return [self.final[f] if f in self.final else '' for f in flds]
 
 
+def read_file(filename):
+  while True:
+    try:
+      with open(filename) as f:
+        return f.read()
+    except IOError, e:
+      if e.errno != errno.EINTR:
+        raise
+
+def read_json(filename):
+  return json.loads(read_file(filename))
+
 benchmarks = collections.defaultdict(Benchmark)
 
 for bm in args.benchmarks:
   for loop in range(0, args.loops):
-    with open('%s.counters.new.%d.json' % (bm, loop)) as f:
-      js_new_ctr = json.loads(f.read())
-    with open('%s.opt.new.%d.json' % (bm, loop)) as f:
-      js_new_opt = json.loads(f.read())
-    with open('%s.counters.old.%d.json' % (bm, loop)) as f:
-      js_old_ctr = json.loads(f.read())
-    with open('%s.opt.old.%d.json' % (bm, loop)) as f:
-      js_old_opt = json.loads(f.read())
+    js_new_ctr = read_json('%s.counters.new.%d.json' % (bm, loop))
+    js_new_opt = read_json('%s.opt.new.%d.json' % (bm, loop))
+    js_old_ctr = read_json('%s.counters.old.%d.json' % (bm, loop))
+    js_old_opt = read_json('%s.opt.old.%d.json' % (bm, loop))
 
     for row in bm_json.expand_json(js_new_ctr, js_new_opt):
       print row
