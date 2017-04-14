@@ -397,7 +397,7 @@ class ObjcLanguage:
     # cmdline argument. Here we return all but one test cases as unimplemented,
     # and depend upon ObjC test's behavior that it runs all cases even when
     # we tell it to run just one.
-    return _TEST_CASES[1:]
+    return _TEST_CASES[1:] + _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
