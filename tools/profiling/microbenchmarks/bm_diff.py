@@ -147,6 +147,7 @@ finally:
   subprocess.check_call(['git', 'checkout', where_am_i])
   subprocess.check_call(['git', 'submodule', 'update'])
 
+jobs = []
 for loop in range(0, args.loops):
   jobs.extend(x for x in itertools.chain(
     (collect1(bm, 'opt', 'new', loop) for bm in args.benchmarks),
