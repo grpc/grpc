@@ -37,11 +37,12 @@ package(default_visibility = ["//visibility:public"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
 
-g_stands_for = "green"
+# This should be updated along with build.yaml
+g_stands_for = "gentle"
 
 core_version = "3.0.0-dev"
 
-version = "1.3.0-dev"
+version = "1.4.0-dev"
 
 grpc_cc_library(
     name = "gpr",
@@ -996,11 +997,11 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/frame_ping.c",
         "src/core/ext/transport/chttp2/transport/frame_rst_stream.c",
         "src/core/ext/transport/chttp2/transport/frame_settings.c",
-        "src/core/ext/transport/chttp2/transport/http2_settings.c",
         "src/core/ext/transport/chttp2/transport/frame_window_update.c",
         "src/core/ext/transport/chttp2/transport/hpack_encoder.c",
         "src/core/ext/transport/chttp2/transport/hpack_parser.c",
         "src/core/ext/transport/chttp2/transport/hpack_table.c",
+        "src/core/ext/transport/chttp2/transport/http2_settings.c",
         "src/core/ext/transport/chttp2/transport/huffsyms.c",
         "src/core/ext/transport/chttp2/transport/incoming_metadata.c",
         "src/core/ext/transport/chttp2/transport/parsing.c",
@@ -1019,11 +1020,11 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/frame_ping.h",
         "src/core/ext/transport/chttp2/transport/frame_rst_stream.h",
         "src/core/ext/transport/chttp2/transport/frame_settings.h",
-        "src/core/ext/transport/chttp2/transport/http2_settings.h",
         "src/core/ext/transport/chttp2/transport/frame_window_update.h",
         "src/core/ext/transport/chttp2/transport/hpack_encoder.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser.h",
         "src/core/ext/transport/chttp2/transport/hpack_table.h",
+        "src/core/ext/transport/chttp2/transport/http2_settings.h",
         "src/core/ext/transport/chttp2/transport/huffsyms.h",
         "src/core/ext/transport/chttp2/transport/incoming_metadata.h",
         "src/core/ext/transport/chttp2/transport/internal.h",

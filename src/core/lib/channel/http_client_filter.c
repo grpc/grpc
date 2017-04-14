@@ -225,8 +225,10 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
     grpc_byte_stream_pull(exec_ctx,
                           calld->send_op->payload->send_message.send_message,
                           &calld->incoming_slice);
-    memcpy(wrptr, GRPC_SLICE_START_PTR(calld->incoming_slice),
-           GRPC_SLICE_LENGTH(calld->incoming_slice));
+    if (GRPC_SLICE_LENGTH(calld->incoming_slice) > 0) {
+      memcpy(wrptr, GRPC_SLICE_START_PTR(calld->incoming_slice),
+             GRPC_SLICE_LENGTH(calld->incoming_slice));
+    }
     wrptr += GRPC_SLICE_LENGTH(calld->incoming_slice);
     grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
     if (calld->send_length == calld->slices.length) {
