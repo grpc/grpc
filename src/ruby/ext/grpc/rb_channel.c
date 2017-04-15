@@ -92,7 +92,9 @@ static void grpc_rb_channel_safe_destroy(grpc_rb_channel *wrapper);
 
 static grpc_completion_queue *channel_polling_cq;
 static gpr_mu global_connection_polling_mu;
+static gpr_cv global_connection_polling_cv;
 static int abort_channel_polling = 0;
+static int channel_polling_thread_started = 0;
 
 /* Destroys Channel instances. */
 static void grpc_rb_channel_free(void *p) {
@@ -479,6 +481,14 @@ static void grpc_rb_channel_safe_destroy(grpc_rb_channel *wrapper) {
 static void *run_poll_channels_loop_no_gil(void *arg) {
   grpc_event event;
   (void)arg;
+  gpr_log(GPR_DEBUG, "GRPC_RUBY: run_poll_channels_loop_no_gil - begin");
+
+  gpr_mu_lock(&global_connection_polling_mu);
+  GPR_ASSERT(!channel_polling_thread_started);
+  channel_polling_thread_started = 1;
+  gpr_cv_signal(&global_connection_polling_cv);
+  gpr_mu_unlock(&global_connection_polling_mu);
+
   for (;;) {
     event = grpc_completion_queue_next(
         channel_polling_cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
@@ -510,8 +520,23 @@ static VALUE run_poll_channels_loop(VALUE arg) {
   gpr_log(GPR_DEBUG, "GRPC_RUBY: run_poll_channels_loop - create connection polling thread");
   rb_thread_call_without_gvl(run_poll_channels_loop_no_gil, NULL,
                              grpc_rb_event_unblocking_func, NULL);
+
   return Qnil;
 }
+
+static void *grpc_rb_wait_until_channel_polling_thread_started(void *arg) {
+  (void)arg;
+  gpr_log(GPR_DEBUG, "GRPC_RUBY: wait for channel polling thread to start");
+  gpr_mu_lock(&global_connection_polling_mu);
+  while (!channel_polling_thread_started && !abort_channel_polling) {
+    gpr_cv_wait(&global_connection_polling_cv, &global_connection_polling_mu,
+                gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+  gpr_mu_unlock(&global_connection_polling_mu);
+
+  return NULL;
+}
+
 
 /* Temporary fix for
  * https://github.com/GoogleCloudPlatform/google-cloud-ruby/issues/899.
@@ -524,12 +549,30 @@ static VALUE run_poll_channels_loop(VALUE arg) {
  * TODO(apolcyn) remove this when core handles new RPCs on dead connections.
  */
 void grpc_rb_channel_polling_thread_start() {
+  VALUE background_thread = Qnil;
+
   GPR_ASSERT(!abort_channel_polling);
+  GPR_ASSERT(!channel_polling_thread_started);
   GPR_ASSERT(channel_polling_cq == NULL);
 
   gpr_mu_init(&global_connection_polling_mu);
+  gpr_cv_init(&global_connection_polling_cv);
+
   channel_polling_cq = grpc_completion_queue_create(NULL);
-  rb_thread_create(run_poll_channels_loop, NULL);
+  background_thread = rb_thread_create(run_poll_channels_loop, NULL);
+
+  if (!RTEST(background_thread)) {
+    gpr_log(GPR_DEBUG, "GRPC_RUBY: failed to spawn channel polling thread");
+    gpr_mu_lock(&global_connection_polling_mu);
+    abort_channel_polling = 1;
+    gpr_mu_unlock(&global_connection_polling_mu);
+    return;
+  }
+
+  // Drop the gil before sleeping on a gpr_cv so that the background thread
+  // signaling it can acquire the gil and then start, if it hasn't already.
+  rb_thread_call_without_gvl(grpc_rb_wait_until_channel_polling_thread_started, NULL,
+                             grpc_rb_event_unblocking_func, NULL);
 }
 
 static void Init_grpc_propagate_masks() {
