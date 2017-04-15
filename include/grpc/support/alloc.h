@@ -68,7 +68,8 @@ GPRAPI void gpr_free_aligned(void *ptr);
 
 /** Request the family of allocation functions in \a functions be used. NOTE
  * that this request will be honored in a *best effort* basis and that no
- * guarantees are made about the default functions (eg, malloc) being called. */
+ * guarantees are made about the default functions (eg, malloc) being called.
+ * The functions.free_fn implementation must be a no-op for NULL input. */
 GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions);
 
 /** Return the family of allocation functions currently in effect. */

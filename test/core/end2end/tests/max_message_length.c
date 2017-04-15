@@ -272,7 +272,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   GPR_ASSERT(was_cancelled == 1);
 
 done:
-  GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
+  GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
   GPR_ASSERT(
       grpc_slice_str_cmp(
           details, send_limit
@@ -466,7 +466,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   GPR_ASSERT(0 ==
              grpc_slice_str_cmp(call_details.host, "foo.test.google.fr:1234"));
 
-  GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
+  GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
   GPR_ASSERT(
       grpc_slice_str_cmp(
           details, send_limit
