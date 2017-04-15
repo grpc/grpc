@@ -113,7 +113,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     else:
       EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
   elif 'win32' in sys.platform:
-    EXTRA_ENV_COMPILE_ARGS += ' -D_PYTHON_MSVC'
+    EXTRA_ENV_COMPILE_ARGS += ' -D_PYTHON_MSVC -std=c++11'
   elif "linux" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -std=c++11 -fvisibility=hidden -fno-wrapv'
   elif "darwin" in sys.platform:
@@ -194,11 +194,13 @@ def cython_extensions_and_necessity():
   cython_module_files = [os.path.join(PYTHON_STEM,
                                name.replace('.', '/') + '.pyx')
                   for name in CYTHON_EXTENSION_MODULE_NAMES]
+  config = os.environ.get('CONFIG', 'opt')
+  prefix = 'libs/' + config + '/'
   if "darwin" in sys.platform:
-    extra_objects = ['libs/opt/libares.a',
-                     'libs/opt/libboringssl.a',
-                     'libs/opt/libgpr.a',
-                     'libs/opt/libgrpc.a']
+    extra_objects = [prefix + 'libares.a',
+                     prefix + 'libboringssl.a',
+                     prefix + 'libgpr.a',
+                     prefix + 'libgrpc.a']
     core_c_files = []
   else:
     core_c_files = list(CORE_C_FILES)
