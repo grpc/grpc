@@ -458,12 +458,13 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
     return init_skip_frame_parser(exec_ctx, t, 0);
   }
   if (err == GRPC_ERROR_NONE) {
-    err = grpc_chttp2_data_parser_begin_frame(&s->data_parser,
-                                              t->incoming_frame_flags, s->id);
+    err = grpc_chttp2_data_parser_begin_frame(
+        &s->data_parser, t->incoming_frame_flags, s->id, s);
   }
 error_handler:
   if (err == GRPC_ERROR_NONE) {
     t->incoming_stream = s;
+    /* t->parser = grpc_chttp2_data_parser_parse;*/
     t->parser = grpc_chttp2_data_parser_parse;
     t->parser_data = &s->data_parser;
     return GRPC_ERROR_NONE;

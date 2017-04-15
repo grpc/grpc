@@ -163,8 +163,8 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoUnimplementedMethod, &client);
   actions["unimplemented_service"] =
       std::bind(&grpc::testing::InteropClient::DoUnimplementedService, &client);
-  // actions["cacheable_unary"] =
-  //    std::bind(&grpc::testing::InteropClient::DoCacheableUnary, &client);
+  actions["cacheable_unary"] =
+      std::bind(&grpc::testing::InteropClient::DoCacheableUnary, &client);
 
   UpdateActions(&actions);
 

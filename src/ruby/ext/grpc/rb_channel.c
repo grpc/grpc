@@ -351,7 +351,7 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent, VALUE mask,
     parent_call = grpc_rb_get_wrapped_call(parent);
   }
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_pluck(NULL);
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   ch = wrapper->wrapped;
   if (ch == NULL) {
@@ -522,7 +522,7 @@ static VALUE run_poll_channels_loop(VALUE arg) {
  * TODO(apolcyn) remove this when core handles new RPCs on dead connections.
  */
 static void start_poll_channels_loop() {
-  channel_polling_cq = grpc_completion_queue_create(NULL);
+  channel_polling_cq = grpc_completion_queue_create_for_next(NULL);
   gpr_mu_init(&global_connection_polling_mu);
   abort_channel_polling = 0;
   rb_thread_create(run_poll_channels_loop, NULL);

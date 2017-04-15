@@ -212,6 +212,7 @@
     if(NOT PROTOBUF_ROOT_DIR)
       set(PROTOBUF_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/protobuf)
     endif()
+    set(PROTOBUF_WELLKNOWN_IMPORT_DIR <%text>${PROTOBUF_ROOT_DIR}</%text>/src)
     if(EXISTS "<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake/CMakeLists.txt")
       set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
       add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
@@ -244,6 +245,7 @@
       find_package(Protobuf MODULE)
       set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
     endif()
+    set(PROTOBUF_WELLKNOWN_IMPORT_DIR /usr/local/include)
   endif()
 
   if("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "module")
@@ -346,7 +348,7 @@
       return()
     endif()
 
-    set(_protobuf_include_path -I .)
+    set(_protobuf_include_path -I . -I <%text>${PROTOBUF_WELLKNOWN_IMPORT_DIR}</%text>)
     foreach(FIL <%text>${ARGN}</%text>)
       get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
       get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)

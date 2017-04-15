@@ -519,9 +519,10 @@
           # the OpenSSL headers, from the downloaded Node development package,
           # which is typically located in `.node-gyp` in your home directory.
           'target_name': 'WINDOWS_BUILD_WARNING',
-          'actions': [
+          'rules': [
             {
-              'action_name': 'WINDOWS_BUILD_WARNING',
+              'rule_name': 'WINDOWS_BUILD_WARNING',
+              'extension': 'S',
               'inputs': [
                 'package.json'
               ],
@@ -652,15 +653,10 @@
         'src/core/lib/channel/channel_args.c',
         'src/core/lib/channel/channel_stack.c',
         'src/core/lib/channel/channel_stack_builder.c',
-        'src/core/lib/channel/compress_filter.c',
         'src/core/lib/channel/connected_channel.c',
-        'src/core/lib/channel/deadline_filter.c',
         'src/core/lib/channel/handshaker.c',
         'src/core/lib/channel/handshaker_factory.c',
         'src/core/lib/channel/handshaker_registry.c',
-        'src/core/lib/channel/http_client_filter.c',
-        'src/core/lib/channel/http_server_filter.c',
-        'src/core/lib/channel/message_size_filter.c',
         'src/core/lib/compression/compression.c',
         'src/core/lib/compression/message_compress.c',
         'src/core/lib/debug/trace.c',
@@ -788,6 +784,7 @@
         'src/core/ext/transport/chttp2/transport/hpack_encoder.c',
         'src/core/ext/transport/chttp2/transport/hpack_parser.c',
         'src/core/ext/transport/chttp2/transport/hpack_table.c',
+        'src/core/ext/transport/chttp2/transport/http2_settings.c',
         'src/core/ext/transport/chttp2/transport/huffsyms.c',
         'src/core/ext/transport/chttp2/transport/incoming_metadata.c',
         'src/core/ext/transport/chttp2/transport/parsing.c',
@@ -796,6 +793,10 @@
         'src/core/ext/transport/chttp2/transport/varint.c',
         'src/core/ext/transport/chttp2/transport/writing.c',
         'src/core/ext/transport/chttp2/alpn/alpn.c',
+        'src/core/ext/filters/http/client/http_client_filter.c',
+        'src/core/ext/filters/http/http_filters_plugin.c',
+        'src/core/ext/filters/http/message_compress/message_compress_filter.c',
+        'src/core/ext/filters/http/server/http_server_filter.c',
         'src/core/lib/http/httpcli_security_connector.c',
         'src/core/lib/security/context/security_context.c',
         'src/core/lib/security/credentials/composite/composite_credentials.c',
@@ -846,6 +847,7 @@
         'src/core/ext/filters/client_channel/subchannel.c',
         'src/core/ext/filters/client_channel/subchannel_index.c',
         'src/core/ext/filters/client_channel/uri_parser.c',
+        'src/core/ext/filters/deadline/deadline_filter.c',
         'src/core/ext/transport/chttp2/client/chttp2_connector.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
@@ -882,6 +884,7 @@
         'src/core/ext/census/trace_context.c',
         'src/core/ext/census/tracing.c',
         'src/core/ext/filters/max_age/max_age_filter.c',
+        'src/core/ext/filters/message_size/message_size_filter.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
       "conditions": [

@@ -167,6 +167,10 @@ void ServerContext::BeginCompletionOp(Call* call) {
   call->PerformOps(completion_op_);
 }
 
+CompletionQueueTag* ServerContext::GetCompletionOpTag() {
+  return static_cast<CompletionQueueTag*>(completion_op_);
+}
+
 void ServerContext::AddInitialMetadata(const grpc::string& key,
                                        const grpc::string& value) {
   initial_metadata_.insert(std::make_pair(key, value));
