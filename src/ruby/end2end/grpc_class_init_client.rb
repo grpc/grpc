@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env ruby
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,17 +29,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Try to catch if native gRPC class constructors are missing a 'grpc_init'
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+require_relative './end2end_common'
 
-EXIT_CODE=0
-ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_closing_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/sig_int_during_channel_watch_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/killed_client_thread_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/forking_client_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/grpc_class_init_driver.rb || EXIT_CODE=1
-exit $EXIT_CODE
+def main
+  grpc_class = ''
+  OptionParser.new do |opts|
+    opts.on('--grpc_class=P', String) do |p|
+      grpc_class = p
+    end
+  end.parse!
+
+  case grpc_class
+  when 'channel'
+    GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
+  when 'server'
+    GRPC::Core::Server.new({})
+  when 'channel_credentials'
+    GRPC::Core::ChannelCredentials.new
+  when 'call_credentials'
+    GRPC::Core::CallCredentials.new(proc { |noop| noop })
+  when 'compression_options'
+    GRPC::Core::CompressionOptions.new
+  else
+    fail "bad --grpc_class=#{grpc_class} param"
+  end
+end
+
+main

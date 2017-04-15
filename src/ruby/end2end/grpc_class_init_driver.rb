@@ -1,5 +1,6 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,17 +29,39 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+require_relative './end2end_common'
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+def main
+  native_grpc_classes = %w( channel
+                            server
+                            channel_credentials
+                            call_credentials
+                            compression_options )
 
-EXIT_CODE=0
-ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_closing_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/sig_int_during_channel_watch_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/killed_client_thread_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/forking_client_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/grpc_class_init_driver.rb || EXIT_CODE=1
-exit $EXIT_CODE
+  native_grpc_classes.each do |grpc_class|
+    STDERR.puts 'start client'
+    this_dir = File.expand_path(File.dirname(__FILE__))
+    client_path = File.join(this_dir, 'grpc_class_init_client.rb')
+    client_pid = Process.spawn(RbConfig.ruby,
+                               client_path,
+                               "--grpc_class=#{grpc_class}")
+    begin
+      Timeout.timeout(10) do
+        Process.wait(client_pid)
+      end
+    rescue Timeout::Error
+      STDERR.puts "timeout waiting for client pid #{client_pid}"
+      Process.kill('SIGKILL', client_pid)
+      Process.wait(client_pid)
+      STDERR.puts 'killed client child'
+      raise 'Timed out waiting for client process. ' \
+        'It likely hangs when the first constructed gRPC object has ' \
+        "type: #{grpc_class}"
+    end
+
+    client_exit_code = $CHILD_STATUS
+    fail "client failed, exit code #{client_exit_code}" if client_exit_code != 0
+  end
+end
+
+main

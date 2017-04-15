@@ -59,7 +59,7 @@ def main
     Process.kill('SIGKILL', p)
     Process.wait(p)
     raise 'Timed out waiting for client process. ' \
-      'It likely hangs when killed while in the middle of an rpc'
+      'It likely hangs when using gRPC after loading it and then forking'
   end
 
   client_exit_code = $CHILD_STATUS
