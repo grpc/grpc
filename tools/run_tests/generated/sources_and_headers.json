@@ -3394,7 +3394,10 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+	    "include/grpc++/test/mock_stream.h", 
+	    "src/proto/grpc/testing/echo_mock.grpc.pb.h" 
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "mock_test", 
