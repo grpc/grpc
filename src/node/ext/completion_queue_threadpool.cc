@@ -148,9 +148,7 @@ void CompletionQueueAsyncWorker::HandleOKCallback() {
   Nan::HandleScope scope;
   current_threads -= 1;
   TryAddWorker();
-  Nan::Callback *callback = GetTagCallback(result.tag);
-  Local<Value> argv[] = {Nan::Null(), GetTagNodeValue(result.tag)};
-  callback->Call(2, argv);
+  CompleteTag(result.tag, NULL);
 
   DestroyTag(result.tag);
 }
@@ -159,10 +157,7 @@ void CompletionQueueAsyncWorker::HandleErrorCallback() {
   Nan::HandleScope scope;
   current_threads -= 1;
   TryAddWorker();
-  Nan::Callback *callback = GetTagCallback(result.tag);
-  Local<Value> argv[] = {Nan::Error(ErrorMessage())};
-
-  callback->Call(1, argv);
+  CompleteTag(result.tag, ErrorMessage());
 
   DestroyTag(result.tag);
 }
