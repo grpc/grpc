@@ -3031,6 +3031,7 @@
     ], 
     "headers": [
       "src/proto/grpc/testing/compiler_test.grpc.pb.h", 
+      "src/proto/grpc/testing/compiler_test_mock.grpc.pb.h", 
       "src/proto/grpc/testing/compiler_test.pb.h"
     ], 
     "is_filegroup": false, 
@@ -8933,12 +8934,14 @@
       "grpc++"
     ], 
     "headers": [
+      "include/grpc++/test/mock_stream.h", 
       "include/grpc++/test/server_context_test_spouse.h"
     ], 
     "is_filegroup": true, 
     "language": "c++", 
     "name": "grpc++_test", 
     "src": [
+      "include/grpc++/test/mock_stream.h", 
       "include/grpc++/test/server_context_test_spouse.h"
     ], 
     "third_party": false, 

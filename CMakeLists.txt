@@ -10082,6 +10082,7 @@ add_executable(golden_file_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test_mock.grpc.pb.h
   test/cpp/codegen/golden_file_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
 )

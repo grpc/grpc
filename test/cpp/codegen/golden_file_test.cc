@@ -76,7 +76,9 @@ TEST(GoldenMockFileTest, TestGeneratedMockFile) {
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   ::google::ParseCommandLineFlags(&argc, &argv, true);
-  if (FLAGS_generated_file_path.empty()) return 1;
+  if (FLAGS_generated_file_path.empty()) {
+    FLAGS_generated_file_path = "gens/src/proto/grpc/testing/";
+  }
   if (FLAGS_generated_file_path.back() != '/')
     FLAGS_generated_file_path.append("/");
   return RUN_ALL_TESTS();
