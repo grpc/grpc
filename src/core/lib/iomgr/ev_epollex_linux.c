@@ -729,7 +729,7 @@ static grpc_error *pollset_poll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
          the fd is level triggered and non-exclusive, which should result in all
          pollers waking */
       if (gpr_atm_no_barrier_load(&pollset->shutdown_atm) == 0) {
-        append_error(&error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
+        append_error(&error, grpc_wakeup_fd_consume_wakeup(&pollset->pollset_wakeup),
                      err_desc);
       }
     } else {
