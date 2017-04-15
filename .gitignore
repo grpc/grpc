@@ -118,3 +118,13 @@ gdb.txt
 
 # ctags file
 tags
+
+# perf data
+perf.data
+perf.data.old
+
+# bm_diff
+bm_diff_new/
+bm_diff_old/
+bm_*.json
+
