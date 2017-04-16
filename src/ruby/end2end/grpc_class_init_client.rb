@@ -29,7 +29,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Try to catch if native gRPC class constructors are missing a 'grpc_init'
+# For GRPC::Core classes, which use the grpc c-core, object init
+# is interesting because it's related to overall library init.
 
 require_relative './end2end_common'
 
@@ -43,15 +44,35 @@ def main
 
   case grpc_class
   when 'channel'
+    thd = Thread.new do
+      GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
+    end
     GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
+    thd.join
   when 'server'
+    thd = Thread.new do
+      GRPC::Core::Server.new({})
+    end
     GRPC::Core::Server.new({})
+    thd.join
   when 'channel_credentials'
+    thd = Thread.new do
+      GRPC::Core::ChannelCredentials.new
+    end
     GRPC::Core::ChannelCredentials.new
+    thd.join
   when 'call_credentials'
+    thd = Thread.new do
+      GRPC::Core::CallCredentials.new(proc { |noop| noop })
+    end
     GRPC::Core::CallCredentials.new(proc { |noop| noop })
+    thd.join
   when 'compression_options'
+    thd = Thread.new do
+      GRPC::Core::CompressionOptions.new
+    end
     GRPC::Core::CompressionOptions.new
+    thd.join
   else
     fail "bad --grpc_class=#{grpc_class} param"
   end
