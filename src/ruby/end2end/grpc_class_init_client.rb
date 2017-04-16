@@ -42,40 +42,36 @@ def main
     end
   end.parse!
 
+  test_proc = nil
+
   case grpc_class
   when 'channel'
-    thd = Thread.new do
+    test_proc = proc do
       GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
     end
-    GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
-    thd.join
   when 'server'
-    thd = Thread.new do
+    test_proc = proc do
       GRPC::Core::Server.new({})
     end
-    GRPC::Core::Server.new({})
-    thd.join
   when 'channel_credentials'
-    thd = Thread.new do
+    test_proc = proc do
       GRPC::Core::ChannelCredentials.new
     end
-    GRPC::Core::ChannelCredentials.new
-    thd.join
   when 'call_credentials'
-    thd = Thread.new do
+    test_proc = proc do
       GRPC::Core::CallCredentials.new(proc { |noop| noop })
     end
-    GRPC::Core::CallCredentials.new(proc { |noop| noop })
-    thd.join
   when 'compression_options'
-    thd = Thread.new do
+    test_proc = proc do
       GRPC::Core::CompressionOptions.new
     end
-    GRPC::Core::CompressionOptions.new
-    thd.join
   else
     fail "bad --grpc_class=#{grpc_class} param"
   end
+
+  th = Thread.new { test_proc.call }
+  test_proc.call
+  th.join
 end
 
 main
