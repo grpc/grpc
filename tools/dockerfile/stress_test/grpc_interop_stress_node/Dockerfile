@@ -93,7 +93,6 @@ RUN /bin/bash -l -c "nvm alias default 4"
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client
 
-
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++

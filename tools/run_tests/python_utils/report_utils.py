@@ -84,6 +84,7 @@ def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
   tree = ET.ElementTree(root)
   tree.write(xml_report, encoding='UTF-8')
 
+
 def render_interop_html_report(
   client_langs, server_langs, test_cases, auth_test_cases, http2_cases,
   http2_server_cases, resultset,

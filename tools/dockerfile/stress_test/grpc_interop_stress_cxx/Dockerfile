@@ -94,7 +94,6 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev c
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client
 
-
 #=================
 # Update clang to a version with improved tsan and fuzzing capabilities
 

@@ -33,7 +33,6 @@ FROM golang:latest
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client
 
-
 #====================
 # Python dependencies
 
