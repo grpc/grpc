@@ -267,7 +267,7 @@ class BuildExt(build_ext.build_ext):
 
     def build_extensions(self):
         if "darwin" in sys.platform:
-            config = os.environ.get('CONFIG', opt)
+            config = os.environ.get('CONFIG', 'opt')
             target_path = os.path.abspath(
                 os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              '..', '..', '..', 'libs', config))
