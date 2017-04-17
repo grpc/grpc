@@ -286,8 +286,10 @@ NAN_METHOD(MetadataKeyIsLegal) {
         "headerKeyIsLegal's argument must be a string");
   }
   Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
+  grpc_slice slice = CreateSliceFromString(key);
   info.GetReturnValue().Set(static_cast<bool>(
-      grpc_header_key_is_legal(CreateSliceFromString(key))));
+      grpc_header_key_is_legal(slice)));
+  grpc_slice_unref(slice);
 }
 
 NAN_METHOD(MetadataNonbinValueIsLegal) {
@@ -296,8 +298,10 @@ NAN_METHOD(MetadataNonbinValueIsLegal) {
         "metadataNonbinValueIsLegal's argument must be a string");
   }
   Local<String> value = Nan::To<String>(info[0]).ToLocalChecked();
+  grpc_slice slice = CreateSliceFromString(value);
   info.GetReturnValue().Set(static_cast<bool>(
-      grpc_header_nonbin_value_is_legal(CreateSliceFromString(value))));
+      grpc_header_nonbin_value_is_legal(slice)));
+  grpc_slice_unref(slice);
 }
 
 NAN_METHOD(MetadataKeyIsBinary) {
@@ -306,8 +310,10 @@ NAN_METHOD(MetadataKeyIsBinary) {
         "metadataKeyIsLegal's argument must be a string");
   }
   Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
+  grpc_slice slice = CreateSliceFromString(key);
   info.GetReturnValue().Set(static_cast<bool>(
-      grpc_is_binary_header(CreateSliceFromString(key))));
+      grpc_is_binary_header(slice)));
+  grpc_slice_unref(slice);
 }
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(

@@ -41,9 +41,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/connector.h"
-#include "src/core/ext/client_channel/http_connect_handshaker.h"
-#include "src/core/ext/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
@@ -113,7 +113,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_lock(&c->mu);
   if (error != GRPC_ERROR_NONE || c->shutdown) {
     if (error == GRPC_ERROR_NONE) {
-      error = GRPC_ERROR_CREATE("connector shutdown");
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connector shutdown");
       // We were shut down after handshaking completed successfully, so
       // destroy the endpoint here.
       // TODO(ctiller): It is currently necessary to shutdown endpoints
@@ -164,7 +164,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   c->connecting = false;
   if (error != GRPC_ERROR_NONE || c->shutdown) {
     if (error == GRPC_ERROR_NONE) {
-      error = GRPC_ERROR_CREATE("connector shutdown");
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connector shutdown");
     } else {
       error = GRPC_ERROR_REF(error);
     }

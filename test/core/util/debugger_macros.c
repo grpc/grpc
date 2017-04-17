@@ -39,7 +39,7 @@
 
 #include <stdio.h>
 
-#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/surface/call.h"

@@ -63,7 +63,7 @@ typedef struct {
   int refs;
   grpc_closure on_connect;
   grpc_endpoint **endpoint;
-  grpc_resource_quota *resource_quota;
+  grpc_channel_args *channel_args;
 } async_connect;
 
 static void async_connect_unlock_and_cleanup(grpc_exec_ctx *exec_ctx,
@@ -72,7 +72,7 @@ static void async_connect_unlock_and_cleanup(grpc_exec_ctx *exec_ctx,
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
-    grpc_resource_quota_unref_internal(exec_ctx, ac->resource_quota);
+    grpc_channel_args_destroy(exec_ctx, ac->channel_args);
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_name);
     gpr_free(ac);
@@ -119,11 +119,12 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
       if (!wsa_success) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
       } else {
-        *ep = grpc_tcp_create(socket, ac->resource_quota, ac->addr_name);
+        *ep =
+            grpc_tcp_create(exec_ctx, socket, ac->channel_args, ac->addr_name);
         socket = NULL;
       }
     } else {
-      error = GRPC_ERROR_CREATE("socket is null");
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("socket is null");
     }
   }
 
@@ -151,17 +152,6 @@ static void tcp_client_connect_impl(
   DWORD ioctl_num_bytes;
   grpc_winsocket_callback_info *info;
   grpc_error *error = GRPC_ERROR_NONE;
-
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
-  if (channel_args != NULL) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
-        resource_quota = grpc_resource_quota_ref_internal(
-            channel_args->args[i].value.pointer.p);
-      }
-    }
-  }
 
   *endpoint = NULL;
 
@@ -225,7 +215,7 @@ static void tcp_client_connect_impl(
   ac->refs = 2;
   ac->addr_name = grpc_sockaddr_to_uri(addr);
   ac->endpoint = endpoint;
-  ac->resource_quota = resource_quota;
+  ac->channel_args = grpc_channel_args_copy(channel_args);
   grpc_closure_init(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   grpc_closure_init(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
@@ -238,15 +228,15 @@ failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   char *target_uri = grpc_sockaddr_to_uri(addr);
   grpc_error *final_error = grpc_error_set_str(
-      GRPC_ERROR_CREATE_REFERENCING("Failed to connect", &error, 1),
-      GRPC_ERROR_STR_TARGET_ADDRESS, target_uri);
+      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Failed to connect",
+                                                       &error, 1),
+      GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(target_uri));
   GRPC_ERROR_UNREF(error);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }
-  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   grpc_closure_sched(exec_ctx, on_done, final_error);
 }
 

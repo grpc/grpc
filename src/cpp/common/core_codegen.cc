@@ -54,9 +54,14 @@ struct grpc_byte_buffer;
 
 namespace grpc {
 
-grpc_completion_queue* CoreCodegen::grpc_completion_queue_create(
+grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_next(
     void* reserved) {
-  return ::grpc_completion_queue_create(reserved);
+  return ::grpc_completion_queue_create_for_next(reserved);
+}
+
+grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_pluck(
+    void* reserved) {
+  return ::grpc_completion_queue_create_for_pluck(reserved);
 }
 
 void CoreCodegen::grpc_completion_queue_destroy(grpc_completion_queue* cq) {
@@ -110,6 +115,8 @@ grpc_byte_buffer* CoreCodegen::grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                            size_t nslices) {
   return ::grpc_raw_byte_buffer_create(slice, nslices);
 }
+
+grpc_slice CoreCodegen::grpc_empty_slice() { return ::grpc_empty_slice(); }
 
 grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {
   return ::grpc_slice_malloc(length);

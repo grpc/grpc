@@ -101,6 +101,14 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
               "Ping delayed [%p]: not enough time elapsed since last ping",
               t->peer_string);
     }
+    if (!t->ping_state.is_delayed_ping_timer_set) {
+      t->ping_state.is_delayed_ping_timer_set = true;
+      grpc_timer_init(exec_ctx, &t->ping_state.delayed_ping_timer,
+                      gpr_time_add(t->ping_state.last_ping_sent_time,
+                                   t->ping_policy.min_time_between_pings),
+                      &t->retry_initiate_ping_locked,
+                      gpr_now(GPR_CLOCK_MONOTONIC));
+    }
     return;
   }
   /* coalesce equivalent pings into this one */
@@ -211,16 +219,29 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
 
     /* send initial metadata if it's available */
     if (!sent_initial_metadata && s->send_initial_metadata) {
-      grpc_chttp2_encode_header(
-          exec_ctx, &t->hpack_compressor, s->id, s->send_initial_metadata, 0,
-          t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-          &s->stats.outgoing, &t->outbuf);
+      grpc_encode_header_options hopt = {
+          .stream_id = s->id,
+          .is_eof = false,
+          .use_true_binary_metadata =
+              t->settings
+                  [GRPC_PEER_SETTINGS]
+                  [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] != 0,
+          .max_frame_size = t->settings[GRPC_PEER_SETTINGS]
+                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+          .stats = &s->stats.outgoing};
+      grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor,
+                                s->send_initial_metadata, &hopt, &t->outbuf);
       s->send_initial_metadata = NULL;
       s->sent_initial_metadata = true;
       sent_initial_metadata = true;
       now_writing = true;
       t->ping_state.pings_before_data_required =
           t->ping_policy.max_pings_without_data;
+      if (!t->is_client) {
+        t->ping_recv_state.last_ping_recv_time =
+            gpr_inf_past(GPR_CLOCK_MONOTONIC);
+        t->ping_recv_state.ping_strikes = 0;
+      }
     }
     /* send any window updates */
     if (s->announce_window > 0) {
@@ -230,6 +251,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                 s->id, s->announce_window, &s->stats.outgoing));
       t->ping_state.pings_before_data_required =
           t->ping_policy.max_pings_without_data;
+      if (!t->is_client) {
+        t->ping_recv_state.last_ping_recv_time =
+            gpr_inf_past(GPR_CLOCK_MONOTONIC);
+        t->ping_recv_state.ping_strikes = 0;
+      }
       GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, announce_window, announce);
     }
     if (sent_initial_metadata) {
@@ -241,7 +267,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                 (int64_t)t->settings[GRPC_PEER_SETTINGS]
                                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
         uint32_t max_outgoing = (uint32_t)GPR_MIN(
-            t->settings[GRPC_ACKED_SETTINGS]
+            t->settings[GRPC_PEER_SETTINGS]
                        [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
             GPR_MIN(stream_outgoing_window, t->outgoing_window));
         if (max_outgoing > 0) {
@@ -262,6 +288,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                            send_bytes);
           t->ping_state.pings_before_data_required =
               t->ping_policy.max_pings_without_data;
+          if (!t->is_client) {
+            t->ping_recv_state.last_ping_recv_time =
+                gpr_inf_past(GPR_CLOCK_MONOTONIC);
+            t->ping_recv_state.ping_strikes = 0;
+          }
           if (is_last_frame) {
             s->send_trailing_metadata = NULL;
             s->sent_trailing_metadata = true;
@@ -292,11 +323,21 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
           grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, 0, true,
                                   &s->stats.outgoing, &t->outbuf);
         } else {
-          grpc_chttp2_encode_header(
-              exec_ctx, &t->hpack_compressor, s->id, s->send_trailing_metadata,
-              true, t->settings[GRPC_ACKED_SETTINGS]
-                               [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-              &s->stats.outgoing, &t->outbuf);
+          grpc_encode_header_options hopt = {
+              .stream_id = s->id,
+              .is_eof = true,
+              .use_true_binary_metadata =
+                  t->settings
+                      [GRPC_PEER_SETTINGS]
+                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
+                  0,
+              .max_frame_size =
+                  t->settings[GRPC_PEER_SETTINGS]
+                             [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+              .stats = &s->stats.outgoing};
+          grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor,
+                                    s->send_trailing_metadata, &hopt,
+                                    &t->outbuf);
         }
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
@@ -337,6 +378,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                           0, announced, &throwaway_stats));
     t->ping_state.pings_before_data_required =
         t->ping_policy.max_pings_without_data;
+    if (!t->is_client) {
+      t->ping_recv_state.last_ping_recv_time =
+          gpr_inf_past(GPR_CLOCK_MONOTONIC);
+      t->ping_recv_state.ping_strikes = 0;
+    }
   }
 
   for (size_t i = 0; i < t->ping_ack_count; i++) {

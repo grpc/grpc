@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_HAVE_IFADDRS
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 
@@ -210,11 +210,12 @@ error:
   if (fd >= 0) {
     close(fd);
   }
-  grpc_error *ret = grpc_error_set_int(
-      GRPC_ERROR_CREATE_REFERENCING("Unable to configure socket", &err, 1),
-      GRPC_ERROR_INT_FD, fd);
+  grpc_error *ret =
+      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Unable to configure socket", &err, 1),
+                         GRPC_ERROR_INT_FD, fd);
   GRPC_ERROR_UNREF(err);
   return ret;
 }
 
-#endif /* GRPC_HAVE_IFADDRS */
+#endif /* GRPC_POSIX_SOCKET */

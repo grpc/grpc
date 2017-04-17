@@ -42,6 +42,7 @@
 #include <grpc++/support/time.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -164,6 +165,10 @@ void ServerContext::BeginCompletionOp(Call* call) {
     completion_op_->set_tag(async_notify_when_done_tag_);
   }
   call->PerformOps(completion_op_);
+}
+
+CompletionQueueTag* ServerContext::GetCompletionOpTag() {
+  return static_cast<CompletionQueueTag*>(completion_op_);
 }
 
 void ServerContext::AddInitialMetadata(const grpc::string& key,

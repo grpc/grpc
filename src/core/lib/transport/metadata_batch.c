@@ -101,12 +101,10 @@ void grpc_metadata_batch_destroy(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_error *grpc_attach_md_to_error(grpc_error *src, grpc_mdelem md) {
-  char *k = grpc_slice_to_c_string(GRPC_MDKEY(md));
-  char *v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
   grpc_error *out = grpc_error_set_str(
-      grpc_error_set_str(src, GRPC_ERROR_STR_KEY, k), GRPC_ERROR_STR_VALUE, v);
-  gpr_free(k);
-  gpr_free(v);
+      grpc_error_set_str(src, GRPC_ERROR_STR_KEY,
+                         grpc_slice_ref_internal(GRPC_MDKEY(md))),
+      GRPC_ERROR_STR_VALUE, grpc_slice_ref_internal(GRPC_MDVALUE(md)));
   return out;
 }
 
@@ -126,7 +124,8 @@ static grpc_error *maybe_link_callout(grpc_metadata_batch *batch,
     return GRPC_ERROR_NONE;
   }
   return grpc_attach_md_to_error(
-      GRPC_ERROR_CREATE("Unallowed duplicate metadata"), storage->md);
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unallowed duplicate metadata"),
+      storage->md);
 }
 
 static void maybe_unlink_callout(grpc_metadata_batch *batch,
@@ -302,7 +301,7 @@ static void add_error(grpc_error **composite, grpc_error *error,
                       const char *composite_error_string) {
   if (error == GRPC_ERROR_NONE) return;
   if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE(composite_error_string);
+    *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(composite_error_string);
   }
   *composite = grpc_error_add_child(*composite, error);
 }

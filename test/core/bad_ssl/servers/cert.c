@@ -56,11 +56,11 @@ int main(int argc, char **argv) {
   grpc_init();
 
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file("src/core/lib/tsi/test_creds/badserver.pem",
-                                  1, &cert_slice)));
+      "load_file",
+      grpc_load_file("src/core/tsi/test_creds/badserver.pem", 1, &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file("src/core/lib/tsi/test_creds/badserver.key",
-                                  1, &key_slice)));
+      "load_file",
+      grpc_load_file("src/core/tsi/test_creds/badserver.key", 1, &key_slice)));
   pem_key_cert_pair.private_key = (const char *)GRPC_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain = (const char *)GRPC_SLICE_START_PTR(cert_slice);
 

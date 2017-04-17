@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
     calls[k].details = grpc_empty_slice();
   }
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
 
   struct grpc_memory_counters client_channel_start =
       grpc_memory_counters_snapshot();
@@ -237,6 +237,11 @@ int main(int argc, char **argv) {
       0, grpc_slice_from_static_string("Reflector/GetAfterSvrCreation"));
 
   // warmup period
+  for (int i = 0; i < warmup_iterations; i++) {
+    send_snapshot_request(
+        0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
+  }
+
   for (call_idx = 0; call_idx < warmup_iterations; ++call_idx) {
     init_ping_pong_request(call_idx + 1);
   }

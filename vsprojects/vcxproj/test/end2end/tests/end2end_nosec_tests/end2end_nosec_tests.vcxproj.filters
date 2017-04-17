@@ -13,6 +13,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_hostname.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_ping.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\binary_metadata.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
@@ -83,6 +86,12 @@
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_concurrent_streams.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_connection_age.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_connection_idle.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_message_length.c">

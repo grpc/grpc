@@ -92,6 +92,11 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
     gpr_log(GPR_ERROR, "The request should not reach application handler.");
     GPR_ASSERT(0);
   }
+  if (request->has_param() && request->param().has_expected_error()) {
+    const auto& error = request->param().expected_error();
+    return Status(static_cast<StatusCode>(error.code()), error.error_message(),
+                  error.binary_error_details());
+  }
   int server_try_cancel = GetIntValueFromMetadata(
       kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
   if (server_try_cancel > DO_NOT_CANCEL) {
@@ -246,6 +251,9 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
   int server_try_cancel = GetIntValueFromMetadata(
       kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
 
+  int server_coalescing_api = GetIntValueFromMetadata(
+      kServerUseCoalescingApi, context->client_metadata(), 0);
+
   if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
     ServerTryCancel(context);
     return Status::CANCELLED;
@@ -260,7 +268,11 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
 
   for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
     response.set_message(request->message() + grpc::to_string(i));
-    writer->Write(response);
+    if (i == kNumResponseStreamsMsgs - 1 && server_coalescing_api != 0) {
+      writer->WriteLast(response, WriteOptions());
+    } else {
+      writer->Write(response);
+    }
   }
 
   if (server_try_cancel_thd != nullptr) {
@@ -305,10 +317,21 @@ Status TestServiceImpl::BidiStream(
         new std::thread(&TestServiceImpl::ServerTryCancel, this, context);
   }
 
+  // kServerFinishAfterNReads suggests after how many reads, the server should
+  // write the last message and send status (coalesced using WriteLast)
+  int server_write_last = GetIntValueFromMetadata(
+      kServerFinishAfterNReads, context->client_metadata(), 0);
+
+  int read_counts = 0;
   while (stream->Read(&request)) {
+    read_counts++;
     gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
     response.set_message(request.message());
-    stream->Write(response);
+    if (read_counts == server_write_last) {
+      stream->WriteLast(response, WriteOptions());
+    } else {
+      stream->Write(response);
+    }
   }
 
   if (server_try_cancel_thd != nullptr) {

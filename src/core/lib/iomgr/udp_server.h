@@ -55,10 +55,12 @@ typedef void (*grpc_udp_server_write_cb)(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
 
 /* Called when the grpc_fd is about to be orphaned (and the FD closed). */
 typedef void (*grpc_udp_server_orphan_cb)(grpc_exec_ctx *exec_ctx,
-                                          grpc_fd *emfd, void *user_data);
+                                          grpc_fd *emfd,
+                                          grpc_closure *shutdown_fd_callback,
+                                          void *user_data);
 
 /* Create a server, initially not bound to any ports */
-grpc_udp_server *grpc_udp_server_create(void);
+grpc_udp_server *grpc_udp_server_create(const grpc_channel_args *args);
 
 /* Start listening to bound ports. user_data is passed to callbacks. */
 void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *udp_server,

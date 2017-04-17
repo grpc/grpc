@@ -85,6 +85,7 @@ def test_options(needs_fullstack=False, needs_dns=False, proxyable=True,
 # maps test names to options
 END2END_TESTS = {
     'bad_hostname': test_options(),
+    'bad_ping': test_options(),
     'binary_metadata': test_options(),
     'resource_quota_server': test_options(proxyable=False),
     'call_creds': test_options(secure=True),
@@ -109,6 +110,8 @@ END2END_TESTS = {
     'keepalive_timeout': test_options(proxyable=False),
     'large_metadata': test_options(),
     'max_concurrent_streams': test_options(proxyable=False),
+    'max_connection_age': test_options(),
+    'max_connection_idle': test_options(needs_fullstack=True, proxyable=False),
     'max_message_length': test_options(),
     'negative_deadline': test_options(),
     'network_status_change': test_options(),

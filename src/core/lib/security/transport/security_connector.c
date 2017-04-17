@@ -54,8 +54,8 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/fake_transport_security.h"
-#include "src/core/lib/tsi/ssl_transport_security.h"
+#include "src/core/tsi/fake_transport_security.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 /* -- Constants. -- */
 
@@ -137,9 +137,9 @@ void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_auth_context **auth_context,
                                         grpc_closure *on_peer_checked) {
   if (sc == NULL) {
-    grpc_closure_sched(
-        exec_ctx, on_peer_checked,
-        GRPC_ERROR_CREATE("cannot check peer -- no security connector"));
+    grpc_closure_sched(exec_ctx, on_peer_checked,
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                           "cannot check peer -- no security connector"));
     tsi_peer_destruct(&peer);
   } else {
     sc->vtable->check_peer(exec_ctx, sc, peer, auth_context, on_peer_checked);
@@ -330,7 +330,8 @@ static void fake_check_peer(grpc_exec_ctx *exec_ctx,
   grpc_error *error = GRPC_ERROR_NONE;
   *auth_context = NULL;
   if (peer.property_count != 1) {
-    error = GRPC_ERROR_CREATE("Fake peers should only have 1 property.");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Fake peers should only have 1 property.");
     goto end;
   }
   prop_name = peer.properties[0].name;
@@ -339,13 +340,14 @@ static void fake_check_peer(grpc_exec_ctx *exec_ctx,
     char *msg;
     gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
                  prop_name == NULL ? "<EMPTY>" : prop_name);
-    error = GRPC_ERROR_CREATE(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     goto end;
   }
   if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
               peer.properties[0].value.length)) {
-    error = GRPC_ERROR_CREATE("Invalid value for cert type property.");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid value for cert type property.");
     goto end;
   }
   *auth_context = grpc_auth_context_create(NULL);
@@ -421,12 +423,8 @@ grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
   c->base.check_call_host = fake_channel_check_call_host;
   c->base.add_handshakers = fake_channel_add_handshakers;
   c->target = gpr_strdup(target);
-  const grpc_arg *expected_target_arg =
-      grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
-  if (expected_target_arg != NULL) {
-    GPR_ASSERT(expected_target_arg->type == GRPC_ARG_STRING);
-    c->expected_targets = gpr_strdup(expected_target_arg->value.string);
-  }
+  const char *expected_targets = grpc_fake_transport_get_expected_targets(args);
+  c->expected_targets = gpr_strdup(expected_targets);
   c->is_lb_channel = (grpc_lb_targets_info_find_in_args(args) != NULL);
   return &c->base;
 }
@@ -446,14 +444,14 @@ grpc_server_security_connector *grpc_fake_server_security_connector_create(
 
 typedef struct {
   grpc_channel_security_connector base;
-  tsi_ssl_handshaker_factory *handshaker_factory;
+  tsi_ssl_client_handshaker_factory *handshaker_factory;
   char *target_name;
   char *overridden_target_name;
 } grpc_ssl_channel_security_connector;
 
 typedef struct {
   grpc_server_security_connector base;
-  tsi_ssl_handshaker_factory *handshaker_factory;
+  tsi_ssl_server_handshaker_factory *handshaker_factory;
 } grpc_ssl_server_security_connector;
 
 static void ssl_channel_destroy(grpc_exec_ctx *exec_ctx,
@@ -462,7 +460,7 @@ static void ssl_channel_destroy(grpc_exec_ctx *exec_ctx,
       (grpc_ssl_channel_security_connector *)sc;
   grpc_call_credentials_unref(exec_ctx, c->base.request_metadata_creds);
   if (c->handshaker_factory != NULL) {
-    tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
+    tsi_ssl_client_handshaker_factory_destroy(c->handshaker_factory);
   }
   if (c->target_name != NULL) gpr_free(c->target_name);
   if (c->overridden_target_name != NULL) gpr_free(c->overridden_target_name);
@@ -474,24 +472,9 @@ static void ssl_server_destroy(grpc_exec_ctx *exec_ctx,
   grpc_ssl_server_security_connector *c =
       (grpc_ssl_server_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
-    tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
+    tsi_ssl_server_handshaker_factory_destroy(c->handshaker_factory);
   }
   gpr_free(sc);
-}
-
-static grpc_security_status ssl_create_handshaker(
-    tsi_ssl_handshaker_factory *handshaker_factory, bool is_client,
-    const char *peer_name, tsi_handshaker **handshaker) {
-  tsi_result result = TSI_OK;
-  if (handshaker_factory == NULL) return GRPC_SECURITY_ERROR;
-  result = tsi_ssl_handshaker_factory_create_handshaker(
-      handshaker_factory, is_client ? peer_name : NULL, handshaker);
-  if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
-            tsi_result_to_string(result));
-    return GRPC_SECURITY_ERROR;
-  }
-  return GRPC_SECURITY_OK;
 }
 
 static void ssl_channel_add_handshakers(grpc_exec_ctx *exec_ctx,
@@ -501,11 +484,17 @@ static void ssl_channel_add_handshakers(grpc_exec_ctx *exec_ctx,
       (grpc_ssl_channel_security_connector *)sc;
   // Instantiate TSI handshaker.
   tsi_handshaker *tsi_hs = NULL;
-  ssl_create_handshaker(c->handshaker_factory, true /* is_client */,
-                        c->overridden_target_name != NULL
-                            ? c->overridden_target_name
-                            : c->target_name,
-                        &tsi_hs);
+  tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
+      c->handshaker_factory,
+      c->overridden_target_name != NULL ? c->overridden_target_name
+                                        : c->target_name,
+      &tsi_hs);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
+            tsi_result_to_string(result));
+    return;
+  }
+
   // Create handshakers.
   grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
                                                 exec_ctx, tsi_hs, &sc->base));
@@ -518,8 +507,14 @@ static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
       (grpc_ssl_server_security_connector *)sc;
   // Instantiate TSI handshaker.
   tsi_handshaker *tsi_hs = NULL;
-  ssl_create_handshaker(c->handshaker_factory, false /* is_client */,
-                        NULL /* peer_name */, &tsi_hs);
+  tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
+      c->handshaker_factory, &tsi_hs);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
+            tsi_result_to_string(result));
+    return;
+  }
+
   // Create handshakers.
   grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
                                                 exec_ctx, tsi_hs, &sc->base));
@@ -586,18 +581,19 @@ static grpc_error *ssl_check_peer(grpc_security_connector *sc,
   const tsi_peer_property *p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == NULL) {
-    return GRPC_ERROR_CREATE(
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Cannot check peer: missing selected ALPN property.");
   }
   if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
-    return GRPC_ERROR_CREATE("Cannot check peer: invalid ALPN value.");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Cannot check peer: invalid ALPN value.");
   }
 
   /* Check the peer name if specified. */
   if (peer_name != NULL && !ssl_host_matches_name(peer, peer_name)) {
     char *msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    grpc_error *error = GRPC_ERROR_CREATE(msg);
+    grpc_error *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return error;
   }

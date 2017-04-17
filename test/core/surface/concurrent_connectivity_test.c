@@ -66,7 +66,7 @@ static int detag(void *p) { return (int)(uintptr_t)p; }
 
 void create_loop_destroy(void *addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
-    grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+    grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
     grpc_channel *chan = grpc_insecure_channel_create((char *)addr, NULL, NULL);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
@@ -109,7 +109,8 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *vargs, grpc_endpoint *tcp,
                        grpc_tcp_server_acceptor *acceptor) {
   gpr_free(acceptor);
   struct server_thread_args *args = (struct server_thread_args *)vargs;
-  grpc_endpoint_shutdown(exec_ctx, tcp, GRPC_ERROR_CREATE("Connected"));
+  grpc_endpoint_shutdown(exec_ctx, tcp,
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(exec_ctx, tcp);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
 }
@@ -195,7 +196,7 @@ int main(int argc, char **argv) {
   gpr_asprintf(&args.addr, "localhost:%d", port);
   args.server = grpc_server_create(NULL, NULL);
   grpc_server_add_insecure_http2_port(args.server, args.addr);
-  args.cq = grpc_completion_queue_create(NULL);
+  args.cq = grpc_completion_queue_create_for_next(NULL);
   grpc_server_register_completion_queue(args.server, args.cq, NULL);
   grpc_server_start(args.server);
   gpr_thd_new(&server, server_thread, &args, &options);

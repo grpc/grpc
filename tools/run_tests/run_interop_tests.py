@@ -45,6 +45,7 @@ import tempfile
 import time
 import uuid
 import six
+import traceback
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
@@ -73,6 +74,10 @@ _SKIP_ADVANCED = ['status_code_and_message',
 
 _TEST_TIMEOUT = 3*60
 
+# disable this test on core-based languages,
+# see https://github.com/grpc/grpc/issues/9779
+_SKIP_DATA_FRAME_PADDING = ['data_frame_padding']
+
 class CXXLanguage:
 
   def __init__(self):
@@ -97,7 +102,7 @@ class CXXLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return []
+    return _SKIP_DATA_FRAME_PADDING
 
   def unimplemented_test_cases_server(self):
     return []
@@ -109,8 +114,8 @@ class CXXLanguage:
 class CSharpLanguage:
 
   def __init__(self):
-    self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug'
-    self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug'
+    self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/net45'
+    self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/net45'
     self.safename = str(self)
 
   def client_cmd(self, args):
@@ -126,7 +131,7 @@ class CSharpLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_SERVER_COMPRESSION
+    return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
@@ -155,7 +160,7 @@ class CSharpCoreCLRLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_SERVER_COMPRESSION
+    return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
@@ -250,7 +255,7 @@ class Http2Server:
     return {}
 
   def unimplemented_test_cases(self):
-    return _TEST_CASES
+    return _TEST_CASES + _SKIP_DATA_FRAME_PADDING
 
   def unimplemented_test_cases_server(self):
     return _TEST_CASES
@@ -281,7 +286,7 @@ class Http2Client:
     return _TEST_CASES
 
   def unimplemented_test_cases_server(self):
-    return []
+    return _TEST_CASES
 
   def __str__(self):
     return 'http2'
@@ -308,7 +313,7 @@ class NodeLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
@@ -333,7 +338,7 @@ class PHPLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
 
   def unimplemented_test_cases_server(self):
     return []
@@ -358,7 +363,7 @@ class PHP7Language:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
 
   def unimplemented_test_cases_server(self):
     return []
@@ -389,7 +394,7 @@ class RubyLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_SERVER_COMPRESSION
+    return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
@@ -437,7 +442,7 @@ class PythonLanguage:
             'PYTHONPATH': '{}/src/python/gens'.format(DOCKER_WORKDIR_ROOT)}
 
   def unimplemented_test_cases(self):
-    return _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
@@ -476,10 +481,14 @@ _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
 
 _HTTP2_TEST_CASES = ['tls', 'framing']
 
-_HTTP2_BADSERVER_TEST_CASES = ['rst_after_header', 'rst_after_data', 'rst_during_data',
-                     'goaway', 'ping', 'max_streams']
+_HTTP2_SERVER_TEST_CASES = ['rst_after_header', 'rst_after_data', 'rst_during_data',
+                               'goaway', 'ping', 'max_streams', 'data_frame_padding', 'no_df_padding_sanity_test']
 
-_LANGUAGES_FOR_HTTP2_BADSERVER_TESTS = ['java', 'go', 'python', 'c++']
+_GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES = { 'data_frame_padding': 'large_unary', 'no_df_padding_sanity_test': 'large_unary' }
+
+_HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS = _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES.keys()
+
+_LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = ['java', 'go', 'python', 'c++']
 
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 
@@ -631,14 +640,28 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
       '--use_tls=%s' % ('false' if insecure else 'true'),
       '--use_test_ca=true',
   ]
+
+  client_test_case = test_case
+  if test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
+    client_test_case = _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES[test_case]
+  if client_test_case in language.unimplemented_test_cases():
+    print('asking client %s to run unimplemented test case %s' % (repr(language), client_test_case))
+    sys.exit(1)
+
   common_options = [
-      '--test_case=%s' % test_case,
+      '--test_case=%s' % client_test_case,
       '--server_host=%s' % server_host,
       '--server_port=%s' % server_port,
   ]
-  if test_case in _HTTP2_BADSERVER_TEST_CASES:
-    cmdline = bash_cmdline(language.client_cmd_http2interop(common_options))
-    cwd = language.http2_cwd
+
+  if test_case in _HTTP2_SERVER_TEST_CASES:
+    if test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
+      client_options = interop_only_options + common_options
+      cmdline = bash_cmdline(language.client_cmd(client_options))
+      cwd = language.client_cwd
+    else:
+      cmdline = bash_cmdline(language.client_cmd_http2interop(common_options))
+      cwd = language.http2_cwd
   else:
     cmdline = bash_cmdline(language.client_cmd(common_options+interop_only_options))
     cwd = language.client_cwd
@@ -686,7 +709,7 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
     docker_args += list(
         itertools.chain.from_iterable(('-p', str(_DEFAULT_SERVER_PORT + i))
                                       for i in range(
-                                          len(_HTTP2_BADSERVER_TEST_CASES))))
+                                          len(_HTTP2_SERVER_TEST_CASES))))
     # Enable docker's healthcheck mechanism.
     # This runs a Python script inside the container every second. The script
     # pings the http2 server to verify it is ready. The 'health-retries' flag
@@ -856,11 +879,11 @@ argp.add_argument('--http2_interop',
                   action='store_const',
                   const=True,
                   help='Enable HTTP/2 client edge case testing. (Bad client, good server)')
-argp.add_argument('--http2_badserver_interop',
+argp.add_argument('--http2_server_interop',
                   default=False,
                   action='store_const',
                   const=True,
-                  help='Enable HTTP/2 server edge case testing. (Good client, bad server)')
+                  help='Enable HTTP/2 server edge case testing. (Includes positive and negative tests')
 argp.add_argument('--insecure',
                   default=False,
                   action='store_const',
@@ -895,26 +918,26 @@ languages = set(_LANGUAGES[l]
                     six.iterkeys(_LANGUAGES) if x == 'all' else [x]
                     for x in args.language))
 
-languages_http2_badserver_interop = set()
-if args.http2_badserver_interop:
-  languages_http2_badserver_interop = set(
-      _LANGUAGES[l] for l in _LANGUAGES_FOR_HTTP2_BADSERVER_TESTS
+languages_http2_clients_for_http2_server_interop = set()
+if args.http2_server_interop:
+  languages_http2_clients_for_http2_server_interop = set(
+      _LANGUAGES[l] for l in _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES
       if 'all' in args.language or l in args.language)
 
 http2Interop = Http2Client() if args.http2_interop else None
-http2InteropServer = Http2Server() if args.http2_badserver_interop else None
+http2InteropServer = Http2Server() if args.http2_server_interop else None
 
 docker_images={}
 if args.use_docker:
   # languages for which to build docker images
   languages_to_build = set(
       _LANGUAGES[k] for k in set([str(l) for l in languages] + [s for s in servers]))
-  languages_to_build = languages_to_build | languages_http2_badserver_interop
+  languages_to_build = languages_to_build | languages_http2_clients_for_http2_server_interop
 
   if args.http2_interop:
     languages_to_build.add(http2Interop)
 
-  if args.http2_badserver_interop:
+  if args.http2_server_interop:
     languages_to_build.add(http2InteropServer)
 
   build_jobs = []
@@ -943,7 +966,6 @@ client_manual_cmd_log = [] if args.manual_run else None
 # Start interop servers.
 server_jobs = {}
 server_addresses = {}
-http2_badserver_ports = ()
 try:
   for s in servers:
     lang = str(s)
@@ -957,15 +979,15 @@ try:
       # don't run the server, set server port to a placeholder value
       server_addresses[lang] = ('localhost', '${SERVER_PORT}')
 
-  http2_badserver_job = None
-  if args.http2_badserver_interop:
+  http2_server_job = None
+  if args.http2_server_interop:
     # launch a HTTP2 server emulator that creates edge cases
     lang = str(http2InteropServer)
     spec = server_jobspec(http2InteropServer, docker_images.get(lang),
                           manual_cmd_log=server_manual_cmd_log)
     if not args.manual_run:
-      http2_badserver_job = dockerjob.DockerJob(spec)
-      server_jobs[lang] = http2_badserver_job
+      http2_server_job = dockerjob.DockerJob(spec)
+      server_jobs[lang] = http2_server_job
     else:
       # don't run the server, set server port to a placeholder value
       server_addresses[lang] = ('localhost', '${SERVER_PORT}')
@@ -1049,15 +1071,15 @@ try:
                                           manual_cmd_log=client_manual_cmd_log)
         jobs.append(test_job)
 
-  if args.http2_badserver_interop:
+  if args.http2_server_interop:
     if not args.manual_run:
-      http2_badserver_job.wait_for_healthy(timeout_seconds=600)
-    for language in languages_http2_badserver_interop:
-      for test_case in _HTTP2_BADSERVER_TEST_CASES:
-        offset = sorted(_HTTP2_BADSERVER_TEST_CASES).index(test_case)
+      http2_server_job.wait_for_healthy(timeout_seconds=600)
+    for language in languages_http2_clients_for_http2_server_interop:
+      for test_case in set(_HTTP2_SERVER_TEST_CASES) - set(_HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS):
+        offset = sorted(_HTTP2_SERVER_TEST_CASES).index(test_case)
         server_port = _DEFAULT_SERVER_PORT+offset
         if not args.manual_run:
-          server_port = http2_badserver_job.mapped_port(server_port)
+          server_port = http2_server_job.mapped_port(server_port)
         test_job = cloud_to_cloud_jobspec(language,
                                           test_case,
                                           str(http2InteropServer),
@@ -1066,6 +1088,31 @@ try:
                                           docker_image=docker_images.get(str(language)),
                                           manual_cmd_log=client_manual_cmd_log)
         jobs.append(test_job)
+    for language in languages:
+      # HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS is a subset of
+      # HTTP_SERVER_TEST_CASES, in which clients use their gRPC interop clients rather
+      # than specialized http2 clients, reusing existing test implementations.
+      # For example, in the "data_frame_padding" test, use language's gRPC
+      # interop clients and make them think that theyre running "large_unary"
+      # test case. This avoids implementing a new test case in each language.
+      for test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
+        if test_case not in language.unimplemented_test_cases():
+          offset = sorted(_HTTP2_SERVER_TEST_CASES).index(test_case)
+          server_port = _DEFAULT_SERVER_PORT+offset
+          if not args.manual_run:
+            server_port = http2_server_job.mapped_port(server_port)
+          if not args.insecure:
+            print(('Creating grpc cient to http2 server test case with insecure connection, even though'
+                   ' args.insecure is False. Http2 test server only supports insecure connections.'))
+          test_job = cloud_to_cloud_jobspec(language,
+                                            test_case,
+                                            str(http2InteropServer),
+                                            'localhost',
+                                            server_port,
+                                            docker_image=docker_images.get(str(language)),
+                                            insecure=True,
+                                            manual_cmd_log=client_manual_cmd_log)
+          jobs.append(test_job)
 
   if not jobs:
     print('No jobs to run.')
@@ -1093,16 +1140,17 @@ try:
     if "http2" in name:
       job[0].http2results = aggregate_http2_results(job[0].message)
 
-  http2_badserver_test_cases = (
-      _HTTP2_BADSERVER_TEST_CASES if args.http2_badserver_interop else [])
+  http2_server_test_cases = (
+      _HTTP2_SERVER_TEST_CASES if args.http2_server_interop else [])
 
   report_utils.render_interop_html_report(
       set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES,
-      _HTTP2_TEST_CASES, http2_badserver_test_cases,
-      _LANGUAGES_FOR_HTTP2_BADSERVER_TESTS, resultset, num_failures,
+      _HTTP2_TEST_CASES, http2_server_test_cases, resultset, num_failures,
       args.cloud_to_prod_auth or args.cloud_to_prod, args.prod_servers,
       args.http2_interop)
-
+except Exception as e:
+  print('exception occurred:')
+  traceback.print_exc(file=sys.stdout)
 finally:
   # Check if servers are still running.
   for server, job in server_jobs.items():

@@ -33,12 +33,12 @@
 
 /* Benchmark gRPC end2end in various configurations */
 
+#include <benchmark/benchmark.h>
 #include "src/core/lib/profiling/timers.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -53,7 +53,8 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 class TrickledCHTTP2 : public EndpointPairFixture {
  public:
   TrickledCHTTP2(Service* service, size_t megabits_per_second)
-      : EndpointPairFixture(service, MakeEndpoints(megabits_per_second)) {}
+      : EndpointPairFixture(service, MakeEndpoints(megabits_per_second),
+                            FixtureConfiguration()) {}
 
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     out << " writes/iter:"

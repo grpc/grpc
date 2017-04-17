@@ -38,6 +38,7 @@
 
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc {
@@ -45,7 +46,10 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen : public CoreCodegenInterface {
  private:
-  grpc_completion_queue* grpc_completion_queue_create(void* reserved) override;
+  grpc_completion_queue* grpc_completion_queue_create_for_next(
+      void* reserved) override;
+  grpc_completion_queue* grpc_completion_queue_create_for_pluck(
+      void* reserved) override;
   void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
   grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
                                          gpr_timespec deadline,
@@ -76,6 +80,7 @@ class CoreCodegen : public CoreCodegenInterface {
   grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                 size_t nslices) override;
 
+  grpc_slice grpc_empty_slice() override;
   grpc_slice grpc_slice_malloc(size_t length) override;
   void grpc_slice_unref(grpc_slice slice) override;
   grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) override;

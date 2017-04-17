@@ -224,7 +224,16 @@ extern grpc_version_string_type grpc_version_string_import;
 typedef const char *(*grpc_g_stands_for_type)(void);
 extern grpc_g_stands_for_type grpc_g_stands_for_import;
 #define grpc_g_stands_for grpc_g_stands_for_import
-typedef grpc_completion_queue *(*grpc_completion_queue_create_type)(void *reserved);
+typedef const grpc_completion_queue_factory *(*grpc_completion_queue_factory_lookup_type)(const grpc_completion_queue_attributes *attributes);
+extern grpc_completion_queue_factory_lookup_type grpc_completion_queue_factory_lookup_import;
+#define grpc_completion_queue_factory_lookup grpc_completion_queue_factory_lookup_import
+typedef grpc_completion_queue *(*grpc_completion_queue_create_for_next_type)(void *reserved);
+extern grpc_completion_queue_create_for_next_type grpc_completion_queue_create_for_next_import;
+#define grpc_completion_queue_create_for_next grpc_completion_queue_create_for_next_import
+typedef grpc_completion_queue *(*grpc_completion_queue_create_for_pluck_type)(void *reserved);
+extern grpc_completion_queue_create_for_pluck_type grpc_completion_queue_create_for_pluck_import;
+#define grpc_completion_queue_create_for_pluck grpc_completion_queue_create_for_pluck_import
+typedef grpc_completion_queue *(*grpc_completion_queue_create_type)(const grpc_completion_queue_factory *factory, const grpc_completion_queue_attributes *attributes, void *reserved);
 extern grpc_completion_queue_create_type grpc_completion_queue_create_import;
 #define grpc_completion_queue_create grpc_completion_queue_create_import
 typedef grpc_event(*grpc_completion_queue_next_type)(grpc_completion_queue *cq, gpr_timespec deadline, void *reserved);
