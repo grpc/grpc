@@ -23,10 +23,10 @@ def generate_cc_impl(ctx):
   arguments = []
   if ctx.executable.plugin:
     arguments += ["--plugin=protoc-gen-PLUGIN=" + ctx.executable.plugin.path]
-    gen_mock = ""
+    flags = list(ctx.attr.flags)
     if ctx.attr.generate_mock:
-      gen_mock = ",generate_mock_code=true"
-    arguments += ["--PLUGIN_out=" + gen_mock + ",".join(ctx.attr.flags) + ":" + dir_out]
+      flags.append("generate_mock_code=true")
+    arguments += ["--PLUGIN_out=" + ",".join(flags) + ":" + dir_out]
     additional_input = [ctx.executable.plugin]
   else:
     arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
