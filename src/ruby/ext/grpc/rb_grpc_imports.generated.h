@@ -500,6 +500,9 @@ extern grpc_slice_new_with_len_type grpc_slice_new_with_len_import;
 typedef grpc_slice(*grpc_slice_malloc_type)(size_t length);
 extern grpc_slice_malloc_type grpc_slice_malloc_import;
 #define grpc_slice_malloc grpc_slice_malloc_import
+typedef grpc_slice(*grpc_slice_malloc_large_type)(size_t length);
+extern grpc_slice_malloc_large_type grpc_slice_malloc_large_import;
+#define grpc_slice_malloc_large grpc_slice_malloc_large_import
 typedef grpc_slice(*grpc_slice_intern_type)(grpc_slice slice);
 extern grpc_slice_intern_type grpc_slice_intern_import;
 #define grpc_slice_intern grpc_slice_intern_import
@@ -524,6 +527,9 @@ extern grpc_slice_sub_no_ref_type grpc_slice_sub_no_ref_import;
 typedef grpc_slice(*grpc_slice_split_tail_type)(grpc_slice *s, size_t split);
 extern grpc_slice_split_tail_type grpc_slice_split_tail_import;
 #define grpc_slice_split_tail grpc_slice_split_tail_import
+typedef grpc_slice(*grpc_slice_split_tail_maybe_ref_type)(grpc_slice *s, size_t split, int inc_refs);
+extern grpc_slice_split_tail_maybe_ref_type grpc_slice_split_tail_maybe_ref_import;
+#define grpc_slice_split_tail_maybe_ref grpc_slice_split_tail_maybe_ref_import
 typedef grpc_slice(*grpc_slice_split_head_type)(grpc_slice *s, size_t split);
 extern grpc_slice_split_head_type grpc_slice_split_head_import;
 #define grpc_slice_split_head grpc_slice_split_head_import
@@ -608,6 +614,9 @@ extern grpc_slice_buffer_trim_end_type grpc_slice_buffer_trim_end_import;
 typedef void(*grpc_slice_buffer_move_first_type)(grpc_slice_buffer *src, size_t n, grpc_slice_buffer *dst);
 extern grpc_slice_buffer_move_first_type grpc_slice_buffer_move_first_import;
 #define grpc_slice_buffer_move_first grpc_slice_buffer_move_first_import
+typedef void(*grpc_slice_buffer_move_first_no_ref_type)(grpc_slice_buffer *src, size_t n, grpc_slice_buffer *dst);
+extern grpc_slice_buffer_move_first_no_ref_type grpc_slice_buffer_move_first_no_ref_import;
+#define grpc_slice_buffer_move_first_no_ref grpc_slice_buffer_move_first_no_ref_import
 typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_exec_ctx *exec_ctx, grpc_slice_buffer *src, size_t n, void *dst);
 extern grpc_slice_buffer_move_first_into_buffer_type grpc_slice_buffer_move_first_into_buffer_import;
 #define grpc_slice_buffer_move_first_into_buffer grpc_slice_buffer_move_first_into_buffer_import
