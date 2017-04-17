@@ -972,7 +972,7 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
   if (!worker_insert(&worker->pollable->root_worker, PWL_POLLABLE, worker)) {
     worker->initialized_cv = true;
     gpr_cv_init(&worker->cv);
-    while (pollset->root_worker != worker) {
+    while (worker->pollable->root_worker != worker) {
       if (gpr_cv_wait(&worker->cv, &pollset->current_pollable->po.mu,
                       deadline)) {
         return false;
