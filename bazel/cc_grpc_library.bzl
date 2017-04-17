@@ -14,7 +14,7 @@ def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, use_externa
         the compiled code of any message that the services depend on.
       well_known_protos: The target from protobuf library that exports well
         known protos. Currently it will only work if the value is
-        "@submodule_protobuf//:well_known_protos"
+        "@com_google_protobuf//:well_known_protos"
       use_external: When True the grpc deps are prefixed with //external. This
         allows grpc to be used as a dependency in other bazel projects.
       **kwargs: rest of arguments, e.g., compatible_with and visibility.
