@@ -52,16 +52,26 @@ static void test_ping(grpc_end2end_test_config config,
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
-  grpc_arg a[] = {{.type = GRPC_ARG_INTEGER,
-                   .key = GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS,
-                   .value.integer = min_time_between_pings_ms},
-                  {.type = GRPC_ARG_INTEGER,
-                   .key = GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
-                   .value.integer = 20}};
-  grpc_channel_args client_args = {.num_args = GPR_ARRAY_SIZE(a), .args = a};
+  grpc_arg client_a[] = {{.type = GRPC_ARG_INTEGER,
+                          .key = GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS,
+                          .value.integer = 0},
+                         {.type = GRPC_ARG_INTEGER,
+                          .key = GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
+                          .value.integer = 20}};
+  grpc_arg server_a[] = {
+      {.type = GRPC_ARG_INTEGER,
+       .key = GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS,
+       .value.integer = 0},
+      {.type = GRPC_ARG_INTEGER,
+       .key = GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS,
+       .value.integer = 1}};
+  grpc_channel_args client_args = {.num_args = GPR_ARRAY_SIZE(client_a),
+                                   .args = client_a};
+  grpc_channel_args server_args = {.num_args = GPR_ARRAY_SIZE(server_a),
+                                   .args = server_a};
 
   config.init_client(&f, &client_args);
-  config.init_server(&f, NULL);
+  config.init_server(&f, &server_args);
 
   grpc_channel_ping(f.client, f.cq, tag(0), NULL);
   CQ_EXPECT_COMPLETION(cqv, tag(0), 0);
@@ -102,6 +112,9 @@ static void test_ping(grpc_end2end_test_config config,
   grpc_channel_destroy(f.client);
   grpc_completion_queue_shutdown(f.cq);
   grpc_completion_queue_destroy(f.cq);
+
+  /* f.shutdown_cq is not used in this test */
+  grpc_completion_queue_destroy(f.shutdown_cq);
   config.tear_down_data(&f);
 
   cq_verifier_destroy(cqv);

@@ -37,6 +37,8 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/sync.h>
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

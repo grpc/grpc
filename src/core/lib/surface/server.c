@@ -44,6 +44,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/stack_lockfree.h"
@@ -154,8 +155,7 @@ struct call_data {
   grpc_completion_queue *cq_new;
 
   grpc_metadata_batch *recv_initial_metadata;
-  bool recv_idempotent_request;
-  bool recv_cacheable_request;
+  uint32_t recv_initial_metadata_flags;
   grpc_metadata_array initial_metadata;
 
   request_matcher *request_matcher;
@@ -211,6 +211,11 @@ struct grpc_server {
      (grpc_server_shutdown_and_notify and maybe_finish_shutdown) */
   gpr_mu mu_global; /* mutex for server and channel state */
   gpr_mu mu_call;   /* mutex for call-specific state */
+
+  /* startup synchronization: flag is protected by mu_global, signals whether
+     we are doing the listener start routine or not */
+  bool starting;
+  gpr_cv starting_cv;
 
   registered_method *registered_methods;
   /** one request matcher for unregistered methods */
@@ -389,6 +394,7 @@ static void server_delete(grpc_exec_ctx *exec_ctx, grpc_server *server) {
   grpc_channel_args_destroy(exec_ctx, server->channel_args);
   gpr_mu_destroy(&server->mu_global);
   gpr_mu_destroy(&server->mu_call);
+  gpr_cv_destroy(&server->starting_cv);
   while ((rm = server->registered_methods) != NULL) {
     server->registered_methods = rm->next;
     if (server->started) {
@@ -498,13 +504,7 @@ static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
       rc->data.batch.details->host = grpc_slice_ref_internal(calld->host);
       rc->data.batch.details->method = grpc_slice_ref_internal(calld->path);
       rc->data.batch.details->deadline = calld->deadline;
-      rc->data.batch.details->flags =
-          (calld->recv_idempotent_request
-               ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
-               : 0) |
-          (calld->recv_cacheable_request
-               ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST
-               : 0);
+      rc->data.batch.details->flags = calld->recv_initial_metadata_flags;
       break;
     case REGISTERED_CALL:
       *rc->data.registered.deadline = calld->deadline;
@@ -632,7 +632,8 @@ static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
       if (!grpc_slice_eq(rm->host, calld->host)) continue;
       if (!grpc_slice_eq(rm->method, calld->path)) continue;
       if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-          !calld->recv_idempotent_request) {
+          0 == (calld->recv_initial_metadata_flags &
+                GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST)) {
         continue;
       }
       finish_start_new_rpc(exec_ctx, server, elem,
@@ -649,7 +650,8 @@ static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
       if (rm->has_host) continue;
       if (!grpc_slice_eq(rm->method, calld->path)) continue;
       if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-          !calld->recv_idempotent_request) {
+          0 == (calld->recv_initial_metadata_flags &
+                GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST)) {
         continue;
       }
       finish_start_new_rpc(exec_ctx, server, elem,
@@ -781,22 +783,25 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
 }
 
 static void server_mutate_op(grpc_call_element *elem,
-                             grpc_transport_stream_op *op) {
+                             grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
 
-  if (op->recv_initial_metadata != NULL) {
-    GPR_ASSERT(op->recv_idempotent_request == NULL);
-    calld->recv_initial_metadata = op->recv_initial_metadata;
-    calld->on_done_recv_initial_metadata = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = &calld->server_on_recv_initial_metadata;
-    op->recv_idempotent_request = &calld->recv_idempotent_request;
-    op->recv_cacheable_request = &calld->recv_cacheable_request;
+  if (op->recv_initial_metadata) {
+    GPR_ASSERT(op->payload->recv_initial_metadata.recv_flags == NULL);
+    calld->recv_initial_metadata =
+        op->payload->recv_initial_metadata.recv_initial_metadata;
+    calld->on_done_recv_initial_metadata =
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
+        &calld->server_on_recv_initial_metadata;
+    op->payload->recv_initial_metadata.recv_flags =
+        &calld->recv_initial_metadata_flags;
   }
 }
 
-static void server_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
-                                             grpc_call_element *elem,
-                                             grpc_transport_stream_op *op) {
+static void server_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   server_mutate_op(elem, op);
   grpc_call_next_op(exec_ctx, elem, op);
@@ -960,7 +965,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 const grpc_channel_filter grpc_server_top_filter = {
-    server_start_transport_stream_op,
+    server_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
@@ -1002,6 +1007,15 @@ void grpc_server_register_completion_queue(grpc_server *server,
   GRPC_API_TRACE(
       "grpc_server_register_completion_queue(server=%p, cq=%p, reserved=%p)", 3,
       (server, cq, reserved));
+
+  if (grpc_get_cq_completion_type(cq) != GRPC_CQ_NEXT) {
+    gpr_log(GPR_INFO,
+            "Completion queue which is not of type GRPC_CQ_NEXT is being "
+            "registered as a server-completion-queue");
+    /* Ideally we should log an error and abort but ruby-wrapped-language API
+       calls grpc_completion_queue_pluck() on server completion queues */
+  }
+
   register_completion_queue(server, cq, false, reserved);
 }
 
@@ -1023,6 +1037,7 @@ grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
 
   gpr_mu_init(&server->mu_global);
   gpr_mu_init(&server->mu_call);
+  gpr_cv_init(&server->starting_cv);
 
   /* decremented by grpc_server_destroy */
   gpr_ref_init(&server->internal_refcount, 1);
@@ -1079,8 +1094,22 @@ void *grpc_server_register_method(
   return m;
 }
 
+static void start_listeners(grpc_exec_ctx *exec_ctx, void *s,
+                            grpc_error *error) {
+  grpc_server *server = s;
+  for (listener *l = server->listeners; l; l = l->next) {
+    l->start(exec_ctx, server, l->arg, server->pollsets, server->pollset_count);
+  }
+
+  gpr_mu_lock(&server->mu_global);
+  server->starting = false;
+  gpr_cv_signal(&server->starting_cv);
+  gpr_mu_unlock(&server->mu_global);
+
+  server_unref(exec_ctx, server);
+}
+
 void grpc_server_start(grpc_server *server) {
-  listener *l;
   size_t i;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -1114,10 +1143,11 @@ void grpc_server_start(grpc_server *server) {
                          (size_t)server->max_requested_calls_per_cq, server);
   }
 
-  for (l = server->listeners; l; l = l->next) {
-    l->start(&exec_ctx, server, l->arg, server->pollsets,
-             server->pollset_count);
-  }
+  server_ref(server);
+  server->starting = true;
+  grpc_closure_sched(&exec_ctx, grpc_closure_create(start_listeners, server,
+                                                    grpc_executor_scheduler),
+                     GRPC_ERROR_NONE);
 
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -1251,8 +1281,14 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   GRPC_API_TRACE("grpc_server_shutdown_and_notify(server=%p, cq=%p, tag=%p)", 3,
                  (server, cq, tag));
 
-  /* lock, and gather up some stuff to do */
+  /* wait for startup to be finished: locks mu_global */
   gpr_mu_lock(&server->mu_global);
+  while (server->starting) {
+    gpr_cv_wait(&server->starting_cv, &server->mu_global,
+                gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+
+  /* stay locked, and gather up some stuff to do */
   grpc_cq_begin_op(cq, tag);
   if (server->shutdown_published) {
     grpc_cq_end_op(&exec_ctx, cq, tag, GRPC_ERROR_NONE, done_published_shutdown,
