@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env ruby
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,17 +29,49 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# For GRPC::Core classes, which use the grpc c-core, object init
+# is interesting because it's related to overall library init.
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+require_relative './end2end_common'
 
-EXIT_CODE=0
-ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_closing_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/sig_int_during_channel_watch_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/killed_client_thread_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/forking_client_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/grpc_class_init_driver.rb || EXIT_CODE=1
-exit $EXIT_CODE
+def main
+  grpc_class = ''
+  OptionParser.new do |opts|
+    opts.on('--grpc_class=P', String) do |p|
+      grpc_class = p
+    end
+  end.parse!
+
+  test_proc = nil
+
+  case grpc_class
+  when 'channel'
+    test_proc = proc do
+      GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
+    end
+  when 'server'
+    test_proc = proc do
+      GRPC::Core::Server.new({})
+    end
+  when 'channel_credentials'
+    test_proc = proc do
+      GRPC::Core::ChannelCredentials.new
+    end
+  when 'call_credentials'
+    test_proc = proc do
+      GRPC::Core::CallCredentials.new(proc { |noop| noop })
+    end
+  when 'compression_options'
+    test_proc = proc do
+      GRPC::Core::CompressionOptions.new
+    end
+  else
+    fail "bad --grpc_class=#{grpc_class} param"
+  end
+
+  th = Thread.new { test_proc.call }
+  test_proc.call
+  th.join
+end
+
+main
