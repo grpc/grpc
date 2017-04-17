@@ -48,6 +48,8 @@
 
 typedef struct call_data {
   intptr_t id; /**< an id unique to the call */
+  bool have_trailing_md_string;
+  grpc_slice trailing_md_string;
   bool have_initial_md_string;
   grpc_slice initial_md_string;
   bool have_service_method;
@@ -140,6 +142,9 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   if (calld->have_initial_md_string) {
     grpc_slice_unref_internal(exec_ctx, calld->initial_md_string);
   }
+  if (calld->have_trailing_md_string) {
+    grpc_slice_unref_internal(exec_ctx, calld->trailing_md_string);
+  }
   if (calld->have_service_method) {
     grpc_slice_unref_internal(exec_ctx, calld->service_method);
   }
@@ -183,6 +188,18 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   */
 }
 
+static grpc_filtered_mdelem lr_trailing_md_filter(grpc_exec_ctx *exec_ctx,
+                                                  void *user_data,
+                                                  grpc_mdelem md) {
+  grpc_call_element *elem = user_data;
+  call_data *calld = elem->call_data;
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN)) {
+    calld->trailing_md_string = GRPC_MDVALUE(md);
+    return GRPC_FILTERED_REMOVE();
+  }
+  return GRPC_FILTERED_MDELEM(md);
+}
+
 static void lr_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
@@ -190,13 +207,21 @@ static void lr_start_transport_stream_op_batch(
   call_data *calld = elem->call_data;
 
   if (op->recv_initial_metadata) {
+    /* substitute our callback for the higher callback */
     calld->recv_initial_metadata =
         op->payload->recv_initial_metadata.recv_initial_metadata;
-    /* substitute our callback for the higher callback */
     calld->ops_recv_initial_metadata_ready =
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &calld->on_initial_md_ready;
+  } else if (op->send_trailing_metadata) {
+    GRPC_LOG_IF_ERROR(
+        "grpc_metadata_batch_filter",
+        grpc_metadata_batch_filter(
+            exec_ctx,
+            op->payload->send_trailing_metadata.send_trailing_metadata,
+            lr_trailing_md_filter, elem,
+            "LR trailing metadata filtering error"));
   }
   grpc_call_next_op(exec_ctx, elem, op);
 
