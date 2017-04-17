@@ -58,15 +58,19 @@ cp $EXTERNAL_GIT_ROOT/architecture=x64,language=protoc,platform=linux/artifacts/
 cp $EXTERNAL_GIT_ROOT/architecture=x86,language=protoc,platform=macos/artifacts/* protoc_plugins/macosx_x86 || true
 cp $EXTERNAL_GIT_ROOT/architecture=x64,language=protoc,platform=macos/artifacts/* protoc_plugins/macosx_x64 || true
 
-dotnet restore .
+dotnet restore Grpc.sln
 
-dotnet pack --configuration Release Grpc.Core/project.json --output ../../artifacts
-dotnet pack --configuration Release Grpc.Core.Testing/project.json --output ../../artifacts
-dotnet pack --configuration Release Grpc.Auth/project.json --output ../../artifacts
-dotnet pack --configuration Release Grpc.HealthCheck/project.json --output ../../artifacts
-dotnet pack --configuration Release Grpc.Reflection/project.json --output ../../artifacts
+# To be able to build, we also need to put grpc_csharp_ext to its normal location
+mkdir -p ../../libs/opt
+cp nativelibs/linux_x64/libgrpc_csharp_ext.so ../../libs/opt
 
-nuget pack Grpc.nuspec -Version "1.3.0-dev" -OutputDirectory ../../artifacts
-nuget pack Grpc.Tools.nuspec -Version "1.3.0-dev" -OutputDirectory ../../artifacts
+dotnet pack --configuration Release Grpc.Core --output ../../../artifacts
+dotnet pack --configuration Release Grpc.Core.Testing --output ../../../artifacts
+dotnet pack --configuration Release Grpc.Auth --output ../../../artifacts
+dotnet pack --configuration Release Grpc.HealthCheck --output ../../../artifacts
+dotnet pack --configuration Release Grpc.Reflection --output ../../../artifacts
+
+nuget pack Grpc.nuspec -Version "1.4.0-dev" -OutputDirectory ../../artifacts
+nuget pack Grpc.Tools.nuspec -Version "1.4.0-dev" -OutputDirectory ../../artifacts
 
 (cd ../../artifacts && zip csharp_nugets_dotnetcli.zip *.nupkg)

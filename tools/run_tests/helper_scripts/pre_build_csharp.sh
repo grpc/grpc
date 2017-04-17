@@ -33,47 +33,4 @@ set -ex
 # cd to gRPC csharp directory
 cd $(dirname $0)/../../../src/csharp
 
-root=`pwd`
-
-if [ -x "$(command -v nuget)" ]
-then
-  # TODO(jtattermusch): Get rid of this hack. See #8034
-  # Restoring Nuget packages by packages rather than by solution because of
-  # inability to restore by solution with Nuget client 3.4.4
-  # Moving into each directory to let the restores work based on per-project packages.config files
-  cd Grpc.Auth
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
-  cd Grpc.Core.Tests
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
-  cd Grpc.Core
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
-  cd Grpc.Examples.MathClient
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
-  cd Grpc.Examples.MathServer
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
-  cd Grpc.Examples
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
-  cd Grpc.HealthCheck.Tests
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
-  cd Grpc.HealthCheck
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-
-  cd Grpc.IntegrationTesting
-  nuget restore -PackagesDirectory ../packages
-  cd ..
-fi
+dotnet restore Grpc.sln

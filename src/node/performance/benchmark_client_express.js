@@ -93,7 +93,7 @@ function BenchmarkClient(server_targets, channels, histogram_params,
 
   for (var i = 0; i < channels; i++) {
     var host_port;
-    host_port = server_targets[i % server_targets.length].split(':')
+    host_port = server_targets[i % server_targets.length].split(':');
     var new_options = _.assign({hostname: host_port[0], port: +host_port[1]}, options);
     new_options.agent = new protocol.Agent(new_options);
     this.client_options[i] = new_options;
@@ -149,6 +149,17 @@ BenchmarkClient.prototype.startClosedLoop = function(
     if (self.running) {
       self.pending_calls++;
       var start_time = process.hrtime();
+      function finishCall(success) {
+        if (success) {
+          var time_diff = process.hrtime(start_time);
+          self.histogram.add(timeDiffToNanos(time_diff));
+        }
+        makeCall(client_options);
+        self.pending_calls--;
+        if ((!self.running) && self.pending_calls == 0) {
+          self.emit('finished');
+        }
+      }
       var req = self.request(client_options, function(res) {
         var res_data = '';
         res.on('data', function(data) {
@@ -156,18 +167,16 @@ BenchmarkClient.prototype.startClosedLoop = function(
         });
         res.on('end', function() {
           JSON.parse(res_data);
-          var time_diff = process.hrtime(start_time);
-          self.histogram.add(timeDiffToNanos(time_diff));
-          makeCall(client_options);
-          self.pending_calls--;
-          if ((!self.running) && self.pending_calls == 0) {
-            self.emit('finished');
-          }
+          finishCall(true);
         });
       });
       req.write(JSON.stringify(argument));
       req.end();
       req.on('error', function(error) {
+        if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+          finishCall(false);
+          return;
+        }
         self.emit('error', new Error('Client error: ' + error.message));
         self.running = false;
       });

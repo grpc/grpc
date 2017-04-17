@@ -89,7 +89,8 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
     /// Called before server is started.
     virtual void PreServerStart(Server* server) {}
     /// Called after a server port is added.
-    virtual void AddPort(Server* server, int port) {}
+    virtual void AddPort(Server* server, const grpc::string& addr,
+                         ServerCredentials* creds, int port) {}
   };
   /// Set the global callback object. Can only be called once. Does not take
   /// ownership of callbacks, and expects the pointed to object to be alive
@@ -177,9 +178,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// caller is required to keep all completion queues live until the server is
   /// destroyed.
   /// \param num_cqs How many completion queues does \a cqs hold.
-  ///
-  /// \return true on a successful shutdown.
-  bool Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
+  void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
 

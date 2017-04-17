@@ -39,10 +39,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/support/string.h"
 
 /* -- Fake transport security credentials. -- */
+
+#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
+  "grpc.fake_security.expected_targets"
 
 static grpc_security_status fake_transport_security_create_security_connector(
     grpc_exec_ctx *exec_ctx, grpc_channel_credentials *c,
@@ -86,6 +90,25 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
   gpr_ref_init(&c->refcount, 1);
   c->vtable = &fake_transport_security_server_credentials_vtable;
   return c;
+}
+
+grpc_arg grpc_fake_transport_expected_targets_arg(char *expected_targets) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  arg.key = GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS;
+  arg.value.string = expected_targets;
+  return arg;
+}
+
+const char *grpc_fake_transport_get_expected_targets(
+    const grpc_channel_args *args) {
+  const grpc_arg *expected_target_arg =
+      grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
+  if (expected_target_arg != NULL &&
+      expected_target_arg->type == GRPC_ARG_STRING) {
+    return expected_target_arg->value.string;
+  }
+  return NULL;
 }
 
 /* -- Metadata-only test credentials. -- */

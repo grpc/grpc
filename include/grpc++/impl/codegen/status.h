@@ -47,10 +47,16 @@ class Status {
   /// Construct an OK instance.
   Status() : code_(StatusCode::OK) {}
 
-  /// Construct an instance with associated \a code and \a details (also
-  // referred to as "error_message").
-  Status(StatusCode code, const grpc::string& details)
-      : code_(code), details_(details) {}
+  /// Construct an instance with associated \a code and \a error_message
+  Status(StatusCode code, const grpc::string& error_message)
+      : code_(code), error_message_(error_message) {}
+
+  /// Construct an instance with \a code,  \a error_message and \a error_details
+  Status(StatusCode code, const grpc::string& error_message,
+         const grpc::string& error_details)
+      : code_(code),
+        error_message_(error_message),
+        binary_error_details_(error_details) {}
 
   // Pre-defined special status objects.
   /// An OK pre-defined instance.
@@ -61,14 +67,18 @@ class Status {
   /// Return the instance's error code.
   StatusCode error_code() const { return code_; }
   /// Return the instance's error message.
-  grpc::string error_message() const { return details_; }
+  grpc::string error_message() const { return error_message_; }
+  /// Return the (binary) error details.
+  // Usually it contains a serialized google.rpc.Status proto.
+  grpc::string error_details() const { return binary_error_details_; }
 
   /// Is the status OK?
   bool ok() const { return code_ == StatusCode::OK; }
 
  private:
   StatusCode code_;
-  grpc::string details_;
+  grpc::string error_message_;
+  grpc::string binary_error_details_;
 };
 
 }  // namespace grpc
