@@ -326,3 +326,28 @@ grpc_error *grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
   }
   return error;
 }
+
+grpc_error *grpc_metadata_batch_copy(grpc_exec_ctx *exec_ctx,
+                                     grpc_metadata_batch *src,
+                                     grpc_metadata_batch *dst,
+                                     grpc_linked_mdelem **storage) {
+  grpc_metadata_batch_init(dst);
+  dst->deadline = src->deadline;
+// FIXME: allocate via arena?
+  *storage = gpr_zalloc(sizeof(grpc_linked_mdelem) * src->list.count);
+  size_t i = 0;
+  for (grpc_linked_mdelem *elem = src->list.head; elem != NULL;
+       elem = elem->next) {
+    grpc_error *error = grpc_metadata_batch_add_tail(exec_ctx, dst,
+                                                     &(*storage)[i++],
+                                                     grpc_mdelem_ref(elem->md));
+    if (error != GRPC_ERROR_NONE) return error;
+  }
+  return GRPC_ERROR_NONE;
+}
+
+void grpc_metadata_batch_move(grpc_metadata_batch *src,
+                              grpc_metadata_batch *dst) {
+  *dst = *src;
+  grpc_metadata_batch_init(src);
+}

@@ -106,7 +106,7 @@ grpc_connected_subchannel *grpc_connected_subchannel_ref(
 void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
                                      grpc_connected_subchannel *channel
                                          GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_call_ref(
+grpc_subchannel_call *grpc_subchannel_call_ref(
     grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
                                 grpc_subchannel_call *call
@@ -119,12 +119,16 @@ typedef struct {
   gpr_timespec start_time;
   gpr_timespec deadline;
   gpr_arena *arena;
+  size_t parent_data_size;
 } grpc_connected_subchannel_call_args;
 
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *connected_subchannel,
     const grpc_connected_subchannel_call_args *args,
     grpc_subchannel_call **subchannel_call);
+
+void *grpc_connected_subchannel_call_get_parent_data(
+    grpc_subchannel_call *subchannel_call);
 
 /** process a transport level op */
 void grpc_connected_subchannel_process_transport_op(

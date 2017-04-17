@@ -37,6 +37,44 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+//#define SIMPLE_ARENA_FOR_DEBUGGING
+
+#ifdef SIMPLE_ARENA_FOR_DEBUGGING
+
+#include <grpc/support/sync.h>
+
+struct gpr_arena {
+  gpr_mu mu;
+  void **ptrs;
+  size_t num_ptrs;
+};
+
+gpr_arena *gpr_arena_create(size_t ignored_initial_size) {
+  gpr_arena *arena = gpr_zalloc(sizeof(*arena));
+  gpr_mu_init(&arena->mu);
+  return arena;
+}
+
+size_t gpr_arena_destroy(gpr_arena *arena) {
+  gpr_mu_destroy(&arena->mu);
+  for (size_t i = 0; i < arena->num_ptrs; ++i) {
+    gpr_free(arena->ptrs[i]);
+  }
+  gpr_free(arena->ptrs);
+  gpr_free(arena);
+  return 1;  // Value doesn't matter, since it won't be used.
+}
+
+void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
+  gpr_mu_lock(&arena->mu);
+  arena->ptrs = gpr_realloc(arena->ptrs, sizeof(void*) * (arena->num_ptrs + 1));
+  void *retval = arena->ptrs[arena->num_ptrs++] = gpr_zalloc(size);
+  gpr_mu_unlock(&arena->mu);
+  return retval;
+}
+
+#else  // SIMPLE_ARENA_FOR_DEBUGGING
+
 #define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
   (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
 
@@ -96,3 +134,5 @@ void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
   GPR_ASSERT(start + size <= z->size_end);
   return ((char *)(z + 1)) + start - z->size_begin;
 }
+
+#endif  // SIMPLE_ARENA_FOR_DEBUGGING

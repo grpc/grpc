@@ -130,6 +130,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\resource_quota_server.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\retry.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\server_finishes_request.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

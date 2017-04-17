@@ -70,6 +70,7 @@ static void get_replacement_throttle_data_if_needed(
 
 bool grpc_server_retry_throttle_data_record_failure(
     grpc_server_retry_throttle_data* throttle_data) {
+  if (throttle_data == NULL) return true;
   // First, check if we are stale and need to be replaced.
   get_replacement_throttle_data_if_needed(&throttle_data);
   // We decrement milli_tokens by 1000 (1 token) for each failure.
@@ -83,6 +84,7 @@ bool grpc_server_retry_throttle_data_record_failure(
 
 void grpc_server_retry_throttle_data_record_success(
     grpc_server_retry_throttle_data* throttle_data) {
+  if (throttle_data == NULL) return;
   // First, check if we are stale and need to be replaced.
   get_replacement_throttle_data_if_needed(&throttle_data);
   // We increment milli_tokens by milli_token_ratio for each success.

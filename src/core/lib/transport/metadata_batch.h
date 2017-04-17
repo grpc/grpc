@@ -163,4 +163,15 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd);
 }
 #endif
 
+/// Copies \a src to \a dst.  Returns a pointer to newly allocated storage
+/// in \a storage, which must be freed by the caller after \a dst is
+/// destroyed.
+grpc_error *grpc_metadata_batch_copy(grpc_exec_ctx *exec_ctx,
+                                     grpc_metadata_batch *src,
+                                     grpc_metadata_batch *dst,
+                                     grpc_linked_mdelem **storage);
+
+void grpc_metadata_batch_move(grpc_metadata_batch *src,
+                              grpc_metadata_batch *dst);
+
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */

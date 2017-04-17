@@ -1029,6 +1029,7 @@ add_library(grpc
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/status_conversion.c
+  src/core/lib/transport/status_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -1105,6 +1106,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver_factory.c
   src/core/ext/filters/client_channel/resolver_registry.c
   src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/status_string.c
   src/core/ext/filters/client_channel/subchannel.c
   src/core/ext/filters/client_channel/subchannel_index.c
   src/core/ext/filters/client_channel/uri_parser.c
@@ -1354,6 +1356,7 @@ add_library(grpc_cronet
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/status_conversion.c
+  src/core/lib/transport/status_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -1404,6 +1407,7 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/resolver_factory.c
   src/core/ext/filters/client_channel/resolver_registry.c
   src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/status_string.c
   src/core/ext/filters/client_channel/subchannel.c
   src/core/ext/filters/client_channel/subchannel_index.c
   src/core/ext/filters/client_channel/uri_parser.c
@@ -1664,6 +1668,7 @@ add_library(grpc_test_util
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/status_conversion.c
+  src/core/lib/transport/status_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -1920,6 +1925,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/status_conversion.c
+  src/core/lib/transport/status_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -1972,6 +1978,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver_factory.c
   src/core/ext/filters/client_channel/resolver_registry.c
   src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/status_string.c
   src/core/ext/filters/client_channel/subchannel.c
   src/core/ext/filters/client_channel/subchannel_index.c
   src/core/ext/filters/client_channel/uri_parser.c
@@ -2339,6 +2346,7 @@ add_library(grpc++
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/status_conversion.c
+  src/core/lib/transport/status_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -2665,6 +2673,7 @@ add_library(grpc++_cronet
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/status_conversion.c
+  src/core/lib/transport/status_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -2718,6 +2727,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/resolver_factory.c
   src/core/ext/filters/client_channel/resolver_registry.c
   src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/status_string.c
   src/core/ext/filters/client_channel/subchannel.c
   src/core/ext/filters/client_channel/subchannel_index.c
   src/core/ext/filters/client_channel/uri_parser.c
@@ -3431,6 +3441,7 @@ add_library(grpc++_unsecure
   src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/status_conversion.c
+  src/core/lib/transport/status_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
@@ -4495,6 +4506,7 @@ add_library(end2end_tests
   test/core/end2end/tests/request_with_flags.c
   test/core/end2end/tests/request_with_payload.c
   test/core/end2end/tests/resource_quota_server.c
+  test/core/end2end/tests/retry.c
   test/core/end2end/tests/server_finishes_request.c
   test/core/end2end/tests/shutdown_finishes_calls.c
   test/core/end2end/tests/shutdown_finishes_tags.c
@@ -4592,6 +4604,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/request_with_flags.c
   test/core/end2end/tests/request_with_payload.c
   test/core/end2end/tests/resource_quota_server.c
+  test/core/end2end/tests/retry.c
   test/core/end2end/tests/server_finishes_request.c
   test/core/end2end/tests/shutdown_finishes_calls.c
   test/core/end2end/tests/shutdown_finishes_tags.c

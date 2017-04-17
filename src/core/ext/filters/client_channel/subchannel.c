@@ -728,9 +728,10 @@ void grpc_subchannel_call_set_cleanup_closure(grpc_subchannel_call *call,
   call->schedule_closure_after_destroy = closure;
 }
 
-void grpc_subchannel_call_ref(
+grpc_subchannel_call *grpc_subchannel_call_ref(
     grpc_subchannel_call *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(c), REF_REASON);
+  return c;
 }
 
 void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
@@ -767,7 +768,8 @@ grpc_error *grpc_connected_subchannel_create_call(
     grpc_subchannel_call **call) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   *call = gpr_arena_alloc(
-      args->arena, sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
+      args->arena, sizeof(grpc_subchannel_call) + chanstk->call_stack_size +
+                   args->parent_data_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   (*call)->connection = GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   const grpc_call_element_args call_args = {.call_stack = callstk,
@@ -786,6 +788,14 @@ grpc_error *grpc_connected_subchannel_create_call(
   }
   grpc_call_stack_set_pollset_or_pollset_set(exec_ctx, callstk, args->pollent);
   return GRPC_ERROR_NONE;
+}
+
+void *grpc_connected_subchannel_call_get_parent_data(
+    grpc_subchannel_call *subchannel_call) {
+  grpc_channel_stack *chanstk =
+      CHANNEL_STACK_FROM_CONNECTION(subchannel_call->connection);
+  return (void *)subchannel_call + sizeof(grpc_subchannel_call) +
+         chanstk->call_stack_size;
 }
 
 grpc_call_stack *grpc_subchannel_call_get_call_stack(

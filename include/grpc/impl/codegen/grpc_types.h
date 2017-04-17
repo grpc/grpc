@@ -290,6 +290,8 @@ each time recvmsg (or equivalent) is called */
   "grpc.experimental.tcp_min_read_chunk_size"
 #define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_max_read_chunk_size"
+/** Per-RPC retry buffer size, in bytes. */
+#define GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE "grpc.per_rpc_retry_buffer_size"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

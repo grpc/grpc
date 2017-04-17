@@ -2975,6 +2975,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/service_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/status_conversion.c \
+    src/core/lib/transport/status_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
@@ -3051,6 +3052,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver_factory.c \
     src/core/ext/filters/client_channel/resolver_registry.c \
     src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/status_string.c \
     src/core/ext/filters/client_channel/subchannel.c \
     src/core/ext/filters/client_channel/subchannel_index.c \
     src/core/ext/filters/client_channel/uri_parser.c \
@@ -3298,6 +3300,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/transport/service_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/status_conversion.c \
+    src/core/lib/transport/status_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
@@ -3348,6 +3351,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/resolver_factory.c \
     src/core/ext/filters/client_channel/resolver_registry.c \
     src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/status_string.c \
     src/core/ext/filters/client_channel/subchannel.c \
     src/core/ext/filters/client_channel/subchannel_index.c \
     src/core/ext/filters/client_channel/uri_parser.c \
@@ -3607,6 +3611,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/transport/service_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/status_conversion.c \
+    src/core/lib/transport/status_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
@@ -3835,6 +3840,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/service_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/status_conversion.c \
+    src/core/lib/transport/status_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
@@ -3887,6 +3893,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver_factory.c \
     src/core/ext/filters/client_channel/resolver_registry.c \
     src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/status_string.c \
     src/core/ext/filters/client_channel/subchannel.c \
     src/core/ext/filters/client_channel/subchannel_index.c \
     src/core/ext/filters/client_channel/uri_parser.c \
@@ -4231,6 +4238,7 @@ LIBGRPC++_SRC = \
     src/core/lib/transport/service_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/status_conversion.c \
+    src/core/lib/transport/status_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
@@ -4565,6 +4573,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/transport/service_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/status_conversion.c \
+    src/core/lib/transport/status_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
@@ -4618,6 +4627,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/client_channel/resolver_factory.c \
     src/core/ext/filters/client_channel/resolver_registry.c \
     src/core/ext/filters/client_channel/retry_throttle.c \
+    src/core/ext/filters/client_channel/status_string.c \
     src/core/ext/filters/client_channel/subchannel.c \
     src/core/ext/filters/client_channel/subchannel_index.c \
     src/core/ext/filters/client_channel/uri_parser.c \
@@ -5328,6 +5338,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/transport/service_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/status_conversion.c \
+    src/core/lib/transport/status_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
@@ -8379,6 +8390,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/request_with_flags.c \
     test/core/end2end/tests/request_with_payload.c \
     test/core/end2end/tests/resource_quota_server.c \
+    test/core/end2end/tests/retry.c \
     test/core/end2end/tests/server_finishes_request.c \
     test/core/end2end/tests/shutdown_finishes_calls.c \
     test/core/end2end/tests/shutdown_finishes_tags.c \
@@ -8471,6 +8483,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/request_with_flags.c \
     test/core/end2end/tests/request_with_payload.c \
     test/core/end2end/tests/resource_quota_server.c \
+    test/core/end2end/tests/retry.c \
     test/core/end2end/tests/server_finishes_request.c \
     test/core/end2end/tests/shutdown_finishes_calls.c \
     test/core/end2end/tests/shutdown_finishes_tags.c \

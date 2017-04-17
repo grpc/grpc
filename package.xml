@@ -283,6 +283,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/status_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_impl.h" role="src" />
@@ -349,6 +350,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/status_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
@@ -502,6 +504,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/service_config.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/status_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.c" role="src" />
@@ -578,6 +581,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/status_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.c" role="src" />

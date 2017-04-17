@@ -127,6 +127,8 @@ extern void request_with_payload(grpc_end2end_test_config config);
 extern void request_with_payload_pre_init(void);
 extern void resource_quota_server(grpc_end2end_test_config config);
 extern void resource_quota_server_pre_init(void);
+extern void retry(grpc_end2end_test_config config);
+extern void retry_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
 extern void server_finishes_request_pre_init(void);
 extern void shutdown_finishes_calls(grpc_end2end_test_config config);
@@ -195,6 +197,7 @@ void grpc_end2end_tests_pre_init(void) {
   request_with_flags_pre_init();
   request_with_payload_pre_init();
   resource_quota_server_pre_init();
+  retry_pre_init();
   server_finishes_request_pre_init();
   shutdown_finishes_calls_pre_init();
   shutdown_finishes_tags_pre_init();
@@ -256,6 +259,7 @@ void grpc_end2end_tests(int argc, char **argv,
     request_with_flags(config);
     request_with_payload(config);
     resource_quota_server(config);
+    retry(config);
     server_finishes_request(config);
     shutdown_finishes_calls(config);
     shutdown_finishes_tags(config);
@@ -433,6 +437,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("resource_quota_server", argv[i])) {
       resource_quota_server(config);
+      continue;
+    }
+    if (0 == strcmp("retry", argv[i])) {
+      retry(config);
       continue;
     }
     if (0 == strcmp("server_finishes_request", argv[i])) {

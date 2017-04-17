@@ -276,6 +276,7 @@ filegroups:
   - src/core/lib/transport/service_config.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/status_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -397,6 +398,7 @@ filegroups:
   - src/core/lib/transport/service_config.c
   - src/core/lib/transport/static_metadata.c
   - src/core/lib/transport/status_conversion.c
+  - src/core/lib/transport/status_metadata.c
   - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
   - src/core/lib/transport/transport_op_string.c
@@ -421,6 +423,7 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/retry_throttle.h
+  - src/core/ext/filters/client_channel/status_string.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
   - src/core/ext/filters/client_channel/uri_parser.h
@@ -442,6 +445,7 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver_factory.c
   - src/core/ext/filters/client_channel/resolver_registry.c
   - src/core/ext/filters/client_channel/retry_throttle.c
+  - src/core/ext/filters/client_channel/status_string.c
   - src/core/ext/filters/client_channel/subchannel.c
   - src/core/ext/filters/client_channel/subchannel_index.c
   - src/core/ext/filters/client_channel/uri_parser.c

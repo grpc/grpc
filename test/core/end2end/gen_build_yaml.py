@@ -139,6 +139,7 @@ END2END_TESTS = {
     'request_with_flags': default_test_options._replace(
         proxyable=False, cpu_cost=LOWCPU),
     'request_with_payload': default_test_options,
+    'retry': default_test_options,
     'server_finishes_request': default_test_options,
     'shutdown_finishes_calls': default_test_options,
     'shutdown_finishes_tags': default_test_options,

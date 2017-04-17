@@ -403,6 +403,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\service_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\status_conversion.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\status_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h" />
@@ -469,6 +470,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_registry.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\retry_throttle.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\status_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel_index.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.h" />
@@ -742,6 +744,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\status_conversion.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\status_metadata.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport.c">
@@ -893,6 +897,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_registry.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\retry_throttle.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\status_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel.c">
     </ClCompile>
