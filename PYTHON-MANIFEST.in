@@ -7,7 +7,7 @@ graft include/grpc
 graft third_party/boringssl
 graft third_party/nanopb
 graft third_party/zlib
-graft third_party/c-ares
+graft third_party/cares
 include src/python/grpcio/_spawn_patch.py
 include src/python/grpcio/commands.py
 include src/python/grpcio/grpc_version.py
