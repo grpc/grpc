@@ -652,14 +652,7 @@ static grpc_error *pollset_kick_all(grpc_pollset *pollset) {
   return error;
 }
 
-/* p->po.mu must be held before calling this function */
-static grpc_error *pollset_kick(grpc_pollset *pollset,
-                                grpc_pollset_worker *specific_worker) {
-  pollable *p = pollset->current_pollable;
-  if (p != &pollset->pollable) {
-    gpr_mu_lock(&p->po.mu);
-  }
-
+static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p, grpc_pollset_worker *specific_worker) {
   if (grpc_polling_trace) {
     gpr_log(GPR_DEBUG,
             "PS:%p kick %p tls_pollset=%p tls_worker=%p "
@@ -710,6 +703,21 @@ static grpc_error *pollset_kick(grpc_pollset *pollset,
     gpr_cv_signal(&specific_worker->cv);
     return GRPC_ERROR_NONE;
   }
+
+}
+
+/* p->po.mu must be held before calling this function */
+static grpc_error *pollset_kick(grpc_pollset *pollset,
+                                grpc_pollset_worker *specific_worker) {
+  pollable *p = pollset->current_pollable;
+  if (p != &pollset->pollable) {
+    gpr_mu_lock(&p->po.mu);
+  }
+  grpc_error *error = pollset_kick_inner(pollset, p, specific_worker);
+  if (p != &pollset->pollable) {
+    gpr_mu_unlock(&p->po.mu);
+  }
+  return error;
 }
 
 static grpc_error *kick_poller(void) {
