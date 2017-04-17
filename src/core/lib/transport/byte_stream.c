@@ -40,9 +40,9 @@
 
 #include "src/core/lib/slice/slice_internal.h"
 
-int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                          grpc_byte_stream *byte_stream, size_t max_size_hint,
-                          grpc_closure *on_complete) {
+bool grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
+                           grpc_byte_stream *byte_stream, size_t max_size_hint,
+                           grpc_closure *on_complete) {
   return byte_stream->next(exec_ctx, byte_stream, max_size_hint, on_complete);
 }
 
@@ -97,28 +97,26 @@ void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
 
 /* grpc_tee_byte_stream */
 
-static void tee_byte_stream_on_complete(grpc_exec_ctx *exec_ctx, void *arg,
-                                        grpc_error *error) {
-  grpc_tee_byte_stream *stream = arg;
-  stream->bytes_read += GRPC_SLICE_LENGTH(*stream->slice);
-  stream->cb(exec_ctx, stream->cb_arg, *stream->slice);
-  grpc_closure_run(exec_ctx, stream->original_on_complete, error);
+static bool tee_byte_stream_next(grpc_exec_ctx *exec_ctx,
+                                 grpc_byte_stream *byte_stream,
+                                 size_t max_size_hint,
+                                 grpc_closure *on_complete) {
+  grpc_tee_byte_stream *stream = (grpc_tee_byte_stream *)byte_stream;
+  return grpc_byte_stream_next(exec_ctx, stream->underlying_stream,
+                               max_size_hint, on_complete);
 }
 
-static int tee_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                                grpc_byte_stream *byte_stream,
-                                grpc_slice *slice, size_t max_size_hint,
-                                grpc_closure *on_complete) {
+static grpc_error *tee_byte_stream_pull(grpc_exec_ctx *exec_ctx,
+                                        grpc_byte_stream *byte_stream,
+                                        grpc_slice *slice) {
   grpc_tee_byte_stream *stream = (grpc_tee_byte_stream *)byte_stream;
-  stream->slice = slice;
-  stream->original_on_complete = on_complete;
-  int retval = grpc_byte_stream_next(exec_ctx, stream->underlying_stream, slice,
-                                     max_size_hint, &stream->on_complete);
-  if (retval) {
-    stream->bytes_read += GRPC_SLICE_LENGTH(*stream->slice);
+  grpc_error *error =
+      grpc_byte_stream_pull(exec_ctx, stream->underlying_stream, slice);
+  if (error != GRPC_ERROR_NONE) {
+    stream->bytes_read += GRPC_SLICE_LENGTH(*slice);
     stream->cb(exec_ctx, stream->cb_arg, *slice);
   }
-  return retval;
+  return error;
 }
 
 static void tee_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -137,11 +135,10 @@ void grpc_tee_byte_stream_init(grpc_tee_byte_stream *stream,
   stream->base.length = underlying_stream->length;
   stream->base.flags = underlying_stream->flags;
   stream->base.next = tee_byte_stream_next;
+  stream->base.pull = tee_byte_stream_pull;
   stream->base.destroy = tee_byte_stream_destroy;
   stream->underlying_stream = underlying_stream;
   stream->cb = cb;
   stream->destroy_cb = destroy_cb;
   stream->cb_arg = cb_arg;
-  grpc_closure_init(&stream->on_complete, tee_byte_stream_on_complete, stream,
-                    grpc_schedule_on_exec_ctx);
 }

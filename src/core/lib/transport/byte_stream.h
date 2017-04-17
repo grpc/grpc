@@ -56,19 +56,19 @@ struct grpc_byte_stream {
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
 };
 
-/* returns 1 if the bytes are available immediately (in which case
- * on_complete will not be called), 0 if the bytes will be available
+/* returns true if the bytes are available immediately (in which case
+ * on_complete will not be called), false if the bytes will be available
  * asynchronously.
  *
  * max_size_hint can be set as a hint as to the maximum number
  * of bytes that would be acceptable to read.
  */
-int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                          grpc_byte_stream *byte_stream, size_t max_size_hint,
-                          grpc_closure *on_complete);
+bool grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
+                           grpc_byte_stream *byte_stream, size_t max_size_hint,
+                           grpc_closure *on_complete);
 
 /* returns the next slice in the byte stream when it is ready (indicated by
- * either grpc_byte_stream_next returning 1 or on_complete passed to
+ * either grpc_byte_stream_next returning true or on_complete passed to
  * grpc_byte_stream_next is called).
  *
  * once a slice is returned into *slice, it is owned by the caller.
@@ -110,9 +110,6 @@ typedef struct {
   tee_byte_stream_destroy_cb destroy_cb;
   void *cb_arg;
   size_t bytes_read;
-  grpc_slice *slice;
-  grpc_closure on_complete;
-  grpc_closure *original_on_complete;
 } grpc_tee_byte_stream;
 
 /* \a destroy_cb gives the caller an opportunity to finish draining the
