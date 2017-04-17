@@ -1,0 +1,5 @@
+<map id="src/core/iomgr/socket_windows.h" name="src/core/iomgr/socket_windows.h">
+<area shape="rect" id="node2" href="$iocp__windows_8h.html" title="src/core/iomgr/iocp\l_windows.h" alt="" coords="5,95,140,136"/>
+<area shape="rect" id="node3" href="$pollset__windows_8h.html" title="src/core/iomgr/pollset\l_windows.h" alt="" coords="165,95,314,136"/>
+<area shape="rect" id="node4" href="$tcp__windows_8h.html" title="src/core/iomgr/tcp\l_windows.h" alt="" coords="338,95,466,136"/>
+</map>

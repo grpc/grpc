@@ -1,0 +1,6 @@
+<map id="grpc_channel_op" name="grpc_channel_op">
+<area shape="rect" id="node2" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="46,95,122,121"/>
+<area shape="rect" id="node3" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="5,5,136,32"/>
+<area shape="rect" id="node4" href="$structgrpc__transport.html" title="grpc_transport" alt="" coords="170,95,278,121"/>
+<area shape="rect" id="node5" href="$structgrpc__transport__vtable.html" title="grpc_transport_vtable" alt="" coords="161,5,311,32"/>
+</map>

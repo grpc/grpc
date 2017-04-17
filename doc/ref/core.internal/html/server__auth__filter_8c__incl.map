@@ -1,0 +1,35 @@
+<map id="src/core/security/server_auth_filter.c" name="src/core/security/server_auth_filter.c">
+<area shape="rect" id="node2" href="$auth__filters_8h.html" title="src/core/security/auth\l_filters.h" alt="" coords="451,95,600,136"/>
+<area shape="rect" id="node18" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="162,281,291,307"/>
+<area shape="rect" id="node29" href="$security__connector_8h.html" title="src/core/security/security\l_connector.h" alt="" coords="719,273,889,315"/>
+<area shape="rect" id="node33" href="$security__context_8h.html" title="src/core/security/security\l_context.h" alt="" coords="845,95,1014,136"/>
+<area shape="rect" id="node3" href="$channel__stack_8h.html" title="src/core/channel/channel\l_stack.h" alt="" coords="389,184,560,225"/>
+<area shape="rect" id="node5" href="$grpc_8h.html" title="grpc/grpc.h" alt="" coords="1061,459,1150,486"/>
+<area shape="rect" id="node21" href="$trace_8h.html" title="src/core/debug/trace.h" alt="" coords="5,780,160,807"/>
+<area shape="rect" id="node22" href="$transport_8h.html" title="src/core/transport\l/transport.h" alt="" coords="463,273,588,315"/>
+<area shape="rect" id="node6" href="$status_8h.html" title="grpc/status.h" alt="" coords="903,541,1001,568"/>
+<area shape="rect" id="node7" href="$byte__buffer_8h.html" title="grpc/byte_buffer.h" alt="" coords="1127,541,1257,568"/>
+<area shape="rect" id="node10" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="1395,705,1533,732"/>
+<area shape="rect" id="node16" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="955,862,1091,889"/>
+<area shape="rect" id="node8" href="$compression_8h.html" title="grpc/compression.h" alt="" coords="1263,623,1401,650"/>
+<area shape="rect" id="node9" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="1111,616,1238,657"/>
+<area shape="rect" id="node11" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="1737,780,1876,807"/>
+<area shape="rect" id="node12" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="928,1019,1117,1045"/>
+<area shape="rect" id="node14" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="1915,862,2104,889"/>
+<area shape="rect" id="node17" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="1723,855,1890,896"/>
+<area shape="rect" id="node15" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="1740,944,1873,971"/>
+<area shape="rect" id="node23" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="532,705,692,732"/>
+<area shape="rect" id="node24" href="$pollset__set_8h.html" title="src/core/iomgr/pollset\l_set.h" alt="" coords="537,616,687,657"/>
+<area shape="rect" id="node25" href="$stream__op_8h.html" title="src/core/transport\l/stream_op.h" alt="" coords="1324,363,1449,404"/>
+<area shape="rect" id="node28" href="$channel_2context_8h.html" title="src/core/channel/context.h" alt="" coords="589,370,766,397"/>
+<area shape="rect" id="node26" href="$metadata_8h.html" title="src/core/transport\l/metadata.h" alt="" coords="1415,452,1540,493"/>
+<area shape="rect" id="node27" href="$useful_8h.html" title="grpc/support/useful.h" alt="" coords="1465,541,1612,568"/>
+<area shape="rect" id="node30" href="$grpc__security_8h.html" title="grpc/grpc_security.h" alt="" coords="842,370,985,397"/>
+<area shape="rect" id="node31" href="$endpoint_8h.html" title="src/core/iomgr/endpoint.h" alt="" coords="711,623,883,650"/>
+<area shape="rect" id="node32" href="$transport__security__interface_8h.html" title="src/core/tsi/transport\l_security_interface.h" alt="" coords="215,363,361,404"/>
+<area shape="rect" id="node34" href="$credentials_8h.html" title="src/core/security/credentials.h" alt="" coords="974,191,1173,218"/>
+<area shape="rect" id="node35" href="$httpcli_8h.html" title="src/core/httpcli/httpcli.h" alt="" coords="721,541,879,568"/>
+<area shape="rect" id="node36" href="$json__token_8h.html" title="src/core/security/json\l_token.h" alt="" coords="1385,273,1532,315"/>
+<area shape="rect" id="node38" href="$json_8h.html" title="src/core/json/json.h" alt="" coords="1162,370,1299,397"/>
+<area shape="rect" id="node39" href="$json__common_8h.html" title="src/core/json/json\l_common.h" alt="" coords="1175,452,1300,493"/>
+</map>

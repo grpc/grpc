@@ -1,0 +1,15 @@
+<map id="src/core/transport/chttp2/frame_goaway.h" name="src/core/transport/chttp2/frame_goaway.h">
+<area shape="rect" id="node2" href="$internal_8h.html" title="src/core/transport\l/chttp2/internal.h" alt="" coords="935,95,1061,136"/>
+<area shape="rect" id="node4" href="$frame__goaway_8c.html" title="src/core/transport\l/chttp2/frame_goaway.c" alt="" coords="5,191,169,233"/>
+<area shape="rect" id="node3" href="$frame__data_8c.html" title="src/core/transport\l/chttp2/frame_data.c" alt="" coords="194,191,338,233"/>
+<area shape="rect" id="node5" href="$frame__ping_8c.html" title="src/core/transport\l/chttp2/frame_ping.c" alt="" coords="363,191,505,233"/>
+<area shape="rect" id="node6" href="$frame__rst__stream_8c.html" title="src/core/transport\l/chttp2/frame_rst_stream.c" alt="" coords="529,191,709,233"/>
+<area shape="rect" id="node7" href="$frame__settings_8c.html" title="src/core/transport\l/chttp2/frame_settings.c" alt="" coords="733,191,897,233"/>
+<area shape="rect" id="node8" href="$frame__window__update_8c.html" title="src/core/transport\l/chttp2/frame_window\l_update.c" alt="" coords="922,184,1074,240"/>
+<area shape="rect" id="node9" href="$hpack__parser_8c.html" title="src/core/transport\l/chttp2/hpack_parser.c" alt="" coords="1098,191,1255,233"/>
+<area shape="rect" id="node10" href="$incoming__metadata_8c.html" title="src/core/transport\l/chttp2/incoming_metadata.c" alt="" coords="1279,191,1471,233"/>
+<area shape="rect" id="node11" href="$parsing_8c.html" title="src/core/transport\l/chttp2/parsing.c" alt="" coords="1495,191,1621,233"/>
+<area shape="rect" id="node12" href="$stream__lists_8c.html" title="src/core/transport\l/chttp2/stream_lists.c" alt="" coords="1645,191,1791,233"/>
+<area shape="rect" id="node13" href="$writing_8c.html" title="src/core/transport\l/chttp2/writing.c" alt="" coords="1815,191,1941,233"/>
+<area shape="rect" id="node14" href="$chttp2__transport_8c.html" title="src/core/transport\l/chttp2_transport.c" alt="" coords="1965,191,2097,233"/>
+</map>

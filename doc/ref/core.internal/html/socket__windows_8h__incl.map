@@ -1,0 +1,10 @@
+<map id="src/core/iomgr/socket_windows.h" name="src/core/iomgr/socket_windows.h">
+<area shape="rect" id="node2" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="215,423,404,449"/>
+<area shape="rect" id="node5" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="127,184,265,211"/>
+<area shape="rect" id="node7" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="164,348,297,375"/>
+<area shape="rect" id="node11" href="$iomgr__internal_8h.html" title="src/core/iomgr/iomgr\l_internal.h" alt="" coords="144,95,288,136"/>
+<area shape="rect" id="node6" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="285,266,475,293"/>
+<area shape="rect" id="node8" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="499,266,635,293"/>
+<area shape="rect" id="node10" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="94,259,261,300"/>
+<area shape="rect" id="node12" href="$iomgr_8h.html" title="src/core/iomgr/iomgr.h" alt="" coords="289,184,444,211"/>
+</map>

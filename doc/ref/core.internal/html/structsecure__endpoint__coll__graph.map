@@ -1,0 +1,10 @@
+<map id="secure_endpoint" name="secure_endpoint">
+<area shape="rect" id="node2" href="$structgpr__refcount.html" title="gpr_refcount" alt="" coords="5,222,103,249"/>
+<area shape="rect" id="node3" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="236,102,312,129"/>
+<area shape="rect" id="node9" href="$structgpr__slice__buffer.html" title="gpr_slice_buffer" alt="" coords="299,222,417,249"/>
+<area shape="rect" id="node4" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="209,5,339,32"/>
+<area shape="rect" id="node5" href="$structgrpc__endpoint.html" title="grpc_endpoint" alt="" coords="441,222,547,249"/>
+<area shape="rect" id="node6" href="$structgrpc__endpoint__vtable.html" title="grpc_endpoint_vtable" alt="" coords="414,102,563,129"/>
+<area shape="rect" id="node7" href="$structtsi__frame__protector.html" title="tsi_frame_protector" alt="" coords="583,222,720,249"/>
+<area shape="rect" id="node8" href="$structtsi__frame__protector__vtable.html" title="tsi_frame_protector\l_vtable" alt="" coords="588,95,725,136"/>
+</map>

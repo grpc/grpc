@@ -1,0 +1,31 @@
+digraph "include/grpc++/impl/client_unary_call.h"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="include/grpc++/impl\l/client_unary_call.h",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="include/grpc++/completion\l_queue.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$completion__queue_8h.html"];
+  Node2 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="include/grpc++/async\l_unary_call.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$async__unary__call_8h.html"];
+  Node2 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="include/grpc++/impl\l/call.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$call_8h.html"];
+  Node4 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="include/grpc++/channel\l_interface.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$channel__interface_8h.html"];
+  Node5 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="include/grpc++/impl\l/internal_stub.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$internal__stub_8h.html"];
+  Node5 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="include/grpc++/stream.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$stream_8h.html"];
+  Node7 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="include/grpc++/async\l_generic_service.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$async__generic__service_8h.html"];
+  Node7 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="include/grpc++/generic\l_stub.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$generic__stub_8h.html"];
+  Node7 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="include/grpc++/impl\l/rpc_service_method.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$rpc__service__method_8h.html"];
+  Node4 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="include/grpc++/server.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$server_8h.html"];
+  Node4 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

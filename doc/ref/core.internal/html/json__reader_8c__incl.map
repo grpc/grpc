@@ -1,0 +1,13 @@
+<map id="src/core/json/json_reader.c" name="src/core/json/json_reader.c">
+<area shape="rect" id="node2" href="$string_8h.html" title="string.h" alt="" coords="430,102,495,129"/>
+<area shape="rect" id="node4" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="627,587,816,613"/>
+<area shape="rect" id="node13" href="$json__reader_8h.html" title="src/core/json/json\l_reader.h" alt="" coords="835,95,960,136"/>
+<area shape="rect" id="node6" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="399,184,526,225"/>
+<area shape="rect" id="node7" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="293,273,430,300"/>
+<area shape="rect" id="node8" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="292,348,431,375"/>
+<area shape="rect" id="node9" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="469,430,659,457"/>
+<area shape="rect" id="node11" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="93,430,229,457"/>
+<area shape="rect" id="node12" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="278,423,445,464"/>
+<area shape="rect" id="node10" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="497,512,631,539"/>
+<area shape="rect" id="node14" href="$json__common_8h.html" title="src/core/json/json\l_common.h" alt="" coords="885,184,1011,225"/>
+</map>

@@ -1,0 +1,27 @@
+<map id="src/core/tsi/transport_security_interface.h" name="src/core/tsi/transport_security_interface.h">
+<area shape="rect" id="node2" href="$security__connector_8h.html" title="src/core/security/security\l_connector.h" alt="" coords="1023,95,1192,136"/>
+<area shape="rect" id="node16" href="$secure__channel__create_8c.html" title="src/core/surface/secure\l_channel_create.c" alt="" coords="1186,273,1346,315"/>
+<area shape="rect" id="node19" href="$fake__transport__security_8h.html" title="src/core/tsi/fake_transport\l_security.h" alt="" coords="2013,95,2189,136"/>
+<area shape="rect" id="node21" href="$ssl__transport__security_8h.html" title="src/core/tsi/ssl_transport\l_security.h" alt="" coords="1822,95,1988,136"/>
+<area shape="rect" id="node23" href="$transport__security_8h.html" title="src/core/tsi/transport\l_security.h" alt="" coords="2214,95,2356,136"/>
+<area shape="rect" id="node25" href="$secure__endpoint_8c.html" title="src/core/security/secure\l_endpoint.c" alt="" coords="2381,95,2544,136"/>
+<area shape="rect" id="node26" href="$init__secure_8c.html" title="src/core/surface/init\l_secure.c" alt="" coords="2568,95,2706,136"/>
+<area shape="rect" id="node3" href="$httpcli__security__connector_8h.html" title="src/core/httpcli/httpcli\l_security_connector.h" alt="" coords="1560,184,1712,225"/>
+<area shape="rect" id="node6" href="$credentials_8h.html" title="src/core/security/credentials.h" alt="" coords="679,191,878,218"/>
+<area shape="rect" id="node8" href="$client__auth__filter_8c.html" title="src/core/security/client\l_auth_filter.c" alt="" coords="339,363,492,404"/>
+<area shape="rect" id="node9" href="$security__connector_8c.html" title="src/core/security/security\l_connector.c" alt="" coords="1064,363,1234,404"/>
+<area shape="rect" id="node11" href="$server__auth__filter_8c.html" title="src/core/security/server\l_auth_filter.c" alt="" coords="28,363,188,404"/>
+<area shape="rect" id="node15" href="$server__secure__chttp2_8c.html" title="src/core/security/server\l_secure_chttp2.c" alt="" coords="952,273,1112,315"/>
+<area shape="rect" id="node17" href="$secure__transport__setup_8h.html" title="src/core/security/secure\l_transport_setup.h" alt="" coords="1353,184,1516,225"/>
+<area shape="rect" id="node4" href="$httpcli_8c.html" title="src/core/httpcli/httpcli.c" alt="" coords="1557,281,1714,307"/>
+<area shape="rect" id="node5" href="$httpcli__security__connector_8c.html" title="src/core/httpcli/httpcli\l_security_connector.c" alt="" coords="1738,273,1890,315"/>
+<area shape="rect" id="node7" href="$security__context_8h.html" title="src/core/security/security\l_context.h" alt="" coords="486,273,655,315"/>
+<area shape="rect" id="node12" href="$credentials_8c.html" title="src/core/security/credentials.c" alt="" coords="680,281,877,307"/>
+<area shape="rect" id="node13" href="$credentials__metadata_8c.html" title="src/core/security/credentials\l_metadata.c" alt="" coords="37,273,224,315"/>
+<area shape="rect" id="node14" href="$google__default__credentials_8c.html" title="src/core/security/google\l_default_credentials.c" alt="" coords="248,273,410,315"/>
+<area shape="rect" id="node10" href="$security__context_8c.html" title="src/core/security/security\l_context.c" alt="" coords="516,363,686,404"/>
+<area shape="rect" id="node18" href="$secure__transport__setup_8c.html" title="src/core/security/secure\l_transport_setup.c" alt="" coords="1370,273,1533,315"/>
+<area shape="rect" id="node20" href="$fake__transport__security_8c.html" title="src/core/tsi/fake_transport\l_security.c" alt="" coords="2192,184,2368,225"/>
+<area shape="rect" id="node22" href="$ssl__transport__security_8c.html" title="src/core/tsi/ssl_transport\l_security.c" alt="" coords="1950,184,2116,225"/>
+<area shape="rect" id="node24" href="$transport__security_8c.html" title="src/core/tsi/transport\l_security.c" alt="" coords="2392,184,2535,225"/>
+</map>

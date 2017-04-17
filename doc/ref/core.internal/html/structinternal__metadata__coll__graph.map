@@ -1,0 +1,6 @@
+<map id="internal_metadata" name="internal_metadata">
+<area shape="rect" id="node2" href="$structgrpc__mdctx.html" title="grpc_mdctx" alt="" coords="5,96,96,123"/>
+<area shape="rect" id="node3" href="$structinternal__string.html" title="internal_string" alt="" coords="113,201,218,228"/>
+<area shape="rect" id="node4" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="322,96,398,123"/>
+<area shape="rect" id="node5" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="288,5,419,32"/>
+</map>

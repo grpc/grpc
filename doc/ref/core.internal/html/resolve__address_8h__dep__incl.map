@@ -1,0 +1,6 @@
+<map id="src/core/iomgr/resolve_address.h" name="src/core/iomgr/resolve_address.h">
+<area shape="rect" id="node2" href="$httpcli_8c.html" title="src/core/httpcli/httpcli.c" alt="" coords="5,102,163,129"/>
+<area shape="rect" id="node3" href="$server__secure__chttp2_8c.html" title="src/core/security/server\l_secure_chttp2.c" alt="" coords="187,95,347,136"/>
+<area shape="rect" id="node4" href="$dns__resolver_8c.html" title="src/core/client_config\l/resolvers/dns_resolver.c" alt="" coords="371,95,541,136"/>
+<area shape="rect" id="node5" href="$server__chttp2_8c.html" title="src/core/surface/server\l_chttp2.c" alt="" coords="565,95,723,136"/>
+</map>

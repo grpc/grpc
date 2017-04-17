@@ -1,0 +1,10 @@
+<map id="src/core/transport/metadata.h" name="src/core/transport/metadata.h">
+<area shape="rect" id="node2" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="412,95,549,121"/>
+<area shape="rect" id="node11" href="$useful_8h.html" title="grpc/support/useful.h" alt="" coords="574,95,720,121"/>
+<area shape="rect" id="node3" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="259,169,398,196"/>
+<area shape="rect" id="node4" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="114,408,303,435"/>
+<area shape="rect" id="node6" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="31,251,220,278"/>
+<area shape="rect" id="node8" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="436,251,572,278"/>
+<area shape="rect" id="node10" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="245,244,412,285"/>
+<area shape="rect" id="node7" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="142,333,275,360"/>
+</map>

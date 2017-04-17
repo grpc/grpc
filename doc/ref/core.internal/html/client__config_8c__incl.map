@@ -1,0 +1,31 @@
+<map id="src/core/client_config/client_config.c" name="src/core/client_config/client_config.c">
+<area shape="rect" id="node2" href="$client__config_8h.html" title="src/core/client_config\l/client_config.h" alt="" coords="481,95,628,136"/>
+<area shape="rect" id="node33" href="$string_8h.html" title="string.h" alt="" coords="1258,809,1323,836"/>
+<area shape="rect" id="node34" href="$alloc_8h.html" title="grpc/support/alloc.h" alt="" coords="283,191,421,218"/>
+<area shape="rect" id="node3" href="$lb__policy_8h.html" title="src/core/client_config\l/lb_policy.h" alt="" coords="481,184,628,225"/>
+<area shape="rect" id="node4" href="$subchannel_8h.html" title="src/core/client_config\l/subchannel.h" alt="" coords="481,273,628,315"/>
+<area shape="rect" id="node5" href="$channel__stack_8h.html" title="src/core/channel/channel\l_stack.h" alt="" coords="411,452,581,493"/>
+<area shape="rect" id="node31" href="$connector_8h.html" title="src/core/client_config\l/connector.h" alt="" coords="540,363,687,404"/>
+<area shape="rect" id="node7" href="$grpc_8h.html" title="grpc/grpc.h" alt="" coords="635,727,725,754"/>
+<area shape="rect" id="node20" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="147,549,277,575"/>
+<area shape="rect" id="node23" href="$trace_8h.html" title="src/core/debug/trace.h" alt="" coords="5,891,160,918"/>
+<area shape="rect" id="node24" href="$transport_8h.html" title="src/core/transport\l/transport.h" alt="" coords="556,541,681,583"/>
+<area shape="rect" id="node8" href="$status_8h.html" title="grpc/status.h" alt="" coords="544,809,643,836"/>
+<area shape="rect" id="node9" href="$byte__buffer_8h.html" title="grpc/byte_buffer.h" alt="" coords="769,809,898,836"/>
+<area shape="rect" id="node12" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="949,973,1086,1000"/>
+<area shape="rect" id="node18" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="472,1130,608,1157"/>
+<area shape="rect" id="node10" href="$compression_8h.html" title="grpc/compression.h" alt="" coords="760,891,899,918"/>
+<area shape="rect" id="node11" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="1075,884,1202,925"/>
+<area shape="rect" id="node13" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="948,1048,1087,1075"/>
+<area shape="rect" id="node14" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="856,1287,1045,1313"/>
+<area shape="rect" id="node16" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="923,1130,1112,1157"/>
+<area shape="rect" id="node19" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="1137,1123,1303,1164"/>
+<area shape="rect" id="node17" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="951,1212,1084,1239"/>
+<area shape="rect" id="node25" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="139,973,299,1000"/>
+<area shape="rect" id="node26" href="$pollset__set_8h.html" title="src/core/iomgr/pollset\l_set.h" alt="" coords="168,720,317,761"/>
+<area shape="rect" id="node27" href="$stream__op_8h.html" title="src/core/transport\l/stream_op.h" alt="" coords="1069,631,1195,672"/>
+<area shape="rect" id="node30" href="$channel_2context_8h.html" title="src/core/channel/context.h" alt="" coords="867,638,1045,665"/>
+<area shape="rect" id="node28" href="$metadata_8h.html" title="src/core/transport\l/metadata.h" alt="" coords="1035,720,1160,761"/>
+<area shape="rect" id="node29" href="$useful_8h.html" title="grpc/support/useful.h" alt="" coords="1024,809,1171,836"/>
+<area shape="rect" id="node32" href="$sockaddr_8h.html" title="src/core/iomgr/sockaddr.h" alt="" coords="1429,1048,1605,1075"/>
+</map>

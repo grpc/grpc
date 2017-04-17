@@ -1,0 +1,6 @@
+<map id="src/core/security/auth_filters.h" name="src/core/security/auth_filters.h">
+<area shape="rect" id="node2" href="$client__auth__filter_8c.html" title="src/core/security/client\l_auth_filter.c" alt="" coords="5,95,159,136"/>
+<area shape="rect" id="node3" href="$server__auth__filter_8c.html" title="src/core/security/server\l_auth_filter.c" alt="" coords="183,95,343,136"/>
+<area shape="rect" id="node4" href="$server__secure__chttp2_8c.html" title="src/core/security/server\l_secure_chttp2.c" alt="" coords="367,95,527,136"/>
+<area shape="rect" id="node5" href="$secure__channel__create_8c.html" title="src/core/surface/secure\l_channel_create.c" alt="" coords="551,95,711,136"/>
+</map>

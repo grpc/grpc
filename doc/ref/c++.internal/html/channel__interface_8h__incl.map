@@ -1,0 +1,13 @@
+<map id="include/grpc++/channel_interface.h" name="include/grpc++/channel_interface.h">
+<area shape="rect" id="node3" href="$status_8h.html" title="grpc++/status.h" alt="" coords="1299,259,1412,285"/>
+<area shape="rect" id="node7" href="$call_8h.html" title="grpc++/impl/call.h" alt="" coords="537,95,664,121"/>
+<area shape="rect" id="node4" href="$status__code__enum_8h.html" title="grpc++/status_code\l_enum.h" alt="" coords="1295,333,1434,375"/>
+<area shape="rect" id="node5" href="$config_8h.html" title="grpc++/config.h" alt="" coords="240,423,353,449"/>
+<area shape="rect" id="node9" href="$client__context_8h.html" title="grpc++/client_context.h" alt="" coords="674,177,834,203"/>
+<area shape="rect" id="node20" href="$completion__queue_8h.html" title="grpc++/completion_queue.h" alt="" coords="929,177,1115,203"/>
+<area shape="rect" id="node23" href="$serialization__traits_8h.html" title="grpc++/impl/serialization\l_traits.h" alt="" coords="241,169,406,211"/>
+<area shape="rect" id="node14" href="$auth__context_8h.html" title="grpc++/auth_context.h" alt="" coords="125,259,279,285"/>
+<area shape="rect" id="node18" href="$time_8h.html" title="grpc++/time.h" alt="" coords="970,259,1074,285"/>
+<area shape="rect" id="node16" href="$auth__property__iterator_8h.html" title="grpc++/auth_property\l_iterator.h" alt="" coords="103,333,253,375"/>
+<area shape="rect" id="node21" href="$grpc__library_8h.html" title="grpc++/impl/grpc_library.h" alt="" coords="1098,259,1274,285"/>
+</map>

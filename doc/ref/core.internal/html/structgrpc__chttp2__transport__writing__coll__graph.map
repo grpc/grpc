@@ -1,0 +1,11 @@
+<map id="grpc_chttp2_transport_writing" name="grpc_chttp2_transport_writing">
+<area shape="rect" id="node2" href="$structgpr__slice__buffer.html" title="gpr_slice_buffer" alt="" coords="5,251,123,277"/>
+<area shape="rect" id="node3" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="201,95,277,121"/>
+<area shape="rect" id="node7" href="$structgrpc__mdstr.html" title="grpc_mdstr" alt="" coords="163,199,253,225"/>
+<area shape="rect" id="node10" href="$structinternal__string.html" title="internal_string" alt="" coords="370,199,475,225"/>
+<area shape="rect" id="node4" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="285,5,416,32"/>
+<area shape="rect" id="node5" href="$structgrpc__chttp2__hpack__compressor.html" title="grpc_chttp2_hpack_compressor" alt="" coords="102,395,314,421"/>
+<area shape="rect" id="node6" href="$structgrpc__mdelem.html" title="grpc_mdelem" alt="" coords="262,304,365,331"/>
+<area shape="rect" id="node8" href="$structgrpc__mdctx.html" title="grpc_mdctx" alt="" coords="389,304,480,331"/>
+<area shape="rect" id="node9" href="$structinternal__metadata.html" title="internal_metadata" alt="" coords="411,395,541,421"/>
+</map>

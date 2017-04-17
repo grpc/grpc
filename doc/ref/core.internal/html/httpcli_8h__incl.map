@@ -1,0 +1,6 @@
+<map id="src/core/httpcli/httpcli.h" name="src/core/httpcli/httpcli.h">
+<area shape="rect" id="node3" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="44,244,180,271"/>
+<area shape="rect" id="node6" href="$pollset__set_8h.html" title="src/core/iomgr/pollset\l_set.h" alt="" coords="124,80,273,121"/>
+<area shape="rect" id="node4" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="125,319,315,345"/>
+<area shape="rect" id="node7" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="121,169,281,196"/>
+</map>

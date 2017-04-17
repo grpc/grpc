@@ -1,0 +1,9 @@
+<map id="src/core/surface/channel.h" name="src/core/surface/channel.h">
+<area shape="rect" id="node2" href="$secure__channel__create_8c.html" title="src/core/surface/secure\l_channel_create.c" alt="" coords="5,80,165,121"/>
+<area shape="rect" id="node3" href="$client__channel_8c.html" title="src/core/channel/client\l_channel.c" alt="" coords="189,80,344,121"/>
+<area shape="rect" id="node4" href="$call_8c.html" title="src/core/surface/call.c" alt="" coords="369,87,519,114"/>
+<area shape="rect" id="node5" href="$channel_8c.html" title="src/core/surface/channel.c" alt="" coords="543,87,721,114"/>
+<area shape="rect" id="node6" href="$channel__create_8c.html" title="src/core/surface/channel\l_create.c" alt="" coords="745,80,911,121"/>
+<area shape="rect" id="node7" href="$lame__client_8c.html" title="src/core/surface/lame\l_client.c" alt="" coords="936,80,1085,121"/>
+<area shape="rect" id="node8" href="$server_8c.html" title="src/core/surface/server.c" alt="" coords="1109,87,1277,114"/>
+</map>

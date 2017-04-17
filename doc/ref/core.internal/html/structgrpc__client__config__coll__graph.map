@@ -1,0 +1,5 @@
+<map id="grpc_client_config" name="grpc_client_config">
+<area shape="rect" id="node2" href="$structgpr__refcount.html" title="gpr_refcount" alt="" coords="5,5,103,32"/>
+<area shape="rect" id="node3" href="$structgrpc__lb__policy.html" title="grpc_lb_policy" alt="" coords="105,95,211,121"/>
+<area shape="rect" id="node4" href="$structgrpc__lb__policy__vtable.html" title="grpc_lb_policy_vtable" alt="" coords="127,5,277,32"/>
+</map>

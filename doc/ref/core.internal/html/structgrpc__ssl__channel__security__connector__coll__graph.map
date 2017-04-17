@@ -1,0 +1,13 @@
+<map id="grpc_ssl_channel_security_connector" name="grpc_ssl_channel_security_connector">
+<area shape="rect" id="node2" href="$structtsi__peer.html" title="tsi_peer" alt="" coords="898,64,967,91"/>
+<area shape="rect" id="node3" href="$structtsi__peer__property.html" title="tsi_peer_property" alt="" coords="597,64,722,91"/>
+<area shape="rect" id="node4" href="$structtsi__ssl__handshaker__factory.html" title="tsi_ssl_handshaker\l_factory" alt="" coords="865,115,1001,157"/>
+<area shape="rect" id="node5" href="$structgrpc__channel__security__connector.html" title="grpc_channel_security\l_connector" alt="" coords="855,181,1011,222"/>
+<area shape="rect" id="node6" href="$structgrpc__security__connector.html" title="grpc_security_connector" alt="" coords="576,125,743,152"/>
+<area shape="rect" id="node7" href="$structgrpc__auth__context.html" title="grpc_auth_context" alt="" coords="297,44,429,71"/>
+<area shape="rect" id="node8" href="$structgpr__refcount.html" title="gpr_refcount" alt="" coords="38,96,135,123"/>
+<area shape="rect" id="node11" href="$structgrpc__credentials.html" title="grpc_credentials" alt="" coords="303,224,423,251"/>
+<area shape="rect" id="node9" href="$structgrpc__auth__property.html" title="grpc_auth_property" alt="" coords="18,7,155,33"/>
+<area shape="rect" id="node10" href="$structgrpc__security__connector__vtable.html" title="grpc_security_connector\l_vtable" alt="" coords="280,158,447,199"/>
+<area shape="rect" id="node12" href="$structgrpc__credentials__vtable.html" title="grpc_credentials_vtable" alt="" coords="5,224,168,251"/>
+</map>

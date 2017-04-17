@@ -1,0 +1,21 @@
+<map id="src/core/security/jwt_verifier.c" name="src/core/security/jwt_verifier.c">
+<area shape="rect" id="node2" href="$jwt__verifier_8h.html" title="src/core/security/jwt\l_verifier.h" alt="" coords="872,184,1011,225"/>
+<area shape="rect" id="node12" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="560,370,699,397"/>
+<area shape="rect" id="node16" href="$string_8h.html" title="string.h" alt="" coords="301,102,366,129"/>
+<area shape="rect" id="node18" href="$httpcli_8h.html" title="src/core/httpcli/httpcli.h" alt="" coords="1071,191,1228,218"/>
+<area shape="rect" id="node20" href="$base64_8h.html" title="src/core/security/base64.h" alt="" coords="473,191,650,218"/>
+<area shape="rect" id="node21" href="$alloc_8h.html" title="grpc/support/alloc.h" alt="" coords="5,281,144,307"/>
+<area shape="rect" id="node22" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="726,102,855,129"/>
+<area shape="rect" id="node24" href="$string__util_8h.html" title="grpc/support/string\l_util.h" alt="" coords="982,95,1114,136"/>
+<area shape="rect" id="node3" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="1091,370,1251,397"/>
+<area shape="rect" id="node6" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="1052,459,1188,486"/>
+<area shape="rect" id="node8" href="$json_8h.html" title="src/core/json/json.h" alt="" coords="795,281,933,307"/>
+<area shape="rect" id="node11" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="477,281,614,307"/>
+<area shape="rect" id="node4" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="869,616,1059,643"/>
+<area shape="rect" id="node10" href="$json__common_8h.html" title="src/core/json/json\l_common.h" alt="" coords="811,363,936,404"/>
+<area shape="rect" id="node13" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="737,459,927,486"/>
+<area shape="rect" id="node15" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="546,452,713,493"/>
+<area shape="rect" id="node14" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="765,541,899,568"/>
+<area shape="rect" id="node17" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="270,184,397,225"/>
+<area shape="rect" id="node19" href="$pollset__set_8h.html" title="src/core/iomgr/pollset\l_set.h" alt="" coords="1109,273,1259,315"/>
+</map>

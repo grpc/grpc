@@ -1,0 +1,7 @@
+<map id="grpc_chttp2_incoming_metadata_live_op_buffer" name="grpc_chttp2_incoming_metadata_live_op_buffer">
+<area shape="rect" id="node2" href="$structgrpc__linked__mdelem.html" title="grpc_linked_mdelem" alt="" coords="21,379,166,405"/>
+<area shape="rect" id="node3" href="$structgrpc__mdelem.html" title="grpc_mdelem" alt="" coords="42,288,145,315"/>
+<area shape="rect" id="node4" href="$structgrpc__mdstr.html" title="grpc_mdstr" alt="" coords="49,184,138,211"/>
+<area shape="rect" id="node5" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="55,95,131,121"/>
+<area shape="rect" id="node6" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="28,5,159,32"/>
+</map>

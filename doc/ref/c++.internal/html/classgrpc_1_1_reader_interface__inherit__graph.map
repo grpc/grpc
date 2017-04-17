@@ -1,0 +1,8 @@
+<map id="grpc::ReaderInterface&lt; R &gt;" name="grpc::ReaderInterface&lt; R &gt;">
+<area shape="rect" id="node2" href="$classgrpc_1_1_client_reader_interface.html" title="grpc::ClientReaderInterface\&lt; R \&gt;" alt="" coords="237,5,455,32"/>
+<area shape="rect" id="node4" href="$classgrpc_1_1_client_reader_writer_interface.html" title="grpc::ClientReaderWriter\lInterface\&lt; R \&gt;" alt="" coords="261,57,431,98"/>
+<area shape="rect" id="node6" href="$classgrpc_1_1_server_reader.html" title="grpc::ServerReader\&lt; R \&gt;" alt="" coords="261,123,431,149"/>
+<area shape="rect" id="node7" href="$classgrpc_1_1_server_reader_writer.html" title="grpc::ServerReaderWriter\&lt; R \&gt;" alt="" coords="243,173,449,200"/>
+<area shape="rect" id="node3" href="$classgrpc_1_1_client_reader.html" title="grpc::ClientReader\&lt; R \&gt;" alt="" coords="505,5,670,32"/>
+<area shape="rect" id="node5" href="$classgrpc_1_1_client_reader_writer.html" title="grpc::ClientReaderWriter\l\&lt; W, R \&gt;" alt="" coords="503,57,672,98"/>
+</map>

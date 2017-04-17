@@ -1,0 +1,5 @@
+<map id="grpc::ServerAsyncReaderWriter&lt; W, R &gt;" name="grpc::ServerAsyncReaderWriter&lt; W, R &gt;">
+<area shape="rect" id="node2" href="$classgrpc_1_1_server_async_streaming_interface.html" title="grpc::ServerAsyncStreaming\lInterface" alt="" coords="19,5,211,47"/>
+<area shape="rect" id="node3" href="$classgrpc_1_1_async_writer_interface.html" title="grpc::AsyncWriterInterface\&lt; W \&gt;" alt="" coords="8,71,223,98"/>
+<area shape="rect" id="node4" href="$classgrpc_1_1_async_reader_interface.html" title="grpc::AsyncReaderInterface\&lt; R \&gt;" alt="" coords="5,122,225,149"/>
+</map>

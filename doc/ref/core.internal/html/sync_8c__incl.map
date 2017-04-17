@@ -1,0 +1,9 @@
+<map id="src/core/support/sync.c" name="src/core/support/sync.c">
+<area shape="rect" id="node2" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="68,80,197,107"/>
+<area shape="rect" id="node5" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="449,80,587,107"/>
+<area shape="rect" id="node9" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="553,244,686,271"/>
+<area shape="rect" id="node6" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="267,319,457,345"/>
+<area shape="rect" id="node8" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="423,162,613,189"/>
+<area shape="rect" id="node10" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="239,162,375,189"/>
+<area shape="rect" id="node12" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="637,155,804,196"/>
+</map>

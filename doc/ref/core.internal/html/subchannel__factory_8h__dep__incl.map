@@ -1,0 +1,19 @@
+<map id="src/core/client_config/subchannel_factory.h" name="src/core/client_config/subchannel_factory.h">
+<area shape="rect" id="node2" href="$resolver__factory_8h.html" title="src/core/client_config\l/resolver_factory.h" alt="" coords="1292,95,1439,136"/>
+<area shape="rect" id="node12" href="$channel_8h.html" title="src/core/surface/channel.h" alt="" coords="639,199,817,225"/>
+<area shape="rect" id="node18" href="$subchannel__factory_8c.html" title="src/core/client_config\l/subchannel_factory.c" alt="" coords="1463,95,1615,136"/>
+<area shape="rect" id="node3" href="$resolver__registry_8h.html" title="src/core/client_config\l/resolver_registry.h" alt="" coords="1292,191,1439,233"/>
+<area shape="rect" id="node8" href="$dns__resolver_8h.html" title="src/core/client_config\l/resolvers/dns_resolver.h" alt="" coords="1463,191,1633,233"/>
+<area shape="rect" id="node10" href="$unix__resolver__posix_8h.html" title="src/core/client_config\l/resolvers/unix_resolver\l_posix.h" alt="" coords="1657,184,1820,240"/>
+<area shape="rect" id="node11" href="$resolver__factory_8c.html" title="src/core/client_config\l/resolver_factory.c" alt="" coords="1121,191,1268,233"/>
+<area shape="rect" id="node4" href="$secure__channel__create_8c.html" title="src/core/surface/secure\l_channel_create.c" alt="" coords="1119,288,1279,329"/>
+<area shape="rect" id="node5" href="$resolver__registry_8c.html" title="src/core/client_config\l/resolver_registry.c" alt="" coords="1303,288,1449,329"/>
+<area shape="rect" id="node6" href="$channel__create_8c.html" title="src/core/surface/channel\l_create.c" alt="" coords="927,288,1094,329"/>
+<area shape="rect" id="node7" href="$init_8c.html" title="src/core/surface/init.c" alt="" coords="1474,295,1622,322"/>
+<area shape="rect" id="node9" href="$dns__resolver_8c.html" title="src/core/client_config\l/resolvers/dns_resolver.c" alt="" coords="1647,288,1817,329"/>
+<area shape="rect" id="node13" href="$client__channel_8c.html" title="src/core/channel/client\l_channel.c" alt="" coords="5,288,160,329"/>
+<area shape="rect" id="node14" href="$call_8c.html" title="src/core/surface/call.c" alt="" coords="185,295,335,322"/>
+<area shape="rect" id="node15" href="$channel_8c.html" title="src/core/surface/channel.c" alt="" coords="359,295,537,322"/>
+<area shape="rect" id="node16" href="$lame__client_8c.html" title="src/core/surface/lame\l_client.c" alt="" coords="561,288,711,329"/>
+<area shape="rect" id="node17" href="$server_8c.html" title="src/core/surface/server.c" alt="" coords="735,295,903,322"/>
+</map>

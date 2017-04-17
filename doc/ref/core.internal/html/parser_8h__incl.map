@@ -1,0 +1,12 @@
+<map id="src/core/httpcli/parser.h" name="src/core/httpcli/parser.h">
+<area shape="rect" id="node2" href="$httpcli_8h.html" title="src/core/httpcli/httpcli.h" alt="" coords="5,80,163,107"/>
+<area shape="rect" id="node5" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="439,408,628,435"/>
+<area shape="rect" id="node9" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="213,80,350,107"/>
+<area shape="rect" id="node4" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="115,333,251,360"/>
+<area shape="rect" id="node7" href="$pollset__set_8h.html" title="src/core/iomgr/pollset\l_set.h" alt="" coords="52,155,201,196"/>
+<area shape="rect" id="node8" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="103,251,263,278"/>
+<area shape="rect" id="node10" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="464,162,603,189"/>
+<area shape="rect" id="node11" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="337,251,527,278"/>
+<area shape="rect" id="node13" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="551,244,718,285"/>
+<area shape="rect" id="node12" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="467,333,600,360"/>
+</map>

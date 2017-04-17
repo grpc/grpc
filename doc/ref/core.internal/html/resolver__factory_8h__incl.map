@@ -1,0 +1,33 @@
+<map id="src/core/client_config/resolver_factory.h" name="src/core/client_config/resolver_factory.h">
+<area shape="rect" id="node2" href="$resolver_8h.html" title="src/core/client_config\l/resolver.h" alt="" coords="1047,95,1193,136"/>
+<area shape="rect" id="node35" href="$subchannel__factory_8h.html" title="src/core/client_config\l/subchannel_factory.h" alt="" coords="844,273,996,315"/>
+<area shape="rect" id="node36" href="$uri__parser_8h.html" title="src/core/client_config\l/uri_parser.h" alt="" coords="1217,95,1364,136"/>
+<area shape="rect" id="node3" href="$client__config_8h.html" title="src/core/client_config\l/client_config.h" alt="" coords="965,184,1112,225"/>
+<area shape="rect" id="node33" href="$sockaddr_8h.html" title="src/core/iomgr/sockaddr.h" alt="" coords="1240,549,1416,575"/>
+<area shape="rect" id="node34" href="$iomgr_8h.html" title="src/core/iomgr/iomgr.h" alt="" coords="1136,191,1291,218"/>
+<area shape="rect" id="node4" href="$lb__policy_8h.html" title="src/core/client_config\l/lb_policy.h" alt="" coords="1020,273,1167,315"/>
+<area shape="rect" id="node5" href="$subchannel_8h.html" title="src/core/client_config\l/subchannel.h" alt="" coords="983,363,1129,404"/>
+<area shape="rect" id="node6" href="$channel__stack_8h.html" title="src/core/channel/channel\l_stack.h" alt="" coords="885,541,1056,583"/>
+<area shape="rect" id="node32" href="$connector_8h.html" title="src/core/client_config\l/connector.h" alt="" coords="1008,452,1155,493"/>
+<area shape="rect" id="node8" href="$grpc_8h.html" title="grpc/grpc.h" alt="" coords="782,817,871,843"/>
+<area shape="rect" id="node21" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="906,638,1035,665"/>
+<area shape="rect" id="node24" href="$trace_8h.html" title="src/core/debug/trace.h" alt="" coords="1139,1137,1293,1164"/>
+<area shape="rect" id="node25" href="$transport_8h.html" title="src/core/transport\l/transport.h" alt="" coords="545,631,671,672"/>
+<area shape="rect" id="node9" href="$status_8h.html" title="grpc/status.h" alt="" coords="864,899,963,925"/>
+<area shape="rect" id="node10" href="$byte__buffer_8h.html" title="grpc/byte_buffer.h" alt="" coords="659,899,789,925"/>
+<area shape="rect" id="node13" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="490,1063,627,1089"/>
+<area shape="rect" id="node19" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="707,1219,843,1246"/>
+<area shape="rect" id="node11" href="$compression_8h.html" title="grpc/compression.h" alt="" coords="773,981,912,1007"/>
+<area shape="rect" id="node12" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="622,973,749,1015"/>
+<area shape="rect" id="node14" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="265,1137,404,1164"/>
+<area shape="rect" id="node15" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="575,1376,764,1403"/>
+<area shape="rect" id="node17" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="443,1219,632,1246"/>
+<area shape="rect" id="node20" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="251,1212,418,1253"/>
+<area shape="rect" id="node18" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="471,1301,604,1328"/>
+<area shape="rect" id="node26" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="32,1063,192,1089"/>
+<area shape="rect" id="node27" href="$pollset__set_8h.html" title="src/core/iomgr/pollset\l_set.h" alt="" coords="43,809,192,851"/>
+<area shape="rect" id="node28" href="$stream__op_8h.html" title="src/core/transport\l/stream_op.h" alt="" coords="309,720,435,761"/>
+<area shape="rect" id="node31" href="$channel_2context_8h.html" title="src/core/channel/context.h" alt="" coords="519,727,697,754"/>
+<area shape="rect" id="node29" href="$metadata_8h.html" title="src/core/transport\l/metadata.h" alt="" coords="379,809,504,851"/>
+<area shape="rect" id="node30" href="$useful_8h.html" title="grpc/support/useful.h" alt="" coords="368,899,515,925"/>
+</map>

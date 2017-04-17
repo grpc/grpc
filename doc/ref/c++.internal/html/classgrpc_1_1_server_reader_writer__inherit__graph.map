@@ -1,0 +1,4 @@
+<map id="grpc::ServerReaderWriter&lt; W, R &gt;" name="grpc::ServerReaderWriter&lt; W, R &gt;">
+<area shape="rect" id="node2" href="$classgrpc_1_1_writer_interface.html" title="grpc::WriterInterface\&lt; W \&gt;" alt="" coords="5,5,184,32"/>
+<area shape="rect" id="node3" href="$classgrpc_1_1_reader_interface.html" title="grpc::ReaderInterface\&lt; R \&gt;" alt="" coords="208,5,392,32"/>
+</map>

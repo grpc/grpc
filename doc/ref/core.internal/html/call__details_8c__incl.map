@@ -1,0 +1,16 @@
+<map id="src/core/surface/call_details.c" name="src/core/surface/call_details.c">
+<area shape="rect" id="node2" href="$grpc_8h.html" title="grpc/grpc.h" alt="" coords="634,95,723,121"/>
+<area shape="rect" id="node16" href="$alloc_8h.html" title="grpc/support/alloc.h" alt="" coords="1015,333,1153,360"/>
+<area shape="rect" id="node17" href="$string_8h.html" title="string.h" alt="" coords="914,169,979,196"/>
+<area shape="rect" id="node3" href="$status_8h.html" title="grpc/status.h" alt="" coords="699,169,797,196"/>
+<area shape="rect" id="node5" href="$byte__buffer_8h.html" title="grpc/byte_buffer.h" alt="" coords="545,169,674,196"/>
+<area shape="rect" id="node8" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="655,333,793,360"/>
+<area shape="rect" id="node14" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="461,490,597,517"/>
+<area shape="rect" id="node6" href="$compression_8h.html" title="grpc/compression.h" alt="" coords="497,251,636,278"/>
+<area shape="rect" id="node7" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="661,244,787,285"/>
+<area shape="rect" id="node9" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="233,408,372,435"/>
+<area shape="rect" id="node10" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="368,647,557,673"/>
+<area shape="rect" id="node12" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="5,490,195,517"/>
+<area shape="rect" id="node15" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="219,483,386,524"/>
+<area shape="rect" id="node13" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="236,572,369,599"/>
+</map>

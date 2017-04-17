@@ -1,0 +1,15 @@
+<map id="grpc_jwt_verifier" name="grpc_jwt_verifier">
+<area shape="rect" id="node2" href="$structemail__key__mapping.html" title="email_key_mapping" alt="" coords="50,519,190,545"/>
+<area shape="rect" id="node3" href="$structgrpc__httpcli__context.html" title="grpc_httpcli_context" alt="" coords="214,519,354,545"/>
+<area shape="rect" id="node4" href="$structgrpc__pollset__set.html" title="grpc_pollset_set" alt="" coords="225,428,343,455"/>
+<area shape="rect" id="node5" href="$structgrpc__fd.html" title="grpc_fd" alt="" coords="425,293,492,320"/>
+<area shape="rect" id="node7" href="$structgrpc__fd__watcher.html" title="grpc_fd_watcher" alt="" coords="399,428,519,455"/>
+<area shape="rect" id="node6" href="$structgrpc__iomgr__object.html" title="grpc_iomgr_object" alt="" coords="375,188,507,215"/>
+<area shape="rect" id="node8" href="$structgrpc__pollset.html" title="grpc_pollset" alt="" coords="208,293,301,320"/>
+<area shape="rect" id="node9" href="$structgrpc__pollset__kick__state.html" title="grpc_pollset_kick_state" alt="" coords="5,188,165,215"/>
+<area shape="rect" id="node10" href="$structgrpc__kick__fd__info.html" title="grpc_kick_fd_info" alt="" coords="23,96,148,123"/>
+<area shape="rect" id="node11" href="$structgrpc__wakeup__fd__info.html" title="grpc_wakeup_fd_info" alt="" coords="11,5,160,32"/>
+<area shape="rect" id="node12" href="$structgrpc__pollset__vtable.html" title="grpc_pollset_vtable" alt="" coords="190,188,327,215"/>
+<area shape="rect" id="node13" href="$structgrpc__iomgr__closure.html" title="A closure over a grpc_iomgr_cb_func. " alt="" coords="587,188,725,215"/>
+<area shape="rect" id="node14" href="$structarg.html" title="arg" alt="" coords="635,96,677,123"/>
+</map>

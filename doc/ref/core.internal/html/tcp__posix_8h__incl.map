@@ -1,0 +1,14 @@
+<map id="src/core/iomgr/tcp_posix.h" name="src/core/iomgr/tcp_posix.h">
+<area shape="rect" id="node2" href="$endpoint_8h.html" title="src/core/iomgr/endpoint.h" alt="" coords="177,95,349,121"/>
+<area shape="rect" id="node13" href="$fd__posix_8h.html" title="src/core/iomgr/fd_posix.h" alt="" coords="435,95,605,121"/>
+<area shape="rect" id="node3" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="5,259,165,285"/>
+<area shape="rect" id="node6" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="123,341,259,367"/>
+<area shape="rect" id="node8" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="291,177,429,203"/>
+<area shape="rect" id="node4" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="191,497,380,524"/>
+<area shape="rect" id="node9" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="504,259,643,285"/>
+<area shape="rect" id="node10" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="408,341,597,367"/>
+<area shape="rect" id="node12" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="622,333,789,375"/>
+<area shape="rect" id="node11" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="537,423,671,449"/>
+<area shape="rect" id="node14" href="$iomgr__internal_8h.html" title="src/core/iomgr/iomgr\l_internal.h" alt="" coords="864,169,1008,211"/>
+<area shape="rect" id="node15" href="$iomgr_8h.html" title="src/core/iomgr/iomgr.h" alt="" coords="864,259,1019,285"/>
+</map>

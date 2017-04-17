@@ -1,0 +1,6 @@
+<map id="waiting_call" name="waiting_call">
+<area shape="rect" id="node2" href="$structgrpc__call__element.html" title="grpc_call_element" alt="" coords="7,95,138,121"/>
+<area shape="rect" id="node3" href="$structgrpc__channel__filter.html" title="grpc_channel_filter" alt="" coords="5,5,140,32"/>
+<area shape="rect" id="node4" href="$structgrpc__iomgr__closure.html" title="A closure over a grpc_iomgr_cb_func. " alt="" coords="162,95,301,121"/>
+<area shape="rect" id="node5" href="$structarg.html" title="arg" alt="" coords="211,5,252,32"/>
+</map>

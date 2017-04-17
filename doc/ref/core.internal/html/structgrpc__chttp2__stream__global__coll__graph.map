@@ -1,0 +1,17 @@
+<map id="grpc_chttp2_stream_global" name="grpc_chttp2_stream_global">
+<area shape="rect" id="node2" href="$structgrpc__stream__op__buffer.html" title="A stream op buffer is a wrapper around stream operations that is dynamically extendable. " alt="" coords="1921,119,2081,145"/>
+<area shape="rect" id="node3" href="$structgrpc__stream__op.html" title="grpc_stream_op" alt="" coords="1625,80,1743,107"/>
+<area shape="rect" id="node4" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="236,31,312,57"/>
+<area shape="rect" id="node10" href="$structgrpc__mdstr.html" title="grpc_mdstr" alt="" coords="391,65,480,92"/>
+<area shape="rect" id="node5" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="5,31,136,57"/>
+<area shape="rect" id="node6" href="$structgrpc__metadata__batch.html" title="grpc_metadata_batch" alt="" coords="1318,108,1469,135"/>
+<area shape="rect" id="node7" href="$structgrpc__mdelem__list.html" title="grpc_mdelem_list" alt="" coords="967,65,1093,92"/>
+<area shape="rect" id="node8" href="$structgrpc__linked__mdelem.html" title="grpc_linked_mdelem" alt="" coords="733,187,879,213"/>
+<area shape="rect" id="node13" href="$structgrpc__chttp2__incoming__metadata__live__op__buffer.html" title="grpc_chttp2_incoming\l_metadata_live_op_buffer" alt="" coords="1117,238,1293,279"/>
+<area shape="rect" id="node14" href="$structgrpc__chttp2__incoming__metadata__buffer.html" title="grpc_chttp2_incoming\l_metadata_buffer" alt="" coords="1317,171,1469,213"/>
+<area shape="rect" id="node9" href="$structgrpc__mdelem.html" title="grpc_mdelem" alt="" coords="560,115,663,141"/>
+<area shape="rect" id="node11" href="$structgpr__timespec.html" title="gpr_timespec" alt="" coords="979,131,1081,157"/>
+<area shape="rect" id="node12" href="$structgrpc__begin__message.html" title="grpc_begin_message" alt="" coords="1319,57,1468,84"/>
+<area shape="rect" id="node15" href="$structgrpc__iomgr__closure.html" title="A closure over a grpc_iomgr_cb_func. " alt="" coords="1932,329,2071,356"/>
+<area shape="rect" id="node16" href="$structarg.html" title="arg" alt="" coords="1663,337,1705,364"/>
+</map>

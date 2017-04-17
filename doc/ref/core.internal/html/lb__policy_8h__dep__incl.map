@@ -1,0 +1,21 @@
+<map id="src/core/client_config/lb_policy.h" name="src/core/client_config/lb_policy.h">
+<area shape="rect" id="node2" href="$client__config_8h.html" title="src/core/client_config\l/client_config.h" alt="" coords="309,95,456,136"/>
+<area shape="rect" id="node18" href="$pick__first_8h.html" title="src/core/client_config\l/lb_policies/pick_first.h" alt="" coords="129,95,285,136"/>
+<area shape="rect" id="node20" href="$lb__policy_8c.html" title="src/core/client_config\l/lb_policy.c" alt="" coords="480,95,627,136"/>
+<area shape="rect" id="node3" href="$resolver_8h.html" title="src/core/client_config\l/resolver.h" alt="" coords="480,184,627,225"/>
+<area shape="rect" id="node17" href="$client__config_8c.html" title="src/core/client_config\l/client_config.c" alt="" coords="309,184,456,225"/>
+<area shape="rect" id="node4" href="$client__channel_8h.html" title="src/core/channel/client\l_channel.h" alt="" coords="876,370,1031,411"/>
+<area shape="rect" id="node8" href="$resolver__factory_8h.html" title="src/core/client_config\l/resolver_factory.h" alt="" coords="372,273,519,315"/>
+<area shape="rect" id="node16" href="$resolver_8c.html" title="src/core/client_config\l/resolver.c" alt="" coords="593,273,740,315"/>
+<area shape="rect" id="node5" href="$secure__channel__create_8c.html" title="src/core/surface/secure\l_channel_create.c" alt="" coords="736,467,896,508"/>
+<area shape="rect" id="node6" href="$client__channel_8c.html" title="src/core/channel/client\l_channel.c" alt="" coords="920,467,1075,508"/>
+<area shape="rect" id="node7" href="$channel__create_8c.html" title="src/core/surface/channel\l_create.c" alt="" coords="545,467,711,508"/>
+<area shape="rect" id="node9" href="$resolver__registry_8h.html" title="src/core/client_config\l/resolver_registry.h" alt="" coords="348,370,495,411"/>
+<area shape="rect" id="node12" href="$dns__resolver_8h.html" title="src/core/client_config\l/resolvers/dns_resolver.h" alt="" coords="153,370,324,411"/>
+<area shape="rect" id="node14" href="$unix__resolver__posix_8h.html" title="src/core/client_config\l/resolvers/unix_resolver\l_posix.h" alt="" coords="519,363,681,419"/>
+<area shape="rect" id="node15" href="$resolver__factory_8c.html" title="src/core/client_config\l/resolver_factory.c" alt="" coords="705,370,852,411"/>
+<area shape="rect" id="node10" href="$resolver__registry_8c.html" title="src/core/client_config\l/resolver_registry.c" alt="" coords="373,467,520,508"/>
+<area shape="rect" id="node11" href="$init_8c.html" title="src/core/surface/init.c" alt="" coords="201,474,349,501"/>
+<area shape="rect" id="node13" href="$dns__resolver_8c.html" title="src/core/client_config\l/resolvers/dns_resolver.c" alt="" coords="5,467,176,508"/>
+<area shape="rect" id="node19" href="$pick__first_8c.html" title="src/core/client_config\l/lb_policies/pick_first.c" alt="" coords="129,184,284,225"/>
+</map>

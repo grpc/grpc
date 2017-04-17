@@ -1,0 +1,6 @@
+<map id="grpc_pollset" name="grpc_pollset">
+<area shape="rect" id="node2" href="$structgrpc__pollset__kick__state.html" title="grpc_pollset_kick_state" alt="" coords="5,187,165,213"/>
+<area shape="rect" id="node3" href="$structgrpc__kick__fd__info.html" title="grpc_kick_fd_info" alt="" coords="23,96,148,123"/>
+<area shape="rect" id="node4" href="$structgrpc__wakeup__fd__info.html" title="grpc_wakeup_fd_info" alt="" coords="11,5,160,32"/>
+<area shape="rect" id="node5" href="$structgrpc__pollset__vtable.html" title="grpc_pollset_vtable" alt="" coords="190,187,327,213"/>
+</map>

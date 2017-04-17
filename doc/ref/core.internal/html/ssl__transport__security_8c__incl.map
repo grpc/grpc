@@ -1,0 +1,17 @@
+<map id="src/core/tsi/ssl_transport_security.c" name="src/core/tsi/ssl_transport_security.c">
+<area shape="rect" id="node2" href="$ssl__transport__security_8h.html" title="src/core/tsi/ssl_transport\l_security.h" alt="" coords="668,95,835,136"/>
+<area shape="rect" id="node7" href="$string_8h.html" title="string.h" alt="" coords="357,102,423,129"/>
+<area shape="rect" id="node12" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="455,348,594,375"/>
+<area shape="rect" id="node17" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="515,102,644,129"/>
+<area shape="rect" id="node19" href="$thd_8h.html" title="grpc/support/thd.h" alt="" coords="5,348,135,375"/>
+<area shape="rect" id="node20" href="$useful_8h.html" title="grpc/support/useful.h" alt="" coords="859,102,1006,129"/>
+<area shape="rect" id="node21" href="$transport__security_8h.html" title="src/core/tsi/transport\l_security.h" alt="" coords="1031,95,1173,136"/>
+<area shape="rect" id="node3" href="$transport__security__interface_8h.html" title="src/core/tsi/transport\l_security_interface.h" alt="" coords="819,184,964,225"/>
+<area shape="rect" id="node9" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="385,587,574,613"/>
+<area shape="rect" id="node10" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="211,184,337,225"/>
+<area shape="rect" id="node11" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="239,273,376,300"/>
+<area shape="rect" id="node13" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="562,430,751,457"/>
+<area shape="rect" id="node15" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="327,430,463,457"/>
+<area shape="rect" id="node16" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="776,423,943,464"/>
+<area shape="rect" id="node14" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="590,512,723,539"/>
+</map>
