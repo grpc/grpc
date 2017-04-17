@@ -507,7 +507,7 @@
         },
       ]
     }],
-    ['OS == "win"', {
+    ['OS == "win" and runtime!="electron"', {
       'targets': [
         {
           # IMPORTANT WINDOWS BUILD INFORMATION
@@ -518,6 +518,8 @@
           # when including the Node headers. The remedy for this is to remove
           # the OpenSSL headers, from the downloaded Node development package,
           # which is typically located in `.node-gyp` in your home directory.
+          #
+          # This is not true of Electron, which does not have OpenSSL headers.
           'target_name': 'WINDOWS_BUILD_WARNING',
           'rules': [
             {
