@@ -1,0 +1,17 @@
+grpc (0.11.0.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Pollock <apollock@debian.org>  Wed, 09 Sep 2015 13:05:55 +1000
+
+grpc (0.10.2-1) unstable; urgency=medium
+
+  * New upstream release (closes: #795766)
+
+ -- Andrew Pollock <apollock@debian.org>  Fri, 28 Aug 2015 09:26:25 +1000
+
+grpc (0.10.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #786375)
+
+ -- Andrew Pollock <apollock@debian.org>  Thu, 07 May 2015 13:28:11 +1000
