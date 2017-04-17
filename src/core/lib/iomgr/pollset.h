@@ -57,7 +57,7 @@ void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu);
  * pollset's mutex must be held */
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure);
-void grpc_pollset_destroy(grpc_pollset *pollset);
+void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset);
 
 /* Do some work on a pollset.
    May involve invoking asynchronous callbacks, or actually polling file
