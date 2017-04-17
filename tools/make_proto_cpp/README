@@ -1,0 +1,20 @@
+For those who wants to install it permanently follow this instructions ( to do as sudo ) :
+
+If you do not already have a dir for your personnal scripts : 
+	mkdir ~/bin;
+
+Edit ~/.bashrc :
+	gedit ~/.bashrc;
+
+Go to the end of your file and paste : 
+	 export PATH=$PATH:~/bin;
+
+Then : 
+	cp make_proto_cpp ~/bin/;
+	mkdir /usr/local/man/man8;
+	cp make_proto_cpp.8.gz /usr/local/man/man8/;
+	source ~/.bashrc;
+
+Here you go, you can now use the command make_proto_cpp, and find it's 
+man page by typing in your shell : 
+	man make_proto_cpp
