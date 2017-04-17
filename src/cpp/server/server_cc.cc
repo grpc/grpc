@@ -503,7 +503,7 @@ int Server::AddListeningPort(const grpc::string& addr,
                              ServerCredentials* creds) {
   GPR_ASSERT(!started_);
   int port = creds->AddPortToServer(addr, server_);
-  global_callbacks_->AddPort(this, port);
+  global_callbacks_->AddPort(this, addr, creds, port);
   return port;
 }
 

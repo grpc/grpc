@@ -45,6 +45,20 @@ message Duration {
   int32 nanos = 2;
 }
 
+message Timestamp {
+
+  // Represents seconds of UTC time since Unix epoch
+  // 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+  // 9999-12-31T23:59:59Z inclusive.
+  int64 seconds = 1;
+
+  // Non-negative fractions of a second at nanosecond resolution. Negative
+  // second values with fractions must still have non-negative nanos values
+  // that count forward in time. Must be from 0 to 999,999,999
+  // inclusive.
+  int32 nanos = 2;
+}
+
 service LoadBalancer {
   // Bidirectional rpc to get a list of servers.
   rpc BalanceLoad(stream LoadBalanceRequest)
@@ -63,22 +77,37 @@ message LoadBalanceRequest {
 }
 
 message InitialLoadBalanceRequest {
-  // Name of load balanced service (IE, service.grpc.gslb.google.com). Its
+  // Name of load balanced service (IE, balancer.service.com)
   // length should be less than 256 bytes.
   string name = 1;
 }
 
 // Contains client level statistics that are useful to load balancing. Each
-// count should be reset to zero after reporting the stats.
+// count except the timestamp should be reset to zero after reporting the stats.
 message ClientStats {
-  // The total number of requests sent by the client since the last report.
-  int64 total_requests = 1;
+  // The timestamp of generating the report.
+  Timestamp timestamp = 1;
 
-  // The number of client rpc errors since the last report.
-  int64 client_rpc_errors = 2;
+  // The total number of RPCs that started.
+  int64 num_calls_started = 2;
 
-  // The number of dropped requests since the last report.
-  int64 dropped_requests = 3;
+  // The total number of RPCs that finished.
+  int64 num_calls_finished = 3;
+
+  // The total number of RPCs that were dropped by the client because of rate
+  // limiting.
+  int64 num_calls_finished_with_drop_for_rate_limiting = 4;
+
+  // The total number of RPCs that were dropped by the client because of load
+  // balancing.
+  int64 num_calls_finished_with_drop_for_load_balancing = 5;
+
+  // The total number of RPCs that failed to reach a server except dropped RPCs.
+  int64 num_calls_finished_with_client_failed_to_send = 6;
+
+  // The total number of RPCs that finished and are known to have been received
+  // by a server.
+  int64 num_calls_finished_known_received = 7;
 }
 
 message LoadBalanceResponse {
@@ -120,6 +149,10 @@ message ServerList {
   Duration expiration_interval = 3;
 }
 
+// Contains server information. When none of the [drop_for_*] fields are true,
+// use the other fields. When drop_for_rate_limiting is true, ignore all other
+// fields. Use drop_for_load_balancing only when it is true and
+// drop_for_rate_limiting is false.
 message Server {
   // A resolved address for the server, serialized in network-byte-order. It may
   // either be an IPv4 or IPv6 address.
@@ -137,6 +170,10 @@ message Server {
   string load_balance_token = 3;
 
   // Indicates whether this particular request should be dropped by the client
-  // when this server is chosen from the list.
-  bool drop_request = 4;
+  // for rate limiting.
+  bool drop_for_rate_limiting = 4;
+
+  // Indicates whether this particular request should be dropped by the client
+  // for load balancing.
+  bool drop_for_load_balancing = 5;
 }
