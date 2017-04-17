@@ -99,7 +99,7 @@ static void on_compute_engine_detection_http_response(grpc_exec_ctx *exec_ctx,
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, grpc_error *e) {
-  grpc_pollset_destroy(p);
+  grpc_pollset_destroy(exec_ctx, p);
 }
 
 static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {

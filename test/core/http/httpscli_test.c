@@ -157,7 +157,7 @@ static void test_post(int port) {
 }
 
 static void destroy_pops(grpc_exec_ctx *exec_ctx, void *p, grpc_error *error) {
-  grpc_pollset_destroy(grpc_polling_entity_pollset(p));
+  grpc_pollset_destroy(exec_ctx, grpc_polling_entity_pollset(p));
 }
 
 int main(int argc, char **argv) {

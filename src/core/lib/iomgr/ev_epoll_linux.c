@@ -1333,7 +1333,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 /* pollset_shutdown is guaranteed to be called before pollset_destroy. So other
  * than destroying the mutexes, there is nothing special that needs to be done
  * here */
-static void pollset_destroy(grpc_pollset *pollset) {
+static void pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   GPR_ASSERT(!pollset_has_workers(pollset));
   gpr_mu_destroy(&pollset->po.mu);
 }

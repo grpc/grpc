@@ -817,7 +817,7 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   pollset->pollset_set_count = 0;
 }
 
-static void pollset_destroy(grpc_pollset *pollset) {
+static void pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   GPR_ASSERT(!pollset_has_workers(pollset));
   GPR_ASSERT(pollset->idle_jobs.head == pollset->idle_jobs.tail);
   while (pollset->local_wakeup_cache) {

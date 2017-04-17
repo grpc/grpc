@@ -106,6 +106,10 @@ void test_tcp_server_poll(test_tcp_server *server, int seconds) {
 }
 
 static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
+static void finish_pollset(grpc_exec_ctx *exec_ctx, void *arg,
+                           grpc_error *error) {
+  grpc_pollset_destroy(exec_ctx, arg);
+}
 
 void test_tcp_server_destroy(test_tcp_server *server) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -120,9 +124,10 @@ void test_tcp_server_destroy(test_tcp_server *server) {
          gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
     test_tcp_server_poll(server, 1);
   }
-  grpc_pollset_shutdown(&exec_ctx, server->pollset, &do_nothing_cb);
+  grpc_pollset_shutdown(&exec_ctx, server->pollset,
+                        grpc_closure_create(finish_pollset, server->pollset,
+                                            grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_pollset_destroy(server->pollset);
   gpr_free(server->pollset);
   grpc_shutdown();
 }
