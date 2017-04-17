@@ -509,6 +509,9 @@ static void fd_invoke_workqueue(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
     }
     grpc_closure *c = (grpc_closure *)n;
     grpc_error *error = c->error_data.error;
+#ifndef NDEBUG
+    c->scheduled = false;
+#endif
     c->cb(exec_ctx, c->cb_arg, error);
     GRPC_ERROR_UNREF(error);
   } else if (gpr_atm_no_barrier_load(&fd->workqueue_item_count) > 0) {
