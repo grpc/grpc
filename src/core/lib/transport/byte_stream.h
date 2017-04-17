@@ -112,8 +112,9 @@ typedef struct {
   size_t bytes_read;
 } grpc_tee_byte_stream;
 
-/* \a destroy_cb gives the caller an opportunity to finish draining the
- * underlying stream if a call fails in the middle of a write.
+/* If \a destroy_cb is not NULL, it will be called when the stream is
+ * destroyed.  This gives the caller an opportunity to finish draining
+ * the underlying stream if a call fails in the middle of a write.
  * \a cb_arg is passed to both \a cb and \a destroy_cb.
  */
 void grpc_tee_byte_stream_init(grpc_tee_byte_stream *stream,

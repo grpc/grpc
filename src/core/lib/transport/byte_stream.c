@@ -122,8 +122,12 @@ static grpc_error *tee_byte_stream_pull(grpc_exec_ctx *exec_ctx,
 static void tee_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                                     grpc_byte_stream *byte_stream) {
   grpc_tee_byte_stream *stream = (grpc_tee_byte_stream *)byte_stream;
-  stream->destroy_cb(exec_ctx, stream->cb_arg, stream->bytes_read,
-                     stream->underlying_stream);
+  if (stream->destroy_cb == NULL) {
+    grpc_byte_stream_destroy(exec_ctx, stream->underlying_stream);
+  } else {
+    stream->destroy_cb(exec_ctx, stream->cb_arg, stream->bytes_read,
+                       stream->underlying_stream);
+  }
 }
 
 void grpc_tee_byte_stream_init(grpc_tee_byte_stream *stream,
