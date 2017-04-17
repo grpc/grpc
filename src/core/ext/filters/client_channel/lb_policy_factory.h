@@ -34,11 +34,12 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H
 
-#include "src/core/ext/filters/client_channel/client_channel_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy.h"
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+
+#include "src/core/ext/filters/client_channel/client_channel_factory.h"
+#include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/uri_parser.h"
 
 // Channel arg key for grpc_lb_addresses.
 #define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
@@ -88,8 +89,17 @@ grpc_lb_addresses *grpc_lb_addresses_copy(const grpc_lb_addresses *addresses);
  * Takes ownership of \a balancer_name. */
 void grpc_lb_addresses_set_address(grpc_lb_addresses *addresses, size_t index,
                                    void *address, size_t address_len,
-                                   bool is_balancer, char *balancer_name,
+                                   bool is_balancer, const char *balancer_name,
                                    void *user_data);
+
+/** Sets the value of the address at index \a index of \a addresses from \a uri.
+ * Returns true upon success, false otherwise. Takes ownership of \a
+ * balancer_name. */
+bool grpc_lb_addresses_set_address_from_uri(grpc_lb_addresses *addresses,
+                                            size_t index, const grpc_uri *uri,
+                                            bool is_balancer,
+                                            const char *balancer_name,
+                                            void *user_data);
 
 /** Compares \a addresses1 and \a addresses2. */
 int grpc_lb_addresses_cmp(const grpc_lb_addresses *addresses1,
@@ -102,6 +112,10 @@ void grpc_lb_addresses_destroy(grpc_exec_ctx *exec_ctx,
 /** Returns a channel arg containing \a addresses. */
 grpc_arg grpc_lb_addresses_create_channel_arg(
     const grpc_lb_addresses *addresses);
+
+/** Returns the \a grpc_lb_addresses instance in \a channel_args or NULL */
+grpc_lb_addresses *grpc_lb_addresses_find_channel_arg(
+    const grpc_channel_args *channel_args);
 
 /** Arguments passed to LB policies. */
 typedef struct grpc_lb_policy_args {

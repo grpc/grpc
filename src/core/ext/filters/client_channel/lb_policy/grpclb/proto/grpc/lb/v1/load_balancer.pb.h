@@ -14,16 +14,6 @@ extern "C" {
 #endif
 
 /* Struct definitions */
-typedef struct _grpc_lb_v1_ClientStats {
-    bool has_total_requests;
-    int64_t total_requests;
-    bool has_client_rpc_errors;
-    int64_t client_rpc_errors;
-    bool has_dropped_requests;
-    int64_t dropped_requests;
-/* @@protoc_insertion_point(struct:grpc_lb_v1_ClientStats) */
-} grpc_lb_v1_ClientStats;
-
 typedef struct _grpc_lb_v1_Duration {
     bool has_seconds;
     int64_t seconds;
@@ -46,10 +36,38 @@ typedef struct _grpc_lb_v1_Server {
     int32_t port;
     bool has_load_balance_token;
     char load_balance_token[50];
-    bool has_drop_request;
-    bool drop_request;
+    bool has_drop_for_rate_limiting;
+    bool drop_for_rate_limiting;
+    bool has_drop_for_load_balancing;
+    bool drop_for_load_balancing;
 /* @@protoc_insertion_point(struct:grpc_lb_v1_Server) */
 } grpc_lb_v1_Server;
+
+typedef struct _grpc_lb_v1_Timestamp {
+    bool has_seconds;
+    int64_t seconds;
+    bool has_nanos;
+    int32_t nanos;
+/* @@protoc_insertion_point(struct:grpc_lb_v1_Timestamp) */
+} grpc_lb_v1_Timestamp;
+
+typedef struct _grpc_lb_v1_ClientStats {
+    bool has_timestamp;
+    grpc_lb_v1_Timestamp timestamp;
+    bool has_num_calls_started;
+    int64_t num_calls_started;
+    bool has_num_calls_finished;
+    int64_t num_calls_finished;
+    bool has_num_calls_finished_with_drop_for_rate_limiting;
+    int64_t num_calls_finished_with_drop_for_rate_limiting;
+    bool has_num_calls_finished_with_drop_for_load_balancing;
+    int64_t num_calls_finished_with_drop_for_load_balancing;
+    bool has_num_calls_finished_with_client_failed_to_send;
+    int64_t num_calls_finished_with_client_failed_to_send;
+    bool has_num_calls_finished_known_received;
+    int64_t num_calls_finished_known_received;
+/* @@protoc_insertion_point(struct:grpc_lb_v1_ClientStats) */
+} grpc_lb_v1_ClientStats;
 
 typedef struct _grpc_lb_v1_InitialLoadBalanceResponse {
     bool has_load_balancer_delegate;
@@ -59,6 +77,13 @@ typedef struct _grpc_lb_v1_InitialLoadBalanceResponse {
 /* @@protoc_insertion_point(struct:grpc_lb_v1_InitialLoadBalanceResponse) */
 } grpc_lb_v1_InitialLoadBalanceResponse;
 
+typedef struct _grpc_lb_v1_ServerList {
+    pb_callback_t servers;
+    bool has_expiration_interval;
+    grpc_lb_v1_Duration expiration_interval;
+/* @@protoc_insertion_point(struct:grpc_lb_v1_ServerList) */
+} grpc_lb_v1_ServerList;
+
 typedef struct _grpc_lb_v1_LoadBalanceRequest {
     bool has_initial_request;
     grpc_lb_v1_InitialLoadBalanceRequest initial_request;
@@ -66,13 +91,6 @@ typedef struct _grpc_lb_v1_LoadBalanceRequest {
     grpc_lb_v1_ClientStats client_stats;
 /* @@protoc_insertion_point(struct:grpc_lb_v1_LoadBalanceRequest) */
 } grpc_lb_v1_LoadBalanceRequest;
-
-typedef struct _grpc_lb_v1_ServerList {
-    pb_callback_t servers;
-    bool has_expiration_interval;
-    grpc_lb_v1_Duration expiration_interval;
-/* @@protoc_insertion_point(struct:grpc_lb_v1_ServerList) */
-} grpc_lb_v1_ServerList;
 
 typedef struct _grpc_lb_v1_LoadBalanceResponse {
     bool has_initial_response;
@@ -86,61 +104,72 @@ typedef struct _grpc_lb_v1_LoadBalanceResponse {
 
 /* Initializer values for message structs */
 #define grpc_lb_v1_Duration_init_default         {false, 0, false, 0}
+#define grpc_lb_v1_Timestamp_init_default        {false, 0, false, 0}
 #define grpc_lb_v1_LoadBalanceRequest_init_default {false, grpc_lb_v1_InitialLoadBalanceRequest_init_default, false, grpc_lb_v1_ClientStats_init_default}
 #define grpc_lb_v1_InitialLoadBalanceRequest_init_default {false, ""}
-#define grpc_lb_v1_ClientStats_init_default      {false, 0, false, 0, false, 0}
+#define grpc_lb_v1_ClientStats_init_default      {false, grpc_lb_v1_Timestamp_init_default, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 #define grpc_lb_v1_LoadBalanceResponse_init_default {false, grpc_lb_v1_InitialLoadBalanceResponse_init_default, false, grpc_lb_v1_ServerList_init_default}
 #define grpc_lb_v1_InitialLoadBalanceResponse_init_default {false, "", false, grpc_lb_v1_Duration_init_default}
 #define grpc_lb_v1_ServerList_init_default       {{{NULL}, NULL}, false, grpc_lb_v1_Duration_init_default}
-#define grpc_lb_v1_Server_init_default           {false, {0, {0}}, false, 0, false, "", false, 0}
+#define grpc_lb_v1_Server_init_default           {false, {0, {0}}, false, 0, false, "", false, 0, false, 0}
 #define grpc_lb_v1_Duration_init_zero            {false, 0, false, 0}
+#define grpc_lb_v1_Timestamp_init_zero           {false, 0, false, 0}
 #define grpc_lb_v1_LoadBalanceRequest_init_zero  {false, grpc_lb_v1_InitialLoadBalanceRequest_init_zero, false, grpc_lb_v1_ClientStats_init_zero}
 #define grpc_lb_v1_InitialLoadBalanceRequest_init_zero {false, ""}
-#define grpc_lb_v1_ClientStats_init_zero         {false, 0, false, 0, false, 0}
+#define grpc_lb_v1_ClientStats_init_zero         {false, grpc_lb_v1_Timestamp_init_zero, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 #define grpc_lb_v1_LoadBalanceResponse_init_zero {false, grpc_lb_v1_InitialLoadBalanceResponse_init_zero, false, grpc_lb_v1_ServerList_init_zero}
 #define grpc_lb_v1_InitialLoadBalanceResponse_init_zero {false, "", false, grpc_lb_v1_Duration_init_zero}
 #define grpc_lb_v1_ServerList_init_zero          {{{NULL}, NULL}, false, grpc_lb_v1_Duration_init_zero}
-#define grpc_lb_v1_Server_init_zero              {false, {0, {0}}, false, 0, false, "", false, 0}
+#define grpc_lb_v1_Server_init_zero              {false, {0, {0}}, false, 0, false, "", false, 0, false, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
-#define grpc_lb_v1_ClientStats_total_requests_tag 1
-#define grpc_lb_v1_ClientStats_client_rpc_errors_tag 2
-#define grpc_lb_v1_ClientStats_dropped_requests_tag 3
 #define grpc_lb_v1_Duration_seconds_tag          1
 #define grpc_lb_v1_Duration_nanos_tag            2
 #define grpc_lb_v1_InitialLoadBalanceRequest_name_tag 1
 #define grpc_lb_v1_Server_ip_address_tag         1
 #define grpc_lb_v1_Server_port_tag               2
 #define grpc_lb_v1_Server_load_balance_token_tag 3
-#define grpc_lb_v1_Server_drop_request_tag       4
+#define grpc_lb_v1_Server_drop_for_rate_limiting_tag 4
+#define grpc_lb_v1_Server_drop_for_load_balancing_tag 5
+#define grpc_lb_v1_Timestamp_seconds_tag         1
+#define grpc_lb_v1_Timestamp_nanos_tag           2
+#define grpc_lb_v1_ClientStats_timestamp_tag     1
+#define grpc_lb_v1_ClientStats_num_calls_started_tag 2
+#define grpc_lb_v1_ClientStats_num_calls_finished_tag 3
+#define grpc_lb_v1_ClientStats_num_calls_finished_with_drop_for_rate_limiting_tag 4
+#define grpc_lb_v1_ClientStats_num_calls_finished_with_drop_for_load_balancing_tag 5
+#define grpc_lb_v1_ClientStats_num_calls_finished_with_client_failed_to_send_tag 6
+#define grpc_lb_v1_ClientStats_num_calls_finished_known_received_tag 7
 #define grpc_lb_v1_InitialLoadBalanceResponse_load_balancer_delegate_tag 1
 #define grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval_tag 2
-#define grpc_lb_v1_LoadBalanceRequest_initial_request_tag 1
-#define grpc_lb_v1_LoadBalanceRequest_client_stats_tag 2
 #define grpc_lb_v1_ServerList_servers_tag        1
 #define grpc_lb_v1_ServerList_expiration_interval_tag 3
+#define grpc_lb_v1_LoadBalanceRequest_initial_request_tag 1
+#define grpc_lb_v1_LoadBalanceRequest_client_stats_tag 2
 #define grpc_lb_v1_LoadBalanceResponse_initial_response_tag 1
 #define grpc_lb_v1_LoadBalanceResponse_server_list_tag 2
 
 /* Struct field encoding specification for nanopb */
 extern const pb_field_t grpc_lb_v1_Duration_fields[3];
+extern const pb_field_t grpc_lb_v1_Timestamp_fields[3];
 extern const pb_field_t grpc_lb_v1_LoadBalanceRequest_fields[3];
 extern const pb_field_t grpc_lb_v1_InitialLoadBalanceRequest_fields[2];
-extern const pb_field_t grpc_lb_v1_ClientStats_fields[4];
+extern const pb_field_t grpc_lb_v1_ClientStats_fields[8];
 extern const pb_field_t grpc_lb_v1_LoadBalanceResponse_fields[3];
 extern const pb_field_t grpc_lb_v1_InitialLoadBalanceResponse_fields[3];
 extern const pb_field_t grpc_lb_v1_ServerList_fields[3];
-extern const pb_field_t grpc_lb_v1_Server_fields[5];
+extern const pb_field_t grpc_lb_v1_Server_fields[6];
 
 /* Maximum encoded size of messages (where known) */
 #define grpc_lb_v1_Duration_size                 22
-#define grpc_lb_v1_LoadBalanceRequest_size       169
+#define grpc_lb_v1_Timestamp_size                22
+#define grpc_lb_v1_LoadBalanceRequest_size       226
 #define grpc_lb_v1_InitialLoadBalanceRequest_size 131
-#define grpc_lb_v1_ClientStats_size              33
+#define grpc_lb_v1_ClientStats_size              90
 #define grpc_lb_v1_LoadBalanceResponse_size      (98 + grpc_lb_v1_ServerList_size)
 #define grpc_lb_v1_InitialLoadBalanceResponse_size 90
 /* grpc_lb_v1_ServerList_size depends on runtime parameters */
-#define grpc_lb_v1_Server_size                   83
+#define grpc_lb_v1_Server_size                   85
 
 /* Message IDs (where set with "msgid" option) */
 #ifdef PB_MSGID
