@@ -12,6 +12,8 @@ def generate_cc_impl(ctx):
   if ctx.executable.plugin:
     outs += [proto.basename[:-len(".proto")] + ".grpc.pb.h" for proto in protos]
     outs += [proto.basename[:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
+    if ctx.attr.generate_mock:
+      outs += [proto.basename[:-len(".proto")] + "_mock.grpc.pb.h" for proto in protos]
   else:
     outs += [proto.basename[:-len(".proto")] + ".pb.h" for proto in protos]
     outs += [proto.basename[:-len(".proto")] + ".pb.cc" for proto in protos]
