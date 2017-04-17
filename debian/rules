@@ -1,0 +1,31 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# output every command that modifies files on the build system.
+#DH_VERBOSE = 1
+
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/default.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# package maintainers to append CFLAGS
+#export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+# package maintainers to append LDFLAGS
+#export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+override_dh_auto_build:
+	make shared_c prefix=/usr
+	make grpc_csharp_ext prefix=/usr
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	make test_c
+endif
+
+override_dh_auto_install:
+	make install_c prefix=$(CURDIR)/debian/tmp/usr
+	make install_grpc_csharp_ext prefix=$(CURDIR)/debian/tmp/usr
+
+%:
+	dh $@ --parallel
