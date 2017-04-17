@@ -90,11 +90,9 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
                              grpc_transport_one_way_stats *stats,
                              grpc_slice_buffer *outbuf);
 
-grpc_error *deframe_unprocessed_incoming_frames(grpc_exec_ctx *exec_ctx,
-                                                grpc_chttp2_data_parser *p,
-                                                grpc_chttp2_stream *s,
-                                                grpc_slice_buffer *slices,
-                                                grpc_slice *slice_out,
-                                                grpc_byte_stream **stream_out);
+grpc_error *grpc_deframe_unprocessed_incoming_frames(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_data_parser *p, grpc_chttp2_stream *s,
+    grpc_slice_buffer *slices, grpc_slice *slice_out,
+    grpc_byte_stream **stream_out);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */
