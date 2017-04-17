@@ -21,8 +21,10 @@
       "lib": "src/node/src"
     },
     "scripts": {
+      "unit-test": "./node_modules/.bin/mocha src/node/test",
+      "memory-leak-test": "node --expose_gc ./node_modules/.bin/_mocha src/node/memory_leak",
       "lint": "node ./node_modules/jshint/bin/jshint src/node/src src/node/test src/node/interop src/node/index.js --exclude-path=src/node/.jshintignore",
-      "test": "./node_modules/.bin/mocha src/node/test && npm run-script lint",
+      "test": "npm run-script unit-test && npm run-script memory-leak-test && npm run-script lint",
       "electron-build": "./node_modules/.bin/node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
       "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
       "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
