@@ -104,6 +104,7 @@ EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
   EXTRA_ENV_COMPILE_ARGS = ''
   if 'win32' in sys.platform and sys.version_info < (3, 5):
+    EXTRA_ENV_COMPILE_ARGS += ' -std=c++11'
     # We use define flags here and don't directly add to DEFINE_MACROS below to
     # ensure that the expert user/builder has a way of turning it off (via the
     # envvars) without adding yet more GRPC-specific envvars.
@@ -113,7 +114,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     else:
       EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
   elif 'win32' in sys.platform:
-    EXTRA_ENV_COMPILE_ARGS += ' -D_PYTHON_MSVC -std=c++11'
+    EXTRA_ENV_COMPILE_ARGS += ' -D_PYTHON_MSVC'
   elif "linux" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -std=c++11 -fvisibility=hidden -fno-wrapv'
   elif "darwin" in sys.platform:
