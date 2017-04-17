@@ -11,7 +11,7 @@
 Install the gRPC NPM package
 
 ```sh
-npm install grpc
+npm install grpc --save
 ```
 
 ## BUILD FROM SOURCE
