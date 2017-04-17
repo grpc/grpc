@@ -161,6 +161,7 @@ struct grpc_fd {
   /* The fd is either closed or we relinquished control of it. In either
      cases, this indicates that the 'fd' on this structure is no longer
      valid */
+  gpr_mu orphaned_mu;
   bool orphaned;
 
   gpr_atm read_closure;
@@ -285,6 +286,7 @@ static void fd_destroy(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   /* Add the fd to the freelist */
   grpc_iomgr_unregister_object(&fd->iomgr_object);
   pollable_destroy(&fd->pollable);
+  gpr_mu_destroy(&fd->orphaned_mu);
   gpr_mu_lock(&fd_freelist_mu);
   fd->freelist_next = fd_freelist;
   fd_freelist = fd;
@@ -347,6 +349,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
+  gpr_mu_init(&new_fd->orphaned_mu);
   new_fd->orphaned = false;
   grpc_lfev_init(&new_fd->read_closure);
   grpc_lfev_init(&new_fd->write_closure);
@@ -374,11 +377,11 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
 static int fd_wrapped_fd(grpc_fd *fd) {
   int ret_fd = -1;
-  gpr_mu_lock(&fd->pollable.po.mu);
+  gpr_mu_lock(&fd->orphaned_mu);
   if (!fd->orphaned) {
     ret_fd = fd->fd;
   }
-  gpr_mu_unlock(&fd->pollable.po.mu);
+  gpr_mu_unlock(&fd->orphaned_mu);
 
   return ret_fd;
 }
@@ -390,6 +393,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   grpc_error *error = GRPC_ERROR_NONE;
 
   gpr_mu_lock(&fd->pollable.po.mu);
+  gpr_mu_lock(&fd->orphaned_mu);
   fd->on_done_closure = on_done;
 
   /* If release_fd is not NULL, we should be relinquishing control of the file
@@ -413,6 +417,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 
   grpc_closure_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
 
+  gpr_mu_unlock(&fd->orphaned_mu);
   gpr_mu_unlock(&fd->pollable.po.mu);
   UNREF_BY(exec_ctx, fd, 2, reason); /* Drop the reference */
   GRPC_LOG_IF_ERROR("fd_orphan", GRPC_ERROR_REF(error));
@@ -545,9 +550,11 @@ static void pollable_init(pollable *p, polling_obj_type type) {
 }
 
 static void pollable_destroy(pollable *p) {
-  close(p->epfd);
-  grpc_wakeup_fd_destroy(&p->wakeup);
   po_destroy(&p->po);
+  if (p->epfd != -1) {
+    close(p->epfd);
+    grpc_wakeup_fd_destroy(&p->wakeup);
+  }
 }
 
 /* ensure that p->epfd, p->wakeup are initialized; p->po.mu must be held */
@@ -590,7 +597,13 @@ static grpc_error *pollable_add_fd(pollable *p, grpc_fd *fd) {
   grpc_error *error = GRPC_ERROR_NONE;
   static const char *err_desc = "pollable_add_fd";
   const int epfd = p->epfd;
+  GPR_ASSERT(epfd != -1);
 
+  gpr_mu_lock(&fd->orphaned_mu);
+  if (fd->orphaned) {
+    gpr_mu_unlock(&fd->orphaned_mu);
+    return GRPC_ERROR_NONE;
+  }
   struct epoll_event ev_fd = {
       .events = EPOLLET | EPOLLIN | EPOLLOUT | EPOLLEXCLUSIVE, .data.ptr = fd};
   if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd->fd, &ev_fd) != 0) {
@@ -614,6 +627,7 @@ static grpc_error *pollable_add_fd(pollable *p, grpc_fd *fd) {
         append_error(&error, GRPC_OS_ERROR(errno, "epoll_ctl"), err_desc);
     }
   }
+  gpr_mu_unlock(&fd->orphaned_mu);
 
   return error;
 }

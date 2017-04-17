@@ -59,7 +59,7 @@ extern "C" {
 auto& force_library_initialization = Library::get();
 
 static void shutdown_ps(grpc_exec_ctx* exec_ctx, void* ps, grpc_error* error) {
-  grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
+  grpc_pollset_destroy(exec_ctx, static_cast<grpc_pollset*>(ps));
 }
 
 static void BM_CreateDestroyPollset(benchmark::State& state) {
