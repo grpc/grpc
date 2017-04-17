@@ -48,15 +48,15 @@ const DATA_POINTS = 10;
  * This function attempts to determine approximately whether a given operation
  * leaks any memory. In theory, if a single fixed operation leaks memory, then
  * the increase in memory usage should be approximately proportional to the
- * number of times that operation is run. We estimate this by calling the
- * operation N times and recording the increase in memory usage (if any), then
- * calling it again another 2 * N times, again recording the increase in memory
- * usage relative to the starting value. To account for noise, we make a
- * conservative estimate and say that it leaked if the additional memory used
- * after a total of 3 * N calls is at least twice the additional memory used
- * after just N calls. We try to choose N that is large enough that its
- * operations are the dominant factor, and small enough that if there is a leak
- * the process will not run out of memory.
+ * number of times that operation is run. We estimate this by running the
+ * operation NUM_RUNS times and recording the memory used since the beginning
+ * of the entire test. Then we repeat that DATA_POINTS times. As a heuristic
+ * to check for linear growth, we check each data point against a linear
+ * extrapolation of the first data point to the previous index (e.g. we check
+ * the fifth data point against 4 times the first data point).
+ * We run NUM_RUNS functions before we start recording data as a warm up to
+ * avoid outliers caused by one-time initialization that the first calls may
+ * cause.
  * @param {function(function(Error))} checkFun The function to check for leaks
  * @param {function(Error)} cb The callback to pass the result to
  */
@@ -64,26 +64,44 @@ function doesLeak(checkFun, cb) {
   function wrappedCheckFun(id, next) {
     checkFun(next);
   }
-  const startRss = process.memoryUsage().rss;
-  function runManyAndCheckUsage(id, next) {
+  function warmUp(run) {
     async.times(NUM_RUNS, wrappedCheckFun, function(err) {
       if (err) {
-        next(err);
+        cb(err);
         return;
       }
       global.gc();
-      const rssDiff = process.memoryUsage().rss - startRss;
-      next(null, rssDiff);
+      run(process.memoryUsage().rss);
     });
   }
-  async.times(DATA_POINTS, runManyAndCheckUsage, function(error, diffs) {
-    if (error) {
-      cb(error);
-      return;
+  warmUp(function(startRss) {
+    function runManyAndCheckUsage(id, next) {
+      async.times(NUM_RUNS, wrappedCheckFun, function(err) {
+        if (err) {
+          next(err);
+          return;
+        }
+        global.gc();
+        const rssDiff = process.memoryUsage().rss - startRss;
+        next(null, rssDiff);
+      });
     }
-    cb(null, _.every(diffs, function(diff, index, diffs) {
-      return diff > index * diffs[0];
-    }));
+    async.times(DATA_POINTS, runManyAndCheckUsage, function(error, diffs) {
+      if (error) {
+        cb(error);
+        return;
+      }
+      /* If the first run saw a decrease in total memory usage, it did not leak
+         memory */
+      if (diffs[0] < 0) {
+        cb(null, false);
+        return;
+      }
+      cb(null, _.every(diffs, function(diff, index, diffs) {
+        // Compare the Nth diff against N-1 times the first diff
+        return diff > index * diffs[0];
+      }));
+    });
   });
 }
 
