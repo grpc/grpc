@@ -81,9 +81,10 @@ git_repository(
     remote = "https://github.com/makdharma/mongoose.git"
 )
 
-local_repository(
+new_local_repository(
     name = "submodule_benchmark",
     path = "third_party/benchmark",
+    build_file = "third_party/benchmark.BUILD",
 )
 
 new_local_repository(
