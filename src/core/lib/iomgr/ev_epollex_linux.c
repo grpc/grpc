@@ -610,6 +610,7 @@ static grpc_error *pollable_add_fd(pollable *p, grpc_fd *fd) {
     switch (errno) {
       case EEXIST: /* if this fd is already in the epoll set, the workqueue fd
                       must also be - just return */
+        gpr_mu_unlock(&fd->orphaned_mu);
         return GRPC_ERROR_NONE;
       default:
         append_error(&error, GRPC_OS_ERROR(errno, "epoll_ctl"), err_desc);
