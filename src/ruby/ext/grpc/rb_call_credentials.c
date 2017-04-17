@@ -124,7 +124,7 @@ static void grpc_rb_call_credentials_callback_with_gil(void *param) {
   error_details = StringValueCStr(details);
   params->callback(params->user_data, md_ary.metadata, md_ary.count, status,
                    error_details);
-  grpc_metadata_array_destroy(&md_ary);
+  grpc_rb_metadata_array_destroy_including_entries(&md_ary);
   gpr_free(params);
 }
 
