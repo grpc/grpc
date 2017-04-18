@@ -328,15 +328,9 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     }
   }
 
-  void ShutdownAndDrainCompletionQueue() {
+  void Shutdown() override {
     server_cq_->Shutdown();
-
-    // Drain any pending items from the queue
-    void* tag;
-    bool ok;
-    while (server_cq_->Next(&tag, &ok)) {
-      // Nothing to be done here
-    }
+ThreadManager::Shutdown();
   }
 
   void Start() {
@@ -415,7 +409,7 @@ Server::~Server() {
     } else if (!started_) {
       // Shutdown the completion queues
       for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-        (*it)->ShutdownAndDrainCompletionQueue();
+        (*it)->Shutdown();
       }
     }
   }
@@ -579,7 +573,6 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Wait for threads in all ThreadManagers to terminate
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
       (*it)->Wait();
-      (*it)->ShutdownAndDrainCompletionQueue();
     }
 
     // Drain the shutdown queue (if the previous call to AsyncNext() timed out

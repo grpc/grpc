@@ -89,7 +89,7 @@ class ThreadManager {
   // Mark the ThreadManager as shutdown and begin draining the work. This is a
   // non-blocking call and the caller should call Wait(), a blocking call which
   // returns only once the shutdown is complete
-  void Shutdown();
+  virtual void Shutdown();
 
   // Has Shutdown() been called
   bool IsShutdown();
@@ -128,7 +128,7 @@ class ThreadManager {
 
   // Returns true if the current thread can resume as a poller. i.e if the
   // current number of pollers is less than the max_pollers.
-  bool MaybeContinueAsPoller();
+  bool MaybeContinueAsPoller(bool work_found);
 
   void MarkAsCompleted(WorkerThread* thd);
   void CleanupCompletedThreads();

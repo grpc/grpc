@@ -98,11 +98,12 @@ void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
 }
 
 void ThreadManager::CleanupCompletedThreads() {
-  std::unique_lock<std::mutex> lock(list_mu_);
-  for (auto thd = completed_threads_.begin(); thd != completed_threads_.end();
-       thd = completed_threads_.erase(thd)) {
-    delete *thd;
+  std::list<WorkerThread*> completed_threads;
+  {
+    std::unique_lock<std::mutex> lock(list_mu_);
+    completed_threads.swap(completed_threads_);
   }
+  for (auto thd : completed_threads) delete thd;
 }
 
 void ThreadManager::Initialize() {
@@ -114,9 +115,10 @@ void ThreadManager::Initialize() {
 // If the number of pollers (i.e threads currently blocked in PollForWork()) is
 // less than max threshold (i.e max_pollers_) and the total number of threads is
 // below the maximum threshold, we can let the current thread continue as poller
-bool ThreadManager::MaybeContinueAsPoller() {
+bool ThreadManager::MaybeContinueAsPoller(bool work_found) {
   std::unique_lock<std::mutex> lock(mu_);
-  if (shutdown_ || num_pollers_ > max_pollers_) {
+  gpr_log(GPR_DEBUG, "s=%d wf=%d np=%d mp=%d", shutdown_, work_found, num_pollers_, max_pollers_);
+  if (shutdown_ || (!work_found && num_pollers_ > max_pollers_)) {
     return false;
   }
 
@@ -132,6 +134,8 @@ void ThreadManager::MaybeCreatePoller() {
   if (!shutdown_ && num_pollers_ < min_pollers_) {
     num_pollers_++;
     num_threads_++;
+
+    lock.unlock();
 
     // Create a new thread (which ends up calling the MainWorkLoop() function
     new WorkerThread(this);
@@ -153,25 +157,36 @@ void ThreadManager::MainWorkLoop() {
    4. Do the actual work (DoWork())
    5. After doing the work, see it this thread can resume polling work (i.e
       see MaybeContinueAsPoller() for more details) */
-  do {
-    WorkStatus work_status = PollForWork(&tag, &ok);
+  WorkStatus work_status;
+  while (true) {
+  bool done = false;
+    work_status = PollForWork(&tag, &ok);
 
-    {
-      std::unique_lock<std::mutex> lock(mu_);
-      num_pollers_--;
-
-      if (work_status == TIMEOUT && num_pollers_ > min_pollers_) {
-        break;
+    std::unique_lock<std::mutex> lock(mu_);
+    num_pollers_--;
+    gpr_log(GPR_DEBUG, "%p: work_status:%d num_pollers:%d min_pollers:%d max_pollers:%d num_threads:%d shutdown:%d", this, work_status, num_pollers_, min_pollers_, max_pollers_, num_threads_, shutdown_);
+    switch (work_status) {
+     case TIMEOUT:
+      if (shutdown_ || num_pollers_ >= max_pollers_) done = true;
+      break;
+     case SHUTDOWN: done = true; break;
+     case WORK_FOUND:
+      if (!shutdown_ && num_pollers_ < min_pollers_) {
+        num_pollers_++;
+        num_threads_++;
+        lock.unlock();
+        new WorkerThread(this);
+      } else {
+        lock.unlock();
       }
-    }
-
-    // Note that MaybeCreatePoller does check for shutdown and creates a new
-    // thread only if ThreadManager is not shutdown
-    if (work_status == WORK_FOUND) {
-      MaybeCreatePoller();
       DoWork(tag, ok);
+      lock.lock();
+      if (shutdown_) done = true;
+      break;
     }
-  } while (MaybeContinueAsPoller());
+if (done) break;
+    num_pollers_++;
+  };
 
   CleanupCompletedThreads();
 
