@@ -59,6 +59,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/backoff.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -73,6 +74,9 @@
 
 // FIXME: what's the right default for this?
 #define DEFAULT_PER_RPC_RETRY_BUFFER_SIZE (1<<30)
+
+// FIXME: what's the right value for this?
+#define RETRY_BACKOFF_JITTER 0.2
 
 /*************************************************************************
  * METHOD-CONFIG TABLE
@@ -955,6 +959,8 @@ typedef struct client_channel_call_data {
   bool retry_committed;
   int num_retry_attempts;
   size_t bytes_buffered_for_retry;
+  gpr_backoff retry_backoff;
+  grpc_timer retry_timer;
   grpc_call_context_element *context;
   // Batches received from above that still have a on_complete,
   // recv_initial_metadata_ready, or recv_message_ready callback pending.
@@ -1181,6 +1187,30 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
                                                    void *arg,
                                                    grpc_error *error_ignored);
 
+static void do_retry(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  subchannel_batch_data *batch_data = arg;
+  grpc_call_element *elem = batch_data->elem;
+  channel_data *chand = elem->channel_data;
+// FIXME: this isn't exactly the right callback to use here, since
+// start_transport_stream_op_batch_locked() assumes that it has a batch
+// to send down and makes its decisions based on that.  right now, we're
+// punting by sending it the batch that just failed, but that's not really
+// the right thing to do, because we might receive new ops from the surface
+// while we're doing the pick, and we'd want to include those in the retry
+// attempt once the pick comes back.  need to either write a new version of
+// start_transport_stream_op_batch_locked() to handle this case or
+// generalize the existing code so that it knows about not having a
+// specific batch available in the retry case.
+  batch_data->batch.handler_private.extra_arg = elem;
+  grpc_closure_sched(
+      exec_ctx,
+      grpc_closure_init(&batch_data->batch.handler_private.closure,
+                        start_transport_stream_op_batch_locked,
+                        &batch_data->batch,
+                        grpc_combiner_scheduler(chand->combiner, false)),
+      GRPC_ERROR_REF(error));
+}
+
 // Returns true if a retry is attempted.
 static bool maybe_retry(grpc_exec_ctx *exec_ctx,
                         subchannel_batch_data *batch_data,
@@ -1227,33 +1257,32 @@ gpr_log(GPR_INFO, "max_retry_attempts=%d", retry_policy->max_retry_attempts);
     if (okay_to_retry && !calld->retry_committed &&
         calld->num_retry_attempts < retry_policy->max_retry_attempts) {
 gpr_log(GPR_INFO, "RETRYING");
-// FIXME: compute backoff delay.  if the backoff delay is less than the
-// deadline, then start a timer to start the next retry attempt
+      // Reset subchannel call.
       grpc_subchannel_call *call = GET_CALL(calld);
       if (call != NULL && call != CANCELLED_CALL) {
         GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, call,
                                    "client_channel_call_retry");
         gpr_atm_rel_store(&calld->subchannel_call, (gpr_atm)NULL);
       }
-// FIXME: this isn't exactly the right callback to use here, since
-// start_transport_stream_op_batch_locked() assumes that it has a batch
-// to send down and makes its decisions based on that.  right now, we're
-// punting by sending it the batch that just failed, but that's not really
-// the right thing to do, because we might receive new ops from the surface
-// while we're doing the pick, and we'd want to include those in the retry
-// attempt once the pick comes back.  need to either write a new version of
-// start_transport_stream_op_batch_locked() to handle this case or
-// generalize the existing code so that it knows about not having a
-// specific batch available in the retry case.
+      // Compute backoff delay.
+      gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+      gpr_timespec next_attempt_time;
+      if (calld->num_retry_attempts == 0) {
+        gpr_backoff_init(&calld->retry_backoff,
+                         retry_policy->initial_backoff_ms,
+                         retry_policy->backoff_multiplier, RETRY_BACKOFF_JITTER,
+                         GPR_MIN(retry_policy->initial_backoff_ms,
+                                 retry_policy->max_backoff_ms),
+                         retry_policy->max_backoff_ms);
+        next_attempt_time = gpr_backoff_begin(&calld->retry_backoff, now);
+      } else {
+        next_attempt_time = gpr_backoff_step(&calld->retry_backoff, now);
+      }
       GRPC_CALL_STACK_REF(calld->owning_call, "maybe_retry");
-      batch_data->batch.handler_private.extra_arg = elem;
-      grpc_closure_sched(
-          exec_ctx,
-          grpc_closure_init(&batch_data->batch.handler_private.closure,
-                            start_transport_stream_op_batch_locked,
-                            &batch_data->batch,
-                            grpc_combiner_scheduler(chand->combiner, false)),
-          GRPC_ERROR_NONE);
+      grpc_closure_init(&calld->next_step, do_retry, batch_data,
+                        grpc_combiner_scheduler(chand->combiner, true));
+      grpc_timer_init(exec_ctx, &calld->retry_timer, next_attempt_time,
+                      &calld->next_step, now);
       ++calld->num_retry_attempts;
       return true;
     }
