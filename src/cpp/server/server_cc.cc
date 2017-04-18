@@ -330,7 +330,17 @@ class Server::SyncRequestThreadManager : public ThreadManager {
 
   void Shutdown() override {
     server_cq_->Shutdown();
-ThreadManager::Shutdown();
+    ThreadManager::Shutdown();
+  }
+
+  void Wait() override {
+    ThreadManager::Wait();
+    // Drain any pending items from the queue
+    void* tag;
+    bool ok;
+    while (server_cq_->Next(&tag, &ok)) {
+      // Do nothing
+    }
   }
 
   void Start() {

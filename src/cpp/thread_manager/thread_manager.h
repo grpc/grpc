@@ -96,7 +96,7 @@ class ThreadManager {
 
   // A blocking call that returns only after the ThreadManager has shutdown and
   // all the threads have drained all the outstanding work
-  void Wait();
+  virtual void Wait();
 
  private:
   // Helper wrapper class around std::thread. This takes a ThreadManager object
@@ -125,10 +125,6 @@ class ThreadManager {
   // Create a new poller if the number of current pollers is less than the
   // minimum number of pollers needed (i.e min_pollers).
   void MaybeCreatePoller();
-
-  // Returns true if the current thread can resume as a poller. i.e if the
-  // current number of pollers is less than the max_pollers.
-  bool MaybeContinueAsPoller(bool work_found);
 
   void MarkAsCompleted(WorkerThread* thd);
   void CleanupCompletedThreads();
