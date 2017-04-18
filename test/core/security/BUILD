@@ -29,8 +29,6 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-package(default_visibility = ["//test/cpp:__subpackages__"],)
-
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
@@ -46,7 +44,8 @@ cc_library(
     srcs = ["oauth2_utils.c"],
     hdrs = ["oauth2_utils.h"],
     deps = ["//:grpc"],
-    copts = ['-std=c99']
+    copts = ['-std=c99'],
+    visibility = ["//test/cpp:__subpackages__"],
 )
 
 cc_test(
