@@ -29,7 +29,9 @@
 
 # Docker file for building gRPC artifacts.
 
-FROM 32bit/debian:jessie
+# 32bit/debian:wheezy tag is not available, for now use an unofficial image.
+# TODO: use official image
+FROM tubia/debian:wheezy
 
 RUN apt-get update && apt-get install debian-keyring && apt-key update
 

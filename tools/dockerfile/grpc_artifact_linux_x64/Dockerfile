@@ -29,7 +29,7 @@
 
 # Docker file for building gRPC artifacts.
 
-FROM debian:jessie
+FROM debian:wheezy
 
 RUN apt-get update && apt-get install debian-keyring && apt-key update
 
