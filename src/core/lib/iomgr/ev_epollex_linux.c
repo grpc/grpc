@@ -711,11 +711,17 @@ static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p,
       }
       return GRPC_ERROR_NONE;
     }
+  } else if (specific_worker->kicked) {
+    if (grpc_polling_trace) {
+      gpr_log(GPR_DEBUG, "PS:%p kicked_specific_but_already_kicked", p);
+    }
+    return GRPC_ERROR_NONE;
   } else if (gpr_tls_get(&g_current_thread_worker) ==
              (intptr_t)specific_worker) {
     if (grpc_polling_trace) {
       gpr_log(GPR_DEBUG, "PS:%p kicked_specific_but_awake", p);
     }
+    specific_worker->kicked = true;
     return GRPC_ERROR_NONE;
   } else if (specific_worker == p->root_worker) {
     if (grpc_polling_trace) {
@@ -723,6 +729,7 @@ static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p,
     }
     grpc_error *err = pollable_materialize(p);
     if (err != GRPC_ERROR_NONE) return err;
+    specific_worker->kicked = true;
     return grpc_wakeup_fd_wakeup(&p->wakeup);
   } else {
     if (grpc_polling_trace) {
