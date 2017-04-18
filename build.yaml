@@ -1227,7 +1227,6 @@ libs:
   build: private
   language: c++
   headers:
-  - src/proto/grpc/testing/echo_mock.grpc.pb.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/create_test_channel.h

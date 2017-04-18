@@ -197,9 +197,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_mock.grpc.pb.h">
-      <Filter>src\proto\grpc\testing</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.h">
       <Filter>test\cpp\end2end</Filter>
     </ClInclude>

@@ -202,7 +202,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_mock.grpc.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\byte_buffer_proto_helper.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.h" />
