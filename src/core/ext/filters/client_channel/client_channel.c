@@ -174,6 +174,8 @@ static void *method_parameters_create_from_json(const grpc_json *json) {
   return value;
 }
 
+struct external_connectivity_watcher;
+
 /*************************************************************************
  * CHANNEL-WIDE FUNCTIONS
  */
@@ -208,6 +210,11 @@ typedef struct client_channel_channel_data {
   grpc_channel_stack *owning_stack;
   /** interested parties (owned) */
   grpc_pollset_set *interested_parties;
+
+  /* external_connectivity_watcher_list head is guarded by its own mutex, since
+   * counts need to be grabbed immediately without polling on a cq */
+  gpr_mu external_connectivity_watcher_list_mu;
+  struct external_connectivity_watcher *external_connectivity_watcher_list_head;
 
   /* the following properties are guarded by a mutex since API's require them
      to be instantaneously available */
@@ -632,6 +639,12 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   // Initialize data members.
   chand->combiner = grpc_combiner_create(NULL);
   gpr_mu_init(&chand->info_mu);
+  gpr_mu_init(&chand->external_connectivity_watcher_list_mu);
+
+  gpr_mu_lock(&chand->external_connectivity_watcher_list_mu);
+  chand->external_connectivity_watcher_list_head = NULL;
+  gpr_mu_unlock(&chand->external_connectivity_watcher_list_mu);
+
   chand->owning_stack = args->channel_stack;
   grpc_closure_init(&chand->on_resolver_result_changed,
                     on_resolver_result_changed_locked, chand,
@@ -718,6 +731,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   grpc_pollset_set_destroy(exec_ctx, chand->interested_parties);
   GRPC_COMBINER_UNREF(exec_ctx, chand->combiner, "client_channel");
   gpr_mu_destroy(&chand->info_mu);
+  gpr_mu_destroy(&chand->external_connectivity_watcher_list_mu);
 }
 
 /*************************************************************************
@@ -1361,13 +1375,78 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
   return out;
 }
 
-typedef struct {
+typedef struct external_connectivity_watcher {
   channel_data *chand;
   grpc_pollset *pollset;
   grpc_closure *on_complete;
+  grpc_closure *watcher_timer_init;
   grpc_connectivity_state *state;
   grpc_closure my_closure;
+  struct external_connectivity_watcher *next;
 } external_connectivity_watcher;
+
+static external_connectivity_watcher *lookup_external_connectivity_watcher(
+    channel_data *chand, grpc_closure *on_complete) {
+  gpr_mu_lock(&chand->external_connectivity_watcher_list_mu);
+  external_connectivity_watcher *w =
+      chand->external_connectivity_watcher_list_head;
+  while (w != NULL && w->on_complete != on_complete) {
+    w = w->next;
+  }
+  gpr_mu_unlock(&chand->external_connectivity_watcher_list_mu);
+  return w;
+}
+
+static void external_connectivity_watcher_list_append(
+    channel_data *chand, external_connectivity_watcher *w) {
+  GPR_ASSERT(!lookup_external_connectivity_watcher(chand, w->on_complete));
+
+  gpr_mu_lock(&w->chand->external_connectivity_watcher_list_mu);
+  GPR_ASSERT(!w->next);
+  w->next = chand->external_connectivity_watcher_list_head;
+  chand->external_connectivity_watcher_list_head = w;
+  gpr_mu_unlock(&w->chand->external_connectivity_watcher_list_mu);
+}
+
+static void external_connectivity_watcher_list_remove(
+    channel_data *chand, external_connectivity_watcher *too_remove) {
+  GPR_ASSERT(
+      lookup_external_connectivity_watcher(chand, too_remove->on_complete));
+  gpr_mu_lock(&chand->external_connectivity_watcher_list_mu);
+  if (too_remove == chand->external_connectivity_watcher_list_head) {
+    chand->external_connectivity_watcher_list_head = too_remove->next;
+    gpr_mu_unlock(&chand->external_connectivity_watcher_list_mu);
+    return;
+  }
+  external_connectivity_watcher *w =
+      chand->external_connectivity_watcher_list_head;
+  while (w != NULL) {
+    if (w->next == too_remove) {
+      w->next = w->next->next;
+      gpr_mu_unlock(&chand->external_connectivity_watcher_list_mu);
+      return;
+    }
+    w = w->next;
+  }
+  GPR_UNREACHABLE_CODE(return );
+}
+
+int grpc_client_channel_num_external_connectivity_watchers(
+    grpc_channel_element *elem) {
+  channel_data *chand = elem->channel_data;
+  int count = 0;
+
+  gpr_mu_lock(&chand->external_connectivity_watcher_list_mu);
+  external_connectivity_watcher *w =
+      chand->external_connectivity_watcher_list_head;
+  while (w != NULL) {
+    count++;
+    w = w->next;
+  }
+  gpr_mu_unlock(&chand->external_connectivity_watcher_list_mu);
+
+  return count;
+}
 
 static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
                                        grpc_error *error) {
@@ -1377,6 +1456,7 @@ static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
                                w->pollset);
   GRPC_CHANNEL_STACK_UNREF(exec_ctx, w->chand->owning_stack,
                            "external_connectivity_watcher");
+  external_connectivity_watcher_list_remove(w->chand, w);
   gpr_free(w);
   grpc_closure_run(exec_ctx, follow_up, GRPC_ERROR_REF(error));
 }
@@ -1384,21 +1464,42 @@ static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
 static void watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                             grpc_error *error_ignored) {
   external_connectivity_watcher *w = arg;
-  grpc_closure_init(&w->my_closure, on_external_watch_complete, w,
-                    grpc_schedule_on_exec_ctx);
-  grpc_connectivity_state_notify_on_state_change(
-      exec_ctx, &w->chand->state_tracker, w->state, &w->my_closure);
+  external_connectivity_watcher *found = NULL;
+  if (w->state != NULL) {
+    external_connectivity_watcher_list_append(w->chand, w);
+    grpc_closure_run(exec_ctx, w->watcher_timer_init, GRPC_ERROR_NONE);
+    grpc_closure_init(&w->my_closure, on_external_watch_complete, w,
+                      grpc_schedule_on_exec_ctx);
+    grpc_connectivity_state_notify_on_state_change(
+        exec_ctx, &w->chand->state_tracker, w->state, &w->my_closure);
+  } else {
+    GPR_ASSERT(w->watcher_timer_init == NULL);
+    found = lookup_external_connectivity_watcher(w->chand, w->on_complete);
+    if (found) {
+      GPR_ASSERT(found->on_complete == w->on_complete);
+      grpc_connectivity_state_notify_on_state_change(
+          exec_ctx, &found->chand->state_tracker, NULL, &found->my_closure);
+    }
+    grpc_pollset_set_del_pollset(exec_ctx, w->chand->interested_parties,
+                                 w->pollset);
+    GRPC_CHANNEL_STACK_UNREF(exec_ctx, w->chand->owning_stack,
+                             "external_connectivity_watcher");
+    gpr_free(w);
+  }
 }
 
 void grpc_client_channel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
-    grpc_connectivity_state *state, grpc_closure *on_complete) {
+    grpc_connectivity_state *state, grpc_closure *on_complete,
+    grpc_closure *watcher_timer_init) {
   channel_data *chand = elem->channel_data;
-  external_connectivity_watcher *w = gpr_malloc(sizeof(*w));
+  external_connectivity_watcher *w = gpr_zalloc(sizeof(*w));
   w->chand = chand;
   w->pollset = pollset;
   w->on_complete = on_complete;
   w->state = state;
+  w->watcher_timer_init = watcher_timer_init;
+
   grpc_pollset_set_add_pollset(exec_ctx, chand->interested_parties, pollset);
   GRPC_CHANNEL_STACK_REF(w->chand->owning_stack,
                          "external_connectivity_watcher");
