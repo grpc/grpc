@@ -197,8 +197,8 @@ class ServerBuilder {
     SyncServerSettings()
         : num_cqs(gpr_cpu_num_cores()),
           min_pollers(1),
-          max_pollers(INT_MAX),
-          cq_timeout_msec(1000) {}
+          max_pollers(2),
+          cq_timeout_msec(10000) {}
 
     // Number of server completion queues to create to listen to incoming RPCs.
     int num_cqs;
