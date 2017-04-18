@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+#!/usr/bin/env bash
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,17 +27,13 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#
+# This script is invoked by Jenkins and runs interop test suite.
 set -ex
 
+export LANG=en_US.UTF-8
+
+# Enter the gRPC repo root
 cd $(dirname $0)/../..
 
-./tools/run_tests/start_port_server.py || true
-
-CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
-
-make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server -j $CPUS
-bins/opt/memory_profile_test
-bq load microbenchmarks.memory memory_usage.csv
-
-tools/run_tests/run_microbenchmark.py --collect summary --bigquery_upload
+tools/run_tests/run_interop_tests.py -l objc -s all --use_docker -t -j 1 $@ || true

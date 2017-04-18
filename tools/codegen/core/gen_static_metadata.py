@@ -124,6 +124,7 @@ CONFIG = [
     ('if-unmodified-since', ''),
     ('last-modified', ''),
     ('lb-token', ''),
+    ('lb-cost-bin', ''),
     ('link', ''),
     ('location', ''),
     ('max-forwards', ''),
