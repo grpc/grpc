@@ -5932,6 +5932,7 @@
       "src/proto/grpc/testing/echo.pb.h", 
       "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
       "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/create_test_channel.h", 
@@ -5943,6 +5944,7 @@
     "language": "c++", 
     "name": "grpc++_test_util", 
     "src": [
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
       "test/cpp/end2end/test_service_impl.cc", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.cc", 
