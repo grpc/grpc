@@ -29,7 +29,7 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//test/cpp:__subpackages__"],)
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 

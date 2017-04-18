@@ -74,9 +74,9 @@ cc_library(
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
         "//test/core/security:oauth2_utils",
+        "//test/cpp/util:test_config",
     ],
 )
-
 
 cc_binary(
     name = "interop_client",
