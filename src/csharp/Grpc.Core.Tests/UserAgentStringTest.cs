@@ -63,10 +63,6 @@ namespace Grpc.Core.Tests
         public void DefaultUserAgentString()
         {
             helper = new MockServiceHelper(Host);
-            server = helper.GetServer();
-            server.Start();
-            channel = helper.GetChannel();
-
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 var userAgentString = context.RequestHeaders.First(m => (m.Key == "user-agent")).Value;
@@ -75,6 +71,11 @@ namespace Grpc.Core.Tests
                 Assert.IsTrue(parts[1].StartsWith("grpc-c/"));
                 return Task.FromResult("PASS");
             });
+
+            server = helper.GetServer();
+            server.Start();
+            channel = helper.GetChannel();
+
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), ""));
         }
 
@@ -83,11 +84,6 @@ namespace Grpc.Core.Tests
         {
             helper = new MockServiceHelper(Host,
                 channelOptions: new[] { new ChannelOption(ChannelOptions.PrimaryUserAgentString, "XYZ") });
-            server = helper.GetServer();
-            server.Start();
-            channel = helper.GetChannel();
-            
-            channel = helper.GetChannel();
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 var userAgentString = context.RequestHeaders.First(m => (m.Key == "user-agent")).Value;
@@ -95,6 +91,11 @@ namespace Grpc.Core.Tests
                 Assert.AreEqual("XYZ", parts[0]);
                 return Task.FromResult("PASS");
             });
+
+            server = helper.GetServer();
+            server.Start();
+            channel = helper.GetChannel();
+
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), ""));
         }
     }
