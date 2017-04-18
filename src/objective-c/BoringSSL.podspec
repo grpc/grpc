@@ -31,7 +31,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL'
-  version = '8.1'
+  version = '8.2'
   s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.'
   # Adapted from the homepage:
@@ -113,7 +113,6 @@ Pod::Spec.new do |s|
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'include/openssl'
     ss.source_files = 'include/openssl/*.h'
-    ss.exclude_files = 'include/openssl/arm_arch.h'
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
