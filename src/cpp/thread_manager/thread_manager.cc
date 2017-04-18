@@ -109,22 +109,13 @@ void ThreadManager::CleanupCompletedThreads() {
 }
 
 void ThreadManager::Initialize() {
-  for (int i = 0; i < min_pollers_; i++) {
-    MaybeCreatePoller();
+  {
+    std::unique_lock<std::mutex> lock(mu_);
+    num_pollers_ = min_pollers_;
+    num_threads_ = min_pollers_;
   }
-}
 
-// Create a new poller if the current number of pollers i.e num_pollers_ (i.e
-// threads currently blocked in PollForWork()) is below the threshold (i.e
-// min_pollers_) and the total number of threads is below the maximum threshold
-void ThreadManager::MaybeCreatePoller() {
-  std::unique_lock<std::mutex> lock(mu_);
-  if (!shutdown_ && num_pollers_ < min_pollers_) {
-    num_pollers_++;
-    num_threads_++;
-
-    lock.unlock();
-
+  for (int i = 0; i < min_pollers_; i++) {
     // Create a new thread (which ends up calling the MainWorkLoop() function
     new WorkerThread(this);
   }

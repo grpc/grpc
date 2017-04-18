@@ -122,10 +122,6 @@ class ThreadManager {
   // The main funtion in ThreadManager
   void MainWorkLoop();
 
-  // Create a new poller if the number of current pollers is less than the
-  // minimum number of pollers needed (i.e min_pollers).
-  void MaybeCreatePoller();
-
   void MarkAsCompleted(WorkerThread* thd);
   void CleanupCompletedThreads();
 
