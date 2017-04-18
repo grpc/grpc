@@ -193,3 +193,11 @@ size_t grpc_trickle_endpoint_trickle(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&te->mu);
   return backlog;
 }
+
+size_t grpc_trickle_get_backlog(grpc_endpoint *ep) {
+  trickle_endpoint *te = (trickle_endpoint *)ep;
+  gpr_mu_lock(&te->mu);
+  size_t backlog = te->write_buffer.length;
+  gpr_mu_unlock(&te->mu);
+  return backlog;
+}
