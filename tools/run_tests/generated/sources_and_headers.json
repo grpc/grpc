@@ -480,6 +480,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "fake_resolver_test", 
+    "src": [
+      "test/core/client_channel/resolvers/fake_resolver_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "fd_conservation_posix_test", 
     "src": [
       "test/core/iomgr/fd_conservation_posix_test.c"
@@ -1585,6 +1602,23 @@
     "name": "message_compress_test", 
     "src": [
       "test/core/compression/message_compress_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "minimal_stack_is_minimal_test", 
+    "src": [
+      "test/core/channel/minimal_stack_is_minimal_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5611,11 +5645,13 @@
       "census", 
       "gpr", 
       "grpc_base", 
+      "grpc_deadline_filter", 
       "grpc_lb_policy_grpclb_secure", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
       "grpc_max_age_filter", 
+      "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
@@ -5714,11 +5750,13 @@
       "census", 
       "gpr", 
       "grpc_base", 
+      "grpc_deadline_filter", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
       "grpc_max_age_filter", 
+      "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
@@ -7575,16 +7613,11 @@
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
-      "src/core/lib/channel/compress_filter.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
-      "src/core/lib/channel/deadline_filter.h", 
       "src/core/lib/channel/handshaker.h", 
       "src/core/lib/channel/handshaker_factory.h", 
       "src/core/lib/channel/handshaker_registry.h", 
-      "src/core/lib/channel/http_client_filter.h", 
-      "src/core/lib/channel/http_server_filter.h", 
-      "src/core/lib/channel/message_size_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/debug/trace.h", 
@@ -7704,25 +7737,15 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.c", 
       "src/core/lib/channel/channel_stack_builder.h", 
-      "src/core/lib/channel/compress_filter.c", 
-      "src/core/lib/channel/compress_filter.h", 
       "src/core/lib/channel/connected_channel.c", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
-      "src/core/lib/channel/deadline_filter.c", 
-      "src/core/lib/channel/deadline_filter.h", 
       "src/core/lib/channel/handshaker.c", 
       "src/core/lib/channel/handshaker.h", 
       "src/core/lib/channel/handshaker_factory.c", 
       "src/core/lib/channel/handshaker_factory.h", 
       "src/core/lib/channel/handshaker_registry.c", 
       "src/core/lib/channel/handshaker_registry.h", 
-      "src/core/lib/channel/http_client_filter.c", 
-      "src/core/lib/channel/http_client_filter.h", 
-      "src/core/lib/channel/http_server_filter.c", 
-      "src/core/lib/channel/http_server_filter.h", 
-      "src/core/lib/channel/message_size_filter.c", 
-      "src/core/lib/channel/message_size_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
@@ -7941,7 +7964,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "grpc_deadline_filter"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/client_channel.h", 
@@ -8035,6 +8059,49 @@
       "include/grpc/impl/codegen/propagation_bits.h", 
       "include/grpc/impl/codegen/slice.h", 
       "include/grpc/impl/codegen/status.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/deadline/deadline_filter.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_deadline_filter", 
+    "src": [
+      "src/core/ext/filters/deadline/deadline_filter.c", 
+      "src/core/ext/filters/deadline/deadline_filter.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/http/client/http_client_filter.h", 
+      "src/core/ext/filters/http/message_compress/message_compress_filter.h", 
+      "src/core/ext/filters/http/server/http_server_filter.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_http_filters", 
+    "src": [
+      "src/core/ext/filters/http/client/http_client_filter.c", 
+      "src/core/ext/filters/http/client/http_client_filter.h", 
+      "src/core/ext/filters/http/http_filters_plugin.c", 
+      "src/core/ext/filters/http/message_compress/message_compress_filter.c", 
+      "src/core/ext/filters/http/message_compress/message_compress_filter.h", 
+      "src/core/ext/filters/http/server/http_server_filter.c", 
+      "src/core/ext/filters/http/server/http_server_filter.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8165,6 +8232,24 @@
     "src": [
       "src/core/ext/filters/max_age/max_age_filter.c", 
       "src/core/ext/filters/max_age/max_age_filter.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/message_size/message_size_filter.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_message_size_filter", 
+    "src": [
+      "src/core/ext/filters/message_size/message_size_filter.c", 
+      "src/core/ext/filters/message_size/message_size_filter.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8369,6 +8454,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_http_filters", 
       "grpc_transport_chttp2_alpn"
     ], 
     "headers": [
@@ -8573,6 +8659,7 @@
   {
     "deps": [
       "grpc_base", 
+      "grpc_http_filters", 
       "grpc_transport_chttp2"
     ], 
     "headers": [

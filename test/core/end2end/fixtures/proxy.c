@@ -104,7 +104,7 @@ grpc_end2end_proxy *grpc_end2end_proxy_create(const grpc_end2end_proxy_def *def,
   gpr_log(GPR_DEBUG, "PROXY ADDR:%s BACKEND:%s", proxy->proxy_port,
           proxy->server_port);
 
-  proxy->cq = grpc_completion_queue_create(NULL);
+  proxy->cq = grpc_completion_queue_create_for_next(NULL);
   proxy->server = def->create_server(proxy->proxy_port, server_args);
   proxy->client = def->create_client(proxy->server_port, client_args);
 

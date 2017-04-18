@@ -46,14 +46,14 @@
 
 extern "C" {
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/deadline/deadline_filter.h"
+#include "src/core/ext/filters/http/client/http_client_filter.h"
+#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/deadline_filter.h"
-#include "src/core/lib/channel/http_client_filter.h"
-#include "src/core/lib/channel/http_server_filter.h"
-#include "src/core/lib/channel/message_size_filter.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -119,7 +119,7 @@ template <class Fixture>
 static void BM_CallCreateDestroy(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture fixture;
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   void *method_hdl =
       grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);
@@ -461,7 +461,7 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, DummyFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, DummyFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientChannelFilter, NoOp);
-typedef Fixture<&grpc_compress_filter, CHECKS_NOT_LAST> CompressFilter;
+typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
@@ -576,7 +576,7 @@ class IsolatedCallFixture : public TrackCounters {
                                                   GRPC_CLIENT_CHANNEL);
       grpc_exec_ctx_finish(&exec_ctx);
     }
-    cq_ = grpc_completion_queue_create(NULL);
+    cq_ = grpc_completion_queue_create_for_next(NULL);
   }
 
   void Finish(benchmark::State &state) {

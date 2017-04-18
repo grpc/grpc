@@ -53,7 +53,8 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 class TrickledCHTTP2 : public EndpointPairFixture {
  public:
   TrickledCHTTP2(Service* service, size_t megabits_per_second)
-      : EndpointPairFixture(service, MakeEndpoints(megabits_per_second)) {}
+      : EndpointPairFixture(service, MakeEndpoints(megabits_per_second),
+                            FixtureConfiguration()) {}
 
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     out << " writes/iter:"

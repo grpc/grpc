@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
   grpc_metadata_array_init(&request_metadata2);
   grpc_call_details_init(&request_details2);
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   cqv = cq_verifier_create(cq);
 
   /* reserve two ports */

@@ -242,6 +242,7 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   grpc_completion_queue_shutdown(f.cq);
   drain_cq(f.cq);
   grpc_completion_queue_destroy(f.cq);
+  grpc_completion_queue_destroy(f.shutdown_cq);
   config.tear_down_data(&f);
 
   cq_verifier_destroy(cqv);

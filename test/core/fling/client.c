@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
   }
 
   channel = grpc_insecure_channel_create(target, NULL, NULL);
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);
 

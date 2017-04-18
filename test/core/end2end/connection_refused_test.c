@@ -68,7 +68,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   cqv = cq_verifier_create(cq);
 
   /* if using service config, create channel args */

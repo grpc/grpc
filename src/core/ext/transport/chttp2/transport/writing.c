@@ -224,9 +224,9 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
           .is_eof = false,
           .use_true_binary_metadata =
               t->settings
-                  [GRPC_ACKED_SETTINGS]
+                  [GRPC_PEER_SETTINGS]
                   [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] != 0,
-          .max_frame_size = t->settings[GRPC_ACKED_SETTINGS]
+          .max_frame_size = t->settings[GRPC_PEER_SETTINGS]
                                        [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
           .stats = &s->stats.outgoing};
       grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor,
@@ -267,7 +267,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                 (int64_t)t->settings[GRPC_PEER_SETTINGS]
                                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
         uint32_t max_outgoing = (uint32_t)GPR_MIN(
-            t->settings[GRPC_ACKED_SETTINGS]
+            t->settings[GRPC_PEER_SETTINGS]
                        [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
             GPR_MIN(stream_outgoing_window, t->outgoing_window));
         if (max_outgoing > 0) {
@@ -328,11 +328,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
               .is_eof = true,
               .use_true_binary_metadata =
                   t->settings
-                      [GRPC_ACKED_SETTINGS]
+                      [GRPC_PEER_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
                   0,
               .max_frame_size =
-                  t->settings[GRPC_ACKED_SETTINGS]
+                  t->settings[GRPC_PEER_SETTINGS]
                              [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
               .stats = &s->stats.outgoing};
           grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor,

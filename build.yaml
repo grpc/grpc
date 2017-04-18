@@ -12,7 +12,7 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 3.0.0-dev
+  core_version: 4.0.0-dev
   g_stands_for: gentle
   version: 1.4.0-dev
 filegroups:
@@ -176,16 +176,11 @@ filegroups:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
-  - src/core/lib/channel/compress_filter.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
-  - src/core/lib/channel/deadline_filter.h
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
-  - src/core/lib/channel/http_client_filter.h
-  - src/core/lib/channel/http_server_filter.h
-  - src/core/lib/channel/message_size_filter.h
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/debug/trace.h
@@ -288,15 +283,10 @@ filegroups:
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
-  - src/core/lib/channel/compress_filter.c
   - src/core/lib/channel/connected_channel.c
-  - src/core/lib/channel/deadline_filter.c
   - src/core/lib/channel/handshaker.c
   - src/core/lib/channel/handshaker_factory.c
   - src/core/lib/channel/handshaker_registry.c
-  - src/core/lib/channel/http_client_filter.c
-  - src/core/lib/channel/http_server_filter.c
-  - src/core/lib/channel/message_size_filter.c
   - src/core/lib/compression/compression.c
   - src/core/lib/compression/message_compress.c
   - src/core/lib/debug/trace.c
@@ -458,6 +448,7 @@ filegroups:
   plugin: grpc_client_channel
   uses:
   - grpc_base
+  - grpc_deadline_filter
 - name: grpc_codegen
   public_headers:
   - include/grpc/impl/codegen/byte_buffer_reader.h
@@ -470,6 +461,27 @@ filegroups:
   - include/grpc/impl/codegen/status.h
   uses:
   - gpr_codegen
+- name: grpc_deadline_filter
+  headers:
+  - src/core/ext/filters/deadline/deadline_filter.h
+  src:
+  - src/core/ext/filters/deadline/deadline_filter.c
+  plugin: grpc_deadline_filter
+  uses:
+  - grpc_base
+- name: grpc_http_filters
+  headers:
+  - src/core/ext/filters/http/client/http_client_filter.h
+  - src/core/ext/filters/http/message_compress/message_compress_filter.h
+  - src/core/ext/filters/http/server/http_server_filter.h
+  src:
+  - src/core/ext/filters/http/client/http_client_filter.c
+  - src/core/ext/filters/http/http_filters_plugin.c
+  - src/core/ext/filters/http/message_compress/message_compress_filter.c
+  - src/core/ext/filters/http/server/http_server_filter.c
+  plugin: grpc_http_filters
+  uses:
+  - grpc_base
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
@@ -533,6 +545,14 @@ filegroups:
   src:
   - src/core/ext/filters/max_age/max_age_filter.c
   plugin: grpc_max_age_filter
+  uses:
+  - grpc_base
+- name: grpc_message_size_filter
+  headers:
+  - src/core/ext/filters/message_size/message_size_filter.h
+  src:
+  - src/core/ext/filters/message_size/message_size_filter.c
+  plugin: grpc_message_size_filter
   uses:
   - grpc_base
 - name: grpc_resolver_dns_ares
@@ -698,6 +718,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_transport_chttp2_alpn
+  - grpc_http_filters
 - name: grpc_transport_chttp2_alpn
   headers:
   - src/core/ext/transport/chttp2/alpn/alpn.h
@@ -771,6 +792,7 @@ filegroups:
   filegroups:
   - grpc_base
   - grpc_transport_chttp2
+  - grpc_http_filters
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
@@ -1001,6 +1023,8 @@ libs:
   - grpc_secure
   - census
   - grpc_max_age_filter
+  - grpc_message_size_filter
+  - grpc_deadline_filter
   generate_plugin_registry: true
   secure: true
   vs_packages:
@@ -1098,6 +1122,8 @@ libs:
   - grpc_lb_policy_round_robin
   - census
   - grpc_max_age_filter
+  - grpc_message_size_filter
+  - grpc_deadline_filter
   generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
@@ -1794,6 +1820,16 @@ targets:
   - uv
   platforms:
   - linux
+- name: fake_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/resolvers/fake_resolver_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -2515,6 +2551,16 @@ targets:
   language: c
   src:
   - test/core/compression/message_compress_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: minimal_stack_is_minimal_test
+  build: test
+  language: c
+  src:
+  - test/core/channel/minimal_stack_is_minimal_test.c
   deps:
   - grpc_test_util
   - grpc

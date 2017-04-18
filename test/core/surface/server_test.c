@@ -70,7 +70,7 @@ void test_register_method_fail(void) {
 }
 
 void test_request_call_on_no_server_cq(void) {
-  grpc_completion_queue *cc = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cc = grpc_completion_queue_create_for_next(NULL);
   grpc_server *server = grpc_server_create(NULL, NULL);
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
              grpc_server_request_call(server, NULL, NULL, NULL, cc, cc, NULL));
@@ -91,7 +91,7 @@ void test_bind_server_twice(void) {
   char *addr;
   grpc_server *server1 = grpc_server_create(&args, NULL);
   grpc_server *server2 = grpc_server_create(&args, NULL);
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   int port = grpc_pick_unused_port_or_die();
   gpr_asprintf(&addr, "[::]:%d", port);
   grpc_server_register_completion_queue(server1, cq, NULL);
@@ -128,7 +128,7 @@ void test_bind_server_to_addr(const char *host, bool secure) {
   } else {
     GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
   }
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   grpc_server_register_completion_queue(server, cq, NULL);
   grpc_server_start(server);
   grpc_server_shutdown_and_notify(server, cq, NULL);

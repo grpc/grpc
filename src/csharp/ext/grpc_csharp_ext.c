@@ -354,8 +354,13 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_shutdown(void) { grpc_shutdown(); }
 /* Completion queue */
 
 GPR_EXPORT grpc_completion_queue *GPR_CALLTYPE
-grpcsharp_completion_queue_create(void) {
-  return grpc_completion_queue_create(NULL);
+grpcsharp_completion_queue_create_async(void) {
+  return grpc_completion_queue_create_for_next(NULL);
+}
+
+GPR_EXPORT grpc_completion_queue *GPR_CALLTYPE
+grpcsharp_completion_queue_create_sync(void) {
+  return grpc_completion_queue_create_for_pluck(NULL);
 }
 
 GPR_EXPORT void GPR_CALLTYPE

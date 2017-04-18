@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
     calls[k].details = grpc_empty_slice();
   }
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
 
   struct grpc_memory_counters client_channel_start =
       grpc_memory_counters_snapshot();

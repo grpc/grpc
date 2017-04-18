@@ -175,6 +175,12 @@ typedef struct {
 /** Grace period after the chennel reaches its max age. Int valued,
    milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
+/** Enable/disable support for per-message compression. Defaults to 1, unless
+    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
+#define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"
+/** Enable/disable support for deadline checking. Defaults to 1, unless
+    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
+#define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
 /** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
@@ -199,6 +205,8 @@ typedef struct {
 /** Minimum time (in milliseconds) between successive ping frames being sent */
 #define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
   "grpc.http2.min_time_between_pings_ms"
+/* Channel arg to override the http2 :scheme header */
+#define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can we send before needing to send a data frame or header
     frame?
     (0 indicates that an infinite number of pings can be sent without sending
@@ -240,6 +248,8 @@ typedef struct {
 /** Secondary user agent: goes at the end of the user-agent metadata
     sent on each request. A string. */
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
+/** The minimum time between subsequent connection attempts, in ms */
+#define GRPC_ARG_MIN_RECONNECT_BACKOFF_MS "grpc.min_reconnect_backoff_ms"
 /** The maximum time between subsequent connection attempts, in ms */
 #define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
 /** The time between the first and second connection attempts, in ms */
@@ -393,8 +403,11 @@ typedef enum grpc_completion_type {
 typedef struct grpc_event {
   /** The type of the completion. */
   grpc_completion_type type;
-  /** non-zero if the operation was successful, 0 upon failure.
-      Only GRPC_OP_COMPLETE can succeed or fail. */
+  /** If the grpc_completion_type is GRPC_OP_COMPLETE, this field indicates
+      whether the operation was successful or not; 0 in case of failure and
+      non-zero in case of success.
+      If grpc_completion_type is GRPC_QUEUE_SHUTDOWN or GRPC_QUEUE_TIMEOUT, this
+      field is guaranteed to be 0 */
   int success;
   /** The tag passed to grpc_call_start_batch etc to start this operation.
       Only GRPC_OP_COMPLETE has a tag. */

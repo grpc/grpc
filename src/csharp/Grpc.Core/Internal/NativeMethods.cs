@@ -115,7 +115,8 @@ namespace Grpc.Core.Internal
 
         public readonly Delegates.grpcsharp_sizeof_grpc_event_delegate grpcsharp_sizeof_grpc_event;
 
-        public readonly Delegates.grpcsharp_completion_queue_create_delegate grpcsharp_completion_queue_create;
+        public readonly Delegates.grpcsharp_completion_queue_create_async_delegate grpcsharp_completion_queue_create_async;
+        public readonly Delegates.grpcsharp_completion_queue_create_sync_delegate grpcsharp_completion_queue_create_sync;
         public readonly Delegates.grpcsharp_completion_queue_shutdown_delegate grpcsharp_completion_queue_shutdown;
         public readonly Delegates.grpcsharp_completion_queue_next_delegate grpcsharp_completion_queue_next;
         public readonly Delegates.grpcsharp_completion_queue_pluck_delegate grpcsharp_completion_queue_pluck;
@@ -229,7 +230,8 @@ namespace Grpc.Core.Internal
 
             this.grpcsharp_sizeof_grpc_event = GetMethodDelegate<Delegates.grpcsharp_sizeof_grpc_event_delegate>(library);
 
-            this.grpcsharp_completion_queue_create = GetMethodDelegate<Delegates.grpcsharp_completion_queue_create_delegate>(library);
+            this.grpcsharp_completion_queue_create_async = GetMethodDelegate<Delegates.grpcsharp_completion_queue_create_async_delegate>(library);
+            this.grpcsharp_completion_queue_create_sync = GetMethodDelegate<Delegates.grpcsharp_completion_queue_create_sync_delegate>(library);
             this.grpcsharp_completion_queue_shutdown = GetMethodDelegate<Delegates.grpcsharp_completion_queue_shutdown_delegate>(library);
             this.grpcsharp_completion_queue_next = GetMethodDelegate<Delegates.grpcsharp_completion_queue_next_delegate>(library);
             this.grpcsharp_completion_queue_pluck = GetMethodDelegate<Delegates.grpcsharp_completion_queue_pluck_delegate>(library);
@@ -383,7 +385,8 @@ namespace Grpc.Core.Internal
 
             public delegate int grpcsharp_sizeof_grpc_event_delegate();
 
-            public delegate CompletionQueueSafeHandle grpcsharp_completion_queue_create_delegate();
+            public delegate CompletionQueueSafeHandle grpcsharp_completion_queue_create_async_delegate();
+            public delegate CompletionQueueSafeHandle grpcsharp_completion_queue_create_sync_delegate();
             public delegate void grpcsharp_completion_queue_shutdown_delegate(CompletionQueueSafeHandle cq);
             public delegate CompletionQueueEvent grpcsharp_completion_queue_next_delegate(CompletionQueueSafeHandle cq);
             public delegate CompletionQueueEvent grpcsharp_completion_queue_pluck_delegate(CompletionQueueSafeHandle cq, IntPtr tag);
