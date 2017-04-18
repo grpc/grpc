@@ -190,8 +190,6 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
-
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 

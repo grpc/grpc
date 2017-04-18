@@ -239,6 +239,13 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
 static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
+  if (GRPC_ERROR_NONE !=
+      grpc_byte_stream_pull(exec_ctx,
+                            calld->send_op->payload->send_message.send_message,
+                            &calld->incoming_slice)) {
+    /* Should never reach here */
+    abort();
+  }
   grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
   if (calld->send_length == calld->slices.length) {
     finish_send_message(exec_ctx, elem);
@@ -251,8 +258,11 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   while (grpc_byte_stream_next(
-      exec_ctx, calld->send_op->payload->send_message.send_message,
-      &calld->incoming_slice, ~(size_t)0, &calld->got_slice)) {
+      exec_ctx, calld->send_op->payload->send_message.send_message, ~(size_t)0,
+      &calld->got_slice)) {
+    grpc_byte_stream_pull(exec_ctx,
+                          calld->send_op->payload->send_message.send_message,
+                          &calld->incoming_slice);
     grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
     if (calld->send_length == calld->slices.length) {
       finish_send_message(exec_ctx, elem);

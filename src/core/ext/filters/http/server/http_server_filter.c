@@ -240,9 +240,9 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
       const int k_url_safe = 1;
       grpc_slice_buffer_add(
           &calld->read_slice_buffer,
-          grpc_base64_decode(exec_ctx,
-                             (const char *)GRPC_SLICE_START_PTR(query_slice),
-                             k_url_safe));
+          grpc_base64_decode_with_len(
+              exec_ctx, (const char *)GRPC_SLICE_START_PTR(query_slice),
+              GRPC_SLICE_LENGTH(query_slice), k_url_safe));
       grpc_slice_buffer_stream_init(&calld->read_stream,
                                     &calld->read_slice_buffer, 0);
       calld->seen_path_with_query = true;

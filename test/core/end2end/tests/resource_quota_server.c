@@ -205,7 +205,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
-    op->flags = 0;
+    op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_SEND_MESSAGE;
