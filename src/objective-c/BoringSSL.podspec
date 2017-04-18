@@ -149,6 +149,11 @@ Pod::Spec.new do |s|
       #include "ssl.h"
       #include "crypto.h"
       #include "aes.h"
+      /* The following macros are defined by base.h. The latter is the first file included by the    
+         other headers. */    
+      #if defined(OPENSSL_ARM) || defined(OPENSSL_AARCH64)    
+      #  include "arm_arch.h"   
+      #endif
       #include "asn1.h"
       #include "asn1_mac.h"
       #include "asn1t.h"
