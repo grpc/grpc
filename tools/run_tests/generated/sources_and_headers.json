@@ -3031,7 +3031,6 @@
     ], 
     "headers": [
       "src/proto/grpc/testing/compiler_test.grpc.pb.h", 
-      "src/proto/grpc/testing/compiler_test_mock.grpc.pb.h", 
       "src/proto/grpc/testing/compiler_test.pb.h"
     ], 
     "is_filegroup": false, 
@@ -3396,13 +3395,13 @@
       "grpc_test_util"
     ], 
     "headers": [
-	    "include/grpc++/test/mock_stream.h", 
-	    "src/proto/grpc/testing/echo_mock.grpc.pb.h" 
+      "include/grpc++/test/mock_stream.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "mock_test", 
     "src": [
+      "include/grpc++/test/mock_stream.h", 
       "test/cpp/end2end/mock_test.cc"
     ], 
     "third_party": false, 
@@ -5930,7 +5929,6 @@
       "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h", 
       "src/proto/grpc/testing/duplicate/echo_duplicate.pb.h", 
       "src/proto/grpc/testing/echo.grpc.pb.h", 
-      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
       "src/proto/grpc/testing/echo.pb.h", 
       "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
       "src/proto/grpc/testing/echo_messages.pb.h", 

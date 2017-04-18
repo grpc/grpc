@@ -234,8 +234,6 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\echo.grpc.pb.h">
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_mock.grpc.pb.h">
-    </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.pb.cc">
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.pb.h">

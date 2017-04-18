@@ -168,8 +168,6 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\compiler_test.grpc.pb.h">
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\compiler_test_mock.grpc.pb.h">
-    </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\codegen\golden_file_test.cc">
     </ClCompile>
   </ItemGroup>
