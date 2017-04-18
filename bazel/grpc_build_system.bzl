@@ -33,7 +33,9 @@
 # use to generate other platform's build system files.
 #
 
-def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [], external_deps = [], deps = [], standalone = False, language = "C++"):
+def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
+                    external_deps = [], deps = [], standalone = False,
+                    language = "C++", testonly = False, visibility = None):
   copts = []
   if language.upper() == "C":
     copts = ["-std=c99"]
@@ -43,6 +45,8 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [], external_deps 
     hdrs = hdrs + public_hdrs,
     deps = deps + ["//external:" + dep for dep in external_deps],
     copts = copts,
+    visibility = visibility,
+    testonly = testonly,
     linkopts = ["-pthread"],
     includes = [
         "include"
@@ -69,7 +73,7 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = None,
     use_external = use_external,
   )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++"):
   native.cc_test(
     name = name,
     srcs = srcs,
@@ -79,12 +83,17 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     linkopts = ["-pthread"],
   )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = []):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False):
+  copts = []
+  if language.upper() == "C":
+    copts = ["-std=c99"]
   native.cc_binary(
     name = name,
     srcs = srcs,
     args = args,
     data = data,
+    testonly = testonly,
     deps = deps + ["//external:" + dep for dep in external_deps],
+    copts = copts,
     linkopts = ["-pthread"],
   )

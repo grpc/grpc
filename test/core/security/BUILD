@@ -27,6 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
@@ -34,7 +36,7 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_fuzzer(
     name = "ssl_server_fuzzer",
     srcs = ["ssl_server_fuzzer.c"],
-    copts = ["-std=c99"],
+    language = "C",
     corpus = "corpus",
     deps = [
         "//:gpr",
@@ -44,18 +46,18 @@ grpc_fuzzer(
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "oauth2_utils",
     srcs = ["oauth2_utils.c"],
     hdrs = ["oauth2_utils.h"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = ["//:grpc"],
 )
 
-cc_test(
+grpc_cc_test(
     name = "auth_context_test",
     srcs = ["auth_context_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -64,10 +66,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -76,10 +78,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "secure_endpoint_test",
     srcs = ["secure_endpoint_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -89,10 +91,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "security_connector_test",
     srcs = ["security_connector_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -101,20 +103,20 @@ cc_test(
     ],
 )
 
-cc_binary(
+grpc_cc_binary(
     name = "create_jwt",
     srcs = ["create_jwt.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
     ],
 )
 
-cc_binary(
+grpc_cc_binary(
     name = "fetch_oauth2",
     srcs = ["fetch_oauth2.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         ":oauth2_utils",
         "//:gpr",
@@ -122,10 +124,10 @@ cc_binary(
     ],
 )
 
-cc_binary(
+grpc_cc_binary(
     name = "verify_jwt",
     srcs = ["verify_jwt.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",

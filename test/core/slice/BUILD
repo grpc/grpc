@@ -27,6 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
@@ -34,7 +36,7 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_fuzzer(
     name = "percent_decode_fuzzer",
     srcs = ["percent_decode_fuzzer.c"],
-    copts = ["-std=c99"],
+    language = "C",
     corpus = "response_corpus",
     deps = [
         "//:gpr",
@@ -43,10 +45,10 @@ grpc_fuzzer(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "percent_encoding_test",
     srcs = ["percent_encoding_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -55,10 +57,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_string_helpers_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -67,10 +69,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "b64_test",
     srcs = ["b64_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",

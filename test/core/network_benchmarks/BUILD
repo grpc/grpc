@@ -27,12 +27,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
-cc_binary(
+grpc_cc_binary(
     name = "low_level_ping_pong",
     srcs = ["low_level_ping_pong.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
