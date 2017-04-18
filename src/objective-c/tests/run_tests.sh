@@ -59,6 +59,9 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme AllTests \
     -destination name="iPhone 6" \
+    HOST_PORT_LOCALSSL=localhost:5051 \
+    HOST_PORT_LOCAL=localhost:5050 \
+    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test | xcpretty
 
 echo "TIME:  $(date)"
@@ -84,4 +87,5 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme InteropTestsRemoteWithCronet \
     -destination name="iPhone 6" \
+    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test | xcpretty
