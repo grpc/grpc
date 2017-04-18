@@ -138,7 +138,7 @@ typedef enum {
 const char *grpc_error_string(grpc_error *error);
 
 /// Create an error - but use GRPC_ERROR_CREATE instead
-grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
+grpc_error *grpc_error_create(const char *file, int line, grpc_slice desc,
                               grpc_error **referencing, size_t num_referencing);
 /// Create an error (this is the preferred way of generating an error that is
 ///   not due to a system call - for system calls, use GRPC_OS_ERROR or
@@ -148,21 +148,21 @@ grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
 /// err = grpc_error_create(x, y, z, r, nr) is equivalent to:
 ///   err = grpc_error_create(x, y, z, NULL, 0);
 ///   for (i=0; i<nr; i++) err = grpc_error_add_child(err, r[i]);
-#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc)                     \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
-                    grpc_slice_from_static_string(desc), NULL, 0)
-#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc)                     \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__, \
-                    grpc_slice_from_copied_string(desc), NULL, 0)
+#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc)                           \
+  grpc_error_create(__FILE__, __LINE__, grpc_slice_from_static_string(desc), \
+                    NULL, 0)
+#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc)                           \
+  grpc_error_create(__FILE__, __LINE__, grpc_slice_from_copied_string(desc), \
+                    NULL, 0)
 
 // Create an error that references some other errors. This function adds a
 // reference to each error in errs - it does not consume an existing reference
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count) \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__,      \
-                    grpc_slice_from_static_string(desc), errs, count)
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count) \
-  grpc_error_create(grpc_slice_from_static_string(__FILE__), __LINE__,      \
-                    grpc_slice_from_copied_string(desc), errs, count)
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count)  \
+  grpc_error_create(__FILE__, __LINE__, grpc_slice_from_static_string(desc), \
+                    errs, count)
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count)  \
+  grpc_error_create(__FILE__, __LINE__, grpc_slice_from_copied_string(desc), \
+                    errs, count)
 
 //#define GRPC_ERROR_REFCOUNT_DEBUG
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
