@@ -156,12 +156,16 @@ void ThreadManager::MainWorkLoop() {
         if (!shutdown_ && num_pollers_ < min_pollers_) {
           num_pollers_++;
           num_threads_++;
+          // Drop lock before spawning thread to avoid contention
           lock.unlock();
           new WorkerThread(this);
         } else {
+          // Drop lock for consistency with above branch
           lock.unlock();
         }
+        // Lock is always released at this point - do the application work
         DoWork(tag, ok);
+        // Take the lock again to check post conditions
         lock.lock();
         // If we're shutdown, we should finish at this point.
         // If not, there's a chance that we'll exceed the max poller count: that
