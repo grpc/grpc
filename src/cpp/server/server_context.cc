@@ -230,17 +230,9 @@ const struct census_context* ServerContext::census_context() const {
 void ServerContext::SetLoadReportingCosts(
     const std::vector<grpc::string>& cost_data) {
   if (call_ == nullptr) return;
-  grpc_load_reporting_cost_context* cost_ctx =
-      static_cast<grpc_load_reporting_cost_context*>(
-          gpr_malloc(sizeof(*cost_ctx)));
-  cost_ctx->values_count = cost_data.size();
-  cost_ctx->values = static_cast<grpc_slice*>(
-      gpr_malloc(sizeof(*cost_ctx->values) * cost_ctx->values_count));
-  for (size_t i = 0; i < cost_ctx->values_count; ++i) {
-    cost_ctx->values[i] =
-        grpc_slice_from_copied_buffer(cost_data[i].data(), cost_data[i].size());
+  for (const auto& cost_datum : cost_data) {
+    AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);
   }
-  grpc_call_set_load_reporting_cost_context(call_, cost_ctx);
 }
 
 }  // namespace grpc
