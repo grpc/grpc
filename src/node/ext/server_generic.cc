@@ -48,7 +48,7 @@ Server::Server(grpc_server *server) : wrapped_server(server) {
       GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_NON_LISTENING};
   shutdown_queue = grpc_completion_queue_create(
       grpc_completion_queue_factory_lookup(&attrs), &attrs, NULL);
-  grpc_server_completion_queue(server, shutdown_queue, NULL);
+  grpc_server_register_completion_queue(server, shutdown_queue, NULL);
 }
 
 Server::~Server() {
