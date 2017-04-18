@@ -5930,6 +5930,7 @@
       "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h", 
       "src/proto/grpc/testing/duplicate/echo_duplicate.pb.h", 
       "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
       "src/proto/grpc/testing/echo.pb.h", 
       "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
       "src/proto/grpc/testing/echo_messages.pb.h", 
