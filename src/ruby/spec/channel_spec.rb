@@ -153,35 +153,6 @@ describe GRPC::Core::Channel do
     end
   end
 
-  describe '#connectivity_state' do
-    it 'returns an enum' do
-      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
-      valid_states = [
-        GRPC::Core::ConnectivityStates::IDLE,
-        GRPC::Core::ConnectivityStates::CONNECTING,
-        GRPC::Core::ConnectivityStates::READY,
-        GRPC::Core::ConnectivityStates::TRANSIENT_FAILURE,
-        GRPC::Core::ConnectivityStates::FATAL_FAILURE
-      ]
-
-      expect(valid_states).to include(ch.connectivity_state)
-    end
-
-    it 'returns an enum when trying to connect' do
-      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
-      ch.connectivity_state(true)
-      valid_states = [
-        GRPC::Core::ConnectivityStates::IDLE,
-        GRPC::Core::ConnectivityStates::CONNECTING,
-        GRPC::Core::ConnectivityStates::READY,
-        GRPC::Core::ConnectivityStates::TRANSIENT_FAILURE,
-        GRPC::Core::ConnectivityStates::FATAL_FAILURE
-      ]
-
-      expect(valid_states).to include(ch.connectivity_state)
-    end
-  end
-
   describe '::SSL_TARGET' do
     it 'is a symbol' do
       expect(GRPC::Core::Channel::SSL_TARGET).to be_a(Symbol)
