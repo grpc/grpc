@@ -573,34 +573,51 @@ static void perform_request(client_fixture *cf) {
 static void setup_client(const server_fixture *lb_server,
                          const server_fixture *backends, client_fixture *cf) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  char *lb_uri;
-  // The grpclb LB policy will be automatically selected by virtue of
-  // the fact that the returned addresses are balancer addresses.
-  gpr_asprintf(&lb_uri, "test:///%s?lb_enabled=1&balancer_names=%s",
-               lb_server->servers_hostport, lb_server->balancer_name);
-
-  grpc_arg expected_target_arg;
-  expected_target_arg.type = GRPC_ARG_STRING;
-  expected_target_arg.key =
-      const_cast<char *>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
 
   char *expected_target_names = NULL;
   const char *backends_name = lb_server->servers_hostport;
   gpr_asprintf(&expected_target_names, "%s;%s", backends_name, BALANCERS_NAME);
 
-  expected_target_arg.value.string = const_cast<char *>(expected_target_names);
+  grpc_fake_resolver_response_generator *response_generator =
+      grpc_fake_resolver_response_generator_create();
+
+  grpc_lb_addresses *addresses = grpc_lb_addresses_create(1, NULL);
+  char *lb_uri_str;
+  gpr_asprintf(&lb_uri_str, "ipv4:%s", lb_server->servers_hostport);
+  grpc_uri *lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
+  GPR_ASSERT(lb_uri != NULL);
+  grpc_lb_addresses_set_address_from_uri(addresses, 0, lb_uri, true,
+                                         lb_server->balancer_name, NULL);
+  grpc_uri_destroy(lb_uri);
+  gpr_free(lb_uri_str);
+
+  gpr_asprintf(&cf->server_uri, "test:///%s", lb_server->servers_hostport);
+  const grpc_arg fake_addresses =
+      grpc_lb_addresses_create_channel_arg(addresses);
+  grpc_channel_args *fake_result =
+      grpc_channel_args_copy_and_add(NULL, &fake_addresses, 1);
+  grpc_lb_addresses_destroy(&exec_ctx, addresses);
+
+  const grpc_arg new_args[] = {
+      grpc_fake_transport_expected_targets_arg(expected_target_names),
+      grpc_fake_resolver_response_generator_arg(response_generator)};
+
   grpc_channel_args *args =
-      grpc_channel_args_copy_and_add(NULL, &expected_target_arg, 1);
+      grpc_channel_args_copy_and_add(NULL, new_args, GPR_ARRAY_SIZE(new_args));
   gpr_free(expected_target_names);
 
   cf->cq = grpc_completion_queue_create_for_next(NULL);
-  cf->server_uri = lb_uri;
   grpc_channel_credentials *fake_creds =
       grpc_fake_transport_security_credentials_create();
   cf->client =
       grpc_secure_channel_create(fake_creds, cf->server_uri, args, NULL);
+  grpc_fake_resolver_response_generator_set_response(
+      &exec_ctx, response_generator, fake_result);
+  grpc_channel_args_destroy(&exec_ctx, fake_result);
   grpc_channel_credentials_unref(&exec_ctx, fake_creds);
   grpc_channel_args_destroy(&exec_ctx, args);
+  grpc_fake_resolver_response_generator_unref(response_generator);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void teardown_client(client_fixture *cf) {
@@ -787,8 +804,8 @@ TEST(GrpclbTest, InvalidAddressInServerlist) {}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_test_init(argc, argv);
   grpc_fake_resolver_init();
+  grpc_test_init(argc, argv);
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

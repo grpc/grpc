@@ -247,12 +247,6 @@ GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call *call,
     functionality. Instead, use grpc_auth_context. */
 GRPCAPI char *grpc_call_get_peer(grpc_call *call);
 
-struct grpc_load_reporting_cost_context;
-
-/* Associate costs contained in \a cost_context to \a call. */
-GRPCAPI void grpc_call_set_load_reporting_cost_context(
-    grpc_call *call, struct grpc_load_reporting_cost_context *context);
-
 struct census_context;
 
 /** Set census context for a call; Must be called before first call to

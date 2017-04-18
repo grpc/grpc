@@ -932,6 +932,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         }
         uint32_t propagation_mask = read_uint32(&inp);
         grpc_slice method = read_string_like_slice(&inp);
+        if (GRPC_SLICE_LENGTH(method) == 0) {
+          ok = false;
+        }
         grpc_slice host = read_string_like_slice(&inp);
         gpr_timespec deadline =
             gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),

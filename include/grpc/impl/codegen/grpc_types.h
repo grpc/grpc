@@ -248,6 +248,8 @@ typedef struct {
 /** Secondary user agent: goes at the end of the user-agent metadata
     sent on each request. A string. */
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
+/** The minimum time between subsequent connection attempts, in ms */
+#define GRPC_ARG_MIN_RECONNECT_BACKOFF_MS "grpc.min_reconnect_backoff_ms"
 /** The maximum time between subsequent connection attempts, in ms */
 #define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
 /** The time between the first and second connection attempts, in ms */

@@ -1187,6 +1187,7 @@ static void finish_batch_step(grpc_exec_ctx *exec_ctx, batch_control *bctl) {
 
 static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
                                       batch_control *bctl) {
+  grpc_error *error;
   grpc_call *call = bctl->call;
   for (;;) {
     size_t remaining = call->receiving_stream->length -
@@ -1198,11 +1199,22 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
       finish_batch_step(exec_ctx, bctl);
       return;
     }
-    if (grpc_byte_stream_next(exec_ctx, call->receiving_stream,
-                              &call->receiving_slice, remaining,
+    if (grpc_byte_stream_next(exec_ctx, call->receiving_stream, remaining,
                               &call->receiving_slice_ready)) {
-      grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                            call->receiving_slice);
+      error = grpc_byte_stream_pull(exec_ctx, call->receiving_stream,
+                                    &call->receiving_slice);
+      if (error == GRPC_ERROR_NONE) {
+        grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
+                              call->receiving_slice);
+      } else {
+        grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
+        call->receiving_stream = NULL;
+        grpc_byte_buffer_destroy(*call->receiving_buffer);
+        *call->receiving_buffer = NULL;
+        call->receiving_message = 0;
+        finish_batch_step(exec_ctx, bctl);
+        return;
+      }
     } else {
       return;
     }
@@ -1213,12 +1225,24 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                                   grpc_error *error) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
+  grpc_byte_stream *bs = call->receiving_stream;
+  bool release_error = false;
 
   if (error == GRPC_ERROR_NONE) {
-    grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                          call->receiving_slice);
-    continue_receiving_slices(exec_ctx, bctl);
-  } else {
+    grpc_slice slice;
+    error = grpc_byte_stream_pull(exec_ctx, bs, &slice);
+    if (error == GRPC_ERROR_NONE) {
+      grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
+                            slice);
+      continue_receiving_slices(exec_ctx, bctl);
+    } else {
+      /* Error returned by grpc_byte_stream_pull needs to be released manually
+       */
+      release_error = true;
+    }
+  }
+
+  if (error != GRPC_ERROR_NONE) {
     if (grpc_trace_operation_failures) {
       GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
     }
@@ -1226,7 +1250,11 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     call->receiving_stream = NULL;
     grpc_byte_buffer_destroy(*call->receiving_buffer);
     *call->receiving_buffer = NULL;
+    call->receiving_message = 0;
     finish_batch_step(exec_ctx, bctl);
+    if (release_error) {
+      GRPC_ERROR_UNREF(error);
+    }
   }
 }
 

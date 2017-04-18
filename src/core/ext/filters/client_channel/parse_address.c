@@ -48,7 +48,12 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+bool grpc_parse_unix(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
+  if (strcmp("unix", uri->scheme) != 0) {
+    gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'", uri->scheme);
+    return false;
+  }
   struct sockaddr_un *un = (struct sockaddr_un *)resolved_addr->addr;
   const size_t maxlen = sizeof(un->sun_path);
   const size_t path_len = strnlen(uri->path, maxlen);
@@ -61,21 +66,29 @@ int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
 
-int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) { abort(); }
+bool grpc_parse_unix(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
+  abort();
+}
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
-int parse_ipv4(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+bool grpc_parse_ipv4(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
+  if (strcmp("ipv4", uri->scheme) != 0) {
+    gpr_log(GPR_ERROR, "Expected 'ipv4' scheme, got '%s'", uri->scheme);
+    return false;
+  }
   const char *host_port = uri->path;
   char *host;
   char *port;
   int port_num;
-  int result = 0;
+  bool result = false;
   struct sockaddr_in *in = (struct sockaddr_in *)resolved_addr->addr;
 
   if (*host_port == '/') ++host_port;
   if (!gpr_split_host_port(host_port, &host, &port)) {
-    return 0;
+    return false;
   }
 
   memset(resolved_addr, 0, sizeof(grpc_resolved_address));
@@ -98,14 +111,19 @@ int parse_ipv4(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
     goto done;
   }
 
-  result = 1;
+  result = true;
 done:
   gpr_free(host);
   gpr_free(port);
   return result;
 }
 
-int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+bool grpc_parse_ipv6(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
+  if (strcmp("ipv6", uri->scheme) != 0) {
+    gpr_log(GPR_ERROR, "Expected 'ipv6' scheme, got '%s'", uri->scheme);
+    return false;
+  }
   const char *host_port = uri->path;
   char *host;
   char *port;
@@ -167,4 +185,16 @@ done:
   gpr_free(host);
   gpr_free(port);
   return result;
+}
+
+bool grpc_parse_uri(const grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+  if (strcmp("unix", uri->scheme) == 0) {
+    return grpc_parse_unix(uri, resolved_addr);
+  } else if (strcmp("ipv4", uri->scheme) == 0) {
+    return grpc_parse_ipv4(uri, resolved_addr);
+  } else if (strcmp("ipv6", uri->scheme) == 0) {
+    return grpc_parse_ipv6(uri, resolved_addr);
+  }
+  gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri->scheme);
+  return false;
 }
