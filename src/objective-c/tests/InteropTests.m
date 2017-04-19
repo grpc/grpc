@@ -459,23 +459,17 @@
 
 - (void)testAlternateDispatchQueue {
   XCTAssertNotNil(self.class.host);
+  NSNumber *kPayloadSize = @256;
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:kPayloadSize
+                                               requestedResponseSize:kPayloadSize];
+
   __weak XCTestExpectation *expectation1 = [self expectationWithDescription:@"AlternateDispatchQueue1"];
 
-  NSArray *requests = @[@27182, @8, @1828, @45904];
-  NSArray *responses = @[@31415, @9, @2653, @58979];
-
   // Set the default dispatch queue
-  NSString *queue1_label = @"test.queue1";
-  NSString *queue2_label = @"test.queue2";
-  dispatch_queue_t queue1 = dispatch_queue_create([queue1_label UTF8String], DISPATCH_QUEUE_SERIAL);
-  dispatch_queue_t queue2 = dispatch_queue_create([queue2_label UTF8String], DISPATCH_QUEUE_SERIAL);
-  [_service setDefaultResponseDispatchQueue:queue1];
+  NSString *queue_label = @"test.queue1";
+  dispatch_queue_t queue = dispatch_queue_create([queue_label UTF8String], DISPATCH_QUEUE_SERIAL);
   GRXBufferedPipe *requestsBuffer1 = [[GRXBufferedPipe alloc] init];
 
-  __block int index = 0;
-
-  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
-                                               requestedResponseSize:responses[index]];
   [requestsBuffer1 writeValue:request];
 
   [_service fullDuplexCallWithRequestsWriter:requestsBuffer1
@@ -485,26 +479,11 @@
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
     XCTAssertTrue(done || response, @"Event handler called without an event.");
     NSString *label = [NSString stringWithUTF8String:dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL)];
-    XCTAssert([label isEqualToString:queue1_label]);
+                                  NSLog(@"main queue label:%@", label);
+    NSString *main_queue_label = [NSString stringWithUTF8String:dispatch_queue_get_label(dispatch_get_main_queue())];
+    XCTAssert([label isEqualToString:main_queue_label]);
 
-    if (response) {
-      XCTAssertLessThan(index, 4, @"More than 4 responses received.");
-      id expected = [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
-      XCTAssertEqualObjects(response, expected);
-      index += 1;
-      if (index < 4) {
-        id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
-                                                     requestedResponseSize:responses[index]];
-        [requestsBuffer1 writeValue:request];
-      } else {
-        [requestsBuffer1 writesFinishedWithError:nil];
-      }
-    }
-
-    if (done) {
-      XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
-      [expectation1 fulfill];
-    }
+    [expectation1 fulfill];
   }];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
@@ -512,8 +491,6 @@
   // Test overriding default queue with another queue
   __weak XCTestExpectation *expectation2 = [self expectationWithDescription:@"AlternateDispatchQueue2"];
   GRXBufferedPipe *requestsBuffer2 = [[GRXBufferedPipe alloc] init];
-
-  index = 0;
 
   [requestsBuffer2 writeValue:request];
 
@@ -524,32 +501,13 @@
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
     XCTAssertTrue(done || response, @"Event handler called without an event.");
     NSString *label = [NSString stringWithUTF8String:dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL)];
-    XCTAssert([label isEqualToString:queue2_label]);
-
-    if (response) {
-      XCTAssertLessThan(index, 4, @"More than 4 responses received.");
-      id expected = [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
-      XCTAssertEqualObjects(response, expected);
-      index += 1;
-      if (index < 4) {
-        id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
-                                                     requestedResponseSize:responses[index]];
-        [requestsBuffer2 writeValue:request];
-      } else {
-        [requestsBuffer2 writesFinishedWithError:nil];
-      }
-    }
-
-    if (done) {
-      XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
-      [expectation2 fulfill];
-    }
+    XCTAssert([label isEqualToString:queue_label]);
+    [expectation2 fulfill];
   }];
-  [rpc setResponseDispatchQueue:queue2];
+  [rpc setResponseDispatchQueue:queue];
   [rpc start];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
-  [_service setDefaultResponseDispatchQueue:dispatch_get_main_queue()];
 }
 
 @end

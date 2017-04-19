@@ -149,20 +149,17 @@ void PrintMethodDeclarations(Printer *printer, const MethodDescriptor *method) {
 void PrintSimpleImplementation(Printer *printer, const MethodDescriptor *method,
                                map< ::grpc::string, ::grpc::string> vars) {
   printer->Print("{\n");
-  printer->Print(vars, "  GRPCProtoCall *rpc = [self RPCTo$method_name$With");
+  printer->Print(vars, "  [[self RPCTo$method_name$With");
   if (method->client_streaming()) {
     printer->Print("RequestsWriter:requestWriter");
   } else {
     printer->Print("Request:request");
   }
   if (method->server_streaming()) {
-    printer->Print(" eventHandler:eventHandler];\n");
+    printer->Print(" eventHandler:eventHandler] start];\n");
   } else {
-    printer->Print(" handler:handler];\n");
+    printer->Print(" handler:handler] start];\n");
   }
-  printer->Print(
-      "  [rpc setResponseDispatchQueue:_defaultResponseDispatchQueue];\n");
-  printer->Print("  [rpc start];\n");
   printer->Print("}\n");
 }
 
@@ -170,29 +167,23 @@ void PrintAdvancedImplementation(Printer *printer,
                                  const MethodDescriptor *method,
                                  map< ::grpc::string, ::grpc::string> vars) {
   printer->Print("{\n");
-  printer->Print(
-      vars, "  GRPCProtoCall *rpc = [self RPCToMethod:@\"$method_name$\"\n");
+  printer->Print(vars, "  return [self RPCToMethod:@\"$method_name$\"\n");
 
-  printer->Print("                          requestsWriter:");
+  printer->Print("            requestsWriter:");
   if (method->client_streaming()) {
     printer->Print("requestWriter\n");
   } else {
     printer->Print("[GRXWriter writerWithValue:request]\n");
   }
 
-  printer->Print(
-      vars,
-      "                           responseClass:[$response_class$ class]\n");
+  printer->Print(vars, "             responseClass:[$response_class$ class]\n");
 
-  printer->Print("                      responsesWriteable:[GRXWriteable ");
+  printer->Print("        responsesWriteable:[GRXWriteable ");
   if (method->server_streaming()) {
     printer->Print("writeableWithEventHandler:eventHandler]];\n");
   } else {
     printer->Print("writeableWithSingleHandler:handler]];\n");
   }
-  printer->Print(
-      "  [rpc setResponseDispatchQueue:_defaultResponseDispatchQueue];\n");
-  printer->Print("  return rpc;\n");
 
   printer->Print("}\n");
 }
@@ -243,8 +234,6 @@ void PrintMethodImplementations(Printer *printer,
         "- (instancetype)initWithHost:(NSString *)host"
         " NS_DESIGNATED_INITIALIZER;\n");
     printer.Print("+ (instancetype)serviceWithHost:(NSString *)host;\n");
-    printer.Print(
-        "- (void)setDefaultResponseDispatchQueue:(dispatch_queue_t)queue;\n");
     printer.Print("@end\n");
   }
   return output;
@@ -262,15 +251,12 @@ void PrintMethodImplementations(Printer *printer,
         {"service_class", ServiceClassName(service)},
         {"package", service->file()->package()}};
 
-    printer.Print(vars, "@implementation $service_class$ {\n");
-    printer.Print(vars, "  dispatch_queue_t _defaultResponseDispatchQueue;\n");
-    printer.Print(vars, "}\n\n");
+    printer.Print(vars, "@implementation $service_class$\n\n");
 
     printer.Print("// Designated initializer\n");
     printer.Print("- (instancetype)initWithHost:(NSString *)host {\n");
     printer.Print(
         vars,
-        "  _defaultResponseDispatchQueue = dispatch_get_main_queue();\n"
         "  return (self = [super initWithHost:host"
         " packageName:@\"$package$\" serviceName:@\"$service_name$\"]);\n");
     printer.Print("}\n\n");
@@ -284,10 +270,6 @@ void PrintMethodImplementations(Printer *printer,
     printer.Print("}\n\n");
     printer.Print("+ (instancetype)serviceWithHost:(NSString *)host {\n");
     printer.Print("  return [[self alloc] initWithHost:host];\n");
-    printer.Print("}\n\n");
-    printer.Print(
-        "- (void)setDefaultResponseDispatchQueue:(dispatch_queue_t)queue {\n");
-    printer.Print("  _defaultResponseDispatchQueue = queue;\n");
     printer.Print("}\n\n\n");
 
     for (int i = 0; i < service->method_count(); i++) {
