@@ -264,13 +264,6 @@
       }]
     ],
     'targets': [
-  <%
-      for lib in libs:
-        if 'grpc' in lib.transitive_deps or lib.name == 'grpc':
-          lib.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
-      for module in node_modules:
-        module.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
-  %>
       % for module in node_modules:
       % for lib in libs:
       % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):
