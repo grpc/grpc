@@ -31,8 +31,8 @@
  *
  */
 
-#include <v8.h>
 #include <grpc/grpc.h>
+#include <v8.h>
 
 namespace grpc {
 namespace node {
