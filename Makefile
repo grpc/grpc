@@ -902,8 +902,8 @@ openssl_dep_message:
 	@echo
 	@echo "The target you are trying to run requires an OpenSSL implementation."
 	@echo "Your system doesn't have one, and either the third_party directory"
-      @echo "doesn't have it, or your compiler can't build BoringSSL."
-      @echo
+	@echo "doesn't have it, or your compiler can't build BoringSSL."
+	@echo
 	@echo "Please consult INSTALL to get more information."
 	@echo
 	@echo "If you need information about why these tests failed, run:"
