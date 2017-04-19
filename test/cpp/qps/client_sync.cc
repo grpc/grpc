@@ -153,16 +153,22 @@ class SynchronousStreamingClient final : public SynchronousClient {
     StartThreads(num_threads_);
   }
   ~SynchronousStreamingClient() {
+    std::vector<std::thread> cleanup_threads;
     for (size_t i = 0; i < num_threads_; i++) {
-      auto stream = &stream_[i];
-      if (*stream) {
-        (*stream)->WritesDone();
-        Status s = (*stream)->Finish();
-        if (!s.ok()) {
-          gpr_log(GPR_ERROR, "Stream %" PRIuPTR " received an error %s", i,
-                  s.error_message().c_str());
+      cleanup_threads.emplace_back([this, i]() {
+        auto stream = &stream_[i];
+        if (*stream) {
+          (*stream)->WritesDone();
+          Status s = (*stream)->Finish();
+          if (!s.ok()) {
+            gpr_log(GPR_ERROR, "Stream %" PRIuPTR " received an error %s", i,
+                    s.error_message().c_str());
+          }
         }
-      }
+      });
+    }
+    for (size_t i = 0; i < num_threads_; i++) {
+      cleanup_threads[i].join();
     }
   }
 
@@ -178,6 +184,8 @@ class SynchronousStreamingClient final : public SynchronousClient {
       // don't set the status since there isn't one yet
       if ((messages_per_stream_ != 0) &&
           (++messages_issued_[thread_idx] < messages_per_stream_)) {
+        return true;
+      } else if (messages_per_stream_ == 0) {
         return true;
       } else {
         // Fall through to the below resetting code after finish

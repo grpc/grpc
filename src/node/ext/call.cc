@@ -332,7 +332,6 @@ class SendServerStatusOp : public Op {
     out->data.send_status_from_server.status_details = &this->details;
     return true;
   }
-
   bool IsFinalOp() { return true; }
   void OnComplete(bool success) {}
 
@@ -359,7 +358,6 @@ class GetMetadataOp : public Op {
     out->data.recv_initial_metadata.recv_initial_metadata = &recv_metadata;
     return true;
   }
-
   bool IsFinalOp() { return false; }
   void OnComplete(bool success) {}
 
@@ -387,7 +385,6 @@ class ReadMessageOp : public Op {
     out->data.recv_message.recv_message = &recv_message;
     return true;
   }
-
   bool IsFinalOp() { return false; }
   void OnComplete(bool success) {}
 
@@ -422,7 +419,6 @@ class ClientStatusOp : public Op {
              ParseMetadata(&metadata_array));
     return scope.Escape(status_obj);
   }
-
   bool IsFinalOp() { return true; }
   void OnComplete(bool success) {}
 
@@ -446,7 +442,6 @@ class ServerCloseResponseOp : public Op {
     out->data.recv_close_on_server.cancelled = &cancelled;
     return true;
   }
-
   bool IsFinalOp() { return false; }
   void OnComplete(bool success) {}
 

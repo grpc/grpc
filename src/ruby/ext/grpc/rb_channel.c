@@ -34,9 +34,9 @@
 #include <ruby/ruby.h>
 #include <ruby/thread.h>
 
-#include "rb_grpc_imports.generated.h"
 #include "rb_byte_buffer.h"
 #include "rb_channel.h"
+#include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -196,13 +196,13 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
 
   gpr_mu_lock(&wrapper->channel_mu);
   wrapper->abort_watch_connectivity_state = 0;
-  wrapper->current_connectivity_state = grpc_channel_check_connectivity_state(wrapper->wrapped, 0);
+  wrapper->current_connectivity_state =
+      grpc_channel_check_connectivity_state(wrapper->wrapped, 0);
   wrapper->safe_to_destroy = 0;
   wrapper->request_safe_destroy = 0;
 
   gpr_cv_broadcast(&wrapper->channel_cv);
   gpr_mu_unlock(&wrapper->channel_mu);
-
 
   grpc_rb_channel_try_register_connection_polling(wrapper);
 
@@ -245,7 +245,8 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE *argv,
     rb_raise(rb_eRuntimeError, "closed!");
     return Qnil;
   }
-  return LONG2NUM(grpc_channel_check_connectivity_state(wrapper->wrapped, grpc_try_to_connect));
+  return LONG2NUM(grpc_channel_check_connectivity_state(wrapper->wrapped,
+                                                        grpc_try_to_connect));
 }
 
 typedef struct watch_state_stack {
@@ -255,22 +256,21 @@ typedef struct watch_state_stack {
 } watch_state_stack;
 
 static void *watch_channel_state_without_gvl(void *arg) {
-  watch_state_stack *stack = (watch_state_stack*)arg;
+  watch_state_stack *stack = (watch_state_stack *)arg;
   gpr_timespec deadline = stack->deadline;
   grpc_rb_channel *wrapper = stack->wrapper;
   int last_state = stack->last_state;
-  void *return_value = (void*)0;
+  void *return_value = (void *)0;
 
   gpr_mu_lock(&wrapper->channel_mu);
-  while(wrapper->current_connectivity_state == last_state &&
-        !wrapper->request_safe_destroy &&
-        !wrapper->safe_to_destroy &&
-        !wrapper->abort_watch_connectivity_state &&
-        gpr_time_cmp(deadline, gpr_now(GPR_CLOCK_REALTIME)) > 0) {
+  while (wrapper->current_connectivity_state == last_state &&
+         !wrapper->request_safe_destroy && !wrapper->safe_to_destroy &&
+         !wrapper->abort_watch_connectivity_state &&
+         gpr_time_cmp(deadline, gpr_now(GPR_CLOCK_REALTIME)) > 0) {
     gpr_cv_wait(&wrapper->channel_cv, &wrapper->channel_mu, deadline);
   }
   if (wrapper->current_connectivity_state != last_state) {
-    return_value = (void*)1;
+    return_value = (void *)1;
   }
   gpr_mu_unlock(&wrapper->channel_mu);
 
@@ -278,7 +278,7 @@ static void *watch_channel_state_without_gvl(void *arg) {
 }
 
 static void watch_channel_state_unblocking_func(void *arg) {
-  grpc_rb_channel *wrapper = (grpc_rb_channel*)arg;
+  grpc_rb_channel *wrapper = (grpc_rb_channel *)arg;
   gpr_log(GPR_DEBUG, "GRPC_RUBY: watch channel state unblocking func called");
   gpr_mu_lock(&wrapper->channel_mu);
   wrapper->abort_watch_connectivity_state = 1;
@@ -298,7 +298,7 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
                                                       VALUE deadline) {
   grpc_rb_channel *wrapper = NULL;
   watch_state_stack stack;
-  void* out;
+  void *out;
 
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
 
@@ -308,14 +308,18 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
   }
 
   if (!FIXNUM_P(last_state)) {
-    rb_raise(rb_eTypeError, "bad type for last_state. want a GRPC::Core::ChannelState constant");
+    rb_raise(
+        rb_eTypeError,
+        "bad type for last_state. want a GRPC::Core::ChannelState constant");
     return Qnil;
   }
 
   stack.wrapper = wrapper;
   stack.deadline = grpc_rb_time_timeval(deadline, 0);
   stack.last_state = NUM2LONG(last_state);
-  out = rb_thread_call_without_gvl(watch_channel_state_without_gvl, &stack, watch_channel_state_unblocking_func, wrapper);
+  out =
+      rb_thread_call_without_gvl(watch_channel_state_without_gvl, &stack,
+                                 watch_channel_state_unblocking_func, wrapper);
   if (out) {
     return Qtrue;
   }
@@ -420,7 +424,7 @@ static VALUE grpc_rb_channel_get_target(VALUE self) {
 // destroy.
 // Not safe to call while a channel's connection state is polled.
 static void grpc_rb_channel_try_register_connection_polling(
-  grpc_rb_channel *wrapper) {
+    grpc_rb_channel *wrapper) {
   grpc_connectivity_state conn_state;
   gpr_timespec sleep_time = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(20, GPR_TIMESPAN));
@@ -484,11 +488,14 @@ static void *run_poll_channels_loop_no_gil(void *arg) {
       break;
     }
     if (event.type == GRPC_OP_COMPLETE) {
-      grpc_rb_channel_try_register_connection_polling((grpc_rb_channel *)event.tag);
+      grpc_rb_channel_try_register_connection_polling(
+          (grpc_rb_channel *)event.tag);
     }
   }
   grpc_completion_queue_destroy(channel_polling_cq);
-  gpr_log(GPR_DEBUG, "GRPC_RUBY: run_poll_channels_loop_no_gil - exit connection polling loop");
+  gpr_log(GPR_DEBUG,
+          "GRPC_RUBY: run_poll_channels_loop_no_gil - exit connection polling "
+          "loop");
   return NULL;
 }
 
@@ -496,7 +503,9 @@ static void *run_poll_channels_loop_no_gil(void *arg) {
 static void grpc_rb_event_unblocking_func(void *arg) {
   (void)arg;
   gpr_mu_lock(&global_connection_polling_mu);
-  gpr_log(GPR_DEBUG, "GRPC_RUBY: grpc_rb_event_unblocking_func - begin aborting connection polling");
+  gpr_log(GPR_DEBUG,
+          "GRPC_RUBY: grpc_rb_event_unblocking_func - begin aborting "
+          "connection polling");
   abort_channel_polling = 1;
   grpc_completion_queue_shutdown(channel_polling_cq);
   gpr_mu_unlock(&global_connection_polling_mu);
@@ -505,7 +514,9 @@ static void grpc_rb_event_unblocking_func(void *arg) {
 // Poll channel connectivity states in background thread without the GIL.
 static VALUE run_poll_channels_loop(VALUE arg) {
   (void)arg;
-  gpr_log(GPR_DEBUG, "GRPC_RUBY: run_poll_channels_loop - create connection polling thread");
+  gpr_log(
+      GPR_DEBUG,
+      "GRPC_RUBY: run_poll_channels_loop - create connection polling thread");
   rb_thread_call_without_gvl(run_poll_channels_loop_no_gil, NULL,
                              grpc_rb_event_unblocking_func, NULL);
   return Qnil;

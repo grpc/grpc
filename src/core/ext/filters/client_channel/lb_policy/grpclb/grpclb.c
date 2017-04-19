@@ -1122,6 +1122,7 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
       glb_policy->base.interested_parties,
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
       &host, glb_policy->deadline, NULL);
+  grpc_slice_unref_internal(exec_ctx, host);
 
   grpc_metadata_array_init(&glb_policy->lb_initial_metadata_recv);
   grpc_metadata_array_init(&glb_policy->lb_trailing_metadata_recv);
@@ -1293,6 +1294,7 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
                   "Received empty server list. Picks will stay pending until a "
                   "response with > 0 servers is received");
         }
+        grpc_grpclb_destroy_serverlist(glb_policy->serverlist);
       }
     } else { /* serverlist == NULL */
       gpr_log(GPR_ERROR, "Invalid LB response received: '%s'. Ignoring.",
