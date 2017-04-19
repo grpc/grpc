@@ -500,7 +500,7 @@ _LANGUAGES = {
 # languages supported as cloud_to_cloud servers
 _SERVERS = ['c++', 'node', 'csharp', 'csharpcoreclr', 'java', 'go', 'ruby', 'python']
 
-_TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
+_TEST_CASES = ['large_unary', 'empty_unary', 'half_duplex', 'ping_pong',
                'empty_stream', 'client_streaming', 'server_streaming',
                'cancel_after_begin', 'cancel_after_first_response',
                'timeout_on_sleeping_server', 'custom_metadata',
