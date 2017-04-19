@@ -167,7 +167,7 @@ class SynchronousStreamingClient final : public SynchronousClient {
         }
       });
     }
-    for (size_t i=0; i<num_threads_; i++) {
+    for (size_t i = 0; i < num_threads_; i++) {
       cleanup_threads[i].join();
     }
   }
