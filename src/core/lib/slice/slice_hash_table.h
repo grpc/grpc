@@ -37,8 +37,8 @@
 /** Hash table implementation.
  *
  * This implementation uses open addressing
- * (https://en.wikipedia.org/wiki/Open_addressing) with quadratic
- * probing (https://en.wikipedia.org/wiki/Quadratic_probing).
+ * (https://en.wikipedia.org/wiki/Open_addressing) with linear
+ * probing (https://en.wikipedia.org/wiki/Linear_probing).
  *
  * The keys are \a grpc_slice objects.  The values are arbitrary pointers
  * with a common destroy function.
