@@ -49,7 +49,7 @@ extern "C" {
 
 DEFINE_bool(log, false, "Log state to CSV files");
 DEFINE_int32(
-    warmup_megabytes, 10,
+    warmup_megabytes, 1,
     "Number of megabytes to pump before collecting flow control stats");
 DEFINE_int32(
     warmup_iterations, 100,
