@@ -164,11 +164,8 @@ uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
   return (uint32_t)GPR_MIN(
       (int64_t)((1u << 31) - 1),
       t->stream_total_over_incoming_window +
-          (int64_t)GPR_MAX(
-              t->settings[GRPC_SENT_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
-                  t->stream_total_under_incoming_window,
-              0));
+          t->settings[GRPC_SENT_SETTINGS]
+                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
 }
 
 bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,

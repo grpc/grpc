@@ -100,7 +100,7 @@ void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
             bw / 125000.0, estimator->bw_est / 125000.0);
   }
   GPR_ASSERT(estimator->ping_state == GRPC_BDP_PING_STARTED);
-  if (estimator->accumulator > 2 * estimator->estimate / 3 &&
+  if (estimator->accumulator > 7 * estimator->estimate / 8 &&
       bw > estimator->bw_est) {
     estimator->estimate *= 2;
     estimator->bw_est = bw;
