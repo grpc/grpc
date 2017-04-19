@@ -535,6 +535,10 @@
             }
           ]
         },
+      ]
+    }],
+    ['OS == "win"', {
+      'targets': [
         # Only want to compile zlib under Windows
         {
           'cflags': [

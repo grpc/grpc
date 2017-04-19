@@ -233,6 +233,10 @@
               }
             ]
           },
+        ]
+      }],
+      ['OS == "win"', {
+        'targets': [
           # Only want to compile zlib under Windows
           % for module in node_modules:
           % for lib in libs:
