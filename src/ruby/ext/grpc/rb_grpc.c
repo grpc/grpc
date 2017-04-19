@@ -33,8 +33,8 @@
 
 #include <ruby/ruby.h>
 
-#include "rb_grpc_imports.generated.h"
 #include "rb_grpc.h"
+#include "rb_grpc_imports.generated.h"
 
 #include <math.h>
 #include <ruby/vm.h>
@@ -46,16 +46,18 @@
 #include "rb_call_credentials.h"
 #include "rb_channel.h"
 #include "rb_channel_credentials.h"
+#include "rb_compression_options.h"
 #include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
-#include "rb_compression_options.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;
 
 static rb_data_type_t grpc_rb_timespec_data_type = {
     "gpr_timespec",
-    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE,
+    {GRPC_RB_GC_NOT_MARKED,
+     GRPC_RB_GC_DONT_FREE,
+     GRPC_RB_MEMSIZE_UNAVAILABLE,
      {NULL, NULL}},
     NULL,
     NULL,
@@ -84,8 +86,7 @@ VALUE grpc_rb_cannot_init(VALUE self) {
 /* Init/Clone func that fails by raising an exception. */
 VALUE grpc_rb_cannot_init_copy(VALUE copy, VALUE self) {
   (void)self;
-  rb_raise(rb_eTypeError,
-           "Copy initialization of %s is not supported",
+  rb_raise(rb_eTypeError, "Copy initialization of %s is not supported",
            rb_obj_classname(copy));
   return Qnil;
 }
@@ -143,8 +144,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
         }
         t.tv_sec = (int64_t)f;
         if (f != t.tv_sec) {
-          rb_raise(rb_eRangeError, "%f out of Time range",
-                   RFLOAT_VALUE(time));
+          rb_raise(rb_eRangeError, "%f out of Time range", RFLOAT_VALUE(time));
         }
         t.tv_nsec = (int)(d * 1e9 + 0.5);
       }
@@ -269,9 +269,7 @@ static void Init_grpc_time_consts() {
   id_tv_nsec = rb_intern("tv_nsec");
 }
 
-static void grpc_rb_shutdown(void) {
-  grpc_shutdown();
-}
+static void grpc_rb_shutdown(void) { grpc_shutdown(); }
 
 /* Initialize the GRPC module structs */
 
@@ -316,9 +314,8 @@ void Init_grpc_c() {
 
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
-  grpc_rb_sNewServerRpc =
-      rb_struct_define("NewServerRpc", "method", "host",
-                       "deadline", "metadata", "call", NULL);
+  grpc_rb_sNewServerRpc = rb_struct_define(
+      "NewServerRpc", "method", "host", "deadline", "metadata", "call", NULL);
   grpc_rb_sStatus =
       rb_struct_define("Status", "code", "details", "metadata", NULL);
   sym_code = ID2SYM(rb_intern("code"));
