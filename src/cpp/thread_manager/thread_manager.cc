@@ -159,15 +159,15 @@ void ThreadManager::MainWorkLoop() {
         // Take the lock again to check post conditions
         lock.lock();
         // If we're shutdown, we should finish at this point.
-        // If not, there's a chance that we'll exceed the max poller count: that
-        // is explicitly ok - we'll decrease after one poll timeout, and prevent
-        // some thrashing starting up and shutting down threads
         if (shutdown_) done = true;
         break;
     }
     // If we decided to finish the thread, break out of the while loop
     if (done) break;
     // ... otherwise increase poller count and continue
+    // There's a chance that we'll exceed the max poller count: that is
+    // explicitly ok - we'll decrease after one poll timeout, and prevent
+    // some thrashing starting up and shutting down threads
     num_pollers_++;
   };
 
