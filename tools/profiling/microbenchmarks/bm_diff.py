@@ -56,6 +56,10 @@ _INTERESTING = (
   'writes_per_iteration',
   'atm_cas_per_iteration',
   'atm_add_per_iteration',
+  'cli_transport_stalls_per_iteration',
+  'cli_stream_stalls_per_iteration',
+  'svr_transport_stalls_per_iteration',
+  'svr_stream_stalls_per_iteration'
 )
 
 def changed_ratio(n, o):
