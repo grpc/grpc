@@ -54,6 +54,8 @@ DEFINE_int32(
 DEFINE_int32(
     warmup_iterations, 100,
     "Number of megabytes to pump before collecting flow control stats");
+DEFINE_int32(warmup_max_time_seconds, 10,
+             "Maximum number of seconds to run warmup loop");
 
 namespace grpc {
 namespace testing {
@@ -283,11 +285,17 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
         }
       }
     };
+    gpr_timespec warmup_start = gpr_now(GPR_CLOCK_MONOTONIC);
     for (int i = 0;
          i < GPR_MAX(FLAGS_warmup_iterations, FLAGS_warmup_megabytes * 1024 *
                                                   1024 / (14 + state.range(0)));
          i++) {
       inner_loop(true);
+      if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), warmup_start),
+                       gpr_time_from_seconds(FLAGS_warmup_max_time_seconds,
+                                             GPR_TIMESPAN)) > 0) {
+        break;
+      }
     }
     while (state.KeepRunning()) {
       inner_loop(false);
