@@ -168,8 +168,8 @@ uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
                      [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
 }
 
-bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
-                             grpc_chttp2_transport *t) {
+grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
@@ -203,9 +203,23 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     }
   }
 
+  bool partial_write = false;
+
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
-  while (grpc_chttp2_list_pop_writable_stream(t, &s)) {
+  while (true) {
+    if (t->outbuf.length >
+        GPR_CLAMP(t->settings[GRPC_SENT_SETTINGS]
+                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+                  1024, 1024 * 1024)) {
+      partial_write = true;
+      break;
+    }
+
+    if (!grpc_chttp2_list_pop_writable_stream(t, &s)) {
+      break;
+    }
+
     bool sent_initial_metadata = s->sent_initial_metadata;
     bool now_writing = false;
 
@@ -392,7 +406,9 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 
-  return t->outbuf.count > 0;
+  return t->outbuf.count > 0 ? (partial_write ? GRPC_CHTTP2_PARTIAL_WRITE
+                                              : GRPC_CHTTP2_FULL_WRITE)
+                             : GRPC_CHTTP2_NOTHING_TO_WRITE;
 }
 
 void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,

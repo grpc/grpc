@@ -884,14 +884,23 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
   GPR_TIMER_BEGIN("write_action_begin_locked", 0);
   grpc_chttp2_transport *t = gt;
   GPR_ASSERT(t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE);
-  if (!t->closed && grpc_chttp2_begin_write(exec_ctx, t)) {
-    set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING,
-                    "begin writing");
-    grpc_closure_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE);
-  } else {
-    set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_IDLE,
-                    "begin writing nothing");
-    GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
+  switch (t->closed ? GRPC_CHTTP2_NOTHING_TO_WRITE
+                    : grpc_chttp2_begin_write(exec_ctx, t)) {
+    case GRPC_CHTTP2_NOTHING_TO_WRITE:
+      set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_IDLE,
+                      "begin writing nothing");
+      GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
+      break;
+    case GRPC_CHTTP2_PARTIAL_WRITE:
+      set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
+                      "begin writing partial");
+      grpc_closure_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE);
+      break;
+    case GRPC_CHTTP2_FULL_WRITE:
+      set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING,
+                      "begin writing");
+      grpc_closure_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE);
+      break;
   }
   GPR_TIMER_END("write_action_begin_locked", 0);
 }
