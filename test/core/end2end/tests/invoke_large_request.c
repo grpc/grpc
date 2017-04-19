@@ -98,7 +98,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 static grpc_slice large_slice(void) {
-  grpc_slice slice = grpc_slice_malloc(100000000);
+  grpc_slice slice = grpc_slice_malloc(1000000000);
   memset(GRPC_SLICE_START_PTR(slice), 'x', GRPC_SLICE_LENGTH(slice));
   return slice;
 }
@@ -248,6 +248,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
+  gpr_log(GPR_INFO, "status: %d", status);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
