@@ -665,6 +665,7 @@ static grpc_error *pollset_kick_all(grpc_pollset *pollset) {
   if (pollset->root_worker != NULL) {
     grpc_pollset_worker *worker = pollset->root_worker;
     do {
+      gpr_mu_lock(&worker->pollable->po.mu);
       if (worker->initialized_cv) {
         worker->kicked = true;
         gpr_cv_signal(&worker->cv);
@@ -672,6 +673,7 @@ static grpc_error *pollset_kick_all(grpc_pollset *pollset) {
         append_error(&error, grpc_wakeup_fd_wakeup(&worker->pollable->wakeup),
                      "pollset_shutdown");
       }
+      gpr_mu_unlock(&worker->pollable->po.mu);
 
       worker = worker->links[PWL_POLLSET].next;
     } while (worker != pollset->root_worker);
