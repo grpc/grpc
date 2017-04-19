@@ -28,7 +28,7 @@
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @rem Current package versions
-set VERSION=1.2.4
+set VERSION=1.2.5
 set PROTOBUF_VERSION=3.0.0
 
 @rem Adjust the location of nuget.exe
