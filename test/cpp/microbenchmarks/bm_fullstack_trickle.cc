@@ -49,8 +49,11 @@ extern "C" {
 
 DEFINE_bool(log, false, "Log state to CSV files");
 DEFINE_int32(
+    warmup_megabytes, 10,
+    "Number of megabytes to pump before collecting flow control stats");
+DEFINE_int32(
     warmup_iterations, 100,
-    "Number of iterations to warm up before collecting flow control stats");
+    "Number of megabytes to pump before collecting flow control stats");
 
 namespace grpc {
 namespace testing {
@@ -280,7 +283,10 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
         }
       }
     };
-    for (int i = 0; i < FLAGS_warmup_iterations; i++) {
+    for (int i = 0;
+         i < GPR_MAX(FLAGS_warmup_iterations, FLAGS_warmup_megabytes * 1024 *
+                                                  1024 / (14 + state.range(0)));
+         i++) {
       inner_loop(true);
     }
     while (state.KeepRunning()) {
@@ -306,7 +312,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
 
 static void TrickleArgs(benchmark::internal::Benchmark* b) {
   for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
-    for (int j = 1; j <= 128 * 1024 * 1024; j *= 8) {
+    for (int j = 64; j <= 128 * 1024 * 1024; j *= 8) {
       double expected_time =
           static_cast<double>(14 + i) / (125.0 * static_cast<double>(j));
       if (expected_time > 2.0) continue;
