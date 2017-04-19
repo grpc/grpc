@@ -98,7 +98,7 @@ argp.add_argument('-t', '--track',
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
 argp.add_argument('-r', '--repetitions', type=int, default=1)
-argp.add_argument('-l', '--loops', type=int, default=12)
+argp.add_argument('-l', '--loops', type=int, default=20)
 argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
 args = argp.parse_args()
 
@@ -247,4 +247,3 @@ def finalize():
 
 
 eintr_be_gone(finalize)
-
