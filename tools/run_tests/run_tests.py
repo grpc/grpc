@@ -427,8 +427,8 @@ class NodeLanguage(object):
     self.args = args
     # Note: electron ABI only depends on major and minor version, so that's all
     # we should specify in the compiler argument
-    _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5', 'node6',
+    _check_compiler(self.args.compiler, ['default', 'node4',
+                                         'node5', 'node6',
                                          'node7', 'electron1.3'])
     if args.iomgr_platform == "uv":
       self.use_uv = True
@@ -955,8 +955,8 @@ class NodeExpressLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5', 'node6'])
+    _check_compiler(self.args.compiler, ['default', 'node4',
+                                         'node5', 'node6'])
     if self.args.compiler == 'default':
       self.node_version = '4'
     else:
