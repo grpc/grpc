@@ -1132,7 +1132,7 @@ static grpc_error *pollset_worker_kick(grpc_pollset_worker *worker) {
   if (gpr_atm_no_barrier_cas(&worker->is_kicked, (gpr_atm)0, (gpr_atm)1)) {
     GRPC_POLLING_TRACE(
         "pollset_worker_kick: Kicking worker: %p (thread id: %ld)",
-        (void *)worker, (long int)worker->pt_id);
+        (void *)worker, worker->pt_id);
     int err_num = pthread_kill(worker->pt_id, grpc_wakeup_signal);
     if (err_num != 0) {
       err = GRPC_OS_ERROR(err_num, "pthread_kill");

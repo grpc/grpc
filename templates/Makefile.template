@@ -311,7 +311,7 @@
   USE_BUILT_PROTOC = false
   endif
 
-  GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc
+  GTEST_LIB = -Ithird_party/googletest/include -Ithird_party/googletest third_party/googletest/src/gtest-all.cc
   GTEST_LIB += -lgflags
   ifeq ($(V),1)
   E = @:
@@ -716,7 +716,7 @@
   PC_REQUIRES_GRPCXX =
   PC_LIBS_GRPCXX =
 
-  CPPFLAGS := -Ithird_party/googletest/googletest/include $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/googletest/include $(CPPFLAGS)
 
   PROTOC_PLUGINS_ALL =\
   % for tgt in targets:

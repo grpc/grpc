@@ -85,10 +85,6 @@
 #define GRPC_LINUX_SOCKETUTILS 1
 #endif
 #endif
-#ifndef __GLIBC__
-#define GRPC_LINUX_EPOLL 1
-#define GRPC_LINUX_EVENTFD 1
-#endif
 #ifndef GRPC_LINUX_EVENTFD
 #define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
 #endif

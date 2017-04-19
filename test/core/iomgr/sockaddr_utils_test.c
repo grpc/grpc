@@ -254,6 +254,8 @@ static void test_sockaddr_to_string(void) {
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 0);
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 1);
   GPR_ASSERT(grpc_sockaddr_to_uri(&dummy) == NULL);
+
+  GPR_ASSERT(errno == 0x7EADBEEF);
 }
 
 static void test_sockaddr_set_get_port(void) {
