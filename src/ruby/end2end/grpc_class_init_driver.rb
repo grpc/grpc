@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env ruby
+
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -28,32 +29,39 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-NODE_TARGET_ARCH=$1
-source ~/.nvm/nvm.sh
+require_relative './end2end_common'
 
-nvm use 4
-set -ex
+def main
+  native_grpc_classes = %w( channel
+                            server
+                            channel_credentials
+                            call_credentials
+                            compression_options )
 
-cd $(dirname $0)/../../..
+  native_grpc_classes.each do |grpc_class|
+    STDERR.puts 'start client'
+    this_dir = File.expand_path(File.dirname(__FILE__))
+    client_path = File.join(this_dir, 'grpc_class_init_client.rb')
+    client_pid = Process.spawn(RbConfig.ruby,
+                               client_path,
+                               "--grpc_class=#{grpc_class}")
+    begin
+      Timeout.timeout(10) do
+        Process.wait(client_pid)
+      end
+    rescue Timeout::Error
+      STDERR.puts "timeout waiting for client pid #{client_pid}"
+      Process.kill('SIGKILL', client_pid)
+      Process.wait(client_pid)
+      STDERR.puts 'killed client child'
+      raise 'Timed out waiting for client process. ' \
+        'It likely hangs when the first constructed gRPC object has ' \
+        "type: #{grpc_class}"
+    end
 
-rm -rf build || true
+    client_exit_code = $CHILD_STATUS
+    fail "client failed, exit code #{client_exit_code}" if client_exit_code != 0
+  end
+end
 
-mkdir -p artifacts
-
-npm update
-
-node_versions=( 4.0.0 5.0.0 6.0.0 7.0.0 )
-
-electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 )
-
-for version in ${node_versions[@]}
-do
-  ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH
-  cp -r build/stage/* artifacts/
-done
-
-for version in ${electron_versions[@]}
-do
-  HOME=~/.electron-gyp ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --runtime=electron --target=$version --target_arch=$NODE_TARGET_ARCH --disturl=https://atom.io/download/electron
-  cp -r build/stage/* artifacts/
-done
+main
