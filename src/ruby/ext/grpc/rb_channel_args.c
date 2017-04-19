@@ -33,8 +33,8 @@
 
 #include <ruby/ruby.h>
 
-#include "rb_grpc_imports.generated.h"
 #include "rb_channel_args.h"
+#include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
 
@@ -42,9 +42,12 @@
 
 static rb_data_type_t grpc_rb_channel_args_data_type = {
     "grpc_channel_args",
-    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE,
+    {GRPC_RB_GC_NOT_MARKED,
+     GRPC_RB_GC_DONT_FREE,
+     GRPC_RB_MEMSIZE_UNAVAILABLE,
      {NULL, NULL}},
-    NULL, NULL,
+    NULL,
+    NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
     RUBY_TYPED_FREE_IMMEDIATELY
 #endif
@@ -137,11 +140,10 @@ static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
     params->dst->num_args = num_args;
     params->dst->args = ALLOC_N(grpc_arg, num_args);
     MEMZERO(params->dst->args, grpc_arg, num_args);
-    rb_hash_foreach(params->src_hash,
-                    grpc_rb_channel_create_in_process_add_args_hash_cb,
-                    TypedData_Wrap_Struct(grpc_rb_cChannelArgs,
-                                          &grpc_rb_channel_args_data_type,
-                                          params->dst));
+    rb_hash_foreach(
+        params->src_hash, grpc_rb_channel_create_in_process_add_args_hash_cb,
+        TypedData_Wrap_Struct(grpc_rb_cChannelArgs,
+                              &grpc_rb_channel_args_data_type, params->dst));
     /* reset num_args as grpc_rb_channel_create_in_process_add_args_hash_cb
      * decrements it during has processing */
     params->dst->num_args = num_args;
@@ -157,7 +159,7 @@ void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
   /* Make a protected call to grpc_rb_hash_convert_channel_args */
   params.src_hash = src_hash;
   params.dst = dst;
-  rb_protect(grpc_rb_hash_convert_to_channel_args0, (VALUE) & params, &status);
+  rb_protect(grpc_rb_hash_convert_to_channel_args0, (VALUE)&params, &status);
   if (status != 0) {
     if (dst->args != NULL) {
       /* Free any allocated memory before propagating the error */
