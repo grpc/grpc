@@ -2139,26 +2139,28 @@ static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                        double bdp_dbl) {
-  uint32_t bdp;
-  if (bdp_dbl <= 0) {
-    bdp = 0;
-  } else if (bdp_dbl > UINT32_MAX) {
-    bdp = UINT32_MAX;
+  int32_t bdp;
+  const int32_t kMinBDP = 128;
+  if (bdp_dbl <= kMinBDP) {
+    bdp = kMinBDP;
+  } else if (bdp_dbl > INT32_MAX) {
+    bdp = INT32_MAX;
   } else {
-    bdp = (uint32_t)(bdp_dbl);
+    bdp = (int32_t)(bdp_dbl);
   }
   int64_t delta =
       (int64_t)bdp -
       (int64_t)t->settings[GRPC_LOCAL_SETTINGS]
                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  if (delta == 0 || (bdp != 0 && delta > -1024 && delta < 1024)) {
+  if (delta == 0 || (delta > -bdp / 10 && delta < bdp / 10)) {
     return;
   }
   if (grpc_bdp_estimator_trace) {
     gpr_log(GPR_DEBUG, "%s: update initial window size to %d", t->peer_string,
             (int)bdp);
   }
-  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, bdp);
+  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+               (uint32_t)bdp);
 }
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,

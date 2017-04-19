@@ -48,6 +48,9 @@ extern "C" {
 }
 
 DEFINE_bool(log, false, "Log state to CSV files");
+DEFINE_int32(
+    warmup_iterations, 100,
+    "Number of iterations to warm up before collecting flow control stats");
 
 namespace grpc {
 namespace testing {
@@ -70,12 +73,12 @@ static void write_csv(std::ostream* out, A0&& a0, Arg&&... arg) {
 class TrickledCHTTP2 : public EndpointPairFixture {
  public:
   TrickledCHTTP2(Service* service, size_t message_size,
-                 size_t megabits_per_second)
-      : EndpointPairFixture(service, MakeEndpoints(megabits_per_second),
+                 size_t kilobits_per_second)
+      : EndpointPairFixture(service, MakeEndpoints(kilobits_per_second),
                             FixtureConfiguration()) {
     if (FLAGS_log) {
       std::ostringstream fn;
-      fn << "trickle." << message_size << "." << megabits_per_second << ".csv";
+      fn << "trickle." << message_size << "." << kilobits_per_second << ".csv";
       log_.reset(new std::ofstream(fn.str().c_str()));
       write_csv(log_.get(), "t", "iteration", "client_backlog",
                 "server_backlog", "client_t_stall", "client_s_stall",
@@ -161,7 +164,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
         server_stream ? server_stream->flow_controlled_buffer.length : 0);
   }
 
-  void Step() {
+  void Step(bool update_stats) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     size_t client_backlog =
         grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.client);
@@ -169,10 +172,12 @@ class TrickledCHTTP2 : public EndpointPairFixture {
         grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.server);
     grpc_exec_ctx_finish(&exec_ctx);
 
-    UpdateStats((grpc_chttp2_transport*)client_transport_, &client_stats_,
-                client_backlog);
-    UpdateStats((grpc_chttp2_transport*)server_transport_, &server_stats_,
-                server_backlog);
+    if (update_stats) {
+      UpdateStats((grpc_chttp2_transport*)client_transport_, &client_stats_,
+                  client_backlog);
+      UpdateStats((grpc_chttp2_transport*)server_transport_, &server_stats_,
+                  server_backlog);
+    }
   }
 
  private:
@@ -219,7 +224,7 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
         t, ok, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                             gpr_time_from_micros(100, GPR_TIMESPAN)))) {
       case CompletionQueue::TIMEOUT:
-        fixture->Step();
+        fixture->Step(iteration != -1);
         break;
       case CompletionQueue::SHUTDOWN:
         GPR_ASSERT(false);
@@ -260,11 +265,12 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
       need_tags &= ~(1 << i);
     }
     request_rw->Read(&recv_response, tag(0));
-    while (state.KeepRunning()) {
+    auto inner_loop = [&](bool in_warmup) {
       GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       response_rw.Write(send_response, tag(1));
       while (true) {
-        TrickleCQNext(fixture.get(), &t, &ok, state.iterations());
+        TrickleCQNext(fixture.get(), &t, &ok,
+                      in_warmup ? -1 : state.iterations());
         if (t == tag(0)) {
           request_rw->Read(&recv_response, tag(0));
         } else if (t == tag(1)) {
@@ -273,6 +279,12 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
           GPR_ASSERT(false);
         }
       }
+    };
+    for (int i = 0; i < FLAGS_warmup_iterations; i++) {
+      inner_loop(true);
+    }
+    while (state.KeepRunning()) {
+      inner_loop(false);
     }
     response_rw.Finish(Status::OK, tag(1));
     need_tags = (1 << 0) | (1 << 1);
@@ -297,7 +309,7 @@ static void TrickleArgs(benchmark::internal::Benchmark* b) {
     for (int j = 1; j <= 128 * 1024 * 1024; j *= 8) {
       double expected_time =
           static_cast<double>(14 + i) / (125.0 * static_cast<double>(j));
-      if (expected_time > 0.01) continue;
+      if (expected_time > 2.0) continue;
       b->Args({i, j});
     }
   }
