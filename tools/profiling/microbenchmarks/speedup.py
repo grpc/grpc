@@ -30,7 +30,7 @@
 from scipy import stats
 import math
 
-_THRESHOLD = 0.0001
+_THRESHOLD = 0.00001
 
 def scale(a, mul):
   return [x*mul for x in a]
