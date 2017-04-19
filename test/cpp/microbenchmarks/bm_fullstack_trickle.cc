@@ -86,7 +86,8 @@ class TrickledCHTTP2 : public EndpointPairFixture {
                 "client_s_announce_window", "server_s_announce_window",
                 "client_peer_iws", "client_local_iws", "client_sent_iws",
                 "client_acked_iws", "server_peer_iws", "server_local_iws",
-                "server_sent_iws", "server_acked_iws");
+                "server_sent_iws", "server_acked_iws", "client_queued_bytes",
+                "server_queued_bytes");
     }
   }
 
@@ -155,7 +156,9 @@ class TrickledCHTTP2 : public EndpointPairFixture {
         server->settings[GRPC_SENT_SETTINGS]
                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
         server->settings[GRPC_ACKED_SETTINGS]
-                        [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+                        [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+        client_stream ? client_stream->flow_controlled_buffer.length : 0,
+        server_stream ? server_stream->flow_controlled_buffer.length : 0);
   }
 
   void Step() {
