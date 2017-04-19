@@ -77,12 +77,6 @@ local_repository(
     path = "third_party/gflags",
 )
 
-git_repository(
-    name   = "mongoose_repo",
-    commit = "4120a97945b41195a6223a600dae8e3b19bed19e",
-    remote = "https://github.com/makdharma/mongoose.git"
-)
-
 new_local_repository(
     name = "submodule_benchmark",
     path = "third_party/benchmark",
