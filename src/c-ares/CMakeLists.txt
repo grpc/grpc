@@ -32,6 +32,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 string(TOLOWER ${CMAKE_SYSTEM_NAME} cares_system_name)
+  if ("${cares_system_name}" MATCHES "android")
+  # use linux config on android
+  set(cares_system_name linux)
+endif ()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/cares)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/cares/cares)

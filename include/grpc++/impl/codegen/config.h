@@ -39,6 +39,7 @@
 #define GRPC_CUSTOM_STRING std::string
 #endif
 
+
 // The following macros are deprecated and appear only for users
 // with PB files generated using gRPC 1.0.x plugins. They should
 // not be used in new code
@@ -49,7 +50,10 @@ namespace grpc {
 
 typedef GRPC_CUSTOM_STRING string;
 
+// gnustl for Android doesn't have to_string, http://stackoverflow.com/questions/22774009/android-ndk-stdto-string-support
+#ifndef __ANDROID__
 using std::to_string;
+#endif
 
 }  // namespace grpc
 

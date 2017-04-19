@@ -131,6 +131,10 @@ if("${gRPC_CARES_PROVIDER}" STREQUAL "module")
     set(CARES_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/c-ares)
   endif()
   string(TOLOWER ${CMAKE_SYSTEM_NAME} CARES_SYSTEM_NAME)
+  if ("${CARES_SYSTEM_NAME}" MATCHES "android")
+    # use linux config on android
+    set(CARES_SYSTEM_NAME linux)
+  endif ()
   set(CARES_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cares/cares")
   set(CARES_BUILD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cares")
   set(CARES_PLATFORM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cares/config_${CARES_SYSTEM_NAME}")
@@ -176,6 +180,10 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
     endif()
     if(TARGET libprotoc)
       set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
+    endif()
+    # if cross-compiling, protoc target will be defined there
+    if(protobuf_IMPORT_EXECUTABLES)
+      include(${protobuf_IMPORT_EXECUTABLES})
     endif()
     if(TARGET protoc)
       set(_gRPC_PROTOBUF_PROTOC protoc)
@@ -269,7 +277,9 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-if(UNIX)
+if (CMAKE_SYSTEM_NAME STREQUAL Android)
+  set(_gRPC_ALLTARGETS_LIBRARIES android log)
+elseif(UNIX)
   set(_gRPC_ALLTARGETS_LIBRARIES dl rt m pthread)
 endif()
 
@@ -10209,269 +10219,289 @@ target_link_libraries(grpc_cli
 
 endif (gRPC_BUILD_TESTS)
 
-add_executable(grpc_cpp_plugin
-  src/compiler/cpp_plugin.cc
-)
 
+if (CMAKE_CROSSCOMPILING)
+  # https://cmake.org/Wiki/CMake_Cross_Compiling#Using_executables_in_the_build_created_during_the_build
+  # when crosscompiling import the executable targets from a file
+  set(gRPC_IMPORT_EXECUTABLES "IMPORTFILE-NOTFOUND" CACHE FILEPATH "Point it to the export file from a native build")
+  include(${gRPC_IMPORT_EXECUTABLES})
+else ()
+  # targets for exporting when not cross-compiling
+  set(EXPORT_TARGETS)
 
-target_include_directories(grpc_cpp_plugin
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(grpc_cpp_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_plugin_support
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  add_executable(grpc_cpp_plugin
+    src/compiler/cpp_plugin.cc
   )
-endif()
-
-
-add_executable(grpc_csharp_plugin
-  src/compiler/csharp_plugin.cc
-)
-
-
-target_include_directories(grpc_csharp_plugin
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(grpc_csharp_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_plugin_support
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  list(APPEND EXPORT_TARGETS grpc_cpp_plugin)
+  
+  
+  target_include_directories(grpc_cpp_plugin
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${BORINGSSL_ROOT_DIR}/include
+    PRIVATE ${PROTOBUF_ROOT_DIR}/src
+    PRIVATE ${BENCHMARK_ROOT_DIR}/include
+    PRIVATE ${ZLIB_ROOT_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+    PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+    PRIVATE ${CARES_INCLUDE_DIR}
+    PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+    PRIVATE ${_gRPC_PROTO_GENS_DIR}
   )
-endif()
 
-
-add_executable(grpc_node_plugin
-  src/compiler/node_plugin.cc
-)
-
-
-target_include_directories(grpc_node_plugin
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(grpc_node_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_plugin_support
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_node_plugin EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  target_link_libraries(grpc_cpp_plugin
+    ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_plugin_support
   )
-endif()
 
+  if (gRPC_INSTALL)
+    install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+  endif() 
 
-add_executable(grpc_objective_c_plugin
-  src/compiler/objective_c_plugin.cc
-)
-
-
-target_include_directories(grpc_objective_c_plugin
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(grpc_objective_c_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_plugin_support
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  add_executable(grpc_csharp_plugin
+    src/compiler/csharp_plugin.cc
   )
-endif()
+  list(APPEND EXPORT_TARGETS grpc_csharp_plugin)
 
 
-add_executable(grpc_php_plugin
-  src/compiler/php_plugin.cc
-)
-
-
-target_include_directories(grpc_php_plugin
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(grpc_php_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_plugin_support
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_php_plugin EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  target_include_directories(grpc_csharp_plugin
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${BORINGSSL_ROOT_DIR}/include
+    PRIVATE ${PROTOBUF_ROOT_DIR}/src
+    PRIVATE ${BENCHMARK_ROOT_DIR}/include
+    PRIVATE ${ZLIB_ROOT_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+    PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+    PRIVATE ${CARES_INCLUDE_DIR}
+    PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+    PRIVATE ${_gRPC_PROTO_GENS_DIR}
   )
-endif()
 
-
-add_executable(grpc_python_plugin
-  src/compiler/python_plugin.cc
-)
-
-
-target_include_directories(grpc_python_plugin
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(grpc_python_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_plugin_support
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_python_plugin EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  target_link_libraries(grpc_csharp_plugin
+    ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_plugin_support
   )
-endif()
 
 
-add_executable(grpc_ruby_plugin
-  src/compiler/ruby_plugin.cc
-)
+  if (gRPC_INSTALL)
+    install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+  endif()
 
 
-target_include_directories(grpc_ruby_plugin
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(grpc_ruby_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_plugin_support
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  add_executable(grpc_node_plugin
+    src/compiler/node_plugin.cc
   )
+  list(APPEND EXPORT_TARGETS grpc_node_plugin)
+
+
+  target_include_directories(grpc_node_plugin
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${BORINGSSL_ROOT_DIR}/include
+    PRIVATE ${PROTOBUF_ROOT_DIR}/src
+    PRIVATE ${BENCHMARK_ROOT_DIR}/include
+    PRIVATE ${ZLIB_ROOT_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+    PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+    PRIVATE ${CARES_INCLUDE_DIR}
+    PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+    PRIVATE ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(grpc_node_plugin
+    ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_plugin_support
+  )
+
+
+  if (gRPC_INSTALL)
+    install(TARGETS grpc_node_plugin EXPORT gRPCTargets
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+  endif()
+
+
+  add_executable(grpc_objective_c_plugin
+    src/compiler/objective_c_plugin.cc
+  )
+  list(APPEND EXPORT_TARGETS grpc_objective_c_plugin)
+
+
+  target_include_directories(grpc_objective_c_plugin
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${BORINGSSL_ROOT_DIR}/include
+    PRIVATE ${PROTOBUF_ROOT_DIR}/src
+    PRIVATE ${BENCHMARK_ROOT_DIR}/include
+    PRIVATE ${ZLIB_ROOT_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+    PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+    PRIVATE ${CARES_INCLUDE_DIR}
+    PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+    PRIVATE ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(grpc_objective_c_plugin
+    ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_plugin_support
+  )
+
+
+  if (gRPC_INSTALL)
+    install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+  endif()
+
+
+  add_executable(grpc_php_plugin
+    src/compiler/php_plugin.cc
+  )
+  list(APPEND EXPORT_TARGETS grpc_php_plugin)
+
+
+  target_include_directories(grpc_php_plugin
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${BORINGSSL_ROOT_DIR}/include
+    PRIVATE ${PROTOBUF_ROOT_DIR}/src
+    PRIVATE ${BENCHMARK_ROOT_DIR}/include
+    PRIVATE ${ZLIB_ROOT_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+    PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+    PRIVATE ${CARES_INCLUDE_DIR}
+    PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+    PRIVATE ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(grpc_php_plugin
+    ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_plugin_support
+  )
+
+
+  if (gRPC_INSTALL)
+    install(TARGETS grpc_php_plugin EXPORT gRPCTargets
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+  endif()
+
+
+  add_executable(grpc_python_plugin
+    src/compiler/python_plugin.cc
+  )
+  list(APPEND EXPORT_TARGETS grpc_python_plugin)
+
+
+  target_include_directories(grpc_python_plugin
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${BORINGSSL_ROOT_DIR}/include
+    PRIVATE ${PROTOBUF_ROOT_DIR}/src
+    PRIVATE ${BENCHMARK_ROOT_DIR}/include
+    PRIVATE ${ZLIB_ROOT_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+    PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+    PRIVATE ${CARES_INCLUDE_DIR}
+    PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+    PRIVATE ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(grpc_python_plugin
+    ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_plugin_support
+  )
+
+
+  if (gRPC_INSTALL)
+    install(TARGETS grpc_python_plugin EXPORT gRPCTargets
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+  endif()
+
+
+  add_executable(grpc_ruby_plugin
+    src/compiler/ruby_plugin.cc
+  )
+  list(APPEND EXPORT_TARGETS grpc_ruby_plugin)
+
+
+  target_include_directories(grpc_ruby_plugin
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${BORINGSSL_ROOT_DIR}/include
+    PRIVATE ${PROTOBUF_ROOT_DIR}/src
+    PRIVATE ${BENCHMARK_ROOT_DIR}/include
+    PRIVATE ${ZLIB_ROOT_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+    PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+    PRIVATE ${CARES_INCLUDE_DIR}
+    PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+    PRIVATE ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(grpc_ruby_plugin
+    ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_plugin_support
+  )
+
+
+  if (gRPC_INSTALL)
+    install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+  endif()
+  
+  # export the generator target to a file, so it can be imported by another build
+  # https://cmake.org/Wiki/CMake_Cross_Compiling#Using_executables_in_the_build_created_during_the_build
+  export(TARGETS ${EXPORT_TARGETS} FILE ${CMAKE_BINARY_DIR}/gRPC_ImportExecutables.cmake)
 endif()
 
 if (gRPC_BUILD_TESTS)
