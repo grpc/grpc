@@ -123,8 +123,13 @@ void DynamicThreadPool::Add(const std::function<void()>& callback) {
   // Increase pool size or notify as needed
   if (threads_waiting_ == 0) {
     // Kick off a new thread
-    nthreads_++;
-    new DynamicThread(this);
+    try {
+      new DynamicThread(this);
+      nthreads_++;
+    }
+    catch (...) {
+
+    }
   } else {
     cv_.notify_one();
   }

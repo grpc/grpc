@@ -130,11 +130,16 @@ bool ThreadManager::MaybeContinueAsPoller() {
 void ThreadManager::MaybeCreatePoller() {
   std::unique_lock<std::mutex> lock(mu_);
   if (!shutdown_ && num_pollers_ < min_pollers_) {
-    num_pollers_++;
-    num_threads_++;
 
     // Create a new thread (which ends up calling the MainWorkLoop() function
-    new WorkerThread(this);
+    try {
+      new WorkerThread(this);
+      num_pollers_++;
+      num_threads_++;
+    }
+    catch(...) {
+
+    }
   }
 }
 
