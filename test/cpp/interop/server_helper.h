@@ -40,6 +40,8 @@
 #include <grpc++/server_context.h>
 #include <grpc/compression.h>
 
+#include "src/core/lib/surface/call_test_only.h"
+
 namespace grpc {
 namespace testing {
 
@@ -47,14 +49,29 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials();
 
 class InteropServerContextInspector {
  public:
-  InteropServerContextInspector(const ::grpc::ServerContext& context);
+  InteropServerContextInspector(const ::grpc::ServerContext& context)
+      : context_(context) {}
 
   // Inspector methods, able to peek inside ServerContext, follow.
-  std::shared_ptr<const AuthContext> GetAuthContext() const;
-  bool IsCancelled() const;
-  grpc_compression_algorithm GetCallCompressionAlgorithm() const;
-  uint32_t GetEncodingsAcceptedByClient() const;
-  uint32_t GetMessageFlags() const;
+  std::shared_ptr<const AuthContext> GetAuthContext() const {
+    return context.auth_context();
+  }
+
+  bool IsCancelled() const {
+    return context_.IsCancelled();
+  }
+
+  grpc_compression_algorithm GetCallCompressionAlgorithm() const {
+    return grpc_call_test_only_get_compression_algorithm(context_.call_);
+  }
+
+  uint32_t GetEncodingsAcceptedByClient() const {
+    return grpc_call_test_only_get_encodings_accepted_by_peer(context_.call_);
+  }
+
+  uint32_t GetMessageFlags() const {
+    return grpc_call_test_only_get_message_flags(context_.call_);
+  }
 
  private:
   const ::grpc::ServerContext& context_;
