@@ -2542,7 +2542,7 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
                                    add_max_recv_bytes);
     if ((int64_t)s->incoming_window_delta + (int64_t)initial_window_size -
             (int64_t)s->announce_window >
-        (int64_t)initial_window_size / 2) {
+        2 * (int64_t)initial_window_size) {
       write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
     }
     grpc_chttp2_become_writable(exec_ctx, t, s, write_type,
