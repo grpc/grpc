@@ -835,7 +835,7 @@ def aggregate_http2_results(stdout):
 # TODO(adelez): implement logic for errors_allowed where if the indicated tests
 # fail, they don't impact the overall test result.
 prod_servers = {
-    'default': ('216.239.32.254',
+    'default': ('grpc-test.sandbox.googleapis.com',
                 'grpc-test.sandbox.googleapis.com', False),
     'gateway_v2': ('216.239.32.254',
                    'grpc-test2.sandbox.googleapis.com', True),
