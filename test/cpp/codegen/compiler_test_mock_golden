@@ -11,37 +11,22 @@
 namespace grpc {
 namespace testing {
 
-// ServiceA detached comment 1
-//
-// ServiceA detached comment 2
-//
-// ServiceA leading comment 1
 class MockServiceAStub : public ServiceA::StubInterface {
  public:
-  MockServiceAStub(){}
-  ~MockServiceAStub(){}
-  // MethodA1 leading comment 1
   MOCK_METHOD3(MethodA1, ::grpc::Status(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::testing::Response* response));
   MOCK_METHOD3(AsyncMethodA1Raw, ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>*(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq));
-  // MethodA1 trailing comment 1
-  // MethodA2 detached leading comment 1
-  //
-  // Method A2 leading comment 1
-  // Method A2 leading comment 2
   MOCK_METHOD2(MethodA2Raw, ::grpc::ClientWriterInterface< ::grpc::testing::Request>*(::grpc::ClientContext* context, ::grpc::testing::Response* response));
   MOCK_METHOD4(AsyncMethodA2Raw, ::grpc::ClientAsyncWriterInterface< ::grpc::testing::Request>*(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::CompletionQueue* cq, void* tag));
-  // MethodA2 trailing comment 1
+  MOCK_METHOD2(MethodA3Raw, ::grpc::ClientReaderInterface< ::grpc::testing::Response>*(::grpc::ClientContext* context, const ::grpc::testing::Request& request));
+  MOCK_METHOD4(AsyncMethodA3Raw, ::grpc::ClientAsyncReaderInterface< ::grpc::testing::Response>*(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq, void* tag));
+  MOCK_METHOD1(MethodA4Raw, ::grpc::ClientReaderWriterInterface< ::grpc::testing::Request, ::grpc::testing::Response>*(::grpc::ClientContext* context));
+  MOCK_METHOD3(AsyncMethodA4Raw, ::grpc::ClientAsyncReaderWriterInterface<::grpc::testing::Request, ::grpc::testing::Response>*(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag));
 };
 
-// ServiceB leading comment 1
 class MockServiceBStub : public ServiceB::StubInterface {
  public:
-  MockServiceBStub(){}
-  ~MockServiceBStub(){}
-  // MethodB1 leading comment 1
   MOCK_METHOD3(MethodB1, ::grpc::Status(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::testing::Response* response));
   MOCK_METHOD3(AsyncMethodB1Raw, ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>*(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq));
-  // MethodB1 trailing comment 1
 };
 
 } // namespace grpc

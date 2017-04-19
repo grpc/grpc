@@ -1523,18 +1523,12 @@ void PrintMockService(grpc_generator::Printer *printer,
                       std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Service"] = service->name();
 
-  printer->Print(service->GetLeadingComments("//").c_str());
   printer->Print(*vars,
                  "class Mock$Service$Stub : public $Service$::StubInterface {\n"
                  " public:\n");
   printer->Indent();
-  printer->Print(*vars,
-                 "Mock$Service$Stub(){}\n"
-                 "~Mock$Service$Stub(){}\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    printer->Print(service->method(i)->GetLeadingComments("//").c_str());
     PrintMockClientMethods(printer, service->method(i).get(), vars);
-    printer->Print(service->method(i)->GetTrailingComments("//").c_str());
   }
   printer->Outdent();
   printer->Print("};\n");
