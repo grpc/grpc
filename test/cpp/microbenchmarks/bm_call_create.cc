@@ -184,7 +184,7 @@ static void BM_LameChannelCallCreateCore(benchmark::State &state) {
 
   channel = grpc_lame_client_channel_create(
       "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah");
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   void *rc = grpc_channel_register_call(
       channel, "/grpc.testing.EchoTestService/Echo", NULL, NULL);
   while (state.KeepRunning()) {
@@ -258,7 +258,7 @@ static void BM_LameChannelCallCreateCoreSeparateBatch(benchmark::State &state) {
 
   channel = grpc_lame_client_channel_create(
       "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah");
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   void *rc = grpc_channel_register_call(
       channel, "/grpc.testing.EchoTestService/Echo", NULL, NULL);
   while (state.KeepRunning()) {
