@@ -38,7 +38,10 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 
 #include <errno.h>
+#include <signal.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
@@ -327,7 +330,7 @@ static __thread int thread_wakeups = 0;
 
 static void test_threading_loop(void *arg) {
   threading_shared *shared = arg;
-  while (thread_wakeups < 1000000) {
+  while (thread_wakeups < 20000) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_pollset_worker *worker;
     gpr_mu_lock(shared->mu);
@@ -360,7 +363,7 @@ static void test_threading(void) {
   shared.pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(shared.pollset, &shared.mu);
 
-  gpr_thd_id thds[10];
+  gpr_thd_id thds[20];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_options opt = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&opt);
@@ -399,6 +402,44 @@ static void test_threading(void) {
   gpr_free(shared.pollset);
 }
 
+/* Convert milliseconds into 'struct timespec' struct. millis == -1 is
+ *  * considered as an infinity-time in future */
+static struct timespec millis_to_timespec(int millis) {
+  struct timespec linux_ts;
+  gpr_timespec gpr_ts;
+
+  if (millis == -1) {
+    gpr_ts = gpr_inf_future(GPR_TIMESPAN);
+  } else {
+    gpr_ts = gpr_time_from_millis(millis, GPR_TIMESPAN);
+  }
+
+  linux_ts.tv_sec = (time_t)gpr_ts.tv_sec;
+  linux_ts.tv_nsec = gpr_ts.tv_nsec;
+  return linux_ts;
+}
+
+void test_sigwait() {
+  sigset_t wakeup_sig_set;
+  sigemptyset(&wakeup_sig_set);
+  sigaddset(&wakeup_sig_set, SIGRTMIN + 6);
+  int timeout_ms[] = {10, 1400};
+
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(timeout_ms); i++) {
+    struct timespec sigwait_timeout = millis_to_timespec(timeout_ms[i]);
+    gpr_log(GPR_ERROR, "sigwait_timeout: %ld, %ld", sigwait_timeout.tv_sec,
+            sigwait_timeout.tv_nsec);
+
+    gpr_log(GPR_ERROR, "Waiting for %d ms...", timeout_ms[i]);
+    gpr_timespec bef = gpr_now(GPR_CLOCK_REALTIME);
+    sigtimedwait(&wakeup_sig_set, NULL, &sigwait_timeout);
+    gpr_timespec af = gpr_now(GPR_CLOCK_REALTIME);
+
+    gpr_log(GPR_ERROR, "Bef: %ld, %d", bef.tv_sec, bef.tv_nsec);
+    gpr_log(GPR_ERROR, "Aft: %ld, %d", af.tv_sec, af.tv_nsec);
+  }
+}
+
 int main(int argc, char **argv) {
   const char *poll_strategy = NULL;
   grpc_test_init(argc, argv);
@@ -409,6 +450,7 @@ int main(int argc, char **argv) {
     test_add_fd_to_pollset();
     test_pollset_queue_merge_items();
     test_threading();
+    test_sigwait();
   } else {
     gpr_log(GPR_INFO,
             "Skipping the test. The test is only relevant for 'epoll' "
