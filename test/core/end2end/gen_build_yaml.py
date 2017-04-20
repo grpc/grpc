@@ -39,9 +39,9 @@ import hashlib
 
 FixtureOptions = collections.namedtuple(
     'FixtureOptions',
-    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing exclude_configs exclude_iomgrs large_writes')
+    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing exclude_configs exclude_iomgrs large_writes enables_compression')
 default_unsecure_fixture_options = FixtureOptions(
-    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], [], True)
+    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], [], True, False)
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'], exclude_iomgrs=['uv'])
@@ -51,8 +51,7 @@ fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
-    'h2_compress': default_unsecure_fixture_options,
-
+    'h2_compress': default_unsecure_fixture_options._replace(enables_compression=True),
     'h2_census': default_unsecure_fixture_options,
     'h2_load_reporting': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
@@ -83,8 +82,8 @@ END2END_FIXTURES = {
 
 TestOptions = collections.namedtuple(
     'TestOptions',
-    'needs_fullstack needs_dns proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky')
-default_test_options = TestOptions(False, False, True, False, True, 1.0, [], False, False)
+    'needs_fullstack needs_dns proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allow_compression')
+default_test_options = TestOptions(False, False, True, False, True, 1.0, [], False, False, True)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 LOWCPU = 0.1
@@ -96,7 +95,8 @@ END2END_TESTS = {
     'bad_ping': connectivity_test_options._replace(proxyable=False),
     'binary_metadata': default_test_options._replace(cpu_cost=LOWCPU),
     'resource_quota_server': default_test_options._replace(large_writes=True,
-                                                           proxyable=False),
+                                                           proxyable=False,
+                                                           allow_compression=False),
     'call_creds': default_test_options._replace(secure=True),
     'cancel_after_accept': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_after_client_done': default_test_options._replace(cpu_cost=LOWCPU),
@@ -171,6 +171,9 @@ def compatible(f, t):
       return False
   if END2END_TESTS[t].large_writes:
     if not END2END_FIXTURES[f].large_writes:
+      return False
+  if not END2END_TESTS[t].allow_compression:
+    if END2END_FIXTURES[f].enables_compression:
       return False
   return True
 
