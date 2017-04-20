@@ -116,10 +116,12 @@ static void test_slice_hash_table() {
   };
   const size_t num_entries = GPR_ARRAY_SIZE(test_entries);
   // Construct table.
-  grpc_slice_hash_table_entry entries[num_entries];
+  grpc_slice_hash_table_entry* entries =
+      gpr_zalloc(sizeof(*entries) * num_entries);
   populate_entries(test_entries, num_entries, entries);
   grpc_slice_hash_table* table =
       grpc_slice_hash_table_create(num_entries, entries, destroy_string);
+  gpr_free(entries);
   // Check contents of table.
   check_values(test_entries, num_entries, table);
   check_non_existent_value("XX", table);
