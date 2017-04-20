@@ -208,10 +208,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
   while (true) {
-    if (t->outbuf.length >
-        GPR_CLAMP(t->settings[GRPC_SENT_SETTINGS]
-                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-                  1024, 1024 * 1024)) {
+    if (t->outbuf.length > 1024 * 1024) {
       partial_write = true;
       break;
     }
