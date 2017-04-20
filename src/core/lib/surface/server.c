@@ -345,7 +345,7 @@ static void request_matcher_destroy(request_matcher *rm) {
 
 static void kill_zombie(grpc_exec_ctx *exec_ctx, void *elem,
                         grpc_error *error) {
-  grpc_call_destroy(grpc_call_from_top_element(elem));
+  grpc_call_unref(grpc_call_from_top_element(elem));
 }
 
 static void request_matcher_zombify_all_pending_calls(grpc_exec_ctx *exec_ctx,

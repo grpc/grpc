@@ -270,7 +270,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
 
       grpc_metadata_array_destroy(&initial_metadata_recv[call_id]);
       grpc_metadata_array_destroy(&trailing_metadata_recv[call_id]);
-      grpc_call_destroy(client_calls[call_id]);
+      grpc_call_unref(client_calls[call_id]);
       grpc_slice_unref(details[call_id]);
 
       pending_client_calls--;
@@ -352,7 +352,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
       GPR_ASSERT(pending_server_end_calls > 0);
       pending_server_end_calls--;
 
-      grpc_call_destroy(server_calls[call_id]);
+      grpc_call_unref(server_calls[call_id]);
     }
   }
 

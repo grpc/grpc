@@ -310,7 +310,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   gpr_log(GPR_INFO, "LB Server[%s](%s) after tag 204. All done. LB server out",
           sf->servers_hostport, sf->balancer_name);
 
-  grpc_call_destroy(s);
+  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 
@@ -457,7 +457,7 @@ static void start_backend_server(server_fixture *sf) {
     gpr_log(GPR_INFO, "Server[%s] DONE. After servicing %d calls",
             sf->servers_hostport, sf->num_calls_serviced);
 
-    grpc_call_destroy(s);
+    grpc_call_unref(s);
     cq_verifier_destroy(cqv);
     grpc_metadata_array_destroy(&request_metadata_recv);
     grpc_call_details_destroy(&call_details);
@@ -557,7 +557,7 @@ static void perform_request(client_fixture *cf) {
   peer = grpc_call_get_peer(c);
   gpr_log(GPR_INFO, "Client DONE WITH SERVER %s ", peer);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verify_empty_timeout(cqv, 1 /* seconds */);
   cq_verifier_destroy(cqv);

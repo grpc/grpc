@@ -329,7 +329,7 @@ cdef extern from "grpc/grpc.h":
                                                const char *description,
                                                void *reserved) nogil
   char *grpc_call_get_peer(grpc_call *call) nogil
-  void grpc_call_destroy(grpc_call *call) nogil
+  void grpc_call_unref(grpc_call *call) nogil
 
   grpc_channel *grpc_insecure_channel_create(const char *target,
                                              const grpc_channel_args *args,

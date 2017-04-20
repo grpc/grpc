@@ -124,7 +124,7 @@ static void BM_CallCreateDestroy(benchmark::State &state) {
   void *method_hdl =
       grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);
   while (state.KeepRunning()) {
-    grpc_call_destroy(grpc_channel_create_registered_call(
+    grpc_call_unref(grpc_channel_create_registered_call(
         fixture.channel(), NULL, GRPC_PROPAGATE_DEFAULTS, cq, method_hdl,
         deadline, NULL));
   }
@@ -600,7 +600,7 @@ static void BM_IsolatedCall_NoOp(benchmark::State &state) {
       grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    grpc_call_destroy(grpc_channel_create_registered_call(
+    grpc_call_unref(grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, NULL));
   }
@@ -645,7 +645,7 @@ static void BM_IsolatedCall_Unary(benchmark::State &state) {
     grpc_call_start_batch(call, ops, 6, tag(1), NULL);
     grpc_completion_queue_next(fixture.cq(),
                                gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
-    grpc_call_destroy(call);
+    grpc_call_unref(call);
   }
   fixture.Finish(state);
   grpc_metadata_array_destroy(&recv_initial_metadata);
@@ -686,7 +686,7 @@ static void BM_IsolatedCall_StreamingSend(benchmark::State &state) {
     grpc_completion_queue_next(fixture.cq(),
                                gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
   }
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   fixture.Finish(state);
   grpc_metadata_array_destroy(&recv_initial_metadata);
   grpc_metadata_array_destroy(&recv_trailing_metadata);
