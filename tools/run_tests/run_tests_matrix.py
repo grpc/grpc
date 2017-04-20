@@ -187,7 +187,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               inner_jobs=inner_jobs)
 
   # portability C and C++ on x64
-  for compiler in ['gcc4.4', 'gcc4.6', 'gcc5.3',
+  for compiler in ['gcc4.4', 'gcc4.6', 'gcc5.3', 'gcc_musl',
                    'clang3.5', 'clang3.6', 'clang3.7']:
     test_jobs += _generate_jobs(languages=['c'],
                                 configs=['dbg'],
@@ -278,7 +278,8 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               configs=['dbg'],
                               platforms=['linux'],
                               arch='default',
-                              compiler='electron1.3',
+                              compiler='electron1.6',
+                              iomgr_platform='uv',
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)

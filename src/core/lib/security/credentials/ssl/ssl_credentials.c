@@ -36,7 +36,6 @@
 #include <string.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/support/alloc.h>

@@ -47,7 +47,7 @@
 
 typedef struct {
   grpc_channel_security_connector base;
-  tsi_ssl_handshaker_factory *handshaker_factory;
+  tsi_ssl_client_handshaker_factory *handshaker_factory;
   char *secure_peer_name;
 } grpc_httpcli_ssl_channel_security_connector;
 
@@ -56,7 +56,7 @@ static void httpcli_ssl_destroy(grpc_exec_ctx *exec_ctx,
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
-    tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
+    tsi_ssl_client_handshaker_factory_destroy(c->handshaker_factory);
   }
   if (c->secure_peer_name != NULL) gpr_free(c->secure_peer_name);
   gpr_free(sc);
@@ -69,7 +69,7 @@ static void httpcli_ssl_add_handshakers(grpc_exec_ctx *exec_ctx,
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   tsi_handshaker *handshaker = NULL;
   if (c->handshaker_factory != NULL) {
-    tsi_result result = tsi_ssl_handshaker_factory_create_handshaker(
+    tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         c->handshaker_factory, c->secure_peer_name, &handshaker);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",

@@ -90,10 +90,15 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State &state) {
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
-    uint32_t stream_id = static_cast<uint32_t>(state.iterations());
-    grpc_chttp2_encode_header(&exec_ctx, &c, stream_id, &b, state.range(0),
-                              state.range(1), &stats, &outbuf);
-    if (!logged_representative_output) {
+    grpc_encode_header_options hopt = {
+        static_cast<uint32_t>(state.iterations()),
+        state.range(0) != 0,
+        Fixture::kEnableTrueBinary,
+        (size_t)state.range(1),
+        &stats,
+    };
+    grpc_chttp2_encode_header(&exec_ctx, &c, &b, &hopt, &outbuf);
+    if (!logged_representative_output && state.iterations() > 3) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {
         char *s = grpc_dump_slice(outbuf.slices[i], GPR_DUMP_HEX);
@@ -122,6 +127,7 @@ namespace hpack_encoder_fixtures {
 
 class EmptyBatch {
  public:
+  static constexpr bool kEnableTrueBinary = false;
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
     return {};
   }
@@ -129,6 +135,7 @@ class EmptyBatch {
 
 class SingleStaticElem {
  public:
+  static constexpr bool kEnableTrueBinary = false;
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
     return {GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE};
   }
@@ -136,6 +143,7 @@ class SingleStaticElem {
 
 class SingleInternedElem {
  public:
+  static constexpr bool kEnableTrueBinary = false;
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
     return {grpc_mdelem_from_slices(
         exec_ctx, grpc_slice_intern(grpc_slice_from_static_string("abc")),
@@ -143,9 +151,10 @@ class SingleInternedElem {
   }
 };
 
-template <int kLength>
+template <int kLength, bool kTrueBinary>
 class SingleInternedBinaryElem {
  public:
+  static constexpr bool kEnableTrueBinary = kTrueBinary;
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
     grpc_slice bytes = MakeBytes();
     std::vector<grpc_mdelem> out = {grpc_mdelem_from_slices(
@@ -167,6 +176,7 @@ class SingleInternedBinaryElem {
 
 class SingleInternedKeyElem {
  public:
+  static constexpr bool kEnableTrueBinary = false;
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
     return {grpc_mdelem_from_slices(
         exec_ctx, grpc_slice_intern(grpc_slice_from_static_string("abc")),
@@ -176,6 +186,7 @@ class SingleInternedKeyElem {
 
 class SingleNonInternedElem {
  public:
+  static constexpr bool kEnableTrueBinary = false;
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
     return {grpc_mdelem_from_slices(exec_ctx,
                                     grpc_slice_from_static_string("abc"),
@@ -183,9 +194,10 @@ class SingleNonInternedElem {
   }
 };
 
-template <int kLength>
+template <int kLength, bool kTrueBinary>
 class SingleNonInternedBinaryElem {
  public:
+  static constexpr bool kEnableTrueBinary = kTrueBinary;
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
     return {grpc_mdelem_from_slices(
         exec_ctx, grpc_slice_from_static_string("abc-bin"), MakeBytes())};
@@ -203,6 +215,7 @@ class SingleNonInternedBinaryElem {
 
 class RepresentativeClientInitialMetadata {
  public:
+  static constexpr bool kEnableTrueBinary = true;
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
     return {
         GRPC_MDELEM_SCHEME_HTTP, GRPC_MDELEM_METHOD_POST,
@@ -224,6 +237,7 @@ class RepresentativeClientInitialMetadata {
 
 class RepresentativeServerInitialMetadata {
  public:
+  static constexpr bool kEnableTrueBinary = true;
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
     return {GRPC_MDELEM_STATUS_200,
             GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
@@ -233,6 +247,7 @@ class RepresentativeServerInitialMetadata {
 
 class RepresentativeServerTrailingMetadata {
  public:
+  static constexpr bool kEnableTrueBinary = true;
   static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
     return {GRPC_MDELEM_GRPC_STATUS_0};
   }
@@ -247,28 +262,67 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedKeyElem)
     ->Args({0, 16384});
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedElem)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedBinaryElem<1>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleInternedBinaryElem<1, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedBinaryElem<3>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleInternedBinaryElem<3, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedBinaryElem<10>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleInternedBinaryElem<10, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedBinaryElem<31>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleInternedBinaryElem<31, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedBinaryElem<100>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleInternedBinaryElem<100, false>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleInternedBinaryElem<1, true>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleInternedBinaryElem<3, true>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleInternedBinaryElem<10, true>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleInternedBinaryElem<31, true>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleInternedBinaryElem<100, true>)
     ->Args({0, 16384});
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedElem)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedBinaryElem<1>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedBinaryElem<3>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedBinaryElem<10>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedBinaryElem<31>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleNonInternedBinaryElem<1, false>)
     ->Args({0, 16384});
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<100>)
+                   SingleNonInternedBinaryElem<3, false>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleNonInternedBinaryElem<10, false>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleNonInternedBinaryElem<31, false>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleNonInternedBinaryElem<100, false>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleNonInternedBinaryElem<1, true>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleNonInternedBinaryElem<3, true>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleNonInternedBinaryElem<10, true>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleNonInternedBinaryElem<31, true>)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   SingleNonInternedBinaryElem<100, true>)
     ->Args({0, 16384});
 // test with a tiny frame size, to highlight continuation costs
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedElem)
@@ -421,7 +475,27 @@ class NonIndexedElem {
   }
 };
 
-class NonIndexedBinaryElem1 {
+template <int kLength, bool kTrueBinary>
+class NonIndexedBinaryElem;
+
+template <int kLength>
+class NonIndexedBinaryElem<kLength, true> {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() { return {}; }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    std::vector<uint8_t> v = {
+        0x00, 0x07, 'a', 'b', 'c',
+        '-',  'b',  'i', 'n', static_cast<uint8_t>(kLength + 1),
+        0};
+    for (int i = 0; i < kLength; i++) {
+      v.push_back(static_cast<uint8_t>(i));
+    }
+    return {MakeSlice(v)};
+  }
+};
+
+template <>
+class NonIndexedBinaryElem<1, false> {
  public:
   static std::vector<grpc_slice> GetInitSlices() { return {}; }
   static std::vector<grpc_slice> GetBenchmarkSlices() {
@@ -430,7 +504,8 @@ class NonIndexedBinaryElem1 {
   }
 };
 
-class NonIndexedBinaryElem3 {
+template <>
+class NonIndexedBinaryElem<3, false> {
  public:
   static std::vector<grpc_slice> GetInitSlices() { return {}; }
   static std::vector<grpc_slice> GetBenchmarkSlices() {
@@ -439,7 +514,8 @@ class NonIndexedBinaryElem3 {
   }
 };
 
-class NonIndexedBinaryElem10 {
+template <>
+class NonIndexedBinaryElem<10, false> {
  public:
   static std::vector<grpc_slice> GetInitSlices() { return {}; }
   static std::vector<grpc_slice> GetBenchmarkSlices() {
@@ -449,7 +525,8 @@ class NonIndexedBinaryElem10 {
   }
 };
 
-class NonIndexedBinaryElem31 {
+template <>
+class NonIndexedBinaryElem<31, false> {
  public:
   static std::vector<grpc_slice> GetInitSlices() { return {}; }
   static std::vector<grpc_slice> GetBenchmarkSlices() {
@@ -461,7 +538,8 @@ class NonIndexedBinaryElem31 {
   }
 };
 
-class NonIndexedBinaryElem100 {
+template <>
+class NonIndexedBinaryElem<100, false> {
  public:
   static std::vector<grpc_slice> GetInitSlices() { return {}; }
   static std::vector<grpc_slice> GetBenchmarkSlices() {
@@ -570,11 +648,16 @@ BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleInternedElem);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleInternedElem);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleInternedElem);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedElem);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem1);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem3);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem10);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem31);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem100);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<1, false>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<3, false>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<10, false>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, false>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, false>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<1, true>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<3, true>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<10, true>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, true>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, true>);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
                    RepresentativeClientInitialMetadata);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
@@ -583,24 +666,5 @@ BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
                    RepresentativeServerTrailingMetadata);
 
 }  // namespace hpack_parser_fixtures
-
-static void BM_Base16SomeStuff(benchmark::State &state) {
-  uint8_t *bytes = new uint8_t[state.range(0)];
-  for (int i = 0; i < state.range(0); i++) {
-    bytes[i] = static_cast<uint8_t>(rand());
-  }
-  uint8_t *encoded = new uint8_t[state.range(0) * 2];
-  static const uint8_t hex[] = "0123456789abcdef";
-  while (state.KeepRunning()) {
-    for (int i = 0; i < state.range(0); i++) {
-      encoded[2 * i + 0] = hex[encoded[i] >> 8];
-      encoded[2 * i + 1] = hex[encoded[i] & 0xf];
-    }
-  }
-  delete[] encoded;
-  delete[] bytes;
-  state.SetBytesProcessed(state.iterations() * state.range(0));
-}
-BENCHMARK(BM_Base16SomeStuff)->Range(1, 4096);
 
 BENCHMARK_MAIN();

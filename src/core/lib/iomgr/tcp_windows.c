@@ -430,9 +430,19 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_get_peer,
                                       win_get_fd};
 
-grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket,
-                               grpc_resource_quota *resource_quota,
+grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
+                               grpc_channel_args *channel_args,
                                char *peer_string) {
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
+  if (channel_args != NULL) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_ref_internal(
+            channel_args->args[i].value.pointer.p);
+      }
+    }
+  }
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
   memset(tcp, 0, sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;

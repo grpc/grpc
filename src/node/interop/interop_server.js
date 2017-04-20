@@ -228,7 +228,7 @@ function getServer(port, tls) {
     server_creds = grpc.ServerCredentials.createInsecure();
   }
   var server = new grpc.Server(options);
-  server.addProtoService(testProto.TestService.service, {
+  server.addService(testProto.TestService.service, {
     emptyCall: handleEmpty,
     unaryCall: handleUnary,
     streamingOutputCall: handleStreamingOutput,

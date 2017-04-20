@@ -99,6 +99,7 @@ DEFINE_bool(do_not_abort_on_transient_failures, false,
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
+using grpc::testing::UpdateActions;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
@@ -162,8 +163,10 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoUnimplementedMethod, &client);
   actions["unimplemented_service"] =
       std::bind(&grpc::testing::InteropClient::DoUnimplementedService, &client);
-  // actions["cacheable_unary"] =
-  //    std::bind(&grpc::testing::InteropClient::DoCacheableUnary, &client);
+  actions["cacheable_unary"] =
+      std::bind(&grpc::testing::InteropClient::DoCacheableUnary, &client);
+
+  UpdateActions(&actions);
 
   if (FLAGS_test_case == "all") {
     for (const auto& action : actions) {

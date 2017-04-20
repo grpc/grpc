@@ -157,8 +157,8 @@ static void do_nothing(void *ignored) {}
 
 static grpc_resolver *sockaddr_create(grpc_exec_ctx *exec_ctx,
                                       grpc_resolver_args *args,
-                                      int parse(grpc_uri *uri,
-                                                grpc_resolved_address *dst)) {
+                                      bool parse(const grpc_uri *uri,
+                                                 grpc_resolved_address *dst)) {
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
             args->uri->scheme);
@@ -209,7 +209,7 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
   static grpc_resolver *name##_factory_create_resolver(                     \
       grpc_exec_ctx *exec_ctx, grpc_resolver_factory *factory,              \
       grpc_resolver_args *args) {                                           \
-    return sockaddr_create(exec_ctx, args, parse_##name);                   \
+    return sockaddr_create(exec_ctx, args, grpc_parse_##name);              \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
       sockaddr_factory_ref, sockaddr_factory_unref,                         \

@@ -83,7 +83,8 @@ in the body.
 
 User Agent
 
-* U-A: grpc-web-javascript
+* Do NOT use User-Agent header (which is to be set by browsers, by default)
+* Use X-User-Agent: grpc-web-javascript/0.1 (follow the same format as specified in [gRPC over HTTP2](http://www.grpc.io/docs/guides/wire.html))
 
 ---
 

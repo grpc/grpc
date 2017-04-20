@@ -45,6 +45,9 @@ grpc_closure *grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
   closure->cb = cb;
   closure->cb_arg = cb_arg;
   closure->scheduler = scheduler;
+#ifndef NDEBUG
+  closure->scheduled = false;
+#endif
   return closure;
 }
 
@@ -137,6 +140,10 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
                         grpc_error *error) {
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
   if (c != NULL) {
+#ifndef NDEBUG
+    GPR_ASSERT(!c->scheduled);
+    c->scheduled = true;
+#endif
     assert(c->cb);
     c->scheduler->vtable->sched(exec_ctx, c, error);
   } else {
@@ -149,6 +156,10 @@ void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
   grpc_closure *c = list->head;
   while (c != NULL) {
     grpc_closure *next = c->next_data.next;
+#ifndef NDEBUG
+    GPR_ASSERT(!c->scheduled);
+    c->scheduled = true;
+#endif
     assert(c->cb);
     c->scheduler->vtable->sched(exec_ctx, c, c->error_data.error);
     c = next;

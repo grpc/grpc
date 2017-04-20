@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/ext/filters/max_age/max_age_filter.h"
 
 #include <limits.h>
 #include <string.h>
@@ -41,11 +41,16 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/service_config.h"
 
 #define DEFAULT_MAX_CONNECTION_AGE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_AGE_GRACE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_IDLE_MS INT_MAX
+#define MAX_CONNECTION_AGE_JITTER 0.1
+
+#define MAX_CONNECTION_AGE_INTEGER_OPTIONS \
+  (grpc_integer_options) { DEFAULT_MAX_CONNECTION_AGE_MS, 1, INT_MAX }
+#define MAX_CONNECTION_IDLE_INTEGER_OPTIONS \
+  (grpc_integer_options) { DEFAULT_MAX_CONNECTION_IDLE_MS, 1, INT_MAX }
 
 typedef struct channel_data {
   /* We take a reference to the channel stack for the timer callback */
@@ -167,8 +172,9 @@ static void start_max_age_grace_timer_after_goaway_op(grpc_exec_ctx* exec_ctx,
 static void close_max_idle_channel(grpc_exec_ctx* exec_ctx, void* arg,
                                    grpc_error* error) {
   channel_data* chand = arg;
-  gpr_atm_no_barrier_fetch_add(&chand->call_count, 1);
   if (error == GRPC_ERROR_NONE) {
+    /* Prevent the max idle timer from being set again */
+    gpr_atm_no_barrier_fetch_add(&chand->call_count, 1);
     grpc_transport_op* op = grpc_make_transport_op(NULL);
     op->goaway_error =
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_idle"),
@@ -254,6 +260,21 @@ static void channel_connectivity_changed(grpc_exec_ctx* exec_ctx, void* arg,
   }
 }
 
+/* A random jitter of +/-10% will be added to MAX_CONNECTION_AGE to spread out
+   connection storms. Note that the MAX_CONNECTION_AGE option without jitter
+   would not create connection storms by itself, but if there happened to be a
+   connection storm it could cause it to repeat at a fixed period. */
+static int add_random_max_connection_age_jitter(int value) {
+  /* generate a random number between 1 - MAX_CONNECTION_AGE_JITTER and
+     1 + MAX_CONNECTION_AGE_JITTER */
+  double multiplier = rand() * MAX_CONNECTION_AGE_JITTER * 2.0 / RAND_MAX +
+                      1.0 - MAX_CONNECTION_AGE_JITTER;
+  double result = multiplier * value;
+  /* INT_MAX - 0.5 converts the value to float, so that result will not be
+     cast to int implicitly before the comparison. */
+  return result > INT_MAX - 0.5 ? INT_MAX : (int)result;
+}
+
 /* Constructor for call_data. */
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
@@ -283,7 +304,9 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
   chand->max_connection_age =
       DEFAULT_MAX_CONNECTION_AGE_MS == INT_MAX
           ? gpr_inf_future(GPR_TIMESPAN)
-          : gpr_time_from_millis(DEFAULT_MAX_CONNECTION_AGE_MS, GPR_TIMESPAN);
+          : gpr_time_from_millis(add_random_max_connection_age_jitter(
+                                     DEFAULT_MAX_CONNECTION_AGE_MS),
+                                 GPR_TIMESPAN);
   chand->max_connection_age_grace =
       DEFAULT_MAX_CONNECTION_AGE_GRACE_MS == INT_MAX
           ? gpr_inf_future(GPR_TIMESPAN)
@@ -297,11 +320,12 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
     if (0 == strcmp(args->channel_args->args[i].key,
                     GRPC_ARG_MAX_CONNECTION_AGE_MS)) {
       const int value = grpc_channel_arg_get_integer(
-          &args->channel_args->args[i],
-          (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_MS, 1, INT_MAX});
+          &args->channel_args->args[i], MAX_CONNECTION_AGE_INTEGER_OPTIONS);
       chand->max_connection_age =
-          value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
-                           : gpr_time_from_millis(value, GPR_TIMESPAN);
+          value == INT_MAX
+              ? gpr_inf_future(GPR_TIMESPAN)
+              : gpr_time_from_millis(
+                    add_random_max_connection_age_jitter(value), GPR_TIMESPAN);
     } else if (0 == strcmp(args->channel_args->args[i].key,
                            GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS)) {
       const int value = grpc_channel_arg_get_integer(
@@ -314,8 +338,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
     } else if (0 == strcmp(args->channel_args->args[i].key,
                            GRPC_ARG_MAX_CONNECTION_IDLE_MS)) {
       const int value = grpc_channel_arg_get_integer(
-          &args->channel_args->args[i],
-          (grpc_integer_options){DEFAULT_MAX_CONNECTION_IDLE_MS, 1, INT_MAX});
+          &args->channel_args->args[i], MAX_CONNECTION_IDLE_INTEGER_OPTIONS);
       chand->max_connection_idle =
           value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
                            : gpr_time_from_millis(value, GPR_TIMESPAN);
@@ -392,16 +415,13 @@ static bool maybe_add_max_age_filter(grpc_exec_ctx* exec_ctx,
                                      void* arg) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  const grpc_arg* a =
-      grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS);
-  bool enable = false;
-  if (a != NULL && a->type == GRPC_ARG_INTEGER && a->value.integer != INT_MAX) {
-    enable = true;
-  }
-  a = grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS);
-  if (a != NULL && a->type == GRPC_ARG_INTEGER && a->value.integer != INT_MAX) {
-    enable = true;
-  }
+  bool enable =
+      grpc_channel_arg_get_integer(
+          grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS),
+          MAX_CONNECTION_AGE_INTEGER_OPTIONS) != INT_MAX &&
+      grpc_channel_arg_get_integer(
+          grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS),
+          MAX_CONNECTION_IDLE_INTEGER_OPTIONS) != INT_MAX;
   if (enable) {
     return grpc_channel_stack_builder_prepend_filter(
         builder, &grpc_max_age_filter, NULL, NULL);

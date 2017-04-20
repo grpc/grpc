@@ -44,8 +44,8 @@ var serviceProto = grpc.load({
 function runServer(port, benchmark_impl) {
   var server_creds = grpc.ServerCredentials.createInsecure();
   var server = new grpc.Server();
-  server.addProtoService(serviceProto.WorkerService.service,
-                         new WorkerServiceImpl(benchmark_impl, server));
+  server.addService(serviceProto.WorkerService.service,
+                    new WorkerServiceImpl(benchmark_impl, server));
   var address = '0.0.0.0:' + port;
   server.bind(address, server_creds);
   server.start();

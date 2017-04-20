@@ -45,6 +45,7 @@
 #include <ws2tcpip.h>
 #else
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #endif
 
 #include <grpc/support/alloc.h>
@@ -81,23 +82,13 @@
 
 /* --- Structure definitions. ---*/
 
-struct tsi_ssl_handshaker_factory {
-  tsi_result (*create_handshaker)(tsi_ssl_handshaker_factory *self,
-                                  const char *server_name_indication,
-                                  tsi_handshaker **handshaker);
-  void (*destroy)(tsi_ssl_handshaker_factory *self);
-};
-
-typedef struct {
-  tsi_ssl_handshaker_factory base;
+struct tsi_ssl_client_handshaker_factory {
   SSL_CTX *ssl_context;
   unsigned char *alpn_protocol_list;
   size_t alpn_protocol_list_length;
-} tsi_ssl_client_handshaker_factory;
+};
 
-typedef struct {
-  tsi_ssl_handshaker_factory base;
-
+struct tsi_ssl_server_handshaker_factory {
   /* Several contexts to support SNI.
      The tsi_peer array contains the subject names of the server certificates
      associated with the contexts at the same index.  */
@@ -106,7 +97,7 @@ typedef struct {
   size_t ssl_context_count;
   unsigned char *alpn_protocol_list;
   size_t alpn_protocol_list_length;
-} tsi_ssl_server_handshaker_factory;
+};
 
 typedef struct {
   tsi_handshaker base;
@@ -1053,18 +1044,6 @@ static const tsi_handshaker_vtable handshaker_vtable = {
 
 /* --- tsi_ssl_handshaker_factory common methods. --- */
 
-tsi_result tsi_ssl_handshaker_factory_create_handshaker(
-    tsi_ssl_handshaker_factory *self, const char *server_name_indication,
-    tsi_handshaker **handshaker) {
-  if (self == NULL || handshaker == NULL) return TSI_INVALID_ARGUMENT;
-  return self->create_handshaker(self, server_name_indication, handshaker);
-}
-
-void tsi_ssl_handshaker_factory_destroy(tsi_ssl_handshaker_factory *self) {
-  if (self == NULL) return;
-  self->destroy(self);
-}
-
 static tsi_result create_tsi_ssl_handshaker(SSL_CTX *ctx, int is_client,
                                             const char *server_name_indication,
                                             tsi_handshaker **handshaker) {
@@ -1152,24 +1131,20 @@ static int select_protocol_list(const unsigned char **out,
   return SSL_TLSEXT_ERR_NOACK;
 }
 
-/* --- tsi_ssl__client_handshaker_factory methods implementation. --- */
+/* --- tsi_ssl_client_handshaker_factory methods implementation. --- */
 
-static tsi_result ssl_client_handshaker_factory_create_handshaker(
-    tsi_ssl_handshaker_factory *self, const char *server_name_indication,
+tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
+    tsi_ssl_client_handshaker_factory *self, const char *server_name_indication,
     tsi_handshaker **handshaker) {
-  tsi_ssl_client_handshaker_factory *impl =
-      (tsi_ssl_client_handshaker_factory *)self;
-  return create_tsi_ssl_handshaker(impl->ssl_context, 1, server_name_indication,
+  return create_tsi_ssl_handshaker(self->ssl_context, 1, server_name_indication,
                                    handshaker);
 }
 
-static void ssl_client_handshaker_factory_destroy(
-    tsi_ssl_handshaker_factory *self) {
-  tsi_ssl_client_handshaker_factory *impl =
-      (tsi_ssl_client_handshaker_factory *)self;
-  if (impl->ssl_context != NULL) SSL_CTX_free(impl->ssl_context);
-  if (impl->alpn_protocol_list != NULL) gpr_free(impl->alpn_protocol_list);
-  gpr_free(impl);
+void tsi_ssl_client_handshaker_factory_destroy(
+    tsi_ssl_client_handshaker_factory *self) {
+  if (self->ssl_context != NULL) SSL_CTX_free(self->ssl_context);
+  if (self->alpn_protocol_list != NULL) gpr_free(self->alpn_protocol_list);
+  gpr_free(self);
 }
 
 static int client_handshaker_factory_npn_callback(SSL *ssl, unsigned char **out,
@@ -1186,36 +1161,29 @@ static int client_handshaker_factory_npn_callback(SSL *ssl, unsigned char **out,
 
 /* --- tsi_ssl_server_handshaker_factory methods implementation. --- */
 
-static tsi_result ssl_server_handshaker_factory_create_handshaker(
-    tsi_ssl_handshaker_factory *self, const char *server_name_indication,
-    tsi_handshaker **handshaker) {
-  tsi_ssl_server_handshaker_factory *impl =
-      (tsi_ssl_server_handshaker_factory *)self;
-  if (impl->ssl_context_count == 0 || server_name_indication != NULL) {
-    return TSI_INVALID_ARGUMENT;
-  }
+tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
+    tsi_ssl_server_handshaker_factory *self, tsi_handshaker **handshaker) {
+  if (self->ssl_context_count == 0) return TSI_INVALID_ARGUMENT;
   /* Create the handshaker with the first context. We will switch if needed
      because of SNI in ssl_server_handshaker_factory_servername_callback.  */
-  return create_tsi_ssl_handshaker(impl->ssl_contexts[0], 0, NULL, handshaker);
+  return create_tsi_ssl_handshaker(self->ssl_contexts[0], 0, NULL, handshaker);
 }
 
-static void ssl_server_handshaker_factory_destroy(
-    tsi_ssl_handshaker_factory *self) {
-  tsi_ssl_server_handshaker_factory *impl =
-      (tsi_ssl_server_handshaker_factory *)self;
+void tsi_ssl_server_handshaker_factory_destroy(
+    tsi_ssl_server_handshaker_factory *self) {
   size_t i;
-  for (i = 0; i < impl->ssl_context_count; i++) {
-    if (impl->ssl_contexts[i] != NULL) {
-      SSL_CTX_free(impl->ssl_contexts[i]);
-      tsi_peer_destruct(&impl->ssl_context_x509_subject_names[i]);
+  for (i = 0; i < self->ssl_context_count; i++) {
+    if (self->ssl_contexts[i] != NULL) {
+      SSL_CTX_free(self->ssl_contexts[i]);
+      tsi_peer_destruct(&self->ssl_context_x509_subject_names[i]);
     }
   }
-  if (impl->ssl_contexts != NULL) gpr_free(impl->ssl_contexts);
-  if (impl->ssl_context_x509_subject_names != NULL) {
-    gpr_free(impl->ssl_context_x509_subject_names);
+  if (self->ssl_contexts != NULL) gpr_free(self->ssl_contexts);
+  if (self->ssl_context_x509_subject_names != NULL) {
+    gpr_free(self->ssl_context_x509_subject_names);
   }
-  if (impl->alpn_protocol_list != NULL) gpr_free(impl->alpn_protocol_list);
-  gpr_free(impl);
+  if (self->alpn_protocol_list != NULL) gpr_free(self->alpn_protocol_list);
+  gpr_free(self);
 }
 
 static int does_entry_match_name(const char *entry, size_t entry_length,
@@ -1317,7 +1285,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     const unsigned char *pem_root_certs, size_t pem_root_certs_size,
     const char *cipher_list, const unsigned char **alpn_protocols,
     const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_handshaker_factory **factory) {
+    tsi_ssl_client_handshaker_factory **factory) {
   SSL_CTX *ssl_context = NULL;
   tsi_ssl_client_handshaker_factory *impl = NULL;
   tsi_result result = TSI_OK;
@@ -1373,16 +1341,13 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     }
   } while (0);
   if (result != TSI_OK) {
-    ssl_client_handshaker_factory_destroy(&impl->base);
+    tsi_ssl_client_handshaker_factory_destroy(impl);
     return result;
   }
   SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NULL);
   /* TODO(jboeuf): Add revocation verification. */
 
-  impl->base.create_handshaker =
-      ssl_client_handshaker_factory_create_handshaker;
-  impl->base.destroy = ssl_client_handshaker_factory_destroy;
-  *factory = &impl->base;
+  *factory = impl;
   return TSI_OK;
 }
 
@@ -1394,7 +1359,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
     size_t pem_client_root_certs_size, int force_client_auth,
     const char *cipher_list, const unsigned char **alpn_protocols,
     const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_handshaker_factory **factory) {
+    tsi_ssl_server_handshaker_factory **factory) {
   return tsi_create_ssl_server_handshaker_factory_ex(
       pem_private_keys, pem_private_keys_sizes, pem_cert_chains,
       pem_cert_chains_sizes, key_cert_pair_count, pem_client_root_certs,
@@ -1414,7 +1379,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     tsi_client_certificate_request_type client_certificate_request,
     const char *cipher_list, const unsigned char **alpn_protocols,
     const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_handshaker_factory **factory) {
+    tsi_ssl_server_handshaker_factory **factory) {
   tsi_ssl_server_handshaker_factory *impl = NULL;
   tsi_result result = TSI_OK;
   size_t i = 0;
@@ -1429,15 +1394,12 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
   }
 
   impl = gpr_zalloc(sizeof(*impl));
-  impl->base.create_handshaker =
-      ssl_server_handshaker_factory_create_handshaker;
-  impl->base.destroy = ssl_server_handshaker_factory_destroy;
   impl->ssl_contexts = gpr_zalloc(key_cert_pair_count * sizeof(SSL_CTX *));
   impl->ssl_context_x509_subject_names =
       gpr_zalloc(key_cert_pair_count * sizeof(tsi_peer));
   if (impl->ssl_contexts == NULL ||
       impl->ssl_context_x509_subject_names == NULL) {
-    tsi_ssl_handshaker_factory_destroy(&impl->base);
+    tsi_ssl_server_handshaker_factory_destroy(impl);
     return TSI_OUT_OF_RESOURCES;
   }
   impl->ssl_context_count = key_cert_pair_count;
@@ -1447,7 +1409,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
         alpn_protocols, alpn_protocols_lengths, num_alpn_protocols,
         &impl->alpn_protocol_list, &impl->alpn_protocol_list_length);
     if (result != TSI_OK) {
-      tsi_ssl_handshaker_factory_destroy(&impl->base);
+      tsi_ssl_server_handshaker_factory_destroy(impl);
       return result;
     }
   }
@@ -1520,11 +1482,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     } while (0);
 
     if (result != TSI_OK) {
-      tsi_ssl_handshaker_factory_destroy(&impl->base);
+      tsi_ssl_server_handshaker_factory_destroy(impl);
       return result;
     }
   }
-  *factory = &impl->base;
+  *factory = impl;
   return TSI_OK;
 }
 

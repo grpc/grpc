@@ -6,15 +6,15 @@ settings:
   '#02': ===
   '#03': Please update the 'g_stands_for' field periodically with a new g word
   '#04': not listed in doc/g_stands_for.md - and update that document to list the
-  '#05': new word.
+  '#05': new word. When doing so, please also update BUILD.
   '#06': ===
   '#07': Master always has a "-dev" suffix
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 3.0.0-dev
+  core_version: 4.0.0-dev
   g_stands_for: gentle
-  version: 1.3.0-dev
+  version: 1.4.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -176,16 +176,11 @@ filegroups:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
-  - src/core/lib/channel/compress_filter.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
-  - src/core/lib/channel/deadline_filter.h
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
-  - src/core/lib/channel/http_client_filter.h
-  - src/core/lib/channel/http_server_filter.h
-  - src/core/lib/channel/message_size_filter.h
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/debug/trace.h
@@ -208,6 +203,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
   - src/core/lib/iomgr/load_file.h
+  - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/network_status_tracker.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
@@ -287,15 +283,10 @@ filegroups:
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
-  - src/core/lib/channel/compress_filter.c
   - src/core/lib/channel/connected_channel.c
-  - src/core/lib/channel/deadline_filter.c
   - src/core/lib/channel/handshaker.c
   - src/core/lib/channel/handshaker_factory.c
   - src/core/lib/channel/handshaker_registry.c
-  - src/core/lib/channel/http_client_filter.c
-  - src/core/lib/channel/http_server_filter.c
-  - src/core/lib/channel/message_size_filter.c
   - src/core/lib/compression/compression.c
   - src/core/lib/compression/message_compress.c
   - src/core/lib/debug/trace.c
@@ -320,6 +311,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr_uv.c
   - src/core/lib/iomgr/iomgr_windows.c
   - src/core/lib/iomgr/load_file.c
+  - src/core/lib/iomgr/lockfree_event.c
   - src/core/lib/iomgr/network_status_tracker.c
   - src/core/lib/iomgr/polling_entity.c
   - src/core/lib/iomgr/pollset_set_uv.c
@@ -456,6 +448,7 @@ filegroups:
   plugin: grpc_client_channel
   uses:
   - grpc_base
+  - grpc_deadline_filter
 - name: grpc_codegen
   public_headers:
   - include/grpc/impl/codegen/byte_buffer_reader.h
@@ -468,6 +461,27 @@ filegroups:
   - include/grpc/impl/codegen/status.h
   uses:
   - gpr_codegen
+- name: grpc_deadline_filter
+  headers:
+  - src/core/ext/filters/deadline/deadline_filter.h
+  src:
+  - src/core/ext/filters/deadline/deadline_filter.c
+  plugin: grpc_deadline_filter
+  uses:
+  - grpc_base
+- name: grpc_http_filters
+  headers:
+  - src/core/ext/filters/http/client/http_client_filter.h
+  - src/core/ext/filters/http/message_compress/message_compress_filter.h
+  - src/core/ext/filters/http/server/http_server_filter.h
+  src:
+  - src/core/ext/filters/http/client/http_client_filter.c
+  - src/core/ext/filters/http/http_filters_plugin.c
+  - src/core/ext/filters/http/message_compress/message_compress_filter.c
+  - src/core/ext/filters/http/server/http_server_filter.c
+  plugin: grpc_http_filters
+  uses:
+  - grpc_base
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
@@ -531,6 +545,14 @@ filegroups:
   src:
   - src/core/ext/filters/max_age/max_age_filter.c
   plugin: grpc_max_age_filter
+  uses:
+  - grpc_base
+- name: grpc_message_size_filter
+  headers:
+  - src/core/ext/filters/message_size/message_size_filter.h
+  src:
+  - src/core/ext/filters/message_size/message_size_filter.c
+  plugin: grpc_message_size_filter
   uses:
   - grpc_base
 - name: grpc_resolver_dns_ares
@@ -664,6 +686,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_table.h
+  - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
@@ -683,6 +706,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/hpack_encoder.c
   - src/core/ext/transport/chttp2/transport/hpack_parser.c
   - src/core/ext/transport/chttp2/transport/hpack_table.c
+  - src/core/ext/transport/chttp2/transport/http2_settings.c
   - src/core/ext/transport/chttp2/transport/huffsyms.c
   - src/core/ext/transport/chttp2/transport/incoming_metadata.c
   - src/core/ext/transport/chttp2/transport/parsing.c
@@ -694,6 +718,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_transport_chttp2_alpn
+  - grpc_http_filters
 - name: grpc_transport_chttp2_alpn
   headers:
   - src/core/ext/transport/chttp2/alpn/alpn.h
@@ -767,6 +792,7 @@ filegroups:
   filegroups:
   - grpc_base
   - grpc_transport_chttp2
+  - grpc_http_filters
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
@@ -913,7 +939,6 @@ filegroups:
   - include/grpc++/impl/codegen/slice.h
   - include/grpc++/impl/codegen/status.h
   - include/grpc++/impl/codegen/status_code_enum.h
-  - include/grpc++/impl/codegen/status_helper.h
   - include/grpc++/impl/codegen/string_ref.h
   - include/grpc++/impl/codegen/stub_options.h
   - include/grpc++/impl/codegen/sync_stream.h
@@ -997,6 +1022,8 @@ libs:
   - grpc_secure
   - census
   - grpc_max_age_filter
+  - grpc_message_size_filter
+  - grpc_deadline_filter
   generate_plugin_registry: true
   secure: true
   vs_packages:
@@ -1094,6 +1121,8 @@ libs:
   - grpc_lb_policy_round_robin
   - census
   - grpc_max_age_filter
+  - grpc_message_size_filter
+  - grpc_deadline_filter
   generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
@@ -1173,6 +1202,18 @@ libs:
   platforms:
   - linux
   secure: true
+- name: grpc++_error_details
+  build: all
+  language: c++
+  public_headers:
+  - include/grpc++/support/error_details.h
+  src:
+  - src/proto/grpc/status/status.proto
+  - src/cpp/util/error_details.cc
+  deps:
+  - grpc++
+  baselib: true
+  vs_project_guid: '{9F58AD72-49E1-4D10-B826-9E190AB0AAC0}'
 - name: grpc++_proto_reflection_desc_db
   build: private
   language: c++
@@ -1475,6 +1516,7 @@ libs:
   - global
 targets:
 - name: alarm_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1658,7 +1700,7 @@ targets:
   dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
 - name: combiner_test
-  cpu_cost: 30
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1679,6 +1721,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: concurrent_connectivity_test
+  cpu_cost: 2.0
   build: test
   language: c
   src:
@@ -1765,6 +1808,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: ev_epoll_linux_test
+  cpu_cost: 3
   build: test
   language: c
   src:
@@ -1778,6 +1822,16 @@ targets:
   - uv
   platforms:
   - linux
+- name: fake_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/resolvers/fake_resolver_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -1924,6 +1978,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_cpu_test
+  cpu_cost: 30
   build: test
   language: c
   src:
@@ -1973,7 +2028,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_spinlock_test
-  cpu_cost: 10
+  cpu_cost: 3
   build: test
   language: c
   src:
@@ -2499,6 +2554,16 @@ targets:
   language: c
   src:
   - test/core/compression/message_compress_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: minimal_stack_is_minimal_test
+  build: test
+  language: c
+  src:
+  - test/core/channel/minimal_stack_is_minimal_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3217,6 +3282,27 @@ targets:
   - mac
   - linux
   - posix
+- name: bm_cq_multiple_threads
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_cq_multiple_threads.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --benchmark_min_time=0
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: bm_error
   build: test
   language: c++
@@ -3473,6 +3559,9 @@ targets:
   - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
+  deps:
+  - grpc
+  - gpr
   filegroups:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
@@ -3544,6 +3633,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: error_details_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/echo_messages.proto
+  - test/cpp/util/error_details_test.cc
+  deps:
+  - grpc++_error_details
+  - grpc++
 - name: filter_end2end_test
   gtest: true
   build: test
@@ -4285,6 +4384,10 @@ configs:
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
+  c++-compat:
+    CFLAGS: -Wc++-compat
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
   counters:
     CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
     DEFINES: NDEBUG
@@ -4426,6 +4529,7 @@ php_config_m4:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   headers:
   - src/php/ext/grpc/byte_buffer.h

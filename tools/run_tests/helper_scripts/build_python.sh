@@ -155,7 +155,7 @@ fi
 ($PYTHON -m virtualenv $VENV ||
  $HOST_PYTHON -m virtualenv -p $PYTHON $VENV ||
  true)
-VENV_PYTHON=`script_realpath -s "$VENV/$VENV_RELATIVE_PYTHON"`
+VENV_PYTHON=`script_realpath "$VENV/$VENV_RELATIVE_PYTHON"`
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.

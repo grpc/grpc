@@ -423,12 +423,8 @@ grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
   c->base.check_call_host = fake_channel_check_call_host;
   c->base.add_handshakers = fake_channel_add_handshakers;
   c->target = gpr_strdup(target);
-  const grpc_arg *expected_target_arg =
-      grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
-  if (expected_target_arg != NULL) {
-    GPR_ASSERT(expected_target_arg->type == GRPC_ARG_STRING);
-    c->expected_targets = gpr_strdup(expected_target_arg->value.string);
-  }
+  const char *expected_targets = grpc_fake_transport_get_expected_targets(args);
+  c->expected_targets = gpr_strdup(expected_targets);
   c->is_lb_channel = (grpc_lb_targets_info_find_in_args(args) != NULL);
   return &c->base;
 }
@@ -448,14 +444,14 @@ grpc_server_security_connector *grpc_fake_server_security_connector_create(
 
 typedef struct {
   grpc_channel_security_connector base;
-  tsi_ssl_handshaker_factory *handshaker_factory;
+  tsi_ssl_client_handshaker_factory *handshaker_factory;
   char *target_name;
   char *overridden_target_name;
 } grpc_ssl_channel_security_connector;
 
 typedef struct {
   grpc_server_security_connector base;
-  tsi_ssl_handshaker_factory *handshaker_factory;
+  tsi_ssl_server_handshaker_factory *handshaker_factory;
 } grpc_ssl_server_security_connector;
 
 static void ssl_channel_destroy(grpc_exec_ctx *exec_ctx,
@@ -464,7 +460,7 @@ static void ssl_channel_destroy(grpc_exec_ctx *exec_ctx,
       (grpc_ssl_channel_security_connector *)sc;
   grpc_call_credentials_unref(exec_ctx, c->base.request_metadata_creds);
   if (c->handshaker_factory != NULL) {
-    tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
+    tsi_ssl_client_handshaker_factory_destroy(c->handshaker_factory);
   }
   if (c->target_name != NULL) gpr_free(c->target_name);
   if (c->overridden_target_name != NULL) gpr_free(c->overridden_target_name);
@@ -476,24 +472,9 @@ static void ssl_server_destroy(grpc_exec_ctx *exec_ctx,
   grpc_ssl_server_security_connector *c =
       (grpc_ssl_server_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
-    tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
+    tsi_ssl_server_handshaker_factory_destroy(c->handshaker_factory);
   }
   gpr_free(sc);
-}
-
-static grpc_security_status ssl_create_handshaker(
-    tsi_ssl_handshaker_factory *handshaker_factory, bool is_client,
-    const char *peer_name, tsi_handshaker **handshaker) {
-  tsi_result result = TSI_OK;
-  if (handshaker_factory == NULL) return GRPC_SECURITY_ERROR;
-  result = tsi_ssl_handshaker_factory_create_handshaker(
-      handshaker_factory, is_client ? peer_name : NULL, handshaker);
-  if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
-            tsi_result_to_string(result));
-    return GRPC_SECURITY_ERROR;
-  }
-  return GRPC_SECURITY_OK;
 }
 
 static void ssl_channel_add_handshakers(grpc_exec_ctx *exec_ctx,
@@ -503,11 +484,17 @@ static void ssl_channel_add_handshakers(grpc_exec_ctx *exec_ctx,
       (grpc_ssl_channel_security_connector *)sc;
   // Instantiate TSI handshaker.
   tsi_handshaker *tsi_hs = NULL;
-  ssl_create_handshaker(c->handshaker_factory, true /* is_client */,
-                        c->overridden_target_name != NULL
-                            ? c->overridden_target_name
-                            : c->target_name,
-                        &tsi_hs);
+  tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
+      c->handshaker_factory,
+      c->overridden_target_name != NULL ? c->overridden_target_name
+                                        : c->target_name,
+      &tsi_hs);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
+            tsi_result_to_string(result));
+    return;
+  }
+
   // Create handshakers.
   grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
                                                 exec_ctx, tsi_hs, &sc->base));
@@ -520,8 +507,14 @@ static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
       (grpc_ssl_server_security_connector *)sc;
   // Instantiate TSI handshaker.
   tsi_handshaker *tsi_hs = NULL;
-  ssl_create_handshaker(c->handshaker_factory, false /* is_client */,
-                        NULL /* peer_name */, &tsi_hs);
+  tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
+      c->handshaker_factory, &tsi_hs);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
+            tsi_result_to_string(result));
+    return;
+  }
+
   // Create handshakers.
   grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
                                                 exec_ctx, tsi_hs, &sc->base));

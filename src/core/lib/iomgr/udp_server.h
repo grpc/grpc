@@ -56,7 +56,7 @@ typedef void (*grpc_udp_server_write_cb)(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
 /* Called when the grpc_fd is about to be orphaned (and the FD closed). */
 typedef void (*grpc_udp_server_orphan_cb)(grpc_exec_ctx *exec_ctx,
                                           grpc_fd *emfd,
-                                          grpc_closure* shutdown_fd_callback,
+                                          grpc_closure *shutdown_fd_callback,
                                           void *user_data);
 
 /* Create a server, initially not bound to any ports */

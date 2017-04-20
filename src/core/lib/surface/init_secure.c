@@ -31,6 +31,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/surface/init.h"
 
 #include <limits.h>

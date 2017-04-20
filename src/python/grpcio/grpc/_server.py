@@ -705,6 +705,10 @@ def _serve(state):
                     state.rpc_states.remove(rpc_state)
                     if _stop_serving(state):
                         return
+        # We want to force the deletion of the previous event
+        # ~before~ we poll again; if the event has a reference
+        # to a shutdown Call object, this can induce spinlock.
+        event = None
 
 
 def _stop(state, grace):

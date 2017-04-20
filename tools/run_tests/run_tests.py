@@ -395,6 +395,8 @@ class CLanguage(object):
       return ('jessie', self._gcc_make_options(version_suffix='-4.8'))
     elif compiler == 'gcc5.3':
       return ('ubuntu1604', [])
+    elif compiler == 'gcc_musl':
+      return ('alpine', [])
     elif compiler == 'clang3.4':
       # on ubuntu1404, clang-3.4 alias doesn't exist, just use 'clang'
       return ('ubuntu1404', self._clang_make_options())
@@ -427,7 +429,7 @@ class NodeLanguage(object):
     # we should specify in the compiler argument
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         'node7', 'electron1.3'])
+                                         'node7', 'electron1.3', 'electron1.6'])
     if args.iomgr_platform == "uv":
       self.use_uv = True
     else:
@@ -626,7 +628,12 @@ class PythonLanguage(object):
     return 'tools/dockerfile/test/python_%s_%s' % (self.python_manager_name(), _docker_arch_suffix(self.args.arch))
 
   def python_manager_name(self):
-    return 'pyenv' if self.args.compiler in ['python3.5', 'python3.6'] else 'jessie'
+    if self.args.compiler in ['python3.5', 'python3.6']:
+      return 'pyenv'
+    elif self.args.compiler == 'python_alpine':
+      return 'alpine'
+    else:
+      return 'jessie'
 
   def _get_pythons(self, args):
     if args.arch == 'x86':
@@ -684,6 +691,8 @@ class PythonLanguage(object):
       return (pypy27_config,)
     elif args.compiler == 'pypy3':
       return (pypy32_config,)
+    elif args.compiler == 'python_alpine':
+      return (python27_config,)
     else:
       raise Exception('Compiler %s not supported.' % args.compiler)
 
@@ -743,14 +752,11 @@ class CSharpLanguage(object):
     if self.platform == 'windows':
       _check_compiler(self.args.compiler, ['coreclr', 'default'])
       _check_arch(self.args.arch, ['default'])
-      self._cmake_arch_option = 'x64' if self.args.compiler == 'coreclr' else 'Win32'
+      self._cmake_arch_option = 'x64'
       self._make_options = []
     else:
       _check_compiler(self.args.compiler, ['default', 'coreclr'])
-      if self.platform == 'linux' and self.args.compiler == 'coreclr':
-        self._docker_distro = 'coreclr'
-      else:
-        self._docker_distro = 'jessie'
+      self._docker_distro = 'jessie'
 
       if self.platform == 'mac':
         # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
@@ -766,7 +772,7 @@ class CSharpLanguage(object):
       tests_by_assembly = json.load(f)
 
     msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
-    nunit_args = ['--labels=All']
+    nunit_args = ['--labels=All', '--noresult', '--workers=1']
     assembly_subdir = 'bin/%s' % msbuild_config
     assembly_extension = '.exe'
 
@@ -775,7 +781,7 @@ class CSharpLanguage(object):
       runtime_cmd = ['dotnet', 'exec']
       assembly_extension = '.dll'
     else:
-      nunit_args += ['--noresult', '--workers=1']
+      assembly_subdir += '/net45'
       if self.platform == 'windows':
         runtime_cmd = []
       else:
@@ -827,18 +833,10 @@ class CSharpLanguage(object):
     return self._make_options;
 
   def build_steps(self):
-    if self.args.compiler == 'coreclr':
-      if self.platform == 'windows':
-        return [['tools\\run_tests\\helper_scripts\\build_csharp_coreclr.bat']]
-      else:
-        return [['tools/run_tests/helper_scripts/build_csharp_coreclr.sh']]
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\helper_scripts\\build_csharp.bat']]
     else:
-      if self.platform == 'windows':
-        return [['vsprojects\\build_vs2015.bat',
-                 'src/csharp/Grpc.sln',
-                 '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
-      else:
-        return [['tools/run_tests/helper_scripts/build_csharp.sh']]
+      return [['tools/run_tests/helper_scripts/build_csharp.sh']]
 
   def post_tests_steps(self):
     if self.platform == 'windows':
@@ -1175,12 +1173,12 @@ argp.add_argument('--arch',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
                   choices=['default',
-                           'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3',
+                           'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc_musl',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2013', 'vs2015',
-                           'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
+                           'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
                            'node0.12', 'node4', 'node5', 'node6', 'node7',
-                           'electron1.3',
+                           'electron1.3', 'electron1.6',
                            'coreclr',
                            'cmake'],
                   default='default',
