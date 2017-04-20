@@ -112,12 +112,10 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
   stats->data_bytes += write_bytes;
 }
 
-grpc_error *deframe_unprocessed_incoming_frames(grpc_exec_ctx *exec_ctx,
-                                                grpc_chttp2_data_parser *p,
-                                                grpc_chttp2_stream *s,
-                                                grpc_slice_buffer *slices,
-                                                grpc_slice *slice_out,
-                                                grpc_byte_stream **stream_out) {
+grpc_error *grpc_deframe_unprocessed_incoming_frames(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_data_parser *p, grpc_chttp2_stream *s,
+    grpc_slice_buffer *slices, grpc_slice *slice_out,
+    grpc_byte_stream **stream_out) {
   grpc_error *error = GRPC_ERROR_NONE;
   grpc_chttp2_transport *t = s->t;
 

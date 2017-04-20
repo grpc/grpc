@@ -30,7 +30,7 @@
 from scipy import stats
 import math
 
-_THRESHOLD = 0.0001
+_THRESHOLD = 1e-10
 
 def scale(a, mul):
   return [x*mul for x in a]
@@ -53,7 +53,7 @@ def speedup(new, old):
     return -(pct - 1)
   else:
     pct = 1
-    while pct < 101:
+    while pct < 100000:
       sp, pp = cmp(new, scale(old, 1 + pct/100.0))
       if sp < 0: break
       if pp > _THRESHOLD: break
