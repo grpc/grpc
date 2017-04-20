@@ -366,8 +366,8 @@ static GRPCProtoMethod *kUnaryCallMethod;
   GRXWriter *requestsWriter1 = [GRXWriter writerWithValue:[request data]];
 
   GRPCCall *call1 = [[GRPCCall alloc] initWithHost:kHostAddress
-                                             path:kUnaryCallMethod.HTTPPath
-                                   requestsWriter:requestsWriter1];
+                                              path:kUnaryCallMethod.HTTPPath
+                                    requestsWriter:requestsWriter1];
 
   id<GRXWriteable> responsesWriteable1 = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     NSString *label = [NSString stringWithUTF8String:dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL)];
