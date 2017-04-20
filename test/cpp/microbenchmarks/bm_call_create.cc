@@ -229,7 +229,7 @@ static void BM_LameChannelCallCreateCore(benchmark::State &state) {
         cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     GPR_ASSERT(ev.type != GRPC_QUEUE_SHUTDOWN);
     GPR_ASSERT(ev.success != 0);
-    grpc_call_destroy(call);
+    grpc_call_unref(call);
     grpc_byte_buffer_destroy(request_payload_send);
     grpc_byte_buffer_destroy(response_payload_recv);
     grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -312,7 +312,7 @@ static void BM_LameChannelCallCreateCoreSeparateBatch(benchmark::State &state) {
                                     NULL);
     GPR_ASSERT(ev.type != GRPC_QUEUE_SHUTDOWN);
     GPR_ASSERT(ev.success != 0);
-    grpc_call_destroy(call);
+    grpc_call_unref(call);
     grpc_byte_buffer_destroy(request_payload_send);
     grpc_byte_buffer_destroy(response_payload_recv);
     grpc_metadata_array_destroy(&initial_metadata_recv);
