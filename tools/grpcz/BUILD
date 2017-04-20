@@ -58,6 +58,5 @@ cc_binary(
     deps = [
         "//external:gflags",
         "monitoring_proto",
-        "@mongoose_repo//:mongoose_lib",
     ],
 )

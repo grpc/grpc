@@ -95,7 +95,6 @@ function BenchmarkClient(server_targets, channels, histogram_params,
     var host_port;
     host_port = server_targets[i % server_targets.length].split(':');
     var new_options = _.assign({hostname: host_port[0], port: +host_port[1]}, options);
-    new_options.agent = new protocol.Agent(new_options);
     this.client_options[i] = new_options;
   }
 
@@ -137,6 +136,7 @@ BenchmarkClient.prototype.startClosedLoop = function(
   }
 
   self.last_wall_time = process.hrtime();
+  self.last_usage = process.cpuUsage();
 
   var argument = {
     response_size: resp_size,
@@ -207,6 +207,7 @@ BenchmarkClient.prototype.startPoisson = function(
   }
 
   self.last_wall_time = process.hrtime();
+  self.last_usage = process.cpuUsage();
 
   var argument = {
     response_size: resp_size,
@@ -264,9 +265,11 @@ BenchmarkClient.prototype.startPoisson = function(
  */
 BenchmarkClient.prototype.mark = function(reset) {
   var wall_time_diff = process.hrtime(this.last_wall_time);
+  var usage_diff = process.cpuUsage(this.last_usage);
   var histogram = this.histogram;
   if (reset) {
     this.last_wall_time = process.hrtime();
+    this.last_usage = process.cpuUsage();
     this.histogram = new Histogram(histogram.resolution,
                                    histogram.max_possible);
   }
@@ -281,9 +284,8 @@ BenchmarkClient.prototype.mark = function(reset) {
       count: histogram.getCount()
     },
     time_elapsed: wall_time_diff[0] + wall_time_diff[1] / 1e9,
-    // Not sure how to measure these values
-    time_user: 0,
-    time_system: 0
+    time_user: usage_diff.user / 1000000,
+    time_system: usage_diff.system / 1000000
   };
 };
 
