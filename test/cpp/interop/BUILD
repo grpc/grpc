@@ -39,6 +39,7 @@ cc_library(
     ],
     deps = [
         "//test/cpp/util:test_util",
+        "//external:gflags",
     ],
 )
 
