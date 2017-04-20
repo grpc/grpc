@@ -46,38 +46,45 @@ void gpr_mpscq_destroy(gpr_mpscq *q) {
   GPR_ASSERT(q->tail == &q->stub);
 }
 
-void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n) {
+bool gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n) {
   gpr_atm_no_barrier_store(&n->next, (gpr_atm)NULL);
   gpr_mpscq_node *prev =
       (gpr_mpscq_node *)gpr_atm_full_xchg(&q->head, (gpr_atm)n);
   gpr_atm_rel_store(&prev->next, (gpr_atm)n);
+  return prev == &q->stub;
 }
 
-gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q) {
+bool gpr_mpscq_pop(gpr_mpscq *q, gpr_mpscq_node **n) {
   gpr_mpscq_node *tail = q->tail;
   gpr_mpscq_node *next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
   if (tail == &q->stub) {
     // indicates the list is actually (ephemerally) empty
-    if (next == NULL) return NULL;
+    if (next == NULL) {
+      return false;
+    }
     q->tail = next;
     tail = next;
     next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
   }
   if (next != NULL) {
     q->tail = next;
-    return tail;
+    *n = tail;
+    return true;
   }
   gpr_mpscq_node *head = (gpr_mpscq_node *)gpr_atm_acq_load(&q->head);
   if (tail != head) {
     // indicates a retry is in order: we're still adding
-    return NULL;
+    *n = NULL;
+    return true;
   }
   gpr_mpscq_push(q, &q->stub);
   next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
   if (next != NULL) {
     q->tail = next;
-    return tail;
+    *n = tail;
+    return true;
   }
   // indicates a retry is in order: we're still adding
-  return NULL;
+  *n = NULL;
+  return true;
 }

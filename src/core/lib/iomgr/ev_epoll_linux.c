@@ -224,8 +224,6 @@ typedef struct polling_island {
   gpr_mu workqueue_read_mu;
   /* Queue of closures to be executed */
   gpr_mpscq workqueue_items;
-  /* Count of items in workqueue_items */
-  gpr_atm workqueue_item_count;
   /* Wakeup fd used to wake pollers to check the contents of workqueue_items */
   grpc_wakeup_fd workqueue_wakeup_fd;
 
@@ -540,7 +538,6 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_init(&pi->workqueue_read_mu);
   gpr_mpscq_init(&pi->workqueue_items);
-  gpr_atm_rel_store(&pi->workqueue_item_count, 0);
 
   gpr_atm_rel_store(&pi->ref_count, 0);
   gpr_atm_rel_store(&pi->poller_count, 0);
@@ -579,7 +576,8 @@ static void polling_island_delete(grpc_exec_ctx *exec_ctx, polling_island *pi) {
   if (pi->epoll_fd >= 0) {
     close(pi->epoll_fd);
   }
-  GPR_ASSERT(gpr_atm_no_barrier_load(&pi->workqueue_item_count) == 0);
+  gpr_mpscq_node *n;
+  GPR_ASSERT(gpr_mpscq_pop(&pi->workqueue_items, &n) == false);
   gpr_mu_destroy(&pi->workqueue_read_mu);
   gpr_mpscq_destroy(&pi->workqueue_items);
   gpr_mu_destroy(&pi->mu);
@@ -751,11 +749,9 @@ static void workqueue_move_items_to_parent(polling_island *q) {
   }
   gpr_mu_lock(&q->workqueue_read_mu);
   int num_added = 0;
-  while (gpr_atm_no_barrier_load(&q->workqueue_item_count) > 0) {
-    gpr_mpscq_node *n = gpr_mpscq_pop(&q->workqueue_items);
+  gpr_mpscq_node *n;
+  while (gpr_mpscq_pop(&q->workqueue_items, &n)) {
     if (n != NULL) {
-      gpr_atm_no_barrier_fetch_add(&q->workqueue_item_count, -1);
-      gpr_atm_no_barrier_fetch_add(&p->workqueue_item_count, 1);
       gpr_mpscq_push(&p->workqueue_items, n);
       num_added++;
     }
@@ -812,10 +808,8 @@ static void workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
    * completes */
   GRPC_WORKQUEUE_REF(workqueue, "enqueue");
   polling_island *pi = (polling_island *)workqueue;
-  gpr_atm last = gpr_atm_no_barrier_fetch_add(&pi->workqueue_item_count, 1);
   closure->error_data.error = error;
-  gpr_mpscq_push(&pi->workqueue_items, &closure->next_data.atm_next);
-  if (last == 0) {
+  if (gpr_mpscq_push(&pi->workqueue_items, &closure->next_data.atm_next)) {
     workqueue_maybe_wakeup(pi);
   }
   workqueue_move_items_to_parent(pi);
@@ -1340,7 +1334,8 @@ static void pollset_destroy(grpc_pollset *pollset) {
 static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
                                     polling_island *pi) {
   if (gpr_mu_trylock(&pi->workqueue_read_mu)) {
-    gpr_mpscq_node *n = gpr_mpscq_pop(&pi->workqueue_items);
+    gpr_mpscq_node *n;
+    gpr_mpscq_pop(&pi->workqueue_items);
     gpr_mu_unlock(&pi->workqueue_read_mu);
     if (n != NULL) {
       if (gpr_atm_full_fetch_add(&pi->workqueue_item_count, -1) > 1) {
