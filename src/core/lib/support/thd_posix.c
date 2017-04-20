@@ -48,13 +48,22 @@
 struct thd_arg {
   void (*body)(void *arg); /* body of a thread */
   void *arg;               /* argument to a thread */
+  void *ctx;               /* thread context */
 };
+
+static gpr_thd_ctx_vtable *thd_ctx_vtable = NULL;
 
 /* Body of every thread started via gpr_thd_new. */
 static void *thread_body(void *v) {
   struct thd_arg a = *(struct thd_arg *)v;
   free(v);
-  (*a.body)(a.arg);
+  if (thd_ctx_vtable != NULL) {
+    thd_ctx_vtable->set(a.ctx);
+    (*a.body)(a.arg);
+    thd_ctx_vtable->destroy(a.ctx);
+  } else {
+    (*a.body)(a.arg);
+  }
   return NULL;
 }
 
@@ -69,6 +78,11 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
   GPR_ASSERT(a != NULL);
   a->body = thd_body;
   a->arg = arg;
+  if (thd_ctx_vtable != NULL) {
+    a->ctx = thd_ctx_vtable->init();
+  } else {
+    a->ctx = NULL;
+  }
 
   GPR_ASSERT(pthread_attr_init(&attr) == 0);
   if (gpr_thd_options_is_detached(options)) {
@@ -81,6 +95,9 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
   thread_started = (pthread_create(&p, &attr, &thread_body, a) == 0);
   GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
   if (!thread_started) {
+    if (thd_ctx_vtable != NULL) {
+      thd_ctx_vtable->destroy(a->ctx);
+    }
     /* don't use gpr_free, as this was allocated using malloc (see above) */
     free(a);
   }
@@ -91,5 +108,9 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
 gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)pthread_self(); }
 
 void gpr_thd_join(gpr_thd_id t) { pthread_join((pthread_t)t, NULL); }
+
+void gpr_thd_set_ctx_vtable(gpr_thd_ctx_vtable *vtable) {
+  thd_ctx_vtable = vtable;
+}
 
 #endif /* GPR_POSIX_SYNC */

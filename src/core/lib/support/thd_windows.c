@@ -114,4 +114,7 @@ void gpr_thd_join(gpr_thd_id t) {
   destroy_thread(info);
 }
 
+// Thread context is currently only implemented on posix
+void gpr_thd_set_ctx_vtable(gpr_thd_ctx_vtable *vtable) { GPR_ASSERT(0); }
+
 #endif /* GPR_WINDOWS */
