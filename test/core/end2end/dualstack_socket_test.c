@@ -243,7 +243,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
                grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
     GPR_ASSERT(was_cancelled == 1);
 
-    grpc_call_destroy(s);
+    grpc_call_unref(s);
   } else {
     /* Check for a failed connection. */
     CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -252,7 +252,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   }
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
 

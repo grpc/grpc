@@ -394,7 +394,7 @@ static request_sequences perform_request(servers_fixture *f,
                                          "foo.test.google.fr"));
       GPR_ASSERT(was_cancelled == 1);
 
-      grpc_call_destroy(f->server_calls[s_idx]);
+      grpc_call_unref(f->server_calls[s_idx]);
 
       /* ask for the next request on this server */
       GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -420,7 +420,7 @@ static request_sequences perform_request(servers_fixture *f,
 
     cq_verifier_destroy(cqv);
 
-    grpc_call_destroy(c);
+    grpc_call_unref(c);
 
     for (i = 0; i < f->num_servers; i++) {
       grpc_call_details_destroy(&rdata->call_details[i]);
@@ -616,7 +616,7 @@ static void test_pending_calls(size_t concurrent_calls) {
   /* destroy the calls after the channel so that they are still around for the
    * LB's shutdown func to process */
   for (i = 0; i < concurrent_calls; i++) {
-    grpc_call_destroy(calls[i]);
+    grpc_call_unref(calls[i]);
   }
   gpr_free(calls);
   teardown_servers(f);

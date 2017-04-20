@@ -132,11 +132,15 @@ static VALUE grpc_rb_server_alloc(VALUE cls) {
 
   Initializes server instances. */
 static VALUE grpc_rb_server_init(VALUE self, VALUE channel_args) {
-  grpc_completion_queue *cq = grpc_completion_queue_create_for_pluck(NULL);
+  grpc_completion_queue *cq = NULL;
   grpc_rb_server *wrapper = NULL;
   grpc_server *srv = NULL;
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
+
+  grpc_ruby_once_init();
+
+  cq = grpc_completion_queue_create_for_pluck(NULL);
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type,
                        wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);

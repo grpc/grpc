@@ -198,7 +198,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
 
-  for compiler in ['gcc4.8', 'gcc5.3', 'gcc_musl',
+  for compiler in ['gcc4.8', 'gcc5.3',
                    'clang3.5', 'clang3.6', 'clang3.7']:
     test_jobs += _generate_jobs(languages=['c++'],
                                 configs=['dbg'],
@@ -257,15 +257,6 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
-  test_jobs += _generate_jobs(languages=['python'],
-                              configs=['dbg'],
-                              platforms=['linux'],
-                              arch='default',
-                              compiler='python_alpine',
-                              labels=['portability'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
-
   test_jobs += _generate_jobs(languages=['csharp'],
                               configs=['dbg'],
                               platforms=['linux'],
@@ -287,7 +278,8 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               configs=['dbg'],
                               platforms=['linux'],
                               arch='default',
-                              compiler='electron1.3',
+                              compiler='electron1.6',
+                              iomgr_platform='uv',
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)

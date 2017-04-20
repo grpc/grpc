@@ -62,7 +62,7 @@ class ServerContext::CompletionOp final : public CallOpSetInterface {
         finalized_(false),
         cancelled_(0) {}
 
-  void FillOps(grpc_op* ops, size_t* nops) override;
+  void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override;
   bool FinalizeResult(void** tag, bool* status) override;
 
   bool CheckCancelled(CompletionQueue* cq) {
@@ -100,7 +100,8 @@ void ServerContext::CompletionOp::Unref() {
   }
 }
 
-void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
+void ServerContext::CompletionOp::FillOps(grpc_call* call, grpc_op* ops,
+                                          size_t* nops) {
   ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops->data.recv_close_on_server.cancelled = &cancelled_;
   ops->flags = 0;
@@ -151,7 +152,7 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
 
 ServerContext::~ServerContext() {
   if (call_) {
-    grpc_call_destroy(call_);
+    grpc_call_unref(call_);
   }
   if (completion_op_) {
     completion_op_->Unref();
@@ -229,17 +230,9 @@ const struct census_context* ServerContext::census_context() const {
 void ServerContext::SetLoadReportingCosts(
     const std::vector<grpc::string>& cost_data) {
   if (call_ == nullptr) return;
-  grpc_load_reporting_cost_context* cost_ctx =
-      static_cast<grpc_load_reporting_cost_context*>(
-          gpr_malloc(sizeof(*cost_ctx)));
-  cost_ctx->values_count = cost_data.size();
-  cost_ctx->values = static_cast<grpc_slice*>(
-      gpr_malloc(sizeof(*cost_ctx->values) * cost_ctx->values_count));
-  for (size_t i = 0; i < cost_ctx->values_count; ++i) {
-    cost_ctx->values[i] =
-        grpc_slice_from_copied_buffer(cost_data[i].data(), cost_data[i].size());
+  for (const auto& cost_datum : cost_data) {
+    AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);
   }
-  grpc_call_set_load_reporting_cost_context(call_, cost_ctx);
 }
 
 }  // namespace grpc
