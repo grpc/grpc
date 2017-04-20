@@ -50,7 +50,7 @@ typedef struct {
 static void populate_entries(const test_entry* input, size_t num_entries,
                              grpc_slice_hash_table_entry* output) {
   for (size_t i = 0; i < num_entries; ++i) {
-    output[i].key = grpc_slice_from_copied_string(gpr_strdup(input[i].key));
+    output[i].key = grpc_slice_from_copied_string(input[i].key);
     output[i].value = gpr_strdup(input[i].value);
   }
 }
