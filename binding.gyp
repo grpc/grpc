@@ -47,7 +47,11 @@
     # will let users recompile gRPC to work without ALPN.
     'grpc_alpn%': 'true',
     # Indicates that the library should be built with gcov.
-    'grpc_gcov%': 'false'
+    'grpc_gcov%': 'false',
+    # Indicates that the library should be built with compatibility for musl
+    # libc, so that it can run on Alpine Linux. This is only necessary if not
+    # building on Alpine Linux
+    'grpc_alpine%': 'false'
   },
   'target_defaults': {
     'configurations': {
@@ -114,6 +118,11 @@
             '-ftest-coverage',
             '-rdynamic',
         ],
+      }],
+      ['grpc_alpine=="true"', {
+        'defines': [
+          'GPR_MUSL_LIBC_COMPAT'
+        ]
       }],
       ['OS!="win" and runtime=="electron"', {
         "defines": [
