@@ -2161,6 +2161,7 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
   push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
                (uint32_t)bdp);
+  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, (uint32_t)bdp);
 }
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,

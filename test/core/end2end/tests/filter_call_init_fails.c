@@ -194,7 +194,7 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
 
@@ -284,7 +284,7 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
 
@@ -372,7 +372,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   // Reset and create a new call.  (The first call uses a different code
   // path in client_channel.c than subsequent calls on the same channel,
   // and we need to test both.)
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
   status = GRPC_STATUS_OK;
   grpc_slice_unref(details);
   details = grpc_empty_slice();
@@ -399,7 +399,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
 

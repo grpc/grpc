@@ -126,7 +126,7 @@ static void prepare_test(int is_client) {
 
 static void cleanup_test() {
   grpc_completion_queue *shutdown_cq;
-  grpc_call_destroy(g_state.call);
+  grpc_call_unref(g_state.call);
   cq_verifier_destroy(g_state.cqv);
   grpc_channel_destroy(g_state.chan);
   grpc_slice_unref(g_state.details);
@@ -135,7 +135,7 @@ static void cleanup_test() {
 
   if (!g_state.is_client) {
     shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
-    grpc_call_destroy(g_state.server_call);
+    grpc_call_unref(g_state.server_call);
     grpc_server_shutdown_and_notify(g_state.server, shutdown_cq, tag(1000));
     GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
                                            grpc_timeout_seconds_to_deadline(5),

@@ -4310,7 +4310,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/slice.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
-    include/grpc++/impl/codegen/status_helper.h \
     include/grpc++/impl/codegen/string_ref.h \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
@@ -4711,7 +4710,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/slice.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
-    include/grpc++/impl/codegen/status_helper.h \
     include/grpc++/impl/codegen/string_ref.h \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
@@ -5094,7 +5092,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/slice.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
-    include/grpc++/impl/codegen/status_helper.h \
     include/grpc++/impl/codegen/string_ref.h \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
@@ -5407,7 +5404,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/slice.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
-    include/grpc++/impl/codegen/status_helper.h \
     include/grpc++/impl/codegen/string_ref.h \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
@@ -14197,28 +14193,28 @@ $(BINDIR)/$(CONFIG)/codegen_test_minimal: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/codegen_test_minimal: $(PROTOBUF_DEP) $(CODEGEN_TEST_MINIMAL_OBJS)
+$(BINDIR)/$(CONFIG)/codegen_test_minimal: $(PROTOBUF_DEP) $(CODEGEN_TEST_MINIMAL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CODEGEN_TEST_MINIMAL_OBJS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/codegen_test_minimal
+	$(Q) $(LDXX) $(LDFLAGS) $(CODEGEN_TEST_MINIMAL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/codegen_test_minimal
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/control.o: 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/control.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o: 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/payloads.o: 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/payloads.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/services.o: 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/services.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/stats.o: 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/stats.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_minimal.o: 
+$(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_minimal.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_codegen_test_minimal: $(CODEGEN_TEST_MINIMAL_OBJS:.o=.dep)
 
