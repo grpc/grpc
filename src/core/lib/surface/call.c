@@ -346,6 +346,8 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   gpr_timespec send_deadline =
       gpr_convert_clock_type(args->send_deadline, GPR_CLOCK_MONOTONIC);
 
+  bool immediately_cancel = false;
+
   if (args->parent_call != NULL) {
     child_call *cc = call->child_call =
         gpr_arena_alloc(arena, sizeof(child_call));
@@ -386,8 +388,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
     if (args->propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
       call->cancellation_is_inherited = 1;
       if (gpr_atm_acq_load(&args->parent_call->received_final_op_atm)) {
-        cancel_with_error(exec_ctx, call, STATUS_FROM_API_OVERRIDE,
-                          GRPC_ERROR_CANCELLED);
+        immediately_cancel = true;
       }
     }
 
@@ -421,6 +422,10 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   if (error != GRPC_ERROR_NONE) {
     cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
                       GRPC_ERROR_REF(error));
+  }
+  if (immediately_cancel) {
+    cancel_with_error(exec_ctx, call, STATUS_FROM_API_OVERRIDE,
+                      GRPC_ERROR_CANCELLED);
   }
   if (args->cq != NULL) {
     GPR_ASSERT(
