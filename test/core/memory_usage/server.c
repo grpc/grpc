@@ -286,7 +286,7 @@ int main(int argc, char **argv) {
           case FLING_SERVER_WAIT_FOR_DESTROY:
             break;
           case FLING_SERVER_SEND_STATUS_FLING_CALL:
-            grpc_call_destroy(s->call);
+            grpc_call_unref(s->call);
             grpc_call_details_destroy(&s->call_details);
             grpc_metadata_array_destroy(&s->initial_metadata_send);
             grpc_metadata_array_destroy(&s->request_metadata_recv);
@@ -304,7 +304,7 @@ int main(int argc, char **argv) {
           case FLING_SERVER_SEND_STATUS_SNAPSHOT:
             grpc_byte_buffer_destroy(payload_buffer);
             grpc_byte_buffer_destroy(terminal_buffer);
-            grpc_call_destroy(s->call);
+            grpc_call_unref(s->call);
             grpc_call_details_destroy(&s->call_details);
             grpc_metadata_array_destroy(&s->initial_metadata_send);
             grpc_metadata_array_destroy(&s->request_metadata_recv);

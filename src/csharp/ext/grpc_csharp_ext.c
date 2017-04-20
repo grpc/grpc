@@ -526,7 +526,7 @@ GPR_EXPORT char *GPR_CALLTYPE grpcsharp_call_get_peer(grpc_call *call) {
 GPR_EXPORT void GPR_CALLTYPE gprsharp_free(void *p) { gpr_free(p); }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_destroy(grpc_call *call) {
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(

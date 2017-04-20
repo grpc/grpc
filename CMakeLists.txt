@@ -9782,6 +9782,8 @@ target_include_directories(codegen_test_minimal
 target_link_libraries(codegen_test_minimal
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

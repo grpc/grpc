@@ -161,6 +161,9 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE *argv,
   grpc_ssl_pem_key_cert_pair key_cert_pair;
   const char *pem_root_certs_cstr = NULL;
   MEMZERO(&key_cert_pair, grpc_ssl_pem_key_cert_pair, 1);
+
+  grpc_ruby_once_init();
+
   /* "03" == no mandatory arg, 3 optional */
   rb_scan_args(argc, argv, "03", &pem_root_certs, &pem_private_key,
                &pem_cert_chain);

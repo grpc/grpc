@@ -1106,8 +1106,8 @@ void PrintSourceClientMethod(grpc_generator::Printer *printer,
         "const $Request$& request, "
         "::grpc::CompletionQueue* cq) {\n");
     printer->Print(*vars,
-                   "  return new "
-                   "::grpc::ClientAsyncResponseReader< $Response$>("
+                   "  return "
+                   "::grpc::ClientAsyncResponseReader< $Response$>::Create("
                    "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, request);\n"
@@ -1129,7 +1129,7 @@ void PrintSourceClientMethod(grpc_generator::Printer *printer,
                    "::grpc::ClientContext* context, $Response$* response, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
-                   "  return new ::grpc::ClientAsyncWriter< $Request$>("
+                   "  return ::grpc::ClientAsyncWriter< $Request$>::Create("
                    "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, response, tag);\n"
@@ -1152,7 +1152,7 @@ void PrintSourceClientMethod(grpc_generator::Printer *printer,
                    "::grpc::ClientContext* context, const $Request$& request, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
-                   "  return new ::grpc::ClientAsyncReader< $Response$>("
+                   "  return ::grpc::ClientAsyncReader< $Response$>::Create("
                    "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, request, tag);\n"
@@ -1174,13 +1174,14 @@ void PrintSourceClientMethod(grpc_generator::Printer *printer,
         "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>* "
         "$ns$$Service$::Stub::Async$Method$Raw(::grpc::ClientContext* context, "
         "::grpc::CompletionQueue* cq, void* tag) {\n");
-    printer->Print(*vars,
-                   "  return new "
-                   "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>("
-                   "channel_.get(), cq, "
-                   "rpcmethod_$Method$_, "
-                   "context, tag);\n"
-                   "}\n\n");
+    printer->Print(
+        *vars,
+        "  return "
+        "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>::Create("
+        "channel_.get(), cq, "
+        "rpcmethod_$Method$_, "
+        "context, tag);\n"
+        "}\n\n");
   }
 }
 

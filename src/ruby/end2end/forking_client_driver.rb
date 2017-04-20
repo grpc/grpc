@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env ruby
+
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -28,32 +29,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-NODE_TARGET_ARCH=$1
-source ~/.nvm/nvm.sh
+require_relative './end2end_common'
 
-nvm use 4
-set -ex
+def main
+  STDERR.puts 'start server'
+  server_runner = ServerRunner.new(EchoServerImpl)
+  server_port = server_runner.run
 
-cd $(dirname $0)/../../..
+  # TODO(apolcyn) Can we get rid of this sleep?
+  # Without it, an immediate call to the just started EchoServer
+  # fails with UNAVAILABLE
+  sleep 1
 
-rm -rf build || true
+  STDERR.puts 'start client'
+  _, client_pid = start_client('forking_client_client.rb',
+                               server_port)
 
-mkdir -p artifacts
+  begin
+    Timeout.timeout(10) do
+      Process.wait(client_pid)
+    end
+  rescue Timeout::Error
+    STDERR.puts "timeout wait for client pid #{client_pid}"
+    Process.kill('SIGKILL', client_pid)
+    Process.wait(client_pid)
+    STDERR.puts 'killed client child'
+    raise 'Timed out waiting for client process. ' \
+      'It likely hangs when requiring grpc, then forking, then using grpc '
+  end
 
-npm update
+  client_exit_code = $CHILD_STATUS
+  if client_exit_code != 0
+    fail "forking client client failed, exit code #{client_exit_code}"
+  end
 
-node_versions=( 4.0.0 5.0.0 6.0.0 7.0.0 )
+  server_runner.stop
+end
 
-electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 )
-
-for version in ${node_versions[@]}
-do
-  ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH
-  cp -r build/stage/* artifacts/
-done
-
-for version in ${electron_versions[@]}
-do
-  HOME=~/.electron-gyp ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --runtime=electron --target=$version --target_arch=$NODE_TARGET_ARCH --disturl=https://atom.io/download/electron
-  cp -r build/stage/* artifacts/
-done
+main
