@@ -33,6 +33,7 @@
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -64,6 +65,8 @@ static void add_samples(grpc_bdp_estimator *estimator, int64_t *samples,
     GPR_ASSERT(grpc_bdp_estimator_add_incoming_bytes(estimator, samples[i]) ==
                false);
   }
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(1, GPR_TIMESPAN)));
   grpc_bdp_estimator_complete_ping(estimator);
 }
 
@@ -123,11 +126,11 @@ static void test_get_estimate_random_values(size_t n) {
   gpr_log(GPR_INFO, "test_get_estimate_random_values(%" PRIdPTR ")", n);
   grpc_bdp_estimator est;
   grpc_bdp_estimator_init(&est, "test");
-  int min = INT_MAX;
-  int max = 65535;  // Windows rand() has limited range, make sure the ASSERT
-                    // passes
+  const int kMaxSample = 65535;
+  int min = kMaxSample;
+  int max = 0;
   for (size_t i = 0; i < n; i++) {
-    int sample = rand();
+    int sample = rand() % (kMaxSample + 1);
     if (sample < min) min = sample;
     if (sample > max) max = sample;
     add_sample(&est, sample);
@@ -141,6 +144,7 @@ static void test_get_estimate_random_values(size_t n) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_noop();
   test_get_estimate_no_samples();
   test_get_estimate_1_sample();
@@ -149,5 +153,6 @@ int main(int argc, char **argv) {
   for (size_t i = 3; i < 1000; i = i * 3 / 2) {
     test_get_estimate_random_values(i);
   }
+  grpc_shutdown();
   return 0;
 }

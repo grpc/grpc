@@ -103,7 +103,7 @@ void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
   if (estimator->accumulator > 2 * estimator->estimate / 3 &&
       bw > estimator->bw_est) {
     estimator->estimate =
-        GPR_MAX(estimator->accumulator * 3 / 2, estimator->estimate * 2);
+        GPR_MAX(estimator->accumulator, estimator->estimate * 2);
     estimator->bw_est = bw;
     if (grpc_bdp_estimator_trace) {
       gpr_log(GPR_DEBUG, "bdp[%s]: estimate increased to %" PRId64,
