@@ -825,6 +825,7 @@ static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
                                           grpc_pollset *pollset) {
   if (pollset->shutdown_closure != NULL && pollset->root_worker == NULL) {
     grpc_closure_sched(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
+    pollset->shutdown_closure = NULL;
   }
 }
 
@@ -1029,7 +1030,6 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
 static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                        grpc_pollset_worker *worker,
                        grpc_pollset_worker **worker_hdl) {
-  worker_remove(&pollset->root_worker, PWL_POLLSET, worker);
   if (NEW_ROOT ==
       worker_remove(&worker->pollable->root_worker, PWL_POLLABLE, worker)) {
     gpr_cv_signal(&worker->pollable->root_worker->cv);
@@ -1039,6 +1039,9 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
   if (pollset_is_pollable_fd(pollset, worker->pollable)) {
     UNREF_BY(exec_ctx, (grpc_fd *)worker->pollable, 2, "one_poll");
+  }
+  if (EMPTIED == worker_remove(&pollset->root_worker, PWL_POLLSET, worker)) {
+    pollset_maybe_finish_shutdown(exec_ctx, pollset);
   }
 }
 
