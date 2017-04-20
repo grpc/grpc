@@ -223,6 +223,8 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
   grpc_call_credentials *creds = NULL;
   grpc_metadata_credentials_plugin plugin;
 
+  grpc_ruby_once_init();
+
   TypedData_Get_Struct(self, grpc_rb_call_credentials,
                        &grpc_rb_call_credentials_data_type, wrapper);
 
@@ -283,8 +285,6 @@ void Init_grpc_call_credentials() {
                    grpc_rb_call_credentials_compose, -1);
 
   id_callback = rb_intern("__callback");
-
-  grpc_rb_event_queue_thread_start();
 }
 
 /* Gets the wrapped grpc_call_credentials from the ruby wrapper */

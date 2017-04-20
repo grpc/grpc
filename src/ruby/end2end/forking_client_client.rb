@@ -1,5 +1,6 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,32 +29,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-NODE_TARGET_ARCH=$1
-source ~/.nvm/nvm.sh
+# Prompted by and minimal repro of https://github.com/grpc/grpc/issues/10658
 
-nvm use 4
-set -ex
+require_relative './end2end_common'
 
-cd $(dirname $0)/../../..
+def main
+  server_port = ''
+  OptionParser.new do |opts|
+    opts.on('--client_control_port=P', String) do
+      STDERR.puts 'client control port not used'
+    end
+    opts.on('--server_port=P', String) do |p|
+      server_port = p
+    end
+  end.parse!
 
-rm -rf build || true
+  p = fork do
+    stub = Echo::EchoServer::Stub.new("localhost:#{server_port}",
+                                      :this_channel_is_insecure)
+    stub.echo(Echo::EchoRequest.new(request: 'hello'))
+  end
 
-mkdir -p artifacts
+  begin
+    Timeout.timeout(10) do
+      Process.wait(p)
+    end
+  rescue Timeout::Error
+    STDERR.puts "timeout waiting for forked process #{p}"
+    Process.kill('SIGKILL', p)
+    Process.wait(p)
+    raise 'Timed out waiting for client process. ' \
+      'It likely hangs when using gRPC after loading it and then forking'
+  end
 
-npm update
+  client_exit_code = $CHILD_STATUS
+  fail "forked process failed #{client_exit_code}" if client_exit_code != 0
+end
 
-node_versions=( 4.0.0 5.0.0 6.0.0 7.0.0 )
-
-electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 )
-
-for version in ${node_versions[@]}
-do
-  ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH
-  cp -r build/stage/* artifacts/
-done
-
-for version in ${electron_versions[@]}
-do
-  HOME=~/.electron-gyp ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --runtime=electron --target=$version --target_arch=$NODE_TARGET_ARCH --disturl=https://atom.io/download/electron
-  cp -r build/stage/* artifacts/
-done
+main
