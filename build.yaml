@@ -3638,6 +3638,7 @@ targets:
 - name: generic_end2end_test
   build: test
   language: c++
+  cpu_cost: 0.1
   src:
   - test/cpp/end2end/generic_end2end_test.cc
   deps:
@@ -3743,6 +3744,7 @@ targets:
 - name: grpc_tool_test
   build: test
   language: c++
+  cpu_cost: 0.2
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -3771,9 +3773,9 @@ targets:
   - grpc++
   - grpc
 - name: grpclb_test
+  cpu_cost: 0.1
   build: test
   language: c++
-  cpu_cost: 0.1
   src:
   - src/proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/grpclb/grpclb_test.cc
@@ -4263,7 +4265,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: writes_per_rpc_test
-  cpu_cost: 0.5
+  cpu_cost: 0.8
   build: test
   language: c++
   src:

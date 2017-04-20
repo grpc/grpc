@@ -1466,7 +1466,7 @@ def _build_and_run(
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.
     if args.travis:
-      massaged_one_run = sorted(one_run, key=lambda x: x.shortname)
+      massaged_one_run = sorted(one_run, key=lambda x: (x.cpu_cost, x.shortname))
     else:
       # whereas otherwise, we want to shuffle things up to give all tests a
       # chance to run.
