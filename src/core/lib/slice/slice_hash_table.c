@@ -42,7 +42,7 @@
 
 struct grpc_slice_hash_table {
   gpr_refcount refs;
-  void (*destroy_value)(grpc_exec_ctx *exec_ctx, void *value);
+  void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value);
   size_t size;
   size_t max_num_probes;
   grpc_slice_hash_table_entry* entries;
@@ -72,7 +72,7 @@ static void grpc_slice_hash_table_add(grpc_slice_hash_table* table,
 
 grpc_slice_hash_table* grpc_slice_hash_table_create(
     size_t num_entries, grpc_slice_hash_table_entry* entries,
-    void (*destroy_value)(grpc_exec_ctx *exec_ctx, void *value)) {
+    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value)) {
   grpc_slice_hash_table* table = gpr_zalloc(sizeof(*table));
   gpr_ref_init(&table->refs, 1);
   table->destroy_value = destroy_value;
