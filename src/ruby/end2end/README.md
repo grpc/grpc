@@ -1,3 +1,6 @@
+TODO: during upmerge from v1.2.x to master, no changes from this
+directory should go into master.
+
 This directory contains some grpc-ruby end to end tests.
 
 Each test here involves two files: a "driver" and a "client". For example,
