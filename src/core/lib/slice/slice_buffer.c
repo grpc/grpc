@@ -274,11 +274,17 @@ static void slice_buffer_move_first_maybe_ref(grpc_slice_buffer *src, size_t n,
     } else if (n == slice_len) {
       grpc_slice_buffer_add(dst, slice);
       break;
-    } else { /* n < slice_len */
+    } else if (incref) { /* n < slice_len */
       grpc_slice_buffer_undo_take_first(
-          src, grpc_slice_split_tail_maybe_ref(&slice, n, incref));
+          src, grpc_slice_split_tail_maybe_ref(&slice, n, GRPC_SLICE_REF_BOTH));
       GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == n);
       grpc_slice_buffer_add(dst, slice);
+      break;
+    } else { /* n < slice_len */
+      grpc_slice_buffer_undo_take_first(
+          src, grpc_slice_split_tail_maybe_ref(&slice, n, GRPC_SLICE_REF_TAIL));
+      GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == n);
+      grpc_slice_buffer_add_indexed(dst, slice);
       break;
     }
   }

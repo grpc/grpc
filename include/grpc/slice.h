@@ -124,11 +124,17 @@ GPRAPI grpc_slice grpc_slice_sub_no_ref(grpc_slice s, size_t begin, size_t end);
    Requires s intialized, split <= s.length */
 GPRAPI grpc_slice grpc_slice_split_tail(grpc_slice *s, size_t split);
 
+typedef enum {
+  GRPC_SLICE_REF_TAIL = 1,
+  GRPC_SLICE_REF_HEAD = 2,
+  GRPC_SLICE_REF_BOTH = 1 + 2
+} grpc_slice_ref_whom;
+
 /* The same as grpc_slice_split_tail, but with an option to skip altering
  * refcounts (grpc_slice_split_tail_maybe_ref(..., true) is equivalent to
  * grpc_slice_split_tail(...)) */
 GPRAPI grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice *s, size_t split,
-                                                  int inc_refs);
+                                                  grpc_slice_ref_whom ref_whom);
 
 /* Splits s into two: modifies s to be s[split:s.length], and returns a new
    slice, sharing a refcount with s, that contains s[0:split].
