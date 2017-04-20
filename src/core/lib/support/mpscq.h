@@ -58,6 +58,7 @@ typedef struct gpr_mpscq {
 void gpr_mpscq_init(gpr_mpscq *q);
 void gpr_mpscq_destroy(gpr_mpscq *q);
 // Push a node, returns true if this was the first addition
+// (may spuriously return true, but will never spuriously return false)
 bool gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n);
 // Pop a node
 // If the queue is empty, returns false (the value of *n is undefined)

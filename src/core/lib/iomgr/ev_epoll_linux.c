@@ -1335,25 +1335,25 @@ static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
                                     polling_island *pi) {
   if (gpr_mu_trylock(&pi->workqueue_read_mu)) {
     gpr_mpscq_node *n;
-    gpr_mpscq_pop(&pi->workqueue_items);
-    gpr_mu_unlock(&pi->workqueue_read_mu);
-    if (n != NULL) {
-      if (gpr_atm_full_fetch_add(&pi->workqueue_item_count, -1) > 1) {
+    if (gpr_mpscq_pop(&pi->workqueue_items, &n)) {
+      gpr_mu_unlock(&pi->workqueue_read_mu);
+      if (n == NULL) {
+        /* n == NULL means there's work but it's not available to be popped
+         * yet - try to ensure another workqueue wakes up to check shortly if so
+         */
         workqueue_maybe_wakeup(pi);
-      }
-      grpc_closure *c = (grpc_closure *)n;
-      grpc_error *error = c->error_data.error;
+      } else {
+        grpc_closure *c = (grpc_closure *)n;
+        grpc_error *error = c->error_data.error;
 #ifndef NDEBUG
-      c->scheduled = false;
+        c->scheduled = false;
 #endif
-      c->cb(exec_ctx, c->cb_arg, error);
-      GRPC_ERROR_UNREF(error);
-      return true;
-    } else if (gpr_atm_no_barrier_load(&pi->workqueue_item_count) > 0) {
-      /* n == NULL might mean there's work but it's not available to be popped
-       * yet - try to ensure another workqueue wakes up to check shortly if so
-       */
-      workqueue_maybe_wakeup(pi);
+        c->cb(exec_ctx, c->cb_arg, error);
+        GRPC_ERROR_UNREF(error);
+        return true;
+      }
+    } else {
+      gpr_mu_unlock(&pi->workqueue_read_mu);
     }
   }
   return false;

@@ -63,7 +63,8 @@ static void test_serial(void) {
     gpr_mpscq_push(&q, &new_node(i, NULL)->node);
   }
   for (size_t i = 0; i < 10000000; i++) {
-    test_node *n = (test_node *)gpr_mpscq_pop(&q);
+    test_node *n;
+    GPR_ASSERT(gpr_mpscq_pop(&q, (gpr_mpscq_node **)&n));
     GPR_ASSERT(n);
     GPR_ASSERT(n->i == i);
     gpr_free(n);
@@ -107,9 +108,11 @@ static void test_mt(void) {
   gpr_event_set(&start, (void *)1);
   while (num_done != GPR_ARRAY_SIZE(thds)) {
     gpr_mpscq_node *n;
-    while ((n = gpr_mpscq_pop(&q)) == NULL) {
+    do {
       spins++;
-    }
+      GPR_ASSERT(gpr_mpscq_pop(&q, &n));
+    } while (n == NULL);
+    spins--;
     test_node *tn = (test_node *)n;
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
@@ -144,9 +147,11 @@ static void pull_thread(void *arg) {
       return;
     }
     gpr_mpscq_node *n;
-    while ((n = gpr_mpscq_pop(pa->q)) == NULL) {
+    do {
       pa->spins++;
-    }
+      GPR_ASSERT(gpr_mpscq_pop(pa->q, &n));
+    } while (n == NULL);
+    pa->spins--;
     test_node *tn = (test_node *)n;
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
