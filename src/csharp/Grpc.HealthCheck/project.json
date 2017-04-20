@@ -1,5 +1,5 @@
 {
-  "version": "1.2.4",
+  "version": "1.2.5",
   "title": "gRPC C# Healthchecking",
   "authors": [ "Google Inc." ],
   "copyright": "Copyright 2015, Google Inc.",
@@ -21,7 +21,7 @@
     }
   },
   "dependencies": {
-    "Grpc.Core": "1.2.4",
+    "Grpc.Core": "1.2.5",
     "Google.Protobuf": "3.2.0"
   },
   "frameworks": {
