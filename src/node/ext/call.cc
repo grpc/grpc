@@ -248,6 +248,7 @@ class SendMessageOp : public Op {
     out->data.send_message.send_message = send_message;
     return true;
   }
+
   bool IsFinalOp() { return false; }
   void OnComplete(bool success) {}
 
@@ -264,6 +265,7 @@ class SendClientCloseOp : public Op {
     EscapableHandleScope scope;
     return scope.Escape(Nan::True());
   }
+
   bool ParseOp(Local<Value> value, grpc_op *out) { return true; }
   bool IsFinalOp() { return false; }
   void OnComplete(bool success) {}
@@ -501,7 +503,7 @@ void DestroyTag(void *tag) {
 
 void Call::DestroyCall() {
   if (this->wrapped_call != NULL) {
-    grpc_call_destroy(this->wrapped_call);
+    grpc_call_unref(this->wrapped_call);
     this->wrapped_call = NULL;
   }
 }

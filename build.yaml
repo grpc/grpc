@@ -3555,6 +3555,9 @@ targets:
   - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
+  deps:
+  - grpc
+  - gpr
   filegroups:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
