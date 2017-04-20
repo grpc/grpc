@@ -763,7 +763,7 @@ class CSharpLanguage(object):
         self._make_options = ['EMBED_OPENSSL=true']
         if self.args.compiler != 'coreclr':
           # On Mac, official distribution of mono is 32bit.
-          self._make_options += ['CFLAGS=-m32', 'LDFLAGS=-m32']
+          self._make_options += ['ARCH_FLAGS=-m32', 'LDFLAGS=-m32']
       else:
         self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
@@ -1352,7 +1352,8 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
                               '-f', makefile,
                               '-j', '%d' % args.jobs,
                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
-                              'CONFIG=%s' % cfg] +
+                              'CONFIG=%s' % cfg,
+                              'Q='] +
                               language_make_options +
                              ([] if not args.travis else ['JENKINS_BUILD=1']) +
                              targets,
