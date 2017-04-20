@@ -986,6 +986,7 @@ for the `SimpleRequest.response_type`. If the server does not support the
 `response_type`, then it should fail the RPC with `INVALID_ARGUMENT`.
 
 ### CacheableUnaryCall
+[CacheableUnaryCall]: #cacheableunarycall
 
 Server gets the default SimpleRequest proto as the request. The content of the
 request is ignored. It returns the SimpleResponse proto with the payload set
