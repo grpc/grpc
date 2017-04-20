@@ -1153,7 +1153,7 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
 static void lb_call_destroy_locked(grpc_exec_ctx *exec_ctx,
                                    glb_lb_policy *glb_policy) {
   GPR_ASSERT(glb_policy->lb_call != NULL);
-  grpc_call_destroy(glb_policy->lb_call);
+  grpc_call_unref(glb_policy->lb_call);
   glb_policy->lb_call = NULL;
 
   grpc_metadata_array_destroy(&glb_policy->lb_initial_metadata_recv);

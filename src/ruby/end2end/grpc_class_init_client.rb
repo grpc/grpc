@@ -1,5 +1,6 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,32 +29,49 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-NODE_TARGET_ARCH=$1
-source ~/.nvm/nvm.sh
+# For GRPC::Core classes, which use the grpc c-core, object init
+# is interesting because it's related to overall library init.
 
-nvm use 4
-set -ex
+require_relative './end2end_common'
 
-cd $(dirname $0)/../../..
+def main
+  grpc_class = ''
+  OptionParser.new do |opts|
+    opts.on('--grpc_class=P', String) do |p|
+      grpc_class = p
+    end
+  end.parse!
 
-rm -rf build || true
+  test_proc = nil
 
-mkdir -p artifacts
+  case grpc_class
+  when 'channel'
+    test_proc = proc do
+      GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
+    end
+  when 'server'
+    test_proc = proc do
+      GRPC::Core::Server.new({})
+    end
+  when 'channel_credentials'
+    test_proc = proc do
+      GRPC::Core::ChannelCredentials.new
+    end
+  when 'call_credentials'
+    test_proc = proc do
+      GRPC::Core::CallCredentials.new(proc { |noop| noop })
+    end
+  when 'compression_options'
+    test_proc = proc do
+      GRPC::Core::CompressionOptions.new
+    end
+  else
+    fail "bad --grpc_class=#{grpc_class} param"
+  end
 
-npm update
+  th = Thread.new { test_proc.call }
+  test_proc.call
+  th.join
+end
 
-node_versions=( 4.0.0 5.0.0 6.0.0 7.0.0 )
-
-electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 )
-
-for version in ${node_versions[@]}
-do
-  ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH
-  cp -r build/stage/* artifacts/
-done
-
-for version in ${electron_versions[@]}
-do
-  HOME=~/.electron-gyp ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --runtime=electron --target=$version --target_arch=$NODE_TARGET_ARCH --disturl=https://atom.io/download/electron
-  cp -r build/stage/* artifacts/
-done
+main

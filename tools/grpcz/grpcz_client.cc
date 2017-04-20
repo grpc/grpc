@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 
 #include "gflags/gflags.h"
-#include "mongoose.h"
+/* #include "mongoose.h" */
 
 // TODO (makdharma): remove local copies of these protos
 #include "tools/grpcz/census.grpc.pb.h"
@@ -122,8 +122,9 @@ class GrpczClient {
   std::unique_ptr<Monitoring::Stub> stub_;
 };
 
-static struct mg_serve_http_opts s_http_server_opts;
 std::unique_ptr<GrpczClient> g_grpcz_client;
+/*
+static struct mg_serve_http_opts s_http_server_opts;
 
 static void ev_handler(struct mg_connection *nc, int ev, void *p) {
   if (ev == MG_EV_HTTP_REQUEST) {
@@ -141,6 +142,7 @@ static void grpcz_handler(struct mg_connection *nc, int ev, void *ev_data) {
   mg_printf(nc, "HTTP/1.0 200 OK\r\n\r\n%s", rendered_html.c_str());
   nc->flags |= MG_F_SEND_AND_CLOSE;
 }
+*/
 
 int main(int argc, char **argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -156,6 +158,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  /*
   // Set up a mongoose webserver handler
   struct mg_mgr mgr;
   mg_mgr_init(&mgr, NULL);
@@ -177,5 +180,6 @@ int main(int argc, char **argv) {
     mg_mgr_poll(&mgr, k_sleep_millis);
   }
   mg_mgr_free(&mgr);
+  */
   return 0;
 }
