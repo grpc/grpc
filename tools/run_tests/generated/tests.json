@@ -6724,7 +6724,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6740,29 +6740,6 @@
   {
     "args": [
       "server_finishes_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_census_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
       "windows", 
@@ -6785,6 +6762,29 @@
   }, 
   {
     "args": [
+      "shutdown_finishes_calls"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_tags"
     ], 
     "ci_platforms": [
@@ -7947,7 +7947,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7963,29 +7963,6 @@
   {
     "args": [
       "server_finishes_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_compress_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
       "windows", 
@@ -8008,6 +7985,29 @@
   }, 
   {
     "args": [
+      "shutdown_finishes_calls"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_tags"
     ], 
     "ci_platforms": [
@@ -9128,7 +9128,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9144,28 +9144,6 @@
   {
     "args": [
       "server_finishes_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_fakesec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
       "windows", 
@@ -9187,6 +9165,28 @@
   }, 
   {
     "args": [
+      "shutdown_finishes_calls"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fakesec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_tags"
     ], 
     "ci_platforms": [
@@ -10197,7 +10197,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10214,29 +10214,6 @@
   {
     "args": [
       "server_finishes_request"
-    ], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_fd_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
       "linux", 
@@ -10259,6 +10236,29 @@
   }, 
   {
     "args": [
+      "shutdown_finishes_calls"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fd_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_tags"
     ], 
     "ci_platforms": [
@@ -11398,7 +11398,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11414,29 +11414,6 @@
   {
     "args": [
       "server_finishes_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
       "windows", 
@@ -11459,6 +11436,29 @@
   }, 
   {
     "args": [
+      "shutdown_finishes_calls"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "shutdown_finishes_tags"
     ], 
     "ci_platforms": [
@@ -12450,7 +12450,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -13582,7 +13582,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -14841,7 +14841,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -16077,7 +16077,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -17336,7 +17336,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19496,7 +19496,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -22910,7 +22910,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24133,7 +24133,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -26360,7 +26360,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -27561,7 +27561,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28761,7 +28761,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29818,7 +29818,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30996,7 +30996,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -32029,7 +32029,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -33138,7 +33138,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -34373,7 +34373,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -35586,7 +35586,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -37685,7 +37685,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -40998,7 +40998,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
