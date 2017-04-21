@@ -67,6 +67,8 @@ class ChannelArgKey:
   primary_user_agent_string = GRPC_ARG_PRIMARY_USER_AGENT_STRING
   secondary_user_agent_string = GRPC_ARG_SECONDARY_USER_AGENT_STRING
   ssl_target_name_override = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
+  # Deprecated -- for backward compatibility.
+  max_message_length = GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
 
 
 class WriteFlag:
