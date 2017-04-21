@@ -65,6 +65,8 @@
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
 
+/* Once this change passes, the fixit is over */
+
 #define MAX_PLUGINS 128
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
