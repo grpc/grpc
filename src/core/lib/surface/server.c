@@ -1033,8 +1033,6 @@ grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
 
   grpc_server *server = gpr_zalloc(sizeof(grpc_server));
 
-  GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
-
   gpr_mu_init(&server->mu_global);
   gpr_mu_init(&server->mu_call);
   gpr_cv_init(&server->starting_cv);
