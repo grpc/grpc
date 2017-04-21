@@ -75,6 +75,8 @@
     maintain lists of users (which users arrange to leave before they are
     destroyed) */
 
+typedef struct grpc_resource_quota grpc_resource_quota;
+
 extern int grpc_resource_quota_trace;
 
 grpc_resource_quota *grpc_resource_quota_ref_internal(
