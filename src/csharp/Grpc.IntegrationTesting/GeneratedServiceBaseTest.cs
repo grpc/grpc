@@ -54,7 +54,8 @@ namespace Grpc.IntegrationTesting
         [SetUp]
         public void Init()
         {
-            server = new Server
+            // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
+            server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
             {
                 Services = { TestService.BindService(new UnimplementedTestServiceImpl()) },
                 Ports = { { Host, ServerPort.PickUnused, SslServerCredentials.Insecure } }

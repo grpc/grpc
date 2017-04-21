@@ -57,7 +57,8 @@ namespace Grpc.HealthCheck.Tests
         {
             serviceImpl = new HealthServiceImpl();
 
-            server = new Server
+            // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
+            server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
             {
                 Services = { Grpc.Health.V1.Health.BindService(serviceImpl) },
                 Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
