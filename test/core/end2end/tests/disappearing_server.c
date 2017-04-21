@@ -191,8 +191,8 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config config,
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 }
 
 static void disappearing_server_test(grpc_end2end_test_config config) {
