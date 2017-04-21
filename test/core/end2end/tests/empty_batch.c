@@ -121,7 +121,7 @@ static void empty_batch_body(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
 }

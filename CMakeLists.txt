@@ -269,8 +269,10 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-if(UNIX)
-  set(_gRPC_ALLTARGETS_LIBRARIES dl rt m pthread)
+if(_gRPC_PLATFORM_MAC)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
+elseif(UNIX)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} rt m pthread)
 endif()
 
 if(WIN32 AND MSVC)
@@ -2456,7 +2458,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -2849,7 +2850,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -3239,7 +3239,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -3547,7 +3546,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -9779,6 +9777,8 @@ target_include_directories(codegen_test_minimal
 target_link_libraries(codegen_test_minimal
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
