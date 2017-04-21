@@ -191,6 +191,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\backoff.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\block_annotate.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpmcq_bounded.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\spinlock.h" />
@@ -245,6 +246,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpmcq_bounded.h">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpscq.c">
     </ClCompile>

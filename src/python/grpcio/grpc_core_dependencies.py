@@ -52,6 +52,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/support/log_linux.c',
   'src/core/lib/support/log_posix.c',
   'src/core/lib/support/log_windows.c',
+  'src/core/lib/support/mpmcq_bounded.h',
   'src/core/lib/support/mpscq.c',
   'src/core/lib/support/murmur_hash.c',
   'src/core/lib/support/stack_lockfree.c',

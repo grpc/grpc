@@ -64,11 +64,13 @@ grpc_cc_library(
     deps = [
         "census",
         "grpc_base",
+        "grpc_deadline_filter",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
         "grpc_max_age_filter",
+        "grpc_message_size_filter",
         "grpc_resolver_dns_ares",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
@@ -77,8 +79,6 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_chttp2_server_secure",
-        "grpc_message_size_filter",
-        "grpc_deadline_filter",
     ],
 )
 
@@ -91,9 +91,9 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
+        "grpc_http_filters",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_cronet_client_secure",
-        "grpc_http_filters",
     ],
 )
 
@@ -109,17 +109,17 @@ grpc_cc_library(
     deps = [
         "census",
         "grpc_base",
+        "grpc_deadline_filter",
         "grpc_lb_policy_grpclb",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
         "grpc_max_age_filter",
+        "grpc_message_size_filter",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
-        "grpc_message_size_filter",
-        "grpc_deadline_filter",
     ],
 )
 
@@ -357,6 +357,7 @@ grpc_cc_library(
         "src/core/lib/support/log_linux.c",
         "src/core/lib/support/log_posix.c",
         "src/core/lib/support/log_windows.c",
+        "src/core/lib/support/mpmcq_bounded.c",
         "src/core/lib/support/mpscq.c",
         "src/core/lib/support/murmur_hash.c",
         "src/core/lib/support/stack_lockfree.c",
@@ -388,6 +389,7 @@ grpc_cc_library(
         "src/core/lib/support/backoff.h",
         "src/core/lib/support/block_annotate.h",
         "src/core/lib/support/env.h",
+        "src/core/lib/support/mpmcq_bounded.",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
         "src/core/lib/support/spinlock.h",
@@ -799,16 +801,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_http_filters",
-    hdrs = [
-        "src/core/ext/filters/http/message_compress/message_compress_filter.h",
-        "src/core/ext/filters/http/client/http_client_filter.h",
-        "src/core/ext/filters/http/server/http_server_filter.h",
-    ],
     srcs = [
-        "src/core/ext/filters/http/message_compress/message_compress_filter.c",
         "src/core/ext/filters/http/client/http_client_filter.c",
+        "src/core/ext/filters/http/http_filters_plugin.c",
+        "src/core/ext/filters/http/message_compress/message_compress_filter.c",
         "src/core/ext/filters/http/server/http_server_filter.c",
-        "src/core/ext/filters/http/http_filters_plugin.c"
+    ],
+    hdrs = [
+        "src/core/ext/filters/http/client/http_client_filter.h",
+        "src/core/ext/filters/http/message_compress/message_compress_filter.h",
+        "src/core/ext/filters/http/server/http_server_filter.h",
     ],
     language = "c",
     deps = [
@@ -1077,8 +1079,8 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
-        "grpc_transport_chttp2_alpn",
         "grpc_http_filters",
+        "grpc_transport_chttp2_alpn",
     ],
 )
 
