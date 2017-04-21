@@ -38,6 +38,19 @@ import argparse
 import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
 
+_AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
+                              'bm_fullstack_streaming_ping_pong',
+                              'bm_fullstack_streaming_pump',
+                              'bm_closure',
+                              'bm_cq',
+                              'bm_call_create',
+                              'bm_error',
+                              'bm_chttp2_hpack',
+                              'bm_chttp2_transport',
+                              'bm_pollset',
+                              'bm_metadata',
+                              'bm_fullstack_trickle']
+
 flamegraph_dir = os.path.join(os.path.expanduser('~'), 'FlameGraph')
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -201,24 +214,11 @@ argp.add_argument('-c', '--collect',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  default=['bm_fullstack_unary_ping_pong',
-                           'bm_fullstack_streaming_ping_pong',
-                           'bm_fullstack_streaming_pump',
-                           'bm_closure',
-                           'bm_cq',
-                           'bm_call_create',
-                           'bm_error',
-                           'bm_chttp2_hpack',
-                           'bm_metadata',
-                           'bm_fullstack_trickle',
-                           ],
+                  choices=_AVAILABLE_BENCHMARK_TESTS,
+                  default=_AVAILABLE_BENCHMARK_TESTS,
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
-argp.add_argument('--diff_perf',
-                  default=None,
-                  type=str,
-                  help='Diff microbenchmarks against this git revision')
 argp.add_argument('--bigquery_upload',
                   default=False,
                   action='store_const',
@@ -234,35 +234,9 @@ try:
   for collect in args.collect:
     for bm_name in args.benchmarks:
       collectors[collect](bm_name, args)
-  if args.diff_perf:
-    if 'summary' not in args.collect:
-      for bm_name in args.benchmarks:
-        run_summary(bm_name, 'opt', bm_name)
-        run_summary(bm_name, 'counters', bm_name)
-    where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
-    subprocess.check_call(['git', 'checkout', args.diff_perf])
-    comparables = []
-    subprocess.check_call(['make', 'clean'])
-    try:
-      for bm_name in args.benchmarks:
-        try:
-          run_summary(bm_name, 'opt', '%s.old' % bm_name)
-          run_summary(bm_name, 'counters', '%s.old' % bm_name)
-          comparables.append(bm_name)
-        except subprocess.CalledProcessError, e:
-          pass
-    finally:
-      subprocess.check_call(['git', 'checkout', where_am_i])
-    for bm_name in comparables:
-      diff = subprocess.check_output(['tools/profiling/microbenchmarks/bm_diff.py',
-                                      '%s.counters.json' % bm_name,
-                                      '%s.opt.json' % bm_name,
-                                      '%s.old.counters.json' % bm_name,
-                                      '%s.old.opt.json' % bm_name]).strip()
-      if diff:
-        heading('Performance diff: %s' % bm_name)
-        text(diff)
 finally:
+  if not os.path.exists('reports'):
+    os.makedirs('reports')
   index_html += "</body>\n</html>\n"
   with open('reports/index.html', 'w') as f:
     f.write(index_html)

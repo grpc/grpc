@@ -180,7 +180,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
@@ -188,6 +187,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\profiling\timers.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\arena.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\backoff.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\block_annotate.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h" />
@@ -207,6 +207,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\profiling\stap_timers.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\alloc.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\arena.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\atm.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\avl.c">
     </ClCompile>

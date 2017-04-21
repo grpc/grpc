@@ -34,7 +34,7 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_fuzzer(
   name = "ssl_server_fuzzer",
   srcs = ["ssl_server_fuzzer.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
+  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util", "//test/core/end2end:ssl_test_data"],
   corpus = "corpus",
   copts = ["-std=c99"],
 )
@@ -44,19 +44,13 @@ cc_library(
     srcs = ["oauth2_utils.c"],
     hdrs = ["oauth2_utils.h"],
     deps = ["//:grpc"],
-    copts = ['-std=c99']
+    copts = ['-std=c99'],
+    visibility = ["//test/cpp:__subpackages__"],
 )
 
 cc_test(
     name = "auth_context_test",
     srcs = ["auth_context_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "b64_test",
-    srcs = ["b64_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )

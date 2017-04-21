@@ -56,6 +56,8 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/lockfree_event.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
@@ -140,52 +142,11 @@ struct grpc_fd {
      Ref/Unref by two to avoid altering the orphaned bit */
   gpr_atm refst;
 
-  /* Internally stores data of type (grpc_error *). If the FD is shutdown, this
-     contains reason for shutdown (i.e a pointer to grpc_error) ORed with
-     FD_SHUTDOWN_BIT. Since address allocations are word-aligned, the lower bit
-     of (grpc_error *) addresses is guaranteed to be zero. Even if the
-     (grpc_error *), is of special types like GRPC_ERROR_NONE, GRPC_ERROR_OOM
-     etc, the lower bit is guaranteed to be zero.
-
-     Once an fd is shutdown, any pending or future read/write closures on the
-     fd should fail */
-  gpr_atm shutdown_error;
-
   /* The fd is either closed or we relinquished control of it. In either
      cases, this indicates that the 'fd' on this structure is no longer
      valid */
   bool orphaned;
 
-  /* Closures to call when the fd is readable or writable respectively. These
-     fields contain one of the following values:
-       CLOSURE_READY     : The fd has an I/O event of interest but there is no
-                           closure yet to execute
-
-       CLOSURE_NOT_READY : The fd has no I/O event of interest
-
-       closure ptr       : The closure to be executed when the fd has an I/O
-                           event of interest
-
-       shutdown_error | FD_SHUTDOWN_BIT :
-                          'shutdown_error' field ORed with FD_SHUTDOWN_BIT.
-                           This indicates that the fd is shutdown. Since all
-                           memory allocations are word-aligned, the lower two
-                           bits of the shutdown_error pointer are always 0. So
-                           it is safe to OR these with FD_SHUTDOWN_BIT
-
-     Valid state transitions:
-
-       <closure ptr> <-----3------ CLOSURE_NOT_READY ----1---->  CLOSURE_READY
-         |  |                         ^   |    ^                         |  |
-         |  |                         |   |    |                         |  |
-         |  +--------------4----------+   6    +---------2---------------+  |
-         |                                |                                 |
-         |                                v                                 |
-         +-----5------->  [shutdown_error | FD_SHUTDOWN_BIT] <----7---------+
-
-      For 1, 4 : See set_ready() function
-      For 2, 3 : See notify_on() function
-      For 5,6,7: See set_shutdown() function */
   gpr_atm read_closure;
   gpr_atm write_closure;
 
@@ -216,11 +177,6 @@ static void fd_unref(grpc_fd *fd);
 
 static void fd_global_init(void);
 static void fd_global_shutdown(void);
-
-#define CLOSURE_NOT_READY ((gpr_atm)0)
-#define CLOSURE_READY ((gpr_atm)2)
-
-#define FD_SHUTDOWN_BIT 1
 
 /*******************************************************************************
  * Polling island Declarations
@@ -321,7 +277,7 @@ static bool append_error(grpc_error **composite, grpc_error *error,
                          const char *desc) {
   if (error == GRPC_ERROR_NONE) return true;
   if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE(desc);
+    *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
   }
   *composite = grpc_error_add_child(*composite, error);
   return false;
@@ -948,10 +904,8 @@ static void unref_by(grpc_fd *fd, int n) {
     fd_freelist = fd;
     grpc_iomgr_unregister_object(&fd->iomgr_object);
 
-    grpc_error *err = (grpc_error *)gpr_atm_acq_load(&fd->shutdown_error);
-    /* Clear the least significant bit if it set (in case fd was shutdown) */
-    err = (grpc_error *)((intptr_t)err & ~FD_SHUTDOWN_BIT);
-    GRPC_ERROR_UNREF(err);
+    grpc_lfev_destroy(&fd->read_closure);
+    grpc_lfev_destroy(&fd->write_closure);
 
     gpr_mu_unlock(&fd_freelist_mu);
   } else {
@@ -1015,10 +969,9 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
-  gpr_atm_no_barrier_store(&new_fd->shutdown_error, (gpr_atm)GRPC_ERROR_NONE);
   new_fd->orphaned = false;
-  gpr_atm_no_barrier_store(&new_fd->read_closure, CLOSURE_NOT_READY);
-  gpr_atm_no_barrier_store(&new_fd->write_closure, CLOSURE_NOT_READY);
+  grpc_lfev_init(&new_fd->read_closure);
+  grpc_lfev_init(&new_fd->write_closure);
   gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = NULL;
@@ -1104,172 +1057,6 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   GRPC_ERROR_UNREF(error);
 }
 
-static void notify_on(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
-                      grpc_closure *closure) {
-  while (true) {
-    /* Fast-path: CLOSURE_NOT_READY -> <closure>.
-       The 'release' cas here matches the 'acquire' load in set_ready and
-       set_shutdown ensuring that the closure (scheduled by set_ready or
-       set_shutdown) happens-after the I/O event on the fd */
-    if (gpr_atm_rel_cas(state, CLOSURE_NOT_READY, (gpr_atm)closure)) {
-      return; /* Fast-path successful. Return */
-    }
-
-    /* Slowpath. The 'acquire' load matches the 'release' cas in set_ready and
-       set_shutdown */
-    gpr_atm curr = gpr_atm_acq_load(state);
-    switch (curr) {
-      case CLOSURE_NOT_READY: {
-        break; /* retry */
-      }
-
-      case CLOSURE_READY: {
-        /* Change the state to CLOSURE_NOT_READY. Schedule the closure if
-           successful. If not, the state most likely transitioned to shutdown.
-           We should retry.
-
-           This can be a no-barrier cas since the state is being transitioned to
-           CLOSURE_NOT_READY; set_ready and set_shutdown do not schedule any
-           closure when transitioning out of CLOSURE_NO_READY state (i.e there
-           is no other code that needs to 'happen-after' this) */
-        if (gpr_atm_no_barrier_cas(state, CLOSURE_READY, CLOSURE_NOT_READY)) {
-          grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
-          return; /* Slow-path successful. Return */
-        }
-
-        break; /* retry */
-      }
-
-      default: {
-        /* 'curr' is either a closure or the fd is shutdown(in which case 'curr'
-           contains a pointer to the shutdown-error). If the fd is shutdown,
-           schedule the closure with the shutdown error */
-        if ((curr & FD_SHUTDOWN_BIT) > 0) {
-          grpc_error *shutdown_err = (grpc_error *)(curr & ~FD_SHUTDOWN_BIT);
-          grpc_closure_sched(
-              exec_ctx, closure,
-              GRPC_ERROR_CREATE_REFERENCING("FD Shutdown", &shutdown_err, 1));
-          return;
-        }
-
-        /* There is already a closure!. This indicates a bug in the code */
-        gpr_log(GPR_ERROR,
-                "notify_on called with a previous callback still pending");
-        abort();
-      }
-    }
-  }
-
-  GPR_UNREACHABLE_CODE(return );
-}
-
-static void set_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state,
-                         grpc_error *shutdown_err) {
-  /* Try the fast-path first (i.e expect the current value to be
-     CLOSURE_NOT_READY */
-  gpr_atm curr = CLOSURE_NOT_READY;
-  gpr_atm new_state = (gpr_atm)shutdown_err | FD_SHUTDOWN_BIT;
-
-  while (true) {
-    /* The 'release' cas here matches the 'acquire' load in notify_on to ensure
-       that the closure it schedules 'happens-after' the set_shutdown is called
-       on the fd */
-    if (gpr_atm_rel_cas(state, curr, new_state)) {
-      return; /* Fast-path successful. Return */
-    }
-
-    /* Fallback to slowpath. This 'acquire' load matches the 'release' cas in
-       notify_on and set_ready */
-    curr = gpr_atm_acq_load(state);
-    switch (curr) {
-      case CLOSURE_READY: {
-        break; /* retry */
-      }
-
-      case CLOSURE_NOT_READY: {
-        break; /* retry */
-      }
-
-      default: {
-        /* 'curr' is either a closure or the fd is already shutdown */
-
-        /* If fd is already shutdown, we are done */
-        if ((curr & FD_SHUTDOWN_BIT) > 0) {
-          return;
-        }
-
-        /* Fd is not shutdown. Schedule the closure and move the state to
-           shutdown state. The 'release' cas here matches the 'acquire' load in
-           notify_on to ensure that the closure it schedules 'happens-after'
-           the set_shutdown is called on the fd */
-        if (gpr_atm_rel_cas(state, curr, new_state)) {
-          grpc_closure_sched(
-              exec_ctx, (grpc_closure *)curr,
-              GRPC_ERROR_CREATE_REFERENCING("FD Shutdown", &shutdown_err, 1));
-          return;
-        }
-
-        /* 'curr' was a closure but now changed to a different state. We will
-          have to retry */
-        break;
-      }
-    }
-  }
-
-  GPR_UNREACHABLE_CODE(return );
-}
-
-static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, gpr_atm *state) {
-  /* Try an optimistic case first (i.e assume current state is
-     CLOSURE_NOT_READY).
-
-     This 'release' cas matches the 'acquire' load in notify_on ensuring that
-     any closure (scheduled by notify_on) 'happens-after' the return from
-     epoll_pwait */
-  if (gpr_atm_rel_cas(state, CLOSURE_NOT_READY, CLOSURE_READY)) {
-    return; /* early out */
-  }
-
-  /* The 'acquire' load here matches the 'release' cas in notify_on and
-     set_shutdown */
-  gpr_atm curr = gpr_atm_acq_load(state);
-  switch (curr) {
-    case CLOSURE_READY: {
-      /* Already ready. We are done here */
-      break;
-    }
-
-    case CLOSURE_NOT_READY: {
-      /* The state was not CLOSURE_NOT_READY when we checked initially at the
-         beginning of this function but now it is CLOSURE_NOT_READY again.
-         This is only possible if the state transitioned out of
-         CLOSURE_NOT_READY to either CLOSURE_READY or <some closure> and then
-         back to CLOSURE_NOT_READY again (i.e after we entered this function,
-         the fd became "ready" and the necessary actions were already done).
-         So there is no need to make the state CLOSURE_READY now */
-      break;
-    }
-
-    default: {
-      /* 'curr' is either a closure or the fd is shutdown */
-      if ((curr & FD_SHUTDOWN_BIT) > 0) {
-        /* The fd is shutdown. Do nothing */
-      } else if (gpr_atm_no_barrier_cas(state, curr, CLOSURE_NOT_READY)) {
-        /* The cas above was no-barrier since the state is being transitioned to
-           CLOSURE_NOT_READY; notify_on and set_shutdown do not schedule any
-           closures when transitioning out of CLOSURE_NO_READY state (i.e there
-           is no other code that needs to 'happen-after' this) */
-
-        grpc_closure_sched(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
-      }
-      /* else the state changed again (only possible by either a racing
-         set_ready or set_shutdown functions. In both these cases, the closure
-         would have been scheduled for execution. So we are done here */
-      break;
-    }
-  }
-}
-
 static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
                                                   grpc_fd *fd) {
   gpr_atm notifier = gpr_atm_acq_load(&fd->read_notifier_pollset);
@@ -1277,33 +1064,27 @@ static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
 }
 
 static bool fd_is_shutdown(grpc_fd *fd) {
-  grpc_error *err = (grpc_error *)gpr_atm_acq_load(&fd->shutdown_error);
-  return (((intptr_t)err & FD_SHUTDOWN_BIT) > 0);
+  return grpc_lfev_is_shutdown(&fd->read_closure);
 }
 
 /* Might be called multiple times */
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
-  /* Store the shutdown error ORed with FD_SHUTDOWN_BIT in fd->shutdown_error */
-  if (gpr_atm_rel_cas(&fd->shutdown_error, (gpr_atm)GRPC_ERROR_NONE,
-                      (gpr_atm)why | FD_SHUTDOWN_BIT)) {
+  if (grpc_lfev_set_shutdown(exec_ctx, &fd->read_closure,
+                             GRPC_ERROR_REF(why))) {
     shutdown(fd->fd, SHUT_RDWR);
-
-    set_shutdown(exec_ctx, fd, &fd->read_closure, why);
-    set_shutdown(exec_ctx, fd, &fd->write_closure, why);
-  } else {
-    /* Shutdown already called */
-    GRPC_ERROR_UNREF(why);
+    grpc_lfev_set_shutdown(exec_ctx, &fd->write_closure, GRPC_ERROR_REF(why));
   }
+  GRPC_ERROR_UNREF(why);
 }
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
-  notify_on(exec_ctx, fd, &fd->read_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure);
 }
 
 static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_closure *closure) {
-  notify_on(exec_ctx, fd, &fd->write_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
 }
 
 static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) {
@@ -1351,7 +1132,7 @@ static grpc_error *pollset_worker_kick(grpc_pollset_worker *worker) {
   if (gpr_atm_no_barrier_cas(&worker->is_kicked, (gpr_atm)0, (gpr_atm)1)) {
     GRPC_POLLING_TRACE(
         "pollset_worker_kick: Kicking worker: %p (thread id: %ld)",
-        (void *)worker, worker->pt_id);
+        (void *)worker, (long int)worker->pt_id);
     int err_num = pthread_kill(worker->pt_id, grpc_wakeup_signal);
     if (err_num != 0) {
       err = GRPC_OS_ERROR(err_num, "pthread_kill");
@@ -1486,13 +1267,14 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
     return 0;
   }
   timeout = gpr_time_sub(deadline, now);
-  return gpr_time_to_millis(gpr_time_add(
+  int millis = gpr_time_to_millis(gpr_time_add(
       timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
+  return millis >= 1 ? millis : 1;
 }
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
-  set_ready(exec_ctx, fd, &fd->read_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
 
   /* Note, it is possible that fd_become_readable might be called twice with
      different 'notifier's when an fd becomes readable and it is in two epoll
@@ -1504,7 +1286,7 @@ static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  set_ready(exec_ctx, fd, &fd->write_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
 }
 
 static void pollset_release_polling_island(grpc_exec_ctx *exec_ctx,
@@ -1566,6 +1348,9 @@ static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
       }
       grpc_closure *c = (grpc_closure *)n;
       grpc_error *error = c->error_data.error;
+#ifndef NDEBUG
+      c->scheduled = false;
+#endif
       c->cb(exec_ctx, c->cb_arg, error);
       GRPC_ERROR_UNREF(error);
       return true;
@@ -1669,6 +1454,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
     for (int i = 0; i < ep_rv; ++i) {
       void *data_ptr = ep_ev[i].data.ptr;
       if (data_ptr == &global_wakeup_fd) {
+        grpc_timer_consume_kick();
         append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                      err_desc);
       } else if (data_ptr == &pi->workqueue_wakeup_fd) {
@@ -1733,7 +1519,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   worker.pt_id = pthread_self();
   gpr_atm_no_barrier_store(&worker.is_kicked, (gpr_atm)0);
 
-  *worker_hdl = &worker;
+  if (worker_hdl) *worker_hdl = &worker;
 
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)pollset);
   gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
@@ -1811,7 +1597,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     gpr_mu_lock(&pollset->po.mu);
   }
 
-  *worker_hdl = NULL;
+  if (worker_hdl) *worker_hdl = NULL;
 
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)0);
   gpr_tls_set(&g_current_thread_worker, (intptr_t)0);

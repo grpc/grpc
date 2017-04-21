@@ -33,14 +33,13 @@
 
 /* Benchmark gRPC end2end in various configurations */
 
+#include <benchmark/benchmark.h>
 #include <sstream>
-
 #include "src/core/lib/profiling/timers.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 namespace grpc {
 namespace testing {
@@ -142,11 +141,20 @@ static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
 
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator)
     ->Apply(SweepSizesArgs);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, MinTCP, NoOpMutator, NoOpMutator)
+    ->Apply(SweepSizesArgs);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator)
+    ->Args({0, 0});
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, MinUDS, NoOpMutator, NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, SockPair, NoOpMutator, NoOpMutator)
     ->Args({0, 0});
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, MinSockPair, NoOpMutator, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator, NoOpMutator)
+    ->Apply(SweepSizesArgs);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, MinInProcessCHTTP2, NoOpMutator,
+                   NoOpMutator)
     ->Apply(SweepSizesArgs);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
                    Client_AddMetadata<RandomBinaryMetadata<10>, 1>, NoOpMutator)

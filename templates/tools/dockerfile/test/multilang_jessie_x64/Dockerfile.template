@@ -38,6 +38,10 @@
   <%include file="../../php_deps.include"/>
   <%include file="../../ruby_deps.include"/>
   <%include file="../../python_deps.include"/>
+  # Install coverage for Python test coverage reporting
+  RUN pip install coverage
+  ENV PATH ~/.local/bin:$PATH
+
   <%include file="../../run_tests_addons.include"/>
   # Define the default command.
   CMD ["bash"]

@@ -52,6 +52,13 @@ PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
 BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
+CARES_INCLUDE = (
+    os.path.join('third_party', 'cares'),
+    os.path.join('third_party', 'cares', 'cares'),)
+if 'linux' in sys.platform:
+  CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
+if 'darwin' in sys.platform:
+  CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_darwin'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -136,7 +143,8 @@ CYTHON_HELPER_C_FILES = ()
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
-    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE)
+    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE +
+    CARES_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
@@ -150,13 +158,15 @@ DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
     ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 if "win32" in sys.platform:
-  DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1),)
+  DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1), ('CARES_STATICLIB', 1),)
   if '64bit' in platform.architecture()[0]:
     DEFINE_MACROS += (('MS_WIN64', 1),)
   elif sys.version_info >= (3, 5):
     # For some reason, this is needed to get access to inet_pton/inet_ntop
     # on msvc, but only for 32 bits
     DEFINE_MACROS += (('NTDDI_VERSION', 0x06000000),)
+else:
+  DEFINE_MACROS += (('HAVE_CONFIG_H', 1),)
 
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
@@ -206,14 +216,13 @@ PACKAGE_DIRECTORIES = {
 
 INSTALL_REQUIRES = (
     'six>=1.5.2',
-    'enum34>=1.0.4',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
     'protobuf>=3.2.0',
 )
 
 if not PY3:
-  INSTALL_REQUIRES += ('futures>=2.2.0',)
+  INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
@@ -265,6 +274,10 @@ PACKAGES = setuptools.find_packages(PYTHON_STEM)
 setuptools.setup(
   name='grpcio',
   version=grpc_version.VERSION,
+  description='HTTP/2-based RPC framework',
+  author='The gRPC Authors',
+  author_email='grpc-io@googlegroups.com',
+  url='http://www.grpc.io',
   license=LICENSE,
   long_description=open(README).read(),
   ext_modules=CYTHON_EXTENSION_MODULES,

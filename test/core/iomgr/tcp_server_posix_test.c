@@ -163,7 +163,8 @@ static void test_addr_init_str(test_addr *addr) {
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *pollset,
                        grpc_tcp_server_acceptor *acceptor) {
-  grpc_endpoint_shutdown(exec_ctx, tcp, GRPC_ERROR_CREATE("Connected"));
+  grpc_endpoint_shutdown(exec_ctx, tcp,
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(exec_ctx, tcp);
 
   on_connect_result temp_result;
@@ -285,7 +286,7 @@ static grpc_error *tcp_connect(grpc_exec_ctx *exec_ctx, const test_addr *remote,
   if (g_nconnects != nconnects_before + 1) {
     gpr_mu_unlock(g_mu);
     close(clifd);
-    return GRPC_ERROR_CREATE("Didn't connect");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Didn't connect");
   }
   close(clifd);
   *result = g_result;

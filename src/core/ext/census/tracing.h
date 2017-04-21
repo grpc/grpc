@@ -121,4 +121,4 @@ free to ignore all further calls using the Span. EndSpanOptions can
 optionally be NULL. */
 void trace_end_span(const trace_status *status, trace_span_context *span_ctxt);
 
-#endif
+#endif /* GRPC_CORE_EXT_CENSUS_TRACING_H */

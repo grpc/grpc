@@ -67,13 +67,14 @@ ClientContext::ClientContext()
       call_canceled_(false),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
       census_context_(nullptr),
-      propagate_from_call_(nullptr) {
+      propagate_from_call_(nullptr),
+      initial_metadata_corked_(false) {
   g_client_callbacks->DefaultConstructor(this);
 }
 
 ClientContext::~ClientContext() {
   if (call_) {
-    grpc_call_destroy(call_);
+    grpc_call_unref(call_);
   }
   g_client_callbacks->Destructor(this);
 }

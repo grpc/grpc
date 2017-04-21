@@ -76,7 +76,7 @@ grpc_error *grpc_chttp2_rst_stream_parser_begin_frame(
     char *msg;
     gpr_asprintf(&msg, "invalid rst_stream: length=%d, flags=%02x", length,
                  flags);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
   }
@@ -112,8 +112,9 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
       char *message;
       gpr_asprintf(&message, "Received RST_STREAM with error code %d", reason);
       error = grpc_error_set_int(
-          grpc_error_set_str(GRPC_ERROR_CREATE("RST_STREAM"),
-                             GRPC_ERROR_STR_GRPC_MESSAGE, message),
+          grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("RST_STREAM"),
+                             GRPC_ERROR_STR_GRPC_MESSAGE,
+                             grpc_slice_from_copied_string(message)),
           GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)reason);
       gpr_free(message);
     }

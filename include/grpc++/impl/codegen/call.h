@@ -34,6 +34,7 @@
 #ifndef GRPCXX_IMPL_CODEGEN_CALL_H
 #define GRPCXX_IMPL_CODEGEN_CALL_H
 
+#include <assert.h>
 #include <cstring>
 #include <functional>
 #include <map>
@@ -47,9 +48,9 @@
 #include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/slice.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc++/impl/codegen/status_helper.h>
 #include <grpc++/impl/codegen/string_ref.h>
 
+#include <grpc/impl/codegen/atm.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -63,20 +64,30 @@ class CallHook;
 class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
 
+const char kBinaryErrorDetailsKey[] = "grpc-status-details-bin";
+
 // TODO(yangg) if the map is changed before we send, the pointers will be a
 // mess. Make sure it does not happen.
 inline grpc_metadata* FillMetadataArray(
-    const std::multimap<grpc::string, grpc::string>& metadata) {
-  if (metadata.empty()) {
+    const std::multimap<grpc::string, grpc::string>& metadata,
+    size_t* metadata_count, const grpc::string& optional_error_details) {
+  *metadata_count = metadata.size() + (optional_error_details.empty() ? 0 : 1);
+  if (*metadata_count == 0) {
     return nullptr;
   }
   grpc_metadata* metadata_array =
       (grpc_metadata*)(g_core_codegen_interface->gpr_malloc(
-          metadata.size() * sizeof(grpc_metadata)));
+          (*metadata_count) * sizeof(grpc_metadata)));
   size_t i = 0;
   for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
     metadata_array[i].key = SliceReferencingString(iter->first);
     metadata_array[i].value = SliceReferencingString(iter->second);
+  }
+  if (!optional_error_details.empty()) {
+    metadata_array[i].key =
+        g_core_codegen_interface->grpc_slice_from_static_buffer(
+            kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
+    metadata_array[i].value = SliceReferencingString(optional_error_details);
   }
   return metadata_array;
 }
@@ -84,8 +95,9 @@ inline grpc_metadata* FillMetadataArray(
 /// Per-message write options.
 class WriteOptions {
  public:
-  WriteOptions() : flags_(0) {}
-  WriteOptions(const WriteOptions& other) : flags_(other.flags_) {}
+  WriteOptions() : flags_(0), last_message_(false) {}
+  WriteOptions(const WriteOptions& other)
+      : flags_(other.flags_), last_message_(other.last_message_) {}
 
   /// Clear all flags.
   inline void Clear() { flags_ = 0; }
@@ -141,6 +153,43 @@ class WriteOptions {
   /// \sa GRPC_WRITE_BUFFER_HINT
   inline bool get_buffer_hint() const { return GetBit(GRPC_WRITE_BUFFER_HINT); }
 
+  /// corked bit: aliases set_buffer_hint currently, with the intent that
+  /// set_buffer_hint will be removed in the future
+  inline WriteOptions& set_corked() {
+    SetBit(GRPC_WRITE_BUFFER_HINT);
+    return *this;
+  }
+
+  inline WriteOptions& clear_corked() {
+    ClearBit(GRPC_WRITE_BUFFER_HINT);
+    return *this;
+  }
+
+  inline bool is_corked() const { return GetBit(GRPC_WRITE_BUFFER_HINT); }
+
+  /// last-message bit: indicates this is the last message in a stream
+  /// client-side:  makes Write the equivalent of performing Write, WritesDone
+  /// in a single step
+  /// server-side:  hold the Write until the service handler returns (sync api)
+  /// or until Finish is called (async api)
+  inline WriteOptions& set_last_message() {
+    last_message_ = true;
+    return *this;
+  }
+
+  /// Clears flag indicating that this is the last message in a stream,
+  /// disabling coalescing.
+  inline WriteOptions& clear_last_messsage() {
+    last_message_ = false;
+    return *this;
+  }
+
+  /// Get value for the flag indicating that this is the last message, and
+  /// should be coalesced with trailing metadata.
+  ///
+  /// \sa GRPC_WRITE_LAST_MESSAGE
+  bool is_last_message() const { return last_message_; }
+
   WriteOptions& operator=(const WriteOptions& rhs) {
     flags_ = rhs.flags_;
     return *this;
@@ -154,6 +203,7 @@ class WriteOptions {
   bool GetBit(const uint32_t mask) const { return (flags_ & mask) != 0; }
 
   uint32_t flags_;
+  bool last_message_;
 };
 
 /// Default argument for CallOpSet. I is unused by the class, but can be
@@ -177,8 +227,8 @@ class CallOpSendInitialMetadata {
     maybe_compression_level_.is_set = false;
     send_ = true;
     flags_ = flags;
-    initial_metadata_count_ = metadata.size();
-    initial_metadata_ = FillMetadataArray(metadata);
+    initial_metadata_ =
+        FillMetadataArray(metadata, &initial_metadata_count_, "");
   }
 
   void set_compression_level(grpc_compression_level level) {
@@ -197,8 +247,10 @@ class CallOpSendInitialMetadata {
     op->data.send_initial_metadata.metadata = initial_metadata_;
     op->data.send_initial_metadata.maybe_compression_level.is_set =
         maybe_compression_level_.is_set;
-    op->data.send_initial_metadata.maybe_compression_level.level =
-        maybe_compression_level_.level;
+    if (maybe_compression_level_.is_set) {
+      op->data.send_initial_metadata.maybe_compression_level.level =
+          maybe_compression_level_.level;
+    }
   }
   void FinishOp(bool* status) {
     if (!send_) return;
@@ -224,7 +276,7 @@ class CallOpSendMessage {
   /// after use.
   template <class M>
   Status SendMessage(const M& message,
-                     const WriteOptions& options) GRPC_MUST_USE_RESULT;
+                     WriteOptions options) GRPC_MUST_USE_RESULT;
 
   template <class M>
   Status SendMessage(const M& message) GRPC_MUST_USE_RESULT;
@@ -252,8 +304,7 @@ class CallOpSendMessage {
 };
 
 template <class M>
-Status CallOpSendMessage::SendMessage(const M& message,
-                                      const WriteOptions& options) {
+Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
   return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
 }
@@ -416,11 +467,12 @@ class CallOpServerSendStatus {
   void ServerSendStatus(
       const std::multimap<grpc::string, grpc::string>& trailing_metadata,
       const Status& status) {
-    trailing_metadata_count_ = trailing_metadata.size();
-    trailing_metadata_ = FillMetadataArray(trailing_metadata);
+    send_error_details_ = status.error_details();
+    trailing_metadata_ = FillMetadataArray(
+        trailing_metadata, &trailing_metadata_count_, send_error_details_);
     send_status_available_ = true;
-    send_status_code_ = static_cast<grpc_status_code>(GetCanonicalCode(status));
-    send_status_details_ = status.error_message();
+    send_status_code_ = static_cast<grpc_status_code>(status.error_code());
+    send_error_message_ = status.error_message();
   }
 
  protected:
@@ -432,9 +484,9 @@ class CallOpServerSendStatus {
         trailing_metadata_count_;
     op->data.send_status_from_server.trailing_metadata = trailing_metadata_;
     op->data.send_status_from_server.status = send_status_code_;
-    status_details_slice_ = SliceReferencingString(send_status_details_);
+    error_message_slice_ = SliceReferencingString(send_error_message_);
     op->data.send_status_from_server.status_details =
-        send_status_details_.empty() ? nullptr : &status_details_slice_;
+        send_error_message_.empty() ? nullptr : &error_message_slice_;
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -448,10 +500,11 @@ class CallOpServerSendStatus {
  private:
   bool send_status_available_;
   grpc_status_code send_status_code_;
-  grpc::string send_status_details_;
+  grpc::string send_error_details_;
+  grpc::string send_error_message_;
   size_t trailing_metadata_count_;
   grpc_metadata* trailing_metadata_;
-  grpc_slice status_details_slice_;
+  grpc_slice error_message_slice_;
 };
 
 class CallOpRecvInitialMetadata {
@@ -490,6 +543,7 @@ class CallOpClientRecvStatus {
   void ClientRecvStatus(ClientContext* context, Status* status) {
     metadata_map_ = &context->trailing_metadata_;
     recv_status_ = status;
+    error_message_ = g_core_codegen_interface->grpc_empty_slice();
   }
 
  protected:
@@ -499,7 +553,7 @@ class CallOpClientRecvStatus {
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
     op->data.recv_status_on_client.status = &status_code_;
-    op->data.recv_status_on_client.status_details = &status_details_;
+    op->data.recv_status_on_client.status_details = &error_message_;
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -507,10 +561,17 @@ class CallOpClientRecvStatus {
   void FinishOp(bool* status) {
     if (recv_status_ == nullptr) return;
     metadata_map_->FillMap();
+    grpc::string binary_error_details;
+    auto iter = metadata_map_->map()->find(kBinaryErrorDetailsKey);
+    if (iter != metadata_map_->map()->end()) {
+      binary_error_details =
+          grpc::string(iter->second.begin(), iter->second.length());
+    }
     *recv_status_ = Status(static_cast<StatusCode>(status_code_),
-                           grpc::string(GRPC_SLICE_START_PTR(status_details_),
-                                        GRPC_SLICE_END_PTR(status_details_)));
-    g_core_codegen_interface->grpc_slice_unref(status_details_);
+                           grpc::string(GRPC_SLICE_START_PTR(error_message_),
+                                        GRPC_SLICE_END_PTR(error_message_)),
+                           binary_error_details);
+    g_core_codegen_interface->grpc_slice_unref(error_message_);
     recv_status_ = nullptr;
   }
 
@@ -518,19 +579,8 @@ class CallOpClientRecvStatus {
   MetadataMap* metadata_map_;
   Status* recv_status_;
   grpc_status_code status_code_;
-  grpc_slice status_details_;
+  grpc_slice error_message_;
 };
-
-/// An abstract collection of CallOpSet's, to be used whenever
-/// CallOpSet objects must be thought of as a group. Each member
-/// of the group should have a shared_ptr back to the collection,
-/// as will the object that instantiates the collection, allowing
-/// for automatic ref-counting. In practice, any actual use should
-/// derive from this base class. This is specifically necessary if
-/// some of the CallOpSet's in the collection are "Sneaky" and don't
-/// report back to the C++ layer CQ operations
-class CallOpSetCollectionInterface
-    : public std::enable_shared_from_this<CallOpSetCollectionInterface> {};
 
 /// An abstract collection of call ops, used to generate the
 /// grpc_call_op structure to pass down to the lower layers,
@@ -539,18 +589,9 @@ class CallOpSetCollectionInterface
 /// API.
 class CallOpSetInterface : public CompletionQueueTag {
  public:
-  CallOpSetInterface() {}
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.
-  virtual void FillOps(grpc_op* ops, size_t* nops) = 0;
-
-  /// Mark this as belonging to a collection if needed
-  void SetCollection(std::shared_ptr<CallOpSetCollectionInterface> collection) {
-    collection_ = collection;
-  }
-
- protected:
-  std::shared_ptr<CallOpSetCollectionInterface> collection_;
+  virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
 };
 
 /// Primary implementaiton of CallOpSetInterface.
@@ -571,13 +612,15 @@ class CallOpSet : public CallOpSetInterface,
                   public Op6 {
  public:
   CallOpSet() : return_tag_(this) {}
-  void FillOps(grpc_op* ops, size_t* nops) override {
+  void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
     this->Op1::AddOp(ops, nops);
     this->Op2::AddOp(ops, nops);
     this->Op3::AddOp(ops, nops);
     this->Op4::AddOp(ops, nops);
     this->Op5::AddOp(ops, nops);
     this->Op6::AddOp(ops, nops);
+    g_core_codegen_interface->grpc_call_ref(call);
+    call_ = call;
   }
 
   bool FinalizeResult(void** tag, bool* status) override {
@@ -588,7 +631,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::FinishOp(status);
     this->Op6::FinishOp(status);
     *tag = return_tag_;
-    collection_.reset();  // drop the ref at this point
+    g_core_codegen_interface->grpc_call_unref(call_);
     return true;
   }
 
@@ -596,6 +639,7 @@ class CallOpSet : public CallOpSetInterface,
 
  private:
   void* return_tag_;
+  grpc_call* call_;
 };
 
 /// A CallOpSet that does not post completions to the completion queue.

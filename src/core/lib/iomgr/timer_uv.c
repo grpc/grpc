@@ -78,6 +78,10 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   uv_timer->data = timer;
   timer->uv_timer = uv_timer;
   uv_timer_start(uv_timer, run_expired_timer, timeout, 0);
+  /* We assume that gRPC timers are only used alongside other active gRPC
+     objects, and that there will therefore always be something else keeping
+     the uv loop alive whenever there is a timer */
+  uv_unref((uv_handle_t *)uv_timer);
 }
 
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {

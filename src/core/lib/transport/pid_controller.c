@@ -49,6 +49,7 @@ void grpc_pid_controller_reset(grpc_pid_controller *pid_controller) {
 
 double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
                                   double error, double dt) {
+  if (dt == 0) return pid_controller->last_control_value;
   /* integrate error using the trapezoid rule */
   pid_controller->error_integral +=
       dt * (pid_controller->last_error + error) * 0.5;

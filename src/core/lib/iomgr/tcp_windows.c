@@ -175,7 +175,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
       char *utf8_message = gpr_format_message(info->wsa_error);
-      error = GRPC_ERROR_CREATE(utf8_message);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(utf8_message);
       gpr_free(utf8_message);
       grpc_slice_unref_internal(exec_ctx, tcp->read_slice);
     } else {
@@ -185,9 +185,9 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
       } else {
         grpc_slice_unref_internal(exec_ctx, tcp->read_slice);
         error = tcp->shutting_down
-                    ? GRPC_ERROR_CREATE_REFERENCING("TCP stream shutting down",
-                                                    &tcp->shutdown_error, 1)
-                    : GRPC_ERROR_CREATE("End of TCP stream");
+                    ? GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                          "TCP stream shutting down", &tcp->shutdown_error, 1)
+                    : GRPC_ERROR_CREATE_FROM_STATIC_STRING("End of TCP stream");
       }
     }
   }
@@ -208,9 +208,10 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   WSABUF buffer;
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CREATE_REFERENCING(
-                                         "TCP socket is shutting down",
-                                         &tcp->shutdown_error, 1));
+    grpc_closure_sched(
+        exec_ctx, cb,
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "TCP socket is shutting down", &tcp->shutdown_error, 1));
     return;
   }
 
@@ -297,9 +298,10 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   size_t len;
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CREATE_REFERENCING(
-                                         "TCP socket is shutting down",
-                                         &tcp->shutdown_error, 1));
+    grpc_closure_sched(
+        exec_ctx, cb,
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "TCP socket is shutting down", &tcp->shutdown_error, 1));
     return;
   }
 
@@ -428,9 +430,19 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_get_peer,
                                       win_get_fd};
 
-grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket,
-                               grpc_resource_quota *resource_quota,
+grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
+                               grpc_channel_args *channel_args,
                                char *peer_string) {
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
+  if (channel_args != NULL) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_ref_internal(
+            channel_args->args[i].value.pointer.p);
+      }
+    }
+  }
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
   memset(tcp, 0, sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;

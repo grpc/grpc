@@ -29,4 +29,4 @@
 
 
 cdef grpc_ssl_roots_override_result ssl_roots_override_callback(
-    char **pem_root_certs) with gil
+    char **pem_root_certs) nogil

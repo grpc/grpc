@@ -41,7 +41,8 @@ CONFIG=${CONFIG:-opt}
 cd $(dirname $0)/../../..
 
 case "$CONFIG" in
-  'dbg') config_flag='--debug' ;;
+  'dbg') config_flags='--debug' ;;
+  'gcov') config_flags="--debug --grpc_gcov=true" ;;
   *) config_flag='--release' ;;
 esac
 

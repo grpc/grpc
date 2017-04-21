@@ -12,7 +12,8 @@ load 'tools/distrib/docker_for_windows.rb'
 # Add rubocop style checking tasks
 RuboCop::RakeTask.new(:rubocop) do |task|
   task.options = ['-c', 'src/ruby/.rubocop.yml']
-  task.patterns = ['src/ruby/{lib,spec}/**/*.rb']
+  # add end2end tests to formatter but don't add generated proto _pb.rb's
+  task.patterns = ['src/ruby/{lib,spec}/**/*.rb', 'src/ruby/end2end/*.rb']
 end
 
 spec = Gem::Specification.load('grpc.gemspec')

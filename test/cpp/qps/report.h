@@ -42,6 +42,9 @@
 
 #include "test/cpp/qps/driver.h"
 
+#include <grpc++/channel.h>
+#include "src/proto/grpc/testing/services.grpc.pb.h"
+
 namespace grpc {
 namespace testing {
 
@@ -122,6 +125,21 @@ class JsonReporter : public Reporter {
   void ReportCpuUsage(const ScenarioResult& result) override;
 
   const string report_file_;
+};
+
+class RpcReporter : public Reporter {
+ public:
+  RpcReporter(const string& name, std::shared_ptr<grpc::Channel> channel)
+      : Reporter(name), stub_(ReportQpsScenarioService::NewStub(channel)) {}
+
+ private:
+  void ReportQPS(const ScenarioResult& result) override;
+  void ReportQPSPerCore(const ScenarioResult& result) override;
+  void ReportLatency(const ScenarioResult& result) override;
+  void ReportTimes(const ScenarioResult& result) override;
+  void ReportCpuUsage(const ScenarioResult& result) override;
+
+  std::unique_ptr<ReportQpsScenarioService::Stub> stub_;
 };
 
 }  // namespace testing

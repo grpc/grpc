@@ -115,7 +115,8 @@ static void server_weak_ref_set(server_weak_ref *weak_ref,
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *pollset,
                        grpc_tcp_server_acceptor *acceptor) {
-  grpc_endpoint_shutdown(exec_ctx, tcp, GRPC_ERROR_CREATE("Connected"));
+  grpc_endpoint_shutdown(exec_ctx, tcp,
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(exec_ctx, tcp);
 
   on_connect_result temp_result;

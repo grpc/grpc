@@ -34,9 +34,9 @@ cc_test(
     srcs = ["client_ssl.c"],
     copts = ["-std=c99"],
     data = [
-        "//src/core/lib/tsi/test_creds:ca.pem",
-        "//src/core/lib/tsi/test_creds:server1.key",
-        "//src/core/lib/tsi/test_creds:server1.pem",
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
     ],
     deps = [
         "//:gpr",
@@ -51,9 +51,9 @@ cc_test(
     srcs = ["server_ssl.c"],
     copts = ["-std=c99"],
     data = [
-        "//src/core/lib/tsi/test_creds:ca.pem",
-        "//src/core/lib/tsi/test_creds:server1.key",
-        "//src/core/lib/tsi/test_creds:server1.pem",
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
     ],
     deps = [
         "//:gpr",

@@ -35,7 +35,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "test/core/util/test_config.h"
 

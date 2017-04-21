@@ -36,8 +36,8 @@
 
 #include <string.h>
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 #include "grpc/grpc.h"
 
 namespace grpc {
@@ -49,10 +49,6 @@ grpc_byte_buffer *BufferToByteBuffer(v8::Local<v8::Value> buffer);
 
 /* Convert a grpc_byte_buffer to a Node.js Buffer */
 v8::Local<v8::Value> ByteBufferToBuffer(grpc_byte_buffer *buffer);
-
-/* Convert a ::node::Buffer to a fast Buffer, as defined in the Node
-   Buffer documentation */
-v8::Local<v8::Value> MakeFastBuffer(v8::Local<v8::Value> slowBuffer);
 
 }  // namespace node
 }  // namespace grpc

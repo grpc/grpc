@@ -70,7 +70,7 @@ grpc_error *grpc_chttp2_window_update_parser_begin_frame(
     char *msg;
     gpr_asprintf(&msg, "invalid window update: length=%d, flags=%02x", length,
                  flags);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
   }
@@ -102,7 +102,7 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
     if (received_update == 0 || (received_update & 0x80000000u)) {
       char *msg;
       gpr_asprintf(&msg, "invalid window update bytes: %d", p->amount);
-      grpc_error *err = GRPC_ERROR_CREATE(msg);
+      grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
       return err;
     }

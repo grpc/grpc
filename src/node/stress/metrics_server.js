@@ -63,7 +63,7 @@ function getAllGauges(call) {
 
 function MetricsServer(port) {
   var server = new grpc.Server();
-  server.addProtoService(metrics.MetricsService.service, {
+  server.addService(metrics.MetricsService.service, {
     getGauge: _.bind(getGauge, this),
     getAllGauges: _.bind(getAllGauges, this)
   });

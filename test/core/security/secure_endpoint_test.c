@@ -39,11 +39,12 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/tsi/fake_transport_security.h"
+#include "src/core/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu *g_mu;
@@ -57,10 +58,11 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair tcp;
 
-  grpc_resource_quota *resource_quota =
-      grpc_resource_quota_create("secure_endpoint_test");
-  tcp = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, slice_size);
-  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
+  grpc_arg a[] = {{.key = GRPC_ARG_TCP_READ_CHUNK_SIZE,
+                   .type = GRPC_ARG_INTEGER,
+                   .value.integer = (int)slice_size}};
+  grpc_channel_args args = {.num_args = GPR_ARRAY_SIZE(a), .args = a};
+  tcp = grpc_iomgr_create_endpoint_pair("fixture", &args);
   grpc_endpoint_add_to_pollset(&exec_ctx, tcp.client, g_pollset);
   grpc_endpoint_add_to_pollset(&exec_ctx, tcp.server, g_pollset);
 
@@ -166,10 +168,12 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   GPR_ASSERT(incoming.count == 1);
   GPR_ASSERT(grpc_slice_eq(s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown(&exec_ctx, f.client_ep,
-                         GRPC_ERROR_CREATE("test_leftover end"));
-  grpc_endpoint_shutdown(&exec_ctx, f.server_ep,
-                         GRPC_ERROR_CREATE("test_leftover end"));
+  grpc_endpoint_shutdown(
+      &exec_ctx, f.client_ep,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
+  grpc_endpoint_shutdown(
+      &exec_ctx, f.server_ep,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
   grpc_endpoint_destroy(&exec_ctx, f.client_ep);
   grpc_endpoint_destroy(&exec_ctx, f.server_ep);
   grpc_exec_ctx_finish(&exec_ctx);

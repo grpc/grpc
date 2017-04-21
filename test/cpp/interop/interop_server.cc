@@ -48,8 +48,8 @@
 
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/byte_stream.h"
-#include "src/proto/grpc/testing/empty.grpc.pb.h"
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/empty.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"

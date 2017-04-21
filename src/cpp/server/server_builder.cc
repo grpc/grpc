@@ -337,10 +337,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
 
   auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
-  if (!server->Start(cqs_data, cqs_.size())) {
-    if (added_port) server->Shutdown();
-    return nullptr;
-  }
+  server->Start(cqs_data, cqs_.size());
 
   for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
     (*plugin)->Finish(initializer);

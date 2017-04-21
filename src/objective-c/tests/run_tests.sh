@@ -47,25 +47,45 @@ BINDIR=../../../bins/$CONFIG
 $BINDIR/interop_server --port=5050 --max_send_message_size=8388608 &
 $BINDIR/interop_server --port=5051 --max_send_message_size=8388608 --use_tls &
 # Kill them when this script exits.
-trap 'kill -9 `jobs -p`' EXIT
+trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
 # xcodebuild is very verbose. We filter its output and tell Bash to fail if any
 # element of the pipe fails.
 # TODO(jcanizales): Use xctool instead? Issue #2540.
 set -o pipefail
 XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
+echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme AllTests \
     -destination name="iPhone 6" \
-    test \
-    | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    HOST_PORT_LOCALSSL=localhost:5051 \
+    HOST_PORT_LOCAL=localhost:5050 \
+    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+    test | xcpretty
 
+echo "TIME:  $(date)"
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme CoreCronetEnd2EndTests \
+    -destination name="iPhone 6" \
+    test | xcpretty
+
+# Temporarily disabled for (possible) flakiness on Jenkins.
+# Fix or reenable after confirmation/disconfirmation that it is the source of
+# Jenkins problem.
+
+# echo "TIME:  $(date)"
+# xcodebuild \
+#     -workspace Tests.xcworkspace \
+#     -scheme CronetUnitTests \
+#     -destination name="iPhone 6" \
+#     test | xcpretty
+
+echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme InteropTestsRemoteWithCronet \
     -destination name="iPhone 6" \
-    test \
-    | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+    test | xcpretty

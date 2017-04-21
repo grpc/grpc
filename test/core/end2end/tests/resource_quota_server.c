@@ -57,24 +57,27 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_time(int n) {
+static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static gpr_timespec five_seconds_from_now(void) {
+  return n_seconds_from_now(5);
+}
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
+  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
+                                         grpc_timeout_seconds_to_deadline(5),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -93,6 +96,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 /* Creates and returns a grpc_slice containing random alphanumeric characters.
@@ -113,6 +117,10 @@ static grpc_slice generate_random_slice() {
 }
 
 void resource_quota_server(grpc_end2end_test_config config) {
+  if (config.feature_mask &
+      FEATURE_MASK_DOES_NOT_SUPPORT_RESOURCE_QUOTA_SERVER) {
+    return;
+  }
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
@@ -191,13 +199,13 @@ void resource_quota_server(grpc_end2end_test_config config) {
         f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
         grpc_slice_from_static_string("/foo"),
         get_host_override_slice("foo.test.google.fr", config),
-        n_seconds_time(60), NULL);
+        n_seconds_from_now(60), NULL);
 
     memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
-    op->flags = 0;
+    op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_SEND_MESSAGE;
@@ -233,7 +241,8 @@ void resource_quota_server(grpc_end2end_test_config config) {
   while (pending_client_calls + pending_server_recv_calls +
              pending_server_end_calls >
          0) {
-    grpc_event ev = grpc_completion_queue_next(f.cq, n_seconds_time(60), NULL);
+    grpc_event ev =
+        grpc_completion_queue_next(f.cq, n_seconds_from_now(60), NULL);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
     int ev_tag = (int)(intptr_t)ev.tag;
@@ -261,7 +270,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
 
       grpc_metadata_array_destroy(&initial_metadata_recv[call_id]);
       grpc_metadata_array_destroy(&trailing_metadata_recv[call_id]);
-      grpc_call_destroy(client_calls[call_id]);
+      grpc_call_unref(client_calls[call_id]);
       grpc_slice_unref(details[call_id]);
 
       pending_client_calls--;
@@ -343,7 +352,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
       GPR_ASSERT(pending_server_end_calls > 0);
       pending_server_end_calls--;
 
-      grpc_call_destroy(server_calls[call_id]);
+      grpc_call_unref(server_calls[call_id]);
     }
   }
 

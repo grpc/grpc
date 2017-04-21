@@ -101,6 +101,26 @@ _BM_SPECS = {
   'BM_PollEmptyPollset_SpeedOfLight': {
     'tpl': [],
     'dyn': ['request_size', 'request_count'],
+  },
+  'BM_StreamCreateSendInitialMetadataDestroy': {
+    'tpl': ['fixture'],
+    'dyn': [],
+  },
+  'BM_TransportStreamSend': {
+    'tpl': [],
+    'dyn': ['request_size'],
+  },
+  'BM_TransportStreamRecv': {
+    'tpl': [],
+    'dyn': ['request_size'],
+  },
+  'BM_StreamingPingPongWithCoalescingApi': {
+    'tpl': ['fixture', 'client_mutator', 'server_mutator'],
+    'dyn': ['request_size', 'request_count', 'end_of_stream'],
+  },
+  'BM_Base16SomeStuff': {
+    'tpl': [],
+    'dyn': ['request_size'],
   }
 }
 
@@ -159,6 +179,7 @@ def parse_name(name):
 
 def expand_json(js, js2 = None):
   for bm in js['benchmarks']:
+    if bm['name'].endswith('_stddev') or bm['name'].endswith('_mean'): continue
     context = js['context']
     if 'label' in bm:
       labels_list = [s.split(':') for s in bm['label'].strip().split(' ') if len(s) and s[0] != '#']
@@ -177,8 +198,10 @@ def expand_json(js, js2 = None):
     row.update(labels)
     if js2:
       for bm2 in js2['benchmarks']:
-        if bm['name'] == bm2['name']:
+        if bm['name'] == bm2['name'] and 'already_used' not in bm2:
           row['cpu_time'] = bm2['cpu_time']
           row['real_time'] = bm2['real_time']
           row['iterations'] = bm2['iterations']
+          bm2['already_used'] = True
+          break
     yield row

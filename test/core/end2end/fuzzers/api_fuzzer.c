@@ -390,9 +390,9 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
     *r->addrs = addrs;
     grpc_closure_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE);
   } else {
-    grpc_closure_sched(
-        exec_ctx, r->on_done,
-        GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1));
+    grpc_closure_sched(exec_ctx, r->on_done,
+                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                           "Resolution failed", &error, 1));
   }
 
   gpr_free(r->addr);
@@ -461,8 +461,8 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = NULL;
-    grpc_closure_sched(exec_ctx, closure,
-                       GRPC_ERROR_CREATE("Connect deadline exceeded"));
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                              "Connect deadline exceeded"));
     return;
   }
 
@@ -661,7 +661,7 @@ static void read_metadata(input_stream *inp, size_t *count,
 }
 
 static call_state *destroy_call(call_state *call) {
-  grpc_call_destroy(call->call);
+  grpc_call_unref(call->call);
   call->call = NULL;
   return maybe_delete_call_state(call);
 }
@@ -719,10 +719,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
-  grpc_resolve_address = my_resolve_address;
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;
   grpc_init();
+  grpc_resolve_address = my_resolve_address;
 
   GPR_ASSERT(g_channel == NULL);
   GPR_ASSERT(g_server == NULL);
@@ -735,7 +735,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   g_active_call = new_call(NULL, ROOT);
   g_resource_quota = grpc_resource_quota_create("api_fuzzer");
 
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
 
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
          pending_channel_watches > 0 || pending_pings > 0 ||
@@ -932,6 +932,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         }
         uint32_t propagation_mask = read_uint32(&inp);
         grpc_slice method = read_string_like_slice(&inp);
+        if (GRPC_SLICE_LENGTH(method) == 0) {
+          ok = false;
+        }
         grpc_slice host = read_string_like_slice(&inp);
         gpr_timespec deadline =
             gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -967,7 +970,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           break;
         }
         grpc_op *ops = gpr_malloc(sizeof(grpc_op) * num_ops);
-        memset(ops, 0, sizeof(grpc_op) * num_ops);
+        if (num_ops > 0) memset(ops, 0, sizeof(grpc_op) * num_ops);
         bool ok = true;
         size_t i;
         grpc_op *op;

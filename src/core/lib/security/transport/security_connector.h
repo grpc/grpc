@@ -39,7 +39,7 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/tsi/transport_security_interface.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 /* --- status enum. --- */
 

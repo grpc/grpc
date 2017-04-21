@@ -38,6 +38,7 @@
 #import <Cronet/Cronet.h>
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <ProtoRPC/ProtoRPC.h>
 #import <RemoteTest/Messages.pbobjc.h>
@@ -45,6 +46,8 @@
 #import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
+#import <grpc/support/log.h>
+#import <grpc/grpc.h>
 
 #define TEST_TIMEOUT 32
 
@@ -153,6 +156,44 @@
   }];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testPacketCoalescing {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseType = RMTPayloadType_Compressable;
+  request.responseSize = 10;
+  request.payload.body = [NSMutableData dataWithLength:10];
+
+  [GRPCCall enableOpBatchLog:YES];
+  [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+
+    RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
+    expectedResponse.payload.type = RMTPayloadType_Compressable;
+    expectedResponse.payload.body = [NSMutableData dataWithLength:10];
+    XCTAssertEqualObjects(response, expectedResponse);
+
+    // The test is a success if there is a batch of exactly 3 ops (SEND_INITIAL_METADATA,
+    // SEND_MESSAGE, SEND_CLOSE_FROM_CLIENT). Without packet coalescing each batch of ops contains
+    // only one op.
+    NSArray *opBatches = [GRPCCall obtainAndCleanOpBatchLog];
+    const NSInteger kExpectedOpBatchSize = 3;
+    for (NSObject *o in opBatches) {
+      if ([o isKindOfClass:[NSArray class]]) {
+        NSArray *batch = (NSArray *)o;
+        if ([batch count] == kExpectedOpBatchSize) {
+          [expectation fulfill];
+          break;
+        }
+      }
+    }
+  }];
+
+  [self waitForExpectationsWithTimeout:16 handler:nil];
+  [GRPCCall enableOpBatchLog:NO];
 }
 
 - (void)test4MBResponsesAreAccepted {

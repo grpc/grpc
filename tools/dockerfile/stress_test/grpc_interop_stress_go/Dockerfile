@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM golang:1.5
+FROM golang:latest
 
 # Google Cloud platform API libraries
 RUN apt-get update && apt-get install -y python-pip && apt-get clean

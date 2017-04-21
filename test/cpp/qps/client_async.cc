@@ -63,13 +63,13 @@ class ClientRpcContext {
   virtual ~ClientRpcContext() {}
   // next state, return false if done. Collect stats when appropriate
   virtual bool RunNextState(bool, HistogramEntry* entry) = 0;
-  virtual ClientRpcContext* StartNewClone() = 0;
+  virtual void StartNewClone(CompletionQueue* cq) = 0;
   static void* tag(ClientRpcContext* c) { return reinterpret_cast<void*>(c); }
   static ClientRpcContext* detag(void* t) {
     return reinterpret_cast<ClientRpcContext*>(t);
   }
 
-  virtual void Start(CompletionQueue* cq) = 0;
+  virtual void Start(CompletionQueue* cq, const ClientConfig& config) = 0;
 };
 
 template <class RequestType, class ResponseType>
@@ -94,22 +94,17 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         next_issue_(next_issue),
         start_req_(start_req) {}
   ~ClientRpcContextUnaryImpl() override {}
-  void Start(CompletionQueue* cq) override {
-    cq_ = cq;
-    if (!next_issue_) {  // ready to issue
-      RunNextState(true, nullptr);
-    } else {  // wait for the issue time
-      alarm_.reset(new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
-    }
+  void Start(CompletionQueue* cq, const ClientConfig& config) override {
+    StartInternal(cq);
   }
   bool RunNextState(bool ok, HistogramEntry* entry) override {
     switch (next_state_) {
       case State::READY:
         start_ = UsageTimer::Now();
         response_reader_ = start_req_(stub_, &context_, req_, cq_);
+        next_state_ = State::RESP_DONE;
         response_reader_->Finish(&response_, &status_,
                                  ClientRpcContext::tag(this));
-        next_state_ = State::RESP_DONE;
         return true;
       case State::RESP_DONE:
         if (status_.ok()) {
@@ -123,9 +118,10 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         return false;
     }
   }
-  ClientRpcContext* StartNewClone() override {
-    return new ClientRpcContextUnaryImpl(stub_, req_, next_issue_, start_req_,
-                                         callback_);
+  void StartNewClone(CompletionQueue* cq) override {
+    auto* clone = new ClientRpcContextUnaryImpl(stub_, req_, next_issue_,
+                                                start_req_, callback_);
+    clone->StartInternal(cq);
   }
 
  private:
@@ -147,6 +143,15 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   double start_;
   std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
       response_reader_;
+
+  void StartInternal(CompletionQueue* cq) {
+    cq_ = cq;
+    if (!next_issue_) {  // ready to issue
+      RunNextState(true, nullptr);
+    } else {  // wait for the issue time
+      alarm_.reset(new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
+    }
+  }
 };
 
 typedef std::forward_list<ClientRpcContext*> context_list;
@@ -185,7 +190,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
         auto* cq = cli_cqs_[t].get();
         auto ctx =
             setup_ctx(channels_[ch].get_stub(), next_issuers_[t], request_);
-        ctx->Start(cq);
+        ctx->Start(cq, config);
       }
       t = (t + 1) % cli_cqs_.size();
     }
@@ -248,8 +253,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
         } else if (!ctx->RunNextState(ok, entry)) {
           // The RPC and callback are done, so clone the ctx
           // and kickstart the new one
-          auto clone = ctx->StartNewClone();
-          clone->Start(cli_cqs_[thread_idx].get());
+          ctx->StartNewClone(cli_cqs_[thread_idx].get());
           // delete the old version
           delete ctx;
         }
@@ -330,10 +334,8 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
         next_issue_(next_issue),
         start_req_(start_req) {}
   ~ClientRpcContextStreamingImpl() override {}
-  void Start(CompletionQueue* cq) override {
-    cq_ = cq;
-    stream_ = start_req_(stub_, &context_, cq, ClientRpcContext::tag(this));
-    next_state_ = State::STREAM_IDLE;
+  void Start(CompletionQueue* cq, const ClientConfig& config) override {
+    StartInternal(cq, config.messages_per_stream());
   }
   bool RunNextState(bool ok, HistogramEntry* entry) override {
     while (true) {
@@ -346,9 +348,9 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
           }
           break;  // loop around, don't return
         case State::WAIT:
+          next_state_ = State::READY_TO_WRITE;
           alarm_.reset(
               new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
-          next_state_ = State::READY_TO_WRITE;
           return true;
         case State::READY_TO_WRITE:
           if (!ok) {
@@ -369,17 +371,32 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
         case State::READ_DONE:
           entry->set_value((UsageTimer::Now() - start_) * 1e9);
           callback_(status_, &response_);
+          if ((messages_per_stream_ != 0) &&
+              (++messages_issued_ >= messages_per_stream_)) {
+            next_state_ = State::WRITES_DONE_DONE;
+            stream_->WritesDone(ClientRpcContext::tag(this));
+            return true;
+          }
           next_state_ = State::STREAM_IDLE;
           break;  // loop around
+        case State::WRITES_DONE_DONE:
+          next_state_ = State::FINISH_DONE;
+          stream_->Finish(&status_, ClientRpcContext::tag(this));
+          return true;
+        case State::FINISH_DONE:
+          next_state_ = State::INVALID;
+          return false;
+          break;
         default:
           GPR_ASSERT(false);
           return false;
       }
     }
   }
-  ClientRpcContext* StartNewClone() override {
-    return new ClientRpcContextStreamingImpl(stub_, req_, next_issue_,
-                                             start_req_, callback_);
+  void StartNewClone(CompletionQueue* cq) override {
+    auto* clone = new ClientRpcContextStreamingImpl(stub_, req_, next_issue_,
+                                                    start_req_, callback_);
+    clone->StartInternal(cq, messages_per_stream_);
   }
 
  private:
@@ -395,7 +412,9 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
     WAIT,
     READY_TO_WRITE,
     WRITE_DONE,
-    READ_DONE
+    READ_DONE,
+    WRITES_DONE_DONE,
+    FINISH_DONE
   };
   State next_state_;
   std::function<void(grpc::Status, ResponseType*)> callback_;
@@ -408,6 +427,18 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
   double start_;
   std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>
       stream_;
+
+  // Allow a limit on number of messages in a stream
+  int messages_per_stream_;
+  int messages_issued_;
+
+  void StartInternal(CompletionQueue* cq, int messages_per_stream) {
+    cq_ = cq;
+    next_state_ = State::STREAM_IDLE;
+    stream_ = start_req_(stub_, &context_, cq, ClientRpcContext::tag(this));
+    messages_per_stream_ = messages_per_stream;
+    messages_issued_ = 0;
+  }
 };
 
 class AsyncStreamingClient final
@@ -459,13 +490,8 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         next_issue_(next_issue),
         start_req_(start_req) {}
   ~ClientRpcContextGenericStreamingImpl() override {}
-  void Start(CompletionQueue* cq) override {
-    cq_ = cq;
-    const grpc::string kMethodName(
-        "/grpc.testing.BenchmarkService/StreamingCall");
-    stream_ = start_req_(stub_, &context_, kMethodName, cq,
-                         ClientRpcContext::tag(this));
-    next_state_ = State::STREAM_IDLE;
+  void Start(CompletionQueue* cq, const ClientConfig& config) override {
+    StartInternal(cq, config.messages_per_stream());
   }
   bool RunNextState(bool ok, HistogramEntry* entry) override {
     while (true) {
@@ -478,9 +504,9 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           }
           break;  // loop around, don't return
         case State::WAIT:
+          next_state_ = State::READY_TO_WRITE;
           alarm_.reset(
               new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
-          next_state_ = State::READY_TO_WRITE;
           return true;
         case State::READY_TO_WRITE:
           if (!ok) {
@@ -501,17 +527,32 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         case State::READ_DONE:
           entry->set_value((UsageTimer::Now() - start_) * 1e9);
           callback_(status_, &response_);
+          if ((messages_per_stream_ != 0) &&
+              (++messages_issued_ >= messages_per_stream_)) {
+            next_state_ = State::WRITES_DONE_DONE;
+            stream_->WritesDone(ClientRpcContext::tag(this));
+            return true;
+          }
           next_state_ = State::STREAM_IDLE;
           break;  // loop around
+        case State::WRITES_DONE_DONE:
+          next_state_ = State::FINISH_DONE;
+          stream_->Finish(&status_, ClientRpcContext::tag(this));
+          return true;
+        case State::FINISH_DONE:
+          next_state_ = State::INVALID;
+          return false;
+          break;
         default:
           GPR_ASSERT(false);
           return false;
       }
     }
   }
-  ClientRpcContext* StartNewClone() override {
-    return new ClientRpcContextGenericStreamingImpl(stub_, req_, next_issue_,
-                                                    start_req_, callback_);
+  void StartNewClone(CompletionQueue* cq) override {
+    auto* clone = new ClientRpcContextGenericStreamingImpl(
+        stub_, req_, next_issue_, start_req_, callback_);
+    clone->StartInternal(cq, messages_per_stream_);
   }
 
  private:
@@ -527,7 +568,9 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
     WAIT,
     READY_TO_WRITE,
     WRITE_DONE,
-    READ_DONE
+    READ_DONE,
+    WRITES_DONE_DONE,
+    FINISH_DONE
   };
   State next_state_;
   std::function<void(grpc::Status, ByteBuffer*)> callback_;
@@ -539,6 +582,21 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> stream_;
+
+  // Allow a limit on number of messages in a stream
+  int messages_per_stream_;
+  int messages_issued_;
+
+  void StartInternal(CompletionQueue* cq, int messages_per_stream) {
+    cq_ = cq;
+    const grpc::string kMethodName(
+        "/grpc.testing.BenchmarkService/StreamingCall");
+    next_state_ = State::STREAM_IDLE;
+    stream_ = start_req_(stub_, &context_, kMethodName, cq,
+                         ClientRpcContext::tag(this));
+    messages_per_stream_ = messages_per_stream;
+    messages_issued_ = 0;
+  }
 };
 
 static std::unique_ptr<grpc::GenericStub> GenericStubCreator(

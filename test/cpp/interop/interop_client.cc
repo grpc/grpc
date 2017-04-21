@@ -46,8 +46,8 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/transport/byte_stream.h"
-#include "src/proto/grpc/testing/empty.grpc.pb.h"
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/empty.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
@@ -918,6 +918,26 @@ bool InteropClient::DoCacheableUnary() {
   // second response is a cached copy of the first response
   GPR_ASSERT(response2.payload().body() == response1.payload().body());
 
+  // Request 3
+  // Modify the request body so it will not get a cache hit
+  ts = gpr_now(GPR_CLOCK_PRECISE);
+  timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+  SimpleRequest request1;
+  request1.mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
+  ClientContext context3;
+  SimpleResponse response3;
+  context3.set_cacheable(true);
+  context3.AddMetadata("x-user-ip", "1.2.3.4");
+  Status s3 =
+      serviceStub_.Get()->CacheableUnaryCall(&context3, request1, &response3);
+  if (!AssertStatusOk(s3)) {
+    return false;
+  }
+  gpr_log(GPR_DEBUG, "response 3 payload: %s",
+          response3.payload().body().c_str());
+
+  // Check that the response is different from the previous response.
+  GPR_ASSERT(response3.payload().body() != response1.payload().body());
   return true;
 }
 

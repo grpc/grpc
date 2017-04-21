@@ -41,8 +41,8 @@ extern "C" {
 #include "test/core/util/memory_counters.h"
 }
 
+#include <benchmark/benchmark.h>
 #include <grpc++/impl/grpc_library.h>
-#include "third_party/benchmark/include/benchmark/benchmark.h"
 
 class Library {
  public:

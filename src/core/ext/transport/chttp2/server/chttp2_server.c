@@ -43,11 +43,11 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
-#include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -256,7 +256,7 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
     char *msg;
     gpr_asprintf(&msg, "No address added out of total %" PRIuPTR " resolved",
                  naddrs);
-    err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, naddrs);
+    err = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(msg, errors, naddrs);
     gpr_free(msg);
     goto error;
   } else if (count != naddrs) {
@@ -264,7 +264,7 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
     gpr_asprintf(&msg, "Only %" PRIuPTR
                        " addresses added out of total %" PRIuPTR " resolved",
                  count, naddrs);
-    err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, naddrs);
+    err = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(msg, errors, naddrs);
     gpr_free(msg);
 
     const char *warning_message = grpc_error_string(err);

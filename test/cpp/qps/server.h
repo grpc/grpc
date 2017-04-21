@@ -38,8 +38,8 @@
 #include <grpc/support/cpu.h>
 #include <vector>
 
-#include "src/proto/grpc/testing/control.grpc.pb.h"
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/control.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/cpp/qps/usage_timer.h"

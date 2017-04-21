@@ -61,7 +61,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
       3, (server, addr, creds));
   // Create security context.
   if (creds == NULL) {
-    err = GRPC_ERROR_CREATE(
+    err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No credentials specified for secure server port (creds==NULL)");
     goto done;
   }
@@ -72,7 +72,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     gpr_asprintf(&msg,
                  "Unable to create secure server with credentials of type %s.",
                  creds->type);
-    err = grpc_error_set_int(GRPC_ERROR_CREATE(msg),
+    err = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg),
                              GRPC_ERROR_INT_SECURITY_STATUS, status);
     gpr_free(msg);
     goto done;

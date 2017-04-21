@@ -62,9 +62,9 @@ typedef struct connected_channel_call_data { void *unused; } call_data;
 
 /* Intercept a call operation and either push it directly up or translate it
    into transport stream operations */
-static void con_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
-                                          grpc_call_element *elem,
-                                          grpc_transport_stream_op *op) {
+static void con_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
@@ -88,9 +88,10 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   int r = grpc_transport_init_stream(
       exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-      &args->call_stack->refcount, args->server_transport_data);
+      &args->call_stack->refcount, args->server_transport_data, args->arena);
   return r == 0 ? GRPC_ERROR_NONE
-                : GRPC_ERROR_CREATE("transport stream initialization failed");
+                : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "transport stream initialization failed");
 }
 
 static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
@@ -105,12 +106,12 @@ static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *and_free_memory) {
+                              grpc_closure *then_schedule_closure) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_transport_destroy_stream(exec_ctx, chand->transport,
                                 TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-                                and_free_memory);
+                                then_schedule_closure);
 }
 
 /* Constructor for channel_data */
@@ -141,7 +142,7 @@ static void con_get_channel_info(grpc_exec_ctx *exec_ctx,
                                  const grpc_channel_info *channel_info) {}
 
 const grpc_channel_filter grpc_connected_filter = {
-    con_start_transport_stream_op,
+    con_start_transport_stream_op_batch,
     con_start_transport_op,
     sizeof(call_data),
     init_call_elem,

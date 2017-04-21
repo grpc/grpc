@@ -172,7 +172,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_helper.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h" />
@@ -183,6 +182,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
@@ -191,7 +191,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />

@@ -40,7 +40,7 @@ from grpc.beta import implementations
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 _INITIAL_METADATA_KEY = "x-grpc-test-echo-initial"
 _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"
@@ -66,7 +66,7 @@ def _maybe_echo_status_and_message(request, servicer_context):
         servicer_context.set_details(request.response_status.message)
 
 
-class TestService(test_pb2.TestServiceServicer):
+class TestService(test_pb2_grpc.TestServiceServicer):
 
     def EmptyCall(self, request, context):
         _maybe_echo_metadata(context)

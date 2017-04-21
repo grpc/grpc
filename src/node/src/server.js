@@ -755,9 +755,16 @@ Server.prototype.addService = function(service, implementation) {
     }
     var impl;
     if (implementation[name] === undefined) {
-      common.log(grpc.logVerbosity.ERROR, 'Method handler for ' +
-          attrs.path + ' expected but not provided');
-      impl = defaultHandler[method_type];
+      /* Handle the case where the method is passed with the name exactly as
+         written in the proto file, instead of using JavaScript function
+         naming style */
+      if (implementation[attrs.originalName] === undefined) {
+        common.log(grpc.logVerbosity.ERROR, 'Method handler ' + name + ' for ' +
+            attrs.path + ' expected but not provided');
+        impl = defaultHandler[method_type];
+      } else {
+        impl = _.bind(implementation[attrs.originalName], implementation);
+      }
     } else {
       impl = _.bind(implementation[name], implementation);
     }
@@ -774,17 +781,31 @@ Server.prototype.addService = function(service, implementation) {
 
 /**
  * Add a proto service to the server, with a corresponding implementation
+ * @deprecated Use grpc.load and Server#addService instead
  * @param {Protobuf.Reflect.Service} service The proto service descriptor
  * @param {Object<String, function>} implementation Map of method names to
  *     method implementation for the provided service.
  */
 Server.prototype.addProtoService = function(service, implementation) {
   var options;
-  if (service.grpc_options) {
-    options = service.grpc_options;
+  var protobuf_js_5_common = require('./protobuf_js_5_common');
+  var protobuf_js_6_common = require('./protobuf_js_6_common');
+  common.log(grpc.logVerbosity.INFO,
+             'Server#addProtoService is deprecated. Use addService instead');
+  if (protobuf_js_5_common.isProbablyProtobufJs5(service)) {
+    options = _.defaults(service.grpc_options, common.defaultGrpcOptions);
+    this.addService(
+        protobuf_js_5_common.getProtobufServiceAttrs(service, options),
+        implementation);
+  } else if (protobuf_js_6_common.isProbablyProtobufJs6(service)) {
+    options = _.defaults(service.grpc_options, common.defaultGrpcOptions);
+    this.addService(
+        protobuf_js_6_common.getProtobufServiceAttrs(service, options),
+        implementation);
+  } else {
+    // We assume that this is a service attributes object
+    this.addService(service, implementation);
   }
-  this.addService(common.getProtobufServiceAttrs(service, options),
-                  implementation);
 };
 
 /**
