@@ -56,6 +56,7 @@ _INTERESTING = (
   'writes_per_iteration',
   'atm_cas_per_iteration',
   'atm_add_per_iteration',
+  'nows_per_iteration',
 )
 
 def changed_ratio(n, o):
