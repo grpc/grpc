@@ -712,6 +712,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
 
   grpc_chttp2_list_remove_stalled_by_transport(t, s);
   grpc_chttp2_list_remove_stalled_by_stream(t, s);
+  grpc_chttp2_list_remove_writing_stream(t, s);
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
     if (s->included[i]) {
