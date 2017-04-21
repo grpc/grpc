@@ -37,7 +37,7 @@ del /f /q BUILD || rmdir build /s /q
 
 call npm update || goto :error
 
-mkdir artifacts
+mkdir -p %ARTIFACTS_OUT%
 
 for %%v in (%node_versions%) do (
   call .\node_modules\.bin\node-pre-gyp.cmd configure build --target=%%v --target_arch=%1
@@ -47,13 +47,13 @@ for %%v in (%node_versions%) do (
   rmdir "%HOMEDRIVE%%HOMEPATH%\.node-gyp\iojs-%%v\include\node\openssl" /S /Q
   call .\node_modules\.bin\node-pre-gyp.cmd build package testpackage --target=%%v --target_arch=%1 || goto :error
 
-  xcopy /Y /I /S build\stage\* artifacts\ || goto :error
+  xcopy /Y /I /S build\stage\* %ARTIFACTS_OUT%\ || goto :error
 )
 
 for %%v in (%electron_versions%) do (
   cmd /V /C "set "HOME=%HOMEDRIVE%%HOMEPATH%\electron-gyp" && call .\node_modules\.bin\node-pre-gyp.cmd configure rebuild package testpackage --runtime=electron --target=%%v --target_arch=%1 --disturl=https://atom.io/download/electron" || goto :error
 
-  xcopy /Y /I /S build\stage\* artifacts\ || goto :error
+  xcopy /Y /I /S build\stage\* %ARTIFACTS_OUT%\ || goto :error
 )
 if %errorlevel% neq 0 exit /b %errorlevel%
 

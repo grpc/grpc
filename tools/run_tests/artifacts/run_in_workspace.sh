@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,21 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#
+# Create a workspace in a subdirectory to allow running multiple builds in isolation.
+# WORKSPACE_NAME env variable needs to contain name of the workspace to create.
+# All cmdline args will be executed as a command.
 set -ex
 
 cd $(dirname $0)/../../..
+export repo_root=$(pwd)
 
-make grpc_csharp_ext
+rm -rf "${WORKSPACE_NAME}"
+git clone . "${WORKSPACE_NAME}"
+# clone gRPC submodules, use data from locally cloned submodules where possible
+git submodule foreach 'cd "${repo_root}/${WORKSPACE_NAME}" \
+    && git submodule update --init --reference ${repo_root}/${name} ${name}'
 
-mkdir -p "${ARTIFACTS_OUT}"
-cp libs/opt/libgrpc_csharp_ext.so "${ARTIFACTS_OUT}" || cp libs/opt/libgrpc_csharp_ext.dylib "${ARTIFACTS_OUT}"
+echo "Running in workspace ${WORKSPACE_NAME}"
+cd ${WORKSPACE_NAME}
+$@
