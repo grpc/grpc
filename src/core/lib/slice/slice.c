@@ -55,6 +55,13 @@ grpc_slice grpc_empty_slice(void) {
   return out;
 }
 
+grpc_slice grpc_slice_copy(grpc_slice s) {
+  grpc_slice out = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(s));
+  memcpy(GRPC_SLICE_START_PTR(out), GRPC_SLICE_START_PTR(s),
+         GRPC_SLICE_LENGTH(s));
+  return out;
+}
+
 grpc_slice grpc_slice_ref_internal(grpc_slice slice) {
   if (slice.refcount) {
     slice.refcount->vtable->ref(slice.refcount);

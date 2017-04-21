@@ -53,6 +53,9 @@ GPRAPI grpc_slice grpc_slice_ref(grpc_slice s);
    where dest!=NULL , then (*dest)(start, len).  Requires s initialized.  */
 GPRAPI void grpc_slice_unref(grpc_slice s);
 
+/* Copy slice - create a new slice that contains the same data as s */
+GPRAPI grpc_slice grpc_slice_copy(grpc_slice s);
+
 /* Create a slice pointing at some data. Calls malloc to allocate a refcount
    for the object, and arranges that destroy will be called with the pointer
    passed in at destruction. */

@@ -66,14 +66,13 @@ static void te_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 static void te_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                      grpc_slice_buffer *slices, grpc_closure *cb) {
   trickle_endpoint *te = (trickle_endpoint *)ep;
-  for (size_t i = 0; i < slices->count; i++) {
-    grpc_slice_ref_internal(slices->slices[i]);
-  }
   gpr_mu_lock(&te->mu);
   if (te->write_buffer.length == 0) {
     te->last_write = gpr_now(GPR_CLOCK_MONOTONIC);
   }
-  grpc_slice_buffer_addn(&te->write_buffer, slices->slices, slices->count);
+  for (size_t i = 0; i < slices->count; i++) {
+    grpc_slice_buffer_add(&te->write_buffer, grpc_slice_copy(slices->slices[i]));
+  }
   grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_REF(te->error));
   gpr_mu_unlock(&te->mu);
 }
