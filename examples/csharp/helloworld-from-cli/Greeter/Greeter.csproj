@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>Greeter</AssemblyTitle>
+    <TargetFrameworks>netcoreapp1.0</TargetFrameworks>
+    <DebugType>portable</DebugType>
+    <AssemblyName>Greeter</AssemblyName>
+    <PackageId>Greeter</PackageId>
+    <RuntimeFrameworkVersion Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">1.0.4</RuntimeFrameworkVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.2.0" />
+    <PackageReference Include="Google.Protobuf.Tools" Version="3.2.0" />
+    <PackageReference Include="Grpc" Version="1.2.2" />
+    <PackageReference Include="Grpc.Tools" Version="1.2.2" />
+  </ItemGroup>
+
+</Project>

@@ -750,18 +750,11 @@ static void destroy_balancer_name(grpc_exec_ctx *exec_ctx,
   gpr_free(balancer_name);
 }
 
-static void *copy_balancer_name(void *balancer_name) {
-  return gpr_strdup(balancer_name);
-}
-
 static grpc_slice_hash_table_entry targets_info_entry_create(
     const char *address, const char *balancer_name) {
-  static const grpc_slice_hash_table_vtable vtable = {destroy_balancer_name,
-                                                      copy_balancer_name};
   grpc_slice_hash_table_entry entry;
   entry.key = grpc_slice_from_copied_string(address);
-  entry.value = (void *)balancer_name;
-  entry.vtable = &vtable;
+  entry.value = gpr_strdup(balancer_name);
   return entry;
 }
 
@@ -825,11 +818,8 @@ static char *get_lb_uri_target_addresses(grpc_exec_ctx *exec_ctx,
                uri_path);
   gpr_free(uri_path);
 
-  *targets_info =
-      grpc_slice_hash_table_create(num_grpclb_addrs, targets_info_entries);
-  for (size_t i = 0; i < num_grpclb_addrs; i++) {
-    grpc_slice_unref_internal(exec_ctx, targets_info_entries[i].key);
-  }
+  *targets_info = grpc_slice_hash_table_create(
+      num_grpclb_addrs, targets_info_entries, destroy_balancer_name);
   gpr_free(targets_info_entries);
 
   return target_uri_str;
@@ -1122,6 +1112,7 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
       glb_policy->base.interested_parties,
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
       &host, glb_policy->deadline, NULL);
+  grpc_slice_unref_internal(exec_ctx, host);
 
   grpc_metadata_array_init(&glb_policy->lb_initial_metadata_recv);
   grpc_metadata_array_init(&glb_policy->lb_trailing_metadata_recv);
@@ -1152,7 +1143,7 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
 static void lb_call_destroy_locked(grpc_exec_ctx *exec_ctx,
                                    glb_lb_policy *glb_policy) {
   GPR_ASSERT(glb_policy->lb_call != NULL);
-  grpc_call_destroy(glb_policy->lb_call);
+  grpc_call_unref(glb_policy->lb_call);
   glb_policy->lb_call = NULL;
 
   grpc_metadata_array_destroy(&glb_policy->lb_initial_metadata_recv);
@@ -1293,6 +1284,7 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
                   "Received empty server list. Picks will stay pending until a "
                   "response with > 0 servers is received");
         }
+        grpc_grpclb_destroy_serverlist(glb_policy->serverlist);
       }
     } else { /* serverlist == NULL */
       gpr_log(GPR_ERROR, "Invalid LB response received: '%s'. Ignoring.",

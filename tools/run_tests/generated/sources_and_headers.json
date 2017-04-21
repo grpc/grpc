@@ -1988,6 +1988,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "slice_hash_table_test", 
+    "src": [
+      "test/core/slice/slice_hash_table_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "slice_string_helpers_test", 
     "src": [
       "test/core/slice/slice_string_helpers_test.c"
@@ -2874,6 +2891,8 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src"
     ], 
@@ -8910,7 +8929,6 @@
       "include/grpc++/impl/codegen/slice.h", 
       "include/grpc++/impl/codegen/status.h", 
       "include/grpc++/impl/codegen/status_code_enum.h", 
-      "include/grpc++/impl/codegen/status_helper.h", 
       "include/grpc++/impl/codegen/string_ref.h", 
       "include/grpc++/impl/codegen/stub_options.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
@@ -8945,7 +8963,6 @@
       "include/grpc++/impl/codegen/slice.h", 
       "include/grpc++/impl/codegen/status.h", 
       "include/grpc++/impl/codegen/status_code_enum.h", 
-      "include/grpc++/impl/codegen/status_helper.h", 
       "include/grpc++/impl/codegen/string_ref.h", 
       "include/grpc++/impl/codegen/stub_options.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 

@@ -148,8 +148,8 @@ void grpc_end2end_proxy_destroy(grpc_end2end_proxy *proxy) {
 
 static void unrefpc(proxy_call *pc, const char *reason) {
   if (gpr_unref(&pc->refs)) {
-    grpc_call_destroy(pc->c2p);
-    grpc_call_destroy(pc->p2s);
+    grpc_call_unref(pc->c2p);
+    grpc_call_unref(pc->p2s);
     grpc_metadata_array_destroy(&pc->c2p_initial_metadata);
     grpc_metadata_array_destroy(&pc->p2s_initial_metadata);
     grpc_metadata_array_destroy(&pc->p2s_trailing_metadata);

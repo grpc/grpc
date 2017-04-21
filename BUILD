@@ -35,7 +35,8 @@ exports_files(["LICENSE"])
 
 package(default_visibility = ["//visibility:public"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library",
+     "grpc_proto_plugin", "grpc_cc_libraries")
 
 # This should be updated along with build.yaml
 g_stands_for = "gentle"
@@ -163,7 +164,7 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "gpr",
-        "grpc++_base",
+        "grpc++_base_unsecure",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc_unsecure",
@@ -1231,8 +1232,12 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_base",
+grpc_cc_libraries(
+    name_list = ["grpc++_base", "grpc++_base_unsecure"],
+    additional_dep_list = [
+        ["grpc", ],
+        ["grpc_unsecure", ],
+    ],
     srcs = [
         "src/cpp/client/channel_cc.cc",
         "src/cpp/client/client_context.cc",
@@ -1267,7 +1272,7 @@ grpc_cc_library(
         "src/cpp/util/status.cc",
         "src/cpp/util/string_ref.cc",
         "src/cpp/util/time_cc.cc",
-    ],
+        ],
     hdrs = [
         "src/cpp/client/create_channel_internal.h",
         "src/cpp/common/channel_filter.h",
@@ -1276,7 +1281,7 @@ grpc_cc_library(
         "src/cpp/server/health/health.pb.h",
         "src/cpp/server/thread_pool_interface.h",
         "src/cpp/thread_manager/thread_manager.h",
-    ],
+        ],
     language = "c++",
     public_hdrs = [
         "include/grpc++/alarm.h",
@@ -1326,9 +1331,8 @@ grpc_cc_library(
         "include/grpc++/support/stub_options.h",
         "include/grpc++/support/sync_stream.h",
         "include/grpc++/support/time.h",
-    ],
+        ],
     deps = [
-        "grpc",
         "grpc++_codegen_base",
     ],
 )
@@ -1362,7 +1366,6 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/slice.h",
         "include/grpc++/impl/codegen/status.h",
         "include/grpc++/impl/codegen/status_code_enum.h",
-        "include/grpc++/impl/codegen/status_helper.h",
         "include/grpc++/impl/codegen/string_ref.h",
         "include/grpc++/impl/codegen/stub_options.h",
         "include/grpc++/impl/codegen/sync_stream.h",

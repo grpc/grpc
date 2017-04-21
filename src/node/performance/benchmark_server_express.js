@@ -81,6 +81,7 @@ BenchmarkServer.prototype.start = function() {
   var self = this;
   this.server.listen(this.input_port, this.input_hostname, function() {
     self.last_wall_time = process.hrtime();
+    self.last_usage = process.cpuUsage();
     self.emit('started');
   });
 };
@@ -91,14 +92,15 @@ BenchmarkServer.prototype.getPort = function() {
 
 BenchmarkServer.prototype.mark = function(reset) {
   var wall_time_diff = process.hrtime(this.last_wall_time);
+  var usage_diff = process.cpuUsage(this.last_usage);
   if (reset) {
     this.last_wall_time = process.hrtime();
+    this.last_usage = process.cpuUsage();
   }
   return {
     time_elapsed: wall_time_diff[0] + wall_time_diff[1] / 1e9,
-    // Not sure how to measure these values
-    time_user: 0,
-    time_system: 0
+    time_user: usage_diff.user / 1000000,
+    time_system: usage_diff.system / 1000000
   };
 };
 

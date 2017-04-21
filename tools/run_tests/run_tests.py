@@ -429,7 +429,7 @@ class NodeLanguage(object):
     # we should specify in the compiler argument
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         'node7', 'electron1.3'])
+                                         'node7', 'electron1.3', 'electron1.6'])
     if args.iomgr_platform == "uv":
       self.use_uv = True
     else:
@@ -1178,7 +1178,7 @@ argp.add_argument('--compiler',
                            'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
                            'node0.12', 'node4', 'node5', 'node6', 'node7',
-                           'electron1.3',
+                           'electron1.3', 'electron1.6',
                            'coreclr',
                            'cmake'],
                   default='default',
@@ -1210,6 +1210,7 @@ argp.add_argument('--quiet_success',
                        'Useful when running many iterations of each test (argument -n).')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
                   help='Dont try to iterate over many polling strategies when they exist')
+argp.add_argument('--max_time', default=-1, type=int, help='Maximum test runtime in seconds')
 args = argp.parse_args()
 
 if args.force_default_poller:
@@ -1465,7 +1466,7 @@ def _build_and_run(
            not re.search(args.regex_exclude, spec.shortname))))
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.
-    if args.travis:
+    if args.travis and args.max_time <= 0:
       massaged_one_run = sorted(one_run, key=lambda x: x.shortname)
     else:
       # whereas otherwise, we want to shuffle things up to give all tests a
@@ -1493,7 +1494,7 @@ def _build_and_run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        quiet_success=args.quiet_success)
+        quiet_success=args.quiet_success, max_time=args.max_time)
     if resultset:
       for k, v in sorted(resultset.items()):
         num_runs, num_failures = _calculate_num_runs_failures(v)
