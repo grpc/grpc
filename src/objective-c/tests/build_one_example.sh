@@ -57,4 +57,4 @@ xcodebuild \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
-    -destination name="iPhone 6" | xcpretty
+    -sdk iphoneos | xcpretty
