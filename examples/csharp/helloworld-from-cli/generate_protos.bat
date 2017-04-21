@@ -34,8 +34,9 @@ setlocal
 @rem enter this directory
 cd /d %~dp0
 
-set TOOLS_PATH=packages\Grpc.Tools.1.2.2\tools\windows_x86
+set PROTOC=%UserProfile%\.nuget\packages\Google.Protobuf.Tools\3.2.0\tools\windows_x64\protoc.exe
+set PLUGIN=%UserProfile%\.nuget\packages\Grpc.Tools\1.2.2\tools\windows_x64\grpc_csharp_plugin.exe
 
-%TOOLS_PATH%\protoc.exe -I../../protos --csharp_out Greeter  ../../protos/helloworld.proto --grpc_out Greeter --plugin=protoc-gen-grpc=%TOOLS_PATH%\grpc_csharp_plugin.exe
+%PROTOC% -I../../protos --csharp_out Greeter  ../../protos/helloworld.proto --grpc_out Greeter --plugin=protoc-gen-grpc=%PLUGIN%
 
 endlocal

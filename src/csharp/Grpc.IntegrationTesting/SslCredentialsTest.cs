@@ -67,7 +67,8 @@ namespace Grpc.IntegrationTesting
             var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert, true);
             var clientCredentials = new SslCredentials(rootCert, keyCertPair);
 
-            server = new Server
+            // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
+            server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
             {
                 Services = { TestService.BindService(new SslCredentialsTestServiceImpl()) },
                 Ports = { { Host, ServerPort.PickUnused, serverCredentials } }

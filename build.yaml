@@ -4354,6 +4354,10 @@ configs:
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
+  c++-compat:
+    CFLAGS: -Wc++-compat
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
   counters:
     CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
     DEFINES: NDEBUG
