@@ -1210,6 +1210,7 @@ argp.add_argument('--quiet_success',
                        'Useful when running many iterations of each test (argument -n).')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
                   help='Dont try to iterate over many polling strategies when they exist')
+argp.add_argument('--max_time', default=-1, type=int, help='Maximum test runtime in seconds')
 args = argp.parse_args()
 
 if args.force_default_poller:
@@ -1493,7 +1494,7 @@ def _build_and_run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        quiet_success=args.quiet_success)
+        quiet_success=args.quiet_success, max_time=args.max_time)
     if resultset:
       for k, v in sorted(resultset.items()):
         num_runs, num_failures = _calculate_num_runs_failures(v)
