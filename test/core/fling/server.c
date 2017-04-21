@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
             break;
           case FLING_SERVER_SEND_STATUS_FOR_STREAMING:
             /* Send status and close completed at server */
-            grpc_call_destroy(call);
+            grpc_call_unref(call);
             if (!shutdown_started) request_call();
             break;
           case FLING_SERVER_READ_FOR_UNARY:
@@ -314,7 +314,7 @@ int main(int argc, char **argv) {
             /* Finished unary call. */
             grpc_byte_buffer_destroy(payload_buffer);
             payload_buffer = NULL;
-            grpc_call_destroy(call);
+            grpc_call_unref(call);
             if (!shutdown_started) request_call();
             break;
         }

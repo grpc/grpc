@@ -2874,6 +2874,8 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src"
     ], 

@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
   GPR_ASSERT(strcmp(peer, "lampoon:national") == 0);
   gpr_free(peer);
 
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
   grpc_completion_queue_destroy(cq);
