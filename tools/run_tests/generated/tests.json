@@ -3291,7 +3291,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -3337,7 +3337,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.2, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 

@@ -3643,9 +3643,9 @@ targets:
   - gpr_test_util
   - gpr
 - name: generic_end2end_test
+  cpu_cost: 0.1
   build: test
   language: c++
-  cpu_cost: 0.1
   src:
   - test/cpp/end2end/generic_end2end_test.cc
   deps:
@@ -3749,9 +3749,9 @@ targets:
   vs_config_type: Application
   vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
 - name: grpc_tool_test
+  cpu_cost: 0.2
   build: test
   language: c++
-  cpu_cost: 0.2
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
