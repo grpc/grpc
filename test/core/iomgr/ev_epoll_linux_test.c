@@ -419,11 +419,13 @@ static struct timespec millis_to_timespec(int millis) {
   return linux_ts;
 }
 
+/* TODO (sreek) - Remove this test before merging. This is written just to
+ * understand the functionality of sigtimedwait and serves no other purpose */
 void test_sigwait() {
   sigset_t wakeup_sig_set;
   sigemptyset(&wakeup_sig_set);
   sigaddset(&wakeup_sig_set, SIGRTMIN + 6);
-  int timeout_ms[] = {10, 1400};
+  int timeout_ms[] = {10, 100};
 
   for (size_t i = 0; i < GPR_ARRAY_SIZE(timeout_ms); i++) {
     struct timespec sigwait_timeout = millis_to_timespec(timeout_ms[i]);

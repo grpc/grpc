@@ -1472,12 +1472,12 @@ static bool acquire_polling_lease(grpc_pollset_worker *worker,
                                   gpr_timespec *now) {
   bool is_lease_acquired = false;
 
-  gpr_mu_lock(&pi->worker_list_mu); //  LOCK
+  gpr_mu_lock(&pi->worker_list_mu);  //  LOCK
   long num_pollers = gpr_atm_no_barrier_load(&pi->poller_count);
 
   if (num_pollers >= GRPC_MAX_POLLERS_PER_ISLAND) {
     push_back_worker_node(&pi->worker_list_head, &worker->pi_list_link);
-    gpr_mu_unlock(&pi->worker_list_mu); // UNLOCK
+    gpr_mu_unlock(&pi->worker_list_mu);  // UNLOCK
 
     bool is_timeout = false;
     int ret;
