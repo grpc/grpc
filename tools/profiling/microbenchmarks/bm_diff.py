@@ -60,6 +60,7 @@ _INTERESTING = (
   'cli_stream_stalls_per_iteration',
   'svr_transport_stalls_per_iteration',
   'svr_stream_stalls_per_iteration'
+  'nows_per_iteration',
 )
 
 def changed_ratio(n, o):

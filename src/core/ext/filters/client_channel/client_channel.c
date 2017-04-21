@@ -96,16 +96,9 @@ static void method_parameters_unref(method_parameters *method_params) {
   }
 }
 
-static void *method_parameters_copy(void *value) {
-  return method_parameters_ref(value);
-}
-
 static void method_parameters_free(grpc_exec_ctx *exec_ctx, void *value) {
   method_parameters_unref(value);
 }
-
-static const grpc_slice_hash_table_vtable method_parameters_vtable = {
-    method_parameters_free, method_parameters_copy};
 
 static bool parse_wait_for_ready(grpc_json *field,
                                  wait_for_ready_value *wait_for_ready) {
@@ -472,7 +465,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         grpc_uri_destroy(uri);
         method_params_table = grpc_service_config_create_method_config_table(
             exec_ctx, service_config, method_parameters_create_from_json,
-            &method_parameters_vtable);
+            method_parameters_free);
         grpc_service_config_destroy(service_config);
       }
     }
