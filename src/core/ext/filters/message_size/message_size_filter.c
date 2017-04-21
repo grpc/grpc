@@ -130,6 +130,8 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
       GRPC_ERROR_UNREF(new_error);
     }
     gpr_free(message_string);
+  } else {
+    GRPC_ERROR_REF(error);
   }
   // Invoke the next callback.
   grpc_closure_run(exec_ctx, calld->next_recv_message_ready, error);
