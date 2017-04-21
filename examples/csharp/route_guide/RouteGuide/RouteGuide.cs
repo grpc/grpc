@@ -53,10 +53,10 @@ namespace Routeguide {
   }
   #region Messages
   /// <summary>
-  ///  Points are represented as latitude-longitude pairs in the E7 representation
-  ///  (degrees multiplied by 10**7 and rounded to the nearest integer).
-  ///  Latitudes should be in the range +/- 90 degrees and longitude should be in
-  ///  the range +/- 180 degrees (inclusive).
+  /// Points are represented as latitude-longitude pairs in the E7 representation
+  /// (degrees multiplied by 10**7 and rounded to the nearest integer).
+  /// Latitudes should be in the range +/- 90 degrees and longitude should be in
+  /// the range +/- 180 degrees (inclusive).
   /// </summary>
   public sealed partial class Point : pb::IMessage<Point> {
     private static readonly pb::MessageParser<Point> _parser = new pb::MessageParser<Point>(() => new Point());
@@ -204,8 +204,8 @@ namespace Routeguide {
   }
 
   /// <summary>
-  ///  A latitude-longitude rectangle, represented as two diagonally opposite
-  ///  points "lo" and "hi".
+  /// A latitude-longitude rectangle, represented as two diagonally opposite
+  /// points "lo" and "hi".
   /// </summary>
   public sealed partial class Rectangle : pb::IMessage<Rectangle> {
     private static readonly pb::MessageParser<Rectangle> _parser = new pb::MessageParser<Rectangle>(() => new Rectangle());
@@ -244,7 +244,7 @@ namespace Routeguide {
     public const int LoFieldNumber = 1;
     private global::Routeguide.Point lo_;
     /// <summary>
-    ///  One corner of the rectangle.
+    /// One corner of the rectangle.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Routeguide.Point Lo {
@@ -258,7 +258,7 @@ namespace Routeguide {
     public const int HiFieldNumber = 2;
     private global::Routeguide.Point hi_;
     /// <summary>
-    ///  The other corner of the rectangle.
+    /// The other corner of the rectangle.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Routeguide.Point Hi {
@@ -371,9 +371,9 @@ namespace Routeguide {
   }
 
   /// <summary>
-  ///  A feature names something at a given point.
+  /// A feature names something at a given point.
   ///
-  ///  If a feature could not be named, the name is empty.
+  /// If a feature could not be named, the name is empty.
   /// </summary>
   public sealed partial class Feature : pb::IMessage<Feature> {
     private static readonly pb::MessageParser<Feature> _parser = new pb::MessageParser<Feature>(() => new Feature());
@@ -412,7 +412,7 @@ namespace Routeguide {
     public const int NameFieldNumber = 1;
     private string name_ = "";
     /// <summary>
-    ///  The name of the feature.
+    /// The name of the feature.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Name {
@@ -426,7 +426,7 @@ namespace Routeguide {
     public const int LocationFieldNumber = 2;
     private global::Routeguide.Point location_;
     /// <summary>
-    ///  The point where the feature is detected.
+    /// The point where the feature is detected.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Routeguide.Point Location {
@@ -533,7 +533,7 @@ namespace Routeguide {
   }
 
   /// <summary>
-  ///  A RouteNote is a message sent while at a given point.
+  /// A RouteNote is a message sent while at a given point.
   /// </summary>
   public sealed partial class RouteNote : pb::IMessage<RouteNote> {
     private static readonly pb::MessageParser<RouteNote> _parser = new pb::MessageParser<RouteNote>(() => new RouteNote());
@@ -572,7 +572,7 @@ namespace Routeguide {
     public const int LocationFieldNumber = 1;
     private global::Routeguide.Point location_;
     /// <summary>
-    ///  The location from which the message is sent.
+    /// The location from which the message is sent.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Routeguide.Point Location {
@@ -586,7 +586,7 @@ namespace Routeguide {
     public const int MessageFieldNumber = 2;
     private string message_ = "";
     /// <summary>
-    ///  The message to be sent.
+    /// The message to be sent.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Message {
@@ -693,11 +693,11 @@ namespace Routeguide {
   }
 
   /// <summary>
-  ///  A RouteSummary is received in response to a RecordRoute rpc.
+  /// A RouteSummary is received in response to a RecordRoute rpc.
   ///
-  ///  It contains the number of individual points received, the number of
-  ///  detected features, and the total distance covered as the cumulative sum of
-  ///  the distance between each point.
+  /// It contains the number of individual points received, the number of
+  /// detected features, and the total distance covered as the cumulative sum of
+  /// the distance between each point.
   /// </summary>
   public sealed partial class RouteSummary : pb::IMessage<RouteSummary> {
     private static readonly pb::MessageParser<RouteSummary> _parser = new pb::MessageParser<RouteSummary>(() => new RouteSummary());
@@ -738,7 +738,7 @@ namespace Routeguide {
     public const int PointCountFieldNumber = 1;
     private int pointCount_;
     /// <summary>
-    ///  The number of points received.
+    /// The number of points received.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int PointCount {
@@ -752,7 +752,7 @@ namespace Routeguide {
     public const int FeatureCountFieldNumber = 2;
     private int featureCount_;
     /// <summary>
-    ///  The number of known features passed while traversing the route.
+    /// The number of known features passed while traversing the route.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int FeatureCount {
@@ -766,7 +766,7 @@ namespace Routeguide {
     public const int DistanceFieldNumber = 3;
     private int distance_;
     /// <summary>
-    ///  The distance covered in metres.
+    /// The distance covered in metres.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Distance {
@@ -780,7 +780,7 @@ namespace Routeguide {
     public const int ElapsedTimeFieldNumber = 4;
     private int elapsedTime_;
     /// <summary>
-    ///  The duration of the traversal in seconds.
+    /// The duration of the traversal in seconds.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int ElapsedTime {
