@@ -21,7 +21,7 @@ See [Performance dashboard](http://performance-dot-grpc-testing.appspot.com/expl
 
 # Repository Structure & Status
 
-This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core] (src/core).
+This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core](src/core).
 
 Libraries in different languages may be in different states of development. We are seeking contributions for all of these libraries.
 
@@ -36,10 +36,9 @@ Libraries in different languages may be in different states of development. We a
 | C#                      | [src/csharp](src/csharp)            | 1.0     |
 | Objective-C             | [src/objective-c](src/objective-c)  | 1.0     |
 
-<small>
-Java source code is in the [grpc-java](http://github.com/grpc/grpc-java) repository.
-Go source code is in the [grpc-go](http://github.com/grpc/grpc-go) repository.
-</small>
+Java source code is in the [grpc-java](http://github.com/grpc/grpc-java)
+repository. Go source code is in the
+[grpc-go](http://github.com/grpc/grpc-go) repository.
 
 See [MANIFEST.md](MANIFEST.md) for a listing of top-level items in the
 repository.

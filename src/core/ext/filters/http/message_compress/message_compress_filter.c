@@ -49,8 +49,6 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-int grpc_compression_trace = 0;
-
 #define INITIAL_METADATA_UNSEEN 0
 #define HAS_COMPRESSION_ALGORITHM 2
 #define NO_COMPRESSION_ALGORITHM 4
