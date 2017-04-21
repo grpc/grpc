@@ -2614,6 +2614,7 @@ static bool incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
   grpc_chttp2_stream *s = bs->stream;
   if (s->unprocessed_incoming_frames_buffer.length > 0) {
+    GPR_TIMER_END("incoming_byte_stream_next", 0);
     return true;
   } else {
     gpr_ref(&bs->refs);
