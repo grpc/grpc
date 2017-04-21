@@ -5,7 +5,7 @@ bind(
 
 bind(
     name = "libssl",
-    actual = "@submodule_boringssl//:ssl",
+    actual = "@boringssl//:ssl",
 )
 
 bind(
@@ -15,17 +15,17 @@ bind(
 
 bind(
     name = "protobuf",
-    actual = "@submodule_protobuf//:protobuf",
+    actual = "@com_google_protobuf//:protobuf",
 )
 
 bind(
     name = "protobuf_clib",
-    actual = "@submodule_protobuf//:protoc_lib",
+    actual = "@com_google_protobuf//:protoc_lib",
 )
 
 bind(
     name = "protocol_compiler",
-    actual = "@submodule_protobuf//:protoc",
+    actual = "@com_google_protobuf//:protoc",
 )
 
 bind(
@@ -48,9 +48,8 @@ bind(
     actual = "@com_github_gflags_gflags//:gflags",
 )
 
-new_local_repository(
-    name = "submodule_boringssl",
-    build_file = "third_party/boringssl-with-bazel/BUILD",
+local_repository(
+    name = "boringssl",
     path = "third_party/boringssl-with-bazel",
 )
 
@@ -60,9 +59,8 @@ new_local_repository(
     path = "third_party/zlib",
 )
 
-new_local_repository(
-    name = "submodule_protobuf",
-    build_file = "third_party/protobuf/BUILD",
+local_repository(
+    name = "com_google_protobuf",
     path = "third_party/protobuf",
 )
 

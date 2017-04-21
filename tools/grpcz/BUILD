@@ -41,7 +41,7 @@ grpc_proto_library (
     deps = [
         ":census_proto",
     ],
-    well_known_protos = "@submodule_protobuf//:well_known_protos",
+    well_known_protos = "@com_google_protobuf//:well_known_protos",
 )
 
 grpc_proto_library (
@@ -49,7 +49,7 @@ grpc_proto_library (
     srcs = [
         "census.proto",
     ],
-    well_known_protos = "@submodule_protobuf//:well_known_protos",
+    well_known_protos = "@com_google_protobuf//:well_known_protos",
 )
 
 cc_binary(
