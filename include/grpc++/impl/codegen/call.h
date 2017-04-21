@@ -247,8 +247,10 @@ class CallOpSendInitialMetadata {
     op->data.send_initial_metadata.metadata = initial_metadata_;
     op->data.send_initial_metadata.maybe_compression_level.is_set =
         maybe_compression_level_.is_set;
-    op->data.send_initial_metadata.maybe_compression_level.level =
-        maybe_compression_level_.level;
+    if (maybe_compression_level_.is_set) {
+      op->data.send_initial_metadata.maybe_compression_level.level =
+          maybe_compression_level_.level;
+    }
   }
   void FinishOp(bool* status) {
     if (!send_) return;
