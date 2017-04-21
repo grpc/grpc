@@ -64,7 +64,7 @@
 #include "src/core/lib/support/spinlock.h"
 
 #ifndef EPOLLEXCLUSIVE
-#define EPOLLEXCLUSIVE (1u << 28)
+#define EPOLLEXCLUSIVE (1 << 28)
 #endif
 
 /* TODO: sreek: Right now, this wakes up all pollers. In future we should make
