@@ -35,7 +35,6 @@ cc_binary(
     name = "client",
     srcs = ["client.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:ssl_test_data"],
-    testonly = 1,
     copts = ['-std=c99']
 )
 
@@ -43,7 +42,6 @@ cc_binary(
     name = "server",
     srcs = ["server.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:ssl_test_data"],
-    testonly = 1,
     copts = ['-std=c99']
 )
 
