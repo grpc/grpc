@@ -200,9 +200,11 @@ int main(int argc, char **argv) {
   CQ_EXPECT_COMPLETION(cqv, tag(0x301), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(GRPC_CHANNEL_READY ==
-             grpc_channel_check_connectivity_state(chan, 0));
-  grpc_channel_watch_connectivity_state(chan, GRPC_CHANNEL_READY,
+  /* accept IDLE, CONNECTING or READY */
+  const grpc_connectivity_state connectivity_state =
+      grpc_channel_check_connectivity_state(chan, 0);
+  GPR_ASSERT(connectivity_state <= 2);
+  grpc_channel_watch_connectivity_state(chan, connectivity_state,
                                         gpr_inf_future(GPR_CLOCK_REALTIME), cq,
                                         tag(0x9999));
 
