@@ -397,7 +397,6 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   conn->proxy = proxy;
   gpr_ref_init(&conn->refcount, 1);
   conn->pollset_set = grpc_pollset_set_create();
-  gpr_log(GPR_DEBUG, "on_accept: %p", conn);
   grpc_pollset_set_add_pollset(exec_ctx, conn->pollset_set, proxy->pollset);
   grpc_endpoint_add_to_pollset_set(exec_ctx, endpoint, conn->pollset_set);
   grpc_closure_init(&conn->on_read_request_done, on_read_request_done, conn,
