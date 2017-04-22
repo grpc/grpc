@@ -107,18 +107,12 @@ typedef struct proxy_connection {
 } proxy_connection;
 
 static void proxy_connection_ref(proxy_connection* conn, const char* reason) {
-  gpr_log(GPR_DEBUG, "proxy_connection_ref: %p %s %" PRIdPTR " --> %" PRIdPTR,
-          conn, reason, gpr_atm_no_barrier_load(&conn->refcount.count),
-          gpr_atm_no_barrier_load(&conn->refcount.count) - 1);
   gpr_ref(&conn->refcount);
 }
 
 // Helper function to destroy the proxy connection.
 static void proxy_connection_unref(grpc_exec_ctx* exec_ctx,
                                    proxy_connection* conn, const char* reason) {
-  gpr_log(GPR_DEBUG, "proxy_connection_unref: %p %s %" PRIdPTR " --> %" PRIdPTR,
-          conn, reason, gpr_atm_no_barrier_load(&conn->refcount.count),
-          gpr_atm_no_barrier_load(&conn->refcount.count) - 1);
   if (gpr_unref(&conn->refcount)) {
     gpr_log(GPR_DEBUG, "endpoints: %p %p", conn->client_endpoint,
             conn->server_endpoint);
