@@ -50,18 +50,9 @@ typedef struct message_size_limits {
   int max_recv_size;
 } message_size_limits;
 
-static void* message_size_limits_copy(void* value) {
-  void* new_value = gpr_malloc(sizeof(message_size_limits));
-  memcpy(new_value, value, sizeof(message_size_limits));
-  return new_value;
-}
-
 static void message_size_limits_free(grpc_exec_ctx* exec_ctx, void* value) {
   gpr_free(value);
 }
-
-static const grpc_slice_hash_table_vtable message_size_limits_vtable = {
-    message_size_limits_free, message_size_limits_copy};
 
 static void* message_size_limits_create_from_json(const grpc_json* json) {
   int max_request_message_bytes = -1;
@@ -257,7 +248,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
       chand->method_limit_table =
           grpc_service_config_create_method_config_table(
               exec_ctx, service_config, message_size_limits_create_from_json,
-              &message_size_limits_vtable);
+              message_size_limits_free);
       grpc_service_config_destroy(service_config);
     }
   }

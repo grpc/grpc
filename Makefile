@@ -1082,6 +1082,7 @@ server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
 server_fuzzer: $(BINDIR)/$(CONFIG)/server_fuzzer
 server_test: $(BINDIR)/$(CONFIG)/server_test
 slice_buffer_test: $(BINDIR)/$(CONFIG)/slice_buffer_test
+slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
 slice_string_helpers_test: $(BINDIR)/$(CONFIG)/slice_string_helpers_test
 slice_test: $(BINDIR)/$(CONFIG)/slice_test
 sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
@@ -1452,6 +1453,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/server_chttp2_test \
   $(BINDIR)/$(CONFIG)/server_test \
   $(BINDIR)/$(CONFIG)/slice_buffer_test \
+  $(BINDIR)/$(CONFIG)/slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/slice_string_helpers_test \
   $(BINDIR)/$(CONFIG)/slice_test \
   $(BINDIR)/$(CONFIG)/sockaddr_resolver_test \
@@ -1924,6 +1926,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/server_test || ( echo test server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_buffer_test"
 	$(Q) $(BINDIR)/$(CONFIG)/slice_buffer_test || ( echo test slice_buffer_test failed ; exit 1 )
+	$(E) "[RUN]     Testing slice_hash_table_test"
+	$(Q) $(BINDIR)/$(CONFIG)/slice_hash_table_test || ( echo test slice_hash_table_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_string_helpers_test"
 	$(Q) $(BINDIR)/$(CONFIG)/slice_string_helpers_test || ( echo test slice_string_helpers_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_test"
@@ -12357,6 +12361,38 @@ deps_slice_buffer_test: $(SLICE_BUFFER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SLICE_BUFFER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SLICE_HASH_TABLE_TEST_SRC = \
+    test/core/slice/slice_hash_table_test.c \
+
+SLICE_HASH_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_HASH_TABLE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/slice_hash_table_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/slice_hash_table_test: $(SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/slice_hash_table_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/slice_hash_table_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_slice_hash_table_test: $(SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
 endif
 endif
 

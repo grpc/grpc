@@ -33,30 +33,31 @@ package(default_visibility = ["//visibility:public"])
 
 load("//:bazel/grpc_build_system.bzl", "grpc_proto_library")
 
-grpc_proto_library (
+grpc_proto_library(
     name = "monitoring_proto",
     srcs = [
         "monitoring.proto",
     ],
+    well_known_protos = "@com_google_protobuf//:well_known_protos",
     deps = [
         ":census_proto",
     ],
-    well_known_protos = "@submodule_protobuf//:well_known_protos",
 )
 
-grpc_proto_library (
+grpc_proto_library(
     name = "census_proto",
     srcs = [
         "census.proto",
     ],
-    well_known_protos = "@submodule_protobuf//:well_known_protos",
+    well_known_protos = "@com_google_protobuf//:well_known_protos",
 )
 
 cc_binary(
     name = "grpcz_client",
-    srcs = ["grpcz_client.cc",],
+    srcs = ["grpcz_client.cc"],
     deps = [
-        "//external:gflags",
         "monitoring_proto",
+        "//external:gflags",
+        "@mongoose_repo//:mongoose_lib",
     ],
 )
