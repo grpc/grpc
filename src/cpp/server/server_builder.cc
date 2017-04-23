@@ -323,9 +323,14 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     }
   }
 
+  bool added_port = false;
   for (auto port = ports_.begin(); port != ports_.end(); port++) {
     int r = server->AddListeningPort(port->addr, port->creds.get());
-    if (!r) return nullptr;
+    if (!r) {
+      if (added_port) server->Shutdown();
+      return nullptr;
+    }
+    added_port = true;
     if (port->selected_port != nullptr) {
       *port->selected_port = r;
     }
@@ -333,6 +338,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 
   auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
   if (!server->Start(cqs_data, cqs_.size())) {
+    if (added_port) server->Shutdown();
     return nullptr;
   }
 

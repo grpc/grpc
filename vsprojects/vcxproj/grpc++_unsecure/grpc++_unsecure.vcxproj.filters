@@ -55,6 +55,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\channel_argument_option.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\create_default_thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
@@ -145,6 +148,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\call.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\channel_argument_option.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\client_unary_call.h">

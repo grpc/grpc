@@ -803,6 +803,7 @@ include/grpc++/generic/generic_stub.h \
 include/grpc++/grpc++.h \
 include/grpc++/health_check_service_interface.h \
 include/grpc++/impl/call.h \
+include/grpc++/impl/channel_argument_option.h \
 include/grpc++/impl/client_unary_call.h \
 include/grpc++/impl/codegen/async_stream.h \
 include/grpc++/impl/codegen/async_unary_call.h \
@@ -914,6 +915,7 @@ src/cpp/common/secure_channel_arguments.cc \
 src/cpp/common/secure_create_auth_context.cc \
 src/cpp/common/version_cc.cc \
 src/cpp/server/async_generic_service.cc \
+src/cpp/server/channel_argument_option.cc \
 src/cpp/server/create_default_thread_pool.cc \
 src/cpp/server/dynamic_thread_pool.cc \
 src/cpp/server/dynamic_thread_pool.h \

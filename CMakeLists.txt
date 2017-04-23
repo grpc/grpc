@@ -662,6 +662,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx secure_sync_unary_ping_pong_test)
 endif()
 add_dependencies(buildtests_cxx server_builder_plugin_test)
+add_dependencies(buildtests_cxx server_builder_test)
 add_dependencies(buildtests_cxx server_context_test_spouse_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx server_crash_test)
@@ -2085,6 +2086,7 @@ add_library(grpc++
   src/cpp/common/rpc_method.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health/default_health_check_service.cc
@@ -2150,6 +2152,7 @@ foreach(_hdr
   include/grpc++/grpc++.h
   include/grpc++/health_check_service_interface.h
   include/grpc++/impl/call.h
+  include/grpc++/impl/channel_argument_option.h
   include/grpc++/impl/client_unary_call.h
   include/grpc++/impl/codegen/core_codegen.h
   include/grpc++/impl/grpc_library.h
@@ -2271,6 +2274,7 @@ add_library(grpc++_cronet
   src/cpp/common/rpc_method.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health/default_health_check_service.cc
@@ -2520,6 +2524,7 @@ foreach(_hdr
   include/grpc++/grpc++.h
   include/grpc++/health_check_service_interface.h
   include/grpc++/impl/call.h
+  include/grpc++/impl/channel_argument_option.h
   include/grpc++/impl/client_unary_call.h
   include/grpc++/impl/codegen/core_codegen.h
   include/grpc++/impl/grpc_library.h
@@ -2942,6 +2947,7 @@ add_library(grpc++_unsecure
   src/cpp/common/rpc_method.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health/default_health_check_service.cc
@@ -3007,6 +3013,7 @@ foreach(_hdr
   include/grpc++/grpc++.h
   include/grpc++/health_check_service_interface.h
   include/grpc++/impl/call.h
+  include/grpc++/impl/channel_argument_option.h
   include/grpc++/impl/client_unary_call.h
   include/grpc++/impl/codegen/core_codegen.h
   include/grpc++/impl/grpc_library.h
@@ -9834,6 +9841,55 @@ target_link_libraries(server_builder_plugin_test
   grpc++
   grpc
   gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(server_builder_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  test/cpp/server/server_builder_test.cc
+  third_party/googletest/src/gtest-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo.proto
+)
+
+target_include_directories(server_builder_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/include
+  PRIVATE third_party/googletest
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(server_builder_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  gpr_test_util
+  grpc++
+  grpc
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
