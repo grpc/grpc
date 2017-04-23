@@ -3419,6 +3419,25 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "memory_test", 
+    "src": [
+      "test/core/support/memory_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config"
@@ -7475,6 +7494,7 @@
       "src/core/lib/support/backoff.h", 
       "src/core/lib/support/block_annotate.h", 
       "src/core/lib/support/env.h", 
+      "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
       "src/core/lib/support/spinlock.h", 
@@ -7542,6 +7562,7 @@
       "src/core/lib/support/log_linux.c", 
       "src/core/lib/support/log_posix.c", 
       "src/core/lib/support/log_windows.c", 
+      "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.c", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.c", 
