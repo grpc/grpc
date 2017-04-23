@@ -249,7 +249,8 @@ class BaseStub
         if (is_callable($this->update_metadata)) {
             $metadata = call_user_func($this->update_metadata,
                                         $metadata,
-                                        $jwt_aud_uri);
+                                        $method,
+                                        $argument);
         }
         $metadata = $this->_validate_and_normalize_metadata(
             $metadata);
