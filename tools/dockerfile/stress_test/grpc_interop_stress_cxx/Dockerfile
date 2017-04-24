@@ -98,27 +98,31 @@ RUN pip install --upgrade google-api-python-client
 #=================
 # Update clang to a version with improved tsan and fuzzing capabilities
 
-RUN apt-get update && apt-get -y install python cmake && apt-get clean
+RUN apt-get update && apt-get -y install python && apt-get clean
 
-RUN git clone -n -b release_38 http://llvm.org/git/llvm.git && \
-  cd llvm && git checkout ad57503 && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/clang.git && \
-  cd clang && git checkout ad2c56e && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/compiler-rt.git && \
-  cd compiler-rt && git checkout 3176922 && cd ..
-RUN git clone -n -b release_38 \
+RUN git clone -n -b release_39 http://llvm.org/git/llvm.git && \
+  cd llvm && git checkout 69e5622 && cd ..
+RUN git clone -n -b release_39 http://llvm.org/git/clang.git && \
+  cd clang && git checkout 07307f9 && cd ..
+RUN git clone -n -b release_39 http://llvm.org/git/compiler-rt.git && \
+  cd compiler-rt && git checkout 38631af && cd ..
+RUN git clone -n -b release_39 \
   http://llvm.org/git/clang-tools-extra.git && cd clang-tools-extra && \
-  git checkout c288525 && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/libcxx.git && \
-  cd libcxx && git checkout fda3549  && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/libcxxabi.git && \
-  cd libcxxabi && git checkout 8d4e51d && cd ..
+  git checkout 97c9504 && cd ..
+RUN git clone -n -b release_39 http://llvm.org/git/libcxx.git && \
+  cd libcxx && git checkout e81a54c && cd ..
+RUN git clone -n -b release_39 http://llvm.org/git/libcxxabi.git && \
+  cd libcxxabi && git checkout 933c4df && cd ..
 
 RUN mv clang llvm/tools
 RUN mv compiler-rt llvm/projects
 RUN mv clang-tools-extra llvm/tools/clang/tools
 RUN mv libcxx llvm/projects
 RUN mv libcxxabi llvm/projects
+
+RUN wget https://cmake.org/files/v3.6/cmake-3.6.2-Linux-x86_64.sh
+RUN chmod 0755 cmake-3.6.2-Linux-x86_64.sh
+RUN cd /usr && yes no | ../cmake-3.6.2-Linux-x86_64.sh --skip-license
 
 RUN mkdir llvm-build
 RUN cd llvm-build && cmake \
