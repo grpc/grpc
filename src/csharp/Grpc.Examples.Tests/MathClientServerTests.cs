@@ -55,7 +55,8 @@ namespace Math.Tests
         [TestFixtureSetUp]
         public void Init()
         {
-            server = new Server
+            // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
+            server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
             {
                 Services = { Math.BindService(new MathServiceImpl()) },
                 Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }

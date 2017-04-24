@@ -58,7 +58,8 @@ namespace Grpc.Reflection.Tests
         {
             serviceImpl = new ReflectionServiceImpl(ServerReflection.Descriptor);
 
-            server = new Server
+            // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
+            server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
             {
                 Services = { ServerReflection.BindService(serviceImpl) },
                 Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
