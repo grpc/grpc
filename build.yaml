@@ -4457,13 +4457,10 @@ node_modules:
   - src/node/ext/call_credentials.cc
   - src/node/ext/channel.cc
   - src/node/ext/channel_credentials.cc
-  - src/node/ext/completion_queue_threadpool.cc
-  - src/node/ext/completion_queue_uv.cc
+  - src/node/ext/completion_queue.cc
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
-  - src/node/ext/server_generic.cc
-  - src/node/ext/server_uv.cc
   - src/node/ext/slice.cc
   - src/node/ext/timeval.cc
 openssl_fallback:

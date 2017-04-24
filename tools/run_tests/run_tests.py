@@ -430,10 +430,6 @@ class NodeLanguage(object):
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
                                          'node7', 'electron1.3', 'electron1.6'])
-    if args.iomgr_platform == "uv":
-      self.use_uv = True
-    else:
-      self.use_uv = False
     if self.args.compiler == 'default':
       self.runtime = 'node'
       self.node_version = '7'
@@ -490,8 +486,7 @@ class NodeLanguage(object):
         # building for electron requires a patch version
         self.node_version += '.0'
       return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
-               self.node_version,
-               '--grpc_uv={}'.format('true' if self.use_uv else 'false')]]
+               self.node_version]]
 
   def post_tests_steps(self):
     return []

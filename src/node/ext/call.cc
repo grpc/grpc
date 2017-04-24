@@ -46,7 +46,6 @@
 #include "call.h"
 #include "channel.h"
 #include "completion_queue.h"
-#include "completion_queue_async_worker.h"
 #include "call_credentials.h"
 #include "slice.h"
 #include "timeval.h"
