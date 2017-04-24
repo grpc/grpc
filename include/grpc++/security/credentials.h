@@ -132,13 +132,17 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
 /// services.
 std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
 
+/// Constant for maximum auth token lifetime.
+constexpr long kMaxAuthTokenLifetimeSecs = 3600;
+
 /// Builds Service Account JWT Access credentials.
 /// json_key is the JSON key string containing the client's private key.
 /// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 /// (JWT) created with this credentials. It should not exceed
-/// \a grpc_max_auth_token_lifetime or will be cropped to this value.
+/// \a kMaxAuthTokenLifetimeSecs or will be cropped to this value.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
-    const grpc::string& json_key, long token_lifetime_seconds);
+    const grpc::string& json_key,
+    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs);
 
 /// Builds refresh token credentials.
 /// json_refresh_token is the JSON string containing the refresh token along
