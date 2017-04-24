@@ -270,7 +270,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   //  2. cqs_: Completion queues added via AddCompletionQueue() call
 
   // All sync cqs (if any) are frequently polled by ThreadManager
-  int num_frequently_polled_cqs = sync_server_cqs->size();
+  size_t num_frequently_polled_cqs = sync_server_cqs->size();
 
   for (auto it = sync_server_cqs->begin(); it != sync_server_cqs->end(); ++it) {
     grpc_server_register_completion_queue(server->server_, (*it)->cq(),
