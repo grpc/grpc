@@ -94,13 +94,11 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 grpc_completion_queue *grpc_cq_from_pollset(grpc_pollset *ps);
 
-void grpc_cq_mark_non_listening_server_cq(grpc_completion_queue *cc);
-bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc);
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc);
-int grpc_cq_is_server_cq(grpc_completion_queue *cc);
+bool grpc_cq_is_server_cq(grpc_completion_queue *cc);
+bool grpc_cq_can_listen(grpc_completion_queue *cc);
 
 grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue *cc);
-grpc_cq_polling_type grpc_get_cq_polling_type(grpc_completion_queue *cc);
 
 grpc_completion_queue *grpc_completion_queue_create_internal(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type);
