@@ -54,32 +54,45 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "grpc",
+grpc_cc_libraries(
+    name_list = ["grpc", "grpc_unsecure",],
     srcs = [
         "src/core/lib/surface/init.c",
-        "src/core/plugin_registry/grpc_plugin_registry.c",
+    ],
+    additional_src_list = [
+        [
+            "src/core/plugin_registry/grpc_plugin_registry.c",
+        ],
+        [
+            "src/core/lib/surface/init_unsecure.c",
+            "src/core/plugin_registry/grpc_unsecure_plugin_registry.c",
+        ],
     ],
     language = "c",
     standalone = True,
     deps = [
         "census",
         "grpc_base",
-        "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
         "grpc_max_age_filter",
-        "grpc_resolver_dns_ares",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
-        "grpc_secure",
         "grpc_transport_chttp2_client_insecure",
-        "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_insecure",
-        "grpc_transport_chttp2_server_secure",
         "grpc_message_size_filter",
         "grpc_deadline_filter",
+    ],
+    additional_dep_list = [
+        [
+            "grpc_secure",
+            "grpc_resolver_dns_ares",
+            "grpc_lb_policy_grpclb_secure",
+            "grpc_transport_chttp2_client_secure",
+            "grpc_transport_chttp2_server_secure",
+        ],
+        [],
     ],
 )
 
@@ -95,32 +108,6 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_cronet_client_secure",
         "grpc_http_filters",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_unsecure",
-    srcs = [
-        "src/core/lib/surface/init.c",
-        "src/core/lib/surface/init_unsecure.c",
-        "src/core/plugin_registry/grpc_unsecure_plugin_registry.c",
-    ],
-    language = "c",
-    standalone = True,
-    deps = [
-        "census",
-        "grpc_base",
-        "grpc_lb_policy_grpclb",
-        "grpc_lb_policy_pick_first",
-        "grpc_lb_policy_round_robin",
-        "grpc_load_reporting",
-        "grpc_max_age_filter",
-        "grpc_resolver_dns_native",
-        "grpc_resolver_sockaddr",
-        "grpc_transport_chttp2_client_insecure",
-        "grpc_transport_chttp2_server_insecure",
-        "grpc_message_size_filter",
-        "grpc_deadline_filter",
     ],
 )
 
