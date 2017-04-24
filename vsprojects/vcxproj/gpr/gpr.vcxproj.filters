@@ -67,6 +67,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_windows.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpmcq_bounded.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpscq.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
@@ -267,6 +270,9 @@
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpmcq_bounded.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h">
