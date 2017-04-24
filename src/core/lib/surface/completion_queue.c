@@ -98,7 +98,8 @@ static void non_polling_poller_init(grpc_pollset *pollset, gpr_mu **mu) {
   *mu = &npp->mu;
 }
 
-static void non_polling_poller_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
+static void non_polling_poller_destroy(grpc_exec_ctx *exec_ctx,
+                                       grpc_pollset *pollset) {
   non_polling_poller *npp = (non_polling_poller *)pollset;
   gpr_mu_destroy(&npp->mu);
 }

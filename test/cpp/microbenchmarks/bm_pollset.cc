@@ -157,17 +157,18 @@ static void BM_PollAddFd(benchmark::State& state) {
   grpc_pollset_init(ps, &mu);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_wakeup_fd wakeup_fd;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
-  grpc_fd *fd = grpc_fd_create(wakeup_fd.read_fd, "xxx");
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
+  grpc_fd* fd = grpc_fd_create(wakeup_fd.read_fd, "xxx");
   while (state.KeepRunning()) {
-     grpc_pollset_add_fd(&exec_ctx, ps, fd);
-     grpc_exec_ctx_flush(&exec_ctx);
+    grpc_pollset_add_fd(&exec_ctx, ps, fd);
+    grpc_exec_ctx_flush(&exec_ctx);
   }
   grpc_fd_orphan(&exec_ctx, fd, NULL, NULL, "xxx");
   grpc_closure shutdown_ps_closure;
   grpc_closure_init(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
-  gpr_mu_lock(mu);  
+  gpr_mu_lock(mu);
   grpc_pollset_shutdown(&exec_ctx, ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
   grpc_exec_ctx_finish(&exec_ctx);
