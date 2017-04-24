@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_ADAPTER_H
-#define GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_ADAPTER_H
+#ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_ADAPTER_H
+#define GRPC_CORE_TSI_TRANSPORT_SECURITY_ADAPTER_H
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -59,4 +59,4 @@ tsi_handshaker *tsi_adapter_handshaker_get_wrapped(tsi_handshaker *adapter);
 }
 #endif
 
-#endif  // GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_ADAPTER_H
+#endif  // GRPC_CORE_TSI_TRANSPORT_SECURITY_ADAPTER_H
