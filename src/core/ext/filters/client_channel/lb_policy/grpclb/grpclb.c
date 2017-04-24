@@ -831,10 +831,10 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   /* Count the number of gRPC-LB addresses. There must be at least one.
    * TODO(roth): For now, we ignore non-balancer addresses, but in the
    * future, we may change the behavior such that we fall back to using
-   * the non-balancer addresses if we cannot reach any balancers. At that
-   * time, this should be changed to allow a list with no balancer addresses,
-   * since the resolver might fail to return a balancer address even when
-   * this is the right LB policy to use. */
+   * the non-balancer addresses if we cannot reach any balancers. In the
+   * fallback case, we should use the LB policy indicated by
+   * GRPC_ARG_LB_POLICY_NAME (although if that specifies grpclb or is
+   * unset, we should default to pick_first). */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
