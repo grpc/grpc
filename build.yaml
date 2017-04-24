@@ -3806,7 +3806,7 @@ targets:
   - grpc++
   - grpc
 - name: grpclb_test
-  cpu_cost: 0.1
+  gtest: false
   build: test
   language: c++
   src:
