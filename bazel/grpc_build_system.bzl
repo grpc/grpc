@@ -49,6 +49,22 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [], external_deps 
     ]
   )
 
+def grpc_cc_libraries(name_list, additional_src_list = [], additional_dep_list = [], srcs = [], public_hdrs = [], hdrs = [], external_deps = [], deps = [], standalone = False, language="C++"):
+  names = len(name_list)
+  asl = additional_src_list + [[]]*(names - len(additional_src_list))
+  adl = additional_dep_list + [[]]*(names - len(additional_dep_list))
+  for i in range(names):
+    grpc_cc_library(
+      name = name_list[i],
+      srcs = srcs + asl[i],
+      hdrs = hdrs,
+      public_hdrs = public_hdrs,
+      deps = deps + adl[i],
+      external_deps = external_deps,
+      standalone = standalone,
+      language = language
+    )
+
 def grpc_proto_plugin(name, srcs = [], deps = []):
   native.cc_binary(
     name = name,

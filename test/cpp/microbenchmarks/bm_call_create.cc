@@ -68,10 +68,12 @@ auto &force_library_initialization = Library::get();
 void BM_Zalloc(benchmark::State &state) {
   // speed of light for call creation is zalloc, so benchmark a few interesting
   // sizes
+  TrackCounters track_counters;
   size_t sz = state.range(0);
   while (state.KeepRunning()) {
     gpr_free(gpr_zalloc(sz));
   }
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_Zalloc)
     ->Arg(64)

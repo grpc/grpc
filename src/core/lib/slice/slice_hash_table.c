@@ -42,56 +42,47 @@
 
 struct grpc_slice_hash_table {
   gpr_refcount refs;
+  void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value);
   size_t size;
+  size_t max_num_probes;
   grpc_slice_hash_table_entry* entries;
 };
 
 static bool is_empty(grpc_slice_hash_table_entry* entry) {
-  return entry->vtable == NULL;
+  return entry->value == NULL;
 }
 
-// Helper function for insert and get operations that performs quadratic
-// probing (https://en.wikipedia.org/wiki/Quadratic_probing).
-static size_t grpc_slice_hash_table_find_index(
-    const grpc_slice_hash_table* table, const grpc_slice key, bool find_empty) {
-  size_t hash = grpc_slice_hash(key);
-  for (size_t i = 0; i < table->size; ++i) {
-    const size_t idx = (hash + i * i) % table->size;
+static void grpc_slice_hash_table_add(grpc_slice_hash_table* table,
+                                      grpc_slice key, void* value) {
+  GPR_ASSERT(value != NULL);
+  const size_t hash = grpc_slice_hash(key);
+  for (size_t offset = 0; offset < table->size; ++offset) {
+    const size_t idx = (hash + offset) % table->size;
     if (is_empty(&table->entries[idx])) {
-      return find_empty ? idx : table->size;
-    }
-    if (grpc_slice_eq(table->entries[idx].key, key)) {
-      return idx;
+      table->entries[idx].key = key;
+      table->entries[idx].value = value;
+      // Keep track of the maximum number of probes needed, since this
+      // provides an upper bound for lookups.
+      if (offset > table->max_num_probes) table->max_num_probes = offset;
+      return;
     }
   }
-  return table->size;  // Not found.
-}
-
-static void grpc_slice_hash_table_add(
-    grpc_slice_hash_table* table, grpc_slice key, void* value,
-    const grpc_slice_hash_table_vtable* vtable) {
-  GPR_ASSERT(value != NULL);
-  const size_t idx =
-      grpc_slice_hash_table_find_index(table, key, true /* find_empty */);
-  GPR_ASSERT(idx != table->size);  // Table should never be full.
-  grpc_slice_hash_table_entry* entry = &table->entries[idx];
-  entry->key = grpc_slice_ref_internal(key);
-  entry->value = vtable->copy_value(value);
-  entry->vtable = vtable;
+  GPR_ASSERT(false);  // Table should never be full.
 }
 
 grpc_slice_hash_table* grpc_slice_hash_table_create(
-    size_t num_entries, grpc_slice_hash_table_entry* entries) {
+    size_t num_entries, grpc_slice_hash_table_entry* entries,
+    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value)) {
   grpc_slice_hash_table* table = gpr_zalloc(sizeof(*table));
   gpr_ref_init(&table->refs, 1);
-  // Quadratic probing gets best performance when the table is no more
-  // than half full.
+  table->destroy_value = destroy_value;
+  // Keep load factor low to improve performance of lookups.
   table->size = num_entries * 2;
   const size_t entry_size = sizeof(grpc_slice_hash_table_entry) * table->size;
   table->entries = gpr_zalloc(entry_size);
   for (size_t i = 0; i < num_entries; ++i) {
     grpc_slice_hash_table_entry* entry = &entries[i];
-    grpc_slice_hash_table_add(table, entry->key, entry->value, entry->vtable);
+    grpc_slice_hash_table_add(table, entry->key, entry->value);
   }
   return table;
 }
@@ -108,7 +99,7 @@ void grpc_slice_hash_table_unref(grpc_exec_ctx* exec_ctx,
       grpc_slice_hash_table_entry* entry = &table->entries[i];
       if (!is_empty(entry)) {
         grpc_slice_unref_internal(exec_ctx, entry->key);
-        entry->vtable->destroy_value(exec_ctx, entry->value);
+        table->destroy_value(exec_ctx, entry->value);
       }
     }
     gpr_free(table->entries);
@@ -118,8 +109,15 @@ void grpc_slice_hash_table_unref(grpc_exec_ctx* exec_ctx,
 
 void* grpc_slice_hash_table_get(const grpc_slice_hash_table* table,
                                 const grpc_slice key) {
-  const size_t idx =
-      grpc_slice_hash_table_find_index(table, key, false /* find_empty */);
-  if (idx == table->size) return NULL;  // Not found.
-  return table->entries[idx].value;
+  const size_t hash = grpc_slice_hash(key);
+  // We cap the number of probes at the max number recorded when
+  // populating the table.
+  for (size_t offset = 0; offset <= table->max_num_probes; ++offset) {
+    const size_t idx = (hash + offset) % table->size;
+    if (is_empty(&table->entries[idx])) break;
+    if (grpc_slice_eq(table->entries[idx].key, key)) {
+      return table->entries[idx].value;
+    }
+  }
+  return NULL;  // Not found.
 }
