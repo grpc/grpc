@@ -75,7 +75,7 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
 load("//:bazel/cc_grpc_library.bzl", "cc_grpc_library")
 
 def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = None,
-                       has_services = True, use_external = False):
+                       has_services = True, use_external = False, generate_mock = False):
   cc_grpc_library(
     name = name,
     srcs = srcs,
@@ -83,5 +83,6 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = None,
     well_known_protos = well_known_protos,
     proto_only = not has_services,
     use_external = use_external,
+    generate_mock = generate_mock,
   )
 
