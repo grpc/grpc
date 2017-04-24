@@ -13180,29 +13180,6 @@
   }, 
   {
     "args": [
-      "invoke_large_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+trace_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "keepalive_timeout"
     ], 
     "ci_platforms": [
@@ -20184,30 +20161,6 @@
   }, 
   {
     "args": [
-      "invoke_large_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "keepalive_timeout"
     ], 
     "ci_platforms": [
@@ -21253,32 +21206,6 @@
   {
     "args": [
       "idempotent_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [
-      "msan"
-    ], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "invoke_large_request"
     ], 
     "ci_platforms": [
       "windows", 
@@ -32713,29 +32640,6 @@
   }, 
   {
     "args": [
-      "invoke_large_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+trace_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "keepalive_timeout"
     ], 
     "ci_platforms": [
@@ -38326,30 +38230,6 @@
   }, 
   {
     "args": [
-      "invoke_large_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "keepalive_timeout"
     ], 
     "ci_platforms": [
@@ -39369,32 +39249,6 @@
   {
     "args": [
       "idempotent_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [
-      "msan"
-    ], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "invoke_large_request"
     ], 
     "ci_platforms": [
       "windows", 
