@@ -3403,7 +3403,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -41250,7 +41250,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -41452,7 +41452,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -41504,7 +41504,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -41529,7 +41529,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -41579,7 +41579,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -41629,7 +41629,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -41729,7 +41729,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -41829,7 +41829,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -42031,7 +42031,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -42083,7 +42083,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -42108,7 +42108,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -42158,7 +42158,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -42208,7 +42208,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -42308,7 +42308,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -42408,7 +42408,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -42714,7 +42714,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -42792,7 +42792,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -42830,7 +42830,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -42906,7 +42906,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -42982,7 +42982,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -43134,7 +43134,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -43286,7 +43286,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -43592,7 +43592,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -43670,7 +43670,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -43708,7 +43708,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -43784,7 +43784,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -43860,7 +43860,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -44012,7 +44012,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 

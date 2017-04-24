@@ -65,8 +65,6 @@ def _scenario_json_string(scenario_json, is_tsan):
 
 def threads_required(scenario_json, where, is_tsan):
   scenario_json = mutate_scenario(scenario_json, is_tsan)
-  if scenario_json['client_config']['outstanding_rpcs_per_channel'] == 1 and scenario_json['client_config']['client_channels'] == 1:
-    return 0.4
   if scenario_json['%s_config' % where]['%s_type' % where] == 'ASYNC_%s' % where.upper():
     if scenario_json['client_config']['client_channels'] == 1: return 1
     return scenario_json['%s_config' % where].get('async_%s_threads' % where, 0)
