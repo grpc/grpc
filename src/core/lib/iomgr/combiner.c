@@ -304,7 +304,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
       // priority
       (gpr_atm_acq_load(&lock->state) >> 1) > 1) {
     gpr_mpscq_node *n;
-    GPR_ASSERT(gpr_mpscq_pop(&lock->queue, &n));
+    if (!gpr_mpscq_pop(&lock->queue, &n)) n = NULL;
     GRPC_COMBINER_TRACE(
         gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n));
     if (n == NULL) {
