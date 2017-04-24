@@ -127,7 +127,6 @@ grpc_server_register_method_type grpc_server_register_method_import;
 grpc_server_request_registered_call_type grpc_server_request_registered_call_import;
 grpc_server_create_type grpc_server_create_import;
 grpc_server_register_completion_queue_type grpc_server_register_completion_queue_import;
-grpc_server_register_non_listening_completion_queue_type grpc_server_register_non_listening_completion_queue_import;
 grpc_server_add_insecure_http2_port_type grpc_server_add_insecure_http2_port_import;
 grpc_server_start_type grpc_server_start_import;
 grpc_server_shutdown_and_notify_type grpc_server_shutdown_and_notify_import;
@@ -425,7 +424,6 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_server_request_registered_call_import = (grpc_server_request_registered_call_type) GetProcAddress(library, "grpc_server_request_registered_call");
   grpc_server_create_import = (grpc_server_create_type) GetProcAddress(library, "grpc_server_create");
   grpc_server_register_completion_queue_import = (grpc_server_register_completion_queue_type) GetProcAddress(library, "grpc_server_register_completion_queue");
-  grpc_server_register_non_listening_completion_queue_import = (grpc_server_register_non_listening_completion_queue_type) GetProcAddress(library, "grpc_server_register_non_listening_completion_queue");
   grpc_server_add_insecure_http2_port_import = (grpc_server_add_insecure_http2_port_type) GetProcAddress(library, "grpc_server_add_insecure_http2_port");
   grpc_server_start_import = (grpc_server_start_type) GetProcAddress(library, "grpc_server_start");
   grpc_server_shutdown_and_notify_import = (grpc_server_shutdown_and_notify_type) GetProcAddress(library, "grpc_server_shutdown_and_notify");

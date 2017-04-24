@@ -981,7 +981,7 @@ const grpc_channel_filter grpc_server_top_filter = {
 
 static void register_completion_queue(grpc_server *server,
                                       grpc_completion_queue *cq,
-                                      bool is_non_listening, void *reserved) {
+                                      void *reserved) {
   size_t i, n;
   GPR_ASSERT(!reserved);
   for (i = 0; i < server->cq_count; i++) {
@@ -989,10 +989,6 @@ static void register_completion_queue(grpc_server *server,
   }
 
   grpc_cq_mark_server_cq(cq);
-
-  if (is_non_listening) {
-    grpc_cq_mark_non_listening_server_cq(cq);
-  }
 
   GRPC_CQ_INTERNAL_REF(cq, "server");
   n = server->cq_count++;
@@ -1016,24 +1012,13 @@ void grpc_server_register_completion_queue(grpc_server *server,
        calls grpc_completion_queue_pluck() on server completion queues */
   }
 
-  register_completion_queue(server, cq, false, reserved);
-}
-
-void grpc_server_register_non_listening_completion_queue(
-    grpc_server *server, grpc_completion_queue *cq, void *reserved) {
-  GRPC_API_TRACE(
-      "grpc_server_register_non_listening_completion_queue(server=%p, cq=%p, "
-      "reserved=%p)",
-      3, (server, cq, reserved));
-  register_completion_queue(server, cq, true, reserved);
+  register_completion_queue(server, cq, reserved);
 }
 
 grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
 
   grpc_server *server = gpr_zalloc(sizeof(grpc_server));
-
-  GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
 
   gpr_mu_init(&server->mu_global);
   gpr_mu_init(&server->mu_call);
@@ -1123,7 +1108,7 @@ void grpc_server_start(grpc_server *server) {
   server->requested_calls_per_cq =
       gpr_malloc(sizeof(*server->requested_calls_per_cq) * server->cq_count);
   for (i = 0; i < server->cq_count; i++) {
-    if (!grpc_cq_is_non_listening_server_cq(server->cqs[i])) {
+    if (grpc_cq_can_listen(server->cqs[i])) {
       server->pollsets[server->pollset_count++] =
           grpc_cq_pollset(server->cqs[i]);
     }

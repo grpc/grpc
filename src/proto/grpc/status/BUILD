@@ -37,7 +37,5 @@ grpc_proto_library(
     name = "status_proto",
     srcs = ["status.proto"],
     has_services = False,
-    well_known_protos = "@submodule_protobuf//:well_known_protos",
+    well_known_protos = "@com_google_protobuf//:well_known_protos",
 )
-
-

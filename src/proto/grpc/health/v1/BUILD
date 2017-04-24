@@ -29,54 +29,11 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+package(default_visibility = ["//visibility:public"])
 
-grpc_fuzzer(
-  name = "percent_decode_fuzzer",
-  srcs = ["percent_decode_fuzzer.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "response_corpus",
-  copts = ["-std=c99"],
-)
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 
-cc_test(
-    name = "percent_encoding_test",
-    srcs = ["percent_encoding_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "slice_test",
-    srcs = ["slice_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "slice_string_helpers_test",
-    srcs = ["slice_string_helpers_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "slice_buffer_test",
-    srcs = ["slice_buffer_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "slice_hash_table_test",
-    srcs = ["slice_hash_table_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
-)
-
-cc_test(
-    name = "b64_test",
-    srcs = ["b64_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+grpc_proto_library(
+    name = "health_proto",
+    srcs = ["health.proto"],
 )
