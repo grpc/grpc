@@ -252,8 +252,8 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_byte_buffer_destroy(response_payload_recv);
   grpc_slice_unref(details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 
   if (args != NULL) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

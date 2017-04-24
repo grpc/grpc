@@ -186,7 +186,7 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config,
   grpc_byte_buffer_destroy(response_payload_recv);
   grpc_slice_unref(details);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
   end_test(&f);

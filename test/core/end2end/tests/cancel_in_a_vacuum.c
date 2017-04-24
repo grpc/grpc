@@ -118,7 +118,7 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, NULL));
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(v_client);
   end_test(&f);

@@ -265,6 +265,10 @@ GRPCAPI grpc_call *grpc_channel_create_registered_call(
     grpc_completion_queue *completion_queue, void *registered_call_handle,
     gpr_timespec deadline, void *reserved);
 
+/** Allocate memory in the grpc_call arena: this memory is automatically
+    discarded at call completion */
+GRPCAPI void *grpc_call_arena_alloc(grpc_call *call, size_t size);
+
 /** Start a batch of operations defined in the array ops; when complete, post a
     completion of type 'tag' to the completion queue bound to the call.
     The order of ops specified in the batch has no significance.
@@ -295,12 +299,6 @@ GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call *call,
     related code. It must not be used for any authentication related
     functionality. Instead, use grpc_auth_context. */
 GRPCAPI char *grpc_call_get_peer(grpc_call *call);
-
-struct grpc_load_reporting_cost_context;
-
-/* Associate costs contained in \a cost_context to \a call. */
-GRPCAPI void grpc_call_set_load_reporting_cost_context(
-    grpc_call *call, struct grpc_load_reporting_cost_context *context);
 
 struct census_context;
 
@@ -347,7 +345,7 @@ GRPCAPI void grpc_channel_destroy(grpc_channel *channel);
 /** Called by clients to cancel an RPC on the server.
     Can be called multiple times, from any thread.
     THREAD-SAFETY grpc_call_cancel and grpc_call_cancel_with_status
-    are thread-safe, and can be called at any point before grpc_call_destroy
+    are thread-safe, and can be called at any point before grpc_call_unref
     is called.*/
 GRPCAPI grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved);
 
@@ -362,9 +360,13 @@ GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                                      const char *description,
                                                      void *reserved);
 
-/** Destroy a call.
-    THREAD SAFETY: grpc_call_destroy is thread-compatible */
-GRPCAPI void grpc_call_destroy(grpc_call *call);
+/** Ref a call.
+    THREAD SAFETY: grpc_call_unref is thread-compatible */
+GRPCAPI void grpc_call_ref(grpc_call *call);
+
+/** Unref a call.
+    THREAD SAFETY: grpc_call_unref is thread-compatible */
+GRPCAPI void grpc_call_unref(grpc_call *call);
 
 /** Request notification of a new call.
     Once a call is received, a notification tagged with \a tag_new is added to

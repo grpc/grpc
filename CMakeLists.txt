@@ -269,8 +269,10 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-if(UNIX)
-  set(_gRPC_ALLTARGETS_LIBRARIES dl rt m pthread)
+if(_gRPC_PLATFORM_MAC)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
+elseif(UNIX)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} rt m pthread)
 endif()
 
 if(WIN32 AND MSVC)
@@ -493,6 +495,7 @@ add_dependencies(buildtests_c sequential_connectivity_test)
 add_dependencies(buildtests_c server_chttp2_test)
 add_dependencies(buildtests_c server_test)
 add_dependencies(buildtests_c slice_buffer_test)
+add_dependencies(buildtests_c slice_hash_table_test)
 add_dependencies(buildtests_c slice_string_helpers_test)
 add_dependencies(buildtests_c slice_test)
 add_dependencies(buildtests_c sockaddr_resolver_test)
@@ -2464,7 +2467,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -2859,7 +2861,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -3249,7 +3250,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -3558,7 +3558,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -8020,6 +8019,37 @@ target_link_libraries(slice_buffer_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(slice_hash_table_test
+  test/core/slice/slice_hash_table_test.c
+)
+
+
+target_include_directories(slice_hash_table_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(slice_hash_table_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(slice_string_helpers_test
   test/core/slice/slice_string_helpers_test.c
 )
@@ -9792,6 +9822,8 @@ target_include_directories(codegen_test_minimal
 target_link_libraries(codegen_test_minimal
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

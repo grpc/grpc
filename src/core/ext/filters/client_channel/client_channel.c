@@ -121,16 +121,9 @@ static void method_parameters_unref(method_parameters *method_params) {
   }
 }
 
-static void *method_parameters_copy(void *value) {
-  return method_parameters_ref(value);
-}
-
 static void method_parameters_free(grpc_exec_ctx *exec_ctx, void *value) {
   method_parameters_unref(value);
 }
-
-static const grpc_slice_hash_table_vtable method_parameters_vtable = {
-    method_parameters_free, method_parameters_copy};
 
 static bool parse_wait_for_ready(grpc_json *field,
                                  wait_for_ready_value *wait_for_ready) {
@@ -494,26 +487,24 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
       lb_policy_name = channel_arg->value.string;
     }
-    // Special case: If all of the addresses are balancer addresses,
-    // assume that we should use the grpclb policy, regardless of what the
-    // resolver actually specified.
+    // Special case: If at least one balancer address is present, we use
+    // the grpclb policy, regardless of what the resolver actually specified.
     channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
     if (channel_arg != NULL && channel_arg->type == GRPC_ARG_POINTER) {
       grpc_lb_addresses *addresses = channel_arg->value.pointer.p;
-      bool found_backend_address = false;
+      bool found_balancer_address = false;
       for (size_t i = 0; i < addresses->num_addresses; ++i) {
-        if (!addresses->addresses[i].is_balancer) {
-          found_backend_address = true;
+        if (addresses->addresses[i].is_balancer) {
+          found_balancer_address = true;
           break;
         }
       }
-      if (!found_backend_address) {
+      if (found_balancer_address) {
         if (lb_policy_name != NULL && strcmp(lb_policy_name, "grpclb") != 0) {
           gpr_log(GPR_INFO,
-                  "resolver requested LB policy %s but provided only balancer "
-                  "addresses, no backend addresses -- forcing use of grpclb LB "
-                  "policy",
+                  "resolver requested LB policy %s but provided at least one "
+                  "balancer address -- forcing use of grpclb LB policy",
                   lb_policy_name);
         }
         lb_policy_name = "grpclb";
@@ -559,7 +550,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         grpc_uri_destroy(uri);
         method_params_table = grpc_service_config_create_method_config_table(
             exec_ctx, service_config, method_parameters_create_from_json,
-            &method_parameters_vtable);
+            method_parameters_free);
         grpc_service_config_destroy(service_config);
       }
     }

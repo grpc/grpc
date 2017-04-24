@@ -9,7 +9,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -363,7 +363,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 30, 
+    "cpu_cost": 10, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -407,7 +407,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 2.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -564,7 +564,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 3, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -779,7 +779,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 30, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -911,7 +911,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 10, 
+    "cpu_cost": 3, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -2064,6 +2064,28 @@
     "gtest": false, 
     "language": "c", 
     "name": "slice_buffer_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "slice_hash_table_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -5846,7 +5868,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -5915,7 +5937,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6124,7 +6146,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6170,7 +6192,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6193,7 +6215,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6239,7 +6261,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6262,7 +6284,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6331,7 +6353,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6400,7 +6422,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6423,7 +6445,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6446,7 +6468,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -6471,7 +6493,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6517,7 +6539,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6609,7 +6631,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6632,7 +6654,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6701,7 +6723,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6770,7 +6792,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6793,7 +6815,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6816,7 +6838,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6839,7 +6861,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6931,7 +6953,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -6977,7 +6999,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7000,7 +7022,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7092,7 +7114,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7161,7 +7183,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7370,7 +7392,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7416,7 +7438,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7439,7 +7461,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7485,7 +7507,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7508,7 +7530,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7577,7 +7599,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7646,7 +7668,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7669,7 +7691,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7692,7 +7714,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -7717,7 +7739,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7763,7 +7785,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7855,7 +7877,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7878,7 +7900,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -7947,30 +7969,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_compress_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "resource_quota_server"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8016,7 +8015,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8039,7 +8038,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8062,7 +8061,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8085,7 +8084,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8177,7 +8176,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8223,7 +8222,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8246,7 +8245,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8334,7 +8333,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8400,7 +8399,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8600,7 +8599,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8644,7 +8643,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8666,7 +8665,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8710,7 +8709,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8732,7 +8731,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8798,7 +8797,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8864,7 +8863,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8886,7 +8885,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8908,7 +8907,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -8932,7 +8931,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -8976,7 +8975,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9064,7 +9063,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9086,7 +9085,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9152,7 +9151,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9218,7 +9217,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9240,7 +9239,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9262,7 +9261,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9284,7 +9283,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9372,7 +9371,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9416,7 +9415,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9438,7 +9437,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -9506,7 +9505,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -9575,7 +9574,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -9713,7 +9712,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -9759,7 +9758,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -9782,7 +9781,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -9828,7 +9827,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -9851,7 +9850,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -9920,7 +9919,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -9989,7 +9988,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10012,7 +10011,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10035,7 +10034,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10081,7 +10080,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10173,7 +10172,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10242,7 +10241,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10311,7 +10310,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10334,7 +10333,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10357,7 +10356,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10380,7 +10379,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10449,7 +10448,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10495,7 +10494,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10518,7 +10517,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -10611,7 +10610,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -10680,7 +10679,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -10889,7 +10888,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -10935,7 +10934,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -10958,7 +10957,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11004,7 +11003,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11027,7 +11026,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11096,7 +11095,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11165,7 +11164,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11188,7 +11187,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11211,7 +11210,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -11236,7 +11235,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11282,7 +11281,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11374,7 +11373,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11397,7 +11396,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11466,7 +11465,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11535,7 +11534,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11558,7 +11557,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11581,7 +11580,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11604,7 +11603,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11696,7 +11695,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11742,7 +11741,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11765,7 +11764,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -11842,7 +11841,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -11899,7 +11898,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12070,7 +12069,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12108,7 +12107,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12127,7 +12126,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12165,7 +12164,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12184,7 +12183,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12241,7 +12240,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12298,7 +12297,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12317,7 +12316,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12336,7 +12335,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12355,7 +12354,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12393,7 +12392,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12469,7 +12468,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12488,7 +12487,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12545,7 +12544,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12602,7 +12601,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12621,7 +12620,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12640,7 +12639,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12659,7 +12658,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12735,7 +12734,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12773,7 +12772,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12792,7 +12791,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -12883,7 +12882,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -12952,7 +12951,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13161,7 +13160,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13207,7 +13206,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13230,7 +13229,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13276,7 +13275,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13345,7 +13344,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13414,7 +13413,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13437,7 +13436,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13460,7 +13459,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -13485,7 +13484,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13531,7 +13530,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13600,7 +13599,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13623,7 +13622,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13692,7 +13691,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13761,7 +13760,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13784,7 +13783,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13807,7 +13806,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13830,7 +13829,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13922,7 +13921,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13968,7 +13967,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -13991,7 +13990,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -14085,7 +14084,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14157,7 +14156,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14373,7 +14372,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14421,7 +14420,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14445,7 +14444,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14493,7 +14492,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14517,7 +14516,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14589,7 +14588,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14661,7 +14660,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14685,7 +14684,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14709,7 +14708,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14733,7 +14732,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14781,7 +14780,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14877,7 +14876,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14901,7 +14900,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -14973,7 +14972,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -15045,7 +15044,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -15069,7 +15068,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -15093,7 +15092,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -15117,7 +15116,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -15213,7 +15212,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -15261,7 +15260,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -15285,7 +15284,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -15379,7 +15378,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -15448,7 +15447,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -15657,7 +15656,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -15703,7 +15702,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -15726,7 +15725,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -15772,7 +15771,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -15795,7 +15794,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -15864,7 +15863,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -15933,7 +15932,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -15956,7 +15955,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -15979,7 +15978,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -16004,7 +16003,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16050,7 +16049,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16142,7 +16141,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16165,7 +16164,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16234,7 +16233,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16303,7 +16302,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16326,7 +16325,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16349,7 +16348,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16372,7 +16371,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16464,7 +16463,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16510,7 +16509,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16533,7 +16532,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -16627,7 +16626,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -16699,7 +16698,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -16915,7 +16914,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -16963,7 +16962,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -16987,7 +16986,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17035,7 +17034,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17059,7 +17058,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17131,7 +17130,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17203,7 +17202,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17227,7 +17226,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17251,7 +17250,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17275,7 +17274,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17323,7 +17322,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17419,7 +17418,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17443,7 +17442,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17515,7 +17514,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17587,7 +17586,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17611,7 +17610,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17635,7 +17634,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17659,7 +17658,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17755,7 +17754,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17803,7 +17802,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17827,7 +17826,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17899,7 +17898,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -17971,7 +17970,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18139,7 +18138,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18187,7 +18186,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18211,7 +18210,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18259,7 +18258,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18379,7 +18378,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18403,7 +18402,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18451,7 +18450,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18547,7 +18546,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18595,7 +18594,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18643,7 +18642,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18667,7 +18666,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18691,7 +18690,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18715,7 +18714,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18811,7 +18810,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18859,7 +18858,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18883,7 +18882,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -18955,7 +18954,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19027,7 +19026,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19171,7 +19170,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19219,7 +19218,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19243,7 +19242,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19291,7 +19290,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19315,7 +19314,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19387,7 +19386,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19459,7 +19458,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19483,7 +19482,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19507,7 +19506,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19555,7 +19554,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19651,7 +19650,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19723,7 +19722,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19771,7 +19770,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19795,7 +19794,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19819,7 +19818,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19843,7 +19842,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19915,7 +19914,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -19987,7 +19986,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20011,7 +20010,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20083,7 +20082,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20155,7 +20154,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20299,7 +20298,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20347,7 +20346,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20371,7 +20370,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20419,7 +20418,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20491,7 +20490,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20563,7 +20562,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20587,7 +20586,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20611,7 +20610,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20659,7 +20658,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20731,7 +20730,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20803,7 +20802,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20851,7 +20850,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20875,7 +20874,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20899,7 +20898,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20923,7 +20922,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -20995,7 +20994,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -21043,7 +21042,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -21067,7 +21066,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -21143,7 +21142,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21221,7 +21220,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21377,7 +21376,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21429,7 +21428,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21455,7 +21454,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21507,7 +21506,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21533,7 +21532,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21611,7 +21610,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21689,7 +21688,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21715,7 +21714,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21741,7 +21740,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21793,7 +21792,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21897,7 +21896,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -21975,7 +21974,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -22027,7 +22026,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -22053,7 +22052,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -22079,7 +22078,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -22105,7 +22104,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -22183,7 +22182,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -22235,7 +22234,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -22261,7 +22260,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -22357,7 +22356,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -22426,7 +22425,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -22635,7 +22634,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -22681,7 +22680,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -22704,7 +22703,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -22750,7 +22749,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -22773,7 +22772,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -22842,7 +22841,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -22911,7 +22910,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -22934,7 +22933,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -22957,7 +22956,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -22982,7 +22981,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23028,7 +23027,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23120,7 +23119,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23143,7 +23142,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23212,7 +23211,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23281,7 +23280,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23304,7 +23303,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23327,7 +23326,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23350,7 +23349,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23442,7 +23441,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23488,7 +23487,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23511,7 +23510,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23603,7 +23602,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23672,7 +23671,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23881,7 +23880,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23927,7 +23926,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23950,7 +23949,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -23996,7 +23995,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24019,7 +24018,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24088,7 +24087,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24157,7 +24156,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24180,7 +24179,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24203,7 +24202,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -24228,7 +24227,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24274,7 +24273,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24366,7 +24365,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24389,7 +24388,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24458,7 +24457,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24527,7 +24526,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24550,7 +24549,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24573,7 +24572,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24596,7 +24595,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24688,7 +24687,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24734,7 +24733,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24757,7 +24756,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -24827,7 +24826,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -24899,7 +24898,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25067,7 +25066,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25115,7 +25114,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25139,7 +25138,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25187,7 +25186,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25307,7 +25306,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25331,7 +25330,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25379,7 +25378,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25475,7 +25474,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25523,7 +25522,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25571,7 +25570,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25595,7 +25594,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25619,7 +25618,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25643,7 +25642,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25739,7 +25738,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25787,7 +25786,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25811,7 +25810,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25904,7 +25903,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -25973,7 +25972,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26157,7 +26156,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26203,7 +26202,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26226,7 +26225,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26272,7 +26271,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26295,7 +26294,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26364,7 +26363,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26433,7 +26432,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26456,7 +26455,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26479,7 +26478,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26502,7 +26501,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26548,7 +26547,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26640,7 +26639,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26663,7 +26662,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26732,7 +26731,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26801,7 +26800,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26824,7 +26823,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26847,7 +26846,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26870,7 +26869,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -26962,7 +26961,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -27008,7 +27007,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -27031,7 +27030,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -27124,7 +27123,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27170,7 +27169,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27379,7 +27378,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27425,7 +27424,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27448,7 +27447,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27494,7 +27493,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27517,7 +27516,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27586,7 +27585,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27655,7 +27654,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27678,7 +27677,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27701,7 +27700,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -27726,7 +27725,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27772,7 +27771,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27864,7 +27863,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27887,7 +27886,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -27956,7 +27955,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28025,7 +28024,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28048,7 +28047,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28071,7 +28070,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28094,7 +28093,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28186,7 +28185,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28232,7 +28231,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28255,7 +28254,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28347,7 +28346,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28393,7 +28392,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28602,7 +28601,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28648,7 +28647,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28671,7 +28670,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28717,7 +28716,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28740,7 +28739,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28809,7 +28808,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28878,7 +28877,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28901,7 +28900,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28924,7 +28923,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -28949,7 +28948,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -28995,7 +28994,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29087,7 +29086,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29110,7 +29109,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29179,30 +29178,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_compress_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "resource_quota_server"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29248,7 +29224,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29271,7 +29247,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29294,7 +29270,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29317,7 +29293,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29409,7 +29385,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29455,7 +29431,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29478,7 +29454,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -29546,7 +29522,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -29592,7 +29568,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -29730,7 +29706,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -29776,7 +29752,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -29799,7 +29775,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -29845,7 +29821,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -29868,7 +29844,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -29937,7 +29913,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30006,7 +29982,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30029,7 +30005,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30052,7 +30028,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30098,7 +30074,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30190,7 +30166,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30259,7 +30235,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30328,7 +30304,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30351,7 +30327,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30374,7 +30350,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30397,7 +30373,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30466,7 +30442,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30512,7 +30488,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30535,7 +30511,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -30628,7 +30604,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -30674,7 +30650,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -30883,7 +30859,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -30929,7 +30905,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -30952,7 +30928,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -30998,7 +30974,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31021,7 +30997,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31090,7 +31066,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31159,7 +31135,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31182,7 +31158,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31205,7 +31181,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -31230,7 +31206,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31276,7 +31252,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31368,7 +31344,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31391,7 +31367,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31460,7 +31436,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31529,7 +31505,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31552,7 +31528,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31575,7 +31551,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31598,7 +31574,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31690,7 +31666,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31736,7 +31712,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31759,7 +31735,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -31836,7 +31812,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -31874,7 +31850,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32045,7 +32021,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32083,7 +32059,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32102,7 +32078,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32140,7 +32116,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32159,7 +32135,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32216,7 +32192,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32273,7 +32249,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32292,7 +32268,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32311,7 +32287,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32330,7 +32306,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32368,7 +32344,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32444,7 +32420,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32463,7 +32439,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32520,7 +32496,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32577,7 +32553,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32596,7 +32572,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32615,7 +32591,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32634,7 +32610,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32710,7 +32686,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32748,7 +32724,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32767,7 +32743,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -32858,7 +32834,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -32904,7 +32880,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33113,7 +33089,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33159,7 +33135,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33182,7 +33158,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33228,7 +33204,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33297,7 +33273,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33366,7 +33342,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33389,7 +33365,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33412,7 +33388,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -33437,7 +33413,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33483,7 +33459,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33552,7 +33528,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33575,7 +33551,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33644,7 +33620,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33713,7 +33689,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33736,7 +33712,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33759,7 +33735,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33782,7 +33758,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33874,7 +33850,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33920,7 +33896,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -33943,7 +33919,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -34037,7 +34013,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34085,7 +34061,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34301,7 +34277,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34349,7 +34325,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34373,7 +34349,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34421,7 +34397,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34445,7 +34421,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34517,7 +34493,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34589,7 +34565,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34613,7 +34589,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34637,7 +34613,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34661,7 +34637,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34709,7 +34685,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34805,7 +34781,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34829,7 +34805,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34901,7 +34877,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34973,7 +34949,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -34997,7 +34973,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -35021,7 +34997,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -35045,7 +35021,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -35141,7 +35117,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -35189,7 +35165,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -35213,7 +35189,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -35307,7 +35283,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35353,7 +35329,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35562,7 +35538,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35608,7 +35584,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35631,7 +35607,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35677,7 +35653,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35700,7 +35676,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35769,7 +35745,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35838,7 +35814,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35861,7 +35837,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35884,7 +35860,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -35909,7 +35885,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -35955,7 +35931,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36047,7 +36023,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36070,7 +36046,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36139,7 +36115,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36208,7 +36184,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36231,7 +36207,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36254,7 +36230,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36277,7 +36253,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36369,7 +36345,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36415,7 +36391,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36438,7 +36414,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -36508,7 +36484,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -36556,7 +36532,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -36724,7 +36700,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -36772,7 +36748,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -36796,7 +36772,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -36844,7 +36820,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -36964,7 +36940,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -36988,7 +36964,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37036,7 +37012,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37132,7 +37108,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37180,7 +37156,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37228,7 +37204,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37252,7 +37228,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37276,7 +37252,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37300,7 +37276,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37396,7 +37372,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37444,7 +37420,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37468,7 +37444,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37540,7 +37516,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37588,7 +37564,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37732,7 +37708,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37780,7 +37756,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37804,7 +37780,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37852,7 +37828,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37876,7 +37852,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -37948,7 +37924,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38020,7 +37996,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38044,7 +38020,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38068,7 +38044,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38116,7 +38092,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38212,7 +38188,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38284,7 +38260,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38356,7 +38332,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38380,7 +38356,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38404,7 +38380,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38428,7 +38404,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38500,7 +38476,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38548,7 +38524,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38572,7 +38548,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38644,7 +38620,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38692,7 +38668,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38836,7 +38812,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38884,7 +38860,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38908,7 +38884,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -38956,7 +38932,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39028,7 +39004,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39100,7 +39076,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39124,7 +39100,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39148,7 +39124,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39196,7 +39172,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39268,7 +39244,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39340,7 +39316,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39388,7 +39364,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39412,7 +39388,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39436,7 +39412,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39460,7 +39436,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39532,7 +39508,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39580,7 +39556,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39604,7 +39580,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -39680,7 +39656,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -39732,7 +39708,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -39888,7 +39864,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -39940,7 +39916,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -39966,7 +39942,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40018,7 +39994,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40044,7 +40020,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40122,7 +40098,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40200,7 +40176,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40226,7 +40202,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40252,7 +40228,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40304,7 +40280,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40408,7 +40384,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40486,7 +40462,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40538,7 +40514,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40564,7 +40540,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40590,7 +40566,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40616,7 +40592,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40694,7 +40670,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40746,7 +40722,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40772,7 +40748,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -40867,7 +40843,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -40913,7 +40889,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41097,7 +41073,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41143,7 +41119,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41166,7 +41142,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41212,7 +41188,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41235,7 +41211,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41304,7 +41280,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41373,7 +41349,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41396,7 +41372,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41419,7 +41395,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41442,7 +41418,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41488,7 +41464,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41580,7 +41556,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41603,7 +41579,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41672,7 +41648,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41741,7 +41717,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41764,7 +41740,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41787,7 +41763,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41810,7 +41786,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41902,7 +41878,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41948,7 +41924,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -41971,7 +41947,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
@@ -43158,6 +43134,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43195,6 +43172,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43232,6 +43210,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43269,6 +43248,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43306,6 +43286,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43343,6 +43324,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43380,6 +43362,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43417,6 +43400,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43456,6 +43440,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43493,6 +43478,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43532,6 +43518,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43569,6 +43556,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43606,6 +43594,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43643,6 +43632,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43680,6 +43670,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43717,6 +43708,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43754,6 +43746,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43791,6 +43784,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43828,6 +43822,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43865,6 +43860,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43902,6 +43898,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43939,6 +43936,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -43976,6 +43974,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44013,6 +44012,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44050,6 +44050,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44087,6 +44088,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44124,6 +44126,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44161,6 +44164,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44198,6 +44202,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44235,6 +44240,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44272,6 +44278,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44311,6 +44318,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44348,6 +44356,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44387,6 +44396,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44424,6 +44434,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44461,6 +44472,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44498,6 +44510,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44535,6 +44548,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44572,6 +44586,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44609,6 +44624,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44646,6 +44662,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44683,6 +44700,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44720,6 +44738,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44757,6 +44776,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44794,6 +44814,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -44831,6 +44852,7 @@
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
+      "c++-compat", 
       "counters", 
       "dbg", 
       "gcov", 
@@ -85865,6 +85887,29 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/clusterfuzz-testcase-5965570207907840"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/clusterfuzz-testcase-6462055064272896"
     ], 
     "ci_platforms": [
       "linux"
