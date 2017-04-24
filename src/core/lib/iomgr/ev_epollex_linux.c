@@ -564,7 +564,7 @@ static grpc_error *pollable_materialize(pollable *p) {
     if (new_epfd < 0) {
       return GRPC_OS_ERROR(errno, "epoll_create1");
     } else {
-      struct epoll_event ev = {.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE,
+      struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLET | EPOLLEXCLUSIVE),
                                .data.ptr = &global_wakeup_fd};
       if (epoll_ctl(new_epfd, EPOLL_CTL_ADD, global_wakeup_fd.read_fd, &ev) !=
           0) {
@@ -578,7 +578,7 @@ static grpc_error *pollable_materialize(pollable *p) {
       close(new_epfd);
       return err;
     }
-    struct epoll_event ev = {.events = EPOLLIN | EPOLLET,
+    struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLET),
                              .data.ptr = &p->wakeup};
     if (epoll_ctl(new_epfd, EPOLL_CTL_ADD, p->wakeup.read_fd, &ev) != 0) {
       err = GRPC_OS_ERROR(errno, "epoll_ctl");
@@ -605,7 +605,8 @@ static grpc_error *pollable_add_fd(pollable *p, grpc_fd *fd) {
     return GRPC_ERROR_NONE;
   }
   struct epoll_event ev_fd = {
-      .events = EPOLLET | EPOLLIN | EPOLLOUT | EPOLLEXCLUSIVE, .data.ptr = fd};
+      .events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLOUT | EPOLLEXCLUSIVE),
+      .data.ptr = fd};
   if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd->fd, &ev_fd) != 0) {
     switch (errno) {
       case EEXIST: /* if this fd is already in the epoll set, the workqueue fd
@@ -616,8 +617,9 @@ static grpc_error *pollable_add_fd(pollable *p, grpc_fd *fd) {
         append_error(&error, GRPC_OS_ERROR(errno, "epoll_ctl"), err_desc);
     }
   }
-  struct epoll_event ev_wq = {.events = EPOLLET | EPOLLIN | EPOLLEXCLUSIVE,
-                              .data.ptr = (void *)(1 + (intptr_t)fd)};
+  struct epoll_event ev_wq = {
+      .events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE),
+      .data.ptr = (void *)(1 + (intptr_t)fd)};
   if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd->workqueue_wakeup_fd.read_fd, &ev_wq) !=
       0) {
     switch (errno) {
@@ -1519,7 +1521,7 @@ static bool is_epollex_available(void) {
       /* choose events that should cause an error on
          EPOLLEXCLUSIVE enabled kernels - specifically the combination of
          EPOLLONESHOT and EPOLLEXCLUSIVE */
-      .events = EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT,
+      .events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT),
       .data.ptr = NULL};
   if (epoll_ctl(fd, EPOLL_CTL_ADD, wakeup.read_fd, &ev) != 0) {
     if (errno != EINVAL) {
