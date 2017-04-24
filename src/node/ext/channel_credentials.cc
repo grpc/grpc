@@ -33,12 +33,12 @@
 
 #include <node.h>
 
+#include "call.h"
+#include "call_credentials.h"
+#include "channel_credentials.h"
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
-#include "channel_credentials.h"
-#include "call_credentials.h"
-#include "call.h"
 
 namespace grpc {
 namespace node {
@@ -80,12 +80,12 @@ void ChannelCredentials::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "compose", Compose);
   fun_tpl.Reset(tpl);
   Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
-  Nan::Set(ctr, Nan::New("createSsl").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateSsl)).ToLocalChecked());
+  Nan::Set(
+      ctr, Nan::New("createSsl").ToLocalChecked(),
+      Nan::GetFunction(Nan::New<FunctionTemplate>(CreateSsl)).ToLocalChecked());
   Nan::Set(ctr, Nan::New("createInsecure").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateInsecure)).ToLocalChecked());
+           Nan::GetFunction(Nan::New<FunctionTemplate>(CreateInsecure))
+               .ToLocalChecked());
   Nan::Set(exports, Nan::New("ChannelCredentials").ToLocalChecked(), ctr);
   constructor = new Nan::Callback(ctr);
 }
@@ -100,9 +100,9 @@ Local<Value> ChannelCredentials::WrapStruct(
   EscapableHandleScope scope;
   const int argc = 1;
   Local<Value> argv[argc] = {
-    Nan::New<External>(reinterpret_cast<void *>(credentials))};
-  MaybeLocal<Object> maybe_instance = Nan::NewInstance(
-      constructor->GetFunction(), argc, argv);
+      Nan::New<External>(reinterpret_cast<void *>(credentials))};
+  MaybeLocal<Object> maybe_instance =
+      Nan::NewInstance(constructor->GetFunction(), argc, argv);
   if (maybe_instance.IsEmpty()) {
     return scope.Escape(Nan::Null());
   } else {
@@ -179,11 +179,10 @@ NAN_METHOD(ChannelCredentials::Compose) {
     return Nan::ThrowTypeError(
         "compose's first argument must be a CallCredentials object");
   }
-  ChannelCredentials *self = ObjectWrap::Unwrap<ChannelCredentials>(
-      info.This());
+  ChannelCredentials *self =
+      ObjectWrap::Unwrap<ChannelCredentials>(info.This());
   if (self->wrapped_credentials == NULL) {
-    return Nan::ThrowTypeError(
-        "Cannot compose insecure credential");
+    return Nan::ThrowTypeError("Cannot compose insecure credential");
   }
   CallCredentials *other = ObjectWrap::Unwrap<CallCredentials>(
       Nan::To<Object>(info[0]).ToLocalChecked());

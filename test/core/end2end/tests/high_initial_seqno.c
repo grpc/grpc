@@ -205,8 +205,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 
   /* TODO(ctiller): this rate limits the test, and it should be removed when
                     retry has been implemented; until then cross-thread chatter

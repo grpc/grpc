@@ -138,7 +138,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
           .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(cq);
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
 

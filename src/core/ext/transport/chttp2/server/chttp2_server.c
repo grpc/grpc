@@ -80,7 +80,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_lock(&connection_state->server_state->mu);
   if (error != GRPC_ERROR_NONE || connection_state->server_state->shutdown) {
     const char *error_str = grpc_error_string(error);
-    gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
+    gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
 
     if (error == GRPC_ERROR_NONE && args->endpoint != NULL) {
       // We were shut down after handshaking completed successfully, so

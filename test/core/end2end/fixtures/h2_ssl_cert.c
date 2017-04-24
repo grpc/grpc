@@ -343,7 +343,7 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   CQ_EXPECT_COMPLETION(cqv, tag(1), expected_result == SUCCESS);
   cq_verify(cqv);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
   cq_verifier_destroy(cqv);
 }
 

@@ -289,8 +289,8 @@ done:
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(recv_payload);
 
-  grpc_call_destroy(c);
-  if (s != NULL) grpc_call_destroy(s);
+  grpc_call_unref(c);
+  if (s != NULL) grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 
@@ -483,8 +483,8 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(recv_payload);
 
-  grpc_call_destroy(c);
-  if (s != NULL) grpc_call_destroy(s);
+  grpc_call_unref(c);
+  if (s != NULL) grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 

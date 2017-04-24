@@ -661,7 +661,7 @@ static void read_metadata(input_stream *inp, size_t *count,
 }
 
 static call_state *destroy_call(call_state *call) {
-  grpc_call_destroy(call->call);
+  grpc_call_unref(call->call);
   call->call = NULL;
   return maybe_delete_call_state(call);
 }
