@@ -46,7 +46,7 @@ import threading
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 10
+_MY_VERSION = 11
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
@@ -70,6 +70,7 @@ print('port server running on port %d' % args.port)
 
 pool = []
 in_use = {}
+mu = threading.Lock()
 
 
 def refill_pool(max_timeout, req):
@@ -97,16 +98,21 @@ def refill_pool(max_timeout, req):
 def allocate_port(req):
   global pool
   global in_use
+  global mu
+  mu.acquire()
   max_timeout = 600
   while not pool:
     refill_pool(max_timeout, req)
     if not pool:
       req.log_message("failed to find ports: retrying soon")
+      mu.release()
       time.sleep(1)
+      mu.acquire()
       max_timeout /= 2
   port = pool[0]
   pool = pool[1:]
   in_use[port] = time.time()
+  mu.release()
   return port
 
 
