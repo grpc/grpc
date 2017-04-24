@@ -245,6 +245,7 @@ struct grpc_call {
 };
 
 int grpc_call_error_trace = 0;
+int grpc_compression_trace = 0;
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
