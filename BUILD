@@ -33,9 +33,15 @@ licenses(["notice"])  # 3-clause BSD
 
 exports_files(["LICENSE"])
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin", "grpc_generate_one_off_targets")
 
 g_stands_for = "green"
 
@@ -1354,3 +1360,5 @@ grpc_cc_library(
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
+
+grpc_generate_one_off_targets()

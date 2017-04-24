@@ -97,3 +97,6 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     copts = copts,
     linkopts = ["-pthread"],
   )
+
+def grpc_generate_one_off_targets():
+    pass
