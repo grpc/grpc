@@ -33,12 +33,12 @@ load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 
 grpc_proto_library(
     name = "auth_sample",
-    srcs = ["auth_sample.proto"],
+    srcs = ["protos/auth_sample.proto"],
 )
 
 grpc_proto_library(
     name = "hellostreamingworld",
-    srcs = ["hellostreamingworld.proto"],
+    srcs = ["protos/hellostreamingworld.proto"],
 )
 
 grpc_proto_library(
