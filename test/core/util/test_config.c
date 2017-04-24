@@ -348,6 +348,14 @@ bool BuiltUnderMsan() {
 #endif
 }
 
+bool BuiltUnderUbsan() {
+#ifdef GRPC_UBSAN
+  return true;
+#else
+  return false;
+#endif
+}
+
 int64_t grpc_test_sanitizer_slowdown_factor() {
   int64_t sanitizer_multiplier = 1;
   if (BuiltUnderValgrind()) {
@@ -358,6 +366,8 @@ int64_t grpc_test_sanitizer_slowdown_factor() {
     sanitizer_multiplier = 3;
   } else if (BuiltUnderMsan()) {
     sanitizer_multiplier = 4;
+  } else if (BuiltUnderUbsan()) {
+    sanitizer_multiplier = 5;
   }
   return sanitizer_multiplier;
 }
