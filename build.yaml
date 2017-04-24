@@ -2810,6 +2810,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: slice_hash_table_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/slice_hash_table_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: slice_string_helpers_test
   build: test
   language: c
