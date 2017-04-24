@@ -105,21 +105,24 @@ static void test_mt(void) {
   }
   size_t num_done = 0;
   size_t spins = 0;
+  size_t empties = 0;
   gpr_event_set(&start, (void *)1);
   while (num_done != GPR_ARRAY_SIZE(thds)) {
     gpr_mpscq_node *n;
     do {
-      spins++;
-      GPR_ASSERT(gpr_mpscq_pop(&q, &n));
+      if (gpr_mpscq_pop(&q, &n)) {
+        if (n == NULL) spins++;
+      } else {
+        empties++;
+      }
     } while (n == NULL);
-    spins--;
     test_node *tn = (test_node *)n;
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) num_done++;
     gpr_free(tn);
   }
-  gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, spins);
+  gpr_log(GPR_DEBUG, "spins: %" PRIdPTR " empties: %" PRIdPTR, spins, empties);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_join(thds[i]);
   }
@@ -132,6 +135,7 @@ typedef struct {
   gpr_mu mu;
   size_t num_done;
   size_t spins;
+  size_t empties;
   gpr_mpscq *q;
   gpr_event *start;
 } pull_args;
@@ -148,10 +152,12 @@ static void pull_thread(void *arg) {
     }
     gpr_mpscq_node *n;
     do {
-      pa->spins++;
-      GPR_ASSERT(gpr_mpscq_pop(pa->q, &n));
+      if (gpr_mpscq_pop(pa->q, &n)) {
+        if (n == NULL) pa->spins++;
+      } else {
+        pa->empties++;
+      }
     } while (n == NULL);
-    pa->spins--;
     test_node *tn = (test_node *)n;
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
@@ -182,6 +188,7 @@ static void test_mt_multipop(void) {
   pa.ta = ta;
   pa.num_thds = GPR_ARRAY_SIZE(thds);
   pa.spins = 0;
+  pa.empties = 0;
   pa.num_done = 0;
   pa.q = &q;
   pa.start = &start;
@@ -195,7 +202,8 @@ static void test_mt_multipop(void) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {
     gpr_thd_join(pull_thds[i]);
   }
-  gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, pa.spins);
+  gpr_log(GPR_DEBUG, "spins: %" PRIdPTR " empties: %" PRIdPTR, pa.spins,
+          pa.empties);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_join(thds[i]);
   }

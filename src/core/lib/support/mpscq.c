@@ -35,6 +35,8 @@
 
 #include <grpc/support/log.h>
 
+static __thread int exit_case;
+
 void gpr_mpscq_init(gpr_mpscq *q) {
   gpr_atm_no_barrier_store(&q->head, (gpr_atm)&q->stub);
   q->tail = &q->stub;
@@ -60,6 +62,8 @@ bool gpr_mpscq_pop(gpr_mpscq *q, gpr_mpscq_node **n) {
   if (tail == &q->stub) {
     // indicates the list is actually (ephemerally) empty
     if (next == NULL) {
+      *n = NULL;
+      exit_case = 1;
       return false;
     }
     q->tail = next;
@@ -69,12 +73,14 @@ bool gpr_mpscq_pop(gpr_mpscq *q, gpr_mpscq_node **n) {
   if (next != NULL) {
     q->tail = next;
     *n = tail;
+    exit_case = 2;
     return true;
   }
   gpr_mpscq_node *head = (gpr_mpscq_node *)gpr_atm_acq_load(&q->head);
   if (tail != head) {
     // indicates a retry is in order: we're still adding
     *n = NULL;
+    exit_case = 3;
     return true;
   }
   gpr_mpscq_push(q, &q->stub);
@@ -82,9 +88,11 @@ bool gpr_mpscq_pop(gpr_mpscq *q, gpr_mpscq_node **n) {
   if (next != NULL) {
     q->tail = next;
     *n = tail;
+    exit_case = 4;
     return true;
   }
   // indicates a retry is in order: we're still adding
   *n = NULL;
+  exit_case = 5;
   return true;
 }
