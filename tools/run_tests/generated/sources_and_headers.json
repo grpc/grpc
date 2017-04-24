@@ -3275,6 +3275,28 @@
     ], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "grpclb_end2end_test", 
+    "src": [
+      "test/cpp/end2end/grpclb_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "grpclb_test", 
     "src": [
       "test/cpp/grpclb/grpclb_test.cc"
