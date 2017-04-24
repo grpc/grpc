@@ -3128,7 +3128,7 @@ targets:
   - linux
   - posix
 - name: alarm_cpp_test
-  cpu_cost: 0.1
+  gtest: true
   build: test
   language: c++
   src:
@@ -3141,7 +3141,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: async_end2end_test
-  cpu_cost: 0.8
+  gtest: true
   build: test
   language: c++
   src:
@@ -3154,6 +3154,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: auth_property_iterator_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3455,7 +3456,6 @@ targets:
   - linux
   - posix
 - name: bm_pollset
-  cpu_cost: 0.5
   build: test
   language: c++
   src:
@@ -3477,6 +3477,7 @@ targets:
   - linux
   - posix
 - name: channel_arguments_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3486,6 +3487,7 @@ targets:
   - grpc
   - gpr
 - name: channel_filter_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3495,6 +3497,7 @@ targets:
   - grpc
   - gpr
 - name: cli_call_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3508,6 +3511,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: client_crash_test
+  gtest: true
   cpu_cost: 0.1
   build: test
   language: c++
@@ -3538,6 +3542,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: codegen_test_full
+  gtest: true
   build: test
   language: c++
   src:
@@ -3554,6 +3559,7 @@ targets:
   filegroups:
   - grpc++_codegen_base
 - name: codegen_test_minimal
+  gtest: true
   build: test
   language: c++
   src:
@@ -3570,6 +3576,7 @@ targets:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
 - name: credentials_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3579,6 +3586,7 @@ targets:
   - grpc
   - gpr
 - name: cxx_byte_buffer_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3590,6 +3598,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: cxx_slice_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3601,6 +3610,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: cxx_string_ref_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3608,6 +3618,7 @@ targets:
   deps:
   - grpc++
 - name: cxx_time_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3619,7 +3630,8 @@ targets:
   - gpr_test_util
   - gpr
 - name: end2end_test
-  cpu_cost: 1.0
+  gtest: true
+  cpu_cost: 0.5
   build: test
   language: c++
   src:
@@ -3632,6 +3644,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: error_details_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3641,6 +3654,7 @@ targets:
   - grpc++_error_details
   - grpc++
 - name: filter_end2end_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3653,7 +3667,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: generic_end2end_test
-  cpu_cost: 0.1
+  gtest: true
   build: test
   language: c++
   src:
@@ -3666,6 +3680,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: golden_file_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3759,7 +3774,7 @@ targets:
   vs_config_type: Application
   vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
 - name: grpc_tool_test
-  cpu_cost: 0.2
+  gtest: true
   build: test
   language: c++
   src:
@@ -3779,6 +3794,7 @@ targets:
   filegroups:
   - grpc++_codegen_proto
 - name: grpclb_api_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3790,7 +3806,7 @@ targets:
   - grpc++
   - grpc
 - name: grpclb_test
-  cpu_cost: 0.1
+  gtest: false
   build: test
   language: c++
   src:
@@ -3804,6 +3820,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: health_service_end2end_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3932,6 +3949,7 @@ targets:
   - gpr
   - grpc++_test_config
 - name: mock_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3952,6 +3970,7 @@ targets:
   - benchmark
   defaults: benchmark
 - name: proto_server_reflection_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -3966,6 +3985,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: proto_utils_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -4083,6 +4103,7 @@ targets:
   - gpr
   - grpc++_test_config
 - name: round_robin_end2end_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -4095,6 +4116,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: secure_auth_context_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -4124,6 +4146,7 @@ targets:
   - linux
   - posix
 - name: server_builder_plugin_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -4136,6 +4159,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: server_builder_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -4150,6 +4174,7 @@ targets:
   - grpc
   - gpr
 - name: server_context_test_spouse_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -4163,6 +4188,7 @@ targets:
   uses:
   - grpc++_test
 - name: server_crash_test
+  gtest: true
   cpu_cost: 0.1
   build: test
   language: c++
@@ -4193,6 +4219,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: shutdown_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -4216,6 +4243,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: streaming_throughput_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -4269,6 +4297,7 @@ targets:
   - gpr
   - grpc++_test_config
 - name: thread_stress_test
+  gtest: true
   cpu_cost: 100
   build: test
   language: c++
@@ -4282,7 +4311,8 @@ targets:
   - gpr_test_util
   - gpr
 - name: writes_per_rpc_test
-  cpu_cost: 0.8
+  gtest: true
+  cpu_cost: 0.5
   build: test
   language: c++
   src:

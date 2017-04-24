@@ -2613,11 +2613,11 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "alarm_cpp_test", 
     "platforms": [
@@ -2635,11 +2635,11 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "async_end2end_test", 
     "platforms": [
@@ -2661,7 +2661,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "auth_property_iterator_test", 
     "platforms": [
@@ -2986,7 +2986,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.5, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -3011,7 +3011,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "channel_arguments_test", 
     "platforms": [
@@ -3033,7 +3033,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "channel_filter_test", 
     "platforms": [
@@ -3055,7 +3055,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "cli_call_test", 
     "platforms": [
@@ -3076,7 +3076,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "client_crash_test", 
     "platforms": [
@@ -3097,7 +3097,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "codegen_test_full", 
     "platforms": [
@@ -3119,7 +3119,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "codegen_test_minimal", 
     "platforms": [
@@ -3141,7 +3141,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "credentials_test", 
     "platforms": [
@@ -3163,7 +3163,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "cxx_byte_buffer_test", 
     "platforms": [
@@ -3185,7 +3185,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "cxx_slice_test", 
     "platforms": [
@@ -3207,7 +3207,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "cxx_string_ref_test", 
     "platforms": [
@@ -3229,7 +3229,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "cxx_time_test", 
     "platforms": [
@@ -3247,11 +3247,11 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.5, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "end2end_test", 
     "platforms": [
@@ -3273,7 +3273,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "error_details_test", 
     "platforms": [
@@ -3295,7 +3295,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "filter_end2end_test", 
     "platforms": [
@@ -3313,11 +3313,11 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "generic_end2end_test", 
     "platforms": [
@@ -3341,7 +3341,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "golden_file_test", 
     "platforms": [
@@ -3359,11 +3359,11 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 0.2, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "grpc_tool_test", 
     "platforms": [
@@ -3385,7 +3385,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "grpclb_api_test", 
     "platforms": [
@@ -3403,7 +3403,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -3429,7 +3429,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "health_service_end2end_test", 
     "platforms": [
@@ -3493,7 +3493,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "mock_test", 
     "platforms": [
@@ -3537,7 +3537,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "proto_server_reflection_test", 
     "platforms": [
@@ -3559,7 +3559,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "proto_utils_test", 
     "platforms": [
@@ -3601,7 +3601,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "round_robin_end2end_test", 
     "platforms": [
@@ -3623,7 +3623,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "secure_auth_context_test", 
     "platforms": [
@@ -3665,7 +3665,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "server_builder_plugin_test", 
     "platforms": [
@@ -3687,7 +3687,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "server_builder_test", 
     "platforms": [
@@ -3709,7 +3709,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "server_context_test_spouse_test", 
     "platforms": [
@@ -3730,7 +3730,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "server_crash_test", 
     "platforms": [
@@ -3751,7 +3751,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "shutdown_test", 
     "platforms": [
@@ -3794,7 +3794,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "streaming_throughput_test", 
     "platforms": [
@@ -3837,7 +3837,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "thread_stress_test", 
     "platforms": [
@@ -3854,11 +3854,11 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.8, 
+    "cpu_cost": 0.5, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "writes_per_rpc_test", 
     "platforms": [
