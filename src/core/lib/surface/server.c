@@ -345,7 +345,7 @@ static void request_matcher_destroy(request_matcher *rm) {
 
 static void kill_zombie(grpc_exec_ctx *exec_ctx, void *elem,
                         grpc_error *error) {
-  grpc_call_destroy(grpc_call_from_top_element(elem));
+  grpc_call_unref(grpc_call_from_top_element(elem));
 }
 
 static void request_matcher_zombify_all_pending_calls(grpc_exec_ctx *exec_ctx,
@@ -1032,8 +1032,6 @@ grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
 
   grpc_server *server = gpr_zalloc(sizeof(grpc_server));
-
-  GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
 
   gpr_mu_init(&server->mu_global);
   gpr_mu_init(&server->mu_call);

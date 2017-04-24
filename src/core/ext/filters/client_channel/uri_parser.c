@@ -50,7 +50,7 @@
 #define NOT_SET (~(size_t)0)
 
 static grpc_uri *bad_uri(const char *uri_text, size_t pos, const char *section,
-                         int suppress_errors) {
+                         bool suppress_errors) {
   char *line_prefix;
   size_t pfx_len;
 
@@ -197,7 +197,7 @@ static void parse_query_parts(grpc_uri *uri) {
 }
 
 grpc_uri *grpc_uri_parse(grpc_exec_ctx *exec_ctx, const char *uri_text,
-                         int suppress_errors) {
+                         bool suppress_errors) {
   grpc_uri *uri;
   size_t scheme_begin = 0;
   size_t scheme_end = NOT_SET;

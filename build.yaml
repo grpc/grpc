@@ -941,7 +941,6 @@ filegroups:
   - include/grpc++/impl/codegen/slice.h
   - include/grpc++/impl/codegen/status.h
   - include/grpc++/impl/codegen/status_code_enum.h
-  - include/grpc++/impl/codegen/status_helper.h
   - include/grpc++/impl/codegen/string_ref.h
   - include/grpc++/impl/codegen/stub_options.h
   - include/grpc++/impl/codegen/sync_stream.h
@@ -1519,6 +1518,7 @@ libs:
   - global
 targets:
 - name: alarm_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1702,7 +1702,7 @@ targets:
   dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
 - name: combiner_test
-  cpu_cost: 30
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1723,6 +1723,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: concurrent_connectivity_test
+  cpu_cost: 2.0
   build: test
   language: c
   src:
@@ -1809,6 +1810,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: ev_epoll_linux_test
+  cpu_cost: 3
   build: test
   language: c
   src:
@@ -1822,6 +1824,16 @@ targets:
   - uv
   platforms:
   - linux
+- name: fake_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/resolvers/fake_resolver_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -1968,6 +1980,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_cpu_test
+  cpu_cost: 30
   build: test
   language: c
   src:
@@ -2017,7 +2030,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_spinlock_test
-  cpu_cost: 10
+  cpu_cost: 3
   build: test
   language: c
   src:
@@ -2799,6 +2812,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: slice_hash_table_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/slice_hash_table_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: slice_string_helpers_test
   build: test
   language: c
@@ -3548,6 +3571,9 @@ targets:
   - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
+  deps:
+  - grpc
+  - gpr
   filegroups:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
@@ -4370,6 +4396,10 @@ configs:
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
+  c++-compat:
+    CFLAGS: -Wc++-compat
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
   counters:
     CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
     DEFINES: NDEBUG
@@ -4511,6 +4541,7 @@ php_config_m4:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   headers:
   - src/php/ext/grpc/byte_buffer.h

@@ -1679,7 +1679,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
           grpc_slice_buffer_swap(&s->unprocessed_incoming_frames_buffer,
                                  &s->frame_storage);
         }
-        error = deframe_unprocessed_incoming_frames(
+        error = grpc_deframe_unprocessed_incoming_frames(
             exec_ctx, &s->data_parser, s,
             &s->unprocessed_incoming_frames_buffer, NULL, s->recv_message);
         if (error != GRPC_ERROR_NONE) {
@@ -2150,6 +2150,7 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
             (int)bdp);
   }
   push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, bdp);
+  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, bdp);
 }
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
@@ -2602,6 +2603,7 @@ static bool incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
   grpc_chttp2_stream *s = bs->stream;
   if (s->unprocessed_incoming_frames_buffer.length > 0) {
+    GPR_TIMER_END("incoming_byte_stream_next", 0);
     return true;
   } else {
     gpr_ref(&bs->refs);
@@ -2627,7 +2629,7 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s = bs->stream;
 
   if (s->unprocessed_incoming_frames_buffer.length > 0) {
-    grpc_error *error = deframe_unprocessed_incoming_frames(
+    grpc_error *error = grpc_deframe_unprocessed_incoming_frames(
         exec_ctx, &s->data_parser, s, &s->unprocessed_incoming_frames_buffer,
         slice, NULL);
     if (error != GRPC_ERROR_NONE) {

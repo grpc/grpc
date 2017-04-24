@@ -31,17 +31,18 @@
  *
  */
 
-#include "src/core/lib/channel/channel_args.h"
-#include <grpc/grpc.h>
-#include "src/core/lib/support/string.h"
+#include <limits.h>
+#include <string.h>
 
 #include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include <string.h>
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/support/string.h"
 
 static grpc_arg copy_arg(const grpc_arg *src) {
   grpc_arg dst;
@@ -330,7 +331,7 @@ const grpc_arg *grpc_channel_args_find(const grpc_channel_args *args,
 }
 
 int grpc_channel_arg_get_integer(const grpc_arg *arg,
-                                 grpc_integer_options options) {
+                                 const grpc_integer_options options) {
   if (arg == NULL) return options.default_value;
   if (arg->type != GRPC_ARG_INTEGER) {
     gpr_log(GPR_ERROR, "%s ignored: it must be an integer", arg->key);

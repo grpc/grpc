@@ -13,12 +13,21 @@ The service config is a JSON string of the following form:
 ```
 {
   // Load balancing policy name.
-  // Supported values are 'round_robin' and 'grpclb'.
-  // Optional; if unset, the default behavior is pick the first available
-  // backend.
-  // Note that if the resolver returns only balancer addresses and no
-  // backend addresses, gRPC will always use the 'grpclb' policy,
-  // regardless of what this field is set to.
+  // Currently, the only selectable client-side policy provided with gRPC
+  // is 'round_robin', but third parties may add their own policies.
+  // This field is optional; if unset, the default behavior is to pick
+  // the first available backend.
+  // If the policy name is set via the client API, that value overrides
+  // the value specified here.
+  //
+  // Note that if the resolver returns at least one balancer address (as
+  // opposed to backend addresses), gRPC will use grpclb (see
+  // https://github.com/grpc/grpc/blob/master/doc/load-balancing.md),
+  // regardless of what LB policy is requested either here or via the
+  // client API.  However, if the resolver returns at least one backend
+  // address in addition to the balancer address(es), the client may fall
+  // back to the requested policy if it is unable to reach any of the
+  // grpclb load balancers.
   'loadBalancingPolicy': string,
 
   // Per-method configuration.  Optional.

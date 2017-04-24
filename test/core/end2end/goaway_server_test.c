@@ -302,10 +302,10 @@ int main(int argc, char **argv) {
   CQ_EXPECT_COMPLETION(cqv, tag(0xdead2), 1);
   cq_verify(cqv);
 
-  grpc_call_destroy(call1);
-  grpc_call_destroy(call2);
-  grpc_call_destroy(server_call1);
-  grpc_call_destroy(server_call2);
+  grpc_call_unref(call1);
+  grpc_call_unref(call2);
+  grpc_call_unref(server_call1);
+  grpc_call_unref(server_call2);
   grpc_server_destroy(server1);
   grpc_server_destroy(server2);
   grpc_channel_destroy(chan);

@@ -96,16 +96,9 @@ static void method_parameters_unref(method_parameters *method_params) {
   }
 }
 
-static void *method_parameters_copy(void *value) {
-  return method_parameters_ref(value);
-}
-
 static void method_parameters_free(grpc_exec_ctx *exec_ctx, void *value) {
   method_parameters_unref(value);
 }
-
-static const grpc_slice_hash_table_vtable method_parameters_vtable = {
-    method_parameters_free, method_parameters_copy};
 
 static bool parse_wait_for_ready(grpc_json *field,
                                  wait_for_ready_value *wait_for_ready) {
@@ -238,14 +231,23 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
                                                   grpc_connectivity_state state,
                                                   grpc_error *error,
                                                   const char *reason) {
-  if ((state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-       state == GRPC_CHANNEL_SHUTDOWN) &&
-      chand->lb_policy != NULL) {
-    /* cancel picks with wait_for_ready=false */
-    grpc_lb_policy_cancel_picks_locked(
-        exec_ctx, chand->lb_policy,
-        /* mask= */ GRPC_INITIAL_METADATA_WAIT_FOR_READY,
-        /* check= */ 0, GRPC_ERROR_REF(error));
+  /* TODO: Improve failure handling:
+   * - Make it possible for policies to return GRPC_CHANNEL_TRANSIENT_FAILURE.
+   * - Hand over pending picks from old policies during the switch that happens
+   *   when resolver provides an update. */
+  if (chand->lb_policy != NULL) {
+    if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      /* cancel picks with wait_for_ready=false */
+      grpc_lb_policy_cancel_picks_locked(
+          exec_ctx, chand->lb_policy,
+          /* mask= */ GRPC_INITIAL_METADATA_WAIT_FOR_READY,
+          /* check= */ 0, GRPC_ERROR_REF(error));
+    } else if (state == GRPC_CHANNEL_SHUTDOWN) {
+      /* cancel all picks */
+      grpc_lb_policy_cancel_picks_locked(exec_ctx, chand->lb_policy,
+                                         /* mask= */ 0, /* check= */ 0,
+                                         GRPC_ERROR_REF(error));
+    }
   }
   grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state, error,
                               reason);
@@ -348,6 +350,33 @@ static void parse_retry_throttle_params(const grpc_json *field, void *arg) {
   }
 }
 
+// Wrap a closure associated with \a lb_policy. The associated callback (\a
+// wrapped_on_pick_closure_cb) is responsible for unref'ing \a lb_policy after
+// scheduling \a wrapped_closure.
+typedef struct wrapped_on_pick_closure_arg {
+  /* the closure instance using this struct as argument */
+  grpc_closure wrapper_closure;
+
+  /* the original closure. Usually a on_complete/notify cb for pick() and ping()
+   * calls against the internal RR instance, respectively. */
+  grpc_closure *wrapped_closure;
+
+  /* The policy instance related to the closure */
+  grpc_lb_policy *lb_policy;
+} wrapped_on_pick_closure_arg;
+
+// Invoke \a arg->wrapped_closure, unref \a arg->lb_policy and free \a arg.
+static void wrapped_on_pick_closure_cb(grpc_exec_ctx *exec_ctx, void *arg,
+                                       grpc_error *error) {
+  wrapped_on_pick_closure_arg *wc_arg = arg;
+  GPR_ASSERT(wc_arg != NULL);
+  GPR_ASSERT(wc_arg->wrapped_closure != NULL);
+  GPR_ASSERT(wc_arg->lb_policy != NULL);
+  grpc_closure_run(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error));
+  GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->lb_policy, "pick_subchannel_wrapping");
+  gpr_free(wc_arg);
+}
+
 static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
                                               void *arg, grpc_error *error) {
   channel_data *chand = arg;
@@ -371,26 +400,24 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
       lb_policy_name = channel_arg->value.string;
     }
-    // Special case: If all of the addresses are balancer addresses,
-    // assume that we should use the grpclb policy, regardless of what the
-    // resolver actually specified.
+    // Special case: If at least one balancer address is present, we use
+    // the grpclb policy, regardless of what the resolver actually specified.
     channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
     if (channel_arg != NULL && channel_arg->type == GRPC_ARG_POINTER) {
       grpc_lb_addresses *addresses = channel_arg->value.pointer.p;
-      bool found_backend_address = false;
+      bool found_balancer_address = false;
       for (size_t i = 0; i < addresses->num_addresses; ++i) {
-        if (!addresses->addresses[i].is_balancer) {
-          found_backend_address = true;
+        if (addresses->addresses[i].is_balancer) {
+          found_balancer_address = true;
           break;
         }
       }
-      if (!found_backend_address) {
+      if (found_balancer_address) {
         if (lb_policy_name != NULL && strcmp(lb_policy_name, "grpclb") != 0) {
           gpr_log(GPR_INFO,
-                  "resolver requested LB policy %s but provided only balancer "
-                  "addresses, no backend addresses -- forcing use of grpclb LB "
-                  "policy",
+                  "resolver requested LB policy %s but provided at least one "
+                  "balancer address -- forcing use of grpclb LB policy",
                   lb_policy_name);
         }
         lb_policy_name = "grpclb";
@@ -436,7 +463,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         grpc_uri_destroy(uri);
         method_params_table = grpc_service_config_create_method_config_table(
             exec_ctx, service_config, method_parameters_create_from_json,
-            &method_parameters_vtable);
+            method_parameters_free);
         grpc_service_config_destroy(service_config);
       }
     }
@@ -1037,11 +1064,29 @@ static bool pick_subchannel_locked(
     const grpc_lb_policy_pick_args inputs = {
         initial_metadata, initial_metadata_flags, &calld->lb_token_mdelem,
         gpr_inf_future(GPR_CLOCK_MONOTONIC)};
-    const bool result = grpc_lb_policy_pick_locked(
-        exec_ctx, lb_policy, &inputs, connected_subchannel, NULL, on_ready);
+
+    // Wrap the user-provided callback in order to hold a strong reference to
+    // the LB policy for the duration of the pick.
+    wrapped_on_pick_closure_arg *w_on_pick_arg =
+        gpr_zalloc(sizeof(*w_on_pick_arg));
+    grpc_closure_init(&w_on_pick_arg->wrapper_closure,
+                      wrapped_on_pick_closure_cb, w_on_pick_arg,
+                      grpc_schedule_on_exec_ctx);
+    w_on_pick_arg->wrapped_closure = on_ready;
+    GRPC_LB_POLICY_REF(lb_policy, "pick_subchannel_wrapping");
+    w_on_pick_arg->lb_policy = lb_policy;
+    const bool pick_done = grpc_lb_policy_pick_locked(
+        exec_ctx, lb_policy, &inputs, connected_subchannel, NULL,
+        &w_on_pick_arg->wrapper_closure);
+    if (pick_done) {
+      /* synchronous grpc_lb_policy_pick call. Unref the LB policy. */
+      GRPC_LB_POLICY_UNREF(exec_ctx, w_on_pick_arg->lb_policy,
+                           "pick_subchannel_wrapping");
+      gpr_free(w_on_pick_arg);
+    }
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "pick_subchannel");
     GPR_TIMER_END("pick_subchannel", 0);
-    return result;
+    return pick_done;
   }
   if (chand->resolver != NULL && !chand->started_resolving) {
     chand->started_resolving = true;
