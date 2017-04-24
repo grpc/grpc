@@ -764,8 +764,7 @@ void grpc_chttp2_stream_ref(grpc_chttp2_stream *s);
 void grpc_chttp2_stream_unref(grpc_exec_ctx *exec_ctx, grpc_chttp2_stream *s);
 #endif
 
-//#define GRPC_CHTTP2_REFCOUNTING_DEBUG 1
-#ifdef GRPC_CHTTP2_REFCOUNTING_DEBUG
+#ifndef NDEBUG
 #define GRPC_CHTTP2_REF_TRANSPORT(t, r) \
   grpc_chttp2_ref_transport(t, r, __FILE__, __LINE__)
 #define GRPC_CHTTP2_UNREF_TRANSPORT(cl, t, r) \
