@@ -47,8 +47,6 @@ some configuration as environment variables that can be set.
   - flowctl - traces http2 flow control
   - op_failure - traces error information when failure is pushed onto a
     completion queue
-  - pending_tags - [debug builds only] traces still-in-progress tags on
-    completion queues
   - round_robin - traces the round_robin load balancing policy
   - glb - traces the grpclb load balancer
   - queue_pluck
@@ -58,6 +56,20 @@ some configuration as environment variables that can be set.
   - timer - timers (alarms) in the grpc internals
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
+  - DEBUG builds only:  
+    * metadata - tracks creation and mutation of metadata
+    * closure - tracks closure creation, scheduling, and completion
+    * pending_tags - traces still-in-progress tags on completion queues
+    * queue_refcount
+    * error_refcount
+    * stream_refcount
+    * workqueue_refcount
+    * fd_refcount
+    * auth_context_refcount
+    * security_connector_refcount
+    * resolver_refcount
+    * lb_policy_refcount
+    * chttp2_refcount
 
   'all' can additionally be used to turn all traces on.
   Individual traces can be disabled by prefixing them with '-'.
