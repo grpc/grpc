@@ -31,8 +31,6 @@
  *
  */
 
-#ifdef GRPC_UV
-
 #include <grpc/grpc.h>
 #include <node.h>
 #include <uv.h>
@@ -95,5 +93,3 @@ void CompletionQueueInit(Local<Object> exports) {
 
 }  // namespace node
 }  // namespace grpc
-
-#endif /* GRPC_UV */
