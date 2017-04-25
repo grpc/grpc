@@ -5710,7 +5710,8 @@
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
-      "grpc_transport_chttp2_server_secure"
+      "grpc_transport_chttp2_server_secure", 
+      "grpc_workaround_cronet_compression_filter"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -5812,7 +5813,8 @@
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
       "grpc_transport_chttp2_client_insecure", 
-      "grpc_transport_chttp2_server_insecure"
+      "grpc_transport_chttp2_server_insecure", 
+      "grpc_workaround_cronet_compression_filter"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -8751,6 +8753,24 @@
       "src/core/ext/transport/cronet/transport/cronet_api_dummy.c", 
       "src/core/ext/transport/cronet/transport/cronet_transport.c", 
       "src/core/ext/transport/cronet/transport/cronet_transport.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_workaround_cronet_compression_filter", 
+    "src": [
+      "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c", 
+      "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

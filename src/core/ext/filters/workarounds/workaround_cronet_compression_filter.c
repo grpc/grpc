@@ -1,0 +1,149 @@
+//
+// Copyright 2017, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+
+#include "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h"
+
+#include <string.h>
+
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+/*
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/service_config.h"
+*/
+
+#define GRPC_WORKAROUND_PRIORITY_HIGH 9999
+
+typedef struct call_data {
+  // Receive closures are chained: we inject this closure as the
+  // recv_initial_metadata_ready up-call on transport_stream_op, and remember to
+  // call our next_recv_initial_metadata_ready member after handling it.
+  grpc_closure recv_initial_metadata_ready;
+  // Used by recv_initial_metadata_ready.
+  grpc_metadata_batch *recv_initial_metadata;
+  // Original recv_initial_metadata_ready callback, invoked after our own.
+  grpc_closure* next_recv_initial_metadata_ready;
+} call_data;
+
+typedef struct channel_data {
+} channel_data;
+
+// Callback invoked when we receive an initial metadata.
+static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* user_data,
+                                        grpc_error* error) {
+  grpc_call_element* elem = user_data;
+  call_data* calld = elem->call_data;
+
+  
+
+  // Invoke the next callback.
+  grpc_closure_run(exec_ctx, calld->next_recv_initial_metadata_ready, GRPC_ERROR_REF(error));
+}
+
+// Start transport stream op.
+static void start_transport_stream_op_batch(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    grpc_transport_stream_op_batch* op) {
+  call_data* calld = elem->call_data;
+
+  // Inject callback for receiving initial metadata
+  if (op->recv_initial_metadata) {
+    calld->next_recv_initial_metadata_ready =
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    op->payload->recv_initial_metadata.recv_initial_metadata_ready = &calld->recv_initial_metadata_ready;
+    calld->recv_initial_metadata = op->payload->recv_initial_metadata.recv_initial_metadata;
+  }
+
+  // Chain to the next filter.
+  grpc_call_next_op(exec_ctx, elem, op);
+}
+
+// Constructor for call_data.
+static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
+                                  grpc_call_element* elem,
+                                  const grpc_call_element_args* args) {
+  call_data* calld = elem->call_data;
+  calld->next_recv_initial_metadata_ready = NULL;
+  grpc_closure_init(&calld->recv_initial_metadata_ready, recv_initial_metadata_ready, elem,
+                    grpc_schedule_on_exec_ctx);
+  return GRPC_ERROR_NONE;
+}
+
+// Destructor for call_data.
+static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+                              const grpc_call_final_info* final_info,
+                              grpc_closure* ignored) {}
+
+// Constructor for channel_data.
+static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
+                                     grpc_channel_element* elem,
+                                     grpc_channel_element_args* args) {
+  return GRPC_ERROR_NONE;
+}
+
+// Destructor for channel_data.
+static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
+                                 grpc_channel_element* elem) {}
+
+const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
+    start_transport_stream_op_batch,
+    grpc_channel_next_op,
+    sizeof(call_data),
+    init_call_elem,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
+    destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
+    "workaround_cronet_compression"};
+
+static bool register_workaround_cronet_compression(grpc_exec_ctx* exec_ctx,
+                                                   grpc_channel_stack_builder* builder,
+                                                   void* arg) {
+  return grpc_channel_stack_builder_prepend_filter(
+      builder, &grpc_workaround_cronet_compression_filter, NULL, NULL);
+}
+
+void grpc_workaround_cronet_compression_filter_init(void) {
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
+                                   GRPC_WORKAROUND_PRIORITY_HIGH,
+                                   register_workaround_cronet_compression, NULL);
+}
+
+void grpc_workaround_cronet_compression_filter_shutdown(void) {}

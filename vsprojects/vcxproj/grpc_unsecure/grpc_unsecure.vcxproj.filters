@@ -622,6 +622,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.c">
       <Filter>src\core\ext\filters\message_size</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_cronet_compression_filter.c">
+      <Filter>src\core\ext\filters\workarounds</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_unsecure_plugin_registry.c">
       <Filter>src\core\plugin_registry</Filter>
     </ClCompile>
@@ -1259,6 +1262,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.h">
       <Filter>src\core\ext\filters\message_size</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_cronet_compression_filter.h">
+      <Filter>src\core\ext\filters\workarounds</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -1357,6 +1363,9 @@
     </Filter>
     <Filter Include="src\core\ext\filters\message_size">
       <UniqueIdentifier>{8cbe7444-caac-49dc-be89-d4c4d1c7966a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\workarounds">
+      <UniqueIdentifier>{8bd0612e-bd53-c9e6-7b3c-20937e4e1e9e}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\transport">
       <UniqueIdentifier>{967c89fe-c97c-27e2-aac0-9ba5854cb5fa}</UniqueIdentifier>

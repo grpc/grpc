@@ -793,6 +793,14 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2
   - grpc_http_filters
+- name: grpc_workaround_cronet_compression_filter
+  headers:
+  - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
+  src:
+  - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c
+  plugin: grpc_workaround_cronet_compression_filter
+  uses:
+  - grpc_base
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
@@ -1025,6 +1033,7 @@ libs:
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
+  - grpc_workaround_cronet_compression_filter
   generate_plugin_registry: true
   secure: true
   vs_packages:
@@ -1124,6 +1133,7 @@ libs:
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
+  - grpc_workaround_cronet_compression_filter
   generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'

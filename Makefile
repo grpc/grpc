@@ -3123,6 +3123,7 @@ LIBGRPC_SRC = \
     src/core/ext/census/tracing.c \
     src/core/ext/filters/max_age/max_age_filter.c \
     src/core/ext/filters/message_size/message_size_filter.c \
+    src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -3954,6 +3955,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/census/tracing.c \
     src/core/ext/filters/max_age/max_age_filter.c \
     src/core/ext/filters/message_size/message_size_filter.c \
+    src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
     src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
