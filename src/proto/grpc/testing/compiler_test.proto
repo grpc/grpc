@@ -59,6 +59,14 @@ service ServiceA {
   // Method A2 leading comment 2
   rpc MethodA2(stream Request) returns (Response);
   // MethodA2 trailing comment 1
+
+  // Method A3 leading comment 1
+  rpc MethodA3(Request) returns (stream Response);
+  // Method A3 trailing comment 1
+
+  // Method A4 leading comment 1
+  rpc MethodA4(stream Request) returns (stream Response);
+  // Method A4 trailing comment 1
 }
 // Ignored ServiceA trailing comment 1
 

@@ -92,6 +92,11 @@ struct grpc_udp_listener {
   struct grpc_udp_listener *next;
 };
 
+struct shutdown_fd_args {
+  grpc_fd *fd;
+  gpr_mu *server_mu;
+};
+
 /* the overall server */
 struct grpc_udp_server {
   gpr_mu mu;
@@ -151,8 +156,13 @@ grpc_udp_server *grpc_udp_server_create(const grpc_channel_args *args) {
   return s;
 }
 
-static void shutdown_fd(grpc_exec_ctx *exec_ctx, void *fd, grpc_error *error) {
-  grpc_fd_shutdown(exec_ctx, (grpc_fd *)fd, GRPC_ERROR_REF(error));
+static void shutdown_fd(grpc_exec_ctx *exec_ctx, void *args,
+                        grpc_error *error) {
+  struct shutdown_fd_args *shutdown_args = (struct shutdown_fd_args *)args;
+  gpr_mu_lock(shutdown_args->server_mu);
+  grpc_fd_shutdown(exec_ctx, shutdown_args->fd, GRPC_ERROR_REF(error));
+  gpr_mu_unlock(shutdown_args->server_mu);
+  gpr_free(shutdown_args);
 }
 
 static void dummy_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -242,7 +252,10 @@ void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
   if (s->active_ports) {
     for (sp = s->head; sp; sp = sp->next) {
       GPR_ASSERT(sp->orphan_cb);
-      grpc_closure_init(&sp->orphan_fd_closure, shutdown_fd, sp->emfd,
+      struct shutdown_fd_args *args = gpr_malloc(sizeof(*args));
+      args->fd = sp->emfd;
+      args->server_mu = &s->mu;
+      grpc_closure_init(&sp->orphan_fd_closure, shutdown_fd, args,
                         grpc_schedule_on_exec_ctx);
       sp->orphan_cb(exec_ctx, sp->emfd, &sp->orphan_fd_closure,
                     sp->server->user_data);
