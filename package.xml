@@ -13,8 +13,8 @@
  <date>2017-03-01</date>
  <time>16:06:07</time>
  <version>
-  <release>1.3.0RC1</release>
-  <api>1.3.0RC1</api>
+  <release>1.4.0dev</release>
+  <api>1.4.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -183,16 +183,11 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/compress_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/message_size_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
@@ -311,6 +306,9 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.h" role="src" />
@@ -354,6 +352,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h" role="src" />
@@ -384,19 +383,15 @@
     <file baseinstalldir="/" name="src/core/ext/census/trace_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/tracing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/compress_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/deadline_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/message_size_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.c" role="src" />
@@ -533,6 +528,10 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writing.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/http_filters_plugin.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli_security_connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.c" role="src" />
@@ -582,6 +581,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c" role="src" />
@@ -618,6 +618,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/trace_context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/tracing.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/asn1_locl.h" role="src" />

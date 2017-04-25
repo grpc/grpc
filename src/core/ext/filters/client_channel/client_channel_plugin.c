@@ -91,8 +91,9 @@ void grpc_client_channel_init(void) {
   grpc_subchannel_index_init();
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
                                    set_default_host_if_unset, NULL);
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, append_filter,
-                                   (void *)&grpc_client_channel_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
+      (void *)&grpc_client_channel_filter);
   grpc_http_connect_register_handshaker_factory();
 }
 

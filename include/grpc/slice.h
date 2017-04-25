@@ -102,9 +102,9 @@ GPRAPI grpc_slice grpc_slice_from_static_string(const char *source);
 /* Create a slice pointing to constant memory */
 GPRAPI grpc_slice grpc_slice_from_static_buffer(const void *source, size_t len);
 
-/* Return a result slice derived from s, which shares a ref count with s, where
-   result.data==s.data+begin, and result.length==end-begin.
-   The ref count of s is increased by one.
+/* Return a result slice derived from s, which shares a ref count with \a s,
+   where result.data==s.data+begin, and result.length==end-begin. The ref count
+   of \a s is increased by one. Do not assign result back to \a s.
    Requires s initialized, begin <= end, begin <= s.length, and
    end <= source->length. */
 GPRAPI grpc_slice grpc_slice_sub(grpc_slice s, size_t begin, size_t end);

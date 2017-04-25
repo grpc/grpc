@@ -175,8 +175,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 }
@@ -242,6 +242,7 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   grpc_completion_queue_shutdown(f.cq);
   drain_cq(f.cq);
   grpc_completion_queue_destroy(f.cq);
+  grpc_completion_queue_destroy(f.shutdown_cq);
   config.tear_down_data(&f);
 
   cq_verifier_destroy(cqv);

@@ -47,32 +47,9 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 
-static void destroy_lr_cost_context(void *c) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_load_reporting_cost_context *cost_ctx = c;
-  for (size_t i = 0; i < cost_ctx->values_count; ++i) {
-    grpc_slice_unref_internal(&exec_ctx, cost_ctx->values[i]);
-  }
-  grpc_exec_ctx_finish(&exec_ctx);
-  gpr_free(cost_ctx->values);
-  gpr_free(cost_ctx);
-}
-
-void grpc_call_set_load_reporting_cost_context(
-    grpc_call *call, grpc_load_reporting_cost_context *ctx) {
-  grpc_call_context_set(call, GRPC_CONTEXT_LR_COST, ctx,
-                        destroy_lr_cost_context);
-}
-
 static bool is_load_reporting_enabled(const grpc_channel_args *a) {
-  if (a == NULL) return false;
-  for (size_t i = 0; i < a->num_args; i++) {
-    if (0 == strcmp(a->args[i].key, GRPC_ARG_ENABLE_LOAD_REPORTING)) {
-      return a->args[i].type == GRPC_ARG_INTEGER &&
-             a->args[i].value.integer != 0;
-    }
-  }
-  return false;
+  return grpc_channel_arg_get_bool(
+      grpc_channel_args_find(a, GRPC_ARG_ENABLE_LOAD_REPORTING), false);
 }
 
 static bool maybe_add_load_reporting_filter(grpc_exec_ctx *exec_ctx,
