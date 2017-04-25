@@ -369,10 +369,6 @@ grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue *cc) {
   return cc->completion_type;
 }
 
-grpc_cq_polling_type grpc_get_cq_polling_type(grpc_completion_queue *cc) {
-  return cc->polling_type;
-}
-
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
                           const char *file, int line) {
@@ -748,7 +744,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
     }
     /* Check alarms - these are a global resource so we just ping
        each time through on every pollset.
-       May update deadline to ensure timely wakeups.
+       May update deadline to ensure timely wakeups. */
     if (grpc_timer_check(&exec_ctx, now, &iteration_deadline)) {
       GPR_TIMER_MARK("alarm_triggered", 0);
       grpc_exec_ctx_flush(&exec_ctx);
