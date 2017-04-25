@@ -30,7 +30,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 #include "src/core/lib/surface/completion_queue.h"
 
 #include <stdio.h>
@@ -414,6 +413,7 @@ grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue *cc) {
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
                           const char *file, int line) {
+  cq_data *cqd = &cc->data;
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p   ref %d -> %d %s", cc,
           (int)cqd->owning_refs.count, (int)cqd->owning_refs.count + 1, reason);
 #else
