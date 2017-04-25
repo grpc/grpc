@@ -46,7 +46,7 @@ import threading
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 11
+_MY_VERSION = 14
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
@@ -166,12 +166,11 @@ class Handler(BaseHTTPRequestHandler):
     elif self.path == '/quitquitquit':
       self.send_response(200)
       self.end_headers()
-      sys.exit(0)
+      self.server.shutdown()
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
   """Handle requests in a separate thread"""
 
 
-httpd = ThreadedHTTPServer(('', args.port), Handler)
-httpd.serve_forever()
+ThreadedHTTPServer(('', args.port), Handler).serve_forever()
 
