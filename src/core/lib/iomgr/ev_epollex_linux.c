@@ -564,8 +564,9 @@ static grpc_error *pollable_materialize(pollable *p) {
     if (new_epfd < 0) {
       return GRPC_OS_ERROR(errno, "epoll_create1");
     } else {
-      struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLET | EPOLLEXCLUSIVE),
-                               .data.ptr = &global_wakeup_fd};
+      struct epoll_event ev = {
+          .events = (uint32_t)(EPOLLIN | EPOLLET | EPOLLEXCLUSIVE),
+          .data.ptr = &global_wakeup_fd};
       if (epoll_ctl(new_epfd, EPOLL_CTL_ADD, global_wakeup_fd.read_fd, &ev) !=
           0) {
         grpc_error *err = GRPC_OS_ERROR(errno, "epoll_ctl");
@@ -912,10 +913,9 @@ static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       bool write_ev = (events[i].events & EPOLLOUT) != 0;
       if (grpc_polling_trace) {
         gpr_log(GPR_DEBUG,
-                "PS:%p poll %p got fd %p(%d/%d): is_wq=%d cancel=%d read=%d "
+                "PS:%p poll %p got fd %p: is_wq=%d cancel=%d read=%d "
                 "write=%d",
-                pollset, p, fd, fd->fd, fd->workqueue_wakeup_fd.read_fd,
-                is_workqueue, cancel, read_ev, write_ev);
+                pollset, p, fd, is_workqueue, cancel, read_ev, write_ev);
       }
       if (is_workqueue) {
         append_error(&error,
