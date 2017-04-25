@@ -477,7 +477,6 @@ class NodeLanguage(object):
       else:
         config_flag = '--release'
       return [['tools\\run_tests\\helper_scripts\\build_node.bat',
-               '--grpc_uv={}'.format('true' if self.use_uv else 'false'),
                config_flag]]
     else:
       build_script = 'build_node'
