@@ -435,9 +435,7 @@ void init(Local<Object> exports) {
   InitWriteFlags(exports);
   InitLogConstants(exports);
 
-#ifdef GRPC_UV
   grpc_pollset_work_run_loop = 0;
-#endif
 
   grpc::node::Call::Init(exports);
   grpc::node::CallCredentials::Init(exports);
