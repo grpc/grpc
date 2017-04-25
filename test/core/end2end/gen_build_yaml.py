@@ -82,8 +82,8 @@ END2END_FIXTURES = {
 
 TestOptions = collections.namedtuple(
     'TestOptions',
-    'needs_fullstack needs_dns proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allow_compression')
-default_test_options = TestOptions(False, False, True, False, True, 1.0, [], False, False, True)
+    'needs_fullstack needs_dns proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allow_compression timeout_seconds')
+default_test_options = TestOptions(False, False, True, False, True, 1.0, [], False, False, True, 300)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 LOWCPU = 0.1
@@ -120,7 +120,7 @@ END2END_TESTS = {
                                                 cpu_cost=LOWCPU),
     'high_initial_seqno': default_test_options._replace(cpu_cost=LOWCPU),
     'idempotent_request': default_test_options,
-    'invoke_large_request': default_test_options._replace(large_writes=True, traceable=False),
+    'invoke_large_request': default_test_options._replace(large_writes=True, traceable=False, timeout_seconds=1200),
     'keepalive_timeout': default_test_options._replace(proxyable=False,
                                                        cpu_cost=LOWCPU),
     'large_metadata': default_test_options,
@@ -282,6 +282,7 @@ def main():
               'flaky': END2END_TESTS[t].flaky,
               'language': 'c',
               'cpu_cost': END2END_TESTS[t].cpu_cost,
+              'timeout_seconds': END2END_TESTS[t].timeout_seconds,
           }
           for f in sorted(END2END_FIXTURES.keys())
           for t in sorted(END2END_TESTS.keys()) if compatible(f, t)
@@ -299,6 +300,7 @@ def main():
               'flaky': END2END_TESTS[t].flaky,
               'language': 'c',
               'cpu_cost': END2END_TESTS[t].cpu_cost,
+              'timeout_seconds': END2END_TESTS[t].timeout_seconds,
           }
           for f in sorted(END2END_FIXTURES.keys())
           if not END2END_FIXTURES[f].secure
