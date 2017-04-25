@@ -690,7 +690,8 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_SUBCHANNEL_WEAK_REF(c, "connected");
   gpr_mu_lock(&c->mu);
   c->connecting = false;
-  if (c->connecting_result.transport != NULL && publish_transport_locked(exec_ctx, c)) {
+  if (c->connecting_result.transport != NULL &&
+      publish_transport_locked(exec_ctx, c)) {
     /* do nothing, transport was published */
   } else if (c->disconnected) {
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
