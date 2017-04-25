@@ -81,22 +81,14 @@ static Callback *shutdown_callback = NULL;
 
 class ServerShutdownOp : public Op {
  public:
-  ServerShutdownOp(grpc_server *server): server(server) {
-  }
+  ServerShutdownOp(grpc_server *server) : server(server) {}
 
-  ~ServerShutdownOp() {
-  }
+  ~ServerShutdownOp() {}
 
-  Local<Value> GetNodeValue() const {
-    return Nan::Null();
-  }
+  Local<Value> GetNodeValue() const { return Nan::Null(); }
 
-  bool ParseOp(Local<Value> value, grpc_op *out) {
-    return true;
-  }
-  bool IsFinalOp() {
-    return false;
-  }
+  bool ParseOp(Local<Value> value, grpc_op *out) { return true; }
+  bool IsFinalOp() { return false; }
   void OnComplete(bool success) {
     /* Because cancel_all_calls was called, we assume that shutdown_and_notify
        completes successfully */
@@ -180,12 +172,9 @@ class TryShutdownOp : public Op {
       server_persist;
 };
 
-Server::Server(grpc_server *server) : wrapped_server(server) {
-}
+Server::Server(grpc_server *server) : wrapped_server(server) {}
 
-Server::~Server() {
-  this->ShutdownServer();
-}
+Server::~Server() { this->ShutdownServer(); }
 
 void Server::Init(Local<Object> exports) {
   HandleScope scope;
@@ -225,10 +214,10 @@ void Server::ShutdownServer() {
   Nan::HandleScope scope;
   if (this->wrapped_server != NULL) {
     if (shutdown_callback == NULL) {
-      Local<FunctionTemplate>callback_tpl =
+      Local<FunctionTemplate> callback_tpl =
           Nan::New<FunctionTemplate>(ServerShutdownCallback);
-      shutdown_callback = new Callback(
-          Nan::GetFunction(callback_tpl).ToLocalChecked());
+      shutdown_callback =
+          new Callback(Nan::GetFunction(callback_tpl).ToLocalChecked());
     }
 
     ServerShutdownOp *op = new ServerShutdownOp(this->wrapped_server);
