@@ -98,7 +98,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 static grpc_slice large_slice(void) {
-  grpc_slice slice = grpc_slice_malloc(100000000);
+  grpc_slice slice = grpc_slice_malloc(1000000000);
   memset(GRPC_SLICE_START_PTR(slice), 'x', GRPC_SLICE_LENGTH(slice));
   return slice;
 }
