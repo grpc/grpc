@@ -47,9 +47,9 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
@@ -70,7 +70,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create(NULL);
+  f.cq = grpc_completion_queue_create_for_next(NULL);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
 
   return f;
 }

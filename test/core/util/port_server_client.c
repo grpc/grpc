@@ -103,7 +103,7 @@ void grpc_free_port_using_server(int port) {
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("port_server_client/free");
   grpc_httpcli_get(&exec_ctx, &context, &pr.pops, resource_quota, &req,
-                   grpc_timeout_seconds_to_deadline(10),
+                   grpc_timeout_seconds_to_deadline(30),
                    grpc_closure_create(freed_port_from_server, &pr,
                                        grpc_schedule_on_exec_ctx),
                    &rsp);
@@ -235,7 +235,7 @@ int grpc_pick_port_using_server(void) {
       grpc_resource_quota_create("port_server_client/pick");
   grpc_httpcli_get(
       &exec_ctx, &context, &pr.pops, resource_quota, &req,
-      grpc_timeout_seconds_to_deadline(10),
+      grpc_timeout_seconds_to_deadline(30),
       grpc_closure_create(got_port_from_server, &pr, grpc_schedule_on_exec_ctx),
       &pr.response);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
