@@ -4467,7 +4467,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
-    DEFINES: NDEBUG
+    DEFINES: NDEBUG GRPC_UBSAN
     LD: clang
     LDFLAGS: -fsanitize=undefined,unsigned-integer-overflow
     LDXX: clang++
