@@ -100,3 +100,10 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
 
 def grpc_generate_one_off_targets():
     pass
+
+def grpc_sh_test(name, srcs, args = [], data = []):
+    native.sh_test(
+        name = name,
+        srcs = srcs,
+        args = args,
+        data = data)
