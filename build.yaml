@@ -971,6 +971,7 @@ filegroups:
 - name: grpc++_test
   language: c++
   public_headers:
+  - include/grpc++/test/mock_stream.h
   - include/grpc++/test/server_context_test_spouse.h
   deps:
   - grpc++
@@ -3693,7 +3694,7 @@ targets:
   - grpc
   - gpr
   args:
-  - --generated_file_path=gens/src/proto/grpc/testing/compiler_test.grpc.pb.h
+  - --generated_file_path=gens/src/proto/grpc/testing/
 - name: grpc_cli
   build: test
   run: false
@@ -3954,6 +3955,8 @@ targets:
   gtest: true
   build: test
   language: c++
+  headers:
+  - include/grpc++/test/mock_stream.h
   src:
   - test/cpp/end2end/mock_test.cc
   deps:
@@ -4466,7 +4469,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
-    DEFINES: NDEBUG
+    DEFINES: NDEBUG GRPC_UBSAN
     LD: clang
     LDFLAGS: -fsanitize=undefined,unsigned-integer-overflow
     LDXX: clang++
