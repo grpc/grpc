@@ -2,7 +2,7 @@
 
 load("//:bazel/generate_cc.bzl", "generate_cc")
 
-def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, use_external = False, **kwargs):
+def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, generate_mock, use_external = False, **kwargs):
   """Generates C++ grpc classes from a .proto file.
 
   Assumes the generated classes will be used in cc_api_version = 2.
@@ -14,9 +14,10 @@ def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, use_externa
         the compiled code of any message that the services depend on.
       well_known_protos: The target from protobuf library that exports well
         known protos. Currently it will only work if the value is
-        "@submodule_protobuf//:well_known_protos"
+        "@com_google_protobuf//:well_known_protos"
       use_external: When True the grpc deps are prefixed with //external. This
         allows grpc to be used as a dependency in other bazel projects.
+      generate_mock: When true GMOCk code for client stub is generated.
       **kwargs: rest of arguments, e.g., compatible_with and visibility.
   """
   if len(srcs) > 1:
@@ -54,6 +55,7 @@ def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, use_externa
         srcs = [proto_target],
         plugin = plugin,
         well_known_protos = well_known_protos,
+        generate_mock = generate_mock,
         **kwargs
     )
 

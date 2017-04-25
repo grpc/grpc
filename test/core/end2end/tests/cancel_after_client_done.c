@@ -229,8 +229,8 @@ static void test_cancel_after_accept_and_writes_closed(
   grpc_byte_buffer_destroy(response_payload_recv);
   grpc_slice_unref(details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
   end_test(&f);

@@ -172,6 +172,9 @@ namespace Grpc.Core
         /// <summary>Secondary user agent: goes at the end of the user-agent metadata</summary>
         public const string SecondaryUserAgentString = "grpc.secondary_user_agent";
 
+        /// <summary>If non-zero, allow the use of SO_REUSEPORT for server if it's available (default 1)</summary>
+        public const string SoReuseport = "grpc.so_reuseport";
+
         /// <summary>
         /// Creates native object for a collection of channel options.
         /// </summary>

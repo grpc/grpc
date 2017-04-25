@@ -56,6 +56,7 @@ _INTERESTING = (
   'writes_per_iteration',
   'atm_cas_per_iteration',
   'atm_add_per_iteration',
+  'nows_per_iteration',
 )
 
 def changed_ratio(n, o):
@@ -98,7 +99,7 @@ argp.add_argument('-t', '--track',
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
 argp.add_argument('-r', '--repetitions', type=int, default=1)
-argp.add_argument('-l', '--loops', type=int, default=12)
+argp.add_argument('-l', '--loops', type=int, default=20)
 argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
 args = argp.parse_args()
 
@@ -192,52 +193,58 @@ class Benchmark:
     return [self.final[f] if f in self.final else '' for f in flds]
 
 
-def read_file(filename):
+def eintr_be_gone(fn):
+  """Run fn until it doesn't stop because of EINTR"""
   while True:
     try:
-      with open(filename) as f:
-        return f.read()
+      return fn()
     except IOError, e:
       if e.errno != errno.EINTR:
         raise
 
+
 def read_json(filename):
-  return json.loads(read_file(filename))
+  with open(filename) as f: return json.loads(f.read())
 
-benchmarks = collections.defaultdict(Benchmark)
 
-for bm in args.benchmarks:
-  for loop in range(0, args.loops):
-    js_new_ctr = read_json('%s.counters.new.%d.json' % (bm, loop))
-    js_new_opt = read_json('%s.opt.new.%d.json' % (bm, loop))
-    js_old_ctr = read_json('%s.counters.old.%d.json' % (bm, loop))
-    js_old_opt = read_json('%s.opt.old.%d.json' % (bm, loop))
+def finalize():
+  benchmarks = collections.defaultdict(Benchmark)
 
-    for row in bm_json.expand_json(js_new_ctr, js_new_opt):
-      print row
-      name = row['cpp_name']
-      if name.endswith('_mean') or name.endswith('_stddev'): continue
-      benchmarks[name].add_sample(row, True)
-    for row in bm_json.expand_json(js_old_ctr, js_old_opt):
-      print row
-      name = row['cpp_name']
-      if name.endswith('_mean') or name.endswith('_stddev'): continue
-      benchmarks[name].add_sample(row, False)
+  for bm in args.benchmarks:
+    for loop in range(0, args.loops):
+      js_new_ctr = read_json('%s.counters.new.%d.json' % (bm, loop))
+      js_new_opt = read_json('%s.opt.new.%d.json' % (bm, loop))
+      js_old_ctr = read_json('%s.counters.old.%d.json' % (bm, loop))
+      js_old_opt = read_json('%s.opt.old.%d.json' % (bm, loop))
 
-really_interesting = set()
-for name, bm in benchmarks.items():
-  print name
-  really_interesting.update(bm.process())
-fields = [f for f in args.track if f in really_interesting]
+      for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+        print row
+        name = row['cpp_name']
+        if name.endswith('_mean') or name.endswith('_stddev'): continue
+        benchmarks[name].add_sample(row, True)
+      for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+        print row
+        name = row['cpp_name']
+        if name.endswith('_mean') or name.endswith('_stddev'): continue
+        benchmarks[name].add_sample(row, False)
 
-headers = ['Benchmark'] + fields
-rows = []
-for name in sorted(benchmarks.keys()):
-  if benchmarks[name].skip(): continue
-  rows.append([name] + benchmarks[name].row(fields))
-if rows:
-  text = 'Performance differences noted:\n' + tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
-else:
-  text = 'No significant performance differences'
-comment_on_pr.comment_on_pr('```\n%s\n```' % text)
-print text
+  really_interesting = set()
+  for name, bm in benchmarks.items():
+    print name
+    really_interesting.update(bm.process())
+  fields = [f for f in args.track if f in really_interesting]
+
+  headers = ['Benchmark'] + fields
+  rows = []
+  for name in sorted(benchmarks.keys()):
+    if benchmarks[name].skip(): continue
+    rows.append([name] + benchmarks[name].row(fields))
+  if rows:
+    text = 'Performance differences noted:\n' + tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
+  else:
+    text = 'No significant performance differences'
+  comment_on_pr.comment_on_pr('```\n%s\n```' % text)
+  print text
+
+
+eintr_be_gone(finalize)

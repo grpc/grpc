@@ -31,17 +31,17 @@
  *
  */
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 #include <uv.h>
 
 #include <queue>
 
+#include "call.h"
+#include "call_credentials.h"
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
-#include "call_credentials.h"
-#include "call.h"
 
 namespace grpc {
 namespace node {
@@ -86,15 +86,15 @@ void CallCredentials::Init(Local<Object> exports) {
   fun_tpl.Reset(tpl);
   Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
   Nan::Set(ctr, Nan::New("createFromPlugin").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateFromPlugin)).ToLocalChecked());
+           Nan::GetFunction(Nan::New<FunctionTemplate>(CreateFromPlugin))
+               .ToLocalChecked());
   Nan::Set(exports, Nan::New("CallCredentials").ToLocalChecked(), ctr);
   constructor = new Nan::Callback(ctr);
 
   Local<FunctionTemplate> callback_tpl =
       Nan::New<FunctionTemplate>(PluginCallback);
-  plugin_callback = new Callback(
-      Nan::GetFunction(callback_tpl).ToLocalChecked());
+  plugin_callback =
+      new Callback(Nan::GetFunction(callback_tpl).ToLocalChecked());
 }
 
 bool CallCredentials::HasInstance(Local<Value> val) {
@@ -109,9 +109,9 @@ Local<Value> CallCredentials::WrapStruct(grpc_call_credentials *credentials) {
     return scope.Escape(Nan::Null());
   }
   Local<Value> argv[argc] = {
-    Nan::New<External>(reinterpret_cast<void *>(credentials))};
-  MaybeLocal<Object> maybe_instance = Nan::NewInstance(
-      constructor->GetFunction(), argc, argv);
+      Nan::New<External>(reinterpret_cast<void *>(credentials))};
+  MaybeLocal<Object> maybe_instance =
+      Nan::NewInstance(constructor->GetFunction(), argc, argv);
   if (maybe_instance.IsEmpty()) {
     return scope.Escape(Nan::Null());
   } else {
@@ -160,8 +160,6 @@ NAN_METHOD(CallCredentials::Compose) {
   info.GetReturnValue().Set(WrapStruct(creds));
 }
 
-
-
 NAN_METHOD(CallCredentials::CreateFromPlugin) {
   if (!info[0]->IsFunction()) {
     return Nan::ThrowTypeError(
@@ -170,21 +168,19 @@ NAN_METHOD(CallCredentials::CreateFromPlugin) {
   grpc_metadata_credentials_plugin plugin;
   plugin_state *state = new plugin_state;
   state->callback = new Nan::Callback(info[0].As<Function>());
-  state->pending_callbacks = new std::queue<plugin_callback_data*>();
+  state->pending_callbacks = new std::queue<plugin_callback_data *>();
   uv_mutex_init(&state->plugin_mutex);
-  uv_async_init(uv_default_loop(),
-                &state->plugin_async,
-                SendPluginCallback);
-  uv_unref((uv_handle_t*)&state->plugin_async);
+  uv_async_init(uv_default_loop(), &state->plugin_async, SendPluginCallback);
+  uv_unref((uv_handle_t *)&state->plugin_async);
 
   state->plugin_async.data = state;
 
   plugin.get_metadata = plugin_get_metadata;
   plugin.destroy = plugin_destroy_state;
-  plugin.state = reinterpret_cast<void*>(state);
+  plugin.state = reinterpret_cast<void *>(state);
   plugin.type = "";
-  grpc_call_credentials *creds = grpc_metadata_credentials_create_from_plugin(
-      plugin, NULL);
+  grpc_call_credentials *creds =
+      grpc_metadata_credentials_create_from_plugin(plugin, NULL);
   info.GetReturnValue().Set(WrapStruct(creds));
 }
 
@@ -206,34 +202,35 @@ NAN_METHOD(PluginCallback) {
     return Nan::ThrowTypeError(
         "The callback's fourth argument must be an object");
   }
-  grpc_status_code code = static_cast<grpc_status_code>(
-      Nan::To<uint32_t>(info[0]).FromJust());
+  grpc_status_code code =
+      static_cast<grpc_status_code>(Nan::To<uint32_t>(info[0]).FromJust());
   Utf8String details_utf8_str(info[1]);
   char *details = *details_utf8_str;
   grpc_metadata_array array;
   grpc_metadata_array_init(&array);
   Local<Object> callback_data = Nan::To<Object>(info[3]).ToLocalChecked();
-  if (!CreateMetadataArray(Nan::To<Object>(info[2]).ToLocalChecked(),
-                           &array)){
+  if (!CreateMetadataArray(Nan::To<Object>(info[2]).ToLocalChecked(), &array)) {
     return Nan::ThrowError("Failed to parse metadata");
   }
   grpc_credentials_plugin_metadata_cb cb =
       reinterpret_cast<grpc_credentials_plugin_metadata_cb>(
-          Nan::Get(callback_data,
-                   Nan::New("cb").ToLocalChecked()
-                   ).ToLocalChecked().As<External>()->Value());
+          Nan::Get(callback_data, Nan::New("cb").ToLocalChecked())
+              .ToLocalChecked()
+              .As<External>()
+              ->Value());
   void *user_data =
-      Nan::Get(callback_data,
-               Nan::New("user_data").ToLocalChecked()
-               ).ToLocalChecked().As<External>()->Value();
+      Nan::Get(callback_data, Nan::New("user_data").ToLocalChecked())
+          .ToLocalChecked()
+          .As<External>()
+          ->Value();
   cb(user_data, array.metadata, array.count, code, details);
   DestroyMetadataArray(&array);
 }
 
 NAUV_WORK_CB(SendPluginCallback) {
   Nan::HandleScope scope;
-  plugin_state *state = reinterpret_cast<plugin_state*>(async->data);
-  std::queue<plugin_callback_data*> callbacks;
+  plugin_state *state = reinterpret_cast<plugin_state *>(async->data);
+  std::queue<plugin_callback_data *> callbacks;
   uv_mutex_lock(&state->plugin_mutex);
   state->pending_callbacks->swap(callbacks);
   uv_mutex_unlock(&state->plugin_mutex);
@@ -242,16 +239,14 @@ NAUV_WORK_CB(SendPluginCallback) {
     callbacks.pop();
     Local<Object> callback_data = Nan::New<Object>();
     Nan::Set(callback_data, Nan::New("cb").ToLocalChecked(),
-             Nan::New<v8::External>(reinterpret_cast<void*>(data->cb)));
+             Nan::New<v8::External>(reinterpret_cast<void *>(data->cb)));
     Nan::Set(callback_data, Nan::New("user_data").ToLocalChecked(),
              Nan::New<v8::External>(data->user_data));
     const int argc = 3;
     v8::Local<v8::Value> argv[argc] = {
-      Nan::New(data->service_url).ToLocalChecked(),
-      callback_data,
-      // Get Local<Function> from Nan::Callback*
-      **plugin_callback
-    };
+        Nan::New(data->service_url).ToLocalChecked(), callback_data,
+        // Get Local<Function> from Nan::Callback*
+        **plugin_callback};
     Nan::Callback *callback = state->callback;
     callback->Call(argc, argv);
     delete data;
@@ -261,7 +256,7 @@ NAUV_WORK_CB(SendPluginCallback) {
 void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data) {
-  plugin_state *p_state = reinterpret_cast<plugin_state*>(state);
+  plugin_state *p_state = reinterpret_cast<plugin_state *>(state);
   plugin_callback_data *data = new plugin_callback_data;
   data->service_url = context.service_url;
   data->cb = cb;
@@ -275,7 +270,7 @@ void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
 }
 
 void plugin_uv_close_cb(uv_handle_t *handle) {
-  uv_async_t *async = reinterpret_cast<uv_async_t*>(handle);
+  uv_async_t *async = reinterpret_cast<uv_async_t *>(handle);
   plugin_state *state = reinterpret_cast<plugin_state *>(async->data);
   uv_mutex_destroy(&state->plugin_mutex);
   delete state->pending_callbacks;
@@ -285,7 +280,7 @@ void plugin_uv_close_cb(uv_handle_t *handle) {
 
 void plugin_destroy_state(void *ptr) {
   plugin_state *state = reinterpret_cast<plugin_state *>(ptr);
-  uv_close((uv_handle_t*)&state->plugin_async, plugin_uv_close_cb);
+  uv_close((uv_handle_t *)&state->plugin_async, plugin_uv_close_cb);
 }
 
 }  // namespace node
