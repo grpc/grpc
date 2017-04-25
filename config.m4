@@ -119,6 +119,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \

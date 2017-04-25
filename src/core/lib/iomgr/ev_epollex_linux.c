@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,6 @@
 #include <poll.h>
 #include <pthread.h>
 #include <string.h>
-#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -55,17 +54,15 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/is_epollexclusive_available.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
+#include "src/core/lib/iomgr/sys_epoll_wrapper.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/spinlock.h"
-
-#ifndef EPOLLEXCLUSIVE
-#define EPOLLEXCLUSIVE (1 << 28)
-#endif
 
 /* TODO: sreek: Right now, this wakes up all pollers. In future we should make
  * sure to wake up one polling thread (which can wake up other threads if
@@ -1496,70 +1493,12 @@ static const grpc_event_engine_vtable vtable = {
     .shutdown_engine = shutdown_engine,
 };
 
-/* It is possible that GLIBC has epoll but the underlying kernel doesn't.
- * Create a dummy epoll_fd to make sure epoll support is available */
-static bool is_epollex_available(void) {
-  static bool logged_why_not = false;
-
-  int fd = epoll_create1(EPOLL_CLOEXEC);
-  if (fd < 0) {
-    if (!logged_why_not) {
-      gpr_log(GPR_ERROR,
-              "epoll_create1 failed with error: %d. Not using epollex polling "
-              "engine.",
-              fd);
-      logged_why_not = true;
-    }
-    return false;
-  }
-  grpc_wakeup_fd wakeup;
-  if (!GRPC_LOG_IF_ERROR("check_wakeupfd_for_epollex",
-                         grpc_wakeup_fd_init(&wakeup))) {
-    return false;
-  }
-  struct epoll_event ev = {
-      /* choose events that should cause an error on
-         EPOLLEXCLUSIVE enabled kernels - specifically the combination of
-         EPOLLONESHOT and EPOLLEXCLUSIVE */
-      .events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT),
-      .data.ptr = NULL};
-  if (epoll_ctl(fd, EPOLL_CTL_ADD, wakeup.read_fd, &ev) != 0) {
-    if (errno != EINVAL) {
-      if (!logged_why_not) {
-        gpr_log(
-            GPR_ERROR,
-            "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT failed with error: "
-            "%d. Not using epollex polling engine.",
-            errno);
-        logged_why_not = true;
-      }
-      close(fd);
-      grpc_wakeup_fd_destroy(&wakeup);
-      return false;
-    }
-  } else {
-    if (!logged_why_not) {
-      gpr_log(GPR_ERROR,
-              "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT succeeded. This is "
-              "evidence of no EPOLLEXCLUSIVE support. Not using "
-              "epollex polling engine.");
-      logged_why_not = true;
-    }
-    close(fd);
-    grpc_wakeup_fd_destroy(&wakeup);
-    return false;
-  }
-  grpc_wakeup_fd_destroy(&wakeup);
-  close(fd);
-  return true;
-}
-
 const grpc_event_engine_vtable *grpc_init_epollex_linux(void) {
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
 
-  if (!is_epollex_available()) {
+  if (!grpc_is_epollexclusive_available()) {
     return NULL;
   }
 

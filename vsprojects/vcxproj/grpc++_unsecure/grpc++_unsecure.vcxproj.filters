@@ -202,6 +202,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_windows.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -908,6 +911,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -969,6 +975,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sys_epoll_wrapper.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client.h">

@@ -203,6 +203,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
+  - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/network_status_tracker.h
@@ -224,6 +225,7 @@ filegroups:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/sys_epoll_wrapper.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -312,6 +314,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr_posix.c
   - src/core/lib/iomgr/iomgr_uv.c
   - src/core/lib/iomgr/iomgr_windows.c
+  - src/core/lib/iomgr/is_epollexclusive_available.c
   - src/core/lib/iomgr/load_file.c
   - src/core/lib/iomgr/lockfree_event.c
   - src/core/lib/iomgr/network_status_tracker.c
@@ -1657,6 +1660,14 @@ targets:
   - grpc_test_util
   - grpc
   - gpr_test_util
+  - gpr
+- name: check_epollexclusive
+  build: tool
+  language: c
+  src:
+  - test/build/check_epollexclusive.c
+  deps:
+  - grpc
   - gpr
 - name: chttp2_hpack_encoder_test
   build: test
