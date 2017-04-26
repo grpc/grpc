@@ -35,15 +35,14 @@ exports_files(["LICENSE"])
 
 package(default_visibility = ["//visibility:public"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library",
-     "grpc_proto_plugin", "grpc_cc_libraries")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
 
 # This should be updated along with build.yaml
 g_stands_for = "gentle"
 
-core_version = "3.0.0-dev"
+core_version = "3.0.0-pre1"
 
-version = "1.4.0-dev"
+version = "1.3.0-pre1"
 
 grpc_cc_library(
     name = "gpr",
@@ -54,45 +53,30 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_libraries(
-    name_list = ["grpc", "grpc_unsecure",],
+grpc_cc_library(
+    name = "grpc",
     srcs = [
         "src/core/lib/surface/init.c",
-    ],
-    additional_src_list = [
-        [
-            "src/core/plugin_registry/grpc_plugin_registry.c",
-        ],
-        [
-            "src/core/lib/surface/init_unsecure.c",
-            "src/core/plugin_registry/grpc_unsecure_plugin_registry.c",
-        ],
+        "src/core/plugin_registry/grpc_plugin_registry.c",
     ],
     language = "c",
     standalone = True,
     deps = [
         "census",
         "grpc_base",
+        "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
         "grpc_max_age_filter",
+        "grpc_resolver_dns_ares",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
+        "grpc_secure",
         "grpc_transport_chttp2_client_insecure",
+        "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_insecure",
-        "grpc_message_size_filter",
-        "grpc_deadline_filter",
-    ],
-    additional_dep_list = [
-        [
-            "grpc_secure",
-            "grpc_resolver_dns_ares",
-            "grpc_lb_policy_grpclb_secure",
-            "grpc_transport_chttp2_client_secure",
-            "grpc_transport_chttp2_server_secure",
-        ],
-        [],
+        "grpc_transport_chttp2_server_secure",
     ],
 )
 
@@ -107,7 +91,30 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_cronet_client_secure",
-        "grpc_http_filters",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_unsecure",
+    srcs = [
+        "src/core/lib/surface/init.c",
+        "src/core/lib/surface/init_unsecure.c",
+        "src/core/plugin_registry/grpc_unsecure_plugin_registry.c",
+    ],
+    language = "c",
+    standalone = True,
+    deps = [
+        "census",
+        "grpc_base",
+        "grpc_lb_policy_grpclb",
+        "grpc_lb_policy_pick_first",
+        "grpc_lb_policy_round_robin",
+        "grpc_load_reporting",
+        "grpc_max_age_filter",
+        "grpc_resolver_dns_native",
+        "grpc_resolver_sockaddr",
+        "grpc_transport_chttp2_client_insecure",
+        "grpc_transport_chttp2_server_insecure",
     ],
 )
 
@@ -151,7 +158,7 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "gpr",
-        "grpc++_base_unsecure",
+        "grpc++_base",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc_unsecure",
@@ -444,10 +451,15 @@ grpc_cc_library(
         "src/core/lib/channel/channel_args.c",
         "src/core/lib/channel/channel_stack.c",
         "src/core/lib/channel/channel_stack_builder.c",
+        "src/core/lib/channel/compress_filter.c",
         "src/core/lib/channel/connected_channel.c",
+        "src/core/lib/channel/deadline_filter.c",
         "src/core/lib/channel/handshaker.c",
         "src/core/lib/channel/handshaker_factory.c",
         "src/core/lib/channel/handshaker_registry.c",
+        "src/core/lib/channel/http_client_filter.c",
+        "src/core/lib/channel/http_server_filter.c",
+        "src/core/lib/channel/message_size_filter.c",
         "src/core/lib/compression/compression.c",
         "src/core/lib/compression/message_compress.c",
         "src/core/lib/debug/trace.c",
@@ -566,11 +578,16 @@ grpc_cc_library(
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
+        "src/core/lib/channel/compress_filter.h",
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
+        "src/core/lib/channel/deadline_filter.h",
         "src/core/lib/channel/handshaker.h",
         "src/core/lib/channel/handshaker_factory.h",
         "src/core/lib/channel/handshaker_registry.h",
+        "src/core/lib/channel/http_client_filter.h",
+        "src/core/lib/channel/http_server_filter.h",
+        "src/core/lib/channel/message_size_filter.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/debug/trace.h",
@@ -739,7 +756,6 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
-        "grpc_deadline_filter",
     ],
 )
 
@@ -750,53 +766,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/max_age/max_age_filter.h",
-    ],
-    language = "c",
-    deps = [
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_deadline_filter",
-    srcs = [
-        "src/core/ext/filters/deadline/deadline_filter.c",
-    ],
-    hdrs = [
-        "src/core/ext/filters/deadline/deadline_filter.h",
-    ],
-    language = "c",
-    deps = [
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_message_size_filter",
-    srcs = [
-        "src/core/ext/filters/message_size/message_size_filter.c",
-    ],
-    hdrs = [
-        "src/core/ext/filters/message_size/message_size_filter.h",
-    ],
-    language = "c",
-    deps = [
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_http_filters",
-    hdrs = [
-        "src/core/ext/filters/http/message_compress/message_compress_filter.h",
-        "src/core/ext/filters/http/client/http_client_filter.h",
-        "src/core/ext/filters/http/server/http_server_filter.h",
-    ],
-    srcs = [
-        "src/core/ext/filters/http/message_compress/message_compress_filter.c",
-        "src/core/ext/filters/http/client/http_client_filter.c",
-        "src/core/ext/filters/http/server/http_server_filter.c",
-        "src/core/ext/filters/http/http_filters_plugin.c"
     ],
     language = "c",
     deps = [
@@ -1066,7 +1035,6 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_transport_chttp2_alpn",
-        "grpc_http_filters",
     ],
 )
 
@@ -1219,12 +1187,8 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_libraries(
-    name_list = ["grpc++_base", "grpc++_base_unsecure"],
-    additional_dep_list = [
-        ["grpc", ],
-        ["grpc_unsecure", ],
-    ],
+grpc_cc_library(
+    name = "grpc++_base",
     srcs = [
         "src/cpp/client/channel_cc.cc",
         "src/cpp/client/client_context.cc",
@@ -1259,7 +1223,7 @@ grpc_cc_libraries(
         "src/cpp/util/status.cc",
         "src/cpp/util/string_ref.cc",
         "src/cpp/util/time_cc.cc",
-        ],
+    ],
     hdrs = [
         "src/cpp/client/create_channel_internal.h",
         "src/cpp/common/channel_filter.h",
@@ -1268,7 +1232,7 @@ grpc_cc_libraries(
         "src/cpp/server/health/health.pb.h",
         "src/cpp/server/thread_pool_interface.h",
         "src/cpp/thread_manager/thread_manager.h",
-        ],
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpc++/alarm.h",
@@ -1318,8 +1282,9 @@ grpc_cc_libraries(
         "include/grpc++/support/stub_options.h",
         "include/grpc++/support/sync_stream.h",
         "include/grpc++/support/time.h",
-        ],
+    ],
     deps = [
+        "grpc",
         "grpc++_codegen_base",
     ],
 )
@@ -1353,6 +1318,7 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/slice.h",
         "include/grpc++/impl/codegen/status.h",
         "include/grpc++/impl/codegen/status_code_enum.h",
+        "include/grpc++/impl/codegen/status_helper.h",
         "include/grpc++/impl/codegen/string_ref.h",
         "include/grpc++/impl/codegen/stub_options.h",
         "include/grpc++/impl/codegen/sync_stream.h",

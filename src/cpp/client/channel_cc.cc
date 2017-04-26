@@ -131,7 +131,7 @@ void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
-  ops->FillOps(call->call(), cops, &nops);
+  ops->FillOps(cops, &nops);
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call->call(), cops, nops, ops, nullptr));
 }

@@ -368,9 +368,6 @@ if __name__ == "__main__":
   argp.add_argument('-n', '--runs_per_test', default=1, type=_runs_per_test_type,
                     help='How many times to run each tests. >1 runs implies ' +
                     'omitting passing test from the output & reports.')
-  argp.add_argument('--max_time', default=-1, type=int,
-                    help='Maximum amount of time to run tests for' +
-                         '(other tests will be skipped)')
   args = argp.parse_args()
 
   extra_args = []
@@ -382,8 +379,6 @@ if __name__ == "__main__":
     extra_args.append('-n')
     extra_args.append('%s' % args.runs_per_test)
     extra_args.append('--quiet_success')
-  if args.max_time > 0:
-    extra_args.extend(('--max_time', '%d' % args.max_time))
 
   all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
              _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)

@@ -34,7 +34,6 @@
 #ifndef GRPCXX_IMPL_CODEGEN_ASYNC_UNARY_CALL_H
 #define GRPCXX_IMPL_CODEGEN_ASYNC_UNARY_CALL_H
 
-#include <assert.h>
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/impl/codegen/client_context.h>
@@ -60,67 +59,57 @@ class ClientAsyncResponseReader final
     : public ClientAsyncResponseReaderInterface<R> {
  public:
   template <class W>
-  static ClientAsyncResponseReader* Create(ChannelInterface* channel,
-                                           CompletionQueue* cq,
-                                           const RpcMethod& method,
-                                           ClientContext* context,
-                                           const W& request) {
-    Call call = channel->CreateCall(method, context, cq);
-    return new (g_core_codegen_interface->grpc_call_arena_alloc(
-        call.call(), sizeof(ClientAsyncResponseReader)))
-        ClientAsyncResponseReader(call, context, request);
-  }
-
-  // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
-    assert(size == sizeof(ClientAsyncResponseReader));
+  ClientAsyncResponseReader(ChannelInterface* channel, CompletionQueue* cq,
+                            const RpcMethod& method, ClientContext* context,
+                            const W& request)
+      : context_(context),
+        call_(channel->CreateCall(method, context, cq)),
+        collection_(std::make_shared<CallOpSetCollection>()) {
+    collection_->init_buf_.SetCollection(collection_);
+    collection_->init_buf_.SendInitialMetadata(
+        context->send_initial_metadata_, context->initial_metadata_flags());
+    // TODO(ctiller): don't assert
+    GPR_CODEGEN_ASSERT(collection_->init_buf_.SendMessage(request).ok());
+    collection_->init_buf_.ClientSendClose();
+    call_.PerformOps(&collection_->init_buf_);
   }
 
   void ReadInitialMetadata(void* tag) {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
-    meta_buf_.set_output_tag(tag);
-    meta_buf_.RecvInitialMetadata(context_);
-    call_.PerformOps(&meta_buf_);
+    collection_->meta_buf_.SetCollection(collection_);
+    collection_->meta_buf_.set_output_tag(tag);
+    collection_->meta_buf_.RecvInitialMetadata(context_);
+    call_.PerformOps(&collection_->meta_buf_);
   }
 
   void Finish(R* msg, Status* status, void* tag) {
-    finish_buf_.set_output_tag(tag);
+    collection_->finish_buf_.SetCollection(collection_);
+    collection_->finish_buf_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
-      finish_buf_.RecvInitialMetadata(context_);
+      collection_->finish_buf_.RecvInitialMetadata(context_);
     }
-    finish_buf_.RecvMessage(msg);
-    finish_buf_.AllowNoMessage();
-    finish_buf_.ClientRecvStatus(context_, status);
-    call_.PerformOps(&finish_buf_);
+    collection_->finish_buf_.RecvMessage(msg);
+    collection_->finish_buf_.AllowNoMessage();
+    collection_->finish_buf_.ClientRecvStatus(context_, status);
+    call_.PerformOps(&collection_->finish_buf_);
   }
 
  private:
-  ClientContext* const context_;
+  ClientContext* context_;
   Call call_;
 
-  template <class W>
-  ClientAsyncResponseReader(Call call, ClientContext* context, const W& request)
-      : context_(context), call_(call) {
-    init_buf_.SendInitialMetadata(context->send_initial_metadata_,
-                                  context->initial_metadata_flags());
-    // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(init_buf_.SendMessage(request).ok());
-    init_buf_.ClientSendClose();
-    call_.PerformOps(&init_buf_);
-  }
-
-  // disable operator new
-  static void* operator new(std::size_t size);
-  static void* operator new(std::size_t size, void* p) { return p; };
-
-  SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-                  CallOpClientSendClose>
-      init_buf_;
-  CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
-  CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
-            CallOpClientRecvStatus>
-      finish_buf_;
+  class CallOpSetCollection : public CallOpSetCollectionInterface {
+   public:
+    SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+                    CallOpClientSendClose>
+        init_buf_;
+    CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
+    CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
+              CallOpClientRecvStatus>
+        finish_buf_;
+  };
+  std::shared_ptr<CallOpSetCollection> collection_;
 };
 
 template <class W>
@@ -189,13 +178,5 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
 };
 
 }  // namespace grpc
-
-namespace std {
-template <class R>
-class default_delete<grpc::ClientAsyncResponseReader<R>> {
- public:
-  void operator()(void* p) {}
-};
-}
 
 #endif  // GRPCXX_IMPL_CODEGEN_ASYNC_UNARY_CALL_H

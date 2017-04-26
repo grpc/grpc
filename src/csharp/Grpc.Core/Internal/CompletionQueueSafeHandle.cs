@@ -51,20 +51,14 @@ namespace Grpc.Core.Internal
         {
         }
 
-        /// <summary>
-        /// Create a completion queue that can only be used for Pluck operations.
-        /// </summary>
-        public static CompletionQueueSafeHandle CreateSync()
+        public static CompletionQueueSafeHandle Create()
         {
-            return Native.grpcsharp_completion_queue_create_sync();
+            return Native.grpcsharp_completion_queue_create();
         }
 
-        /// <summary>
-        /// Create a completion queue that can only be used for Next operations.
-        /// </summary>
-        public static CompletionQueueSafeHandle CreateAsync(CompletionRegistry completionRegistry)
+        public static CompletionQueueSafeHandle Create(CompletionRegistry completionRegistry)
         {
-            var cq = Native.grpcsharp_completion_queue_create_async();
+            var cq = Native.grpcsharp_completion_queue_create();
             cq.completionRegistry = completionRegistry;
             return cq;
         }

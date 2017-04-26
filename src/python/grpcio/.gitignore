@@ -11,6 +11,7 @@ dist/
 .cache/
 nosetests.xml
 doc/
+_grpcio_metadata.py
 htmlcov/
 grpc/_cython/_credentials
 poison.c

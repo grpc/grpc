@@ -33,14 +33,14 @@
 
 #include <ruby/ruby.h>
 
-#include "rb_completion_queue.h"
 #include "rb_grpc_imports.generated.h"
+#include "rb_completion_queue.h"
 
 #include <ruby/thread.h>
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpc/support/log.h>
 #include "rb_grpc.h"
 
 /* Used to allow grpc_completion_queue_next call to release the GIL */
@@ -54,13 +54,14 @@ typedef struct next_call_stack {
 
 /* Calls grpc_completion_queue_pluck without holding the ruby GIL */
 static void *grpc_rb_completion_queue_pluck_no_gil(void *param) {
-  next_call_stack *const next_call = (next_call_stack *)param;
+  next_call_stack *const next_call = (next_call_stack*)param;
   gpr_timespec increment = gpr_time_from_millis(20, GPR_TIMESPAN);
   gpr_timespec deadline;
   do {
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
-    next_call->event = grpc_completion_queue_pluck(
-        next_call->cq, next_call->tag, deadline, NULL);
+    next_call->event = grpc_completion_queue_pluck(next_call->cq,
+                                                   next_call->tag,
+                                                   deadline, NULL);
     if (next_call->event.type != GRPC_QUEUE_TIMEOUT ||
         gpr_time_cmp(deadline, next_call->timeout) > 0) {
       break;
@@ -80,7 +81,7 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue *cq) {
 }
 
 static void unblock_func(void *param) {
-  next_call_stack *const next_call = (next_call_stack *)param;
+  next_call_stack *const next_call = (next_call_stack*)param;
   next_call->interrupted = 1;
 }
 
@@ -110,6 +111,7 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue *queue, void *tag,
                                (void *)&next_call);
     /* If an interrupt prevented pluck from returning useful information, then
        any plucks that did complete must have timed out */
-  } while (next_call.interrupted && next_call.event.type == GRPC_QUEUE_TIMEOUT);
+  } while (next_call.interrupted &&
+           next_call.event.type == GRPC_QUEUE_TIMEOUT);
   return next_call.event;
 }

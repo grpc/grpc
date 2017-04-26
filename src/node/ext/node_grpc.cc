@@ -33,8 +33,8 @@
 
 #include <queue>
 
-#include <nan.h>
 #include <node.h>
+#include <nan.h>
 #include <v8.h>
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
@@ -51,11 +51,12 @@ extern "C" {
 #include "call_credentials.h"
 #include "channel.h"
 #include "channel_credentials.h"
-#include "completion_queue.h"
 #include "server.h"
+#include "completion_queue_async_worker.h"
 #include "server_credentials.h"
 #include "slice.h"
 #include "timeval.h"
+#include "completion_queue.h"
 
 using grpc::node::CreateSliceFromString;
 
@@ -185,7 +186,8 @@ void InitOpTypeConstants(Local<Object> exports) {
       Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_INITIAL_METADATA));
   Nan::Set(op_type, Nan::New("SEND_INITIAL_METADATA").ToLocalChecked(),
            SEND_INITIAL_METADATA);
-  Local<Value> SEND_MESSAGE(Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_MESSAGE));
+  Local<Value> SEND_MESSAGE(
+      Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_MESSAGE));
   Nan::Set(op_type, Nan::New("SEND_MESSAGE").ToLocalChecked(), SEND_MESSAGE);
   Local<Value> SEND_CLOSE_FROM_CLIENT(
       Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_CLOSE_FROM_CLIENT));
@@ -199,7 +201,8 @@ void InitOpTypeConstants(Local<Object> exports) {
       Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_INITIAL_METADATA));
   Nan::Set(op_type, Nan::New("RECV_INITIAL_METADATA").ToLocalChecked(),
            RECV_INITIAL_METADATA);
-  Local<Value> RECV_MESSAGE(Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_MESSAGE));
+  Local<Value> RECV_MESSAGE(
+      Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_MESSAGE));
   Nan::Set(op_type, Nan::New("RECV_MESSAGE").ToLocalChecked(), RECV_MESSAGE);
   Local<Value> RECV_STATUS_ON_CLIENT(
       Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_STATUS_ON_CLIENT));
@@ -247,7 +250,8 @@ void InitConnectivityStateConstants(Local<Object> exports) {
       Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_TRANSIENT_FAILURE));
   Nan::Set(channel_state, Nan::New("TRANSIENT_FAILURE").ToLocalChecked(),
            TRANSIENT_FAILURE);
-  Local<Value> FATAL_FAILURE(Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_SHUTDOWN));
+  Local<Value> FATAL_FAILURE(
+      Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_SHUTDOWN));
   Nan::Set(channel_state, Nan::New("FATAL_FAILURE").ToLocalChecked(),
            FATAL_FAILURE);
 }
@@ -276,11 +280,13 @@ void InitLogConstants(Local<Object> exports) {
 
 NAN_METHOD(MetadataKeyIsLegal) {
   if (!info[0]->IsString()) {
-    return Nan::ThrowTypeError("headerKeyIsLegal's argument must be a string");
+    return Nan::ThrowTypeError(
+        "headerKeyIsLegal's argument must be a string");
   }
   Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
   grpc_slice slice = CreateSliceFromString(key);
-  info.GetReturnValue().Set(static_cast<bool>(grpc_header_key_is_legal(slice)));
+  info.GetReturnValue().Set(static_cast<bool>(
+      grpc_header_key_is_legal(slice)));
   grpc_slice_unref(slice);
 }
 
@@ -291,8 +297,8 @@ NAN_METHOD(MetadataNonbinValueIsLegal) {
   }
   Local<String> value = Nan::To<String>(info[0]).ToLocalChecked();
   grpc_slice slice = CreateSliceFromString(value);
-  info.GetReturnValue().Set(
-      static_cast<bool>(grpc_header_nonbin_value_is_legal(slice)));
+  info.GetReturnValue().Set(static_cast<bool>(
+      grpc_header_nonbin_value_is_legal(slice)));
   grpc_slice_unref(slice);
 }
 
@@ -303,7 +309,8 @@ NAN_METHOD(MetadataKeyIsBinary) {
   }
   Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
   grpc_slice slice = CreateSliceFromString(key);
-  info.GetReturnValue().Set(static_cast<bool>(grpc_is_binary_header(slice)));
+  info.GetReturnValue().Set(static_cast<bool>(
+      grpc_is_binary_header(slice)));
   grpc_slice_unref(slice);
 }
 
@@ -345,13 +352,11 @@ NAUV_WORK_CB(LogMessagesCallback) {
     args.pop();
     Local<Value> file = Nan::New(arg->core_args.file).ToLocalChecked();
     Local<Value> line = Nan::New<Uint32, uint32_t>(arg->core_args.line);
-    Local<Value> severity =
-        Nan::New(gpr_log_severity_string(arg->core_args.severity))
-            .ToLocalChecked();
+    Local<Value> severity = Nan::New(
+        gpr_log_severity_string(arg->core_args.severity)).ToLocalChecked();
     Local<Value> message = Nan::New(arg->core_args.message).ToLocalChecked();
-    Local<Value> timestamp =
-        Nan::New<v8::Date>(grpc::node::TimespecToMilliseconds(arg->timestamp))
-            .ToLocalChecked();
+    Local<Value> timestamp = Nan::New<v8::Date>(
+        grpc::node::TimespecToMilliseconds(arg->timestamp)).ToLocalChecked();
     const int argc = 5;
     Local<Value> argv[argc] = {file, line, severity, message, timestamp};
     grpc_logger_state.callback->Call(argc, argv);
@@ -381,9 +386,10 @@ void init_logger() {
   memset(&grpc_logger_state, 0, sizeof(logger_state));
   grpc_logger_state.pending_args = new std::queue<log_args *>();
   uv_mutex_init(&grpc_logger_state.mutex);
-  uv_async_init(uv_default_loop(), &grpc_logger_state.async,
+  uv_async_init(uv_default_loop(),
+                &grpc_logger_state.async,
                 LogMessagesCallback);
-  uv_unref((uv_handle_t *)&grpc_logger_state.async);
+  uv_unref((uv_handle_t*)&grpc_logger_state.async);
   grpc_logger_state.logger_set = false;
 
   gpr_log_verbosity_init();
@@ -408,10 +414,11 @@ NAN_METHOD(SetDefaultLoggerCallback) {
 
 NAN_METHOD(SetLogVerbosity) {
   if (!info[0]->IsUint32()) {
-    return Nan::ThrowTypeError("setLogVerbosity's argument must be a number");
+    return Nan::ThrowTypeError(
+        "setLogVerbosity's argument must be a number");
   }
-  gpr_log_severity severity =
-      static_cast<gpr_log_severity>(Nan::To<uint32_t>(info[0]).FromJust());
+  gpr_log_severity severity = static_cast<gpr_log_severity>(
+      Nan::To<uint32_t>(info[0]).FromJust());
   gpr_set_log_verbosity(severity);
 }
 
@@ -442,25 +449,28 @@ void init(Local<Object> exports) {
 
   // Attach a few utility functions directly to the module
   Nan::Set(exports, Nan::New("metadataKeyIsLegal").ToLocalChecked(),
-           Nan::GetFunction(Nan::New<FunctionTemplate>(MetadataKeyIsLegal))
-               .ToLocalChecked());
-  Nan::Set(
-      exports, Nan::New("metadataNonbinValueIsLegal").ToLocalChecked(),
-      Nan::GetFunction(Nan::New<FunctionTemplate>(MetadataNonbinValueIsLegal))
-          .ToLocalChecked());
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(MetadataKeyIsLegal)).ToLocalChecked());
+  Nan::Set(exports, Nan::New("metadataNonbinValueIsLegal").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(MetadataNonbinValueIsLegal)
+                            ).ToLocalChecked());
   Nan::Set(exports, Nan::New("metadataKeyIsBinary").ToLocalChecked(),
-           Nan::GetFunction(Nan::New<FunctionTemplate>(MetadataKeyIsBinary))
-               .ToLocalChecked());
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(MetadataKeyIsBinary)
+                            ).ToLocalChecked());
   Nan::Set(exports, Nan::New("setDefaultRootsPem").ToLocalChecked(),
-           Nan::GetFunction(Nan::New<FunctionTemplate>(SetDefaultRootsPem))
-               .ToLocalChecked());
-  Nan::Set(
-      exports, Nan::New("setDefaultLoggerCallback").ToLocalChecked(),
-      Nan::GetFunction(Nan::New<FunctionTemplate>(SetDefaultLoggerCallback))
-          .ToLocalChecked());
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(SetDefaultRootsPem)
+                            ).ToLocalChecked());
+  Nan::Set(exports, Nan::New("setDefaultLoggerCallback").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(SetDefaultLoggerCallback)
+                            ).ToLocalChecked());
   Nan::Set(exports, Nan::New("setLogVerbosity").ToLocalChecked(),
-           Nan::GetFunction(Nan::New<FunctionTemplate>(SetLogVerbosity))
-               .ToLocalChecked());
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(SetLogVerbosity)
+                            ).ToLocalChecked());
 }
 
 NODE_MODULE(grpc_node, init)

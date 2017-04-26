@@ -43,11 +43,11 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -80,7 +80,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_lock(&connection_state->server_state->mu);
   if (error != GRPC_ERROR_NONE || connection_state->server_state->shutdown) {
     const char *error_str = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
+    gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
 
     if (error == GRPC_ERROR_NONE && args->endpoint != NULL) {
       // We were shut down after handshaking completed successfully, so

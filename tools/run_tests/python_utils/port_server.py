@@ -33,20 +33,18 @@
 from __future__ import print_function
 
 import argparse
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from six.moves import BaseHTTPServer
 import hashlib
 import os
 import socket
 import sys
 import time
-from SocketServer import ThreadingMixIn
-import threading
 
 
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 14
+_MY_VERSION = 9
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
@@ -70,7 +68,6 @@ print('port server running on port %d' % args.port)
 
 pool = []
 in_use = {}
-mu = threading.Lock()
 
 
 def refill_pool(max_timeout, req):
@@ -98,33 +95,28 @@ def refill_pool(max_timeout, req):
 def allocate_port(req):
   global pool
   global in_use
-  global mu
-  mu.acquire()
   max_timeout = 600
   while not pool:
     refill_pool(max_timeout, req)
     if not pool:
       req.log_message("failed to find ports: retrying soon")
-      mu.release()
       time.sleep(1)
-      mu.acquire()
       max_timeout /= 2
   port = pool[0]
   pool = pool[1:]
   in_use[port] = time.time()
-  mu.release()
   return port
 
 
 keep_running = True
 
 
-class Handler(BaseHTTPRequestHandler):
+class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
   
   def setup(self):
     # If the client is unreachable for 5 seconds, close the connection
     self.timeout = 5
-    BaseHTTPRequestHandler.setup(self)
+    BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
 
   def do_GET(self):
     global keep_running
@@ -166,11 +158,12 @@ class Handler(BaseHTTPRequestHandler):
     elif self.path == '/quitquitquit':
       self.send_response(200)
       self.end_headers()
-      self.server.shutdown()
-
-class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-  """Handle requests in a separate thread"""
+      keep_running = False
 
 
-ThreadedHTTPServer(('', args.port), Handler).serve_forever()
+httpd = BaseHTTPServer.HTTPServer(('', args.port), Handler)
+while keep_running:
+  httpd.handle_request()
+  sys.stderr.flush()
 
+print('done')

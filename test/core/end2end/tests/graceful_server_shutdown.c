@@ -91,8 +91,6 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  /* Note: shutdown_cq is not used in this test */
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void test_early_server_shutdown_finishes_inflight_calls(
@@ -192,7 +190,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  grpc_call_unref(s);
+  grpc_call_destroy(s);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
@@ -206,7 +204,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_unref(c);
+  grpc_call_destroy(c);
 
   cq_verifier_destroy(cqv);
 

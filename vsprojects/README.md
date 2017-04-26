@@ -1,10 +1,10 @@
-# Pre-generated MS Visual Studio project & solution files
+#Pre-generated MS Visual Studio project & solution files
 
 Versions 2013 and 2015 are both supported. You can use [their respective
 community
 editions](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx).
 
-# Building
+#Building
 We are using [NuGet](http://www.nuget.org) to pull zlib and openssl dependencies.
 If you don't have Visual Studio NuGet plugin installed, you'll need to
 download nuget.exe from the web and manually restore the NuGet packages.
@@ -19,7 +19,7 @@ After that, you can build the solution using one of these options:
   1. open `grpc.sln` with Visual Studio and hit "Build".
   2. build from commandline using `msbuild grpc.sln /p:Configuration=Debug`
 
-# C/C++ Test Dependencies
+#C/C++ Test Dependencies
    * gtest isn't available as a git repo like the other dependencies.  download it and add it to `/third_party/gtest/` (the folder will end up with `/build-aux/`, `/cmake/`, `/codegear/`, etc. folders in it).  
     * if using vs2013: open/import the gtest solution in `/msvc/`, and save over the first solution (you will have to change it from read-only).  change all projects to use `/MDd` (Property Pages - C/C++ - Code Generation - Runtime Library) and build. This is a "multithreaded debug" setting and it needs to match grpc.
     * build all

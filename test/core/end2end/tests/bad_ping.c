@@ -75,7 +75,6 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void test_bad_ping(grpc_end2end_test_config config) {
@@ -208,7 +207,7 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
   cq_verify(cqv);
 
-  grpc_call_unref(s);
+  grpc_call_destroy(s);
 
   // The connection should be closed immediately after the misbehaved pings,
   // the in-progress RPC should fail.
@@ -224,7 +223,7 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  grpc_call_unref(c);
+  grpc_call_destroy(c);
   cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);

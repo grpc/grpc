@@ -106,13 +106,11 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   auto* server = serverlist->add_servers();
   server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
   server->set_port(12345);
-  server->set_drop_for_rate_limiting(true);
-  server->set_drop_for_load_balancing(false);
+  server->set_drop_request(true);
   server = response.mutable_server_list()->add_servers();
   server->set_ip_address(Ip4ToPackedString("10.0.0.1"));
   server->set_port(54321);
-  server->set_drop_for_rate_limiting(false);
-  server->set_drop_for_load_balancing(true);
+  server->set_drop_request(false);
   auto* expiration_interval = serverlist->mutable_expiration_interval();
   expiration_interval->set_seconds(888);
   expiration_interval->set_nanos(999);
@@ -127,14 +125,12 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   EXPECT_EQ(PackedStringToIp(c_serverlist->servers[0]->ip_address),
             "127.0.0.1");
   EXPECT_EQ(c_serverlist->servers[0]->port, 12345);
-  EXPECT_TRUE(c_serverlist->servers[0]->drop_for_rate_limiting);
-  EXPECT_FALSE(c_serverlist->servers[0]->drop_for_load_balancing);
+  EXPECT_TRUE(c_serverlist->servers[0]->drop_request);
   EXPECT_TRUE(c_serverlist->servers[1]->has_ip_address);
 
   EXPECT_EQ(PackedStringToIp(c_serverlist->servers[1]->ip_address), "10.0.0.1");
   EXPECT_EQ(c_serverlist->servers[1]->port, 54321);
-  EXPECT_FALSE(c_serverlist->servers[1]->drop_for_rate_limiting);
-  EXPECT_TRUE(c_serverlist->servers[1]->drop_for_load_balancing);
+  EXPECT_FALSE(c_serverlist->servers[1]->drop_request);
 
   EXPECT_TRUE(c_serverlist->expiration_interval.has_seconds);
   EXPECT_EQ(c_serverlist->expiration_interval.seconds, 888);

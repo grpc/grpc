@@ -36,15 +36,12 @@
 
 #include <grpc/support/log.h>
 
-/*
- * == Default completion queue factory implementation ==
- */
-
+/* TODO (sreek) - Currently this does not use the attributes arg. This will be
+   added in a future PR */
 static grpc_completion_queue* default_create(
     const grpc_completion_queue_factory* factory,
-    const grpc_completion_queue_attributes* attr) {
-  return grpc_completion_queue_create_internal(attr->cq_completion_type,
-                                               attr->cq_polling_type);
+    const grpc_completion_queue_attributes* attributes) {
+  return grpc_completion_queue_create(NULL);
 }
 
 static grpc_completion_queue_factory_vtable default_vtable = {default_create};
@@ -52,23 +49,18 @@ static grpc_completion_queue_factory_vtable default_vtable = {default_create};
 static const grpc_completion_queue_factory g_default_cq_factory = {
     "Default Factory", NULL, &default_vtable};
 
-/*
- * == Completion queue factory APIs
- */
-
 const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
     const grpc_completion_queue_attributes* attributes) {
-  GPR_ASSERT(attributes->version >= 1 &&
-             attributes->version <= GRPC_CQ_CURRENT_VERSION);
+  /* As we add more fields to grpc_completion_queue_attributes, we may have to
+     change this assert to:
+         GPR_ASSERT (attributes->version >= 1 &&
+             attributes->version <= GRPC_CQ_CURRENT_VERSION) */
+  GPR_ASSERT(attributes->version == 1);
 
   /* The default factory can handle version 1 of the attributes structure. We
      may have to change this as more fields are added to the structure */
   return &g_default_cq_factory;
 }
-
-/*
- * == Completion queue creation APIs ==
- */
 
 grpc_completion_queue* grpc_completion_queue_create_for_next(void* reserved) {
   GPR_ASSERT(!reserved);
@@ -82,11 +74,4 @@ grpc_completion_queue* grpc_completion_queue_create_for_pluck(void* reserved) {
   grpc_completion_queue_attributes attr = {1, GRPC_CQ_PLUCK,
                                            GRPC_CQ_DEFAULT_POLLING};
   return g_default_cq_factory.vtable->create(&g_default_cq_factory, &attr);
-}
-
-grpc_completion_queue* grpc_completion_queue_create(
-    const grpc_completion_queue_factory* factory,
-    const grpc_completion_queue_attributes* attr, void* reserved) {
-  GPR_ASSERT(!reserved);
-  return factory->vtable->create(factory, attr);
 }

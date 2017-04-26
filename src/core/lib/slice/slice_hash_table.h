@@ -37,28 +37,33 @@
 /** Hash table implementation.
  *
  * This implementation uses open addressing
- * (https://en.wikipedia.org/wiki/Open_addressing) with linear
- * probing (https://en.wikipedia.org/wiki/Linear_probing).
+ * (https://en.wikipedia.org/wiki/Open_addressing) with quadratic
+ * probing (https://en.wikipedia.org/wiki/Quadratic_probing).
  *
  * The keys are \a grpc_slice objects.  The values are arbitrary pointers
- * with a common destroy function.
+ * with a common vtable.
  *
  * Hash tables are intentionally immutable, to avoid the need for locking.
  */
 
 typedef struct grpc_slice_hash_table grpc_slice_hash_table;
 
+typedef struct grpc_slice_hash_table_vtable {
+  void (*destroy_value)(grpc_exec_ctx *exec_ctx, void *value);
+  void *(*copy_value)(void *value);
+} grpc_slice_hash_table_vtable;
+
 typedef struct grpc_slice_hash_table_entry {
   grpc_slice key;
   void *value; /* Must not be NULL. */
+  const grpc_slice_hash_table_vtable *vtable;
 } grpc_slice_hash_table_entry;
 
 /** Creates a new hash table of containing \a entries, which is an array
-    of length \a num_entries.  Takes ownership of all keys and values in
-    \a entries.  Values will be cleaned up via \a destroy_value(). */
+    of length \a num_entries.
+    Creates its own copy of all keys and values from \a entries. */
 grpc_slice_hash_table *grpc_slice_hash_table_create(
-    size_t num_entries, grpc_slice_hash_table_entry *entries,
-    void (*destroy_value)(grpc_exec_ctx *exec_ctx, void *value));
+    size_t num_entries, grpc_slice_hash_table_entry *entries);
 
 grpc_slice_hash_table *grpc_slice_hash_table_ref(grpc_slice_hash_table *table);
 void grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,

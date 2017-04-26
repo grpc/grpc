@@ -44,8 +44,7 @@ cc_library(
     srcs = ["oauth2_utils.c"],
     hdrs = ["oauth2_utils.h"],
     deps = ["//:grpc"],
-    copts = ['-std=c99'],
-    visibility = ["//test/cpp:__subpackages__"],
+    copts = ['-std=c99']
 )
 
 cc_test(

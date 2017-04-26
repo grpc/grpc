@@ -49,10 +49,9 @@ typedef struct grpc_byte_stream grpc_byte_stream;
 struct grpc_byte_stream {
   uint32_t length;
   uint32_t flags;
-  bool (*next)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-               size_t max_size_hint, grpc_closure *on_complete);
-  grpc_error *(*pull)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-                      grpc_slice *slice);
+  int (*next)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
+              grpc_slice *slice, size_t max_size_hint,
+              grpc_closure *on_complete);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
 };
 
@@ -62,20 +61,12 @@ struct grpc_byte_stream {
  *
  * max_size_hint can be set as a hint as to the maximum number
  * of bytes that would be acceptable to read.
- */
-int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                          grpc_byte_stream *byte_stream, size_t max_size_hint,
-                          grpc_closure *on_complete);
-
-/* returns the next slice in the byte stream when it is ready (indicated by
- * either grpc_byte_stream_next returning 1 or on_complete passed to
- * grpc_byte_stream_next is called).
  *
  * once a slice is returned into *slice, it is owned by the caller.
  */
-grpc_error *grpc_byte_stream_pull(grpc_exec_ctx *exec_ctx,
-                                  grpc_byte_stream *byte_stream,
-                                  grpc_slice *slice);
+int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
+                          grpc_byte_stream *byte_stream, grpc_slice *slice,
+                          size_t max_size_hint, grpc_closure *on_complete);
 
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                               grpc_byte_stream *byte_stream);

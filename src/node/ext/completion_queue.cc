@@ -31,10 +31,10 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <node.h>
 #include <uv.h>
+#include <node.h>
 #include <v8.h>
+#include <grpc/grpc.h>
 
 #include "call.h"
 #include "completion_queue.h"
@@ -55,8 +55,8 @@ void drain_completion_queue(uv_prepare_t *handle) {
   grpc_event event;
   (void)handle;
   do {
-    event = grpc_completion_queue_next(queue, gpr_inf_past(GPR_CLOCK_MONOTONIC),
-                                       NULL);
+    event = grpc_completion_queue_next(
+        queue, gpr_inf_past(GPR_CLOCK_MONOTONIC), NULL);
 
     if (event.type == GRPC_OP_COMPLETE) {
       const char *error_message;
@@ -75,7 +75,9 @@ void drain_completion_queue(uv_prepare_t *handle) {
   } while (event.type != GRPC_QUEUE_TIMEOUT);
 }
 
-grpc_completion_queue *GetCompletionQueue() { return queue; }
+grpc_completion_queue *GetCompletionQueue() {
+  return queue;
+}
 
 void CompletionQueueNext() {
   if (pending_batches == 0) {
@@ -86,7 +88,7 @@ void CompletionQueueNext() {
 }
 
 void CompletionQueueInit(Local<Object> exports) {
-  queue = grpc_completion_queue_create_for_next(NULL);
+  queue = grpc_completion_queue_create(NULL);
   uv_prepare_init(uv_default_loop(), &prepare);
   pending_batches = 0;
 }

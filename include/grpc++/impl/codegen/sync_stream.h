@@ -155,11 +155,7 @@ class ClientReader final : public ClientReaderInterface<R> {
   template <class W>
   ClientReader(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, const W& request)
-      : context_(context),
-        cq_(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK,
-            GRPC_CQ_DEFAULT_POLLING}),  // Pluckable cq
-        call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpClientSendClose>
         ops;
@@ -231,11 +227,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   template <class R>
   ClientWriter(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, R* response)
-      : context_(context),
-        cq_(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK,
-            GRPC_CQ_DEFAULT_POLLING}),  // Pluckable cq
-        call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
 
@@ -333,11 +325,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   /// Blocking create a stream.
   ClientReaderWriter(ChannelInterface* channel, const RpcMethod& method,
                      ClientContext* context)
-      : context_(context),
-        cq_(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK,
-            GRPC_CQ_DEFAULT_POLLING}),  // Pluckable cq
-        call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     if (!context_->initial_metadata_corked_) {
       CallOpSet<CallOpSendInitialMetadata> ops;
       ops.SendInitialMetadata(context->send_initial_metadata_,
@@ -574,7 +562,7 @@ class ServerReaderWriterBody final {
   Call* const call_;
   ServerContext* const ctx_;
 };
-}  // namespace internal
+}
 
 // class to represent the user API for a bidirectional streaming call
 template <class W, class R>

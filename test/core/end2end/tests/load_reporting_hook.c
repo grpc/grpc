@@ -101,10 +101,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         NULL)
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -123,13 +122,13 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void request_response_with_payload(
     grpc_end2end_test_config config, grpc_end2end_test_fixture f,
     const char *method_name, const char *request_msg, const char *response_msg,
-    grpc_metadata *initial_lr_metadata, grpc_metadata *trailing_lr_metadata) {
+    grpc_metadata *initial_lr_metadata,
+    grpc_load_reporting_cost_context *cost_ctx) {
   grpc_slice request_payload_slice = grpc_slice_from_static_string(request_msg);
   grpc_slice response_payload_slice =
       grpc_slice_from_static_string(response_msg);
@@ -242,9 +241,8 @@ static void request_response_with_payload(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  GPR_ASSERT(trailing_lr_metadata != NULL);
-  op->data.send_status_from_server.trailing_metadata_count = 1;
-  op->data.send_status_from_server.trailing_metadata = trailing_lr_metadata;
+  GPR_ASSERT(cost_ctx != NULL);
+  grpc_call_set_load_reporting_cost_context(s, cost_ctx);
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
@@ -266,8 +264,8 @@ static void request_response_with_payload(
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_unref(c);
-  grpc_call_unref(s);
+  grpc_call_destroy(c);
+  grpc_call_destroy(s);
 
   cq_verifier_destroy(cqv);
 
@@ -298,21 +296,21 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   const char *response_msg = "... and the response from the server";
 
   grpc_metadata initial_lr_metadata;
-  grpc_metadata trailing_lr_metadata;
 
   initial_lr_metadata.key = GRPC_MDSTR_LB_TOKEN;
   initial_lr_metadata.value = grpc_slice_from_static_string("client-token");
   memset(&initial_lr_metadata.internal_data, 0,
          sizeof(initial_lr_metadata.internal_data));
 
-  trailing_lr_metadata.key = GRPC_MDSTR_LB_COST_BIN;
-  trailing_lr_metadata.value = grpc_slice_from_static_string("server-token");
-  memset(&trailing_lr_metadata.internal_data, 0,
-         sizeof(trailing_lr_metadata.internal_data));
+  grpc_load_reporting_cost_context *cost_ctx = gpr_malloc(sizeof(*cost_ctx));
+  memset(cost_ctx, 0, sizeof(*cost_ctx));
+  cost_ctx->values_count = 1;
+  cost_ctx->values =
+      gpr_malloc(sizeof(*cost_ctx->values) * cost_ctx->values_count);
+  cost_ctx->values[0] = grpc_slice_from_static_string("cost-token");
 
   request_response_with_payload(config, f, method_name, request_msg,
-                                response_msg, &initial_lr_metadata,
-                                &trailing_lr_metadata);
+                                response_msg, &initial_lr_metadata, cost_ctx);
   end_test(&f);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

@@ -56,7 +56,7 @@ def _file_descriptor_response(descriptor):
             file_descriptor_proto=(serialized_proto,)),)
 
 
-class ReflectionServicer(reflection_pb2_grpc.ServerReflectionServicer):
+class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
     """Servicer handling RPCs for service statuses."""
 
     def __init__(self, service_names, pool=None):

@@ -43,19 +43,19 @@ namespace Grpc.Core.Internal.Tests
     public class CompletionQueueSafeHandleTest
     {
         [Test]
-        public void CreateSyncAndDestroy()
+        public void CreateAndDestroy()
         {
             GrpcEnvironment.AddRef();
-            var cq = CompletionQueueSafeHandle.CreateSync();
+            var cq = CompletionQueueSafeHandle.Create();
             cq.Dispose();
             GrpcEnvironment.ReleaseAsync().Wait();
         }
 
         [Test]
-        public void CreateAsyncAndShutdown()
+        public void CreateAndShutdown()
         {
-            var env = GrpcEnvironment.AddRef();
-            var cq = CompletionQueueSafeHandle.CreateAsync(new CompletionRegistry(env));
+            GrpcEnvironment.AddRef();
+            var cq = CompletionQueueSafeHandle.Create();
             cq.Shutdown();
             var ev = cq.Next();
             cq.Dispose();
