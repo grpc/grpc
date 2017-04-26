@@ -147,10 +147,11 @@ grpc::string Ip4ToPackedString(const char* ip_str) {
   return grpc::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
-using Stream = ServerReaderWriter<LoadBalanceResponse, LoadBalanceRequest>;
-using ResponseDelayPair = std::pair<LoadBalanceResponse, int>;
 class BalancerServiceImpl : public BalancerService {
  public:
+  using Stream = ServerReaderWriter<LoadBalanceResponse, LoadBalanceRequest>;
+  using ResponseDelayPair = std::pair<LoadBalanceResponse, int>;
+
   BalancerServiceImpl() : shutdown_(false) {}
 
   Status BalanceLoad(ServerContext* context, Stream* stream) override {
@@ -269,25 +270,22 @@ class GrpclbEnd2endTest : public ::testing::Test {
   void SetNextResolution(const std::vector<AddressData>& address_data) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_lb_addresses* addresses =
-        grpc_lb_addresses_create(address_data.size(), NULL);
+        grpc_lb_addresses_create(address_data.size(), nullptr);
     for (size_t i = 0; i < address_data.size(); ++i) {
       char* lb_uri_str;
       gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", address_data[i].port);
       grpc_uri* lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
-      GPR_ASSERT(lb_uri != NULL);
+      GPR_ASSERT(lb_uri != nullptr);
       grpc_lb_addresses_set_address_from_uri(
           addresses, i, lb_uri, address_data[i].is_balancer,
-          address_data[i].balancer_name.c_str(), NULL);
+          address_data[i].balancer_name.c_str(), nullptr);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    const grpc_arg fake_addresses =
-        grpc_lb_addresses_create_channel_arg(addresses);
-    grpc_channel_args* fake_result =
-        grpc_channel_args_copy_and_add(NULL, &fake_addresses, 1);
+    grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
+    grpc_channel_args fake_result = {1, &fake_addresses};
     grpc_fake_resolver_response_generator_set_response(
-        &exec_ctx, response_generator_, fake_result);
-    grpc_channel_args_destroy(&exec_ctx, fake_result);
+        &exec_ctx, response_generator_, &fake_result);
     grpc_lb_addresses_destroy(&exec_ctx, addresses);
     grpc_exec_ctx_finish(&exec_ctx);
   }
