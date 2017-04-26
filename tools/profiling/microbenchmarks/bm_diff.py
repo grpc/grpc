@@ -248,8 +248,8 @@ def finalize():
     text = 'Performance differences noted:\n' + tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
   else:
     text = 'No significant performance differences'
-  comment_on_pr.comment_on_pr('```\n%s\n```' % text)
   print text
+  comment_on_pr.comment_on_pr('```\n%s\n```' % text)
 
 
 eintr_be_gone(finalize)
