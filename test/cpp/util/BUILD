@@ -29,15 +29,6 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-# The following builds a shared-object to confirm that grpc++_unsecure
-# builds properly. Build-only is sufficient here
-cc_binary(
-    name = "testso.so",
-    srcs = [],
-    deps = ["//:grpc++_unsecure"],
-    linkshared = 1,
-)
-
 cc_library(
     name = "test_config",
     srcs = [

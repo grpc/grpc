@@ -33,15 +33,15 @@
 
 #include <ruby/ruby.h>
 
-#include "rb_byte_buffer.h"
 #include "rb_grpc_imports.generated.h"
+#include "rb_byte_buffer.h"
 
-#include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/slice.h>
 #include "rb_grpc.h"
 
-grpc_byte_buffer *grpc_rb_s_to_byte_buffer(char *string, size_t length) {
+grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char *string, size_t length) {
   grpc_slice slice = grpc_slice_from_copied_buffer(string, length);
   grpc_byte_buffer *buffer = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_slice_unref(slice);
@@ -61,7 +61,7 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
     return Qnil;
   }
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    rb_str_cat(rb_string, (const char *)GRPC_SLICE_START_PTR(next),
+    rb_str_cat(rb_string, (const char *) GRPC_SLICE_START_PTR(next),
                GRPC_SLICE_LENGTH(next));
     grpc_slice_unref(next);
   }
@@ -71,9 +71,7 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
 
 VALUE grpc_rb_slice_to_ruby_string(grpc_slice slice) {
   if (GRPC_SLICE_START_PTR(slice) == NULL) {
-    rb_raise(rb_eRuntimeError,
-             "attempt to convert uninitialized grpc_slice to ruby string");
+    rb_raise(rb_eRuntimeError, "attempt to convert uninitialized grpc_slice to ruby string");
   }
-  return rb_str_new((char *)GRPC_SLICE_START_PTR(slice),
-                    GRPC_SLICE_LENGTH(slice));
+  return rb_str_new((char*)GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice));
 }

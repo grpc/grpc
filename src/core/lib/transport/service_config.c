@@ -162,6 +162,7 @@ static char* parse_json_method_name(grpc_json* json) {
 static bool parse_json_method_config(
     grpc_exec_ctx* exec_ctx, grpc_json* json,
     void* (*create_value)(const grpc_json* method_config_json),
+    const grpc_slice_hash_table_vtable* vtable,
     grpc_slice_hash_table_entry* entries, size_t* idx) {
   // Construct value.
   void* method_config = create_value(json);
@@ -184,11 +185,13 @@ static bool parse_json_method_config(
   // Add entry for each path.
   for (size_t i = 0; i < paths.count; ++i) {
     entries[*idx].key = grpc_slice_from_copied_string(paths.strs[i]);
-    entries[*idx].value = method_config;
+    entries[*idx].value = vtable->copy_value(method_config);
+    entries[*idx].vtable = vtable;
     ++*idx;
   }
   success = true;
 done:
+  vtable->destroy_value(exec_ctx, method_config);
   gpr_strvec_destroy(&paths);
   return success;
 }
@@ -196,7 +199,7 @@ done:
 grpc_slice_hash_table* grpc_service_config_create_method_config_table(
     grpc_exec_ctx* exec_ctx, const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
-    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value)) {
+    const grpc_slice_hash_table_vtable* vtable) {
   const grpc_json* json = service_config->json_tree;
   // Traverse parsed JSON tree.
   if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
@@ -217,8 +220,8 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
       size_t idx = 0;
       for (grpc_json* method = field->child; method != NULL;
            method = method->next) {
-        if (!parse_json_method_config(exec_ctx, method, create_value, entries,
-                                      &idx)) {
+        if (!parse_json_method_config(exec_ctx, method, create_value, vtable,
+                                      entries, &idx)) {
           return NULL;
         }
       }
@@ -228,8 +231,12 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
   // Instantiate method config table.
   grpc_slice_hash_table* method_config_table = NULL;
   if (entries != NULL) {
-    method_config_table =
-        grpc_slice_hash_table_create(num_entries, entries, destroy_value);
+    method_config_table = grpc_slice_hash_table_create(num_entries, entries);
+    // Clean up.
+    for (size_t i = 0; i < num_entries; ++i) {
+      grpc_slice_unref_internal(exec_ctx, entries[i].key);
+      vtable->destroy_value(exec_ctx, entries[i].value);
+    }
     gpr_free(entries);
   }
   return method_config_table;

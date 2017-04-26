@@ -37,7 +37,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.4.0-dev'
+  version = '1.3.0-pre1'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -258,11 +258,16 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_args.h',
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.h',
+                      'src/core/lib/channel/compress_filter.h',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
+                      'src/core/lib/channel/deadline_filter.h',
                       'src/core/lib/channel/handshaker.h',
                       'src/core/lib/channel/handshaker_factory.h',
                       'src/core/lib/channel/handshaker_registry.h',
+                      'src/core/lib/channel/http_client_filter.h',
+                      'src/core/lib/channel/http_server_filter.h',
+                      'src/core/lib/channel/message_size_filter.h',
                       'src/core/lib/compression/algorithm_metadata.h',
                       'src/core/lib/compression/message_compress.h',
                       'src/core/lib/debug/trace.h',
@@ -381,9 +386,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/stream_map.h',
                       'src/core/ext/transport/chttp2/transport/varint.h',
                       'src/core/ext/transport/chttp2/alpn/alpn.h',
-                      'src/core/ext/filters/http/client/http_client_filter.h',
-                      'src/core/ext/filters/http/message_compress/message_compress_filter.h',
-                      'src/core/ext/filters/http/server/http_server_filter.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/composite/composite_credentials.h',
                       'src/core/lib/security/credentials/credentials.h',
@@ -427,7 +429,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_index.h',
                       'src/core/ext/filters/client_channel/uri_parser.h',
-                      'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
@@ -458,15 +459,19 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/trace_string.h',
                       'src/core/ext/census/tracing.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
-                      'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/lib/surface/init.c',
                       'src/core/lib/channel/channel_args.c',
                       'src/core/lib/channel/channel_stack.c',
                       'src/core/lib/channel/channel_stack_builder.c',
+                      'src/core/lib/channel/compress_filter.c',
                       'src/core/lib/channel/connected_channel.c',
+                      'src/core/lib/channel/deadline_filter.c',
                       'src/core/lib/channel/handshaker.c',
                       'src/core/lib/channel/handshaker_factory.c',
                       'src/core/lib/channel/handshaker_registry.c',
+                      'src/core/lib/channel/http_client_filter.c',
+                      'src/core/lib/channel/http_server_filter.c',
+                      'src/core/lib/channel/message_size_filter.c',
                       'src/core/lib/compression/compression.c',
                       'src/core/lib/compression/message_compress.c',
                       'src/core/lib/debug/trace.c',
@@ -603,10 +608,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/varint.c',
                       'src/core/ext/transport/chttp2/transport/writing.c',
                       'src/core/ext/transport/chttp2/alpn/alpn.c',
-                      'src/core/ext/filters/http/client/http_client_filter.c',
-                      'src/core/ext/filters/http/http_filters_plugin.c',
-                      'src/core/ext/filters/http/message_compress/message_compress_filter.c',
-                      'src/core/ext/filters/http/server/http_server_filter.c',
                       'src/core/lib/http/httpcli_security_connector.c',
                       'src/core/lib/security/context/security_context.c',
                       'src/core/lib/security/credentials/composite/composite_credentials.c',
@@ -656,7 +657,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel.c',
                       'src/core/ext/filters/client_channel/subchannel_index.c',
                       'src/core/ext/filters/client_channel/uri_parser.c',
-                      'src/core/ext/filters/deadline/deadline_filter.c',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.c',
                       'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
                       'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
@@ -693,7 +693,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/trace_context.c',
                       'src/core/ext/census/tracing.c',
                       'src/core/ext/filters/max_age/max_age_filter.c',
-                      'src/core/ext/filters/message_size/message_size_filter.c',
                       'src/core/plugin_registry/grpc_plugin_registry.c'
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
@@ -713,11 +712,16 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channel_args.h',
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
+                              'src/core/lib/channel/compress_filter.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
+                              'src/core/lib/channel/deadline_filter.h',
                               'src/core/lib/channel/handshaker.h',
                               'src/core/lib/channel/handshaker_factory.h',
                               'src/core/lib/channel/handshaker_registry.h',
+                              'src/core/lib/channel/http_client_filter.h',
+                              'src/core/lib/channel/http_server_filter.h',
+                              'src/core/lib/channel/message_size_filter.h',
                               'src/core/lib/compression/algorithm_metadata.h',
                               'src/core/lib/compression/message_compress.h',
                               'src/core/lib/debug/trace.h',
@@ -836,9 +840,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/stream_map.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
                               'src/core/ext/transport/chttp2/alpn/alpn.h',
-                              'src/core/ext/filters/http/client/http_client_filter.h',
-                              'src/core/ext/filters/http/message_compress/message_compress_filter.h',
-                              'src/core/ext/filters/http/server/http_server_filter.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/composite/composite_credentials.h',
                               'src/core/lib/security/credentials/credentials.h',
@@ -882,7 +883,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/subchannel.h',
                               'src/core/ext/filters/client_channel/subchannel_index.h',
                               'src/core/ext/filters/client_channel/uri_parser.h',
-                              'src/core/ext/filters/deadline/deadline_filter.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
@@ -912,8 +912,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/trace_status.h',
                               'src/core/ext/census/trace_string.h',
                               'src/core/ext/census/tracing.h',
-                              'src/core/ext/filters/max_age/max_age_filter.h',
-                              'src/core/ext/filters/message_size/message_size_filter.h'
+                              'src/core/ext/filters/max_age/max_age_filter.h'
   end
 
   s.subspec 'Cronet-Interface' do |ss|

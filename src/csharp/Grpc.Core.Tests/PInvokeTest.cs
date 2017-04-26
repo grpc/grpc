@@ -53,7 +53,7 @@ namespace Grpc.Core.Tests
         /// (~1.26us .NET Windows)
         /// </summary>
         [Test]
-        public void CompletionQueueCreateSyncDestroyBenchmark()
+        public void CompletionQueueCreateDestroyBenchmark()
         {
             GrpcEnvironment.AddRef();  // completion queue requires gRPC environment being initialized.
 
@@ -61,7 +61,7 @@ namespace Grpc.Core.Tests
                 10, 10,
                 () =>
                 {
-                    CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.CreateSync();
+                    CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create();
                     cq.Dispose();
                 });
 

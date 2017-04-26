@@ -98,10 +98,6 @@ bool grpc_channel_stack_builder_iterator_is_first(
 bool grpc_channel_stack_builder_iterator_is_end(
     grpc_channel_stack_builder_iterator *iterator);
 
-/// What is the name of the filter at this iterator position?
-const char *grpc_channel_stack_builder_iterator_filter_name(
-    grpc_channel_stack_builder_iterator *iterator);
-
 /// Move an iterator to the next item
 bool grpc_channel_stack_builder_move_next(
     grpc_channel_stack_builder_iterator *iterator);

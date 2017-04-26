@@ -1,4 +1,4 @@
-# Errors and Cancelletion code samples for grpc-ruby
+#Errors and Cancelletion code samples for grpc-ruby
 
 The examples in this directory show use of grpc errors.
 

@@ -31,18 +31,17 @@
  *
  */
 
-#include <limits.h>
-#include <string.h>
+#include "src/core/lib/channel/channel_args.h"
+#include <grpc/grpc.h>
+#include "src/core/lib/support/string.h"
 
 #include <grpc/compression.h>
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/support/string.h"
+#include <string.h>
 
 static grpc_arg copy_arg(const grpc_arg *src) {
   grpc_arg dst;
@@ -330,9 +329,7 @@ const grpc_arg *grpc_channel_args_find(const grpc_channel_args *args,
   return NULL;
 }
 
-int grpc_channel_arg_get_integer(const grpc_arg *arg,
-                                 const grpc_integer_options options) {
-  if (arg == NULL) return options.default_value;
+int grpc_channel_arg_get_integer(grpc_arg *arg, grpc_integer_options options) {
   if (arg->type != GRPC_ARG_INTEGER) {
     gpr_log(GPR_ERROR, "%s ignored: it must be an integer", arg->key);
     return options.default_value;
@@ -350,25 +347,9 @@ int grpc_channel_arg_get_integer(const grpc_arg *arg,
   return arg->value.integer;
 }
 
-bool grpc_channel_arg_get_bool(const grpc_arg *arg, bool default_value) {
-  if (arg == NULL) return default_value;
-  if (arg->type != GRPC_ARG_INTEGER) {
-    gpr_log(GPR_ERROR, "%s ignored: it must be an integer", arg->key);
-    return default_value;
-  }
-  switch (arg->value.integer) {
-    case 0:
-      return false;
-    case 1:
-      return true;
-    default:
-      gpr_log(GPR_ERROR, "%s treated as bool but set to %d (assuming true)",
-              arg->key, arg->value.integer);
-      return true;
-  }
-}
-
 bool grpc_channel_args_want_minimal_stack(const grpc_channel_args *args) {
-  return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(args, GRPC_ARG_MINIMAL_STACK), false);
+  const grpc_arg *arg = grpc_channel_args_find(args, GRPC_ARG_MINIMAL_STACK);
+  if (arg == NULL) return false;
+  if (arg->type == GRPC_ARG_INTEGER && arg->value.integer == 0) return false;
+  return true;
 }

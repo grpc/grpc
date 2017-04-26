@@ -39,7 +39,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.4.0-dev")
+set(PACKAGE_VERSION   "1.3.0-pre1")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -269,10 +269,8 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-if(_gRPC_PLATFORM_MAC)
-  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
-elseif(UNIX)
-  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} rt m pthread)
+if(UNIX)
+  set(_gRPC_ALLTARGETS_LIBRARIES dl rt m pthread)
 endif()
 
 if(WIN32 AND MSVC)
@@ -393,7 +391,6 @@ add_dependencies(buildtests_c error_test)
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c ev_epoll_linux_test)
 endif()
-add_dependencies(buildtests_c fake_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c fd_conservation_posix_test)
 endif()
@@ -474,7 +471,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c memory_profile_test)
 endif()
 add_dependencies(buildtests_c message_compress_test)
-add_dependencies(buildtests_c minimal_stack_is_minimal_test)
 add_dependencies(buildtests_c mlog_test)
 add_dependencies(buildtests_c multiple_server_queues_test)
 add_dependencies(buildtests_c murmur_hash_test)
@@ -495,7 +491,6 @@ add_dependencies(buildtests_c sequential_connectivity_test)
 add_dependencies(buildtests_c server_chttp2_test)
 add_dependencies(buildtests_c server_test)
 add_dependencies(buildtests_c slice_buffer_test)
-add_dependencies(buildtests_c slice_hash_table_test)
 add_dependencies(buildtests_c slice_string_helpers_test)
 add_dependencies(buildtests_c slice_test)
 add_dependencies(buildtests_c sockaddr_resolver_test)
@@ -918,10 +913,15 @@ add_library(grpc
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1058,10 +1058,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
-  src/core/ext/filters/http/client/http_client_filter.c
-  src/core/ext/filters/http/http_filters_plugin.c
-  src/core/ext/filters/http/message_compress/message_compress_filter.c
-  src/core/ext/filters/http/server/http_server_filter.c
   src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/context/security_context.c
   src/core/lib/security/credentials/composite/composite_credentials.c
@@ -1111,7 +1107,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel.c
   src/core/ext/filters/client_channel/subchannel_index.c
   src/core/ext/filters/client_channel/uri_parser.c
-  src/core/ext/filters/deadline/deadline_filter.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
@@ -1148,7 +1143,6 @@ add_library(grpc
   src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
   src/core/ext/filters/max_age/max_age_filter.c
-  src/core/ext/filters/message_size/message_size_filter.c
   src/core/plugin_registry/grpc_plugin_registry.c
 )
 
@@ -1243,10 +1237,15 @@ add_library(grpc_cronet
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1386,10 +1385,6 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
-  src/core/ext/filters/http/client/http_client_filter.c
-  src/core/ext/filters/http/http_filters_plugin.c
-  src/core/ext/filters/http/message_compress/message_compress_filter.c
-  src/core/ext/filters/http/server/http_server_filter.c
   src/core/ext/filters/client_channel/channel_connectivity.c
   src/core/ext/filters/client_channel/client_channel.c
   src/core/ext/filters/client_channel/client_channel_factory.c
@@ -1410,7 +1405,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/subchannel.c
   src/core/ext/filters/client_channel/subchannel_index.c
   src/core/ext/filters/client_channel/uri_parser.c
-  src/core/ext/filters/deadline/deadline_filter.c
   src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/context/security_context.c
   src/core/lib/security/credentials/composite/composite_credentials.c
@@ -1553,10 +1547,15 @@ add_library(grpc_test_util
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1809,10 +1808,15 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1950,10 +1954,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
-  src/core/ext/filters/http/client/http_client_filter.c
-  src/core/ext/filters/http/http_filters_plugin.c
-  src/core/ext/filters/http/message_compress/message_compress_filter.c
-  src/core/ext/filters/http/server/http_server_filter.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
@@ -1978,7 +1978,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel.c
   src/core/ext/filters/client_channel/subchannel_index.c
   src/core/ext/filters/client_channel/uri_parser.c
-  src/core/ext/filters/deadline/deadline_filter.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
@@ -2010,7 +2009,6 @@ add_library(grpc_unsecure
   src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
   src/core/ext/filters/max_age/max_age_filter.c
-  src/core/ext/filters/message_size/message_size_filter.c
   src/core/plugin_registry/grpc_unsecure_plugin_registry.c
 )
 
@@ -2228,10 +2226,15 @@ add_library(grpc++
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -2459,6 +2462,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -2553,10 +2557,15 @@ add_library(grpc++_cronet
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -2699,10 +2708,6 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
-  src/core/ext/filters/http/client/http_client_filter.c
-  src/core/ext/filters/http/http_filters_plugin.c
-  src/core/ext/filters/http/message_compress/message_compress_filter.c
-  src/core/ext/filters/http/server/http_server_filter.c
   src/core/ext/filters/client_channel/channel_connectivity.c
   src/core/ext/filters/client_channel/client_channel.c
   src/core/ext/filters/client_channel/client_channel_factory.c
@@ -2723,7 +2728,6 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/subchannel.c
   src/core/ext/filters/client_channel/subchannel_index.c
   src/core/ext/filters/client_channel/uri_parser.c
-  src/core/ext/filters/deadline/deadline_filter.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
@@ -2851,6 +2855,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -3240,6 +3245,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -3317,10 +3323,15 @@ add_library(grpc++_unsecure
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -3547,6 +3558,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -5444,37 +5456,6 @@ target_link_libraries(ev_epoll_linux_test
 )
 
 endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(fake_resolver_test
-  test/core/client_channel/resolvers/fake_resolver_test.c
-)
-
-
-target_include_directories(fake_resolver_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(fake_resolver_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -7477,37 +7458,6 @@ target_link_libraries(message_compress_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(minimal_stack_is_minimal_test
-  test/core/channel/minimal_stack_is_minimal_test.c
-)
-
-
-target_include_directories(minimal_stack_is_minimal_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(minimal_stack_is_minimal_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(mlog_test
   test/core/census/mlog_test.c
 )
@@ -7996,37 +7946,6 @@ target_include_directories(slice_buffer_test
 )
 
 target_link_libraries(slice_buffer_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(slice_hash_table_test
-  test/core/slice/slice_hash_table_test.c
-)
-
-
-target_include_directories(slice_hash_table_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(slice_hash_table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -9809,8 +9728,6 @@ target_include_directories(codegen_test_minimal
 target_link_libraries(codegen_test_minimal
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
-  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

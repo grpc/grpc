@@ -113,17 +113,6 @@ grpc_channel_stack_builder_create_iterator_at_last(
   return create_iterator_at_filter_node(builder, &builder->end);
 }
 
-bool grpc_channel_stack_builder_iterator_is_end(
-    grpc_channel_stack_builder_iterator *iterator) {
-  return iterator->node == &iterator->builder->end;
-}
-
-const char *grpc_channel_stack_builder_iterator_filter_name(
-    grpc_channel_stack_builder_iterator *iterator) {
-  if (iterator->node->filter == NULL) return NULL;
-  return iterator->node->filter->name;
-}
-
 bool grpc_channel_stack_builder_move_next(
     grpc_channel_stack_builder_iterator *iterator) {
   if (iterator->node == &iterator->builder->end) return false;

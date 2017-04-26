@@ -31,15 +31,14 @@
  *
  */
 
-#include <grpc/slice.h>
-#include <nan.h>
 #include <node.h>
+#include <nan.h>
+#include <grpc/slice.h>
 
 namespace grpc {
 namespace node {
 
-typedef Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>>
-    PersistentValue;
+typedef Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>> PersistentValue;
 
 grpc_slice CreateSliceFromString(const v8::Local<v8::String> source);
 

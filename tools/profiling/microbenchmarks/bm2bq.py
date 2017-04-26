@@ -71,7 +71,6 @@ columns = [
   ('end_of_stream', 'boolean'),
   ('header_bytes_per_iteration', 'float'),
   ('framing_bytes_per_iteration', 'float'),
-  ('nows_per_iteration', 'float'),
 ]
 
 SANITIZE = {
@@ -104,3 +103,4 @@ for row in bm_json.expand_json(js, js2):
       if row[name] == '': continue
       sane_row[name] = SANITIZE[sql_type](row[name])
   writer.writerow(sane_row)
+

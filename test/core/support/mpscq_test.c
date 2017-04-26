@@ -76,7 +76,7 @@ typedef struct {
   gpr_event *start;
 } thd_args;
 
-#define THREAD_ITERATIONS 10000
+#define THREAD_ITERATIONS 100000
 
 static void test_thread(void *args) {
   thd_args *a = args;

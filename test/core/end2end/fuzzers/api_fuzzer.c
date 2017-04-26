@@ -661,7 +661,7 @@ static void read_metadata(input_stream *inp, size_t *count,
 }
 
 static call_state *destroy_call(call_state *call) {
-  grpc_call_unref(call->call);
+  grpc_call_destroy(call->call);
   call->call = NULL;
   return maybe_delete_call_state(call);
 }
@@ -735,7 +735,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   g_active_call = new_call(NULL, ROOT);
   g_resource_quota = grpc_resource_quota_create("api_fuzzer");
 
-  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
          pending_channel_watches > 0 || pending_pings > 0 ||
@@ -932,9 +932,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         }
         uint32_t propagation_mask = read_uint32(&inp);
         grpc_slice method = read_string_like_slice(&inp);
-        if (GRPC_SLICE_LENGTH(method) == 0) {
-          ok = false;
-        }
         grpc_slice host = read_string_like_slice(&inp);
         gpr_timespec deadline =
             gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -970,7 +967,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           break;
         }
         grpc_op *ops = gpr_malloc(sizeof(grpc_op) * num_ops);
-        if (num_ops > 0) memset(ops, 0, sizeof(grpc_op) * num_ops);
+        memset(ops, 0, sizeof(grpc_op) * num_ops);
         bool ok = true;
         size_t i;
         grpc_op *op;

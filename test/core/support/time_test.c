@@ -47,17 +47,32 @@ static void to_fp(void *arg, const char *buf, size_t len) {
   fwrite(buf, 1, len, (FILE *)arg);
 }
 
-/* Convert gpr_intmax x to ascii base b (2..16), and write with
+/* Convert gpr_uintmax x to ascii base b (2..16), and write with
    (*writer)(arg, ...), zero padding to "chars" digits).  */
-static void i_to_s(intmax_t x, int base, int chars,
+static void u_to_s(uintmax_t x, unsigned base, int chars,
                    void (*writer)(void *arg, const char *buf, size_t len),
                    void *arg) {
   char buf[64];
-  char fmt[32];
-  GPR_ASSERT(base == 16 || base == 10);
-  sprintf(fmt, "%%0%d%s", chars, base == 16 ? PRIxMAX : PRIdMAX);
-  sprintf(buf, fmt, x);
-  (*writer)(arg, buf, strlen(buf));
+  char *p = buf + sizeof(buf);
+  do {
+    *--p = "0123456789abcdef"[x % base];
+    x /= base;
+    chars--;
+  } while (x != 0 || chars > 0);
+  (*writer)(arg, p, (size_t)(buf + sizeof(buf) - p));
+}
+
+/* Convert gpr_intmax x to ascii base b (2..16), and write with
+   (*writer)(arg, ...), zero padding to "chars" digits).  */
+static void i_to_s(intmax_t x, unsigned base, int chars,
+                   void (*writer)(void *arg, const char *buf, size_t len),
+                   void *arg) {
+  if (x < 0) {
+    (*writer)(arg, "-", 1);
+    u_to_s((uintmax_t)-x, base, chars - 1, writer, arg);
+  } else {
+    u_to_s((uintmax_t)x, base, chars, writer, arg);
+  }
 }
 
 /* Convert ts to ascii, and write with (*writer)(arg, ...).  */

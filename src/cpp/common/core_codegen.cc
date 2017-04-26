@@ -54,26 +54,9 @@ struct grpc_byte_buffer;
 
 namespace grpc {
 
-const grpc_completion_queue_factory*
-CoreCodegen::grpc_completion_queue_factory_lookup(
-    const grpc_completion_queue_attributes* attributes) {
-  return ::grpc_completion_queue_factory_lookup(attributes);
-}
-
 grpc_completion_queue* CoreCodegen::grpc_completion_queue_create(
-    const grpc_completion_queue_factory* factory,
-    const grpc_completion_queue_attributes* attributes, void* reserved) {
-  return ::grpc_completion_queue_create(factory, attributes, reserved);
-}
-
-grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_next(
     void* reserved) {
-  return ::grpc_completion_queue_create_for_next(reserved);
-}
-
-grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_pluck(
-    void* reserved) {
-  return ::grpc_completion_queue_create_for_pluck(reserved);
+  return ::grpc_completion_queue_create(reserved);
 }
 
 void CoreCodegen::grpc_completion_queue_destroy(grpc_completion_queue* cq) {
@@ -106,12 +89,6 @@ void CoreCodegen::gpr_cv_broadcast(gpr_cv* cv) { ::gpr_cv_broadcast(cv); }
 
 void CoreCodegen::grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
   ::grpc_byte_buffer_destroy(bb);
-}
-
-void CoreCodegen::grpc_call_ref(grpc_call* call) { ::grpc_call_ref(call); }
-void CoreCodegen::grpc_call_unref(grpc_call* call) { ::grpc_call_unref(call); }
-void* CoreCodegen::grpc_call_arena_alloc(grpc_call* call, size_t length) {
-  return ::grpc_call_arena_alloc(call, length);
 }
 
 int CoreCodegen::grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,

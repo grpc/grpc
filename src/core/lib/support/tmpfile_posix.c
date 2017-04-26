@@ -50,34 +50,34 @@
 
 FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
   FILE *result = NULL;
-  char *filename_template;
+  char *template;
   int fd;
 
   if (tmp_filename != NULL) *tmp_filename = NULL;
 
-  gpr_asprintf(&filename_template, "/tmp/%s_XXXXXX", prefix);
-  GPR_ASSERT(filename_template != NULL);
+  gpr_asprintf(&template, "/tmp/%s_XXXXXX", prefix);
+  GPR_ASSERT(template != NULL);
 
-  fd = mkstemp(filename_template);
+  fd = mkstemp(template);
   if (fd == -1) {
-    gpr_log(GPR_ERROR, "mkstemp failed for filename_template %s with error %s.",
-            filename_template, strerror(errno));
+    gpr_log(GPR_ERROR, "mkstemp failed for template %s with error %s.",
+            template, strerror(errno));
     goto end;
   }
   result = fdopen(fd, "w+");
   if (result == NULL) {
     gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
-            filename_template, fd, strerror(errno));
-    unlink(filename_template);
+            template, fd, strerror(errno));
+    unlink(template);
     close(fd);
     goto end;
   }
 
 end:
   if (result != NULL && tmp_filename != NULL) {
-    *tmp_filename = filename_template;
+    *tmp_filename = template;
   } else {
-    gpr_free(filename_template);
+    gpr_free(template);
   }
   return result;
 }

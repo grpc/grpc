@@ -76,7 +76,7 @@ static void verifier_succeeds(grpc_server *server, grpc_completion_queue *cq,
   GPR_ASSERT(payload != NULL);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_unref(s);
+  grpc_call_destroy(s);
   grpc_byte_buffer_destroy(payload);
   cq_verifier_destroy(cqv);
 }
@@ -102,7 +102,7 @@ static void verifier_fails(grpc_server *server, grpc_completion_queue *cq,
   GPR_ASSERT(payload == NULL);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_unref(s);
+  grpc_call_destroy(s);
   cq_verifier_destroy(cqv);
 }
 

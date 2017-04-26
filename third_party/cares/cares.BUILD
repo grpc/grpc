@@ -1,8 +1,3 @@
-config_setting(
-    name = "darwin",
-    values = {"cpu": "darwin"},
-)
-
 cc_library(
     name = "ares",
     srcs = [
@@ -58,6 +53,7 @@ cc_library(
     ],
     hdrs = [
         "ares_build.h",
+        "config_linux/ares_config.h",
         "cares/ares.h",
         "cares/ares_data.h",
         "cares/ares_dns.h",
@@ -79,17 +75,12 @@ cc_library(
         "cares/bitncmp.h",
         "cares/config-win32.h",
         "cares/setup_once.h",
-    ] + select({
-        ":darwin": ["config_darwin/ares_config.h"],
-        "//conditions:default": ["config_linux/ares_config.h"],
-    }),
+    ],
     includes = [
         ".",
-        "cares"
-    ] + select({
-        ":darwin": ["config_darwin"],
-        "//conditions:default": ["config_linux"],
-    }),
+        "config_linux",
+        "cares",
+    ],
     linkstatic = 1,
     visibility = [
         "//visibility:public",

@@ -68,7 +68,6 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       ::grpc::string imports = ::grpc::string("#import \"") + file_name +
                                ".pbobjc.h\"\n\n"
                                "#import <ProtoRPC/ProtoService.h>\n"
-                               "#import <ProtoRPC/ProtoRPC.h>\n"
                                "#import <RxLibrary/GRXWriteable.h>\n"
                                "#import <RxLibrary/GRXWriter.h>\n";
 

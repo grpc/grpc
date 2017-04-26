@@ -42,7 +42,6 @@
 #ifdef __linux__
 #include <sys/syscall.h>
 #endif
-#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/support/block_annotate.h"
@@ -145,14 +144,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
 
 gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
 
-#ifdef GPR_LOW_LEVEL_COUNTERS
-gpr_atm gpr_now_call_count;
-#endif
-
 gpr_timespec gpr_now(gpr_clock_type clock_type) {
-#ifdef GPR_LOW_LEVEL_COUNTERS
-  __atomic_fetch_add(&gpr_now_call_count, 1, __ATOMIC_RELAXED);
-#endif
   return gpr_now_impl(clock_type);
 }
 

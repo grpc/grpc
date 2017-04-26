@@ -37,12 +37,13 @@
 #include <memory>
 #include <vector>
 
-#include <nan.h>
 #include <node.h>
+#include <nan.h>
 #include "grpc/grpc.h"
 #include "grpc/support/log.h"
 
 #include "channel.h"
+
 
 namespace grpc {
 namespace node {
