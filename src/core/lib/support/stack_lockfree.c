@@ -76,13 +76,13 @@ struct gpr_stack_lockfree {
 
 gpr_stack_lockfree *gpr_stack_lockfree_create(size_t entries) {
   gpr_stack_lockfree *stack;
-  stack = gpr_malloc(sizeof(*stack));
+  stack = (gpr_stack_lockfree *)gpr_malloc(sizeof(*stack));
   /* Since we only allocate 16 bits to represent an entry number,
    * make sure that we are within the desired range */
   /* Reserve the highest entry number as a dummy */
   GPR_ASSERT(entries < INVALID_ENTRY_INDEX);
-  stack->entries = gpr_malloc_aligned(entries * sizeof(stack->entries[0]),
-                                      ENTRY_ALIGNMENT_BITS);
+  stack->entries = (lockfree_node *)gpr_malloc_aligned(
+      entries * sizeof(stack->entries[0]), ENTRY_ALIGNMENT_BITS);
   /* Clear out all entries */
   memset(stack->entries, 0, entries * sizeof(stack->entries[0]));
   memset(&stack->head, 0, sizeof(stack->head));
