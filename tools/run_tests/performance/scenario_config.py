@@ -96,6 +96,18 @@ def _payload_type(use_generic_payload, req_size, resp_size):
         r['simple_params'] = sizes
     return r
 
+def _add_channel_arg(config, key, value):
+  if 'channel_args' in config:
+    channel_args = config['channel_args']
+  else:
+    channel_args = []
+    config['channel_args'] = channel_args
+  arg = {'name': key}
+  if isinstance(value, int):
+    arg['int_value'] = value
+  else:
+    arg['str_value'] = value
+  channel_args.append(arg)
 
 def _ping_pong_scenario(name, rpc_type,
                         client_type, server_type,
@@ -113,7 +125,8 @@ def _ping_pong_scenario(name, rpc_type,
                         outstanding=None,
                         resource_quota_size=None,
                         messages_per_stream=None,
-                        excluded_poll_engines=[]):
+                        excluded_poll_engines=[],
+                        minimal_stack=False):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -166,6 +179,10 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['client_channels'] = 1
     scenario['client_config']['async_client_threads'] = 1
 
+  if minimal_stack:
+    _add_channel_arg(scenario['client_config'], 'grpc.minimal_stack', 1)
+    _add_channel_arg(scenario['server_config'], 'grpc.minimal_stack', 1)
+
   if messages_per_stream:
     scenario['client_config']['messages_per_stream'] = messages_per_stream
   if client_language:
@@ -215,6 +232,7 @@ class CXXLanguage:
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories+[SCALABLE])
 
       for mps in geometric_progression(1, 20, 10):
@@ -225,6 +243,7 @@ class CXXLanguage:
             server_type='ASYNC_GENERIC_SERVER',
             unconstrained_client='async', use_generic_payload=True,
             secure=secure, messages_per_stream=mps,
+            minimal_stack=not secure,
             categories=smoketest_categories+[SCALABLE])
 
       for mps in geometric_progression(1, 200, math.sqrt(10)):
@@ -235,6 +254,7 @@ class CXXLanguage:
             server_type='ASYNC_GENERIC_SERVER',
             unconstrained_client='async', use_generic_payload=True,
             secure=secure, messages_per_stream=mps,
+            minimal_stack=not secure,
             categories=[SWEEP])
 
       yield _ping_pong_scenario(
@@ -246,6 +266,7 @@ class CXXLanguage:
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories+[SCALABLE],
           channels=1, outstanding=100)
 
@@ -258,6 +279,7 @@ class CXXLanguage:
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
@@ -267,6 +289,7 @@ class CXXLanguage:
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           async_server_threads=1,
+          minimal_stack=not secure,
           secure=secure)
 
       yield _ping_pong_scenario(
@@ -277,6 +300,7 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories + [SCALABLE],
           excluded_poll_engines = ['poll-cv'])
 
@@ -291,6 +315,7 @@ class CXXLanguage:
           req_size=128,
           resp_size=8*1024*1024,
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories + [SCALABLE])
 
       yield _ping_pong_scenario(
@@ -300,6 +325,7 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories+[SCALABLE],
           excluded_poll_engines = ['poll-cv'])
 
@@ -308,6 +334,7 @@ class CXXLanguage:
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         req_size=1024*1024, resp_size=1024*1024,
         secure=secure,
+        minimal_stack=not secure,
         categories=smoketest_categories + [SCALABLE])
 
       for rpc_type in ['unary', 'streaming']:
@@ -318,6 +345,7 @@ class CXXLanguage:
               client_type='%s_CLIENT' % synchronicity.upper(),
               server_type='%s_SERVER' % synchronicity.upper(),
               async_server_threads=1,
+              minimal_stack=not secure,
               secure=secure)
 
           for size in geometric_progression(1, 1024*1024*1024+1, 8):
@@ -330,6 +358,7 @@ class CXXLanguage:
                   server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity,
                   secure=secure,
+                  minimal_stack=not secure,
                   categories=[SWEEP])
 
           yield _ping_pong_scenario(
@@ -339,6 +368,7 @@ class CXXLanguage:
               server_type='%s_SERVER' % synchronicity.upper(),
               unconstrained_client=synchronicity,
               secure=secure,
+              minimal_stack=not secure,
               categories=smoketest_categories+[SCALABLE])
 
           # TODO(vjpai): Re-enable this test. It has a lot of timeouts
@@ -363,6 +393,7 @@ class CXXLanguage:
                   server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity,
                   secure=secure, messages_per_stream=mps,
+                  minimal_stack=not secure,
                   categories=smoketest_categories+[SCALABLE])
 
             for mps in geometric_progression(1, 200, math.sqrt(10)):
@@ -373,6 +404,7 @@ class CXXLanguage:
                   server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity,
                   secure=secure, messages_per_stream=mps,
+                  minimal_stack=not secure,
                   categories=[SWEEP])
 
           for channels in geometric_progression(1, 20000, math.sqrt(10)):
@@ -385,6 +417,7 @@ class CXXLanguage:
                     client_type='%s_CLIENT' % synchronicity.upper(),
                     server_type='%s_SERVER' % synchronicity.upper(),
                     unconstrained_client=synchronicity, secure=secure,
+                    minimal_stack=not secure,
                     categories=[SWEEP], channels=channels, outstanding=outstanding)
 
   def __str__(self):
