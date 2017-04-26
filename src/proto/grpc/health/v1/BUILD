@@ -29,49 +29,11 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_test(
-    name = "codegen_test_full",
-    srcs = ["codegen_test_full.cc"],
-    deps = [
-        "//:grpc++",
-        "//external:gtest",
-        "//test/core/util:gpr_test_util",
-    ],
-)
+package(default_visibility = ["//visibility:public"])
 
-cc_test(
-    name = "codegen_test_minimal",
-    srcs = ["codegen_test_minimal.cc"],
-    deps = [
-        "//:grpc++",
-        "//external:gtest",
-        "//test/core/util:gpr_test_util",
-    ],
-)
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 
-cc_test(
-    name = "proto_utils_test",
-    srcs = ["proto_utils_test.cc"],
-    deps = [
-        "//:grpc++",
-        "//external:gtest",
-        "//test/core/util:gpr_test_util",
-    ],
-)
-
-cc_test(
-    name = "golden_file_test",
-    srcs = ["golden_file_test.cc"],
-    args = ["--generated_file_path=$(GENDIR)/src/proto/grpc/testing/"],
-    data = [
-        ":compiler_test_golden",
-        "//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen",
-    ],
-    deps = [
-        "//:grpc++",
-        "//external:gflags",
-        "//external:gtest",
-        "//src/proto/grpc/testing:compiler_test_proto",
-        "//test/core/util:gpr_test_util",
-    ],
+grpc_proto_library(
+    name = "health_proto",
+    srcs = ["health.proto"],
 )
