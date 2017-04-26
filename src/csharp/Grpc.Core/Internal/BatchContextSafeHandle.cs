@@ -104,6 +104,11 @@ namespace Grpc.Core.Internal
             return Native.grpcsharp_batch_context_recv_close_on_server_cancelled(this) != 0;
         }
 
+        public void Reset()
+        {
+            Native.grpcsharp_batch_context_reset(this);
+        }
+
         protected override bool ReleaseHandle()
         {
             Native.grpcsharp_batch_context_destroy(handle);
