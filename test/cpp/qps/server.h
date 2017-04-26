@@ -34,8 +34,11 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
+#include <grpc++/resource_quota.h>
 #include <grpc++/security/server_credentials.h>
+#include <grpc++/server_builder.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
 #include <vector>
 
 #include "src/proto/grpc/testing/control.pb.h"
@@ -103,6 +106,28 @@ class Server {
       return SslServerCredentials(ssl_opts);
     } else {
       return InsecureServerCredentials();
+    }
+  }
+
+  static void ApplyServerConfig(const ServerConfig& config,
+                                ServerBuilder* builder) {
+    if (config.resource_quota_size() > 0) {
+      builder->SetResourceQuota(
+          ResourceQuota("QpsServerTest").Resize(config.resource_quota_size()));
+    }
+
+    for (auto arg : config.channel_args()) {
+      switch (arg.value_case()) {
+        case ChannelArg::kStrValue:
+          builder->AddChannelArgument(arg.name(), arg.str_value());
+          break;
+        case ChannelArg::kIntValue:
+          builder->AddChannelArgument(arg.name(), arg.int_value());
+          break;
+        default:
+          gpr_log(GPR_ERROR, "Channel arg '%s' ignored due to unknown type",
+                  arg.name().c_str());
+      }
     }
   }
 

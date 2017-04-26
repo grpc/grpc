@@ -96,10 +96,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       srv_cqs_.emplace_back(builder.AddCompletionQueue());
     }
 
-    if (config.resource_quota_size() > 0) {
-      builder.SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
-                                   .Resize(config.resource_quota_size()));
-    }
+    ApplyServerConfig(config, &builder);
 
     server_ = builder.BuildAndStart();
 

@@ -94,10 +94,7 @@ class SynchronousServer final : public grpc::testing::Server {
                              Server::CreateServerCredentials(config));
     gpr_free(server_address);
 
-    if (config.resource_quota_size() > 0) {
-      builder.SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
-                                   .Resize(config.resource_quota_size()));
-    }
+    ApplyServerConfig(config, &builder);
 
     builder.RegisterService(&service_);
 

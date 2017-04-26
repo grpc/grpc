@@ -158,6 +158,8 @@ message ServerConfig {
 
   // Buffer pool size (no buffer pool specified if unset)
   int32 resource_quota_size = 1001;
+
+  repeated ChannelArg channel_args = 1002;
 }
 
 message ServerArgs {
