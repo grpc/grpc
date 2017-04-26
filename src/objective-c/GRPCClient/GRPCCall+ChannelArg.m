@@ -47,6 +47,11 @@
   hostConfig.responseSizeLimitOverride = @(limit);
 }
 
++ (void)setHostnameOverride:(nonnull NSString *)hostnameOverride forHost:(nonnull NSString *)host {
+    GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+    hostConfig.hostNameOverride = hostnameOverride;
+}
+
 + (void)closeOpenConnections {
   [GRPCHost flushChannelCache];
 }
