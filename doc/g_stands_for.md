@@ -8,3 +8,4 @@ future), and the corresponding version numbers that used them:
 - 1.1 'g' stands for 'good'
 - 1.2 'g' stands for 'green'
 - 1.3 'g' stands for 'gentle'
+- 1.4 'g' stands for 'gregarious'
