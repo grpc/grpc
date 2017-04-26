@@ -212,10 +212,7 @@ void grpcsharp_metadata_array_move(grpc_metadata_array *dest,
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_batch_context_destroy(grpcsharp_batch_context *ctx) {
-  if (!ctx) {
-    return;
-  }
+grpcsharp_batch_context_reset(grpcsharp_batch_context *ctx) {
   grpcsharp_metadata_array_destroy_metadata_including_entries(
       &(ctx->send_initial_metadata));
 
@@ -231,7 +228,15 @@ grpcsharp_batch_context_destroy(grpcsharp_batch_context *ctx) {
   grpcsharp_metadata_array_destroy_metadata_only(
       &(ctx->recv_status_on_client.trailing_metadata));
   grpc_slice_unref(ctx->recv_status_on_client.status_details);
+  memset(ctx, 0, sizeof(grpcsharp_batch_context));
+}
 
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_batch_context_destroy(grpcsharp_batch_context *ctx) {
+  if (!ctx) {
+    return;
+  }
+  grpcsharp_batch_context_reset(ctx);
   gpr_free(ctx);
 }
 
