@@ -59,9 +59,9 @@
 #define INTERNAL_REF_BITS 16
 #define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))
 
+#define GRPC_SUBCHANNEL_MIN_CONNECT_TIMEOUT_SECONDS 20
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER 1.6
-#define GRPC_SUBCHANNEL_RECONNECT_MIN_BACKOFF_SECONDS 20
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
@@ -353,8 +353,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                "subchannel");
   int initial_backoff_ms =
       GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
-  int min_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MIN_BACKOFF_SECONDS * 1000;
   int max_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
+  int min_backoff_ms = GRPC_SUBCHANNEL_MIN_CONNECT_TIMEOUT_SECONDS * 1000;
   bool fixed_reconnect_backoff = false;
   if (c->args) {
     for (size_t i = 0; i < c->args->num_args; i++) {
@@ -365,12 +365,6 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
             grpc_channel_arg_get_integer(
                 &c->args->args[i],
                 (grpc_integer_options){initial_backoff_ms, 100, INT_MAX});
-      } else if (0 == strcmp(c->args->args[i].key,
-                             GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
-        fixed_reconnect_backoff = false;
-        min_backoff_ms = grpc_channel_arg_get_integer(
-            &c->args->args[i],
-            (grpc_integer_options){min_backoff_ms, 100, INT_MAX});
       } else if (0 == strcmp(c->args->args[i].key,
                              GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
@@ -803,7 +797,13 @@ static void grpc_uri_to_sockaddr(grpc_exec_ctx *exec_ctx, const char *uri_str,
                                  grpc_resolved_address *addr) {
   grpc_uri *uri = grpc_uri_parse(exec_ctx, uri_str, 0 /* suppress_errors */);
   GPR_ASSERT(uri != NULL);
-  if (!grpc_parse_uri(uri, addr)) memset(addr, 0, sizeof(*addr));
+  if (strcmp(uri->scheme, "ipv4") == 0) {
+    GPR_ASSERT(parse_ipv4(uri, addr));
+  } else if (strcmp(uri->scheme, "ipv6") == 0) {
+    GPR_ASSERT(parse_ipv6(uri, addr));
+  } else {
+    GPR_ASSERT(parse_unix(uri, addr));
+  }
   grpc_uri_destroy(uri);
 }
 

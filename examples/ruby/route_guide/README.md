@@ -1,4 +1,4 @@
-# gRPC Basics: Ruby sample code
+#gRPC Basics: Ruby sample code
 
 The files in this folder are the samples used in [gRPC Basics: Ruby][],
 a detailed tutorial for using gRPC in Ruby.

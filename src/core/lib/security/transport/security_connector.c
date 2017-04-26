@@ -423,8 +423,12 @@ grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
   c->base.check_call_host = fake_channel_check_call_host;
   c->base.add_handshakers = fake_channel_add_handshakers;
   c->target = gpr_strdup(target);
-  const char *expected_targets = grpc_fake_transport_get_expected_targets(args);
-  c->expected_targets = gpr_strdup(expected_targets);
+  const grpc_arg *expected_target_arg =
+      grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
+  if (expected_target_arg != NULL) {
+    GPR_ASSERT(expected_target_arg->type == GRPC_ARG_STRING);
+    c->expected_targets = gpr_strdup(expected_target_arg->value.string);
+  }
   c->is_lb_channel = (grpc_lb_targets_info_find_in_args(args) != NULL);
   return &c->base;
 }

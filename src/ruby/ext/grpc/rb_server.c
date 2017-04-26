@@ -37,15 +37,15 @@
 #include "rb_server.h"
 
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
 #include <grpc/support/atm.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
-#include "rb_byte_buffer.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
 #include "rb_completion_queue.h"
-#include "rb_grpc.h"
 #include "rb_server_credentials.h"
+#include "rb_byte_buffer.h"
+#include "rb_grpc.h"
 
 /* grpc_rb_cServer is the ruby class that proxies grpc_server. */
 static VALUE grpc_rb_cServer = Qnil;
@@ -93,8 +93,9 @@ static void grpc_rb_server_free(void *p) {
   };
   svr = (grpc_rb_server *)p;
 
-  deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                          gpr_time_from_seconds(2, GPR_TIMESPAN));
+  deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME),
+      gpr_time_from_seconds(2, GPR_TIMESPAN));
 
   destroy_server(svr, deadline);
 
@@ -103,15 +104,13 @@ static void grpc_rb_server_free(void *p) {
 
 static const rb_data_type_t grpc_rb_server_data_type = {
     "grpc_server",
-    {GRPC_RB_GC_NOT_MARKED,
-     grpc_rb_server_free,
-     GRPC_RB_MEMSIZE_UNAVAILABLE,
+    {GRPC_RB_GC_NOT_MARKED, grpc_rb_server_free, GRPC_RB_MEMSIZE_UNAVAILABLE,
      {NULL, NULL}},
     NULL,
     NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
-    /* It is unsafe to specify RUBY_TYPED_FREE_IMMEDIATELY because the free
-     * function would block and we might want to unlock GVL
+    /* It is unsafe to specify RUBY_TYPED_FREE_IMMEDIATELY because the free function would block
+     * and we might want to unlock GVL
      * TODO(yugui) Unlock GVL?
      */
     0,
@@ -140,7 +139,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE channel_args) {
 
   grpc_ruby_once_init();
 
-  cq = grpc_completion_queue_create_for_pluck(NULL);
+  cq = grpc_completion_queue_create(NULL);
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type,
                        wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
@@ -168,7 +167,7 @@ typedef struct request_call_stack {
 
 /* grpc_request_call_stack_init ensures the request_call_stack is properly
  * initialized */
-static void grpc_request_call_stack_init(request_call_stack *st) {
+static void grpc_request_call_stack_init(request_call_stack* st) {
   MEMZERO(st, request_call_stack, 1);
   grpc_metadata_array_init(&st->md_ary);
   grpc_call_details_init(&st->details);
@@ -176,7 +175,7 @@ static void grpc_request_call_stack_init(request_call_stack *st) {
 
 /* grpc_request_call_stack_cleanup ensures the request_call_stack is properly
  * cleaned up */
-static void grpc_request_call_stack_cleanup(request_call_stack *st) {
+static void grpc_request_call_stack_cleanup(request_call_stack* st) {
   grpc_metadata_array_destroy(&st->md_ary);
   grpc_call_details_destroy(&st->details);
 }
@@ -192,9 +191,8 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
   grpc_call_error err;
   request_call_stack st;
   VALUE result;
-  void *tag = (void *)&st;
-  grpc_completion_queue *call_queue =
-      grpc_completion_queue_create_for_pluck(NULL);
+  void *tag = (void*)&st;
+  grpc_completion_queue *call_queue = grpc_completion_queue_create(NULL);
   gpr_timespec deadline;
 
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
@@ -205,8 +203,9 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
   grpc_request_call_stack_init(&st);
   /* call grpc_server_request_call, then wait for it to complete using
    * pluck_event */
-  err = grpc_server_request_call(s->wrapped, &call, &st.details, &st.md_ary,
-                                 call_queue, s->queue, tag);
+  err = grpc_server_request_call(
+      s->wrapped, &call, &st.details, &st.md_ary,
+      call_queue, s->queue, tag);
   if (err != GRPC_CALL_OK) {
     grpc_request_call_stack_cleanup(&st);
     rb_raise(grpc_rb_eCallError,
@@ -302,7 +301,8 @@ static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port,
     return Qnil;
   } else if (TYPE(rb_creds) == T_SYMBOL) {
     if (id_insecure_server != SYM2ID(rb_creds)) {
-      rb_raise(rb_eTypeError, "bad creds symbol, want :this_port_is_insecure");
+      rb_raise(rb_eTypeError,
+               "bad creds symbol, want :this_port_is_insecure");
       return Qnil;
     }
     recvd_port =
@@ -314,8 +314,9 @@ static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port,
     }
   } else {
     creds = grpc_rb_get_wrapped_server_credentials(rb_creds);
-    recvd_port = grpc_server_add_secure_http2_port(
-        s->wrapped, StringValueCStr(port), creds);
+    recvd_port =
+        grpc_server_add_secure_http2_port(s->wrapped, StringValueCStr(port),
+                                          creds);
     if (recvd_port == 0) {
       rb_raise(rb_eRuntimeError,
                "could not add secure port %s to server, not sure why",
@@ -334,17 +335,18 @@ void Init_grpc_server() {
 
   /* Provides a ruby constructor and support for dup/clone. */
   rb_define_method(grpc_rb_cServer, "initialize", grpc_rb_server_init, 1);
-  rb_define_method(grpc_rb_cServer, "initialize_copy", grpc_rb_cannot_init_copy,
-                   1);
+  rb_define_method(grpc_rb_cServer, "initialize_copy",
+                   grpc_rb_cannot_init_copy, 1);
 
   /* Add the server methods. */
-  rb_define_method(grpc_rb_cServer, "request_call", grpc_rb_server_request_call,
-                   0);
+  rb_define_method(grpc_rb_cServer, "request_call",
+                   grpc_rb_server_request_call, 0);
   rb_define_method(grpc_rb_cServer, "start", grpc_rb_server_start, 0);
   rb_define_method(grpc_rb_cServer, "destroy", grpc_rb_server_destroy, -1);
   rb_define_alias(grpc_rb_cServer, "close", "destroy");
   rb_define_method(grpc_rb_cServer, "add_http2_port",
-                   grpc_rb_server_add_http2_port, 2);
+                   grpc_rb_server_add_http2_port,
+                   2);
   id_at = rb_intern("at");
   id_insecure_server = rb_intern("this_port_is_insecure");
 }

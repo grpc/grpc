@@ -1,6 +1,6 @@
 {
   "name": "grpc-health-check",
-  "version": "1.4.0-dev",
+  "version": "1.3.0-pre1",
   "author": "Google Inc.",
   "description": "Health check service for use with gRPC",
   "repository": {
@@ -15,7 +15,7 @@
     }
   ],
   "dependencies": {
-    "grpc": "^1.4.0-dev",
+    "grpc": "^1.3.0-pre1",
     "lodash": "^3.9.3",
     "google-protobuf": "^3.0.0"
   },

@@ -436,18 +436,6 @@ BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, InProcessCHTTP2, NoOpMutator,
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, TCP, NoOpMutator, NoOpMutator)
     ->Range(0, 128 * 1024 * 1024);
 
-BENCHMARK_TEMPLATE(BM_StreamingPingPong, MinInProcessCHTTP2, NoOpMutator,
-                   NoOpMutator)
-    ->Apply(StreamingPingPongArgs);
-BENCHMARK_TEMPLATE(BM_StreamingPingPong, MinTCP, NoOpMutator, NoOpMutator)
-    ->Apply(StreamingPingPongArgs);
-
-BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, MinInProcessCHTTP2, NoOpMutator,
-                   NoOpMutator)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, MinTCP, NoOpMutator, NoOpMutator)
-    ->Range(0, 128 * 1024 * 1024);
-
 // Generate Args for StreamingPingPongWithCoalescingApi benchmarks. Currently
 // generates args for only "small streams" (i.e streams with 0, 1 or 2 messages)
 static void StreamingPingPongWithCoalescingApiArgs(
@@ -469,9 +457,6 @@ static void StreamingPingPongWithCoalescingApiArgs(
 }
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPongWithCoalescingApi, InProcessCHTTP2,
-                   NoOpMutator, NoOpMutator)
-    ->Apply(StreamingPingPongWithCoalescingApiArgs);
-BENCHMARK_TEMPLATE(BM_StreamingPingPongWithCoalescingApi, MinInProcessCHTTP2,
                    NoOpMutator, NoOpMutator)
     ->Apply(StreamingPingPongWithCoalescingApiArgs);
 

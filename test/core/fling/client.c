@@ -99,7 +99,7 @@ static void step_ping_pong_request(void) {
                                                    (size_t)(op - ops),
                                                    (void *)1, NULL));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  grpc_call_unref(call);
+  grpc_call_destroy(call);
   grpc_byte_buffer_destroy(response_payload_recv);
   call = NULL;
   GPR_TIMER_END("ping_pong", 1);
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
   }
 
   channel = grpc_insecure_channel_create(target, NULL, NULL);
-  cq = grpc_completion_queue_create_for_next(NULL);
+  cq = grpc_completion_queue_create(NULL);
   the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);
 
@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
   grpc_profiler_stop();
 
   if (call) {
-    grpc_call_unref(call);
+    grpc_call_destroy(call);
   }
 
   grpc_channel_destroy(channel);

@@ -36,11 +36,7 @@
 
 #import "InteropTests.h"
 
-// The server address is derived from preprocessor macro, which is
-// in turn derived from environment variable of the same name.
-#define NSStringize_helper(x) #x
-#define NSStringize(x) @NSStringize_helper(x)
-static NSString * const kLocalCleartextHost = NSStringize(HOST_PORT_LOCAL);
+static NSString * const kLocalCleartextHost = @"localhost:5050";
 
 // The Protocol Buffers encoding overhead of local interop server. Acquired
 // by experiment. Adjust this when server's proto file changes.

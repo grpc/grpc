@@ -12,8 +12,6 @@ def generate_cc_impl(ctx):
   if ctx.executable.plugin:
     outs += [proto.basename[:-len(".proto")] + ".grpc.pb.h" for proto in protos]
     outs += [proto.basename[:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
-    if ctx.attr.generate_mock:
-      outs += [proto.basename[:-len(".proto")] + "_mock.grpc.pb.h" for proto in protos]
   else:
     outs += [proto.basename[:-len(".proto")] + ".pb.h" for proto in protos]
     outs += [proto.basename[:-len(".proto")] + ".pb.cc" for proto in protos]
@@ -25,10 +23,7 @@ def generate_cc_impl(ctx):
   arguments = []
   if ctx.executable.plugin:
     arguments += ["--plugin=protoc-gen-PLUGIN=" + ctx.executable.plugin.path]
-    flags = list(ctx.attr.flags)
-    if ctx.attr.generate_mock:
-      flags.append("generate_mock_code=true")
-    arguments += ["--PLUGIN_out=" + ",".join(flags) + ":" + dir_out]
+    arguments += ["--PLUGIN_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
     additional_input = [ctx.executable.plugin]
   else:
     arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
@@ -40,10 +35,10 @@ def generate_cc_impl(ctx):
   well_known_proto_files = []
   if ctx.attr.well_known_protos:
     f = ctx.attr.well_known_protos.files.to_list()[0].dirname
-    if f != "external/com_google_protobuf/src/google/protobuf":
-      print("Error: Only @com_google_protobuf//:well_known_protos is supported")
+    if f != "external/submodule_protobuf/src/google/protobuf":
+      print("Error: Only @submodule_protobuf//:well_known_protos is supported")
     else:
-      # f points to "external/com_google_protobuf/src/google/protobuf"
+      # f points to "external/submodule_protobuf/src/google/protobuf"
       # add -I argument to protoc so it knows where to look for the proto files.
       arguments += ["-I{0}".format(f + "/../..")]
       well_known_proto_files = [f for f in ctx.attr.well_known_protos.files]
@@ -74,10 +69,6 @@ generate_cc = rule(
             allow_empty = True,
         ),
         "well_known_protos" : attr.label(
-            mandatory = False,
-        ),
-        "generate_mock" : attr.bool(
-            default = False,
             mandatory = False,
         ),
         "_protoc": attr.label(

@@ -104,7 +104,7 @@ grpc_end2end_proxy *grpc_end2end_proxy_create(const grpc_end2end_proxy_def *def,
   gpr_log(GPR_DEBUG, "PROXY ADDR:%s BACKEND:%s", proxy->proxy_port,
           proxy->server_port);
 
-  proxy->cq = grpc_completion_queue_create_for_next(NULL);
+  proxy->cq = grpc_completion_queue_create(NULL);
   proxy->server = def->create_server(proxy->proxy_port, server_args);
   proxy->client = def->create_client(proxy->server_port, client_args);
 
@@ -148,8 +148,8 @@ void grpc_end2end_proxy_destroy(grpc_end2end_proxy *proxy) {
 
 static void unrefpc(proxy_call *pc, const char *reason) {
   if (gpr_unref(&pc->refs)) {
-    grpc_call_unref(pc->c2p);
-    grpc_call_unref(pc->p2s);
+    grpc_call_destroy(pc->c2p);
+    grpc_call_destroy(pc->p2s);
     grpc_metadata_array_destroy(&pc->c2p_initial_metadata);
     grpc_metadata_array_destroy(&pc->p2s_initial_metadata);
     grpc_metadata_array_destroy(&pc->p2s_trailing_metadata);

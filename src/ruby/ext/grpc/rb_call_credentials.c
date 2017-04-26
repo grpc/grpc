@@ -33,8 +33,8 @@
 
 #include <ruby/ruby.h>
 
-#include "rb_call_credentials.h"
 #include "rb_grpc_imports.generated.h"
+#include "rb_call_credentials.h"
 
 #include <ruby/thread.h>
 
@@ -82,18 +82,20 @@ static VALUE grpc_rb_call_credentials_callback(VALUE callback_args) {
 static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
                                                       VALUE exception_object) {
   VALUE result = rb_hash_new();
-  VALUE backtrace =
-      rb_funcall(rb_funcall(exception_object, rb_intern("backtrace"), 0),
-                 rb_intern("join"), 1, rb_str_new2("\n\tfrom "));
-  VALUE rb_exception_info =
-      rb_funcall(exception_object, rb_intern("inspect"), 0);
+  VALUE backtrace = rb_funcall(
+      rb_funcall(exception_object, rb_intern("backtrace"), 0),
+      rb_intern("join"),
+      1, rb_str_new2("\n\tfrom "));
+  VALUE rb_exception_info = rb_funcall(exception_object, rb_intern("inspect"), 0);
   (void)args;
   gpr_log(GPR_INFO, "Call credentials callback failed: %s\n%s",
-          StringValueCStr(rb_exception_info), StringValueCStr(backtrace));
+          StringValueCStr(rb_exception_info),
+          StringValueCStr(backtrace));
   rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
   rb_hash_aset(result, rb_str_new2("status"),
                INT2NUM(GRPC_STATUS_UNAUTHENTICATED));
-  rb_hash_aset(result, rb_str_new2("details"), rb_exception_info);
+  rb_hash_aset(result, rb_str_new2("details"),
+               rb_exception_info);
   return result;
 }
 
@@ -116,8 +118,7 @@ static void grpc_rb_call_credentials_callback_with_gil(void *param) {
   result = rb_rescue(grpc_rb_call_credentials_callback, callback_args,
                      grpc_rb_call_credentials_callback_rescue, Qnil);
   // Both callbacks return a hash, so result should be a hash
-  grpc_rb_md_ary_convert(rb_hash_aref(result, rb_str_new2("metadata")),
-                         &md_ary);
+  grpc_rb_md_ary_convert(rb_hash_aref(result, rb_str_new2("metadata")), &md_ary);
   status = NUM2INT(rb_hash_aref(result, rb_str_new2("status")));
   details = rb_hash_aref(result, rb_str_new2("details"));
   error_details = StringValueCStr(details);
@@ -137,7 +138,7 @@ static void grpc_rb_call_credentials_plugin_get_metadata(
   params->callback = cb;
 
   grpc_rb_event_queue_enqueue(grpc_rb_call_credentials_callback_with_gil,
-                              (void *)(params));
+                              (void*)(params));
 }
 
 static void grpc_rb_call_credentials_plugin_destroy(void *state) {
@@ -171,15 +172,13 @@ static void grpc_rb_call_credentials_mark(void *p) {
 }
 
 static rb_data_type_t grpc_rb_call_credentials_data_type = {
-    "grpc_call_credentials",
-    {grpc_rb_call_credentials_mark,
-     grpc_rb_call_credentials_free,
-     GRPC_RB_MEMSIZE_UNAVAILABLE,
-     {NULL, NULL}},
-    NULL,
-    NULL,
+  "grpc_call_credentials",
+  {grpc_rb_call_credentials_mark, grpc_rb_call_credentials_free,
+   GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
+  NULL,
+  NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
-    RUBY_TYPED_FREE_IMMEDIATELY
+  RUBY_TYPED_FREE_IMMEDIATELY
 #endif
 };
 
@@ -189,8 +188,7 @@ static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
   grpc_rb_call_credentials *wrapper = ALLOC(grpc_rb_call_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
-  return TypedData_Wrap_Struct(cls, &grpc_rb_call_credentials_data_type,
-                               wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_call_credentials_data_type, wrapper);
 }
 
 /* Creates a wrapping object for a given call credentials. This should only be
@@ -234,7 +232,7 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
     rb_raise(rb_eTypeError, "Argument to CallCredentials#new must be a proc");
     return Qnil;
   }
-  plugin.state = (void *)proc;
+  plugin.state = (void*)proc;
   plugin.type = "";
 
   creds = grpc_metadata_credentials_create_from_plugin(plugin, NULL);
@@ -291,6 +289,7 @@ void Init_grpc_call_credentials() {
 grpc_call_credentials *grpc_rb_get_wrapped_call_credentials(VALUE v) {
   grpc_rb_call_credentials *wrapper = NULL;
   TypedData_Get_Struct(v, grpc_rb_call_credentials,
-                       &grpc_rb_call_credentials_data_type, wrapper);
+                       &grpc_rb_call_credentials_data_type,
+                       wrapper);
   return wrapper->wrapped;
 }

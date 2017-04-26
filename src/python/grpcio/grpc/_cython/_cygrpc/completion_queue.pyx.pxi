@@ -40,7 +40,7 @@ cdef class CompletionQueue:
   def __cinit__(self):
     grpc_init()
     with nogil:
-      self.c_completion_queue = grpc_completion_queue_create_for_next(NULL)
+      self.c_completion_queue = grpc_completion_queue_create(NULL)
     self.is_shutting_down = False
     self.is_shutdown = False
 

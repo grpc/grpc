@@ -109,7 +109,7 @@ static void test(const char *name, void (*body)(void *m), int timeout_s,
       start, gpr_time_from_micros((int64_t)timeout_s * 1000000, GPR_TIMESPAN));
   fprintf(stderr, "%s:", name);
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
-    if (iterations < INT64_MAX / 2) iterations <<= 1;
+    iterations <<= 1;
     fprintf(stderr, " %ld", (long)iterations);
     m = test_new(10, iterations, incr_step);
     test_create_threads(m, body);

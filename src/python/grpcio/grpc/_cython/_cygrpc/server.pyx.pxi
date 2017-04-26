@@ -82,11 +82,20 @@ cdef class Server:
           self.c_server, queue.c_completion_queue, NULL)
     self.registered_completion_queues.append(queue)
 
+  def register_non_listening_completion_queue(
+      self, CompletionQueue queue not None):
+    if self.is_started:
+      raise ValueError("cannot register completion queues after start")
+    with nogil:
+      grpc_server_register_non_listening_completion_queue(
+          self.c_server, queue.c_completion_queue, NULL)
+    self.registered_completion_queues.append(queue)
+
   def start(self):
     if self.is_started:
       raise ValueError("the server has already started")
     self.backup_shutdown_queue = CompletionQueue()
-    self.register_completion_queue(self.backup_shutdown_queue)
+    self.register_non_listening_completion_queue(self.backup_shutdown_queue)
     self.is_started = True
     with nogil:
       grpc_server_start(self.c_server)

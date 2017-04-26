@@ -53,7 +53,6 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
 struct grpc_end2end_test_fixture {
   grpc_completion_queue *cq;
-  grpc_completion_queue *shutdown_cq;
   grpc_server *server;
   grpc_channel *client;
   void *fixture_data;

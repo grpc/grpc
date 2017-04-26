@@ -1,4 +1,4 @@
-# gRPC Basics: C++
+#gRPC Basics: C++
 
 This tutorial provides a basic C++ programmer's introduction to working with
 gRPC. By walking through this example you'll learn how to:

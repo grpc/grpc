@@ -62,8 +62,7 @@ BENCHMARK(BM_CreateDestroyCpp);
 static void BM_CreateDestroyCpp2(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
-    grpc_completion_queue* core_cq =
-        grpc_completion_queue_create_for_next(NULL);
+    grpc_completion_queue* core_cq = grpc_completion_queue_create(NULL);
     CompletionQueue cq(core_cq);
   }
   track_counters.Finish(state);
@@ -73,9 +72,7 @@ BENCHMARK(BM_CreateDestroyCpp2);
 static void BM_CreateDestroyCore(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
-    // TODO: sreek Templatize this benchmark and pass completion type and
-    // polling type as parameters
-    grpc_completion_queue_destroy(grpc_completion_queue_create_for_next(NULL));
+    grpc_completion_queue_destroy(grpc_completion_queue_create(NULL));
   }
   track_counters.Finish(state);
 }
@@ -111,8 +108,7 @@ BENCHMARK(BM_Pass1Cpp);
 
 static void BM_Pass1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO: sreek Templatize this benchmark and pass polling_type as a param
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
@@ -130,8 +126,7 @@ BENCHMARK(BM_Pass1Core);
 
 static void BM_Pluck1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO: sreek Templatize this benchmark and pass polling_type as a param
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
@@ -149,8 +144,7 @@ BENCHMARK(BM_Pluck1Core);
 
 static void BM_EmptyCore(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO: sreek Templatize this benchmark and pass polling_type as a param
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_completion_queue_next(cq, deadline, NULL);

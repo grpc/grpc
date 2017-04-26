@@ -65,7 +65,7 @@ static zend_object_handlers call_ce_handlers;
 /* Frees and destroys an instance of wrapped_grpc_call */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_call)
   if (p->owned && p->wrapped != NULL) {
-    grpc_call_unref(p->wrapped);
+    grpc_call_destroy(p->wrapped);
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 

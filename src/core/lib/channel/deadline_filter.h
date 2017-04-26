@@ -29,8 +29,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
+#ifndef GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H
+#define GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -64,10 +64,14 @@ typedef struct grpc_deadline_state {
 
 // assumes elem->call_data is zero'd
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              grpc_call_stack* call_stack,
-                              gpr_timespec deadline);
+                              grpc_call_stack* call_stack);
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
                                  grpc_call_element* elem);
+
+// Starts the timer with the specified deadline.
+// Should be called from the filter's init_call_elem() method.
+void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+                               gpr_timespec deadline);
 
 // Cancels the existing timer and starts a new one with new_deadline.
 //
@@ -89,13 +93,10 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op_batch* op);
 
-// Should deadline checking be performed (according to channel args)
-bool grpc_deadline_checking_enabled(const grpc_channel_args* args);
-
 // Deadline filters for direct client channels and server channels.
 // Note: Deadlines for non-direct client channels are handled by the
 // client_channel filter.
 extern const grpc_channel_filter grpc_client_deadline_filter;
 extern const grpc_channel_filter grpc_server_deadline_filter;
 
-#endif /* GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H */
+#endif /* GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H */

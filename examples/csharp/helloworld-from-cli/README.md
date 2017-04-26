@@ -12,19 +12,26 @@ Example projects in this directory depend on the [Grpc](https://www.nuget.org/pa
 and [Google.Protobuf](https://www.nuget.org/packages/Google.Protobuf/) NuGet packages
 which have been already added to the project for you.
 
+The examples in this directory target .NET 4.5 framework, as .NET Core support is
+currently experimental.
+
 PREREQUISITES
 -------------
 
-- The [.NET Core SDK](https://www.microsoft.com/net/core).
+- The DotNetCore SDK cli.
+
+- The .NET 4.5 framework.
+
+Both are available to download at https://www.microsoft.com/net/download
 
 BUILD
 -------
 
 From the `examples/csharp/helloworld-from-cli` directory:
 
-- `dotnet restore Greeter.sln`
+- `dotnet restore`
 
-- `dotnet build Greeter.sln`
+- `dotnet build **/project.json` (this will automatically download NuGet dependencies)
 
 Try it!
 -------
@@ -33,14 +40,14 @@ Try it!
 
   ```
   > cd GreeterServer
-  > dotnet run -f netcoreapp1.0
+  > dotnet run
   ```
 
 - Run the client
 
   ```
   > cd GreeterClient
-  > dotnet run -f netcoreapp1.0
+  > dotnet run
   ```
 
 Tutorial

@@ -108,7 +108,7 @@ bool Http2Client::DoRstAfterData() {
 
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
-  // There is no guarantee that data would be received.
+  GPR_ASSERT(response.has_payload());  // data should be received
 
   gpr_log(GPR_DEBUG, "Done testing reset stream after data");
   return true;
