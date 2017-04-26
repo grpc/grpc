@@ -2871,14 +2871,19 @@
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
       "src/proto/grpc/testing/control.pb.h", 
+      "src/proto/grpc/testing/control_mock.grpc.pb.h", 
       "src/proto/grpc/testing/messages.grpc.pb.h", 
       "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/payloads.grpc.pb.h", 
       "src/proto/grpc/testing/payloads.pb.h", 
+      "src/proto/grpc/testing/payloads_mock.grpc.pb.h", 
       "src/proto/grpc/testing/services.grpc.pb.h", 
       "src/proto/grpc/testing/services.pb.h", 
+      "src/proto/grpc/testing/services_mock.grpc.pb.h", 
       "src/proto/grpc/testing/stats.grpc.pb.h", 
-      "src/proto/grpc/testing/stats.pb.h"
+      "src/proto/grpc/testing/stats.pb.h", 
+      "src/proto/grpc/testing/stats_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -2899,14 +2904,19 @@
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
       "src/proto/grpc/testing/control.pb.h", 
+      "src/proto/grpc/testing/control_mock.grpc.pb.h", 
       "src/proto/grpc/testing/messages.grpc.pb.h", 
       "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/payloads.grpc.pb.h", 
       "src/proto/grpc/testing/payloads.pb.h", 
+      "src/proto/grpc/testing/payloads_mock.grpc.pb.h", 
       "src/proto/grpc/testing/services.grpc.pb.h", 
       "src/proto/grpc/testing/services.pb.h", 
+      "src/proto/grpc/testing/services_mock.grpc.pb.h", 
       "src/proto/grpc/testing/stats.grpc.pb.h", 
-      "src/proto/grpc/testing/stats.pb.h"
+      "src/proto/grpc/testing/stats.pb.h", 
+      "src/proto/grpc/testing/stats_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -3027,7 +3037,8 @@
     ], 
     "headers": [
       "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
-      "src/proto/grpc/testing/echo_messages.pb.h"
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -3084,7 +3095,8 @@
     ], 
     "headers": [
       "src/proto/grpc/testing/compiler_test.grpc.pb.h", 
-      "src/proto/grpc/testing/compiler_test.pb.h"
+      "src/proto/grpc/testing/compiler_test.pb.h", 
+      "src/proto/grpc/testing/compiler_test_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -3229,7 +3241,9 @@
       "src/proto/grpc/testing/echo.grpc.pb.h", 
       "src/proto/grpc/testing/echo.pb.h", 
       "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
-      "src/proto/grpc/testing/echo_messages.pb.h"
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -3249,7 +3263,8 @@
     ], 
     "headers": [
       "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
-      "src/proto/grpc/lb/v1/load_balancer.pb.h"
+      "src/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -3271,7 +3286,8 @@
     ], 
     "headers": [
       "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
-      "src/proto/grpc/lb/v1/load_balancer.pb.h"
+      "src/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -3445,6 +3461,7 @@
     "headers": [
       "src/proto/grpc/testing/metrics.grpc.pb.h", 
       "src/proto/grpc/testing/metrics.pb.h", 
+      "src/proto/grpc/testing/metrics_mock.grpc.pb.h", 
       "test/cpp/util/metrics_server.h"
     ], 
     "is_filegroup": false, 
@@ -3466,11 +3483,14 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "include/grpc++/test/mock_stream.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "mock_test", 
     "src": [
+      "include/grpc++/test/mock_stream.h", 
       "test/cpp/end2end/mock_test.cc"
     ], 
     "third_party": false, 
@@ -3629,10 +3649,13 @@
     "headers": [
       "src/proto/grpc/testing/empty.grpc.pb.h", 
       "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/empty_mock.grpc.pb.h", 
       "src/proto/grpc/testing/messages.grpc.pb.h", 
       "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/test.grpc.pb.h", 
-      "src/proto/grpc/testing/test.pb.h"
+      "src/proto/grpc/testing/test.pb.h", 
+      "src/proto/grpc/testing/test_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -3658,10 +3681,13 @@
     "headers": [
       "src/proto/grpc/testing/empty.grpc.pb.h", 
       "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/empty_mock.grpc.pb.h", 
       "src/proto/grpc/testing/messages.grpc.pb.h", 
       "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/test.grpc.pb.h", 
-      "src/proto/grpc/testing/test.pb.h"
+      "src/proto/grpc/testing/test.pb.h", 
+      "src/proto/grpc/testing/test_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -3762,7 +3788,9 @@
       "src/proto/grpc/testing/echo.grpc.pb.h", 
       "src/proto/grpc/testing/echo.pb.h", 
       "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
-      "src/proto/grpc/testing/echo_messages.pb.h"
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -3899,12 +3927,16 @@
     "headers": [
       "src/proto/grpc/testing/empty.grpc.pb.h", 
       "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/empty_mock.grpc.pb.h", 
       "src/proto/grpc/testing/messages.grpc.pb.h", 
       "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/metrics.grpc.pb.h", 
       "src/proto/grpc/testing/metrics.pb.h", 
+      "src/proto/grpc/testing/metrics_mock.grpc.pb.h", 
       "src/proto/grpc/testing/test.grpc.pb.h", 
       "src/proto/grpc/testing/test.pb.h", 
+      "src/proto/grpc/testing/test_mock.grpc.pb.h", 
       "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.h", 
       "test/cpp/interop/stress_interop_client.h", 
@@ -5919,7 +5951,8 @@
     "headers": [
       "include/grpc++/support/error_details.h", 
       "src/proto/grpc/status/status.grpc.pb.h", 
-      "src/proto/grpc/status/status.pb.h"
+      "src/proto/grpc/status/status.pb.h", 
+      "src/proto/grpc/status/status_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -5999,12 +6032,16 @@
     "headers": [
       "src/proto/grpc/health/v1/health.grpc.pb.h", 
       "src/proto/grpc/health/v1/health.pb.h", 
+      "src/proto/grpc/health/v1/health_mock.grpc.pb.h", 
       "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h", 
       "src/proto/grpc/testing/duplicate/echo_duplicate.pb.h", 
+      "src/proto/grpc/testing/duplicate/echo_duplicate_mock.grpc.pb.h", 
       "src/proto/grpc/testing/echo.grpc.pb.h", 
       "src/proto/grpc/testing/echo.pb.h", 
       "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
       "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/create_test_channel.h", 
@@ -6184,10 +6221,13 @@
     "headers": [
       "src/proto/grpc/testing/empty.grpc.pb.h", 
       "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/empty_mock.grpc.pb.h", 
       "src/proto/grpc/testing/messages.grpc.pb.h", 
       "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/test.grpc.pb.h", 
       "src/proto/grpc/testing/test.pb.h", 
+      "src/proto/grpc/testing/test_mock.grpc.pb.h", 
       "test/cpp/interop/http2_client.h"
     ], 
     "is_filegroup": false, 
@@ -6211,6 +6251,7 @@
     "headers": [
       "src/proto/grpc/testing/messages.grpc.pb.h", 
       "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
       "test/cpp/interop/client_helper.h"
     ], 
     "is_filegroup": false, 
@@ -6237,10 +6278,13 @@
     "headers": [
       "src/proto/grpc/testing/empty.grpc.pb.h", 
       "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/empty_mock.grpc.pb.h", 
       "src/proto/grpc/testing/messages.grpc.pb.h", 
       "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/test.grpc.pb.h", 
       "src/proto/grpc/testing/test.pb.h", 
+      "src/proto/grpc/testing/test_mock.grpc.pb.h", 
       "test/cpp/interop/interop_client.h"
     ], 
     "is_filegroup": false, 
@@ -6289,10 +6333,13 @@
     "headers": [
       "src/proto/grpc/testing/empty.grpc.pb.h", 
       "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/empty_mock.grpc.pb.h", 
       "src/proto/grpc/testing/messages.grpc.pb.h", 
       "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/test.grpc.pb.h", 
-      "src/proto/grpc/testing/test.pb.h"
+      "src/proto/grpc/testing/test.pb.h", 
+      "src/proto/grpc/testing/test_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -6326,14 +6373,19 @@
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
       "src/proto/grpc/testing/control.pb.h", 
+      "src/proto/grpc/testing/control_mock.grpc.pb.h", 
       "src/proto/grpc/testing/messages.grpc.pb.h", 
       "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/payloads.grpc.pb.h", 
       "src/proto/grpc/testing/payloads.pb.h", 
+      "src/proto/grpc/testing/payloads_mock.grpc.pb.h", 
       "src/proto/grpc/testing/services.grpc.pb.h", 
       "src/proto/grpc/testing/services.pb.h", 
+      "src/proto/grpc/testing/services_mock.grpc.pb.h", 
       "src/proto/grpc/testing/stats.grpc.pb.h", 
       "src/proto/grpc/testing/stats.pb.h", 
+      "src/proto/grpc/testing/stats_mock.grpc.pb.h", 
       "test/cpp/qps/benchmark_config.h", 
       "test/cpp/qps/client.h", 
       "test/cpp/qps/driver.h", 
@@ -9047,7 +9099,8 @@
     "deps": [], 
     "headers": [
       "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h", 
-      "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
+      "src/proto/grpc/reflection/v1alpha/reflection.pb.h", 
+      "src/proto/grpc/reflection/v1alpha/reflection_mock.grpc.pb.h"
     ], 
     "is_filegroup": true, 
     "language": "c++", 
@@ -9061,12 +9114,14 @@
       "grpc++"
     ], 
     "headers": [
+      "include/grpc++/test/mock_stream.h", 
       "include/grpc++/test/server_context_test_spouse.h"
     ], 
     "is_filegroup": true, 
     "language": "c++", 
     "name": "grpc++_test", 
     "src": [
+      "include/grpc++/test/mock_stream.h", 
       "include/grpc++/test/server_context_test_spouse.h"
     ], 
     "third_party": false, 

@@ -3329,7 +3329,7 @@
   }, 
   {
     "args": [
-      "--generated_file_path=gens/src/proto/grpc/testing/compiler_test.grpc.pb.h"
+      "--generated_file_path=gens/src/proto/grpc/testing/"
     ], 
     "ci_platforms": [
       "linux", 
@@ -85304,6 +85304,29 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/clusterfuzz-testcase-6723650944237568"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/clusterfuzz-testcase-minimized-5175380371570688"
     ], 
     "ci_platforms": [
       "linux"

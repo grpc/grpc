@@ -39,7 +39,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library",
      "grpc_proto_plugin", "grpc_cc_libraries")
 
 # This should be updated along with build.yaml
-g_stands_for = "gentle"
+g_stands_for = "gregarious"
 
 core_version = "3.0.0-dev"
 
