@@ -142,6 +142,7 @@ EXPORTS
     grpc_server_credentials_set_auth_metadata_processor
     grpc_slice_ref
     grpc_slice_unref
+    grpc_slice_copy
     grpc_slice_new
     grpc_slice_new_with_user_data
     grpc_slice_new_with_len

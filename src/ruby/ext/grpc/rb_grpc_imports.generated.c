@@ -180,6 +180,7 @@ grpc_call_set_credentials_type grpc_call_set_credentials_import;
 grpc_server_credentials_set_auth_metadata_processor_type grpc_server_credentials_set_auth_metadata_processor_import;
 grpc_slice_ref_type grpc_slice_ref_import;
 grpc_slice_unref_type grpc_slice_unref_import;
+grpc_slice_copy_type grpc_slice_copy_import;
 grpc_slice_new_type grpc_slice_new_import;
 grpc_slice_new_with_user_data_type grpc_slice_new_with_user_data_import;
 grpc_slice_new_with_len_type grpc_slice_new_with_len_import;
@@ -481,6 +482,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_server_credentials_set_auth_metadata_processor_import = (grpc_server_credentials_set_auth_metadata_processor_type) GetProcAddress(library, "grpc_server_credentials_set_auth_metadata_processor");
   grpc_slice_ref_import = (grpc_slice_ref_type) GetProcAddress(library, "grpc_slice_ref");
   grpc_slice_unref_import = (grpc_slice_unref_type) GetProcAddress(library, "grpc_slice_unref");
+  grpc_slice_copy_import = (grpc_slice_copy_type) GetProcAddress(library, "grpc_slice_copy");
   grpc_slice_new_import = (grpc_slice_new_type) GetProcAddress(library, "grpc_slice_new");
   grpc_slice_new_with_user_data_import = (grpc_slice_new_with_user_data_type) GetProcAddress(library, "grpc_slice_new_with_user_data");
   grpc_slice_new_with_len_import = (grpc_slice_new_with_len_type) GetProcAddress(library, "grpc_slice_new_with_len");

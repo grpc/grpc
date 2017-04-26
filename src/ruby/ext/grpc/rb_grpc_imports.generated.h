@@ -491,6 +491,9 @@ extern grpc_slice_ref_type grpc_slice_ref_import;
 typedef void(*grpc_slice_unref_type)(grpc_slice s);
 extern grpc_slice_unref_type grpc_slice_unref_import;
 #define grpc_slice_unref grpc_slice_unref_import
+typedef grpc_slice(*grpc_slice_copy_type)(grpc_slice s);
+extern grpc_slice_copy_type grpc_slice_copy_import;
+#define grpc_slice_copy grpc_slice_copy_import
 typedef grpc_slice(*grpc_slice_new_type)(void *p, size_t len, void (*destroy)(void *));
 extern grpc_slice_new_type grpc_slice_new_import;
 #define grpc_slice_new grpc_slice_new_import
@@ -530,7 +533,7 @@ extern grpc_slice_sub_no_ref_type grpc_slice_sub_no_ref_import;
 typedef grpc_slice(*grpc_slice_split_tail_type)(grpc_slice *s, size_t split);
 extern grpc_slice_split_tail_type grpc_slice_split_tail_import;
 #define grpc_slice_split_tail grpc_slice_split_tail_import
-typedef grpc_slice(*grpc_slice_split_tail_maybe_ref_type)(grpc_slice *s, size_t split, int inc_refs);
+typedef grpc_slice(*grpc_slice_split_tail_maybe_ref_type)(grpc_slice *s, size_t split, grpc_slice_ref_whom ref_whom);
 extern grpc_slice_split_tail_maybe_ref_type grpc_slice_split_tail_maybe_ref_import;
 #define grpc_slice_split_tail_maybe_ref grpc_slice_split_tail_maybe_ref_import
 typedef grpc_slice(*grpc_slice_split_head_type)(grpc_slice *s, size_t split);
