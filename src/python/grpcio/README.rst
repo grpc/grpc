@@ -6,7 +6,7 @@ Package for gRPC Python.
 Installation
 ------------
 
-gRPC Python is available for Linux, Mac OS X, and Windows.
+gRPC Python is available for Linux, macOS, and Windows.
 
 From PyPI
 ~~~~~~~~~
