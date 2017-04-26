@@ -66,7 +66,9 @@ void bad_ssl_run(grpc_server *server) {
   grpc_call *s = NULL;
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue *shutdown_cq;
 
   grpc_call_details_init(&call_details);
   grpc_metadata_array_init(&request_metadata_recv);
@@ -82,10 +84,13 @@ void bad_ssl_run(grpc_server *server) {
   while (!shutdown_finished) {
     if (got_sigint && !shutdown_started) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
-      grpc_server_shutdown_and_notify(server, cq, NULL);
-      GPR_ASSERT(grpc_completion_queue_pluck(
-                     cq, NULL, grpc_timeout_seconds_to_deadline(5), NULL)
-                     .type == GRPC_OP_COMPLETE);
+      shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+      grpc_server_shutdown_and_notify(server, shutdown_cq, NULL);
+      GPR_ASSERT(
+          grpc_completion_queue_pluck(shutdown_cq, NULL,
+                                      grpc_timeout_seconds_to_deadline(5), NULL)
+              .type == GRPC_OP_COMPLETE);
+      grpc_completion_queue_destroy(shutdown_cq);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
     }

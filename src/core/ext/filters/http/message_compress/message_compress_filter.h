@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -30,18 +31,38 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_HTTP_CLIENT_FILTER_H
-#define GRPC_CORE_LIB_CHANNEL_HTTP_CLIENT_FILTER_H
+#ifndef GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_COMPRESS_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_COMPRESS_FILTER_H
+
+#include <grpc/impl/codegen/compression_types.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 
-/* Processes metadata on the client side for HTTP2 transports */
-extern const grpc_channel_filter grpc_http_client_filter;
+extern int grpc_compression_trace;
 
-/* Channel arg to override the http2 :scheme header */
-#define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
+/** Compression filter for outgoing data.
+ *
+ * See <grpc/compression.h> for the available compression settings.
+ *
+ * Compression settings may come from:
+ *  - Channel configuration, as established at channel creation time.
+ *  - The metadata accompanying the outgoing data to be compressed. This is
+ *    taken as a request only. We may choose not to honor it. The metadata key
+ *    is given by \a GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY.
+ *
+ * Compression can be disabled for concrete messages (for instance in order to
+ * prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set in
+ * the BEGIN_MESSAGE flags.
+ *
+ * The attempted compression mechanism is added to the resulting initial
+ * metadata under the'grpc-encoding' key.
+ *
+ * If compression is actually performed, BEGIN_MESSAGE's flag is modified to
+ * incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of the
+ * aforementioned 'grpc-encoding' metadata value, data will pass through
+ * uncompressed. */
 
-/* Channel arg to determine maximum size of payload eligable for GET request */
-#define GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET "grpc.max_payload_size_for_get"
+extern const grpc_channel_filter grpc_message_compress_filter;
 
-#endif /* GRPC_CORE_LIB_CHANNEL_HTTP_CLIENT_FILTER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_COMPRESS_FILTER_H \
+          */

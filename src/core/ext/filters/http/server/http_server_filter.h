@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,17 +31,12 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H
-#define GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H
+#ifndef GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H
 
-#include <grpc++/impl/codegen/status.h>
+#include "src/core/lib/channel/channel_stack.h"
 
-namespace grpc {
+/* Processes metadata on the client side for HTTP2 transports */
+extern const grpc_channel_filter grpc_http_server_filter;
 
-inline StatusCode GetCanonicalCode(const Status& status) {
-  return status.error_code();
-}
-
-}  // namespace grpc
-
-#endif  // GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H
+#endif /* GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H */

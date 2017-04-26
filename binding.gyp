@@ -47,7 +47,11 @@
     # will let users recompile gRPC to work without ALPN.
     'grpc_alpn%': 'true',
     # Indicates that the library should be built with gcov.
-    'grpc_gcov%': 'false'
+    'grpc_gcov%': 'false',
+    # Indicates that the library should be built with compatibility for musl
+    # libc, so that it can run on Alpine Linux. This is only necessary if not
+    # building on Alpine Linux
+    'grpc_alpine%': 'false'
   },
   'target_defaults': {
     'configurations': {
@@ -114,6 +118,11 @@
             '-ftest-coverage',
             '-rdynamic',
         ],
+      }],
+      ['grpc_alpine=="true"', {
+        'defines': [
+          'GPR_MUSL_LIBC_COMPAT'
+        ]
       }],
       ['OS!="win" and runtime=="electron"', {
         "defines": [
@@ -535,6 +544,10 @@
             }
           ]
         },
+      ]
+    }],
+    ['OS == "win"', {
+      'targets': [
         # Only want to compile zlib under Windows
         {
           'cflags': [
@@ -569,7 +582,6 @@
     }]
   ],
   'targets': [
-
     {
       'cflags': [
         '-std=c99',
@@ -648,22 +660,16 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
-        'node_modules/cares/deps/cares/cares.gyp:cares',
       ],
       'sources': [
         'src/core/lib/surface/init.c',
         'src/core/lib/channel/channel_args.c',
         'src/core/lib/channel/channel_stack.c',
         'src/core/lib/channel/channel_stack_builder.c',
-        'src/core/lib/channel/compress_filter.c',
         'src/core/lib/channel/connected_channel.c',
-        'src/core/lib/channel/deadline_filter.c',
         'src/core/lib/channel/handshaker.c',
         'src/core/lib/channel/handshaker_factory.c',
         'src/core/lib/channel/handshaker_registry.c',
-        'src/core/lib/channel/http_client_filter.c',
-        'src/core/lib/channel/http_server_filter.c',
-        'src/core/lib/channel/message_size_filter.c',
         'src/core/lib/compression/compression.c',
         'src/core/lib/compression/message_compress.c',
         'src/core/lib/debug/trace.c',
@@ -800,6 +806,10 @@
         'src/core/ext/transport/chttp2/transport/varint.c',
         'src/core/ext/transport/chttp2/transport/writing.c',
         'src/core/ext/transport/chttp2/alpn/alpn.c',
+        'src/core/ext/filters/http/client/http_client_filter.c',
+        'src/core/ext/filters/http/http_filters_plugin.c',
+        'src/core/ext/filters/http/message_compress/message_compress_filter.c',
+        'src/core/ext/filters/http/server/http_server_filter.c',
         'src/core/lib/http/httpcli_security_connector.c',
         'src/core/lib/security/context/security_context.c',
         'src/core/lib/security/credentials/composite/composite_credentials.c',
@@ -849,6 +859,7 @@
         'src/core/ext/filters/client_channel/subchannel.c',
         'src/core/ext/filters/client_channel/subchannel_index.c',
         'src/core/ext/filters/client_channel/uri_parser.c',
+        'src/core/ext/filters/deadline/deadline_filter.c',
         'src/core/ext/transport/chttp2/client/chttp2_connector.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
@@ -885,6 +896,7 @@
         'src/core/ext/census/trace_context.c',
         'src/core/ext/census/tracing.c',
         'src/core/ext/filters/max_age/max_age_filter.c',
+        'src/core/ext/filters/message_size/message_size_filter.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
       "conditions": [
@@ -951,7 +963,6 @@
       "dependencies": [
         "grpc",
         "gpr",
-        "node_modules/cares/deps/cares/cares.gyp:cares",
       ]
     },
     {

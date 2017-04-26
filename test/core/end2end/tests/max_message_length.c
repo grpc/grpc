@@ -83,9 +83,10 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
+  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
+                                         grpc_timeout_seconds_to_deadline(5),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -104,6 +105,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 // Test with request larger than the limit.
@@ -287,8 +289,8 @@ done:
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(recv_payload);
 
-  grpc_call_destroy(c);
-  if (s != NULL) grpc_call_destroy(s);
+  grpc_call_unref(c);
+  if (s != NULL) grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 
@@ -481,8 +483,8 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(recv_payload);
 
-  grpc_call_destroy(c);
-  if (s != NULL) grpc_call_destroy(s);
+  grpc_call_unref(c);
+  if (s != NULL) grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 

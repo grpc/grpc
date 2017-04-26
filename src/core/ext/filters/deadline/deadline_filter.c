@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "src/core/lib/channel/deadline_filter.h"
+#include "src/core/ext/filters/deadline/deadline_filter.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -39,9 +39,11 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/channel_init.h"
 
 //
 // grpc_deadline_state
@@ -141,18 +143,6 @@ static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
   op->on_complete = &deadline_state->on_complete;
 }
 
-void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              grpc_call_stack* call_stack) {
-  grpc_deadline_state* deadline_state = elem->call_data;
-  deadline_state->call_stack = call_stack;
-}
-
-void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
-                                 grpc_call_element* elem) {
-  grpc_deadline_state* deadline_state = elem->call_data;
-  cancel_timer_if_needed(exec_ctx, deadline_state);
-}
-
 // Callback and associated state for starting the timer after call stack
 // initialization has been completed.
 struct start_timer_after_init_state {
@@ -167,8 +157,11 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
   gpr_free(state);
 }
 
-void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                               gpr_timespec deadline) {
+void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+                              grpc_call_stack* call_stack,
+                              gpr_timespec deadline) {
+  grpc_deadline_state* deadline_state = elem->call_data;
+  deadline_state->call_stack = call_stack;
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
@@ -187,6 +180,12 @@ void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                       grpc_schedule_on_exec_ctx);
     grpc_closure_sched(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
+}
+
+void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
+                                 grpc_call_element* elem) {
+  grpc_deadline_state* deadline_state = elem->call_data;
+  cancel_timer_if_needed(exec_ctx, deadline_state);
 }
 
 void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
@@ -248,8 +247,7 @@ typedef struct server_call_data {
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
-  grpc_deadline_state_start(exec_ctx, elem, args->deadline);
+  grpc_deadline_state_init(exec_ctx, elem, args->call_stack, args->deadline);
   return GRPC_ERROR_NONE;
 }
 
@@ -346,3 +344,30 @@ const grpc_channel_filter grpc_server_deadline_filter = {
     grpc_channel_next_get_info,
     "deadline",
 };
+
+bool grpc_deadline_checking_enabled(const grpc_channel_args* channel_args) {
+  return grpc_channel_arg_get_bool(
+      grpc_channel_args_find(channel_args, GRPC_ARG_ENABLE_DEADLINE_CHECKS),
+      !grpc_channel_args_want_minimal_stack(channel_args));
+}
+
+static bool maybe_add_deadline_filter(grpc_exec_ctx* exec_ctx,
+                                      grpc_channel_stack_builder* builder,
+                                      void* arg) {
+  return grpc_deadline_checking_enabled(
+             grpc_channel_stack_builder_get_channel_arguments(builder))
+             ? grpc_channel_stack_builder_prepend_filter(builder, arg, NULL,
+                                                         NULL)
+             : true;
+}
+
+void grpc_deadline_filter_init(void) {
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_deadline_filter, (void*)&grpc_client_deadline_filter);
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_deadline_filter, (void*)&grpc_server_deadline_filter);
+}
+
+void grpc_deadline_filter_shutdown(void) {}

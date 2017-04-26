@@ -33,15 +33,15 @@
 
 #include <ruby/ruby.h>
 
-#include "rb_compression_options.h"
 #include "rb_byte_buffer.h"
+#include "rb_compression_options.h"
 #include "rb_grpc_imports.generated.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/alloc.h>
 #include <string.h>
 
 #include "rb_grpc.h"
@@ -182,15 +182,16 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
    * correct C string out of it. */
   algorithm_name_as_string = rb_funcall(algorithm_name, rb_intern("to_s"), 0);
 
-  name_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(algorithm_name_as_string), RSTRING_LEN(algorithm_name_as_string));
+  name_slice =
+      grpc_slice_from_copied_buffer(RSTRING_PTR(algorithm_name_as_string),
+                                    RSTRING_LEN(algorithm_name_as_string));
 
   /* Raise an error if the name isn't recognized as a compression algorithm by
    * the algorithm parse function
    * in GRPC core. */
-  if(!grpc_compression_algorithm_parse(name_slice, algorithm_value)) {
+  if (!grpc_compression_algorithm_parse(name_slice, algorithm_value)) {
     tmp_str = grpc_slice_to_c_string(name_slice);
-    rb_raise(rb_eNameError, "Invalid compression algorithm name: %s",
-             tmp_str);
+    rb_raise(rb_eNameError, "Invalid compression algorithm name: %s", tmp_str);
   }
 
   grpc_slice_unref(name_slice);

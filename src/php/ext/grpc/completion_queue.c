@@ -38,13 +38,10 @@
 grpc_completion_queue *completion_queue;
 
 void grpc_php_init_completion_queue(TSRMLS_D) {
-  completion_queue = grpc_completion_queue_create(NULL);
+  completion_queue = grpc_completion_queue_create_for_pluck(NULL);
 }
 
 void grpc_php_shutdown_completion_queue(TSRMLS_D) {
   grpc_completion_queue_shutdown(completion_queue);
-  while (grpc_completion_queue_next(completion_queue,
-                                    gpr_inf_future(GPR_CLOCK_REALTIME),
-                                    NULL).type != GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(completion_queue);
 }

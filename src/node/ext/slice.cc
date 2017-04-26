@@ -31,10 +31,10 @@
  *
  */
 
-#include <node.h>
-#include <nan.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
+#include <nan.h>
+#include <node.h>
 
 #include "slice.h"
 
@@ -49,19 +49,19 @@ using v8::Value;
 
 namespace {
 void SliceFreeCallback(char *data, void *hint) {
-  grpc_slice *slice = reinterpret_cast<grpc_slice*>(hint);
+  grpc_slice *slice = reinterpret_cast<grpc_slice *>(hint);
   grpc_slice_unref(*slice);
   delete slice;
 }
 
 void string_destroy_func(void *user_data) {
-  delete reinterpret_cast<Nan::Utf8String*>(user_data);
+  delete reinterpret_cast<Nan::Utf8String *>(user_data);
 }
 
 void buffer_destroy_func(void *user_data) {
-  delete reinterpret_cast<PersistentValue*>(user_data);
+  delete reinterpret_cast<PersistentValue *>(user_data);
 }
-} // namespace
+}  // namespace
 
 grpc_slice CreateSliceFromString(const Local<String> source) {
   Nan::HandleScope scope;
@@ -73,28 +73,32 @@ grpc_slice CreateSliceFromString(const Local<String> source) {
 grpc_slice CreateSliceFromBuffer(const Local<Value> source) {
   // Prerequisite: ::node::Buffer::HasInstance(source)
   Nan::HandleScope scope;
-  return grpc_slice_new_with_user_data(::node::Buffer::Data(source),
-                                       ::node::Buffer::Length(source),
-                                       buffer_destroy_func,
-                                       new PersistentValue(source));
+  return grpc_slice_new_with_user_data(
+      ::node::Buffer::Data(source), ::node::Buffer::Length(source),
+      buffer_destroy_func, new PersistentValue(source));
 }
 Local<String> CopyStringFromSlice(const grpc_slice slice) {
   Nan::EscapableHandleScope scope;
   if (GRPC_SLICE_LENGTH(slice) == 0) {
     return scope.Escape(Nan::EmptyString());
   }
-  return scope.Escape(Nan::New<String>(
-      const_cast<char *>(reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(slice))),
-      GRPC_SLICE_LENGTH(slice)).ToLocalChecked());
+  return scope.Escape(
+      Nan::New<String>(const_cast<char *>(reinterpret_cast<const char *>(
+                           GRPC_SLICE_START_PTR(slice))),
+                       GRPC_SLICE_LENGTH(slice))
+          .ToLocalChecked());
 }
 
 Local<Value> CreateBufferFromSlice(const grpc_slice slice) {
   Nan::EscapableHandleScope scope;
   grpc_slice *slice_ptr = new grpc_slice;
   *slice_ptr = grpc_slice_ref(slice);
-  return scope.Escape(Nan::NewBuffer(
-      const_cast<char *>(reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(*slice_ptr))),
-      GRPC_SLICE_LENGTH(*slice_ptr), SliceFreeCallback, slice_ptr).ToLocalChecked());
+  return scope.Escape(
+      Nan::NewBuffer(
+          const_cast<char *>(
+              reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(*slice_ptr))),
+          GRPC_SLICE_LENGTH(*slice_ptr), SliceFreeCallback, slice_ptr)
+          .ToLocalChecked());
 }
 
 }  // namespace node

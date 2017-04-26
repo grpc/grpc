@@ -120,7 +120,7 @@ static void finish_ping_pong_request(int call_idx) {
   grpc_metadata_array_destroy(&calls[call_idx].initial_metadata_recv);
   grpc_metadata_array_destroy(&calls[call_idx].trailing_metadata_recv);
   grpc_slice_unref(calls[call_idx].details);
-  grpc_call_destroy(calls[call_idx].call);
+  grpc_call_unref(calls[call_idx].call);
   calls[call_idx].call = NULL;
 }
 
@@ -187,7 +187,7 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
   grpc_byte_buffer_destroy(response_payload_recv);
   grpc_slice_unref(calls[call_idx].details);
   calls[call_idx].details = grpc_empty_slice();
-  grpc_call_destroy(calls[call_idx].call);
+  grpc_call_unref(calls[call_idx].call);
   calls[call_idx].call = NULL;
 
   return snapshot;
@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
     calls[k].details = grpc_empty_slice();
   }
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
 
   struct grpc_memory_counters client_channel_start =
       grpc_memory_counters_snapshot();

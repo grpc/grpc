@@ -5,8 +5,22 @@
       <Filter>test\cpp\end2end</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\test\mock_stream.h">
+      <Filter>include\grpc++\test</Filter>
+    </ClInclude>
+  </ItemGroup>
 
   <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{b827d6d2-cfa5-2dd4-6ebc-afcccd5e8e0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++">
+      <UniqueIdentifier>{28289e8f-b68e-b9f5-7680-c15d77b574a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\test">
+      <UniqueIdentifier>{4a7b43be-c730-6221-d190-e394521f9ae7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="test">
       <UniqueIdentifier>{69c257a2-3e4c-a86e-ce0d-1a97b237d294}</UniqueIdentifier>
     </Filter>

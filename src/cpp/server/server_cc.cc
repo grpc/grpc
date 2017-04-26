@@ -124,6 +124,14 @@ class ShutdownTag : public CompletionQueueTag {
   bool FinalizeResult(void** tag, bool* status) { return false; }
 };
 
+class DummyTag : public CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) {
+    *status = true;
+    return true;
+  }
+};
+
 class Server::SyncRequest final : public CompletionQueueTag {
  public:
   SyncRequest(RpcServiceMethod* method, void* tag)
@@ -145,7 +153,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
     grpc_metadata_array_destroy(&request_metadata_);
   }
 
-  void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
+  void SetupRequest() { cq_ = grpc_completion_queue_create_for_pluck(nullptr); }
 
   void TeardownRequest() {
     grpc_completion_queue_destroy(cq_);
@@ -213,10 +221,15 @@ class Server::SyncRequest final : public CompletionQueueTag {
           MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
-      void* ignored_tag;
-      bool ignored_ok;
+
       cq_.Shutdown();
-      GPR_ASSERT(cq_.Next(&ignored_tag, &ignored_ok) == false);
+
+      CompletionQueueTag* op_tag = ctx_.GetCompletionOpTag();
+      cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
+
+      /* Ensure the cq_ is shutdown */
+      DummyTag ignored_tag;
+      GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
     }
 
    private:
@@ -315,14 +328,18 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     }
   }
 
-  void ShutdownAndDrainCompletionQueue() {
+  void Shutdown() override {
     server_cq_->Shutdown();
+    ThreadManager::Shutdown();
+  }
 
+  void Wait() override {
+    ThreadManager::Wait();
     // Drain any pending items from the queue
     void* tag;
     bool ok;
     while (server_cq_->Next(&tag, &ok)) {
-      // Nothing to be done here
+      // Do nothing
     }
   }
 
@@ -402,7 +419,7 @@ Server::~Server() {
     } else if (!started_) {
       // Shutdown the completion queues
       for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-        (*it)->ShutdownAndDrainCompletionQueue();
+        (*it)->Shutdown();
       }
     }
   }
@@ -490,11 +507,11 @@ int Server::AddListeningPort(const grpc::string& addr,
                              ServerCredentials* creds) {
   GPR_ASSERT(!started_);
   int port = creds->AddPortToServer(addr, server_);
-  global_callbacks_->AddPort(this, port);
+  global_callbacks_->AddPort(this, addr, creds, port);
   return port;
 }
 
-bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
+void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
   global_callbacks_->PreServerStart(this);
   started_ = true;
@@ -530,8 +547,6 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
     (*it)->Start();
   }
-
-  return true;
 }
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
@@ -568,7 +583,6 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Wait for threads in all ThreadManagers to terminate
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
       (*it)->Wait();
-      (*it)->ShutdownAndDrainCompletionQueue();
     }
 
     // Drain the shutdown queue (if the previous call to AsyncNext() timed out
@@ -593,7 +607,7 @@ void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
-  ops->FillOps(cops, &nops);
+  ops->FillOps(call->call(), cops, &nops);
   auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == result);
 }
