@@ -71,7 +71,8 @@ static void te_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     te->last_write = gpr_now(GPR_CLOCK_MONOTONIC);
   }
   for (size_t i = 0; i < slices->count; i++) {
-    grpc_slice_buffer_add(&te->write_buffer, grpc_slice_copy(slices->slices[i]));
+    grpc_slice_buffer_add(&te->write_buffer,
+                          grpc_slice_copy(slices->slices[i]));
   }
   grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_REF(te->error));
   gpr_mu_unlock(&te->mu);

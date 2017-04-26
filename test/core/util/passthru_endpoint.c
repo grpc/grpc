@@ -108,7 +108,8 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     m->on_read = NULL;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
-      grpc_slice_buffer_add(&m->read_buffer, grpc_slice_copy(slices->slices[i]));
+      grpc_slice_buffer_add(&m->read_buffer,
+                            grpc_slice_copy(slices->slices[i]));
     }
   }
   gpr_mu_unlock(&m->parent->mu);
