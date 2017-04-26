@@ -9,3 +9,7 @@ future), and the corresponding version numbers that used them:
 - 1.2 'g' stands for 'green'
 - 1.3 'g' stands for 'gentle'
 - 1.4 'g' stands for 'gregarious'
+- 1.5 'g' stands for 'graham'
+- 1.6 'g' stands for 'gala'
+- 1.7 'g' stands for 'grumpy' (of the _7_ Dwarfs)
+- 1.8 'g' stands for 'greight'
