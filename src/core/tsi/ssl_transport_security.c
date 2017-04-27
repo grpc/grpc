@@ -1042,6 +1042,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     ssl_handshaker_extract_peer,
     ssl_handshaker_create_frame_protector,
     ssl_handshaker_destroy,
+    NULL,
 };
 
 /* --- tsi_ssl_handshaker_factory common methods. --- */
