@@ -922,7 +922,7 @@ static bool cq_is_pluck_finished(grpc_exec_ctx *exec_ctx, void *arg) {
 }
 
 static grpc_event cq_pluck(grpc_completion_queue *cc, void *tag,
-                     gpr_timespec deadline, void *reserved) {
+                           gpr_timespec deadline, void *reserved) {
   grpc_event ret;
   grpc_cq_completion *c;
   grpc_cq_completion *prev;
