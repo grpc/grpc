@@ -2125,14 +2125,17 @@ static bool is_epoll_available() {
 }
 
 /* This is mainly for testing purposes. Checks to see if environment variable
- * GRPC_MAX_POLLERS_PER_PI is set and if so, assigns that value to the */
+ * GRPC_MAX_POLLERS_PER_PI is set and if so, assigns that value to
+ * g_max_pollers_per_pi (any negative value is considered INT_MAX) */
 static void set_max_pollers_per_island() {
   char *s = gpr_getenv("GRPC_MAX_POLLERS_PER_PI");
   if (s) {
-    int max_pollers = (int)strtol(s, NULL, 10);
-    if (max_pollers > 0) {
-      g_max_pollers_per_pi = max_pollers;
+    g_max_pollers_per_pi = (int)strtol(s, NULL, 10);
+    if (g_max_pollers_per_pi < 0) {
+      g_max_pollers_per_pi = INT_MAX;
     }
+  } else {
+    g_max_pollers_per_pi = INT_MAX;
   }
 
   gpr_log(GPR_INFO, "Max number of pollers per polling island: %d",
