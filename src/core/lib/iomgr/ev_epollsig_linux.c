@@ -1921,7 +1921,8 @@ static bool is_epoll_available() {
   return true;
 }
 
-const grpc_event_engine_vtable *grpc_init_epollsig_linux(bool explicit_request) {
+const grpc_event_engine_vtable *grpc_init_epollsig_linux(
+    bool explicit_request) {
   /* If use of signals is disabled, we cannot use epoll engine*/
   if (is_grpc_wakeup_signal_initialized && grpc_wakeup_signal < 0) {
     return NULL;
@@ -1936,8 +1937,11 @@ const grpc_event_engine_vtable *grpc_init_epollsig_linux(bool explicit_request) 
   }
 
   if (!is_grpc_wakeup_signal_initialized) {
-    if (explicit_request) grpc_use_signal(SIGRTMIN + 6);    
- else return NULL;
+    if (explicit_request) {
+      grpc_use_signal(SIGRTMIN + 6);
+    } else {
+      return NULL;
+    }
   }
 
   fd_global_init();
@@ -1959,7 +1963,10 @@ const grpc_event_engine_vtable *grpc_init_epollsig_linux(bool explicit_request) 
 #include "src/core/lib/iomgr/ev_posix.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable *grpc_init_epollsig_linux(bool explicit_request) { return NULL; }
+const grpc_event_engine_vtable *grpc_init_epollsig_linux(
+    bool explicit_request) {
+  return NULL;
+}
 #endif /* defined(GRPC_POSIX_SOCKET) */
 
 void grpc_use_signal(int signum) {}
