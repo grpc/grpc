@@ -72,7 +72,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['epoll', 'poll', 'poll-cv']
+  'linux': ['epoll1', 'epollsig', 'poll', 'poll-cv']
 }
 
 
