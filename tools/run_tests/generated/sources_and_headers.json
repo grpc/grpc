@@ -463,9 +463,9 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "ev_epoll_linux_test", 
+    "name": "ev_epollsig_linux_test", 
     "src": [
-      "test/core/iomgr/ev_epoll_linux_test.c"
+      "test/core/iomgr/ev_epollsig_linux_test.c"
     ], 
     "third_party": false, 
     "type": "target"

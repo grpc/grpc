@@ -1814,12 +1814,12 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: ev_epoll_linux_test
+- name: ev_epollsig_linux_test
   cpu_cost: 3
   build: test
   language: c
   src:
-  - test/core/iomgr/ev_epoll_linux_test.c
+  - test/core/iomgr/ev_epollsig_linux_test.c
   deps:
   - grpc_test_util
   - grpc
