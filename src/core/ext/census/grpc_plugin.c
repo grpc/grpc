@@ -31,6 +31,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <limits.h>
 #include <string.h>
 
@@ -48,7 +50,7 @@ static bool is_census_enabled(const grpc_channel_args *a) {
       return a->args[i].value.integer != 0 && census_enabled();
     }
   }
-  return census_enabled();
+  return census_enabled() && !grpc_channel_args_want_minimal_stack(a);
 }
 
 static bool maybe_add_census_filter(grpc_exec_ctx *exec_ctx,

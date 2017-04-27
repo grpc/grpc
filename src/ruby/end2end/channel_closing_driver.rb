@@ -36,7 +36,7 @@ require_relative './end2end_common'
 
 def main
   STDERR.puts 'start server'
-  server_runner = ServerRunner.new
+  server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
 
   sleep 1

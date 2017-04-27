@@ -103,6 +103,28 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
     if (p->is_ack) {
       grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
     } else {
+      if (!t->is_client) {
+        gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+        gpr_timespec next_allowed_ping =
+            gpr_time_add(t->ping_recv_state.last_ping_recv_time,
+                         t->ping_policy.min_ping_interval_without_data);
+
+        if (t->keepalive_permit_without_calls == 0 &&
+            grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
+          /* According to RFC1122, the interval of TCP Keep-Alive is default to
+             no less than two hours. When there is no outstanding streams, we
+             restrict the number of PINGS equivalent to TCP Keep-Alive. */
+          next_allowed_ping =
+              gpr_time_add(t->ping_recv_state.last_ping_recv_time,
+                           gpr_time_from_seconds(7200, GPR_TIMESPAN));
+        }
+
+        if (gpr_time_cmp(next_allowed_ping, now) > 0) {
+          grpc_chttp2_add_ping_strike(exec_ctx, t);
+        }
+
+        t->ping_recv_state.last_ping_recv_time = now;
+      }
       if (!g_disable_ping_ack) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity = GPR_MAX(t->ping_ack_capacity * 3 / 2, 3);

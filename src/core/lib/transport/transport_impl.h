@@ -59,7 +59,8 @@ typedef struct grpc_transport_vtable {
 
   /* implementation of grpc_transport_perform_stream_op */
   void (*perform_stream_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                            grpc_stream *stream, grpc_transport_stream_op *op);
+                            grpc_stream *stream,
+                            grpc_transport_stream_op_batch *op);
 
   /* implementation of grpc_transport_perform_op */
   void (*perform_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,

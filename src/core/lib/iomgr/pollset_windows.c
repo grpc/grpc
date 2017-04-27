@@ -120,7 +120,7 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker_hdl,
                               gpr_timespec now, gpr_timespec deadline) {
   grpc_pollset_worker worker;
-  *worker_hdl = &worker;
+  if (worker_hdl) *worker_hdl = &worker;
 
   int added_worker = 0;
   worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].next =
@@ -185,7 +185,7 @@ done:
     remove_worker(&worker, GRPC_POLLSET_WORKER_LINK_POLLSET);
   }
   gpr_cv_destroy(&worker.cv);
-  *worker_hdl = NULL;
+  if (worker_hdl) *worker_hdl = NULL;
   return GRPC_ERROR_NONE;
 }
 

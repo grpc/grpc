@@ -34,8 +34,8 @@
 #ifndef NET_GRPC_NODE_CHANNEL_H_
 #define NET_GRPC_NODE_CHANNEL_H_
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 #include "grpc/grpc.h"
 
 namespace grpc {

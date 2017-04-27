@@ -1130,6 +1130,39 @@ TEST_P(End2endTest, BinaryTrailerTest) {
   EXPECT_TRUE(returned_info.ParseFromString(ToString(iter->second)));
 }
 
+TEST_P(End2endTest, ExpectErrorTest) {
+  ResetStub();
+
+  std::vector<ErrorStatus> expected_status;
+  expected_status.emplace_back();
+  expected_status.back().set_code(13);  // INTERNAL
+  expected_status.back().set_error_message("text error message");
+  expected_status.back().set_binary_error_details("text error details");
+  expected_status.emplace_back();
+  expected_status.back().set_code(13);  // INTERNAL
+  expected_status.back().set_error_message("text error message");
+  expected_status.back().set_binary_error_details(
+      "\x0\x1\x2\x3\x4\x5\x6\x8\x9\xA\xB");
+
+  for (auto iter = expected_status.begin(); iter != expected_status.end();
+       ++iter) {
+    EchoRequest request;
+    EchoResponse response;
+    ClientContext context;
+    request.set_message("Hello");
+    auto* error = request.mutable_param()->mutable_expected_error();
+    error->set_code(iter->code());
+    error->set_error_message(iter->error_message());
+    error->set_binary_error_details(iter->binary_error_details());
+
+    Status s = stub_->Echo(&context, request, &response);
+    EXPECT_FALSE(s.ok());
+    EXPECT_EQ(iter->code(), s.error_code());
+    EXPECT_EQ(iter->error_message(), s.error_message());
+    EXPECT_EQ(iter->binary_error_details(), s.error_details());
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Test with and without a proxy.
 class ProxyEnd2endTest : public End2endTest {

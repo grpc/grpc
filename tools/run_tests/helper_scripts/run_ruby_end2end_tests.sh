@@ -38,4 +38,7 @@ ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
 ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
 ruby src/ruby/end2end/channel_closing_driver.rb || EXIT_CODE=1
 ruby src/ruby/end2end/sig_int_during_channel_watch_driver.rb || EXIT_CODE=1
+ruby src/ruby/end2end/killed_client_thread_driver.rb || EXIT_CODE=1
+ruby src/ruby/end2end/forking_client_driver.rb || EXIT_CODE=1
+ruby src/ruby/end2end/grpc_class_init_driver.rb || EXIT_CODE=1
 exit $EXIT_CODE

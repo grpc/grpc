@@ -47,8 +47,29 @@ cc_test(
 )
 
 cc_test(
-    name = "slice_buffer_test",
+    name = "slice_test",
+    srcs = ["slice_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    copts = ['-std=c99']
+)
+
+cc_test(
+    name = "slice_string_helpers_test",
     srcs = ["slice_string_helpers_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    copts = ['-std=c99']
+)
+
+cc_test(
+    name = "slice_buffer_test",
+    srcs = ["slice_buffer_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    copts = ['-std=c99']
+)
+
+cc_test(
+    name = "slice_hash_table_test",
+    srcs = ["slice_hash_table_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )

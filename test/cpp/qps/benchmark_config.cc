@@ -33,6 +33,9 @@
 
 #include "test/cpp/qps/benchmark_config.h"
 #include <gflags/gflags.h>
+#include <grpc++/create_channel.h>
+#include <grpc++/security/credentials.h>
+#include <grpc/support/log.h>
 
 DEFINE_bool(enable_log_reporter, true,
             "Enable reporting of benchmark results through GprLog");
@@ -50,6 +53,11 @@ DEFINE_string(server_address, "localhost:50052",
               "Address of the performance database server");
 
 DEFINE_string(tag, "", "Optional tag for the test");
+
+DEFINE_string(rpc_reporter_server_address, "",
+              "Server address for rpc reporter to send results to");
+
+DEFINE_bool(enable_rpc_reporter, false, "Enable use of RPC reporter");
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
@@ -74,6 +82,13 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
   if (FLAGS_scenario_result_file != "") {
     composite_reporter->add(std::unique_ptr<Reporter>(
         new JsonReporter("JsonReporter", FLAGS_scenario_result_file)));
+  }
+  if (FLAGS_enable_rpc_reporter) {
+    GPR_ASSERT(!FLAGS_rpc_reporter_server_address.empty());
+    composite_reporter->add(std::unique_ptr<Reporter>(new RpcReporter(
+        "RpcReporter",
+        grpc::CreateChannel(FLAGS_rpc_reporter_server_address,
+                            grpc::InsecureChannelCredentials()))));
   }
 
   return std::shared_ptr<Reporter>(composite_reporter);

@@ -33,10 +33,10 @@
 
 #ifdef GRPC_UV
 
-#include <uv.h>
-#include <node.h>
-#include <v8.h>
 #include <grpc/grpc.h>
+#include <node.h>
+#include <uv.h>
+#include <v8.h>
 
 #include "call.h"
 #include "completion_queue.h"
@@ -57,21 +57,17 @@ void drain_completion_queue(uv_prepare_t *handle) {
   grpc_event event;
   (void)handle;
   do {
-    event = grpc_completion_queue_next(
-        queue, gpr_inf_past(GPR_CLOCK_MONOTONIC), NULL);
+    event = grpc_completion_queue_next(queue, gpr_inf_past(GPR_CLOCK_MONOTONIC),
+                                       NULL);
 
     if (event.type == GRPC_OP_COMPLETE) {
-      Nan::Callback *callback = grpc::node::GetTagCallback(event.tag);
+      const char *error_message;
       if (event.success) {
-        Local<Value> argv[] = {Nan::Null(),
-                             grpc::node::GetTagNodeValue(event.tag)};
-        callback->Call(2, argv);
+        error_message = NULL;
       } else {
-        Local<Value> argv[] = {Nan::Error(
-            "The async function encountered an error")};
-        callback->Call(1, argv);
+        error_message = "The async function encountered an error";
       }
-      grpc::node::CompleteTag(event.tag);
+      CompleteTag(event.tag, error_message);
       grpc::node::DestroyTag(event.tag);
       pending_batches--;
       if (pending_batches == 0) {
@@ -81,9 +77,7 @@ void drain_completion_queue(uv_prepare_t *handle) {
   } while (event.type != GRPC_QUEUE_TIMEOUT);
 }
 
-grpc_completion_queue *GetCompletionQueue() {
-  return queue;
-}
+grpc_completion_queue *GetCompletionQueue() { return queue; }
 
 void CompletionQueueNext() {
   if (pending_batches == 0) {
@@ -94,7 +88,7 @@ void CompletionQueueNext() {
 }
 
 void CompletionQueueInit(Local<Object> exports) {
-  queue = grpc_completion_queue_create(NULL);
+  queue = grpc_completion_queue_create_for_next(NULL);
   uv_prepare_init(uv_default_loop(), &prepare);
   pending_batches = 0;
 }

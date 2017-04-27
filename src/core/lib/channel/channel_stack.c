@@ -246,9 +246,9 @@ void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
 }
 
 void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                       grpc_transport_stream_op *op) {
+                       grpc_transport_stream_op_batch *op) {
   grpc_call_element *next_elem = elem + 1;
-  next_elem->filter->start_transport_stream_op(exec_ctx, next_elem, op);
+  next_elem->filter->start_transport_stream_op_batch(exec_ctx, next_elem, op);
 }
 
 char *grpc_call_next_get_peer(grpc_exec_ctx *exec_ctx,
@@ -284,7 +284,8 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem) {
 void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *elem,
                                     grpc_error *error) {
-  grpc_transport_stream_op *op = grpc_make_transport_stream_op(NULL);
-  op->cancel_error = error;
-  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
+  grpc_transport_stream_op_batch *op = grpc_make_transport_stream_op(NULL);
+  op->cancel_stream = true;
+  op->payload->cancel_stream.cancel_error = error;
+  elem->filter->start_transport_stream_op_batch(exec_ctx, elem, op);
 }

@@ -68,7 +68,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   cqv = cq_verifier_create(cq);
 
   /* if using service config, create channel args */
@@ -138,7 +138,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
           .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(cq);
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
 

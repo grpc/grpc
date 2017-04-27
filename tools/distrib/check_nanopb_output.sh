@@ -58,7 +58,7 @@ popd
 #
 # Checks for load_balancer.proto
 #
-readonly LOAD_BALANCER_GRPC_OUTPUT_PATH='src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1'
+readonly LOAD_BALANCER_GRPC_OUTPUT_PATH='src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1'
 # nanopb-compile the proto to a temp location
 ./tools/codegen/core/gen_nano_proto.sh \
   src/proto/grpc/lb/v1/load_balancer.proto \
@@ -66,7 +66,7 @@ readonly LOAD_BALANCER_GRPC_OUTPUT_PATH='src/core/ext/lb_policy/grpclb/proto/grp
   "$LOAD_BALANCER_GRPC_OUTPUT_PATH"
 
 # compare outputs to checked compiled code
-if ! diff -r $NANOPB_TMP_OUTPUT src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1; then
+if ! diff -r $NANOPB_TMP_OUTPUT src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1; then
   echo "Outputs differ: $NANOPB_TMP_OUTPUT vs $LOAD_BALANCER_GRPC_OUTPUT_PATH"
   exit 2
 fi

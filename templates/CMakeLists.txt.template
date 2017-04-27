@@ -7,9 +7,6 @@
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
   #
-  # Additionally, this is currently very experimental, and unsupported.
-  # Further work will happen on that file.
-  #
   # Copyright 2015, Google Inc.
   # All rights reserved.
   #
@@ -215,6 +212,7 @@
     if(NOT PROTOBUF_ROOT_DIR)
       set(PROTOBUF_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/protobuf)
     endif()
+    set(PROTOBUF_WELLKNOWN_IMPORT_DIR <%text>${PROTOBUF_ROOT_DIR}</%text>/src)
     if(EXISTS "<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake/CMakeLists.txt")
       set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
       add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
@@ -247,6 +245,7 @@
       find_package(Protobuf MODULE)
       set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
     endif()
+    set(PROTOBUF_WELLKNOWN_IMPORT_DIR /usr/local/include)
   endif()
 
   if("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "module")
@@ -315,8 +314,10 @@
     set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
   endif()
 
-  if(UNIX)
-    set(_gRPC_ALLTARGETS_LIBRARIES dl rt m pthread)
+  if(_gRPC_PLATFORM_MAC)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m pthread)
+  elseif(UNIX)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> rt m pthread)
   endif()
 
   if(WIN32 AND MSVC)
@@ -349,11 +350,11 @@
       return()
     endif()
 
-    set(_protobuf_include_path -I .)
+    set(_protobuf_include_path -I . -I <%text>${PROTOBUF_WELLKNOWN_IMPORT_DIR}</%text>)
     foreach(FIL <%text>${ARGN}</%text>)
       get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
       get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
-      file(RELATIVE_PATH REL_FIL <%text>${CMAKE_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
+      file(RELATIVE_PATH REL_FIL <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
       get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
       set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
 
@@ -369,7 +370,7 @@
              <%text>${_protobuf_include_path}</%text>
              <%text>${REL_FIL}</%text>
         DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> grpc_cpp_plugin
-        WORKING_DIRECTORY <%text>${CMAKE_SOURCE_DIR}</%text>
+        WORKING_DIRECTORY <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
         COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
         VERBATIM)
 
@@ -511,8 +512,8 @@
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
-    PRIVATE third_party/googletest/include
-    PRIVATE third_party/googletest
+    PRIVATE third_party/googletest/googletest/include
+    PRIVATE third_party/googletest/googletest
   % endif
   % if lib.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
@@ -555,7 +556,7 @@
   % endif
   % endfor
   % if tgt.build == 'test' and tgt.language == 'c++':
-    third_party/googletest/src/gtest-all.cc
+    third_party/googletest/googletest/src/gtest-all.cc
   % endif
   )
 
@@ -581,8 +582,8 @@
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
-    PRIVATE third_party/googletest/include
-    PRIVATE third_party/googletest
+    PRIVATE third_party/googletest/googletest/include
+    PRIVATE third_party/googletest/googletest
   % endif
   % if tgt.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>

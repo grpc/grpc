@@ -56,7 +56,7 @@ def _file_descriptor_response(descriptor):
             file_descriptor_proto=(serialized_proto,)),)
 
 
-class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
+class ReflectionServicer(reflection_pb2_grpc.ServerReflectionServicer):
     """Servicer handling RPCs for service statuses."""
 
     def __init__(self, service_names, pool=None):
@@ -143,12 +143,13 @@ class ReflectionServicer(reflection_pb2.ServerReflectionServicer):
                         .encode(),))
 
 
-def enable_server_reflection(service_names, server):
+def enable_server_reflection(service_names, server, pool=None):
     """Enables server reflection on a server.
 
     Args:
       service_names: Iterable of fully-qualified service names available.
       server: grpc.Server to which reflection service will be added.
+      pool: DescriptorPool object to use (descriptor_pool.Default() if None).
     """
     reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
-        ReflectionServicer(service_names), server)
+        ReflectionServicer(service_names), server, pool)

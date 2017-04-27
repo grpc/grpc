@@ -1,0 +1,4 @@
+include grpc_version.py
+include reflection_commands.py
+graft grpc_reflection
+global-exclude *.pyc

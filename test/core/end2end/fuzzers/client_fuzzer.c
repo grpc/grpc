@@ -65,7 +65,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       grpc_mock_endpoint_create(discard_write, resource_quota);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
 
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   grpc_transport *transport =
       grpc_create_chttp2_transport(&exec_ctx, NULL, mock_endpoint, 1);
   grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
@@ -151,7 +151,7 @@ done:
     ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
     GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
   }
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   grpc_completion_queue_destroy(cq);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

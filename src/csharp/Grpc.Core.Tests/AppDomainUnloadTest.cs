@@ -72,16 +72,16 @@ namespace Grpc.Core.Tests
             public AppDomainTestClass()
             {
                 var helper = new MockServiceHelper(Host);
-                var server = helper.GetServer();
-                server.Start();
-                var channel = helper.GetChannel();
-
                 var readyToShutdown = new TaskCompletionSource<object>();
                 helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
                 {
                     readyToShutdown.SetResult(null);
                     await requestStream.ToListAsync();
                 });
+
+                var server = helper.GetServer();
+                server.Start();
+                var channel = helper.GetChannel();
 
                 var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
                 readyToShutdown.Task.Wait();  // make sure handler is running

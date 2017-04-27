@@ -74,17 +74,18 @@ static void extract_and_annotate_method_tag(grpc_metadata_batch *md,
 }
 
 static void client_mutate_op(grpc_call_element *elem,
-                             grpc_transport_stream_op *op) {
+                             grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   if (op->send_initial_metadata) {
-    extract_and_annotate_method_tag(op->send_initial_metadata, calld, chand);
+    extract_and_annotate_method_tag(
+        op->payload->send_initial_metadata.send_initial_metadata, calld, chand);
   }
 }
 
 static void client_start_transport_op(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
-                                      grpc_transport_stream_op *op) {
+                                      grpc_transport_stream_op_batch *op) {
   client_mutate_op(elem, op);
   grpc_call_next_op(exec_ctx, elem, op);
 }
@@ -103,19 +104,22 @@ static void server_on_done_recv(grpc_exec_ctx *exec_ctx, void *ptr,
 }
 
 static void server_mutate_op(grpc_call_element *elem,
-                             grpc_transport_stream_op *op) {
+                             grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   if (op->recv_initial_metadata) {
     /* substitute our callback for the op callback */
-    calld->recv_initial_metadata = op->recv_initial_metadata;
-    calld->on_done_recv = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = &calld->finish_recv;
+    calld->recv_initial_metadata =
+        op->payload->recv_initial_metadata.recv_initial_metadata;
+    calld->on_done_recv =
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
+        &calld->finish_recv;
   }
 }
 
 static void server_start_transport_op(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
-                                      grpc_transport_stream_op *op) {
+                                      grpc_transport_stream_op_batch *op) {
   /* TODO(ctiller): this code fails. I don't know why. I expect it's
                     incomplete, and someone should look at it soon.
 

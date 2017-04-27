@@ -309,7 +309,8 @@ cdef extern from "grpc/grpc.h":
   void grpc_init() nogil
   void grpc_shutdown() nogil
 
-  grpc_completion_queue *grpc_completion_queue_create(void *reserved) nogil
+  grpc_completion_queue *grpc_completion_queue_create_for_next(void *reserved) nogil
+
   grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
                                         gpr_timespec deadline,
                                         void *reserved) nogil
@@ -328,7 +329,7 @@ cdef extern from "grpc/grpc.h":
                                                const char *description,
                                                void *reserved) nogil
   char *grpc_call_get_peer(grpc_call *call) nogil
-  void grpc_call_destroy(grpc_call *call) nogil
+  void grpc_call_unref(grpc_call *call) nogil
 
   grpc_channel *grpc_insecure_channel_create(const char *target,
                                              const grpc_channel_args *args,
@@ -355,8 +356,6 @@ cdef extern from "grpc/grpc.h":
   void grpc_server_register_completion_queue(grpc_server *server,
                                              grpc_completion_queue *cq,
                                              void *reserved) nogil
-  void grpc_server_register_non_listening_completion_queue(
-      grpc_server *server, grpc_completion_queue *cq, void *reserved) nogil
   int grpc_server_add_insecure_http2_port(
       grpc_server *server, const char *addr) nogil
   void grpc_server_start(grpc_server *server) nogil
@@ -531,5 +530,4 @@ cdef extern from "grpc/compression.h":
   int grpc_compression_options_is_algorithm_enabled(
       const grpc_compression_options *opts,
       grpc_compression_algorithm algorithm) nogil
-
 
