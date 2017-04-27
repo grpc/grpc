@@ -67,6 +67,7 @@
  * needed) */
 static grpc_wakeup_fd global_wakeup_fd;
 static int g_epfd;
+static bool g_timer_kick = false;
 
 /*******************************************************************************
  * Fd Declarations
@@ -350,6 +351,9 @@ static grpc_error *pollset_global_init(void) {
   gpr_mu_init(&g_pollset_mu);
   gpr_tls_init(&g_current_thread_pollset);
   gpr_tls_init(&g_current_thread_worker);
+  global_wakeup_fd.read_fd = -1;
+  grpc_error *err = grpc_wakeup_fd_init(&global_wakeup_fd);
+  if (err != GRPC_ERROR_NONE) return err;
   struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLET),
                            .data.ptr = &global_wakeup_fd};
   if (epoll_ctl(g_epfd, EPOLL_CTL_ADD, global_wakeup_fd.read_fd, &ev) != 0) {
@@ -362,6 +366,7 @@ static void pollset_global_shutdown(void) {
   gpr_mu_destroy(&g_pollset_mu);
   gpr_tls_destroy(&g_current_thread_pollset);
   gpr_tls_destroy(&g_current_thread_worker);
+  if (global_wakeup_fd.read_fd != -1) grpc_wakeup_fd_destroy(&global_wakeup_fd);
 }
 
 static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
@@ -449,7 +454,10 @@ static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   for (int i = 0; i < r; i++) {
     void *data_ptr = events[i].data.ptr;
     if (data_ptr == &global_wakeup_fd) {
-      grpc_timer_consume_kick();
+      if (g_timer_kick) {
+        g_timer_kick = false;
+        grpc_timer_consume_kick();
+      }
       append_error(&error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                    err_desc);
     } else {
@@ -543,11 +551,19 @@ static grpc_error *pollset_kick(grpc_pollset *pollset,
                                 grpc_pollset_worker *specific_worker) {
   if (specific_worker == NULL) {
     if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)pollset) {
-      if (pollset->root_worker == NULL) {
+      grpc_pollset_worker *root_worker = pollset->root_worker;
+      if (root_worker == NULL) {
         pollset->kicked_without_poller = true;
         return GRPC_ERROR_NONE;
-      } else {
+      }
+      grpc_pollset_worker *next_worker = root_worker->links[PWL_POLLSET].next;
+      if (root_worker == next_worker && root_worker == g_root_worker) {
+        root_worker->kicked = true;
         return grpc_wakeup_fd_wakeup(&global_wakeup_fd);
+      } else {
+        next_worker->kicked = true;
+        gpr_cv_signal(&next_worker->cv);
+        return GRPC_ERROR_NONE;
       }
     } else {
       return GRPC_ERROR_NONE;
@@ -572,6 +588,9 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {}
 
 static grpc_error *kick_poller(void) {
+  gpr_mu_lock(&g_pollset_mu);
+  g_timer_kick = true;
+  gpr_mu_unlock(&g_pollset_mu);
   return grpc_wakeup_fd_wakeup(&global_wakeup_fd);
 }
 
