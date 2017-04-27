@@ -52,7 +52,6 @@ extern "C" {
 #include "channel.h"
 #include "channel_credentials.h"
 #include "server.h"
-#include "completion_queue_async_worker.h"
 #include "server_credentials.h"
 #include "slice.h"
 #include "timeval.h"
