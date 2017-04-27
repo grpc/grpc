@@ -696,7 +696,7 @@ static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p,
             p->root_worker);
   }
   if (specific_worker == NULL) {
-    if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)p) {
+    if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)pollset) {
       if (pollset->root_worker == NULL) {
         if (grpc_polling_trace) {
           gpr_log(GPR_DEBUG, "PS:%p kicked_any_without_poller", p);
