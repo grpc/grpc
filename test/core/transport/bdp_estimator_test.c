@@ -137,7 +137,7 @@ static void test_get_estimate_random_values(size_t n) {
     if (i >= 3) {
       gpr_log(GPR_DEBUG, "est:%" PRId64 " min:%d max:%d", get_estimate(&est),
               min, max);
-      GPR_ASSERT(get_estimate(&est) <= 2 * next_pow_2(max));
+      GPR_ASSERT(get_estimate(&est) <= GPR_MAX(65536, 2 * next_pow_2(max)));
     }
   }
 }
