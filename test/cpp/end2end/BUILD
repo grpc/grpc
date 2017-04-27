@@ -198,6 +198,25 @@ cc_test(
     ],
 )
 
+
+cc_test(
+    name = "grpclb_end2end_test",
+    srcs = ["grpclb_end2end_test.cc"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//external:gtest",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
 cc_test(
     name = "proto_server_reflection_test",
     srcs = ["proto_server_reflection_test.cc"],
