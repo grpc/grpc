@@ -39,7 +39,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library",
      "grpc_proto_plugin", "grpc_cc_libraries")
 
 # This should be updated along with build.yaml
-g_stands_for = "gentle"
+g_stands_for = "gregarious"
 
 core_version = "3.0.0-dev"
 
@@ -376,6 +376,10 @@ grpc_cc_library(
         "src/core/lib/support/backoff.h",
         "src/core/lib/support/block_annotate.h",
         "src/core/lib/support/env.h",
+        "src/core/lib/support/memory.h",
+        "src/core/lib/support/atomic.h",
+        "src/core/lib/support/atomic_with_atm.h",
+        "src/core/lib/support/atomic_with_std.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
         "src/core/lib/support/spinlock.h",
@@ -543,7 +547,7 @@ grpc_cc_library(
         "src/core/lib/surface/completion_queue.c",
         "src/core/lib/surface/completion_queue_factory.c",
         "src/core/lib/surface/event_string.c",
-        "src/core/lib/surface/lame_client.c",
+        "src/core/lib/surface/lame_client.cc",
         "src/core/lib/surface/metadata_array.c",
         "src/core/lib/surface/server.c",
         "src/core/lib/surface/validate_metadata.c",
@@ -1202,12 +1206,14 @@ grpc_cc_library(
         "src/core/tsi/fake_transport_security.c",
         "src/core/tsi/ssl_transport_security.c",
         "src/core/tsi/transport_security.c",
+        "src/core/tsi/transport_security_adapter.c",
     ],
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/ssl_types.h",
         "src/core/tsi/transport_security.h",
+        "src/core/tsi/transport_security_adapter.h",
         "src/core/tsi/transport_security_interface.h",
     ],
     external_deps = [
