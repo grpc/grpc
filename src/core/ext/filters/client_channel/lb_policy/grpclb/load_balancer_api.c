@@ -98,7 +98,7 @@ grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request) {
   pb_encode(&sizestream, grpc_lb_v1_LoadBalanceRequest_fields, request);
   encoded_length = sizestream.bytes_written;
 
-  slice = grpc_slice_malloc(encoded_length);
+  slice = GRPC_SLICE_MALLOC(encoded_length);
   outputstream =
       pb_ostream_from_buffer(GRPC_SLICE_START_PTR(slice), encoded_length);
   GPR_ASSERT(pb_encode(&outputstream, grpc_lb_v1_LoadBalanceRequest_fields,
