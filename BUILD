@@ -40,9 +40,9 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
 # This should be updated along with build.yaml
 g_stands_for = "gentle"
 
-core_version = "3.0.0-pre1"
+core_version = "3.0.0"
 
-version = "1.3.0-pre1"
+version = "1.3.0"
 
 grpc_cc_library(
     name = "gpr",
