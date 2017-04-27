@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,44 +31,44 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_GPR_TYPES_H
-#define GRPC_IMPL_CODEGEN_GPR_TYPES_H
+#ifndef GRPC_CORE_LIB_SUPPORT_MEMORY_H
+#define GRPC_CORE_LIB_SUPPORT_MEMORY_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/alloc.h>
 
-#include <stddef.h>
+#include <memory>
+#include <utility>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc_core {
 
-/* The clocks we support. */
-typedef enum {
-  /* Monotonic clock. Epoch undefined. Always moves forwards. */
-  GPR_CLOCK_MONOTONIC = 0,
-  /* Realtime clock. May jump forwards or backwards. Settable by
-     the system administrator. Has its epoch at 0:00:00 UTC 1 Jan 1970. */
-  GPR_CLOCK_REALTIME,
-  /* CPU cycle time obtained by rdtsc instruction on x86 platforms. Epoch
-     undefined. Degrades to GPR_CLOCK_REALTIME on other platforms. */
-  GPR_CLOCK_PRECISE,
-  /* Unmeasurable clock type: no base, created by taking the difference
-     between two times */
-  GPR_TIMESPAN
-} gpr_clock_type;
-
-/* Analogous to struct timespec. On some machines, absolute times may be in
- * local time. */
-typedef struct gpr_timespec {
-  int64_t tv_sec;
-  int32_t tv_nsec;
-  /** Against which clock was this time measured? (or GPR_TIMESPAN if
-      this is a relative time meaure) */
-  gpr_clock_type clock_type;
-} gpr_timespec;
-
-#ifdef __cplusplus
+// Alternative to new, since we cannot use it (for fear of libstdc++)
+template <typename T, typename... Args>
+inline T* New(Args&&... args) {
+  void* p = gpr_malloc(sizeof(T));
+  return new (p) T(std::forward<Args>(args)...);
 }
-#endif
 
-#endif /* GRPC_IMPL_CODEGEN_GPR_TYPES_H */
+// Alternative to delete, since we cannot use it (for fear of libstdc++)
+template <typename T>
+inline void Delete(T* p) {
+  p->~T();
+  gpr_free(p);
+}
+
+template <typename T>
+class DefaultDelete {
+ public:
+  void operator()(T* p) { Delete(p); }
+};
+
+template <typename T, typename Deleter = DefaultDelete<T>>
+using UniquePtr = std::unique_ptr<T, Deleter>;
+
+template <typename T, typename... Args>
+inline UniquePtr<T> MakeUnique(Args&&... args) {
+  return UniquePtr<T>(New<T>(std::forward<Args>(args)...));
+}
+
+}  // namespace grpc_core
+
+#endif /* GRPC_CORE_LIB_SUPPORT_MEMORY_H */

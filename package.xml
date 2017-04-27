@@ -91,9 +91,13 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/arena.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atomic.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atomic_with_atm.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atomic_with_std.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/spinlock.h" role="src" />
@@ -492,7 +496,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/lame_client.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/lame_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/server.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.c" role="src" />

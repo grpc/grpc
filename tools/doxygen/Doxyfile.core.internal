@@ -1254,6 +1254,9 @@ src/core/lib/support/alloc.c \
 src/core/lib/support/arena.c \
 src/core/lib/support/arena.h \
 src/core/lib/support/atm.c \
+src/core/lib/support/atomic.h \
+src/core/lib/support/atomic_with_atm.h \
+src/core/lib/support/atomic_with_std.h \
 src/core/lib/support/avl.c \
 src/core/lib/support/backoff.c \
 src/core/lib/support/backoff.h \
@@ -1274,6 +1277,7 @@ src/core/lib/support/log_android.c \
 src/core/lib/support/log_linux.c \
 src/core/lib/support/log_posix.c \
 src/core/lib/support/log_windows.c \
+src/core/lib/support/memory.h \
 src/core/lib/support/mpscq.c \
 src/core/lib/support/mpscq.h \
 src/core/lib/support/murmur_hash.c \
@@ -1334,7 +1338,7 @@ src/core/lib/surface/event_string.h \
 src/core/lib/surface/init.c \
 src/core/lib/surface/init.h \
 src/core/lib/surface/init_secure.c \
-src/core/lib/surface/lame_client.c \
+src/core/lib/surface/lame_client.cc \
 src/core/lib/surface/lame_client.h \
 src/core/lib/surface/metadata_array.c \
 src/core/lib/surface/server.c \
