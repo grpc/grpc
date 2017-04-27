@@ -34,44 +34,81 @@
 
 require_relative './end2end_common'
 
-def main
-  grpc_class = ''
-  OptionParser.new do |opts|
-    opts.on('--grpc_class=P', String) do |p|
-      grpc_class = p
+def construct_many(test_proc)
+  thds = []
+  4.times do
+    thds << Thread.new do
+      20.times do
+        test_proc.call
+      end
     end
-  end.parse!
+  end
+  20.times do
+    test_proc.call
+  end
+  thds.each(&:join)
+end
 
-  test_proc = nil
+def run_gc_stress_test(test_proc)
+  GC.disable
+  construct_many(test_proc)
 
+  GC.enable
+  construct_many(test_proc)
+
+  GC.start(full_mark: true, immediate_sweep: true)
+  construct_many(test_proc)
+end
+
+def get_test_proc(grpc_class)
   case grpc_class
   when 'channel'
-    test_proc = proc do
+    return proc do
       GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
     end
   when 'server'
-    test_proc = proc do
+    return proc do
       GRPC::Core::Server.new({})
     end
   when 'channel_credentials'
-    test_proc = proc do
+    return proc do
       GRPC::Core::ChannelCredentials.new
     end
   when 'call_credentials'
-    test_proc = proc do
+    return proc do
       GRPC::Core::CallCredentials.new(proc { |noop| noop })
     end
   when 'compression_options'
-    test_proc = proc do
+    return proc do
       GRPC::Core::CompressionOptions.new
     end
   else
     fail "bad --grpc_class=#{grpc_class} param"
   end
+end
 
-  th = Thread.new { test_proc.call }
+def main
+  grpc_class = ''
+  gc_stress = false
+  OptionParser.new do |opts|
+    opts.on('--grpc_class=P', String) do |p|
+      grpc_class = p
+    end
+    opts.on('--gc_stress=P') do |p|
+      gc_stress = p
+    end
+  end.parse!
+
+  test_proc = get_test_proc(grpc_class)
+
+  if gc_stress == 'true'
+    run_gc_stress_test(test_proc)
+    return
+  end
+
+  thd = Thread.new { test_proc.call }
   test_proc.call
-  th.join
+  thd.join
 end
 
 main

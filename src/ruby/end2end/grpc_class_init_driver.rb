@@ -38,29 +38,38 @@ def main
                             call_credentials
                             compression_options )
 
-  native_grpc_classes.each do |grpc_class|
-    STDERR.puts 'start client'
-    this_dir = File.expand_path(File.dirname(__FILE__))
-    client_path = File.join(this_dir, 'grpc_class_init_client.rb')
-    client_pid = Process.spawn(RbConfig.ruby,
-                               client_path,
-                               "--grpc_class=#{grpc_class}")
-    begin
-      Timeout.timeout(10) do
-        Process.wait(client_pid)
-      end
-    rescue Timeout::Error
-      STDERR.puts "timeout waiting for client pid #{client_pid}"
-      Process.kill('SIGKILL', client_pid)
-      Process.wait(client_pid)
-      STDERR.puts 'killed client child'
-      raise 'Timed out waiting for client process. ' \
-        'It likely hangs when the first constructed gRPC object has ' \
-        "type: #{grpc_class}"
-    end
+  # there is room for false positives in this test,
+  # do 10 runs for each config to reduce these.
+  [true, false].each do |gc_stress|
+    10.times do
+      native_grpc_classes.each do |grpc_class|
+        STDERR.puts 'start client'
+        this_dir = File.expand_path(File.dirname(__FILE__))
+        client_path = File.join(this_dir, 'grpc_class_init_client.rb')
+        client_pid = Process.spawn(RbConfig.ruby,
+                                   client_path,
+                                   "--grpc_class=#{grpc_class}",
+                                   "--gc_stress=#{gc_stress}")
+        begin
+          Timeout.timeout(10) do
+            Process.wait(client_pid)
+          end
+        rescue Timeout::Error
+          STDERR.puts "timeout waiting for client pid #{client_pid}"
+          Process.kill('SIGKILL', client_pid)
+          Process.wait(client_pid)
+          STDERR.puts 'killed client child'
+          raise 'Timed out waiting for client process. ' \
+            'It likely hangs when the first constructed gRPC object has ' \
+            "type: #{grpc_class}"
+        end
 
-    client_exit_code = $CHILD_STATUS
-    fail "client failed, exit code #{client_exit_code}" if client_exit_code != 0
+        client_exit_code = $CHILD_STATUS
+        if client_exit_code != 0
+          fail "client failed, exit code #{client_exit_code}"
+        end
+      end
+    end
   end
 end
 

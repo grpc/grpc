@@ -103,7 +103,7 @@ static void destroy_call(grpc_rb_call *call) {
   if (call->wrapped != NULL) {
     grpc_call_destroy(call->wrapped);
     call->wrapped = NULL;
-    grpc_rb_completion_queue_destroy(call->queue);
+    grpc_rb_completion_queue_safe_destroy(call->queue);
     call->queue = NULL;
   }
 }
