@@ -315,7 +315,7 @@
 }
 
 - (void)dealloc {
-  grpc_call_destroy(_call);
+  grpc_call_unref(_call);
 }
 
 @end

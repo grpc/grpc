@@ -74,9 +74,10 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
+  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
+                                         grpc_timeout_seconds_to_deadline(5),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -95,6 +96,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 /* Creates and returns a grpc_slice containing random alphanumeric characters.
@@ -167,6 +169,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   int cancelled_calls_on_client = 0;
   int cancelled_calls_on_server = 0;
   int deadline_exceeded = 0;
+  int unavailable = 0;
 
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -203,7 +206,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
-    op->flags = 0;
+    op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_SEND_MESSAGE;
@@ -258,6 +261,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
         case GRPC_STATUS_DEADLINE_EXCEEDED:
           deadline_exceeded++;
           break;
+        case GRPC_STATUS_UNAVAILABLE:
+          unavailable++;
+          break;
         case GRPC_STATUS_OK:
           break;
         default:
@@ -268,7 +274,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
 
       grpc_metadata_array_destroy(&initial_metadata_recv[call_id]);
       grpc_metadata_array_destroy(&trailing_metadata_recv[call_id]);
-      grpc_call_destroy(client_calls[call_id]);
+      grpc_call_unref(client_calls[call_id]);
       grpc_slice_unref(details[call_id]);
 
       pending_client_calls--;
@@ -350,15 +356,15 @@ void resource_quota_server(grpc_end2end_test_config config) {
       GPR_ASSERT(pending_server_end_calls > 0);
       pending_server_end_calls--;
 
-      grpc_call_destroy(server_calls[call_id]);
+      grpc_call_unref(server_calls[call_id]);
     }
   }
 
   gpr_log(GPR_INFO,
           "Done. %d total calls: %d cancelled at server, %d cancelled at "
-          "client, %d timed out.",
+          "client, %d timed out, %d unavailable.",
           NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client,
-          deadline_exceeded);
+          deadline_exceeded, unavailable);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_slice_unref(request_payload_slice);

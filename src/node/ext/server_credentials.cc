@@ -78,12 +78,12 @@ void ServerCredentials::Init(Local<Object> exports) {
   tpl->SetClassName(Nan::New("ServerCredentials").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   Local<Function> ctr = tpl->GetFunction();
-  Nan::Set(ctr, Nan::New("createSsl").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateSsl)).ToLocalChecked());
+  Nan::Set(
+      ctr, Nan::New("createSsl").ToLocalChecked(),
+      Nan::GetFunction(Nan::New<FunctionTemplate>(CreateSsl)).ToLocalChecked());
   Nan::Set(ctr, Nan::New("createInsecure").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateInsecure)).ToLocalChecked());
+           Nan::GetFunction(Nan::New<FunctionTemplate>(CreateInsecure))
+               .ToLocalChecked());
   fun_tpl.Reset(tpl);
   constructor = new Nan::Callback(ctr);
   Nan::Set(exports, Nan::New("ServerCredentials").ToLocalChecked(), ctr);
@@ -99,9 +99,9 @@ Local<Value> ServerCredentials::WrapStruct(
   Nan::EscapableHandleScope scope;
   const int argc = 1;
   Local<Value> argv[argc] = {
-    Nan::New<External>(reinterpret_cast<void *>(credentials))};
-  MaybeLocal<Object> maybe_instance = Nan::NewInstance(
-      constructor->GetFunction(), argc, argv);
+      Nan::New<External>(reinterpret_cast<void *>(credentials))};
+  MaybeLocal<Object> maybe_instance =
+      Nan::NewInstance(constructor->GetFunction(), argc, argv);
   if (maybe_instance.IsEmpty()) {
     return scope.Escape(Nan::Null());
   } else {
@@ -160,13 +160,13 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   }
   Local<Array> pair_list = Local<Array>::Cast(info[1]);
   uint32_t key_cert_pair_count = pair_list->Length();
-  grpc_ssl_pem_key_cert_pair *key_cert_pairs = new grpc_ssl_pem_key_cert_pair[
-      key_cert_pair_count];
+  grpc_ssl_pem_key_cert_pair *key_cert_pairs =
+      new grpc_ssl_pem_key_cert_pair[key_cert_pair_count];
 
   Local<String> key_key = Nan::New("private_key").ToLocalChecked();
   Local<String> cert_key = Nan::New("cert_chain").ToLocalChecked();
 
-  for(uint32_t i = 0; i < key_cert_pair_count; i++) {
+  for (uint32_t i = 0; i < key_cert_pair_count; i++) {
     Local<Value> pair_val = Nan::Get(pair_list, i).ToLocalChecked();
     if (!pair_val->IsObject()) {
       delete[] key_cert_pairs;

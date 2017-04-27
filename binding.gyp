@@ -507,7 +507,7 @@
         },
       ]
     }],
-    ['OS == "win"', {
+    ['OS == "win" and runtime!="electron"', {
       'targets': [
         {
           # IMPORTANT WINDOWS BUILD INFORMATION
@@ -518,6 +518,8 @@
           # when including the Node headers. The remedy for this is to remove
           # the OpenSSL headers, from the downloaded Node development package,
           # which is typically located in `.node-gyp` in your home directory.
+          #
+          # This is not true of Electron, which does not have OpenSSL headers.
           'target_name': 'WINDOWS_BUILD_WARNING',
           'rules': [
             {
@@ -653,15 +655,10 @@
         'src/core/lib/channel/channel_args.c',
         'src/core/lib/channel/channel_stack.c',
         'src/core/lib/channel/channel_stack_builder.c',
-        'src/core/lib/channel/compress_filter.c',
         'src/core/lib/channel/connected_channel.c',
-        'src/core/lib/channel/deadline_filter.c',
         'src/core/lib/channel/handshaker.c',
         'src/core/lib/channel/handshaker_factory.c',
         'src/core/lib/channel/handshaker_registry.c',
-        'src/core/lib/channel/http_client_filter.c',
-        'src/core/lib/channel/http_server_filter.c',
-        'src/core/lib/channel/message_size_filter.c',
         'src/core/lib/compression/compression.c',
         'src/core/lib/compression/message_compress.c',
         'src/core/lib/debug/trace.c',
@@ -757,7 +754,7 @@
         'src/core/lib/surface/completion_queue.c',
         'src/core/lib/surface/completion_queue_factory.c',
         'src/core/lib/surface/event_string.c',
-        'src/core/lib/surface/lame_client.c',
+        'src/core/lib/surface/lame_client.cc',
         'src/core/lib/surface/metadata_array.c',
         'src/core/lib/surface/server.c',
         'src/core/lib/surface/validate_metadata.c',
@@ -798,6 +795,10 @@
         'src/core/ext/transport/chttp2/transport/varint.c',
         'src/core/ext/transport/chttp2/transport/writing.c',
         'src/core/ext/transport/chttp2/alpn/alpn.c',
+        'src/core/ext/filters/http/client/http_client_filter.c',
+        'src/core/ext/filters/http/http_filters_plugin.c',
+        'src/core/ext/filters/http/message_compress/message_compress_filter.c',
+        'src/core/ext/filters/http/server/http_server_filter.c',
         'src/core/lib/http/httpcli_security_connector.c',
         'src/core/lib/security/context/security_context.c',
         'src/core/lib/security/credentials/composite/composite_credentials.c',
@@ -825,6 +826,7 @@
         'src/core/tsi/fake_transport_security.c',
         'src/core/tsi/ssl_transport_security.c',
         'src/core/tsi/transport_security.c',
+        'src/core/tsi/transport_security_adapter.c',
         'src/core/ext/transport/chttp2/server/chttp2_server.c',
         'src/core/ext/transport/chttp2/client/secure/secure_channel_create.c',
         'src/core/ext/filters/client_channel/channel_connectivity.c',
@@ -847,6 +849,7 @@
         'src/core/ext/filters/client_channel/subchannel.c',
         'src/core/ext/filters/client_channel/subchannel_index.c',
         'src/core/ext/filters/client_channel/uri_parser.c',
+        'src/core/ext/filters/deadline/deadline_filter.c',
         'src/core/ext/transport/chttp2/client/chttp2_connector.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
@@ -883,6 +886,7 @@
         'src/core/ext/census/trace_context.c',
         'src/core/ext/census/tracing.c',
         'src/core/ext/filters/max_age/max_age_filter.c',
+        'src/core/ext/filters/message_size/message_size_filter.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
       "conditions": [

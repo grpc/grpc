@@ -37,13 +37,12 @@
 #include <memory>
 #include <vector>
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 #include "grpc/grpc.h"
 #include "grpc/support/log.h"
 
 #include "channel.h"
-
 
 namespace grpc {
 namespace node {
@@ -106,6 +105,7 @@ class Op {
   virtual ~Op();
   v8::Local<v8::Value> GetOpType() const;
   virtual bool IsFinalOp() = 0;
+  virtual void OnComplete(bool success) = 0;
 
  protected:
   virtual std::string GetTypeString() const = 0;
@@ -123,13 +123,9 @@ struct tag {
       call_persist;
 };
 
-v8::Local<v8::Value> GetTagNodeValue(void *tag);
-
-Nan::Callback *GetTagCallback(void *tag);
-
 void DestroyTag(void *tag);
 
-void CompleteTag(void *tag);
+void CompleteTag(void *tag, const char *error_message);
 
 }  // namespace node
 }  // namespace grpc

@@ -304,11 +304,11 @@ class CXXLanguage:
           excluded_poll_engines = ['poll-cv'])
 
       yield _ping_pong_scenario(
-        'cpp_protobuf_async_unary_ping_pong_%s_1mb' % secstr, rpc_type='UNARY',
+        'cpp_protobuf_async_unary_ping_pong_%s_1MB' % secstr, rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         req_size=1024*1024, resp_size=1024*1024,
         secure=secure,
-        categories=smoketest_categories)
+        categories=smoketest_categories + [SCALABLE])
 
       for rpc_type in ['unary', 'streaming']:
         for synchronicity in ['sync', 'async']:
@@ -464,10 +464,10 @@ class CSharpLanguage:
         categories=[SCALABLE])
 
     yield _ping_pong_scenario(
-        'csharp_protobuf_async_unary_ping_pong_1mb', rpc_type='UNARY',
+        'csharp_protobuf_async_unary_ping_pong_1MB', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         req_size=1024*1024, resp_size=1024*1024,
-        categories=[SMOKETEST])
+        categories=[SMOKETEST, SCALABLE])
 
 
   def __str__(self):
@@ -510,10 +510,25 @@ class NodeLanguage:
         client_language='c++')
 
     yield _ping_pong_scenario(
-        'node_protobuf_async_unary_ping_pong_1mb', rpc_type='UNARY',
+        'node_protobuf_unary_ping_pong_1MB', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         req_size=1024*1024, resp_size=1024*1024,
-        categories=[SMOKETEST])
+        categories=[SCALABLE])
+
+    sizes = [('1B', 1), ('1KB', 1024), ('10KB', 10 * 1024),
+             ('1MB', 1024 * 1024), ('10MB', 10 * 1024 * 1024),
+             ('100MB', 100 * 1024 * 1024)]
+
+    for size_name, size in sizes:
+      for secure in (True, False):
+        yield _ping_pong_scenario(
+            'node_protobuf_unary_ping_pong_%s_resp_%s' %
+            (size_name, 'secure' if secure else 'insecure'),
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+            req_size=0, resp_size=size,
+            secure=secure,
+            categories=[SCALABLE])
 
     # TODO(murgatroid99): fix bugs with this scenario and re-enable it
     # yield _ping_pong_scenario(
@@ -528,11 +543,10 @@ class NodeLanguage:
     #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
     #    unconstrained_client='async')
 
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'node_to_cpp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-    #    server_language='c++', async_server_threads=1)
+    yield _ping_pong_scenario(
+        'node_to_cpp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        server_language='c++', async_server_threads=1)
 
     # TODO(jtattermusch): make this scenario work
     #yield _ping_pong_scenario(
@@ -596,10 +610,10 @@ class PythonLanguage:
         server_language='c++', async_server_threads=1)
 
     yield _ping_pong_scenario(
-        'python_protobuf_sync_unary_ping_pong_1mb', rpc_type='UNARY',
+        'python_protobuf_sync_unary_ping_pong_1MB', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
         req_size=1024*1024, resp_size=1024*1024,
-        categories=[SMOKETEST])
+        categories=[SMOKETEST, SCALABLE])
 
   def __str__(self):
     return 'python'
@@ -648,10 +662,10 @@ class RubyLanguage:
         server_language='c++', async_server_threads=1)
 
     yield _ping_pong_scenario(
-        'ruby_protobuf_async_unary_ping_pong_1mb', rpc_type='UNARY',
+        'ruby_protobuf_unary_ping_pong_1MB', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
         req_size=1024*1024, resp_size=1024*1024,
-        categories=[SMOKETEST])
+        categories=[SMOKETEST, SCALABLE])
 
   def __str__(self):
     return 'ruby'
@@ -828,6 +842,21 @@ class NodeExpressLanguage:
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         unconstrained_client='async',
         categories=[SCALABLE, SMOKETEST])
+
+    sizes = [('1B', 1), ('1KB', 1024), ('10KB', 10 * 1024),
+             ('1MB', 1024 * 1024), ('10MB', 10 * 1024 * 1024),
+             ('100MB', 100 * 1024 * 1024)]
+
+    for size_name, size in sizes:
+      for secure in (True, False):
+        yield _ping_pong_scenario(
+            'node_express_json_unary_ping_pong_%s_resp_%s' %
+            (size_name, 'secure' if secure else 'insecure'),
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+            req_size=0, resp_size=size,
+            secure=secure,
+            categories=[SCALABLE])
 
   def __str__(self):
     return 'node_express'

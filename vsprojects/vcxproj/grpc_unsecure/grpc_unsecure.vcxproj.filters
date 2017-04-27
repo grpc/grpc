@@ -16,13 +16,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
@@ -32,15 +26,6 @@
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
@@ -328,7 +313,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.cc">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
@@ -454,6 +439,18 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.c">
       <Filter>src\core\ext\transport\chttp2\alpn</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.c">
+      <Filter>src\core\ext\filters\http\client</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\http_filters_plugin.c">
+      <Filter>src\core\ext\filters\http</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.c">
+      <Filter>src\core\ext\filters\http\message_compress</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.c">
+      <Filter>src\core\ext\filters\http\server</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
       <Filter>src\core\ext\transport\chttp2\server</Filter>
     </ClCompile>
@@ -525,6 +522,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.c">
       <Filter>src\core\ext\filters\client_channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
+      <Filter>src\core\ext\filters\deadline</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\dns_resolver_ares.c">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
@@ -618,6 +618,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.c">
       <Filter>src\core\ext\filters\max_age</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.c">
+      <Filter>src\core\ext\filters\message_size</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_unsecure_plugin_registry.c">
       <Filter>src\core\plugin_registry</Filter>
@@ -725,16 +728,10 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h">
@@ -744,15 +741,6 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h">
@@ -1109,6 +1097,15 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h">
       <Filter>src\core\ext\transport\chttp2\alpn</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.h">
+      <Filter>src\core\ext\filters\http\client</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.h">
+      <Filter>src\core\ext\filters\http\message_compress</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.h">
+      <Filter>src\core\ext\filters\http\server</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.h">
       <Filter>src\core\ext\transport\chttp2\server</Filter>
     </ClInclude>
@@ -1168,6 +1165,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.h">
       <Filter>src\core\ext\filters\client_channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h">
+      <Filter>src\core\ext\filters\deadline</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver.h">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
@@ -1256,6 +1256,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.h">
       <Filter>src\core\ext\filters\max_age</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.h">
+      <Filter>src\core\ext\filters\message_size</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -1331,11 +1334,29 @@
     <Filter Include="src\core\ext\filters\client_channel\resolver\sockaddr">
       <UniqueIdentifier>{99210f5e-b2a0-ecd1-024f-fc152db68a11}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\filters\deadline">
+      <UniqueIdentifier>{ac374be1-7a3f-14a8-69fe-badac2d9f9ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\http">
+      <UniqueIdentifier>{33287f7d-739b-d30d-a9f3-b338103456b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\http\client">
+      <UniqueIdentifier>{95cd5972-7339-6f09-2332-e6769b3cba3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\http\message_compress">
+      <UniqueIdentifier>{cf8cb886-3020-e143-317e-730ff9bbddc3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\http\server">
+      <UniqueIdentifier>{2c1e7897-6f69-f8b9-0b90-5c3fae59a48f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\ext\filters\load_reporting">
       <UniqueIdentifier>{0aef07b4-39d2-f862-15ac-65b4bf00dabb}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\filters\max_age">
       <UniqueIdentifier>{d3bc80c1-5f2d-e842-42ac-43d8a6ada8de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\message_size">
+      <UniqueIdentifier>{8cbe7444-caac-49dc-be89-d4c4d1c7966a}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\transport">
       <UniqueIdentifier>{967c89fe-c97c-27e2-aac0-9ba5854cb5fa}</UniqueIdentifier>

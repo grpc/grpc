@@ -87,7 +87,7 @@ namespace Grpc.Core.Internal
             var profiler = Profilers.ForCurrentThread();
 
             using (profiler.NewScope("AsyncCall.UnaryCall"))
-            using (CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create())
+            using (CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.CreateSync())
             {
                 byte[] payload = UnsafeSerialize(msg);
 

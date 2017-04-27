@@ -65,6 +65,7 @@ ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 ENV['AR'] = RbConfig::CONFIG['AR'] unless grpc_config == 'lto'
 ENV['CC'] = RbConfig::CONFIG['CC']
+ENV['CXX'] = RbConfig::CONFIG['CXX']
 ENV['LD'] = ENV['CC']
 
 ENV['AR'] = 'libtool -o' if RUBY_PLATFORM =~ /darwin/
@@ -84,7 +85,10 @@ unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
   nproc = 4
   nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
+<<<<<<< HEAD
   system("pwd")
+=======
+>>>>>>> 4865c79548d4f83ebae4e10fbaf4c3ba10535c97
   system("make -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config} Q=")
   exit 1 unless $? == 0
 end

@@ -212,6 +212,7 @@
     if(NOT PROTOBUF_ROOT_DIR)
       set(PROTOBUF_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/protobuf)
     endif()
+    set(PROTOBUF_WELLKNOWN_IMPORT_DIR <%text>${PROTOBUF_ROOT_DIR}</%text>/src)
     if(EXISTS "<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake/CMakeLists.txt")
       set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
       add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
@@ -244,6 +245,7 @@
       find_package(Protobuf MODULE)
       set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
     endif()
+    set(PROTOBUF_WELLKNOWN_IMPORT_DIR /usr/local/include)
   endif()
 
   if("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "module")
@@ -312,8 +314,10 @@
     set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
   endif()
 
-  if(UNIX)
-    set(_gRPC_ALLTARGETS_LIBRARIES dl rt m pthread)
+  if(_gRPC_PLATFORM_MAC)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m pthread)
+  elseif(UNIX)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> rt m pthread)
   endif()
 
   if(WIN32 AND MSVC)
@@ -346,7 +350,7 @@
       return()
     endif()
 
-    set(_protobuf_include_path -I .)
+    set(_protobuf_include_path -I . -I <%text>${PROTOBUF_WELLKNOWN_IMPORT_DIR}</%text>)
     foreach(FIL <%text>${ARGN}</%text>)
       get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
       get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
@@ -357,10 +361,11 @@
       add_custom_command(
         OUTPUT <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"</%text>
         COMMAND <%text>${_gRPC_PROTOBUF_PROTOC}</%text>
-        ARGS --grpc_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
+        ARGS --grpc_out=<%text>generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}</%text>
              --cpp_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
              --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
              <%text>${_protobuf_include_path}</%text>
@@ -370,7 +375,7 @@
         COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
         VERBATIM)
 
-        <%text>set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)</%text>
+        <%text>set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"  "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)</%text>
     endforeach()
   endfunction()
 
@@ -471,6 +476,9 @@
     ${proto_replace_ext(src, '.grpc.pb.cc')}
     ${proto_replace_ext(src, '.pb.h')}
     ${proto_replace_ext(src, '.grpc.pb.h')}
+    % if src in ["src/proto/grpc/testing/compiler_test.proto", "src/proto/grpc/testing/echo.proto"]:
+    ${proto_replace_ext(src, '_mock.grpc.pb.h')}
+    % endif
   % endif
   % endfor
   )
@@ -510,6 +518,8 @@
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
+    PRIVATE third_party/googletest/googlemock/include
+    PRIVATE third_party/googletest/googlemock
   % endif
   % if lib.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
@@ -553,6 +563,7 @@
   % endfor
   % if tgt.build == 'test' and tgt.language == 'c++':
     third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
   % endif
   )
 
@@ -580,6 +591,8 @@
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
+    PRIVATE third_party/googletest/googlemock/include
+    PRIVATE third_party/googletest/googlemock
   % endif
   % if tgt.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>

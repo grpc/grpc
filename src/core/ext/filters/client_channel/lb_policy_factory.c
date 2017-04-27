@@ -36,16 +36,18 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
+
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/ext/filters/client_channel/parse_address.h"
 
 grpc_lb_addresses* grpc_lb_addresses_create(
     size_t num_addresses, const grpc_lb_user_data_vtable* user_data_vtable) {
-  grpc_lb_addresses* addresses = gpr_malloc(sizeof(grpc_lb_addresses));
+  grpc_lb_addresses* addresses = gpr_zalloc(sizeof(grpc_lb_addresses));
   addresses->num_addresses = num_addresses;
   addresses->user_data_vtable = user_data_vtable;
   const size_t addresses_size = sizeof(grpc_lb_address) * num_addresses;
-  addresses->addresses = gpr_malloc(addresses_size);
-  memset(addresses->addresses, 0, addresses_size);
+  addresses->addresses = gpr_zalloc(addresses_size);
   return addresses;
 }
 
@@ -69,7 +71,7 @@ grpc_lb_addresses* grpc_lb_addresses_copy(const grpc_lb_addresses* addresses) {
 
 void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
                                    void* address, size_t address_len,
-                                   bool is_balancer, char* balancer_name,
+                                   bool is_balancer, const char* balancer_name,
                                    void* user_data) {
   GPR_ASSERT(index < addresses->num_addresses);
   if (user_data != NULL) GPR_ASSERT(addresses->user_data_vtable != NULL);
@@ -77,8 +79,20 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
   memcpy(target->address.addr, address, address_len);
   target->address.len = address_len;
   target->is_balancer = is_balancer;
-  target->balancer_name = balancer_name;
+  target->balancer_name = gpr_strdup(balancer_name);
   target->user_data = user_data;
+}
+
+bool grpc_lb_addresses_set_address_from_uri(grpc_lb_addresses* addresses,
+                                            size_t index, const grpc_uri* uri,
+                                            bool is_balancer,
+                                            const char* balancer_name,
+                                            void* user_data) {
+  grpc_resolved_address address;
+  if (!grpc_parse_uri(uri, &address)) return false;
+  grpc_lb_addresses_set_address(addresses, index, address.addr, address.len,
+                                is_balancer, balancer_name, user_data);
+  return true;
 }
 
 int grpc_lb_addresses_cmp(const grpc_lb_addresses* addresses1,
@@ -145,6 +159,15 @@ grpc_arg grpc_lb_addresses_create_channel_arg(
   arg.value.pointer.p = (void*)addresses;
   arg.value.pointer.vtable = &lb_addresses_arg_vtable;
   return arg;
+}
+
+grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
+    const grpc_channel_args* channel_args) {
+  const grpc_arg* lb_addresses_arg =
+      grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
+  if (lb_addresses_arg == NULL || lb_addresses_arg->type != GRPC_ARG_POINTER)
+    return NULL;
+  return lb_addresses_arg->value.pointer.p;
 }
 
 void grpc_lb_policy_factory_ref(grpc_lb_policy_factory* factory) {

@@ -52,3 +52,21 @@ bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
   }
   GPR_UNREACHABLE_CODE(return true;);
 }
+
+const char *grpc_channel_stack_type_string(grpc_channel_stack_type type) {
+  switch (type) {
+    case GRPC_CLIENT_CHANNEL:
+      return "CLIENT_CHANNEL";
+    case GRPC_CLIENT_SUBCHANNEL:
+      return "CLIENT_SUBCHANNEL";
+    case GRPC_SERVER_CHANNEL:
+      return "SERVER_CHANNEL";
+    case GRPC_CLIENT_LAME_CHANNEL:
+      return "CLIENT_LAME_CHANNEL";
+    case GRPC_CLIENT_DIRECT_CHANNEL:
+      return "CLIENT_DIRECT_CHANNEL";
+    case GRPC_NUM_CHANNEL_STACK_TYPES:
+      break;
+  }
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}

@@ -92,7 +92,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
   uint8_t *p;
   static const size_t header_size = 9;
 
-  hdr = grpc_slice_malloc(header_size);
+  hdr = GRPC_SLICE_MALLOC(header_size);
   p = GRPC_SLICE_START_PTR(hdr);
   GPR_ASSERT(write_bytes < (1 << 24));
   *p++ = (uint8_t)(write_bytes >> 16);
@@ -106,18 +106,16 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
   *p++ = (uint8_t)(id);
   grpc_slice_buffer_add(outbuf, hdr);
 
-  grpc_slice_buffer_move_first(inbuf, write_bytes, outbuf);
+  grpc_slice_buffer_move_first_no_ref(inbuf, write_bytes, outbuf);
 
   stats->framing_bytes += header_size;
   stats->data_bytes += write_bytes;
 }
 
-grpc_error *deframe_unprocessed_incoming_frames(grpc_exec_ctx *exec_ctx,
-                                                grpc_chttp2_data_parser *p,
-                                                grpc_chttp2_stream *s,
-                                                grpc_slice_buffer *slices,
-                                                grpc_slice *slice_out,
-                                                grpc_byte_stream **stream_out) {
+grpc_error *grpc_deframe_unprocessed_incoming_frames(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_data_parser *p, grpc_chttp2_stream *s,
+    grpc_slice_buffer *slices, grpc_slice *slice_out,
+    grpc_byte_stream **stream_out) {
   grpc_error *error = GRPC_ERROR_NONE;
   grpc_chttp2_transport *t = s->t;
 

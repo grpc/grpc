@@ -60,10 +60,155 @@ typedef struct {
   void *tag;
 } plucker;
 
+typedef struct {
+  bool can_get_pollset;
+  bool can_listen;
+  size_t (*size)(void);
+  void (*init)(grpc_pollset *pollset, gpr_mu **mu);
+  grpc_error *(*kick)(grpc_pollset *pollset,
+                      grpc_pollset_worker *specific_worker);
+  grpc_error *(*work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                      grpc_pollset_worker **worker, gpr_timespec now,
+                      gpr_timespec deadline);
+  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                   grpc_closure *closure);
+  void (*destroy)(grpc_pollset *pollset);
+} cq_poller_vtable;
+
+typedef struct non_polling_worker {
+  gpr_cv cv;
+  bool kicked;
+  struct non_polling_worker *next;
+  struct non_polling_worker *prev;
+} non_polling_worker;
+
+typedef struct {
+  gpr_mu mu;
+  non_polling_worker *root;
+  grpc_closure *shutdown;
+} non_polling_poller;
+
+static size_t non_polling_poller_size(void) {
+  return sizeof(non_polling_poller);
+}
+
+static void non_polling_poller_init(grpc_pollset *pollset, gpr_mu **mu) {
+  non_polling_poller *npp = (non_polling_poller *)pollset;
+  gpr_mu_init(&npp->mu);
+  *mu = &npp->mu;
+}
+
+static void non_polling_poller_destroy(grpc_pollset *pollset) {
+  non_polling_poller *npp = (non_polling_poller *)pollset;
+  gpr_mu_destroy(&npp->mu);
+}
+
+static grpc_error *non_polling_poller_work(grpc_exec_ctx *exec_ctx,
+                                           grpc_pollset *pollset,
+                                           grpc_pollset_worker **worker,
+                                           gpr_timespec now,
+                                           gpr_timespec deadline) {
+  non_polling_poller *npp = (non_polling_poller *)pollset;
+  if (npp->shutdown) return GRPC_ERROR_NONE;
+  non_polling_worker w;
+  gpr_cv_init(&w.cv);
+  if (worker != NULL) *worker = (grpc_pollset_worker *)&w;
+  if (npp->root == NULL) {
+    npp->root = w.next = w.prev = &w;
+  } else {
+    w.next = npp->root;
+    w.prev = w.next->prev;
+    w.next->prev = w.prev->next = &w;
+  }
+  w.kicked = false;
+  while (!npp->shutdown && !w.kicked && !gpr_cv_wait(&w.cv, &npp->mu, deadline))
+    ;
+  if (&w == npp->root) {
+    npp->root = w.next;
+    if (&w == npp->root) {
+      if (npp->shutdown) {
+        grpc_closure_sched(exec_ctx, npp->shutdown, GRPC_ERROR_NONE);
+      }
+      npp->root = NULL;
+    }
+  }
+  w.next->prev = w.prev;
+  w.prev->next = w.next;
+  gpr_cv_destroy(&w.cv);
+  if (worker != NULL) *worker = NULL;
+  return GRPC_ERROR_NONE;
+}
+
+static grpc_error *non_polling_poller_kick(
+    grpc_pollset *pollset, grpc_pollset_worker *specific_worker) {
+  non_polling_poller *p = (non_polling_poller *)pollset;
+  if (specific_worker == NULL) specific_worker = (grpc_pollset_worker *)p->root;
+  if (specific_worker != NULL) {
+    non_polling_worker *w = (non_polling_worker *)specific_worker;
+    if (!w->kicked) {
+      w->kicked = true;
+      gpr_cv_signal(&w->cv);
+    }
+  }
+  return GRPC_ERROR_NONE;
+}
+
+static void non_polling_poller_shutdown(grpc_exec_ctx *exec_ctx,
+                                        grpc_pollset *pollset,
+                                        grpc_closure *closure) {
+  non_polling_poller *p = (non_polling_poller *)pollset;
+  GPR_ASSERT(closure != NULL);
+  p->shutdown = closure;
+  if (p->root == NULL) {
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
+  } else {
+    non_polling_worker *w = p->root;
+    do {
+      gpr_cv_signal(&w->cv);
+      w = w->next;
+    } while (w != p->root);
+  }
+}
+
+static const cq_poller_vtable g_poller_vtable_by_poller_type[] = {
+    /* GRPC_CQ_DEFAULT_POLLING */
+    {.can_get_pollset = true,
+     .can_listen = true,
+     .size = grpc_pollset_size,
+     .init = grpc_pollset_init,
+     .kick = grpc_pollset_kick,
+     .work = grpc_pollset_work,
+     .shutdown = grpc_pollset_shutdown,
+     .destroy = grpc_pollset_destroy},
+    /* GRPC_CQ_NON_LISTENING */
+    {.can_get_pollset = true,
+     .can_listen = false,
+     .size = grpc_pollset_size,
+     .init = grpc_pollset_init,
+     .kick = grpc_pollset_kick,
+     .work = grpc_pollset_work,
+     .shutdown = grpc_pollset_shutdown,
+     .destroy = grpc_pollset_destroy},
+    /* GRPC_CQ_NON_POLLING */
+    {.can_get_pollset = false,
+     .can_listen = false,
+     .size = non_polling_poller_size,
+     .init = non_polling_poller_init,
+     .kick = non_polling_poller_kick,
+     .work = non_polling_poller_work,
+     .shutdown = non_polling_poller_shutdown,
+     .destroy = non_polling_poller_destroy},
+};
+
 /* Completion queue structure */
 struct grpc_completion_queue {
   /** owned by pollset */
   gpr_mu *mu;
+
+  grpc_cq_completion_type completion_type;
+
+  const cq_poller_vtable *poller_vtable;
+
   /** completed events */
   grpc_cq_completion completed_head;
   grpc_cq_completion *completed_tail;
@@ -79,6 +224,7 @@ struct grpc_completion_queue {
   int shutdown_called;
   int is_server_cq;
   /** Can the server cq accept incoming channels */
+  /* TODO: sreek - This will no longer be needed. Use polling_type set */
   int is_non_listening_server_cq;
   int num_pluckers;
   plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
@@ -110,20 +256,30 @@ int grpc_cq_event_timeout_trace;
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
                                      grpc_error *error);
 
-grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
+grpc_completion_queue *grpc_completion_queue_create_internal(
+    grpc_cq_completion_type completion_type,
+    grpc_cq_polling_type polling_type) {
   grpc_completion_queue *cc;
-  GPR_ASSERT(!reserved);
 
-  GPR_TIMER_BEGIN("grpc_completion_queue_create", 0);
+  GPR_TIMER_BEGIN("grpc_completion_queue_create_internal", 0);
 
-  GRPC_API_TRACE("grpc_completion_queue_create(reserved=%p)", 1, (reserved));
+  GRPC_API_TRACE(
+      "grpc_completion_queue_create_internal(completion_type=%d, "
+      "polling_type=%d)",
+      2, (completion_type, polling_type));
 
-  cc = gpr_zalloc(sizeof(grpc_completion_queue) + grpc_pollset_size());
-  grpc_pollset_init(POLLSET_FROM_CQ(cc), &cc->mu);
+  const cq_poller_vtable *poller_vtable =
+      &g_poller_vtable_by_poller_type[polling_type];
+
+  cc = gpr_zalloc(sizeof(grpc_completion_queue) + poller_vtable->size());
+  poller_vtable->init(POLLSET_FROM_CQ(cc), &cc->mu);
 #ifndef NDEBUG
   cc->outstanding_tags = NULL;
   cc->outstanding_tag_capacity = 0;
 #endif
+
+  cc->completion_type = completion_type;
+  cc->poller_vtable = poller_vtable;
 
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
   gpr_ref_init(&cc->pending_events, 1);
@@ -143,9 +299,13 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
   grpc_closure_init(&cc->pollset_shutdown_done, on_pollset_shutdown_done, cc,
                     grpc_schedule_on_exec_ctx);
 
-  GPR_TIMER_END("grpc_completion_queue_create", 0);
+  GPR_TIMER_END("grpc_completion_queue_create_internal", 0);
 
   return cc;
+}
+
+grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue *cc) {
+  return cc->completion_type;
 }
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
@@ -175,7 +335,7 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc) {
 #endif
   if (gpr_unref(&cc->owning_refs)) {
     GPR_ASSERT(cc->completed_head.next == (uintptr_t)&cc->completed_head);
-    grpc_pollset_destroy(POLLSET_FROM_CQ(cc));
+    cc->poller_vtable->destroy(POLLSET_FROM_CQ(cc));
 #ifndef NDEBUG
     gpr_free(cc->outstanding_tags);
 #endif
@@ -260,7 +420,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
       }
     }
     grpc_error *kick_error =
-        grpc_pollset_kick(POLLSET_FROM_CQ(cc), pluck_worker);
+        cc->poller_vtable->kick(POLLSET_FROM_CQ(cc), pluck_worker);
     gpr_mu_unlock(cc->mu);
     if (kick_error != GRPC_ERROR_NONE) {
       const char *msg = grpc_error_string(kick_error);
@@ -275,8 +435,8 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
     GPR_ASSERT(!cc->shutdown);
     GPR_ASSERT(cc->shutdown_called);
     cc->shutdown = 1;
-    grpc_pollset_shutdown(exec_ctx, POLLSET_FROM_CQ(cc),
-                          &cc->pollset_shutdown_done);
+    cc->poller_vtable->shutdown(exec_ctx, POLLSET_FROM_CQ(cc),
+                                &cc->pollset_shutdown_done);
     gpr_mu_unlock(cc->mu);
   }
 
@@ -346,6 +506,13 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
                                       gpr_timespec deadline, void *reserved) {
   grpc_event ret;
   gpr_timespec now;
+
+  if (cc->completion_type != GRPC_CQ_NEXT) {
+    gpr_log(GPR_ERROR,
+            "grpc_completion_queue_next() cannot be called on this completion "
+            "queue since its completion type is not GRPC_CQ_NEXT");
+    abort();
+  }
 
   GPR_TIMER_BEGIN("grpc_completion_queue_next", 0);
 
@@ -425,8 +592,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       gpr_mu_lock(cc->mu);
       continue;
     } else {
-      grpc_error *err = grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc), NULL,
-                                          now, iteration_deadline);
+      grpc_error *err = cc->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cc),
+                                                NULL, now, iteration_deadline);
       if (err != GRPC_ERROR_NONE) {
         gpr_mu_unlock(cc->mu);
         const char *msg = grpc_error_string(err);
@@ -515,6 +682,13 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   gpr_timespec now;
 
   GPR_TIMER_BEGIN("grpc_completion_queue_pluck", 0);
+
+  if (cc->completion_type != GRPC_CQ_PLUCK) {
+    gpr_log(GPR_ERROR,
+            "grpc_completion_queue_pluck() cannot be called on this completion "
+            "queue since its completion type is not GRPC_CQ_PLUCK");
+    abort();
+  }
 
   if (grpc_cq_pluck_trace) {
     GRPC_API_TRACE(
@@ -610,8 +784,8 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(cc->mu);
     } else {
-      grpc_error *err = grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc),
-                                          &worker, now, iteration_deadline);
+      grpc_error *err = cc->poller_vtable->work(
+          &exec_ctx, POLLSET_FROM_CQ(cc), &worker, now, iteration_deadline);
       if (err != GRPC_ERROR_NONE) {
         del_plucker(cc, tag, &worker);
         gpr_mu_unlock(cc->mu);
@@ -655,8 +829,8 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
   if (gpr_unref(&cc->pending_events)) {
     GPR_ASSERT(!cc->shutdown);
     cc->shutdown = 1;
-    grpc_pollset_shutdown(&exec_ctx, POLLSET_FROM_CQ(cc),
-                          &cc->pollset_shutdown_done);
+    cc->poller_vtable->shutdown(&exec_ctx, POLLSET_FROM_CQ(cc),
+                                &cc->pollset_shutdown_done);
   }
   gpr_mu_unlock(cc->mu);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -672,7 +846,7 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
 }
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
-  return POLLSET_FROM_CQ(cc);
+  return cc->poller_vtable->can_get_pollset ? POLLSET_FROM_CQ(cc) : NULL;
 }
 
 grpc_completion_queue *grpc_cq_from_pollset(grpc_pollset *ps) {
@@ -680,13 +854,23 @@ grpc_completion_queue *grpc_cq_from_pollset(grpc_pollset *ps) {
 }
 
 void grpc_cq_mark_non_listening_server_cq(grpc_completion_queue *cc) {
+  /* TODO: sreek - use cc->polling_type field here and add a validation check
+     (i.e grpc_cq_mark_non_listening_server_cq can only be called on a cc whose
+     polling_type is set to GRPC_CQ_NON_LISTENING */
   cc->is_non_listening_server_cq = 1;
 }
 
 bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc) {
+  /* TODO (sreek) - return (cc->polling_type == GRPC_CQ_NON_LISTENING) */
   return (cc->is_non_listening_server_cq == 1);
 }
 
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc) { cc->is_server_cq = 1; }
 
-int grpc_cq_is_server_cq(grpc_completion_queue *cc) { return cc->is_server_cq; }
+bool grpc_cq_is_server_cq(grpc_completion_queue *cc) {
+  return cc->is_server_cq;
+}
+
+bool grpc_cq_can_listen(grpc_completion_queue *cc) {
+  return cc->poller_vtable->can_listen;
+}

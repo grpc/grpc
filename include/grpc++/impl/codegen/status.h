@@ -53,7 +53,7 @@ class Status {
 
   /// Construct an instance with \a code,  \a error_message and \a error_details
   Status(StatusCode code, const grpc::string& error_message,
-         const grpc::string error_details)
+         const grpc::string& error_details)
       : code_(code),
         error_message_(error_message),
         binary_error_details_(error_details) {}
