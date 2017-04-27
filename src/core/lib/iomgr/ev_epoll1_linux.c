@@ -192,12 +192,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
     new_fd = gpr_malloc(sizeof(grpc_fd));
   }
 
-  struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET),
-                           .data.ptr = new_fd};
-  if (epoll_ctl(g_epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
-    gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
-  }
-
   new_fd->fd = fd;
   grpc_lfev_init(&new_fd->read_closure);
   grpc_lfev_init(&new_fd->write_closure);
@@ -212,15 +206,36 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, (void *)new_fd, fd_name);
 #endif
   gpr_free(fd_name);
+
+  struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET),
+                           .data.ptr = new_fd};
+  if (epoll_ctl(g_epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
+    gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
+  }
+
   return new_fd;
 }
 
 static int fd_wrapped_fd(grpc_fd *fd) { return fd->fd; }
 
+/* Might be called multiple times */
+static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
+  if (grpc_lfev_set_shutdown(exec_ctx, &fd->read_closure,
+                             GRPC_ERROR_REF(why))) {
+    shutdown(fd->fd, SHUT_RDWR);
+    grpc_lfev_set_shutdown(exec_ctx, &fd->write_closure, GRPC_ERROR_REF(why));
+  }
+  GRPC_ERROR_UNREF(why);
+}
+
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
                       const char *reason) {
   grpc_error *error = GRPC_ERROR_NONE;
+
+  if (!grpc_lfev_is_shutdown(&fd->read_closure)) {
+    fd_shutdown(exec_ctx, fd, GRPC_ERROR_CREATE_FROM_COPIED_STRING(reason));
+  }
 
   /* If release_fd is not NULL, we should be relinquishing control of the file
      descriptor fd->fd (but we still own the grpc_fd structure). */
@@ -250,16 +265,6 @@ static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
 
 static bool fd_is_shutdown(grpc_fd *fd) {
   return grpc_lfev_is_shutdown(&fd->read_closure);
-}
-
-/* Might be called multiple times */
-static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
-  if (grpc_lfev_set_shutdown(exec_ctx, &fd->read_closure,
-                             GRPC_ERROR_REF(why))) {
-    shutdown(fd->fd, SHUT_RDWR);
-    grpc_lfev_set_shutdown(exec_ctx, &fd->write_closure, GRPC_ERROR_REF(why));
-  }
-  GRPC_ERROR_UNREF(why);
 }
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
@@ -703,6 +708,8 @@ const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
 #include "src/core/lib/iomgr/ev_posix.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) { return NULL; }
+const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
+  return NULL;
+}
 #endif /* defined(GRPC_POSIX_SOCKET) */
 #endif /* !defined(GRPC_LINUX_EPOLL) */
