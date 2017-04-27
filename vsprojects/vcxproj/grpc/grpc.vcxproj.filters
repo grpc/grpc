@@ -709,6 +709,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_cronet_compression_filter.c">
       <Filter>src\core\ext\filters\workarounds</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_utils.c">
+      <Filter>src\core\ext\filters\workarounds</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
       <Filter>src\core\plugin_registry</Filter>
     </ClCompile>
@@ -1422,6 +1425,9 @@
       <Filter>src\core\ext\filters\message_size</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_cronet_compression_filter.h">
+      <Filter>src\core\ext\filters\workarounds</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_utils.h">
       <Filter>src\core\ext\filters\workarounds</Filter>
     </ClInclude>
   </ItemGroup>

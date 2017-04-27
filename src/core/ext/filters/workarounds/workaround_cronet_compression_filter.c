@@ -31,22 +31,15 @@
 
 #include "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h"
 
+#include <stdio.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+
+#include "src/core/ext/filters/workarounds/workaround_utils.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-/*
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/support/string.h"
-#include "src/core/lib/transport/service_config.h"
-*/
-
-#define GRPC_WORKAROUND_PRIORITY_HIGH 9999
+#include "src/core/lib/transport/metadata.h"
 
 typedef struct call_data {
   // Receive closures are chained: we inject this closure as the
@@ -57,10 +50,28 @@ typedef struct call_data {
   grpc_metadata_batch *recv_initial_metadata;
   // Original recv_initial_metadata_ready callback, invoked after our own.
   grpc_closure* next_recv_initial_metadata_ready;
+
+  // Marks whether the workaround is active
+  bool workaround_active;
 } call_data;
 
 typedef struct channel_data {
 } channel_data;
+
+// Find the user agent metadata element in the batch
+static bool get_user_agent_mdelem(const grpc_metadata_batch *batch,
+                                  grpc_mdelem *md) {
+  grpc_linked_mdelem *t = batch->list.head;
+  while (t != NULL) {
+    *md = t->md;
+    if (grpc_slice_eq(GRPC_MDKEY(*md), GRPC_MDSTR_USER_AGENT)) {
+      return true;
+    }
+    t = t->next;
+  }
+
+  return false;
+}
 
 // Callback invoked when we receive an initial metadata.
 static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* user_data,
@@ -68,7 +79,17 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* user_data
   grpc_call_element* elem = user_data;
   call_data* calld = elem->call_data;
 
-  
+  if (GRPC_ERROR_NONE == error) {
+    grpc_mdelem md;
+    if (get_user_agent_mdelem(calld->recv_initial_metadata, &md)) {
+      grpc_user_agent_md *user_agent_md = grpc_parse_user_agent(md);
+      if (user_agent_md->workaround_active[GRPC_WORKAROUND_ID_CRONET_COMPRESSION]) {
+        calld->workaround_active = true;
+      }
+      // Remove with caching
+      gpr_free(user_agent_md);
+    }
+  }
 
   // Invoke the next callback.
   grpc_closure_run(exec_ctx, calld->next_recv_initial_metadata_ready, GRPC_ERROR_REF(error));
@@ -98,6 +119,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   const grpc_call_element_args* args) {
   call_data* calld = elem->call_data;
   calld->next_recv_initial_metadata_ready = NULL;
+  calld->workaround_active = false;
   grpc_closure_init(&calld->recv_initial_metadata_ready, recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
@@ -119,6 +141,44 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
 static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
                                  grpc_channel_element* elem) {}
 
+// Parse the user agent
+static bool parse_user_agent(grpc_mdelem md) {
+  const char grpc_objc_specifier[] = "grpc-objc/";
+  const size_t grpc_objc_specifier_len = sizeof(grpc_objc_specifier) - 1;
+  const char cronet_specifier[] = "cronet_http";
+  const size_t cronet_specifier_len = sizeof(cronet_specifier) - 1;
+
+  char *user_agent_str = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+  bool grpc_objc_specifier_seen = false;
+  bool cronet_specifier_seen = false;
+  char *major_version = user_agent_str, *minor_version;
+
+  char *head = strtok(user_agent_str, " ");
+  while (head != NULL) {
+    if (!grpc_objc_specifier_seen &&
+        0 == strncmp(head, grpc_objc_specifier, grpc_objc_specifier_len)) {
+      major_version = head + grpc_objc_specifier_len;
+      grpc_objc_specifier_seen = true;
+    } else if (grpc_objc_specifier_seen &&
+               0 == strncmp(head, cronet_specifier, cronet_specifier_len)) {
+      cronet_specifier_seen = true;
+      break;
+    }
+
+    head = strtok(NULL, " ");
+  }
+  if (grpc_objc_specifier_seen) {
+    major_version = strtok(major_version, ".");
+    minor_version = strtok(NULL, ".");
+  }
+
+  gpr_free(user_agent_str);
+  return (grpc_objc_specifier_seen &&
+          cronet_specifier_seen &&
+          (atol(major_version) < 1 ||
+           (atol(major_version) == 1 && atol(minor_version) <= 3)));
+}
+
 const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
     start_transport_stream_op_batch,
     grpc_channel_next_op,
@@ -136,6 +196,8 @@ const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
 static bool register_workaround_cronet_compression(grpc_exec_ctx* exec_ctx,
                                                    grpc_channel_stack_builder* builder,
                                                    void* arg) {
+  grpc_register_workaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION,
+                           parse_user_agent);
   return grpc_channel_stack_builder_prepend_filter(
       builder, &grpc_workaround_cronet_compression_filter, NULL, NULL);
 }

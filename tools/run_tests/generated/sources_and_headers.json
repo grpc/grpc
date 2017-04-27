@@ -5707,6 +5707,7 @@
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
+      "grpc_server_backward_compatibility", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
@@ -5812,6 +5813,7 @@
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
+      "grpc_server_backward_compatibility", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_workaround_cronet_compression_filter"
@@ -8459,6 +8461,24 @@
       "src/core/lib/security/util/json_util.c", 
       "src/core/lib/security/util/json_util.h", 
       "src/core/lib/surface/init_secure.c"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/workarounds/workaround_utils.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_server_backward_compatibility", 
+    "src": [
+      "src/core/ext/filters/workarounds/workaround_utils.c", 
+      "src/core/ext/filters/workarounds/workaround_utils.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

@@ -973,6 +973,8 @@ src/core/ext/filters/message_size/message_size_filter.c \
 src/core/ext/filters/message_size/message_size_filter.h \
 src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
 src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h \
+src/core/ext/filters/workarounds/workaround_utils.c \
+src/core/ext/filters/workarounds/workaround_utils.h \
 src/core/ext/transport/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.c \
