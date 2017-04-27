@@ -1569,7 +1569,7 @@ static const grpc_event_engine_vtable vtable = {
     .shutdown_engine = shutdown_engine,
 };
 
-const grpc_event_engine_vtable *grpc_init_poll_posix(void) {
+const grpc_event_engine_vtable *grpc_init_poll_posix(bool explicit_request) {
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
@@ -1579,7 +1579,7 @@ const grpc_event_engine_vtable *grpc_init_poll_posix(void) {
   return &vtable;
 }
 
-const grpc_event_engine_vtable *grpc_init_poll_cv_posix(void) {
+const grpc_event_engine_vtable *grpc_init_poll_cv_posix(bool explicit_request) {
   global_cv_fd_table_init();
   grpc_enable_cv_wakeup_fds(1);
   if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {

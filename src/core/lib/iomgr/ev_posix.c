@@ -58,7 +58,7 @@ grpc_wakeup_fd grpc_global_wakeup_fd;
 static const grpc_event_engine_vtable *g_event_engine;
 static const char *g_poll_strategy_name = NULL;
 
-typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(void);
+typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(bool explicit_request);
 
 typedef struct {
   const char *name;
@@ -104,7 +104,7 @@ static bool is(const char *want, const char *have) {
 static void try_engine(const char *engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
     if (is(engine, g_factories[i].name)) {
-      if ((g_event_engine = g_factories[i].factory())) {
+      if ((g_event_engine = g_factories[i].factory(0 == strcmp(engine, g_factories[i].name)))) {
         g_poll_strategy_name = g_factories[i].name;
         gpr_log(GPR_DEBUG, "Using polling engine: %s", g_factories[i].name);
         return;

@@ -37,7 +37,7 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
-const grpc_event_engine_vtable *grpc_init_epollsig_linux(void);
+const grpc_event_engine_vtable *grpc_init_epollsig_linux(bool explicit_request);
 
 #ifdef GRPC_LINUX_EPOLL
 void *grpc_fd_get_polling_island(grpc_fd *fd);

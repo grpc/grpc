@@ -676,7 +676,7 @@ static const grpc_event_engine_vtable vtable = {
 
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create a dummy epoll_fd to make sure epoll support is available */
-const grpc_event_engine_vtable *grpc_init_epoll1_linux(void) {
+const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
@@ -703,6 +703,6 @@ const grpc_event_engine_vtable *grpc_init_epoll1_linux(void) {
 #include "src/core/lib/iomgr/ev_posix.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable *grpc_init_epoll1_linux(void) { return NULL; }
+const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) { return NULL; }
 #endif /* defined(GRPC_POSIX_SOCKET) */
 #endif /* !defined(GRPC_LINUX_EPOLL) */
