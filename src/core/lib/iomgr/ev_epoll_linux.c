@@ -63,8 +63,9 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
 
+#define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
+
 /* TODO: sreek - Move this to init.c and initialize this like other tracers. */
-static int grpc_polling_trace = 0; /* Disabled by default */
 #define GRPC_POLLING_TRACE(fmt, ...)       \
   if (grpc_polling_trace) {                \
     gpr_log(GPR_INFO, (fmt), __VA_ARGS__); \

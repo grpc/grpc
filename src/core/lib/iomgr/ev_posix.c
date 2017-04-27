@@ -44,9 +44,13 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
+
+int grpc_polling_trace = 0; /* Disabled by default */
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
@@ -65,6 +69,7 @@ typedef struct {
 } event_engine_factory;
 
 static const event_engine_factory g_factories[] = {
+    {"epollex", grpc_init_epollex_linux},
     {"epoll", grpc_init_epoll_linux},
     {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
@@ -121,6 +126,8 @@ void grpc_set_event_engine_test_only(
 const char *grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
+  grpc_register_tracer("polling", &grpc_polling_trace);
+
   char *s = gpr_getenv("GRPC_POLL_STRATEGY");
   if (s == NULL) {
     s = gpr_strdup("all");

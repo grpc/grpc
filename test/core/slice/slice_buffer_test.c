@@ -115,8 +115,8 @@ void test_slice_buffer_move_first() {
   grpc_slice_buffer_move_first(&src, 2, &dst);
   src_len -= 2;
   dst_len += 2;
-  GPR_ASSERT(src.length == src.length);
-  GPR_ASSERT(dst.length == dst.length);
+  GPR_ASSERT(src_len == src.length);
+  GPR_ASSERT(dst_len == dst.length);
 }
 
 int main(int argc, char **argv) {

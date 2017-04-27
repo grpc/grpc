@@ -41372,7 +41372,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 100, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -41474,7 +41474,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -41526,7 +41526,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -41951,7 +41951,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 100, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -42053,7 +42053,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -42105,7 +42105,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
@@ -42582,7 +42582,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 100, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -42736,7 +42736,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -42814,7 +42814,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -43460,7 +43460,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 100, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -43614,7 +43614,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 
@@ -43692,7 +43692,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": "capacity", 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
       "asan-noleaks", 

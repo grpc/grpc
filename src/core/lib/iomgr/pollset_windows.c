@@ -43,6 +43,8 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 
+#define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
+
 gpr_mu grpc_polling_mu;
 static grpc_pollset_worker *g_active_poller;
 static grpc_pollset_worker g_global_root_worker;

@@ -136,8 +136,7 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
   gpr_mu_lock(mu);
   while (state.KeepRunning()) {
-    grpc_pollset_worker* worker;
-    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, &worker, now, deadline));
+    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, now, deadline));
   }
   grpc_closure shutdown_ps_closure;
   grpc_closure_init(&shutdown_ps_closure, shutdown_ps, ps,
@@ -149,6 +148,33 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   track_counters.Finish(state);
 }
 BENCHMARK(BM_PollEmptyPollset);
+
+static void BM_PollAddFd(benchmark::State& state) {
+  TrackCounters track_counters;
+  size_t ps_sz = grpc_pollset_size();
+  grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
+  gpr_mu* mu;
+  grpc_pollset_init(ps, &mu);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_wakeup_fd wakeup_fd;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
+  grpc_fd *fd = grpc_fd_create(wakeup_fd.read_fd, "xxx");
+  while (state.KeepRunning()) {
+     grpc_pollset_add_fd(&exec_ctx, ps, fd);
+     grpc_exec_ctx_flush(&exec_ctx);
+  }
+  grpc_fd_orphan(&exec_ctx, fd, NULL, NULL, "xxx");
+  grpc_closure shutdown_ps_closure;
+  grpc_closure_init(&shutdown_ps_closure, shutdown_ps, ps,
+                    grpc_schedule_on_exec_ctx);
+  gpr_mu_lock(mu);  
+  grpc_pollset_shutdown(&exec_ctx, ps, &shutdown_ps_closure);
+  gpr_mu_unlock(mu);
+  grpc_exec_ctx_finish(&exec_ctx);
+  gpr_free(ps);
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_PollAddFd);
 
 class Closure : public grpc_closure {
  public:
@@ -233,8 +259,7 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_fd_notify_on_read(&exec_ctx, wakeup, continue_closure);
   gpr_mu_lock(mu);
   while (!done) {
-    grpc_pollset_worker* worker;
-    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, &worker, now, deadline));
+    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, now, deadline));
   }
   grpc_fd_orphan(&exec_ctx, wakeup, NULL, NULL, "done");
   wakeup_fd.read_fd = 0;
