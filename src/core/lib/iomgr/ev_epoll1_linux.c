@@ -563,6 +563,7 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
     // active list
     pollset_neighbourhood *neighbourhood = pollset->neighbourhood;
     gpr_mu_unlock(&pollset->mu);
+    // pollset unlocked: state may change (even worker->kick_state)
     gpr_mu_lock(&neighbourhood->mu);
     gpr_mu_lock(&pollset->mu);
     if (pollset->seen_inactive) {
