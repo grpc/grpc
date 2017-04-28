@@ -53,6 +53,9 @@ GPRAPI grpc_slice grpc_slice_ref(grpc_slice s);
    where dest!=NULL , then (*dest)(start, len).  Requires s initialized.  */
 GPRAPI void grpc_slice_unref(grpc_slice s);
 
+/* Copy slice - create a new slice that contains the same data as s */
+GPRAPI grpc_slice grpc_slice_copy(grpc_slice s);
+
 /* Create a slice pointing at some data. Calls malloc to allocate a refcount
    for the object, and arranges that destroy will be called with the pointer
    passed in at destruction. */
@@ -75,6 +78,13 @@ GPRAPI grpc_slice grpc_slice_new_with_len(void *p, size_t len,
    call.
    Aborts if malloc() fails. */
 GPRAPI grpc_slice grpc_slice_malloc(size_t length);
+GPRAPI grpc_slice grpc_slice_malloc_large(size_t length);
+
+#define GRPC_SLICE_MALLOC(len)                                    \
+  ((len) <= GRPC_SLICE_INLINED_SIZE                               \
+       ? (grpc_slice){.refcount = NULL,                           \
+                      .data.inlined = {.length = (uint8_t)(len)}} \
+       : grpc_slice_malloc_large((len)))
 
 /* Intern a slice:
 
@@ -102,9 +112,9 @@ GPRAPI grpc_slice grpc_slice_from_static_string(const char *source);
 /* Create a slice pointing to constant memory */
 GPRAPI grpc_slice grpc_slice_from_static_buffer(const void *source, size_t len);
 
-/* Return a result slice derived from s, which shares a ref count with s, where
-   result.data==s.data+begin, and result.length==end-begin.
-   The ref count of s is increased by one.
+/* Return a result slice derived from s, which shares a ref count with \a s,
+   where result.data==s.data+begin, and result.length==end-begin. The ref count
+   of \a s is increased by one. Do not assign result back to \a s.
    Requires s initialized, begin <= end, begin <= s.length, and
    end <= source->length. */
 GPRAPI grpc_slice grpc_slice_sub(grpc_slice s, size_t begin, size_t end);
@@ -116,6 +126,18 @@ GPRAPI grpc_slice grpc_slice_sub_no_ref(grpc_slice s, size_t begin, size_t end);
    sharing a refcount with s, that contains s[split:s.length].
    Requires s intialized, split <= s.length */
 GPRAPI grpc_slice grpc_slice_split_tail(grpc_slice *s, size_t split);
+
+typedef enum {
+  GRPC_SLICE_REF_TAIL = 1,
+  GRPC_SLICE_REF_HEAD = 2,
+  GRPC_SLICE_REF_BOTH = 1 + 2
+} grpc_slice_ref_whom;
+
+/* The same as grpc_slice_split_tail, but with an option to skip altering
+ * refcounts (grpc_slice_split_tail_maybe_ref(..., true) is equivalent to
+ * grpc_slice_split_tail(...)) */
+GPRAPI grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice *s, size_t split,
+                                                  grpc_slice_ref_whom ref_whom);
 
 /* Splits s into two: modifies s to be s[split:s.length], and returns a new
    slice, sharing a refcount with s, that contains s[0:split].

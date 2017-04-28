@@ -43,6 +43,9 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <stdio.h>
+#include <string.h>
+
+#include "src/core/lib/support/env.h"
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
@@ -74,7 +77,7 @@ typedef struct gpr_timer_log_list {
 static __thread gpr_timer_log *g_thread_log;
 static gpr_once g_once_init = GPR_ONCE_INIT;
 static FILE *output_file;
-static const char *output_filename = "latency_trace.txt";
+static const char *output_filename_or_null = NULL;
 static pthread_mutex_t g_mu;
 static pthread_cond_t g_cv;
 static gpr_timer_log_list g_in_progress_logs;
@@ -84,6 +87,17 @@ static gpr_thd_id g_writing_thread;
 static __thread int g_thread_id;
 static int g_next_thread_id;
 static int g_writing_enabled = 1;
+
+static const char *output_filename() {
+  if (output_filename_or_null == NULL) {
+    output_filename_or_null = gpr_getenv("LATENCY_TRACE");
+    if (output_filename_or_null == NULL ||
+        strlen(output_filename_or_null) == 0) {
+      output_filename_or_null = "latency_trace.txt";
+    }
+  }
+  return output_filename_or_null;
+}
 
 static int timer_log_push_back(gpr_timer_log_list *list, gpr_timer_log *log) {
   if (list->head == NULL) {
@@ -134,7 +148,7 @@ static void timer_log_remove(gpr_timer_log_list *list, gpr_timer_log *log) {
 static void write_log(gpr_timer_log *log) {
   size_t i;
   if (output_file == NULL) {
-    output_file = fopen(output_filename, "w");
+    output_file = fopen(output_filename(), "w");
   }
   for (i = 0; i < log->num_entries; i++) {
     gpr_timer_entry *entry = &(log->log[i]);
@@ -198,13 +212,13 @@ static void finish_writing(void) {
 }
 
 void gpr_timers_set_log_filename(const char *filename) {
-  output_filename = filename;
+  output_filename_or_null = filename;
 }
 
 static void init_output() {
   gpr_thd_options options = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&options);
-  gpr_thd_new(&g_writing_thread, writing_thread, NULL, &options);
+  GPR_ASSERT(gpr_thd_new(&g_writing_thread, writing_thread, NULL, &options));
   atexit(finish_writing);
 }
 

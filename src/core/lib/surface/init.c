@@ -41,13 +41,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/deadline_filter.h"
 #include "src/core/lib/channel/handshaker_registry.h"
-#include "src/core/lib/channel/http_client_filter.h"
-#include "src/core/lib/channel/http_server_filter.h"
-#include "src/core/lib/channel/message_size_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -63,6 +58,7 @@
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -94,57 +90,13 @@ static bool prepend_filter(grpc_exec_ctx *exec_ctx,
       builder, (const grpc_channel_filter *)arg, NULL, NULL);
 }
 
-static bool maybe_add_http_filter(grpc_exec_ctx *exec_ctx,
-                                  grpc_channel_stack_builder *builder,
-                                  void *arg) {
-  grpc_transport *t = grpc_channel_stack_builder_get_transport(builder);
-  if (t && strstr(t->vtable->name, "http")) {
-    return grpc_channel_stack_builder_prepend_filter(
-        builder, (const grpc_channel_filter *)arg, NULL, NULL);
-  }
-  return true;
-}
-
 static void register_builtin_channel_init() {
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      prepend_filter, (void *)&grpc_client_deadline_filter);
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
-      (void *)&grpc_server_deadline_filter);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      prepend_filter, (void *)&grpc_message_size_filter);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      prepend_filter, (void *)&grpc_message_size_filter);
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
-      (void *)&grpc_message_size_filter);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
-      (void *)&grpc_compress_filter);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      prepend_filter, (void *)&grpc_compress_filter);
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
-      (void *)&grpc_compress_filter);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_http_filter, (void *)&grpc_http_client_filter);
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, NULL);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_http_filter, (void *)&grpc_http_client_filter);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, NULL);
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_http_filter, (void *)&grpc_http_server_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, NULL);
@@ -188,10 +140,10 @@ void grpc_init(void) {
     grpc_register_tracer("channel_stack_builder",
                          &grpc_trace_channel_stack_builder);
     grpc_register_tracer("http1", &grpc_http1_trace);
-    grpc_register_tracer("compression", &grpc_compression_trace);
     grpc_register_tracer("queue_pluck", &grpc_cq_pluck_trace);
     grpc_register_tracer("combiner", &grpc_combiner_trace);
     grpc_register_tracer("server_channel", &grpc_server_channel_trace);
+    grpc_register_tracer("bdp_estimator", &grpc_bdp_estimator_trace);
     // Default pluck trace to 1
     grpc_cq_pluck_trace = 1;
     grpc_register_tracer("queue_timeout", &grpc_cq_event_timeout_trace);
@@ -207,7 +159,6 @@ void grpc_init(void) {
     grpc_iomgr_init();
     grpc_executor_init();
     gpr_timers_global_init();
-    grpc_cq_global_init();
     grpc_handshaker_factory_registry_init();
     grpc_security_init();
     for (i = 0; i < g_number_of_plugins; i++) {
@@ -234,7 +185,6 @@ void grpc_shutdown(void) {
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     grpc_executor_shutdown(&exec_ctx);
-    grpc_cq_global_shutdown();
     grpc_iomgr_shutdown(&exec_ctx);
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();

@@ -32,26 +32,47 @@
  */
 
 #include "src/core/lib/transport/pid_controller.h"
+#include <grpc/support/useful.h>
 
 void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
-                              double gain_p, double gain_i, double gain_d) {
-  pid_controller->gain_p = gain_p;
-  pid_controller->gain_i = gain_i;
-  pid_controller->gain_d = gain_d;
+                              grpc_pid_controller_args args) {
+  pid_controller->args = args;
+  pid_controller->last_control_value = args.initial_control_value;
   grpc_pid_controller_reset(pid_controller);
 }
 
 void grpc_pid_controller_reset(grpc_pid_controller *pid_controller) {
   pid_controller->last_error = 0.0;
+  pid_controller->last_dc_dt = 0.0;
   pid_controller->error_integral = 0.0;
 }
 
 double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
                                   double error, double dt) {
-  pid_controller->error_integral += error * dt;
+  if (dt == 0) return pid_controller->last_control_value;
+  /* integrate error using the trapezoid rule */
+  pid_controller->error_integral +=
+      dt * (pid_controller->last_error + error) * 0.5;
+  pid_controller->error_integral = GPR_CLAMP(
+      pid_controller->error_integral, -pid_controller->args.integral_range,
+      pid_controller->args.integral_range);
   double diff_error = (error - pid_controller->last_error) / dt;
+  /* calculate derivative of control value vs time */
+  double dc_dt = pid_controller->args.gain_p * error +
+                 pid_controller->args.gain_i * pid_controller->error_integral +
+                 pid_controller->args.gain_d * diff_error;
+  /* and perform trapezoidal integration */
+  double new_control_value = pid_controller->last_control_value +
+                             dt * (pid_controller->last_dc_dt + dc_dt) * 0.5;
+  new_control_value =
+      GPR_CLAMP(new_control_value, pid_controller->args.min_control_value,
+                pid_controller->args.max_control_value);
   pid_controller->last_error = error;
-  return dt * (pid_controller->gain_p * error +
-               pid_controller->gain_i * pid_controller->error_integral +
-               pid_controller->gain_d * diff_error);
+  pid_controller->last_dc_dt = dc_dt;
+  pid_controller->last_control_value = new_control_value;
+  return new_control_value;
+}
+
+double grpc_pid_controller_last(grpc_pid_controller *pid_controller) {
+  return pid_controller->last_control_value;
 }

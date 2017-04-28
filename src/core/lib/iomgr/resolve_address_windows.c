@@ -78,7 +78,7 @@ static grpc_error *blocking_resolve_address_impl(
   if (host == NULL) {
     char *msg;
     gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
-    error = GRPC_ERROR_CREATE(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     goto done;
   }
@@ -86,7 +86,7 @@ static grpc_error *blocking_resolve_address_impl(
     if (default_port == NULL) {
       char *msg;
       gpr_asprintf(&msg, "no port in name '%s'", name);
-      error = GRPC_ERROR_CREATE(msg);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
       goto done;
     }

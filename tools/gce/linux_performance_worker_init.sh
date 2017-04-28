@@ -40,11 +40,6 @@ sudo apt-get update
 sudo apt-get install -y openjdk-8-jdk
 sudo apt-get install -y unzip lsof
 
-# Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
-# This needs to happen as the last step to prevent Jenkins master from connecting
-# to a machine that hasn't been properly setup yet.
-cat jenkins_master.pub | sudo tee --append ~jenkins/.ssh/authorized_keys
-
 sudo apt-get install -y \
   autoconf \
   autotools-dev \
@@ -60,7 +55,10 @@ sudo apt-get install -y \
   libc6 \
   libc6-dbg \
   libc6-dev \
+  libcurl4-openssl-dev \
   libgtest-dev \
+  libreadline-dev \
+  libssl-dev \
   libtool \
   make \
   strace \
@@ -76,7 +74,8 @@ sudo apt-get install -y \
   telnet \
   unzip \
   wget \
-  zip
+  zip \
+  zlib1g-dev
 
 # perftools
 sudo apt-get install -y google-perftools libgoogle-perftools-dev
@@ -92,14 +91,15 @@ sudo pip install tabulate
 sudo pip install google-api-python-client
 sudo pip install virtualenv
 
-# TODO(jtattermusch): For some reason, building gRPC Python depends on python3.4
-# being installed, but python3.4 is not available on Ubuntu 16.04.
-# Temporarily fixing this by adding a PPA with python3.4, but we should
-# really remove this hack once possible.
-sudo add-apt-repository -y ppa:fkrull/deadsnakes
-sudo apt-get update
-sudo apt-get install -y python3.4 python3.4-dev
-python3.4 -m pip install virtualenv
+# Building gRPC Python depends on python3.4 being installed, but python3.4
+# is not available on Ubuntu 16.10, so install from source
+curl -O https://www.python.org/ftp/python/3.4.6/Python-3.4.6.tgz
+tar xzvf Python-3.4.6.tgz
+cd Python-3.4.6
+./configure --enable-shared --prefix=/usr/local LDFLAGS="-Wl,--rpath=/usr/local/lib"
+sudo make altinstall
+cd ..
+rm Python-3.4.6.tgz
 
 curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
@@ -122,17 +122,25 @@ sudo apt-get update
 sudo apt-get install -y mono-devel nuget
 
 # C# .NET Core dependencies (https://www.microsoft.com/net/core#ubuntu)
-sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ xenial main" > /etc/apt/sources.list.d/dotnetdev.list'
+sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ yakkety main" > /etc/apt/sources.list.d/dotnetdev.list'
 sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
 sudo apt-get update
-sudo apt-get install -y dotnet-dev-1.0.0-preview2-003131
+sudo apt-get install -y dotnet-dev-1.0.0-preview2.1-003155
+sudo apt-get install -y dotnet-dev-1.0.1
 
 # Ruby dependencies
-gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-curl -sSL https://get.rvm.io | bash -s stable --ruby
+git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
+
+git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"
+
+rbenv install 2.4.0
+rbenv global 2.4.0
+ruby -v
 
 # Install bundler (prerequisite for gRPC Ruby)
-source ~/.rvm/scripts/rvm
 gem install bundler
 
 # Java dependencies - nothing as we already have Java JDK 8
@@ -142,7 +150,7 @@ gem install bundler
 # Significant performance improvements with grpc-go have been observed after
 # upgrading from go 1.5 to a later version, so a later go version is preferred.
 # Following go install instructions from https://golang.org/doc/install
-GO_VERSION=1.7.1
+GO_VERSION=1.8
 OS=linux
 ARCH=amd64
 curl -O https://storage.googleapis.com/golang/go${GO_VERSION}.${OS}-${ARCH}.tar.gz
@@ -166,3 +174,15 @@ echo 4096 | sudo tee /proc/sys/kernel/perf_event_mlock_kb
 # on benchmarks
 git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 
+# Install scipy and numpy for benchmarking scripts
+sudo apt-get install -y python-scipy python-numpy
+
+# Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
+# This needs to happen as the last step to prevent Jenkins master from connecting
+# to a machine that hasn't been properly setup yet.
+cat jenkins_master.pub | sudo tee --append ~jenkins/.ssh/authorized_keys
+
+# Restart for VM to pick up kernel update
+echo 'Successfully initialized the linux worker, going for reboot in 10 seconds'
+sleep 10
+sudo reboot

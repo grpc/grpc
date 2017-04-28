@@ -40,15 +40,15 @@
 #include <grpc++/support/channel_arguments.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "src/proto/grpc/testing/empty.grpc.pb.h"
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/empty.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
 
 DEFINE_int32(server_control_port, 0, "Server port for control rpcs.");
 DEFINE_int32(server_retry_port, 0, "Server port for testing reconnection.");
-DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
+DEFINE_string(server_host, "localhost", "Server host to connect to");
 DEFINE_int32(max_reconnect_backoff_ms, 0,
              "Maximum backoff time, or 0 for default.");
 

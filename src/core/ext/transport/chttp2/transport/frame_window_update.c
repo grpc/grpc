@@ -41,7 +41,7 @@
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_update, grpc_transport_one_way_stats *stats) {
   static const size_t frame_size = 13;
-  grpc_slice slice = grpc_slice_malloc(frame_size);
+  grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
   stats->header_bytes += frame_size;
   uint8_t *p = GRPC_SLICE_START_PTR(slice);
 
@@ -70,7 +70,7 @@ grpc_error *grpc_chttp2_window_update_parser_begin_frame(
     char *msg;
     gpr_asprintf(&msg, "invalid window update: length=%d, flags=%02x", length,
                  flags);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
   }
@@ -102,7 +102,7 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
     if (received_update == 0 || (received_update & 0x80000000u)) {
       char *msg;
       gpr_asprintf(&msg, "invalid window update bytes: %d", p->amount);
-      grpc_error *err = GRPC_ERROR_CREATE(msg);
+      grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
       return err;
     }
@@ -110,13 +110,12 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
 
     if (t->incoming_stream_id != 0) {
       if (s != NULL) {
-        bool was_zero = s->outgoing_window <= 0;
-        GRPC_CHTTP2_FLOW_CREDIT_STREAM("parse", t, s, outgoing_window,
+        GRPC_CHTTP2_FLOW_CREDIT_STREAM("parse", t, s, outgoing_window_delta,
                                        received_update);
-        bool is_zero = s->outgoing_window <= 0;
-        if (was_zero && !is_zero) {
-          grpc_chttp2_become_writable(exec_ctx, t, s, false,
-                                      "stream.read_flow_control");
+        if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
+          grpc_chttp2_become_writable(
+              exec_ctx, t, s, GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
+              "stream.read_flow_control");
         }
       }
     } else {

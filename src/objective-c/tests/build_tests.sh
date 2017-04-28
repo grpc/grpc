@@ -50,4 +50,5 @@ rm -rf Tests.xcworkspace
 rm -f Podfile.lock
 rm -f RemoteTestClient/*.{h,m}
 
+echo "TIME:  $(date)"
 pod install

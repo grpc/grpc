@@ -35,21 +35,25 @@
 
 #include <string.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/executor.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/support/string.h"
+
 /* -- Fake transport security credentials. -- */
+
+#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
+  "grpc.fake_security.expected_targets"
 
 static grpc_security_status fake_transport_security_create_security_connector(
     grpc_exec_ctx *exec_ctx, grpc_channel_credentials *c,
     grpc_call_credentials *call_creds, const char *target,
     const grpc_channel_args *args, grpc_channel_security_connector **sc,
     grpc_channel_args **new_args) {
-  *sc = grpc_fake_channel_security_connector_create(call_creds);
+  *sc = grpc_fake_channel_security_connector_create(call_creds, target, args);
   return GRPC_SECURITY_OK;
 }
 
@@ -71,8 +75,7 @@ static grpc_server_credentials_vtable
 
 grpc_channel_credentials *grpc_fake_transport_security_credentials_create(
     void) {
-  grpc_channel_credentials *c = gpr_malloc(sizeof(grpc_channel_credentials));
-  memset(c, 0, sizeof(grpc_channel_credentials));
+  grpc_channel_credentials *c = gpr_zalloc(sizeof(grpc_channel_credentials));
   c->type = GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
   c->vtable = &fake_transport_security_credentials_vtable;
   gpr_ref_init(&c->refcount, 1);
@@ -87,6 +90,25 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
   gpr_ref_init(&c->refcount, 1);
   c->vtable = &fake_transport_security_server_credentials_vtable;
   return c;
+}
+
+grpc_arg grpc_fake_transport_expected_targets_arg(char *expected_targets) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  arg.key = GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS;
+  arg.value.string = expected_targets;
+  return arg;
+}
+
+const char *grpc_fake_transport_get_expected_targets(
+    const grpc_channel_args *args) {
+  const grpc_arg *expected_target_arg =
+      grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
+  if (expected_target_arg != NULL &&
+      expected_target_arg->type == GRPC_ARG_STRING) {
+    return expected_target_arg->value.string;
+  }
+  return NULL;
 }
 
 /* -- Metadata-only test credentials. -- */
@@ -131,8 +153,7 @@ static grpc_call_credentials_vtable md_only_test_vtable = {
 grpc_call_credentials *grpc_md_only_test_credentials_create(
     const char *md_key, const char *md_value, int is_async) {
   grpc_md_only_test_credentials *c =
-      gpr_malloc(sizeof(grpc_md_only_test_credentials));
-  memset(c, 0, sizeof(grpc_md_only_test_credentials));
+      gpr_zalloc(sizeof(grpc_md_only_test_credentials));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
   c->base.vtable = &md_only_test_vtable;
   gpr_ref_init(&c->base.refcount, 1);

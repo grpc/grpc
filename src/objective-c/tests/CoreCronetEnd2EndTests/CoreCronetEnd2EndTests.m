@@ -79,7 +79,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   gpr_join_host_port(&ffd->localaddr, "127.0.0.1", port);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create(NULL);
+  f.cq = grpc_completion_queue_create_for_next(NULL);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
 
   return f;
 }
@@ -206,7 +207,7 @@ static char *roots_filename;
              inDomains:NSUserDomainMask] lastObject];
   NSLog(@"Documents directory: %@", url);
   [Cronet start];
-  [Cronet startNetLogToFile:@"Documents/cronet_netlog.json" logBytes:YES];
+  [Cronet startNetLogToFile:@"cronet_netlog.json" logBytes:YES];
 }
 
 // The tearDown() function is run after all test cases finish running
@@ -273,8 +274,7 @@ static char *roots_filename;
 }
 
 - (void)testCompressedPayload {
-  // NOT SUPPORTED
-  // [self testIndividualCase:"compressed_payload"];
+  [self testIndividualCase:"compressed_payload"];
 }
 
 - (void)testConnectivity {

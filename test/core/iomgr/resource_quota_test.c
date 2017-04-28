@@ -682,6 +682,56 @@ static void test_one_slice_deleted_late(void) {
   }
 }
 
+static void test_resize_to_zero(void) {
+  gpr_log(GPR_INFO, "** test_resize_to_zero **");
+  grpc_resource_quota *q = grpc_resource_quota_create("test_resize_to_zero");
+  grpc_resource_quota_resize(q, 0);
+  grpc_resource_quota_unref(q);
+}
+
+static void test_negative_rq_free_pool(void) {
+  gpr_log(GPR_INFO, "** test_negative_rq_free_pool **");
+  grpc_resource_quota *q =
+      grpc_resource_quota_create("test_negative_rq_free_pool");
+  grpc_resource_quota_resize(q, 1024);
+
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
+
+  grpc_resource_user_slice_allocator alloc;
+  int num_allocs = 0;
+  grpc_resource_user_slice_allocator_init(&alloc, usr, inc_int_cb, &num_allocs);
+
+  grpc_slice_buffer buffer;
+  grpc_slice_buffer_init(&buffer);
+
+  {
+    const int start_allocs = num_allocs;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_resource_user_alloc_slices(&exec_ctx, &alloc, 1024, 1, &buffer);
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(num_allocs == start_allocs + 1);
+  }
+
+  grpc_resource_quota_resize(q, 512);
+
+  double eps = 0.0001;
+  GPR_ASSERT(grpc_resource_quota_get_memory_pressure(q) < 1 + eps);
+  GPR_ASSERT(grpc_resource_quota_get_memory_pressure(q) > 1 - eps);
+
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_resource_user_unref(&exec_ctx, usr);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+
+  grpc_resource_quota_unref(q);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_slice_buffer_destroy_internal(&exec_ctx, &buffer);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -705,6 +755,8 @@ int main(int argc, char **argv) {
   test_reclaimers_can_be_posted_repeatedly();
   test_one_slice();
   test_one_slice_deleted_late();
+  test_resize_to_zero();
+  test_negative_rq_free_pool();
   grpc_shutdown();
   return 0;
 }

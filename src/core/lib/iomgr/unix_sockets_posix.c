@@ -60,7 +60,7 @@ grpc_error *grpc_resolve_unix_domain_address(const char *name,
     gpr_asprintf(&err_msg,
                  "Path name should not have more than %" PRIuPTR " characters.",
                  GPR_ARRAY_SIZE(un->sun_path) - 1);
-    err = GRPC_ERROR_CREATE(err_msg);
+    err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_msg);
     gpr_free(err_msg);
     return err;
   }

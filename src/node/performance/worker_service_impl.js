@@ -89,6 +89,7 @@ module.exports = function WorkerServiceImpl(benchmark_impl, server) {
           default:
           call.emit('error', new Error('Unsupported PayloadConfig type' +
               setup.payload_config.payload));
+          return;
         }
         switch (setup.load_params.load) {
           case 'closed_loop':
@@ -103,6 +104,7 @@ module.exports = function WorkerServiceImpl(benchmark_impl, server) {
           default:
           call.emit('error', new Error('Unsupported LoadParams type' +
               setup.load_params.load));
+          return;
         }
         stats = client.mark();
         call.write({
@@ -137,8 +139,27 @@ module.exports = function WorkerServiceImpl(benchmark_impl, server) {
       switch (request.argtype) {
         case 'setup':
         console.log('ServerConfig %j', request.setup);
+        var setup = request.setup;
+        var resp_size, generic;
+        if (setup.payload_config) {
+          switch (setup.payload_config.payload) {
+            case 'bytebuf_params':
+            resp_size = setup.payload_config.bytebuf_params.resp_size;
+            generic = true;
+            break;
+            case 'simple_params':
+            resp_size = setup.payload_config.simple_params.resp_size;
+            generic = false;
+            break;
+            default:
+            call.emit('error', new Error('Unsupported PayloadConfig type' +
+                setup.payload_config.payload));
+            return;
+          }
+        }
         server = new BenchmarkServer('[::]', request.setup.port,
-                                     request.setup.security_params);
+                                     request.setup.security_params,
+                                     generic, resp_size);
         server.on('started', function() {
           stats = server.mark();
           call.write({

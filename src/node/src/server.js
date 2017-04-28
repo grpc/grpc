@@ -121,19 +121,19 @@ function sendUnaryResponse(call, value, serialize, metadata, flags) {
   if (metadata) {
     statusMetadata = metadata;
   }
-  status.metadata = statusMetadata._getCoreRepresentation();
-  if (!call.metadataSent) {
-    end_batch[grpc.opType.SEND_INITIAL_METADATA] =
-        (new Metadata())._getCoreRepresentation();
-    call.metadataSent = true;
-  }
   var message;
   try {
     message = serialize(value);
   } catch (e) {
     e.code = grpc.status.INTERNAL;
-    handleError(e);
+    handleError(call, e);
     return;
+  }
+  status.metadata = statusMetadata._getCoreRepresentation();
+  if (!call.metadataSent) {
+    end_batch[grpc.opType.SEND_INITIAL_METADATA] =
+        (new Metadata())._getCoreRepresentation();
+    call.metadataSent = true;
   }
   message.grpcWriteFlags = flags;
   end_batch[grpc.opType.SEND_MESSAGE] = message;
@@ -280,11 +280,6 @@ function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
   var self = this;
-  if (!this.call.metadataSent) {
-    batch[grpc.opType.SEND_INITIAL_METADATA] =
-        (new Metadata())._getCoreRepresentation();
-    this.call.metadataSent = true;
-  }
   var message;
   try {
     message = this.serialize(chunk);
@@ -292,6 +287,11 @@ function _write(chunk, encoding, callback) {
     e.code = grpc.status.INTERNAL;
     callback(e);
     return;
+  }
+  if (!this.call.metadataSent) {
+    batch[grpc.opType.SEND_INITIAL_METADATA] =
+        (new Metadata())._getCoreRepresentation();
+    this.call.metadataSent = true;
   }
   if (_.isFinite(encoding)) {
     /* Attach the encoding if it is a finite number. This is the closest we
@@ -728,11 +728,17 @@ var defaultHandler = {
  *     method implementation for the provided service.
  */
 Server.prototype.addService = function(service, implementation) {
+  if (!_.isObject(service) || !_.isObject(implementation)) {
+    throw new Error('addService requires two objects as arguments');
+  }
+  if (_.keys(service).length === 0) {
+    throw new Error('Cannot add an empty service to a server');
+  }
   if (this.started) {
     throw new Error('Can\'t add a service to a started server.');
   }
   var self = this;
-  _.each(service, function(attrs, name) {
+  _.forOwn(service, function(attrs, name) {
     var method_type;
     if (attrs.requestStream) {
       if (attrs.responseStream) {
@@ -749,9 +755,16 @@ Server.prototype.addService = function(service, implementation) {
     }
     var impl;
     if (implementation[name] === undefined) {
-      common.log(grpc.logVerbosity.ERROR, 'Method handler for ' +
-          attrs.path + ' expected but not provided');
-      impl = defaultHandler[method_type];
+      /* Handle the case where the method is passed with the name exactly as
+         written in the proto file, instead of using JavaScript function
+         naming style */
+      if (implementation[attrs.originalName] === undefined) {
+        common.log(grpc.logVerbosity.ERROR, 'Method handler ' + name + ' for ' +
+            attrs.path + ' expected but not provided');
+        impl = defaultHandler[method_type];
+      } else {
+        impl = _.bind(implementation[attrs.originalName], implementation);
+      }
     } else {
       impl = _.bind(implementation[name], implementation);
     }
@@ -768,17 +781,31 @@ Server.prototype.addService = function(service, implementation) {
 
 /**
  * Add a proto service to the server, with a corresponding implementation
+ * @deprecated Use grpc.load and Server#addService instead
  * @param {Protobuf.Reflect.Service} service The proto service descriptor
  * @param {Object<String, function>} implementation Map of method names to
  *     method implementation for the provided service.
  */
 Server.prototype.addProtoService = function(service, implementation) {
   var options;
-  if (service.grpc_options) {
-    options = service.grpc_options;
+  var protobuf_js_5_common = require('./protobuf_js_5_common');
+  var protobuf_js_6_common = require('./protobuf_js_6_common');
+  common.log(grpc.logVerbosity.INFO,
+             'Server#addProtoService is deprecated. Use addService instead');
+  if (protobuf_js_5_common.isProbablyProtobufJs5(service)) {
+    options = _.defaults(service.grpc_options, common.defaultGrpcOptions);
+    this.addService(
+        protobuf_js_5_common.getProtobufServiceAttrs(service, options),
+        implementation);
+  } else if (protobuf_js_6_common.isProbablyProtobufJs6(service)) {
+    options = _.defaults(service.grpc_options, common.defaultGrpcOptions);
+    this.addService(
+        protobuf_js_6_common.getProtobufServiceAttrs(service, options),
+        implementation);
+  } else {
+    // We assume that this is a service attributes object
+    this.addService(service, implementation);
   }
-  this.addService(common.getProtobufServiceAttrs(service, options),
-                  implementation);
 };
 
 /**

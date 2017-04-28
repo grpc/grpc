@@ -15,33 +15,75 @@ bind(
 
 bind(
     name = "protobuf",
-    actual = "@submodule_protobuf//:protobuf",
+    actual = "@com_google_protobuf//:protobuf",
 )
 
 bind(
     name = "protobuf_clib",
-    actual = "@submodule_protobuf//:protoc_lib",
+    actual = "@com_google_protobuf//:protoc_lib",
 )
 
 bind(
     name = "protocol_compiler",
-    actual = "@submodule_protobuf//:protoc",
+    actual = "@com_google_protobuf//:protoc",
 )
 
-new_local_repository(
+bind(
+    name = "cares",
+    actual = "@submodule_cares//:ares",
+)
+
+bind(
+    name = "gtest",
+    actual = "@submodule_gtest//:gtest",
+)
+
+bind(
+    name = "benchmark",
+    actual = "@submodule_benchmark//:benchmark",
+)
+
+bind(
+    name = "gflags",
+    actual = "@com_github_gflags_gflags//:gflags",
+)
+
+local_repository(
     name = "submodule_boringssl",
     path = "third_party/boringssl-with-bazel",
-    build_file = "third_party/boringssl-with-bazel/BUILD",
 )
 
 new_local_repository(
     name = "submodule_zlib",
-    path = "third_party/zlib",
     build_file = "third_party/zlib.BUILD",
+    path = "third_party/zlib",
 )
 
 new_local_repository(
-    name = "submodule_protobuf",
-    path = "third_party/protobuf",
+    name = "com_google_protobuf",
     build_file = "third_party/protobuf/BUILD",
+    path = "third_party/protobuf",
+)
+
+new_local_repository(
+    name = "submodule_gtest",
+    build_file = "third_party/gtest.BUILD",
+    path = "third_party/googletest",
+)
+
+local_repository(
+    name = "com_github_gflags_gflags",
+    path = "third_party/gflags",
+)
+
+new_local_repository(
+    name = "submodule_benchmark",
+    path = "third_party/benchmark",
+    build_file = "third_party/benchmark.BUILD",
+)
+
+new_local_repository(
+    name = "submodule_cares",
+    path = "third_party/cares",
+    build_file = "third_party/cares/cares.BUILD",
 )

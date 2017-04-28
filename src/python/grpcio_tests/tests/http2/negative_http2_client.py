@@ -31,6 +31,7 @@
 import argparse
 
 import grpc
+import time
 from src.proto.grpc.testing import test_pb2
 from src.proto.grpc.testing import messages_pb2
 
@@ -75,6 +76,7 @@ def _goaway(stub):
     first_response = stub.UnaryCall(_SIMPLE_REQUEST)
     _validate_payload_type_and_length(first_response, messages_pb2.COMPRESSABLE,
                                       _RESPONSE_SIZE)
+    time.sleep(1)
     second_response = stub.UnaryCall(_SIMPLE_REQUEST)
     _validate_payload_type_and_length(second_response,
                                       messages_pb2.COMPRESSABLE, _RESPONSE_SIZE)
@@ -94,8 +96,6 @@ def _rst_during_data(stub):
 
 def _rst_after_data(stub):
     resp_future = stub.UnaryCall.future(_SIMPLE_REQUEST)
-    _validate_payload_type_and_length(
-        next(resp_future), messages_pb2.COMPRESSABLE, _RESPONSE_SIZE)
     _validate_status_code_and_details(resp_future, grpc.StatusCode.INTERNAL,
                                       "Received RST_STREAM with error code 0")
 

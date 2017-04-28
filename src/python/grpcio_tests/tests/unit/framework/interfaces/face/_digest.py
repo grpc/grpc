@@ -49,12 +49,9 @@ _IDENTITY = lambda x: x
 
 class TestServiceDigest(
         collections.namedtuple('TestServiceDigest', (
-            'methods',
-            'inline_method_implementations',
-            'event_method_implementations',
-            'multi_method_implementation',
-            'unary_unary_messages_sequences',
-            'unary_stream_messages_sequences',
+            'methods', 'inline_method_implementations',
+            'event_method_implementations', 'multi_method_implementation',
+            'unary_unary_messages_sequences', 'unary_stream_messages_sequences',
             'stream_unary_messages_sequences',
             'stream_stream_messages_sequences',))):
     """A transformation of a service.TestService.

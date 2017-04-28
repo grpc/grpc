@@ -34,19 +34,14 @@ from grpc.framework.interfaces.base import base
 
 
 class _Completion(base.Completion,
-                  collections.namedtuple('_Completion', (
-                      'terminal_metadata',
-                      'code',
-                      'message',))):
+                  collections.namedtuple('_Completion', ('terminal_metadata',
+                                                         'code', 'message',))):
     """A trivial implementation of base.Completion."""
 
 
 class _Subscription(base.Subscription,
                     collections.namedtuple('_Subscription', (
-                        'kind',
-                        'termination_callback',
-                        'allowance',
-                        'operator',
+                        'kind', 'termination_callback', 'allowance', 'operator',
                         'protocol_receiver',))):
     """A trivial implementation of base.Subscription."""
 

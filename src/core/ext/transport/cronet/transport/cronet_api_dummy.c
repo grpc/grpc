@@ -80,4 +80,16 @@ void bidirectional_stream_cancel(bidirectional_stream* stream) {
   GPR_ASSERT(0);
 }
 
+void bidirectional_stream_disable_auto_flush(bidirectional_stream* stream,
+                                             bool disable_auto_flush) {
+  GPR_ASSERT(0);
+}
+
+void bidirectional_stream_delay_request_headers_until_flush(
+    bidirectional_stream* stream, bool delay_headers_until_flush) {
+  GPR_ASSERT(0);
+}
+
+void bidirectional_stream_flush(bidirectional_stream* stream) { GPR_ASSERT(0); }
+
 #endif /* GRPC_COMPILE_WITH_CRONET */

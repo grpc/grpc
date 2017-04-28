@@ -33,13 +33,16 @@
 
 #include <grpc++/server_context.h>
 
+#include <algorithm>
 #include <mutex>
+#include <utility>
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/support/time.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -59,7 +62,7 @@ class ServerContext::CompletionOp final : public CallOpSetInterface {
         finalized_(false),
         cancelled_(0) {}
 
-  void FillOps(grpc_op* ops, size_t* nops) override;
+  void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override;
   bool FinalizeResult(void** tag, bool* status) override;
 
   bool CheckCancelled(CompletionQueue* cq) {
@@ -97,7 +100,8 @@ void ServerContext::CompletionOp::Unref() {
   }
 }
 
-void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
+void ServerContext::CompletionOp::FillOps(grpc_call* call, grpc_op* ops,
+                                          size_t* nops) {
   ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops->data.recv_close_on_server.cancelled = &cancelled_;
   ops->flags = 0;
@@ -133,8 +137,7 @@ ServerContext::ServerContext()
       sent_initial_metadata_(false),
       compression_level_set_(false) {}
 
-ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
-                             size_t metadata_count)
+ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
     : completion_op_(nullptr),
       has_notify_when_done_tag_(false),
       async_notify_when_done_tag_(nullptr),
@@ -143,17 +146,13 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
       cq_(nullptr),
       sent_initial_metadata_(false),
       compression_level_set_(false) {
-  for (size_t i = 0; i < metadata_count; i++) {
-    client_metadata_.map()->insert(
-        std::pair<grpc::string_ref, grpc::string_ref>(
-            StringRefFromSlice(&metadata[i].key),
-            StringRefFromSlice(&metadata[i].value)));
-  }
+  std::swap(*client_metadata_.arr(), *arr);
+  client_metadata_.FillMap();
 }
 
 ServerContext::~ServerContext() {
   if (call_) {
-    grpc_call_destroy(call_);
+    grpc_call_unref(call_);
   }
   if (completion_op_) {
     completion_op_->Unref();
@@ -167,6 +166,10 @@ void ServerContext::BeginCompletionOp(Call* call) {
     completion_op_->set_tag(async_notify_when_done_tag_);
   }
   call->PerformOps(completion_op_);
+}
+
+CompletionQueueTag* ServerContext::GetCompletionOpTag() {
+  return static_cast<CompletionQueueTag*>(completion_op_);
 }
 
 void ServerContext::AddInitialMetadata(const grpc::string& key,
@@ -222,6 +225,14 @@ grpc::string ServerContext::peer() const {
 
 const struct census_context* ServerContext::census_context() const {
   return grpc_census_call_get_context(call_);
+}
+
+void ServerContext::SetLoadReportingCosts(
+    const std::vector<grpc::string>& cost_data) {
+  if (call_ == nullptr) return;
+  for (const auto& cost_datum : cost_data) {
+    AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);
+  }
 }
 
 }  // namespace grpc

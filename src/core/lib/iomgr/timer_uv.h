@@ -41,7 +41,7 @@ struct grpc_timer {
   /* This is actually a uv_timer_t*, but we want to keep platform-specific
      types out of headers */
   void *uv_timer;
-  int triggered;
+  int pending;
 };
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_UV_H */

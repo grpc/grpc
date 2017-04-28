@@ -37,8 +37,41 @@
 
 import json
 import sys
+import argparse
 
-set_end_stream = len(sys.argv) > 1 and sys.argv[1] == '--set_end_stream'
+def append_never_indexed(payload_line, n, count, key, value):
+  payload_line.append(0x10)
+  assert(len(key) <= 126)
+  payload_line.append(len(key))
+  payload_line.extend(ord(c) for c in key)
+  assert(len(value) <= 126)
+  payload_line.append(len(value))
+  payload_line.extend(ord(c) for c in value)
+
+def append_inc_indexed(payload_line, n, count, key, value):
+  payload_line.append(0x40)
+  assert(len(key) <= 126)
+  payload_line.append(len(key))
+  payload_line.extend(ord(c) for c in key)
+  assert(len(value) <= 126)
+  payload_line.append(len(value))
+  payload_line.extend(ord(c) for c in value)
+
+def append_pre_indexed(payload_line, n, count, key, value):
+  payload_line.append(0x80 + 61 + count - n)
+
+_COMPRESSORS = {
+  'never': append_never_indexed,
+  'inc': append_inc_indexed,
+  'pre': append_pre_indexed,
+}
+
+argp = argparse.ArgumentParser('Generate header frames')
+argp.add_argument('--set_end_stream', default=False, action='store_const', const=True)
+argp.add_argument('--no_framing', default=False, action='store_const', const=True)
+argp.add_argument('--compression', choices=sorted(_COMPRESSORS.keys()), default='never')
+argp.add_argument('--hex', default=False, action='store_const', const=True)
+args = argp.parse_args()
 
 # parse input, fill in vals
 vals = []
@@ -52,38 +85,37 @@ for line in sys.stdin:
   vals.append((key, value))
 
 # generate frame payload binary data
-payload_bytes = [[]] # reserve space for header
+payload_bytes = []
+if not args.no_framing:
+  payload_bytes.append([]) # reserve space for header
 payload_len = 0
+n = 0
 for key, value in vals:
   payload_line = []
-  payload_line.append(0x10)
-  assert(len(key) <= 126)
-  payload_line.append(len(key))
-  payload_line.extend(ord(c) for c in key)
-  assert(len(value) <= 126)
-  payload_line.append(len(value))
-  payload_line.extend(ord(c) for c in value)
+  _COMPRESSORS[args.compression](payload_line, n, len(vals), key, value)
+  n += 1
   payload_len += len(payload_line)
   payload_bytes.append(payload_line)
 
 # fill in header
-flags = 0x04  # END_HEADERS
-if set_end_stream:
-  flags |= 0x01  # END_STREAM
-payload_bytes[0].extend([
-    (payload_len >> 16) & 0xff,
-    (payload_len >> 8) & 0xff,
-    (payload_len) & 0xff,
-    # header frame
-    0x01,
-    # flags
-    flags,
-    # stream id
-    0x00,
-    0x00,
-    0x00,
-    0x01
-])
+if not args.no_framing:
+  flags = 0x04  # END_HEADERS
+  if args.set_end_stream:
+    flags |= 0x01  # END_STREAM
+  payload_bytes[0].extend([
+      (payload_len >> 16) & 0xff,
+      (payload_len >> 8) & 0xff,
+      (payload_len) & 0xff,
+      # header frame
+      0x01,
+      # flags
+      flags,
+      # stream id
+      0x00,
+      0x00,
+      0x00,
+      0x01
+  ])
 
 hex_bytes = [ord(c) for c in "abcdefABCDEF0123456789"]
 
@@ -105,6 +137,11 @@ def esc_c(line):
   return out + "\""
 
 # dump bytes
-for line in payload_bytes:
-  print esc_c(line)
-
+if args.hex:
+  all_bytes = []
+  for line in payload_bytes:
+    all_bytes.extend(line)
+  print '{%s}' % ', '.join('0x%02x' % c for c in all_bytes)
+else:
+  for line in payload_bytes:
+    print esc_c(line)

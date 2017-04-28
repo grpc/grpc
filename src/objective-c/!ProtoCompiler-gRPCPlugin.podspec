@@ -1,5 +1,11 @@
-# CocoaPods podspec for the gRPC Proto Compiler Plugin
+# This file has been automatically generated from a template file.
+# Please make modifications to
+# `templates/src/objective-c/!ProtoCompiler-gRPCPlugin.podspec.template`
+# instead. This file can be regenerated from the template by running
+# `tools/buildgen/generate_projects.sh`.
 
+# CocoaPods podspec for the gRPC Proto Compiler Plugin
+#
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -36,7 +42,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler-gRPCPlugin'
-  v = '1.0.2'
+  v = '1.4.0-dev'
   s.version  = v
   s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
   s.description = <<-DESC
@@ -84,10 +90,7 @@ Pod::Spec.new do |s|
   repo = 'grpc/grpc'
   file = "grpc_objective_c_plugin-#{v}-macos-x86_64.zip"
   s.source = {
-    # TODO(mxyan): Change back to "https://github.com/#{repo}/releases/download/v#{v}/#{file}" for
-    # next release
-    # :http => "https://github.com/#{repo}/releases/download/v#{v}/#{file}",
-    :http => "https://github.com/#{repo}/releases/download/objective-c-v#{v}/#{file}",
+    :http => "https://github.com/#{repo}/releases/download/v#{v}/#{file}",
     # TODO(jcanizales): Add sha1 or sha256
     # :sha1 => '??',
   }
@@ -98,9 +101,9 @@ Pod::Spec.new do |s|
   s.preserve_paths = plugin
 
   # Restrict the protoc version to the one supported by this plugin.
-  s.dependency '!ProtoCompiler', '3.0.2'
+  s.dependency '!ProtoCompiler', '3.2.0'
   # For the Protobuf dependency not to complain:
-  s.ios.deployment_target = '7.1'
+  s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
   # Restrict the gRPC runtime version to the one supported by this plugin.
   s.dependency 'gRPC-ProtoRPC', v

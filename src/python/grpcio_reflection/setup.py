@@ -40,14 +40,15 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import reflection_commands
 import grpc_version
 
-PACKAGE_DIRECTORIES = {'': '.',}
+PACKAGE_DIRECTORIES = {
+    '': '.',
+}
 
 SETUP_REQUIRES = (
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),)
 
-INSTALL_REQUIRES = (
-    'protobuf>=3.0.0',
-    'grpcio>={version}'.format(version=grpc_version.VERSION),)
+INSTALL_REQUIRES = ('protobuf>=3.2.0',
+                    'grpcio>={version}'.format(version=grpc_version.VERSION),)
 
 COMMAND_CLASS = {
     # Run preprocess from the repository *before* doing any packaging!
@@ -59,6 +60,10 @@ setuptools.setup(
     name='grpcio-reflection',
     version=grpc_version.VERSION,
     license='3-clause BSD',
+    description='Standard Protobuf Reflection Service for gRPC',
+    author='The gRPC Authors',
+    author_email='grpc-io@googlegroups.com',
+    url='http://www.grpc.io',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),
     install_requires=INSTALL_REQUIRES,

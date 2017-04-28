@@ -37,7 +37,8 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/ext/client_channel/uri_parser.h"
+#include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -47,10 +48,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   memcpy(s, data, size);
   s[size] = 0;
 
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_uri *x;
-  if ((x = grpc_uri_parse(s, 1))) {
+  if ((x = grpc_uri_parse(&exec_ctx, s, 1))) {
     grpc_uri_destroy(x);
   }
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(s);
   return 0;
 }

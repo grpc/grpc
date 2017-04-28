@@ -8,7 +8,8 @@ objs
 # Python items
 cython_debug/
 python_build/
-python_format_venv/
+yapf_virtual_environment/
+python_pylint_venv/
 .coverage*
 .eggs
 htmlcov/
@@ -114,3 +115,16 @@ bazel-testlogs
 
 # Debug output
 gdb.txt
+
+# ctags file
+tags
+
+# perf data
+perf.data
+perf.data.old
+
+# bm_diff
+bm_diff_new/
+bm_diff_old/
+bm_*.json
+

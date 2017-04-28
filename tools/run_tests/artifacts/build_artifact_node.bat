@@ -27,9 +27,9 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set node_versions=1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 6.0.0 7.0.0
+set node_versions=4.0.0 5.0.0 6.0.0 7.0.0
 
-set electron_versions=1.0.0 1.1.0 1.2.0 1.3.0 1.4.0
+set electron_versions=1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0
 
 set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
 

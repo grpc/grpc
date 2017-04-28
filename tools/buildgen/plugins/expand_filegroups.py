@@ -57,6 +57,7 @@ FILEGROUP_DEFAULTS = {
   'language': 'c',
   'boringssl': False,
   'zlib': False,
+  'ares': False,
 }
 
 
@@ -85,7 +86,7 @@ def mako_plugin(dictionary):
   skips = 0
 
   while todo:
-    assert skips != len(todo), "infinite loop in filegroup uses clauses"
+    assert skips != len(todo), "infinite loop in filegroup uses clauses: %r" % [t['name'] for t in todo]
     # take the first element of the todo list
     cur = todo[0]
     todo = todo[1:]

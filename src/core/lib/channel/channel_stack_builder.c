@@ -65,8 +65,7 @@ struct grpc_channel_stack_builder_iterator {
 };
 
 grpc_channel_stack_builder *grpc_channel_stack_builder_create(void) {
-  grpc_channel_stack_builder *b = gpr_malloc(sizeof(*b));
-  memset(b, 0, sizeof(*b));
+  grpc_channel_stack_builder *b = gpr_zalloc(sizeof(*b));
 
   b->begin.filter = NULL;
   b->end.filter = NULL;
@@ -112,6 +111,17 @@ grpc_channel_stack_builder_iterator *
 grpc_channel_stack_builder_create_iterator_at_last(
     grpc_channel_stack_builder *builder) {
   return create_iterator_at_filter_node(builder, &builder->end);
+}
+
+bool grpc_channel_stack_builder_iterator_is_end(
+    grpc_channel_stack_builder_iterator *iterator) {
+  return iterator->node == &iterator->builder->end;
+}
+
+const char *grpc_channel_stack_builder_iterator_filter_name(
+    grpc_channel_stack_builder_iterator *iterator) {
+  if (iterator->node->filter == NULL) return NULL;
+  return iterator->node->filter->name;
 }
 
 bool grpc_channel_stack_builder_move_next(
@@ -251,7 +261,7 @@ grpc_error *grpc_channel_stack_builder_finish(
   size_t channel_stack_size = grpc_channel_stack_size(filters, num_filters);
 
   // allocate memory, with prefix_bytes followed by channel_stack_size
-  *result = gpr_malloc(prefix_bytes + channel_stack_size);
+  *result = gpr_zalloc(prefix_bytes + channel_stack_size);
   // fetch a pointer to the channel stack
   grpc_channel_stack *channel_stack =
       (grpc_channel_stack *)((char *)(*result) + prefix_bytes);

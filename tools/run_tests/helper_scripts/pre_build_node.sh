@@ -32,7 +32,7 @@
 NODE_VERSION=$1
 source ~/.nvm/nvm.sh
 
-nvm use $NODE_VERSION
+nvm install $NODE_VERSION
 set -ex
 
 export GRPC_CONFIG=${CONFIG:-opt}

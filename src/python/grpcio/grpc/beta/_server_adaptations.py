@@ -41,6 +41,8 @@ from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import stream
 from grpc.framework.interfaces.face import face
 
+# pylint: disable=too-many-return-statements
+
 _DEFAULT_POOL_SIZE = 8
 
 
@@ -78,7 +80,7 @@ class _FaceServicerContext(face.ServicerContext):
         return _ServerProtocolContext(self._servicer_context)
 
     def invocation_metadata(self):
-        return _common.cygrpc_metadata(
+        return _common.to_cygrpc_metadata(
             self._servicer_context.invocation_metadata())
 
     def initial_metadata(self, initial_metadata):
@@ -179,7 +181,7 @@ def _run_request_pipe_thread(request_iterator, request_consumer,
                 return
         request_consumer.terminate()
 
-    def stop_request_pipe(timeout):
+    def stop_request_pipe(timeout):  # pylint: disable=unused-argument
         thread_joined.set()
 
     request_pipe_thread = _common.CleanupThread(
@@ -256,14 +258,9 @@ def _adapt_stream_stream_event(stream_stream_event):
 
 class _SimpleMethodHandler(
         collections.namedtuple('_MethodHandler', (
-            'request_streaming',
-            'response_streaming',
-            'request_deserializer',
-            'response_serializer',
-            'unary_unary',
-            'unary_stream',
-            'stream_unary',
-            'stream_stream',)), grpc.RpcMethodHandler):
+            'request_streaming', 'response_streaming', 'request_deserializer',
+            'response_serializer', 'unary_unary', 'unary_stream',
+            'stream_unary', 'stream_stream',)), grpc.RpcMethodHandler):
     pass
 
 
@@ -356,27 +353,27 @@ class _GenericRpcHandler(grpc.GenericRpcHandler):
 
 class _Server(interfaces.Server):
 
-    def __init__(self, server):
-        self._server = server
+    def __init__(self, grpc_server):
+        self._grpc_server = grpc_server
 
     def add_insecure_port(self, address):
-        return self._server.add_insecure_port(address)
+        return self._grpc_server.add_insecure_port(address)
 
     def add_secure_port(self, address, server_credentials):
-        return self._server.add_secure_port(address, server_credentials)
+        return self._grpc_server.add_secure_port(address, server_credentials)
 
     def start(self):
-        self._server.start()
+        self._grpc_server.start()
 
     def stop(self, grace):
-        return self._server.stop(grace)
+        return self._grpc_server.stop(grace)
 
     def __enter__(self):
-        self._server.start()
+        self._grpc_server.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._server.stop(None)
+        self._grpc_server.stop(None)
         return False
 
 

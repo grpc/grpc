@@ -33,6 +33,7 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
+#include <assert.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -44,6 +45,9 @@ grpc_closure *grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
   closure->cb = cb;
   closure->cb_arg = cb_arg;
   closure->scheduler = scheduler;
+#ifndef NDEBUG
+  closure->scheduled = false;
+#endif
   return closure;
 }
 
@@ -51,20 +55,22 @@ void grpc_closure_list_init(grpc_closure_list *closure_list) {
   closure_list->head = closure_list->tail = NULL;
 }
 
-void grpc_closure_list_append(grpc_closure_list *closure_list,
+bool grpc_closure_list_append(grpc_closure_list *closure_list,
                               grpc_closure *closure, grpc_error *error) {
   if (closure == NULL) {
     GRPC_ERROR_UNREF(error);
-    return;
+    return false;
   }
   closure->error_data.error = error;
   closure->next_data.next = NULL;
-  if (closure_list->head == NULL) {
+  bool was_empty = (closure_list->head == NULL);
+  if (was_empty) {
     closure_list->head = closure;
   } else {
     closure_list->tail->next_data.next = closure;
   }
   closure_list->tail = closure;
+  return was_empty;
 }
 
 void grpc_closure_list_fail_all(grpc_closure_list *list,
@@ -122,6 +128,7 @@ void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
                       grpc_error *error) {
   GPR_TIMER_BEGIN("grpc_closure_run", 0);
   if (c != NULL) {
+    assert(c->cb);
     c->scheduler->vtable->run(exec_ctx, c, error);
   } else {
     GRPC_ERROR_UNREF(error);
@@ -133,6 +140,11 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
                         grpc_error *error) {
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
   if (c != NULL) {
+#ifndef NDEBUG
+    GPR_ASSERT(!c->scheduled);
+    c->scheduled = true;
+#endif
+    assert(c->cb);
     c->scheduler->vtable->sched(exec_ctx, c, error);
   } else {
     GRPC_ERROR_UNREF(error);
@@ -144,6 +156,11 @@ void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
   grpc_closure *c = list->head;
   while (c != NULL) {
     grpc_closure *next = c->next_data.next;
+#ifndef NDEBUG
+    GPR_ASSERT(!c->scheduled);
+    c->scheduled = true;
+#endif
+    assert(c->cb);
     c->scheduler->vtable->sched(exec_ctx, c, c->error_data.error);
     c = next;
   }

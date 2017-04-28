@@ -42,6 +42,12 @@ typedef struct grpc_service_config grpc_service_config;
 grpc_service_config* grpc_service_config_create(const char* json_string);
 void grpc_service_config_destroy(grpc_service_config* service_config);
 
+/// Invokes \a process_json() for each global parameter in the service
+/// config.  \a arg is passed as the second argument to \a process_json().
+void grpc_service_config_parse_global_params(
+    const grpc_service_config* service_config,
+    void (*process_json)(const grpc_json* json, void* arg), void* arg);
+
 /// Gets the LB policy name from \a service_config.
 /// Returns NULL if no LB policy name was specified.
 /// Caller does NOT take ownership.
@@ -51,12 +57,12 @@ const char* grpc_service_config_get_lb_policy_name(
 /// Creates a method config table based on the data in \a json.
 /// The table's keys are request paths.  The table's value type is
 /// returned by \a create_value(), based on data parsed from the JSON tree.
-/// \a vtable provides methods used to manage the values.
+/// \a destroy_value is used to clean up values.
 /// Returns NULL on error.
 grpc_slice_hash_table* grpc_service_config_create_method_config_table(
     grpc_exec_ctx* exec_ctx, const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
-    const grpc_slice_hash_table_vtable* vtable);
+    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value));
 
 /// A helper function for looking up values in the table returned by
 /// \a grpc_service_config_create_method_config_table().

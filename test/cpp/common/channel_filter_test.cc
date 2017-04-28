@@ -55,7 +55,7 @@ class MyCallData : public CallData {
   MyCallData() {}
 
   grpc_error* Init(grpc_exec_ctx* exec_ctx, ChannelData* channel_data,
-                   grpc_call_element_args* args) override {
+                   const grpc_call_element_args* args) override {
     (void)args->path;  // Make sure field is available.
     return GRPC_ERROR_NONE;
   }

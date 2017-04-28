@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,5 @@ git submodule update --init
 
 # download fuzzer docker image from dockerhub
 export DOCKERHUB_ORGANIZATION=grpctesting
-# runtime 23 * 60 mins
 config=asan-trace-cmp tools/jenkins/run_fuzzer.sh hpack_parser_fuzzer_test
 

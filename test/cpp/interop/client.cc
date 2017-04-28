@@ -34,8 +34,6 @@
 #include <memory>
 #include <unordered_map>
 
-#include <unistd.h>
-
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
@@ -53,7 +51,7 @@ DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
 DEFINE_int32(server_port, 0, "Server port.");
-DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
+DEFINE_string(server_host, "localhost", "Server host to connect to");
 DEFINE_string(server_host_override, "foo.test.google.fr",
               "Override the server host which is sent in HTTP header");
 DEFINE_string(
@@ -101,6 +99,7 @@ DEFINE_bool(do_not_abort_on_transient_failures, false,
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
+using grpc::testing::UpdateActions;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
@@ -164,8 +163,10 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoUnimplementedMethod, &client);
   actions["unimplemented_service"] =
       std::bind(&grpc::testing::InteropClient::DoUnimplementedService, &client);
-  // actions["cacheable_unary"] =
-  //    std::bind(&grpc::testing::InteropClient::DoCacheableUnary, &client);
+  actions["cacheable_unary"] =
+      std::bind(&grpc::testing::InteropClient::DoCacheableUnary, &client);
+
+  UpdateActions(&actions);
 
   if (FLAGS_test_case == "all") {
     for (const auto& action : actions) {

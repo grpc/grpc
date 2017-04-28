@@ -124,7 +124,7 @@ static void oauth2_token_fetcher_destruct(grpc_exec_ctx *exec_ctx,
       (grpc_oauth2_token_fetcher_credentials *)creds;
   grpc_credentials_md_store_unref(exec_ctx, c->access_token_md);
   gpr_mu_destroy(&c->mu);
-  grpc_httpcli_context_destroy(&c->httpcli_context);
+  grpc_httpcli_context_destroy(exec_ctx, &c->httpcli_context);
 }
 
 grpc_credentials_status
@@ -389,8 +389,7 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
     gpr_log(GPR_ERROR, "Invalid input for refresh token credentials creation");
     return NULL;
   }
-  c = gpr_malloc(sizeof(grpc_google_refresh_token_credentials));
-  memset(c, 0, sizeof(grpc_google_refresh_token_credentials));
+  c = gpr_zalloc(sizeof(grpc_google_refresh_token_credentials));
   init_oauth2_token_fetcher(&c->base, refresh_token_fetch_oauth2);
   c->base.base.vtable = &refresh_token_vtable;
   c->refresh_token = refresh_token;
@@ -450,14 +449,13 @@ static grpc_call_credentials_vtable access_token_vtable = {
 grpc_call_credentials *grpc_access_token_credentials_create(
     const char *access_token, void *reserved) {
   grpc_access_token_credentials *c =
-      gpr_malloc(sizeof(grpc_access_token_credentials));
+      gpr_zalloc(sizeof(grpc_access_token_credentials));
   char *token_md_value;
   GRPC_API_TRACE(
       "grpc_access_token_credentials_create(access_token=<redacted>, "
       "reserved=%p)",
       1, (reserved));
   GPR_ASSERT(reserved == NULL);
-  memset(c, 0, sizeof(grpc_access_token_credentials));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
   c->base.vtable = &access_token_vtable;
   gpr_ref_init(&c->base.refcount, 1);

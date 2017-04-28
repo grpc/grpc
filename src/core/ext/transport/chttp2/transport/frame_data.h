@@ -56,27 +56,15 @@ typedef enum {
 typedef struct grpc_chttp2_incoming_byte_stream
     grpc_chttp2_incoming_byte_stream;
 
-typedef struct grpc_chttp2_incoming_frame_queue {
-  grpc_chttp2_incoming_byte_stream *head;
-  grpc_chttp2_incoming_byte_stream *tail;
-} grpc_chttp2_incoming_frame_queue;
-
 typedef struct {
   grpc_chttp2_stream_state state;
-  uint8_t is_last_frame;
   uint8_t frame_type;
   uint32_t frame_size;
   grpc_error *error;
 
-  int is_frame_compressed;
+  bool is_frame_compressed;
   grpc_chttp2_incoming_byte_stream *parsing_frame;
 } grpc_chttp2_data_parser;
-
-void grpc_chttp2_incoming_frame_queue_merge(
-    grpc_chttp2_incoming_frame_queue *head_dst,
-    grpc_chttp2_incoming_frame_queue *tail_src);
-grpc_byte_stream *grpc_chttp2_incoming_frame_queue_pop(
-    grpc_chttp2_incoming_frame_queue *q);
 
 /* initialize per-stream state for data frame parsing */
 grpc_error *grpc_chttp2_data_parser_init(grpc_chttp2_data_parser *parser);
@@ -87,7 +75,8 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
 /* start processing a new data frame */
 grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,
                                                 uint8_t flags,
-                                                uint32_t stream_id);
+                                                uint32_t stream_id,
+                                                grpc_chttp2_stream *s);
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */
@@ -100,5 +89,10 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
                              uint32_t write_bytes, int is_eof,
                              grpc_transport_one_way_stats *stats,
                              grpc_slice_buffer *outbuf);
+
+grpc_error *grpc_deframe_unprocessed_incoming_frames(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_data_parser *p, grpc_chttp2_stream *s,
+    grpc_slice_buffer *slices, grpc_slice *slice_out,
+    grpc_byte_stream **stream_out);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */

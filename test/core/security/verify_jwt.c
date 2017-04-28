@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 
   grpc_init();
 
-  sync.pollset = gpr_malloc(grpc_pollset_size());
+  sync.pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(sync.pollset, &sync.mu);
   sync.is_done = 0;
 
@@ -123,14 +123,15 @@ int main(int argc, char **argv) {
                               gpr_inf_future(GPR_CLOCK_MONOTONIC))))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(sync.mu);
   }
   gpr_mu_unlock(sync.mu);
 
   gpr_free(sync.pollset);
 
-  grpc_jwt_verifier_destroy(verifier);
+  grpc_jwt_verifier_destroy(&exec_ctx, verifier);
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_cmdline_destroy(cl);
   grpc_shutdown();
   return !sync.success;

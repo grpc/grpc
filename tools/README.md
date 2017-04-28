@@ -16,3 +16,6 @@ internal_ci: Support for running tests on an internal CI platform.
 jenkins: Support for running tests on Jenkins.
 
 run_tests: Scripts to run gRPC tests in parallel.
+
+run_tests/performance: See the [README](./run_tests/performance/README.md) for
+more notes on the performance tests.

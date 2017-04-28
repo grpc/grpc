@@ -49,6 +49,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -72,7 +73,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   gpr_event* ev_;
 };
 
-class ShutdownTest : public ::testing::Test {
+class ShutdownTest : public ::testing::TestWithParam<string> {
  public:
   ShutdownTest() : shutdown_(false), service_(&ev_) { gpr_event_init(&ev_); }
 
@@ -85,7 +86,9 @@ class ShutdownTest : public ::testing::Test {
     grpc::string server_address = "localhost:" + to_string(port);
 
     ServerBuilder builder;
-    builder.AddListeningPort(server_address, InsecureServerCredentials());
+    auto server_creds =
+        GetCredentialsProvider()->GetServerCredentials(GetParam());
+    builder.AddListeningPort(server_address, server_creds);
     builder.RegisterService(&service_);
     std::unique_ptr<Server> server = builder.BuildAndStart();
     return server;
@@ -95,7 +98,10 @@ class ShutdownTest : public ::testing::Test {
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
-    channel_ = CreateChannel(target, InsecureChannelCredentials());
+    ChannelArguments args;
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args);
+    channel_ = CreateCustomChannel(target, channel_creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -125,8 +131,31 @@ class ShutdownTest : public ::testing::Test {
   TestServiceImpl service_;
 };
 
+std::vector<string> GetAllCredentialsTypeList() {
+  std::vector<grpc::string> credentials_types;
+  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
+                                                      nullptr) != nullptr) {
+    credentials_types.push_back(kInsecureCredentialsType);
+  }
+  auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
+  for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
+    credentials_types.push_back(*sec);
+  }
+  GPR_ASSERT(!credentials_types.empty());
+
+  std::string credentials_type_list("credentials types:");
+  for (const string& type : credentials_types) {
+    credentials_type_list.append(" " + type);
+  }
+  gpr_log(GPR_INFO, "%s", credentials_type_list.c_str());
+  return credentials_types;
+}
+
+INSTANTIATE_TEST_CASE_P(End2EndShutdown, ShutdownTest,
+                        ::testing::ValuesIn(GetAllCredentialsTypeList()));
+
 // TODO(ctiller): leaked objects in this test
-TEST_F(ShutdownTest, ShutdownTest) {
+TEST_P(ShutdownTest, ShutdownTest) {
   ResetStub();
 
   // send the request in a background thread

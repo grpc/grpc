@@ -46,18 +46,21 @@ cc_library(
 cc_library(
     name = "grpc_test_util",
     srcs = [
+        "debugger_macros.c",
         "grpc_profiler.c",
         "mock_endpoint.c",
         "parse_hexstring.c",
         "passthru_endpoint.c",
-        "port_posix.c",
+        "port.c",
         "port_server_client.c",
-        "port_windows.c",
         "reconnect_server.c",
         "slice_splitter.c",
         "test_tcp_server.c",
+        "trickle_endpoint.c",
     ],
     hdrs = [
+        "debugger_macros.h",
+        "trickle_endpoint.h",
         "grpc_profiler.h",
         "mock_endpoint.h",
         "parse_hexstring.h",

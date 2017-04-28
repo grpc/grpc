@@ -31,9 +31,16 @@
  *
  */
 
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
+   using that endpoint. Because of various transitive includes in uv.h,
+   including windows.h on Windows, uv.h must be included before other system
+   headers. Therefore, sockaddr.h must always be included first */
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include "test/core/util/passthru_endpoint.h"
 
 #include <inttypes.h>
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -55,6 +62,9 @@ typedef struct {
 struct passthru_endpoint {
   gpr_mu mu;
   int halves;
+  grpc_passthru_endpoint_stats *stats;
+  grpc_passthru_endpoint_stats
+      dummy_stats;  // used if constructor stats == NULL
   bool shutdown;
   half client;
   half server;
@@ -65,7 +75,8 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   half *m = (half *)ep;
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CREATE("Already shutdown"));
+    grpc_closure_sched(
+        exec_ctx, cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
   } else if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
     grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
@@ -86,17 +97,19 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   half *m = other_half((half *)ep);
   gpr_mu_lock(&m->parent->mu);
   grpc_error *error = GRPC_ERROR_NONE;
+  m->parent->stats->num_writes++;
   if (m->parent->shutdown) {
-    error = GRPC_ERROR_CREATE("Endpoint already shutdown");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown");
   } else if (m->on_read != NULL) {
     for (size_t i = 0; i < slices->count; i++) {
-      grpc_slice_buffer_add(m->on_read_out, grpc_slice_ref(slices->slices[i]));
+      grpc_slice_buffer_add(m->on_read_out, grpc_slice_copy(slices->slices[i]));
     }
     grpc_closure_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE);
     m->on_read = NULL;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
-      grpc_slice_buffer_add(&m->read_buffer, grpc_slice_ref(slices->slices[i]));
+      grpc_slice_buffer_add(&m->read_buffer,
+                            grpc_slice_copy(slices->slices[i]));
     }
   }
   gpr_mu_unlock(&m->parent->mu);
@@ -115,14 +128,16 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_lock(&m->parent->mu);
   m->parent->shutdown = true;
   if (m->on_read) {
-    grpc_closure_sched(exec_ctx, m->on_read,
-                       GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
+    grpc_closure_sched(
+        exec_ctx, m->on_read,
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = NULL;
   }
   m = other_half(m);
   if (m->on_read) {
-    grpc_closure_sched(exec_ctx, m->on_read,
-                       GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
+    grpc_closure_sched(
+        exec_ctx, m->on_read,
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->parent->mu);
@@ -147,7 +162,9 @@ static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 }
 
 static char *me_get_peer(grpc_endpoint *ep) {
-  return gpr_strdup("fake:mock_endpoint");
+  passthru_endpoint *p = ((half *)ep)->parent;
+  return ((half *)ep) == &p->client ? gpr_strdup("fake:mock_client_endpoint")
+                                    : gpr_strdup("fake:mock_server_endpoint");
 }
 
 static int me_get_fd(grpc_endpoint *ep) { return -1; }
@@ -188,10 +205,13 @@ static void half_init(half *m, passthru_endpoint *parent,
 
 void grpc_passthru_endpoint_create(grpc_endpoint **client,
                                    grpc_endpoint **server,
-                                   grpc_resource_quota *resource_quota) {
+                                   grpc_resource_quota *resource_quota,
+                                   grpc_passthru_endpoint_stats *stats) {
   passthru_endpoint *m = gpr_malloc(sizeof(*m));
   m->halves = 2;
   m->shutdown = 0;
+  m->stats = stats == NULL ? &m->dummy_stats : stats;
+  memset(m->stats, 0, sizeof(*m->stats));
   half_init(&m->client, m, resource_quota, "client");
   half_init(&m->server, m, resource_quota, "server");
   gpr_mu_init(&m->mu);

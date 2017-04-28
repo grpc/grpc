@@ -39,7 +39,7 @@ def _wrap(behavior):
     def _wrapping(*args, **kwargs):
         try:
             return behavior(*args, **kwargs)
-        except Exception as e:
+        except Exception:
             logging.exception(
                 'Unexpected exception from %s executed in logging pool!',
                 behavior)

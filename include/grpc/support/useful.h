@@ -74,4 +74,7 @@
 
 #define GPR_ICMP(a, b) ((a) < (b) ? -1 : ((a) > (b) ? 1 : 0))
 
+#define GPR_HASH_POINTER(x, range) \
+  ((((size_t)x) >> 4) ^ (((size_t)x) >> 9) ^ (((size_t)x) >> 14)) % (range)
+
 #endif /* GRPC_SUPPORT_USEFUL_H */

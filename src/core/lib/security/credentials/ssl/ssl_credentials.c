@@ -36,33 +36,28 @@
 #include <string.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-//
-// Utils
-//
-
-static void ssl_copy_key_material(const char *input, unsigned char **output,
-                                  size_t *output_size) {
-  *output_size = strlen(input);
-  *output = gpr_malloc(*output_size);
-  memcpy(*output, input, *output_size);
-}
+#include <grpc/support/string_util.h>
 
 //
 // SSL Channel Credentials.
 //
 
+static void ssl_config_pem_key_cert_pair_destroy(
+    tsi_ssl_pem_key_cert_pair *kp) {
+  if (kp == NULL) return;
+  gpr_free((void *)kp->private_key);
+  gpr_free((void *)kp->cert_chain);
+}
+
 static void ssl_destruct(grpc_exec_ctx *exec_ctx,
                          grpc_channel_credentials *creds) {
   grpc_ssl_credentials *c = (grpc_ssl_credentials *)creds;
-  if (c->config.pem_root_certs != NULL) gpr_free(c->config.pem_root_certs);
-  if (c->config.pem_private_key != NULL) gpr_free(c->config.pem_private_key);
-  if (c->config.pem_cert_chain != NULL) gpr_free(c->config.pem_cert_chain);
+  gpr_free(c->config.pem_root_certs);
+  ssl_config_pem_key_cert_pair_destroy(&c->config.pem_key_cert_pair);
 }
 
 static grpc_security_status ssl_create_security_connector(
@@ -103,32 +98,28 @@ static void ssl_build_config(const char *pem_root_certs,
                              grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
                              grpc_ssl_config *config) {
   if (pem_root_certs != NULL) {
-    ssl_copy_key_material(pem_root_certs, &config->pem_root_certs,
-                          &config->pem_root_certs_size);
+    config->pem_root_certs = gpr_strdup(pem_root_certs);
   }
   if (pem_key_cert_pair != NULL) {
     GPR_ASSERT(pem_key_cert_pair->private_key != NULL);
     GPR_ASSERT(pem_key_cert_pair->cert_chain != NULL);
-    ssl_copy_key_material(pem_key_cert_pair->private_key,
-                          &config->pem_private_key,
-                          &config->pem_private_key_size);
-    ssl_copy_key_material(pem_key_cert_pair->cert_chain,
-                          &config->pem_cert_chain,
-                          &config->pem_cert_chain_size);
+    config->pem_key_cert_pair.cert_chain =
+        gpr_strdup(pem_key_cert_pair->cert_chain);
+    config->pem_key_cert_pair.private_key =
+        gpr_strdup(pem_key_cert_pair->private_key);
   }
 }
 
 grpc_channel_credentials *grpc_ssl_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
     void *reserved) {
-  grpc_ssl_credentials *c = gpr_malloc(sizeof(grpc_ssl_credentials));
+  grpc_ssl_credentials *c = gpr_zalloc(sizeof(grpc_ssl_credentials));
   GRPC_API_TRACE(
       "grpc_ssl_credentials_create(pem_root_certs=%s, "
       "pem_key_cert_pair=%p, "
       "reserved=%p)",
       3, (pem_root_certs, pem_key_cert_pair, reserved));
   GPR_ASSERT(reserved == NULL);
-  memset(c, 0, sizeof(grpc_ssl_credentials));
   c->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
   c->base.vtable = &ssl_vtable;
   gpr_ref_init(&c->base.refcount, 1);
@@ -145,22 +136,10 @@ static void ssl_server_destruct(grpc_exec_ctx *exec_ctx,
   grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
   size_t i;
   for (i = 0; i < c->config.num_key_cert_pairs; i++) {
-    if (c->config.pem_private_keys[i] != NULL) {
-      gpr_free(c->config.pem_private_keys[i]);
-    }
-    if (c->config.pem_cert_chains[i] != NULL) {
-      gpr_free(c->config.pem_cert_chains[i]);
-    }
+    ssl_config_pem_key_cert_pair_destroy(&c->config.pem_key_cert_pairs[i]);
   }
-  if (c->config.pem_private_keys != NULL) gpr_free(c->config.pem_private_keys);
-  if (c->config.pem_private_keys_sizes != NULL) {
-    gpr_free(c->config.pem_private_keys_sizes);
-  }
-  if (c->config.pem_cert_chains != NULL) gpr_free(c->config.pem_cert_chains);
-  if (c->config.pem_cert_chains_sizes != NULL) {
-    gpr_free(c->config.pem_cert_chains_sizes);
-  }
-  if (c->config.pem_root_certs != NULL) gpr_free(c->config.pem_root_certs);
+  gpr_free(c->config.pem_key_cert_pairs);
+  gpr_free(c->config.pem_root_certs);
 }
 
 static grpc_security_status ssl_server_create_security_connector(
@@ -181,30 +160,21 @@ static void ssl_build_server_config(
   size_t i;
   config->client_certificate_request = client_certificate_request;
   if (pem_root_certs != NULL) {
-    ssl_copy_key_material(pem_root_certs, &config->pem_root_certs,
-                          &config->pem_root_certs_size);
+    config->pem_root_certs = gpr_strdup(pem_root_certs);
   }
   if (num_key_cert_pairs > 0) {
     GPR_ASSERT(pem_key_cert_pairs != NULL);
-    config->pem_private_keys =
-        gpr_malloc(num_key_cert_pairs * sizeof(unsigned char *));
-    config->pem_cert_chains =
-        gpr_malloc(num_key_cert_pairs * sizeof(unsigned char *));
-    config->pem_private_keys_sizes =
-        gpr_malloc(num_key_cert_pairs * sizeof(size_t));
-    config->pem_cert_chains_sizes =
-        gpr_malloc(num_key_cert_pairs * sizeof(size_t));
+    config->pem_key_cert_pairs =
+        gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair));
   }
   config->num_key_cert_pairs = num_key_cert_pairs;
   for (i = 0; i < num_key_cert_pairs; i++) {
     GPR_ASSERT(pem_key_cert_pairs[i].private_key != NULL);
     GPR_ASSERT(pem_key_cert_pairs[i].cert_chain != NULL);
-    ssl_copy_key_material(pem_key_cert_pairs[i].private_key,
-                          &config->pem_private_keys[i],
-                          &config->pem_private_keys_sizes[i]);
-    ssl_copy_key_material(pem_key_cert_pairs[i].cert_chain,
-                          &config->pem_cert_chains[i],
-                          &config->pem_cert_chains_sizes[i]);
+    config->pem_key_cert_pairs[i].cert_chain =
+        gpr_strdup(pem_key_cert_pairs[i].cert_chain);
+    config->pem_key_cert_pairs[i].private_key =
+        gpr_strdup(pem_key_cert_pairs[i].private_key);
   }
 }
 
@@ -225,7 +195,7 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     void *reserved) {
   grpc_ssl_server_credentials *c =
-      gpr_malloc(sizeof(grpc_ssl_server_credentials));
+      gpr_zalloc(sizeof(grpc_ssl_server_credentials));
   GRPC_API_TRACE(
       "grpc_ssl_server_credentials_create_ex("
       "pem_root_certs=%s, pem_key_cert_pairs=%p, num_key_cert_pairs=%lu, "
@@ -233,7 +203,6 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
       5, (pem_root_certs, pem_key_cert_pairs, (unsigned long)num_key_cert_pairs,
           client_certificate_request, reserved));
   GPR_ASSERT(reserved == NULL);
-  memset(c, 0, sizeof(grpc_ssl_server_credentials));
   c->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &ssl_server_vtable;

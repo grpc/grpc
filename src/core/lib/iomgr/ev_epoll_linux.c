@@ -56,6 +56,8 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/lockfree_event.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
@@ -68,7 +70,7 @@ static int grpc_polling_trace = 0; /* Disabled by default */
     gpr_log(GPR_INFO, (fmt), __VA_ARGS__); \
   }
 
-/* Uncomment the following enable extra checks on poll_object operations */
+/* Uncomment the following to enable extra checks on poll_object operations */
 /* #define PO_DEBUG */
 
 static int grpc_wakeup_signal = -1;
@@ -140,24 +142,20 @@ struct grpc_fd {
      Ref/Unref by two to avoid altering the orphaned bit */
   gpr_atm refst;
 
-  /* Indicates that the fd is shutdown and that any pending read/write closures
-     should fail */
-  bool shutdown;
-  grpc_error *shutdown_error; /* reason for shutdown: set iff shutdown==true */
-
-  /* The fd is either closed or we relinquished control of it. In either cases,
-     this indicates that the 'fd' on this structure is no longer valid */
+  /* The fd is either closed or we relinquished control of it. In either
+     cases, this indicates that the 'fd' on this structure is no longer
+     valid */
   bool orphaned;
 
-  /* TODO: sreek - Move this to a lockfree implementation */
-  grpc_closure *read_closure;
-  grpc_closure *write_closure;
+  gpr_atm read_closure;
+  gpr_atm write_closure;
 
   struct grpc_fd *freelist_next;
   grpc_closure *on_done_closure;
 
-  /* The pollset that last noticed that the fd is readable */
-  grpc_pollset *read_notifier_pollset;
+  /* The pollset that last noticed that the fd is readable. The actual type
+   * stored in this is (grpc_pollset *) */
+  gpr_atm read_notifier_pollset;
 
   grpc_iomgr_object iomgr_object;
 };
@@ -179,9 +177,6 @@ static void fd_unref(grpc_fd *fd);
 
 static void fd_global_init(void);
 static void fd_global_shutdown(void);
-
-#define CLOSURE_NOT_READY ((grpc_closure *)0)
-#define CLOSURE_READY ((grpc_closure *)1)
 
 /*******************************************************************************
  * Polling island Declarations
@@ -282,7 +277,7 @@ static bool append_error(grpc_error **composite, grpc_error *error,
                          const char *desc) {
   if (error == GRPC_ERROR_NONE) return true;
   if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE(desc);
+    *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
   }
   *composite = grpc_error_add_child(*composite, error);
   return false;
@@ -908,7 +903,9 @@ static void unref_by(grpc_fd *fd, int n) {
     fd->freelist_next = fd_freelist;
     fd_freelist = fd;
     grpc_iomgr_unregister_object(&fd->iomgr_object);
-    if (fd->shutdown) GRPC_ERROR_UNREF(fd->shutdown_error);
+
+    grpc_lfev_destroy(&fd->read_closure);
+    grpc_lfev_destroy(&fd->write_closure);
 
     gpr_mu_unlock(&fd_freelist_mu);
   } else {
@@ -972,13 +969,13 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
-  new_fd->shutdown = false;
   new_fd->orphaned = false;
-  new_fd->read_closure = CLOSURE_NOT_READY;
-  new_fd->write_closure = CLOSURE_NOT_READY;
+  grpc_lfev_init(&new_fd->read_closure);
+  grpc_lfev_init(&new_fd->write_closure);
+  gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
+
   new_fd->freelist_next = NULL;
   new_fd->on_done_closure = NULL;
-  new_fd->read_notifier_pollset = NULL;
 
   gpr_mu_unlock(&new_fd->po.mu);
 
@@ -1060,101 +1057,34 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   GRPC_ERROR_UNREF(error);
 }
 
-static grpc_error *fd_shutdown_error(grpc_fd *fd) {
-  if (!fd->shutdown) {
-    return GRPC_ERROR_NONE;
-  } else {
-    return GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1);
-  }
-}
-
-static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
-                             grpc_closure **st, grpc_closure *closure) {
-  if (fd->shutdown) {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE("FD shutdown"));
-  } else if (*st == CLOSURE_NOT_READY) {
-    /* not ready ==> switch to a waiting state by setting the closure */
-    *st = closure;
-  } else if (*st == CLOSURE_READY) {
-    /* already ready ==> queue the closure to run immediately */
-    *st = CLOSURE_NOT_READY;
-    grpc_closure_sched(exec_ctx, closure, fd_shutdown_error(fd));
-  } else {
-    /* upcallptr was set to a different closure.  This is an error! */
-    gpr_log(GPR_ERROR,
-            "User called a notify_on function with a previous callback still "
-            "pending");
-    abort();
-  }
-}
-
-/* returns 1 if state becomes not ready */
-static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
-                            grpc_closure **st) {
-  if (*st == CLOSURE_READY) {
-    /* duplicate ready ==> ignore */
-    return 0;
-  } else if (*st == CLOSURE_NOT_READY) {
-    /* not ready, and not waiting ==> flag ready */
-    *st = CLOSURE_READY;
-    return 0;
-  } else {
-    /* waiting ==> queue closure */
-    grpc_closure_sched(exec_ctx, *st, fd_shutdown_error(fd));
-    *st = CLOSURE_NOT_READY;
-    return 1;
-  }
-}
-
 static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
                                                   grpc_fd *fd) {
-  grpc_pollset *notifier = NULL;
-
-  gpr_mu_lock(&fd->po.mu);
-  notifier = fd->read_notifier_pollset;
-  gpr_mu_unlock(&fd->po.mu);
-
-  return notifier;
+  gpr_atm notifier = gpr_atm_acq_load(&fd->read_notifier_pollset);
+  return (grpc_pollset *)notifier;
 }
 
 static bool fd_is_shutdown(grpc_fd *fd) {
-  gpr_mu_lock(&fd->po.mu);
-  const bool r = fd->shutdown;
-  gpr_mu_unlock(&fd->po.mu);
-  return r;
+  return grpc_lfev_is_shutdown(&fd->read_closure);
 }
 
 /* Might be called multiple times */
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
-  gpr_mu_lock(&fd->po.mu);
-  /* Do the actual shutdown only once */
-  if (!fd->shutdown) {
-    fd->shutdown = true;
-    fd->shutdown_error = why;
-
+  if (grpc_lfev_set_shutdown(exec_ctx, &fd->read_closure,
+                             GRPC_ERROR_REF(why))) {
     shutdown(fd->fd, SHUT_RDWR);
-    /* Flush any pending read and write closures. Since fd->shutdown is 'true'
-       at this point, the closures would be called with 'success = false' */
-    set_ready_locked(exec_ctx, fd, &fd->read_closure);
-    set_ready_locked(exec_ctx, fd, &fd->write_closure);
-  } else {
-    GRPC_ERROR_UNREF(why);
+    grpc_lfev_set_shutdown(exec_ctx, &fd->write_closure, GRPC_ERROR_REF(why));
   }
-  gpr_mu_unlock(&fd->po.mu);
+  GRPC_ERROR_UNREF(why);
 }
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
-  gpr_mu_lock(&fd->po.mu);
-  notify_on_locked(exec_ctx, fd, &fd->read_closure, closure);
-  gpr_mu_unlock(&fd->po.mu);
+  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure);
 }
 
 static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_closure *closure) {
-  gpr_mu_lock(&fd->po.mu);
-  notify_on_locked(exec_ctx, fd, &fd->write_closure, closure);
-  gpr_mu_unlock(&fd->po.mu);
+  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
 }
 
 static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) {
@@ -1202,7 +1132,7 @@ static grpc_error *pollset_worker_kick(grpc_pollset_worker *worker) {
   if (gpr_atm_no_barrier_cas(&worker->is_kicked, (gpr_atm)0, (gpr_atm)1)) {
     GRPC_POLLING_TRACE(
         "pollset_worker_kick: Kicking worker: %p (thread id: %ld)",
-        (void *)worker, worker->pt_id);
+        (void *)worker, (long int)worker->pt_id);
     int err_num = pthread_kill(worker->pt_id, grpc_wakeup_signal);
     if (err_num != 0) {
       err = GRPC_OS_ERROR(err_num, "pthread_kill");
@@ -1337,24 +1267,26 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
     return 0;
   }
   timeout = gpr_time_sub(deadline, now);
-  return gpr_time_to_millis(gpr_time_add(
+  int millis = gpr_time_to_millis(gpr_time_add(
       timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
+  return millis >= 1 ? millis : 1;
 }
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
-  /* Need the fd->po.mu since we might be racing with fd_notify_on_read */
-  gpr_mu_lock(&fd->po.mu);
-  set_ready_locked(exec_ctx, fd, &fd->read_closure);
-  fd->read_notifier_pollset = notifier;
-  gpr_mu_unlock(&fd->po.mu);
+  grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
+
+  /* Note, it is possible that fd_become_readable might be called twice with
+     different 'notifier's when an fd becomes readable and it is in two epoll
+     sets (This can happen briefly during polling island merges). In such cases
+     it does not really matter which notifer is set as the read_notifier_pollset
+     (They would both point to the same polling island anyway) */
+  /* Use release store to match with acquire load in fd_get_read_notifier */
+  gpr_atm_rel_store(&fd->read_notifier_pollset, (gpr_atm)notifier);
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  /* Need the fd->po.mu since we might be racing with fd_notify_on_write */
-  gpr_mu_lock(&fd->po.mu);
-  set_ready_locked(exec_ctx, fd, &fd->write_closure);
-  gpr_mu_unlock(&fd->po.mu);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
 }
 
 static void pollset_release_polling_island(grpc_exec_ctx *exec_ctx,
@@ -1405,16 +1337,6 @@ static void pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->po.mu);
 }
 
-static void pollset_reset(grpc_pollset *pollset) {
-  GPR_ASSERT(pollset->shutting_down);
-  GPR_ASSERT(!pollset_has_workers(pollset));
-  pollset->shutting_down = false;
-  pollset->finish_shutdown_called = false;
-  pollset->kicked_without_pollers = false;
-  pollset->shutdown_done = NULL;
-  GPR_ASSERT(pollset->po.pi == NULL);
-}
-
 static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
                                     polling_island *pi) {
   if (gpr_mu_trylock(&pi->workqueue_read_mu)) {
@@ -1426,6 +1348,9 @@ static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
       }
       grpc_closure *c = (grpc_closure *)n;
       grpc_error *error = c->error_data.error;
+#ifndef NDEBUG
+      c->scheduled = false;
+#endif
       c->cb(exec_ctx, c->cb_arg, error);
       GRPC_ERROR_UNREF(error);
       return true;
@@ -1529,6 +1454,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
     for (int i = 0; i < ep_rv; ++i) {
       void *data_ptr = ep_ev[i].data.ptr;
       if (data_ptr == &global_wakeup_fd) {
+        grpc_timer_consume_kick();
         append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                      err_desc);
       } else if (data_ptr == &pi->workqueue_wakeup_fd) {
@@ -1593,7 +1519,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   worker.pt_id = pthread_self();
   gpr_atm_no_barrier_store(&worker.is_kicked, (gpr_atm)0);
 
-  *worker_hdl = &worker;
+  if (worker_hdl) *worker_hdl = &worker;
 
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)pollset);
   gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
@@ -1671,7 +1597,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     gpr_mu_lock(&pollset->po.mu);
   }
 
-  *worker_hdl = NULL;
+  if (worker_hdl) *worker_hdl = NULL;
 
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)0);
   gpr_tls_set(&g_current_thread_worker, (intptr_t)0);
@@ -1747,7 +1673,7 @@ retry:
               (void *)pi_new, FD_FROM_PO(item)->fd, poll_obj_string(bag_type),
               (void *)bag);
           /* No need to lock 'pi_new' here since this is a new polling island
-            * and no one has a reference to it yet */
+             and no one has a reference to it yet */
           polling_island_remove_all_fds_locked(pi_new, true, &error);
 
           /* Ref and unref so that the polling island gets deleted during unref
@@ -1852,13 +1778,12 @@ static grpc_pollset_set *pollset_set_create(void) {
   return pss;
 }
 
-static void pollset_set_destroy(grpc_pollset_set *pss) {
+static void pollset_set_destroy(grpc_exec_ctx *exec_ctx,
+                                grpc_pollset_set *pss) {
   gpr_mu_destroy(&pss->po.mu);
 
   if (pss->po.pi != NULL) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    PI_UNREF(&exec_ctx, pss->po.pi, "pss_destroy");
-    grpc_exec_ctx_finish(&exec_ctx);
+    PI_UNREF(exec_ctx, pss->po.pi, "pss_destroy");
   }
 
   gpr_free(pss);
@@ -1958,7 +1883,6 @@ static const grpc_event_engine_vtable vtable = {
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,
-    .pollset_reset = pollset_reset,
     .pollset_destroy = pollset_destroy,
     .pollset_work = pollset_work,
     .pollset_kick = pollset_kick,

@@ -41,12 +41,16 @@
 
 #include <grpc/support/log.h>
 
+#include "test/core/util/debugger_macros.h"
+
 static bool g_pre_init_called = false;
 
 extern void authority_not_supported(grpc_end2end_test_config config);
 extern void authority_not_supported_pre_init(void);
 extern void bad_hostname(grpc_end2end_test_config config);
 extern void bad_hostname_pre_init(void);
+extern void bad_ping(grpc_end2end_test_config config);
+extern void bad_ping_pre_init(void);
 extern void binary_metadata(grpc_end2end_test_config config);
 extern void binary_metadata_pre_init(void);
 extern void cancel_after_accept(grpc_end2end_test_config config);
@@ -87,12 +91,18 @@ extern void idempotent_request(grpc_end2end_test_config config);
 extern void idempotent_request_pre_init(void);
 extern void invoke_large_request(grpc_end2end_test_config config);
 extern void invoke_large_request_pre_init(void);
+extern void keepalive_timeout(grpc_end2end_test_config config);
+extern void keepalive_timeout_pre_init(void);
 extern void large_metadata(grpc_end2end_test_config config);
 extern void large_metadata_pre_init(void);
 extern void load_reporting_hook(grpc_end2end_test_config config);
 extern void load_reporting_hook_pre_init(void);
 extern void max_concurrent_streams(grpc_end2end_test_config config);
 extern void max_concurrent_streams_pre_init(void);
+extern void max_connection_age(grpc_end2end_test_config config);
+extern void max_connection_age_pre_init(void);
+extern void max_connection_idle(grpc_end2end_test_config config);
+extern void max_connection_idle_pre_init(void);
 extern void max_message_length(grpc_end2end_test_config config);
 extern void max_message_length_pre_init(void);
 extern void negative_deadline(grpc_end2end_test_config config);
@@ -143,8 +153,10 @@ extern void write_buffering_at_end_pre_init(void);
 void grpc_end2end_tests_pre_init(void) {
   GPR_ASSERT(!g_pre_init_called);
   g_pre_init_called = true;
+  grpc_summon_debugger_macros();
   authority_not_supported_pre_init();
   bad_hostname_pre_init();
+  bad_ping_pre_init();
   binary_metadata_pre_init();
   cancel_after_accept_pre_init();
   cancel_after_client_done_pre_init();
@@ -165,9 +177,12 @@ void grpc_end2end_tests_pre_init(void) {
   hpack_size_pre_init();
   idempotent_request_pre_init();
   invoke_large_request_pre_init();
+  keepalive_timeout_pre_init();
   large_metadata_pre_init();
   load_reporting_hook_pre_init();
   max_concurrent_streams_pre_init();
+  max_connection_age_pre_init();
+  max_connection_idle_pre_init();
   max_message_length_pre_init();
   negative_deadline_pre_init();
   network_status_change_pre_init();
@@ -202,6 +217,7 @@ void grpc_end2end_tests(int argc, char **argv,
   if (argc <= 1) {
     authority_not_supported(config);
     bad_hostname(config);
+    bad_ping(config);
     binary_metadata(config);
     cancel_after_accept(config);
     cancel_after_client_done(config);
@@ -222,9 +238,12 @@ void grpc_end2end_tests(int argc, char **argv,
     hpack_size(config);
     idempotent_request(config);
     invoke_large_request(config);
+    keepalive_timeout(config);
     large_metadata(config);
     load_reporting_hook(config);
     max_concurrent_streams(config);
+    max_connection_age(config);
+    max_connection_idle(config);
     max_message_length(config);
     negative_deadline(config);
     network_status_change(config);
@@ -258,6 +277,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("bad_hostname", argv[i])) {
       bad_hostname(config);
+      continue;
+    }
+    if (0 == strcmp("bad_ping", argv[i])) {
+      bad_ping(config);
       continue;
     }
     if (0 == strcmp("binary_metadata", argv[i])) {
@@ -340,6 +363,10 @@ void grpc_end2end_tests(int argc, char **argv,
       invoke_large_request(config);
       continue;
     }
+    if (0 == strcmp("keepalive_timeout", argv[i])) {
+      keepalive_timeout(config);
+      continue;
+    }
     if (0 == strcmp("large_metadata", argv[i])) {
       large_metadata(config);
       continue;
@@ -350,6 +377,14 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("max_concurrent_streams", argv[i])) {
       max_concurrent_streams(config);
+      continue;
+    }
+    if (0 == strcmp("max_connection_age", argv[i])) {
+      max_connection_age(config);
+      continue;
+    }
+    if (0 == strcmp("max_connection_idle", argv[i])) {
+      max_connection_idle(config);
       continue;
     }
     if (0 == strcmp("max_message_length", argv[i])) {

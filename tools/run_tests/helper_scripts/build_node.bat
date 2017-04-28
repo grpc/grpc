@@ -38,5 +38,7 @@ for /f "delims=v" %%v in ('node --version') do (
   rmdir "%USERPROFILE%\.node-gyp\%%v\include\node\openssl" /S /Q
 )
 
+
+
 @rem rebuild, because it probably failed the first time
-call npm install --build-from-source
+call npm install --build-from-source %*

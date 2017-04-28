@@ -31,11 +31,10 @@
   
   @rem Current package versions
   set VERSION=${settings.csharp_version}
-  set PROTOBUF_VERSION=3.0.0
   
   @rem Adjust the location of nuget.exe
   set NUGET=C:\nuget\nuget.exe
-  set DOTNET=C:\dotnet\dotnet.exe
+  set DOTNET=dotnet
   
   set -ex
   
@@ -58,12 +57,16 @@
   xcopy /Y /I ..\..\architecture=x86,language=protoc,platform=macos\artifacts\* protoc_plugins\macosx_x86${"\\"}
   xcopy /Y /I ..\..\architecture=x64,language=protoc,platform=macos\artifacts\* protoc_plugins\macosx_x64${"\\"}
   
-  %%DOTNET% restore . || goto :error
+  %%DOTNET% restore Grpc.sln || goto :error
   
-  %%DOTNET% pack --configuration Release Grpc.Core\project.json --output ..\..\artifacts || goto :error
-  %%DOTNET% pack --configuration Release Grpc.Auth\project.json --output ..\..\artifacts || goto :error
-  %%DOTNET% pack --configuration Release Grpc.HealthCheck\project.json --output ..\..\artifacts || goto :error
-  %%DOTNET% pack --configuration Release Grpc.Reflection\project.json --output ..\..\artifacts || goto :error
+  @rem To be able to build, we also need to put grpc_csharp_ext to its normal location
+  xcopy /Y /I nativelibs\windows_x64\grpc_csharp_ext.dll ..\..\cmake\build\x64\Release${"\\"}
+  
+  %%DOTNET% pack --configuration Release Grpc.Core --output ..\..\..\artifacts || goto :error
+  %%DOTNET% pack --configuration Release Grpc.Core.Testing --output ..\..\..\artifacts || goto :error
+  %%DOTNET% pack --configuration Release Grpc.Auth --output ..\..\..\artifacts || goto :error
+  %%DOTNET% pack --configuration Release Grpc.HealthCheck --output ..\..\..\artifacts || goto :error
+  %%DOTNET% pack --configuration Release Grpc.Reflection --output ..\..\..\artifacts || goto :error
   
   %%NUGET% pack Grpc.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts || goto :error
   %%NUGET% pack Grpc.Tools.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts

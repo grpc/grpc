@@ -215,6 +215,16 @@ static void install_crash_handler() {
 #include <stdio.h>
 #include <string.h>
 
+#define SIGNAL_NAMES_LENGTH 32
+
+static const char *const signal_names[] = {
+    NULL,      "SIGHUP",  "SIGINT",    "SIGQUIT", "SIGILL",    "SIGTRAP",
+    "SIGABRT", "SIGBUS",  "SIGFPE",    "SIGKILL", "SIGUSR1",   "SIGSEGV",
+    "SIGUSR2", "SIGPIPE", "SIGALRM",   "SIGTERM", "SIGSTKFLT", "SIGCHLD",
+    "SIGCONT", "SIGSTOP", "SIGTSTP",   "SIGTTIN", "SIGTTOU",   "SIGURG",
+    "SIGXCPU", "SIGXFSZ", "SIGVTALRM", "SIGPROF", "SIGWINCH",  "SIGIO",
+    "SIGPWR",  "SIGSYS"};
+
 static char g_alt_stack[GPR_MAX(MINSIGSTKSZ, 65536)];
 
 #define MAX_FRAMES 32
@@ -240,7 +250,11 @@ static void crash_handler(int signum, siginfo_t *info, void *data) {
   int addrlen;
 
   output_string("\n\n\n*******************************\nCaught signal ");
-  output_num(signum);
+  if (signum > 0 && signum < SIGNAL_NAMES_LENGTH) {
+    output_string(signal_names[signum]);
+  } else {
+    output_num(signum);
+  }
   output_string("\n");
 
   addrlen = backtrace(addrlist, GPR_ARRAY_SIZE(addrlist));
@@ -337,6 +351,14 @@ bool BuiltUnderMsan() {
 #endif
 }
 
+bool BuiltUnderUbsan() {
+#ifdef GRPC_UBSAN
+  return true;
+#else
+  return false;
+#endif
+}
+
 int64_t grpc_test_sanitizer_slowdown_factor() {
   int64_t sanitizer_multiplier = 1;
   if (BuiltUnderValgrind()) {
@@ -347,6 +369,8 @@ int64_t grpc_test_sanitizer_slowdown_factor() {
     sanitizer_multiplier = 3;
   } else if (BuiltUnderMsan()) {
     sanitizer_multiplier = 4;
+  } else if (BuiltUnderUbsan()) {
+    sanitizer_multiplier = 5;
   }
   return sanitizer_multiplier;
 }

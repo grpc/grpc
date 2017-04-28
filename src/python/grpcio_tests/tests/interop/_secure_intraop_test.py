@@ -32,7 +32,7 @@ from concurrent import futures
 import unittest
 
 import grpc
-from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 from tests.interop import _intraop_test_case
 from tests.interop import methods
@@ -45,19 +45,19 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
 
     def setUp(self):
         self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        test_pb2.add_TestServiceServicer_to_server(methods.TestService(),
-                                                   self.server)
+        test_pb2_grpc.add_TestServiceServicer_to_server(methods.TestService(),
+                                                        self.server)
         port = self.server.add_secure_port(
             '[::]:0',
             grpc.ssl_server_credentials(
                 [(resources.private_key(), resources.certificate_chain())]))
         self.server.start()
-        self.stub = test_pb2.TestServiceStub(
+        self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel('localhost:{}'.format(port),
                                 grpc.ssl_channel_credentials(
-                                    resources.test_root_certificates()), ((
-                                        'grpc.ssl_target_name_override',
-                                        _SERVER_HOST_OVERRIDE,),)))
+                                    resources.test_root_certificates()), (
+                                        ('grpc.ssl_target_name_override',
+                                         _SERVER_HOST_OVERRIDE,),)))
 
 
 if __name__ == '__main__':

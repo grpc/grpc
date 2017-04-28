@@ -43,6 +43,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/test_config.h"
@@ -119,7 +120,7 @@ static void finish_ping_pong_request(int call_idx) {
   grpc_metadata_array_destroy(&calls[call_idx].initial_metadata_recv);
   grpc_metadata_array_destroy(&calls[call_idx].trailing_metadata_recv);
   grpc_slice_unref(calls[call_idx].details);
-  grpc_call_destroy(calls[call_idx].call);
+  grpc_call_unref(calls[call_idx].call);
   calls[call_idx].call = NULL;
 }
 
@@ -186,7 +187,7 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
   grpc_byte_buffer_destroy(response_payload_recv);
   grpc_slice_unref(calls[call_idx].details);
   calls[call_idx].details = grpc_empty_slice();
-  grpc_call_destroy(calls[call_idx].call);
+  grpc_call_unref(calls[call_idx].call);
   calls[call_idx].call = NULL;
 
   return snapshot;
@@ -222,7 +223,7 @@ int main(int argc, char **argv) {
     calls[k].details = grpc_empty_slice();
   }
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
 
   struct grpc_memory_counters client_channel_start =
       grpc_memory_counters_snapshot();
@@ -236,6 +237,11 @@ int main(int argc, char **argv) {
       0, grpc_slice_from_static_string("Reflector/GetAfterSvrCreation"));
 
   // warmup period
+  for (int i = 0; i < warmup_iterations; i++) {
+    send_snapshot_request(
+        0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
+  }
+
   for (call_idx = 0; call_idx < warmup_iterations; ++call_idx) {
     init_ping_pong_request(call_idx + 1);
   }
@@ -309,6 +315,29 @@ int main(int argc, char **argv) {
   gpr_log(GPR_INFO, "server channel memory usage %zi bytes",
           server_calls_end.total_size_relative -
               after_server_create.total_size_relative);
+
+  const char *csv_file = "memory_usage.csv";
+  FILE *csv = fopen(csv_file, "w");
+  if (csv) {
+    char *env_build = gpr_getenv("BUILD_NUMBER");
+    char *env_job = gpr_getenv("JOB_NAME");
+    fprintf(csv, "%f,%zi,%zi,%f,%zi,%s,%s\n",
+            (double)(client_calls_inflight.total_size_relative -
+                     client_benchmark_calls_start.total_size_relative) /
+                benchmark_iterations,
+            client_channel_end.total_size_relative -
+                client_channel_start.total_size_relative,
+            after_server_create.total_size_relative -
+                before_server_create.total_size_relative,
+            (double)(server_calls_inflight.total_size_relative -
+                     server_benchmark_calls_start.total_size_relative) /
+                benchmark_iterations,
+            server_calls_end.total_size_relative -
+                after_server_create.total_size_relative,
+            env_build == NULL ? "" : env_build, env_job == NULL ? "" : env_job);
+    fclose(csv);
+    gpr_log(GPR_INFO, "Summary written to %s", csv_file);
+  }
 
   grpc_memory_counters_destroy();
   return 0;

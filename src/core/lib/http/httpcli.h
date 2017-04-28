@@ -83,7 +83,8 @@ typedef struct grpc_httpcli_request {
 typedef struct grpc_http_response grpc_httpcli_response;
 
 void grpc_httpcli_context_init(grpc_httpcli_context *context);
-void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
+void grpc_httpcli_context_destroy(grpc_exec_ctx *exec_ctx,
+                                  grpc_httpcli_context *context);
 
 /* Asynchronously perform a HTTP GET.
    'context' specifies the http context under which to do the get

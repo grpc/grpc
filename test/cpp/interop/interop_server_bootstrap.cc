@@ -32,7 +32,6 @@
  */
 
 #include <signal.h>
-#include <unistd.h>
 
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"

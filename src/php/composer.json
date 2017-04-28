@@ -2,10 +2,10 @@
   "name": "grpc/grpc-dev",
   "description": "gRPC library for PHP - for Developement use only",
   "license": "BSD-3-Clause",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "require": {
     "php": ">=5.5.0",
-    "google/protobuf": "v3.1.0-alpha-1"
+    "google/protobuf": "^v3.1.0"
   },
   "require-dev": {
     "google/auth": "v0.9"

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 # Copyright 2016, Google Inc.
 # All rights reserved.
@@ -29,6 +29,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
+
 import sys
 import yaml
 import os
@@ -48,13 +50,13 @@ try:
     'git rev-parse --abbrev-ref HEAD',
     shell=True)
 except:
-  print 'WARNING: not a git repository'
+  print('WARNING: not a git repository')
   branch_name = None
 
 if branch_name is not None:
   m = re.match(r'^release-([0-9]+)_([0-9]+)$', branch_name)
   if m:
-    print 'RELEASE branch'
+    print('RELEASE branch')
     # version number should align with the branched version
     check_version = lambda version: (
       version.major == int(m.group(1)) and
@@ -78,7 +80,7 @@ settings = build_yaml['settings']
 top_version = Version(settings['version'])
 if not check_version(top_version):
   errors += 1
-  print warning % ('version', top_version)
+  print(warning % ('version', top_version))
 
 for tag, value in settings.iteritems():
   if re.match(r'^[a-z]+_version$', tag):
@@ -86,12 +88,14 @@ for tag, value in settings.iteritems():
     if tag != 'core_version':
       if value.major != top_version.major:
         errors += 1
-        print 'major version mismatch on %s: %d vs %d' % (tag, value.major, top_version.major)
+        print('major version mismatch on %s: %d vs %d' % (tag, value.major,
+                                                          top_version.major))
       if value.minor != top_version.minor:
         errors += 1
-        print 'minor version mismatch on %s: %d vs %d' % (tag, value.minor, top_version.minor)
+        print('minor version mismatch on %s: %d vs %d' % (tag, value.minor,
+                                                          top_version.minor))
     if not check_version(value):
       errors += 1
-      print warning % (tag, value)
+      print(warning % (tag, value))
 
 sys.exit(errors)

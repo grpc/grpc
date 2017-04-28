@@ -113,6 +113,9 @@ message ClientConfig {
   string other_client_api = 15;
 
   repeated ChannelArg channel_args = 16;
+
+  // Number of messages on a stream before it gets finished/restarted
+  int32 messages_per_stream = 18;
 }
 
 message ClientStatus { ClientStats stats = 1; }
@@ -139,7 +142,10 @@ message ServerConfig {
   int32 async_server_threads = 7;
   // Specify the number of cores to limit server to, if desired
   int32 core_limit = 8;
-  // payload config, used in generic server
+  // payload config, used in generic server.
+  // Note this must NOT be used in proto (non-generic) servers. For proto servers,
+  // 'response sizes' must be configured from the 'response_size' field of the
+  // 'SimpleRequest' objects in RPC requests.
   PayloadConfig payload_config = 9;
 
   // Specify the cores we should run the server on, if desired

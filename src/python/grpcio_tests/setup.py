@@ -47,18 +47,16 @@ import grpc_version
 
 LICENSE = '3-clause BSD'
 
-PACKAGE_DIRECTORIES = {'': '.',}
+PACKAGE_DIRECTORIES = {
+    '': '.',
+}
 
 INSTALL_REQUIRES = (
-    'coverage>=4.0',
-    'enum34>=1.0.4',
-    'futures>=2.2.0',
+    'coverage>=4.0', 'enum34>=1.0.4', 'futures>=2.2.0',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
-    'oauth2client>=1.4.7',
-    'protobuf>=3.0.0',
-    'six>=1.10',)
+    'oauth2client>=1.4.7', 'protobuf>=3.2.0', 'six>=1.10',)
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
@@ -75,7 +73,9 @@ PACKAGE_DATA = {
         'credentials/server1.key',
         'credentials/server1.pem',
     ],
-    'tests.protoc_plugin.protos.invocation_testing': ['same.proto',],
+    'tests.protoc_plugin.protos.invocation_testing': [
+        'same.proto',
+    ],
     'tests.protoc_plugin.protos.invocation_testing.split_messages': [
         'messages.proto',
     ],

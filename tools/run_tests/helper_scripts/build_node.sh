@@ -40,4 +40,12 @@ CONFIG=${CONFIG:-opt}
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-npm install --unsafe-perm --build-from-source
+case "$CONFIG" in
+  'dbg') config_flags='--debug' ;;
+  'gcov') config_flags="--debug --grpc_gcov=true" ;;
+  *) config_flag='--release' ;;
+esac
+
+uv_flag=$2
+
+npm install --unsafe-perm --build-from-source $uv_flag $config_flag

@@ -56,7 +56,7 @@ void gpr_time_init(void) {
   g_time_scale = 1.0 / (double)frequency.QuadPart;
 }
 
-gpr_timespec gpr_now(gpr_clock_type clock) {
+static gpr_timespec now_impl(gpr_clock_type clock) {
   gpr_timespec now_tv;
   LONGLONG diff;
   struct _timeb now_tb;
@@ -82,6 +82,12 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
       break;
   }
   return now_tv;
+}
+
+gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
+
+gpr_timespec gpr_now(gpr_clock_type clock_type) {
+  return gpr_now_impl(clock_type);
 }
 
 void gpr_sleep_until(gpr_timespec until) {

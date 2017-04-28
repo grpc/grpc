@@ -33,6 +33,7 @@
 
 #include "src/core/lib/transport/pid_controller.h"
 
+#include <float.h>
 #include <math.h>
 
 #include <grpc/support/alloc.h>
@@ -45,7 +46,14 @@
 static void test_noop(void) {
   gpr_log(GPR_INFO, "test_noop");
   grpc_pid_controller pid;
-  grpc_pid_controller_init(&pid, 1, 1, 1);
+  grpc_pid_controller_init(
+      &pid, (grpc_pid_controller_args){.gain_p = 1,
+                                       .gain_i = 1,
+                                       .gain_d = 1,
+                                       .initial_control_value = 1,
+                                       .min_control_value = DBL_MIN,
+                                       .max_control_value = DBL_MAX,
+                                       .integral_range = DBL_MAX});
 }
 
 static void test_simple_convergence(double gain_p, double gain_i, double gain_d,
@@ -55,16 +63,24 @@ static void test_simple_convergence(double gain_p, double gain_i, double gain_d,
           "start=%lf",
           gain_p, gain_i, gain_d, dt, set_point, start);
   grpc_pid_controller pid;
-  grpc_pid_controller_init(&pid, 0.2, 0.1, 0.1);
+  grpc_pid_controller_init(
+      &pid, (grpc_pid_controller_args){.gain_p = gain_p,
+                                       .gain_i = gain_i,
+                                       .gain_d = gain_d,
+                                       .initial_control_value = start,
+                                       .min_control_value = DBL_MIN,
+                                       .max_control_value = DBL_MAX,
+                                       .integral_range = DBL_MAX});
 
-  double current = start;
-
-  for (int i = 0; i < 1000; i++) {
-    current += grpc_pid_controller_update(&pid, set_point - current, 1);
+  for (int i = 0; i < 100000; i++) {
+    grpc_pid_controller_update(&pid, set_point - grpc_pid_controller_last(&pid),
+                               1);
   }
 
-  GPR_ASSERT(fabs(set_point - current) < 0.1);
-  GPR_ASSERT(fabs(pid.error_integral) < 0.1);
+  GPR_ASSERT(fabs(set_point - grpc_pid_controller_last(&pid)) < 0.1);
+  if (gain_i > 0) {
+    GPR_ASSERT(fabs(pid.error_integral) < 0.1);
+  }
 }
 
 int main(int argc, char **argv) {

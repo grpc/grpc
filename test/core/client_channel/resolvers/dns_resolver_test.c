@@ -35,12 +35,15 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "test/core/util/test_config.h"
+
+static grpc_combiner *g_combiner;
 
 static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(string, 0);
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, string, 0);
   grpc_resolver_args args;
   grpc_resolver *resolver;
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
@@ -48,6 +51,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
+  args.combiner = g_combiner;
   resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   GPR_ASSERT(resolver != NULL);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_succeeds");
@@ -57,7 +61,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
 
 static void test_fails(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(string, 0);
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, string, 0);
   grpc_resolver_args args;
   grpc_resolver *resolver;
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
@@ -65,6 +69,7 @@ static void test_fails(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
+  args.combiner = g_combiner;
   resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
   GPR_ASSERT(resolver == NULL);
   grpc_uri_destroy(uri);
@@ -76,6 +81,8 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
 
+  g_combiner = grpc_combiner_create(NULL);
+
   dns = grpc_resolver_factory_lookup("dns");
 
   test_succeeds(dns, "dns:10.2.1.1");
@@ -84,6 +91,11 @@ int main(int argc, char **argv) {
   test_fails(dns, "ipv4://8.8.8.8/8.8.8.8:8888");
 
   grpc_resolver_factory_unref(dns);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    GRPC_COMBINER_UNREF(&exec_ctx, g_combiner, "test");
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   grpc_shutdown();
 
   return 0;

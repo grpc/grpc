@@ -42,10 +42,17 @@ cd -
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
 # OUTPUT_DIR - Directory that will be copied from inside docker after finishing.
 # DOCKERHUB_ORGANIZATION - If set, pull a prebuilt image from given dockerhub org.
+# DOCKER_BASE_IMAGE - If set, pull the latest base image.
 # $@ - Extra args to pass to docker run
 
 # Use image name based on Dockerfile location checksum
 DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+
+# Pull the base image to force an update
+if [ "$DOCKER_BASE_IMAGE" != "" ]
+then
+  docker pull $DOCKER_BASE_IMAGE
+fi
 
 if [ "$DOCKERHUB_ORGANIZATION" != "" ]
 then

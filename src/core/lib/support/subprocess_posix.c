@@ -76,8 +76,7 @@ gpr_subprocess *gpr_subprocess_create(int argc, const char **argv) {
     _exit(1);
     return NULL;
   } else {
-    r = gpr_malloc(sizeof(gpr_subprocess));
-    memset(r, 0, sizeof(*r));
+    r = gpr_zalloc(sizeof(gpr_subprocess));
     r->pid = pid;
     return r;
   }

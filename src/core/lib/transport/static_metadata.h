@@ -44,7 +44,7 @@
 
 #include "src/core/lib/transport/metadata.h"
 
-#define GRPC_STATIC_MDSTR_COUNT 98
+#define GRPC_STATIC_MDSTR_COUNT 99
 extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 /* ":path" */
 #define GRPC_MDSTR_PATH (grpc_static_slice_table[0])
@@ -68,24 +68,24 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_MDSTR_GRPC_ENCODING (grpc_static_slice_table[9])
 /* "grpc-accept-encoding" */
 #define GRPC_MDSTR_GRPC_ACCEPT_ENCODING (grpc_static_slice_table[10])
+/* "grpc-server-stats-bin" */
+#define GRPC_MDSTR_GRPC_SERVER_STATS_BIN (grpc_static_slice_table[11])
+/* "grpc-tags-bin" */
+#define GRPC_MDSTR_GRPC_TAGS_BIN (grpc_static_slice_table[12])
+/* "grpc-trace-bin" */
+#define GRPC_MDSTR_GRPC_TRACE_BIN (grpc_static_slice_table[13])
 /* "content-type" */
-#define GRPC_MDSTR_CONTENT_TYPE (grpc_static_slice_table[11])
+#define GRPC_MDSTR_CONTENT_TYPE (grpc_static_slice_table[14])
 /* "grpc-internal-encoding-request" */
-#define GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST (grpc_static_slice_table[12])
+#define GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST (grpc_static_slice_table[15])
 /* "user-agent" */
-#define GRPC_MDSTR_USER_AGENT (grpc_static_slice_table[13])
+#define GRPC_MDSTR_USER_AGENT (grpc_static_slice_table[16])
 /* "host" */
-#define GRPC_MDSTR_HOST (grpc_static_slice_table[14])
+#define GRPC_MDSTR_HOST (grpc_static_slice_table[17])
 /* "lb-token" */
-#define GRPC_MDSTR_LB_TOKEN (grpc_static_slice_table[15])
-/* "lb-cost-bin" */
-#define GRPC_MDSTR_LB_COST_BIN (grpc_static_slice_table[16])
+#define GRPC_MDSTR_LB_TOKEN (grpc_static_slice_table[18])
 /* "grpc-timeout" */
-#define GRPC_MDSTR_GRPC_TIMEOUT (grpc_static_slice_table[17])
-/* "grpc-tracing-bin" */
-#define GRPC_MDSTR_GRPC_TRACING_BIN (grpc_static_slice_table[18])
-/* "grpc-stats-bin" */
-#define GRPC_MDSTR_GRPC_STATS_BIN (grpc_static_slice_table[19])
+#define GRPC_MDSTR_GRPC_TIMEOUT (grpc_static_slice_table[19])
 /* "" */
 #define GRPC_MDSTR_EMPTY (grpc_static_slice_table[20])
 /* "grpc.wait_for_ready" */
@@ -205,47 +205,49 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_MDSTR_IF_UNMODIFIED_SINCE (grpc_static_slice_table[76])
 /* "last-modified" */
 #define GRPC_MDSTR_LAST_MODIFIED (grpc_static_slice_table[77])
+/* "lb-cost-bin" */
+#define GRPC_MDSTR_LB_COST_BIN (grpc_static_slice_table[78])
 /* "link" */
-#define GRPC_MDSTR_LINK (grpc_static_slice_table[78])
+#define GRPC_MDSTR_LINK (grpc_static_slice_table[79])
 /* "location" */
-#define GRPC_MDSTR_LOCATION (grpc_static_slice_table[79])
+#define GRPC_MDSTR_LOCATION (grpc_static_slice_table[80])
 /* "max-forwards" */
-#define GRPC_MDSTR_MAX_FORWARDS (grpc_static_slice_table[80])
+#define GRPC_MDSTR_MAX_FORWARDS (grpc_static_slice_table[81])
 /* "proxy-authenticate" */
-#define GRPC_MDSTR_PROXY_AUTHENTICATE (grpc_static_slice_table[81])
+#define GRPC_MDSTR_PROXY_AUTHENTICATE (grpc_static_slice_table[82])
 /* "proxy-authorization" */
-#define GRPC_MDSTR_PROXY_AUTHORIZATION (grpc_static_slice_table[82])
+#define GRPC_MDSTR_PROXY_AUTHORIZATION (grpc_static_slice_table[83])
 /* "range" */
-#define GRPC_MDSTR_RANGE (grpc_static_slice_table[83])
+#define GRPC_MDSTR_RANGE (grpc_static_slice_table[84])
 /* "referer" */
-#define GRPC_MDSTR_REFERER (grpc_static_slice_table[84])
+#define GRPC_MDSTR_REFERER (grpc_static_slice_table[85])
 /* "refresh" */
-#define GRPC_MDSTR_REFRESH (grpc_static_slice_table[85])
+#define GRPC_MDSTR_REFRESH (grpc_static_slice_table[86])
 /* "retry-after" */
-#define GRPC_MDSTR_RETRY_AFTER (grpc_static_slice_table[86])
+#define GRPC_MDSTR_RETRY_AFTER (grpc_static_slice_table[87])
 /* "server" */
-#define GRPC_MDSTR_SERVER (grpc_static_slice_table[87])
+#define GRPC_MDSTR_SERVER (grpc_static_slice_table[88])
 /* "set-cookie" */
-#define GRPC_MDSTR_SET_COOKIE (grpc_static_slice_table[88])
+#define GRPC_MDSTR_SET_COOKIE (grpc_static_slice_table[89])
 /* "strict-transport-security" */
-#define GRPC_MDSTR_STRICT_TRANSPORT_SECURITY (grpc_static_slice_table[89])
+#define GRPC_MDSTR_STRICT_TRANSPORT_SECURITY (grpc_static_slice_table[90])
 /* "transfer-encoding" */
-#define GRPC_MDSTR_TRANSFER_ENCODING (grpc_static_slice_table[90])
+#define GRPC_MDSTR_TRANSFER_ENCODING (grpc_static_slice_table[91])
 /* "vary" */
-#define GRPC_MDSTR_VARY (grpc_static_slice_table[91])
+#define GRPC_MDSTR_VARY (grpc_static_slice_table[92])
 /* "via" */
-#define GRPC_MDSTR_VIA (grpc_static_slice_table[92])
+#define GRPC_MDSTR_VIA (grpc_static_slice_table[93])
 /* "www-authenticate" */
-#define GRPC_MDSTR_WWW_AUTHENTICATE (grpc_static_slice_table[93])
+#define GRPC_MDSTR_WWW_AUTHENTICATE (grpc_static_slice_table[94])
 /* "identity,deflate" */
-#define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE (grpc_static_slice_table[94])
+#define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE (grpc_static_slice_table[95])
 /* "identity,gzip" */
-#define GRPC_MDSTR_IDENTITY_COMMA_GZIP (grpc_static_slice_table[95])
+#define GRPC_MDSTR_IDENTITY_COMMA_GZIP (grpc_static_slice_table[96])
 /* "deflate,gzip" */
-#define GRPC_MDSTR_DEFLATE_COMMA_GZIP (grpc_static_slice_table[96])
+#define GRPC_MDSTR_DEFLATE_COMMA_GZIP (grpc_static_slice_table[97])
 /* "identity,deflate,gzip" */
 #define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
-  (grpc_static_slice_table[97])
+  (grpc_static_slice_table[98])
 
 extern const grpc_slice_refcount_vtable grpc_static_metadata_vtable;
 extern grpc_slice_refcount
@@ -517,12 +519,14 @@ typedef enum {
   GRPC_BATCH_GRPC_PAYLOAD_BIN,
   GRPC_BATCH_GRPC_ENCODING,
   GRPC_BATCH_GRPC_ACCEPT_ENCODING,
+  GRPC_BATCH_GRPC_SERVER_STATS_BIN,
+  GRPC_BATCH_GRPC_TAGS_BIN,
+  GRPC_BATCH_GRPC_TRACE_BIN,
   GRPC_BATCH_CONTENT_TYPE,
   GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST,
   GRPC_BATCH_USER_AGENT,
   GRPC_BATCH_HOST,
   GRPC_BATCH_LB_TOKEN,
-  GRPC_BATCH_LB_COST_BIN,
   GRPC_BATCH_CALLOUTS_COUNT
 } grpc_metadata_batch_callouts_index;
 
@@ -540,12 +544,14 @@ typedef union {
     struct grpc_linked_mdelem *grpc_payload_bin;
     struct grpc_linked_mdelem *grpc_encoding;
     struct grpc_linked_mdelem *grpc_accept_encoding;
+    struct grpc_linked_mdelem *grpc_server_stats_bin;
+    struct grpc_linked_mdelem *grpc_tags_bin;
+    struct grpc_linked_mdelem *grpc_trace_bin;
     struct grpc_linked_mdelem *content_type;
     struct grpc_linked_mdelem *grpc_internal_encoding_request;
     struct grpc_linked_mdelem *user_agent;
     struct grpc_linked_mdelem *host;
     struct grpc_linked_mdelem *lb_token;
-    struct grpc_linked_mdelem *lb_cost_bin;
   } named;
 } grpc_metadata_batch_callouts;
 

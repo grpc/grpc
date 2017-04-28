@@ -45,6 +45,24 @@ grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
 grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
     void);
 
+/* Used to verify the target names given to the fake transport security
+ * connector.
+ *
+ * The syntax of \a expected_targets by example:
+ * For LB channels:
+ *     "backend_target_1,backend_target_2,...;lb_target_1,lb_target_2,..."
+ * For regular channels:
+ *     "backend_taget_1,backend_target_2,..."
+ *
+ * That is to say, LB channels have a heading list of LB targets separated from
+ * the list of backend targets by a semicolon. For non-LB channels, only the
+ * latter is present. */
+grpc_arg grpc_fake_transport_expected_targets_arg(char *expected_targets);
+
+/* Return the value associated with the expected targets channel arg or NULL */
+const char *grpc_fake_transport_get_expected_targets(
+    const grpc_channel_args *args);
+
 /* --  Metadata-only Test credentials. -- */
 
 typedef struct {

@@ -39,6 +39,7 @@ Content-Type
   * e.g. application/grpc-web+[proto, json, thrift]
 2. application/grpc-web-text
   * text-encoded streams of “application/grpc-web”
+  * e.g. application/grpc-web-text+[proto, thrift]
 
 ---
 
@@ -60,21 +61,30 @@ HTTP/2 related behavior (specified in [gRPC over HTTP2](http://www.grpc.io/docs/
 Message framing (vs. [http2-transport-mapping](http://www.grpc.io/docs/guides/wire.html#http2-transport-mapping))
 
 1. Response status encoded as part of the response body
-  * Key-value pairs encoded in the HTTP/2 [literal header format](https://tools.ietf.org/html/rfc7541#section-6.2) as a single header block.
+  * Key-value pairs encoded as a HTTP/1 headers block (without the terminating newline), per https://tools.ietf.org/html/rfc7230#section-3.2
+  ```
+    key1: foo\r\n
+    key2: bar\r\n
+  ```
 2. 8th (MSB) bit of the 1st gRPC frame byte
   * 0: data
   * 1: trailers
+  ```
+    10000000b: an uncompressed trailer (as part of the body)
+    10000001b: a compressed trailer
+  ```
 3. Trailers must be the last message of the response, as enforced
 by the implementation
 4. Trailers-only responses: no change to the gRPC protocol spec.
-Trailers will be sent together with response headers, with no message
+Trailers may be sent together with response headers, with no message
 in the body.
 
 ---
 
 User Agent
 
-* grpc-web-javascript/0.1
+* Do NOT use User-Agent header (which is to be set by browsers, by default)
+* Use X-User-Agent: grpc-web-javascript/0.1 (follow the same format as specified in [gRPC over HTTP2](http://www.grpc.io/docs/guides/wire.html))
 
 ---
 
@@ -85,14 +95,12 @@ the response stream needs to be text encoded e.g. when XHR is used or due
 to security policies with XHR
   * Accept: application/grpc-web-text
 2. The default text encoding is base64
-  * Text encoding may be specified with Content-Type or Accept headers as
-      * application/grpc-web-text-base64
   * Note that “Content-Transfer-Encoding: base64” should not be used.
   Due to in-stream base64 padding when delimiting messages, the entire
   response body is not necessarily a valid base64-encoded entity
   * While the server runtime will always base64-encode and flush gRPC messages
   atomically the client library should not assume base64 padding always
-  happens at the boundary of message frames.
+  happens at the boundary of message frames. That is, the implementation may send base64-encoded "chunks" with potential padding whenever the runtime needs to flush a byte buffer.
 3. For binary trailers, when the content-type is set to
 application/grpc-web-text, the extra base64 encoding specified
 in [gRPC over HTTP2](http://www.grpc.io/docs/guides/wire.html)
@@ -130,6 +138,10 @@ Security
 
 CORS preflight
 
+* Should follow the [CORS spec](https://developer.mozilla.org/en-US/docs/Web/HTTP/Server-Side_Access_Control)
+  * Access-Control-Allow-Credentials to allow Authorization headers
+  * Access-Control-Allow-Methods to allow POST and (preflight) OPTIONS only
+  * Access-Control-Allow-Headers to whatever the preflight request carries
 * The client library may support header overwrites to avoid preflight
   * https://github.com/whatwg/fetch/issues/210
 * CSP support to be specified
@@ -148,3 +160,10 @@ Bidi-streaming, with flow-control
 * Pending on [whatwg fetch/streams](https://github.com/whatwg/fetch) to be
 finalized and implemented in modern browsers
 * gRPC-Web client will support the native gRPC protocol with modern browsers
+
+---
+
+Versioning
+
+* Special headers may be introduced to support features that may break compatiblity.
+

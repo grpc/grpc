@@ -69,7 +69,7 @@ class ServerTest extends PHPUnit_Framework_TestCase
         $this->server = new Grpc\Server();
         $port = $this->server->addHttp2Port('0.0.0.0:0');
         $this->server->start();
-        $channel = new Grpc\Channel('localhost:' . $port,
+        $channel = new Grpc\Channel('localhost:'.$port,
              ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
 
         $deadline = Grpc\Timeval::infFuture();

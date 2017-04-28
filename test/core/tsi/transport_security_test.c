@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/tsi/transport_security.h"
+#include "src/core/tsi/transport_security.h"
 
 #include <string.h>
 
@@ -43,8 +43,8 @@
 #include <openssl/crypto.h>
 
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/fake_transport_security.h"
-#include "src/core/lib/tsi/ssl_transport_security.h"
+#include "src/core/tsi/fake_transport_security.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "test/core/util/test_config.h"
 
 typedef struct {
@@ -375,6 +375,8 @@ static void test_handshaker_invalid_args(void) {
   GPR_ASSERT(tsi_handshaker_process_bytes_from_peer(NULL, NULL, NULL) ==
              TSI_INVALID_ARGUMENT);
   GPR_ASSERT(tsi_handshaker_get_bytes_to_send_to_peer(NULL, NULL, NULL) ==
+             TSI_INVALID_ARGUMENT);
+  GPR_ASSERT(tsi_handshaker_next(NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL) ==
              TSI_INVALID_ARGUMENT);
 }
 

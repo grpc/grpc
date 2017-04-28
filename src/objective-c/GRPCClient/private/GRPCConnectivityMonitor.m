@@ -159,11 +159,13 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
     if (strongSelf) {
       if (lossHandler && !flags.reachable) {
         lossHandler();
+#if TARGET_OS_IPHONE
       } else if (wifiStatusChangeHandler &&
                  strongSelf->_previousReachabilityFlags &&
                  (flags.isWWAN ^
                   strongSelf->_previousReachabilityFlags.isWWAN)) {
         wifiStatusChangeHandler();
+#endif
       }
       strongSelf->_previousReachabilityFlags = flags;
     }

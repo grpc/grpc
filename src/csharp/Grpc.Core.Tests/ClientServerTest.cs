@@ -376,6 +376,18 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void ServerCallContext_AuthContextNotPopulated()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                Assert.IsFalse(context.AuthContext.IsPeerAuthenticated);
+                Assert.AreEqual(0, context.AuthContext.Properties.Count());
+                return "PASS";
+            });
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+        }
+
+        [Test]
         public async Task Channel_WaitForStateChangedAsync()
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>

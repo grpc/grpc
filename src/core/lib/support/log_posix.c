@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <pthread.h>
 #include <stdarg.h>
@@ -93,10 +94,13 @@ void gpr_default_log(gpr_log_func_args *args) {
     strcpy(time_buffer, "error:strftime");
   }
 
-  fprintf(stderr, "%s%s.%09d %7tu %s:%d] %s\n",
-          gpr_log_severity_string(args->severity), time_buffer,
-          (int)(now.tv_nsec), gettid(), display_file, args->line,
-          args->message);
+  char *prefix;
+  gpr_asprintf(&prefix, "%s%s.%09d %7tu %s:%d]",
+               gpr_log_severity_string(args->severity), time_buffer,
+               (int)(now.tv_nsec), gettid(), display_file, args->line);
+
+  fprintf(stderr, "%-70s %s\n", prefix, args->message);
+  gpr_free(prefix);
 }
 
 #endif /* defined(GPR_POSIX_LOG) */

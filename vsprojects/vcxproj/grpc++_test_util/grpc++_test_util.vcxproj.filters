@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\health\v1\health.proto">
+      <Filter>src\proto\grpc\health\v1</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
@@ -108,9 +111,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_helper.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
@@ -141,6 +141,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -163,9 +166,6 @@
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
@@ -253,6 +253,12 @@
     </Filter>
     <Filter Include="src\proto\grpc">
       <UniqueIdentifier>{f3daac52-2bfd-362e-9a76-04cd7a90aa34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\health">
+      <UniqueIdentifier>{d2393dd7-6f95-0e70-c36d-cd8ef8e2f17e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\health\v1">
+      <UniqueIdentifier>{f2f10901-f74f-a55a-abea-082923feb664}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\proto\grpc\testing">
       <UniqueIdentifier>{3df5f11f-e018-1126-8c22-291540035aa8}</UniqueIdentifier>

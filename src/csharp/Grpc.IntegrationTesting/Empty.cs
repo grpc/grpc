@@ -35,13 +35,13 @@ namespace Grpc.Testing {
   }
   #region Messages
   /// <summary>
-  ///  An empty message that you can re-use to avoid defining duplicated empty
-  ///  messages in your project. A typical example is to use it as argument or the
-  ///  return value of a service API. For instance:
+  /// An empty message that you can re-use to avoid defining duplicated empty
+  /// messages in your project. A typical example is to use it as argument or the
+  /// return value of a service API. For instance:
   ///
-  ///    service Foo {
-  ///      rpc Bar (grpc.testing.Empty) returns (grpc.testing.Empty) { };
-  ///    };
+  ///   service Foo {
+  ///     rpc Bar (grpc.testing.Empty) returns (grpc.testing.Empty) { };
+  ///   };
   /// </summary>
   public sealed partial class Empty : pb::IMessage<Empty> {
     private static readonly pb::MessageParser<Empty> _parser = new pb::MessageParser<Empty>(() => new Empty());

@@ -53,7 +53,6 @@ static void *tag(intptr_t i) { return (void *)i; }
 static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel *chan;
   grpc_call *call;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
   grpc_completion_queue *cq;
   cq_verifier *cqv;
   grpc_op ops[6];
@@ -69,7 +68,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   cqv = cq_verifier_create(cq);
 
   /* if using service config, create channel args */
@@ -98,6 +97,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   gpr_log(GPR_INFO, "server: %s", addr);
   chan = grpc_insecure_channel_create(addr, args, NULL);
   grpc_slice host = grpc_slice_from_static_string("nonexistant");
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
   call = grpc_channel_create_call(
       chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/service/method"), &host, deadline, NULL);
@@ -138,7 +138,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
           .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(cq);
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
 

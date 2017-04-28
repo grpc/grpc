@@ -37,15 +37,19 @@ import six
 import grpc
 from grpc._cython import cygrpc
 
-_EMPTY_METADATA = cygrpc.Metadata(())
+EMPTY_METADATA = cygrpc.Metadata(())
 
 CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
-    cygrpc.ConnectivityState.idle: grpc.ChannelConnectivity.IDLE,
-    cygrpc.ConnectivityState.connecting: grpc.ChannelConnectivity.CONNECTING,
-    cygrpc.ConnectivityState.ready: grpc.ChannelConnectivity.READY,
+    cygrpc.ConnectivityState.idle:
+    grpc.ChannelConnectivity.IDLE,
+    cygrpc.ConnectivityState.connecting:
+    grpc.ChannelConnectivity.CONNECTING,
+    cygrpc.ConnectivityState.ready:
+    grpc.ChannelConnectivity.READY,
     cygrpc.ConnectivityState.transient_failure:
     grpc.ChannelConnectivity.TRANSIENT_FAILURE,
-    cygrpc.ConnectivityState.shutdown: grpc.ChannelConnectivity.SHUTDOWN,
+    cygrpc.ConnectivityState.shutdown:
+    grpc.ChannelConnectivity.SHUTDOWN,
 }
 
 CYGRPC_STATUS_CODE_TO_STATUS_CODE = {
@@ -88,27 +92,27 @@ def decode(b):
         try:
             return b.decode('utf8')
         except UnicodeDecodeError:
-            logging.exception('Invalid encoding on {}'.format(b))
+            logging.exception('Invalid encoding on %s', b)
             return b.decode('latin1')
 
 
 def channel_args(options):
-    channel_args = []
+    cygrpc_args = []
     for key, value in options:
         if isinstance(value, six.string_types):
-            channel_args.append(cygrpc.ChannelArg(encode(key), encode(value)))
+            cygrpc_args.append(cygrpc.ChannelArg(encode(key), encode(value)))
         else:
-            channel_args.append(cygrpc.ChannelArg(encode(key), value))
-    return cygrpc.ChannelArgs(channel_args)
+            cygrpc_args.append(cygrpc.ChannelArg(encode(key), value))
+    return cygrpc.ChannelArgs(cygrpc_args)
 
 
-def cygrpc_metadata(application_metadata):
-    return _EMPTY_METADATA if application_metadata is None else cygrpc.Metadata(
+def to_cygrpc_metadata(application_metadata):
+    return EMPTY_METADATA if application_metadata is None else cygrpc.Metadata(
         cygrpc.Metadatum(encode(key), encode(value))
         for key, value in application_metadata)
 
 
-def application_metadata(cygrpc_metadata):
+def to_application_metadata(cygrpc_metadata):
     if cygrpc_metadata is None:
         return ()
     else:
@@ -144,36 +148,23 @@ def fully_qualified_method(group, method):
 class CleanupThread(threading.Thread):
     """A threading.Thread subclass supporting custom behavior on join().
 
-  On Python Interpreter exit, Python will attempt to join outstanding threads
-  prior to garbage collection.  We may need to do additional cleanup, and
-  we accomplish this by overriding the join() method.
-  """
+    On Python Interpreter exit, Python will attempt to join outstanding threads
+    prior to garbage collection.  We may need to do additional cleanup, and
+    we accomplish this by overriding the join() method.
+    """
 
-    def __init__(self,
-                 behavior,
-                 group=None,
-                 target=None,
-                 name=None,
-                 args=(),
-                 kwargs={}):
+    def __init__(self, behavior, *args, **kwargs):
         """Constructor.
 
-    Args:
-      behavior (function): Function called on join() with a single
-          argument, timeout, indicating the maximum duration of
-          `behavior`, or None indicating `behavior` has no deadline.
-          `behavior` must be idempotent.
-      group (None): should be None.  Reseved for future extensions
-          when ThreadGroup is implemented.
-      target (function): The function to invoke when this thread is
-          run.  Defaults to None.
-      name (str): The name of this thread.  Defaults to None.
-        args (tuple[object]): A tuple of arguments to pass to `target`.
-      kwargs (dict[str,object]): A dictionary of keyword arguments to
-           pass to `target`.
-    """
-        super(CleanupThread, self).__init__(
-            group=group, target=target, name=name, args=args, kwargs=kwargs)
+        Args:
+            behavior (function): Function called on join() with a single
+                argument, timeout, indicating the maximum duration of
+                `behavior`, or None indicating `behavior` has no deadline.
+                `behavior` must be idempotent.
+            args: Positional arguments passed to threading.Thread constructor.
+            kwargs: Keyword arguments passed to threading.Thread constructor.
+        """
+        super(CleanupThread, self).__init__(*args, **kwargs)
         self._behavior = behavior
 
     def join(self, timeout=None):

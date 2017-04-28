@@ -47,7 +47,7 @@ typedef struct grpc_transport_vtable {
   /* implementation of grpc_transport_init_stream */
   int (*init_stream)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
                      grpc_stream *stream, grpc_stream_refcount *refcount,
-                     const void *server_data);
+                     const void *server_data, gpr_arena *arena);
 
   /* implementation of grpc_transport_set_pollset */
   void (*set_pollset)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
@@ -59,7 +59,8 @@ typedef struct grpc_transport_vtable {
 
   /* implementation of grpc_transport_perform_stream_op */
   void (*perform_stream_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                            grpc_stream *stream, grpc_transport_stream_op *op);
+                            grpc_stream *stream,
+                            grpc_transport_stream_op_batch *op);
 
   /* implementation of grpc_transport_perform_op */
   void (*perform_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
@@ -67,7 +68,8 @@ typedef struct grpc_transport_vtable {
 
   /* implementation of grpc_transport_destroy_stream */
   void (*destroy_stream)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                         grpc_stream *stream, void *and_free_memory);
+                         grpc_stream *stream,
+                         grpc_closure *then_schedule_closure);
 
   /* implementation of grpc_transport_destroy */
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_transport *self);

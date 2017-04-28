@@ -84,6 +84,14 @@ void grpc_resource_quota_unref_internal(grpc_exec_ctx *exec_ctx,
 grpc_resource_quota *grpc_resource_quota_from_channel_args(
     const grpc_channel_args *channel_args);
 
+/* Return a number indicating current memory pressure:
+   0.0 ==> no memory usage
+   1.0 ==> maximum memory usage */
+double grpc_resource_quota_get_memory_pressure(
+    grpc_resource_quota *resource_quota);
+
+size_t grpc_resource_quota_peek_size(grpc_resource_quota *resource_quota);
+
 typedef struct grpc_resource_user grpc_resource_user;
 
 grpc_resource_user *grpc_resource_user_create(

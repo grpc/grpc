@@ -122,8 +122,8 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
-    grpc_fd_shutdown(exec_ctx, ac->fd,
-                     GRPC_ERROR_CREATE("connect() timed out"));
+    grpc_fd_shutdown(exec_ctx, ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                           "connect() timed out"));
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -138,29 +138,7 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 grpc_endpoint *grpc_tcp_client_create_from_fd(
     grpc_exec_ctx *exec_ctx, grpc_fd *fd, const grpc_channel_args *channel_args,
     const char *addr_str) {
-  size_t tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
-  if (channel_args != NULL) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 ==
-          strcmp(channel_args->args[i].key, GRPC_ARG_TCP_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {(int)tcp_read_chunk_size, 1,
-                                        8 * 1024 * 1024};
-        tcp_read_chunk_size = (size_t)grpc_channel_arg_get_integer(
-            &channel_args->args[i], options);
-      } else if (0 ==
-                 strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
-        resource_quota = grpc_resource_quota_ref_internal(
-            channel_args->args[i].value.pointer.p);
-      }
-    }
-  }
-
-  grpc_endpoint *ep =
-      grpc_tcp_create(fd, resource_quota, tcp_read_chunk_size, addr_str);
-  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
-  return ep;
+  return grpc_tcp_create(exec_ctx, fd, channel_args, addr_str);
 }
 
 static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
@@ -192,7 +170,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   gpr_mu_lock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
     error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                           grpc_slice_from_static_string("Timeout occurred"));
     goto finish;
   }
 
@@ -253,12 +232,17 @@ finish:
   gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
     char *error_descr;
-    gpr_asprintf(&error_descr, "Failed to connect to remote host: %s",
-                 grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION));
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, error_descr);
+    grpc_slice str;
+    bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
+    GPR_ASSERT(ret);
+    char *desc = grpc_slice_to_c_string(str);
+    gpr_asprintf(&error_descr, "Failed to connect to remote host: %s", desc);
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                               grpc_slice_from_copied_string(error_descr));
     gpr_free(error_descr);
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, ac->addr_str);
+    gpr_free(desc);
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
+                               grpc_slice_from_copied_string(ac->addr_str));
   }
   if (done) {
     gpr_mu_destroy(&ac->mu);

@@ -1,0 +1,156 @@
+// Copyright 2017, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// This file defines an interface for exporting monitoring information
+// out of gRPC servers.
+syntax = "proto3";
+
+// TODO(ericgribkoff) Figure out how to manage the external Census proto
+// dependency.
+import "tools/grpcz/census.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+
+package grpc.instrumentation.v1alpha;
+
+option java_multiple_files = true;
+option java_package = "io.grpc.instrumentation.v1alpha";
+option java_outer_classname = "MonitoringProto";
+
+service Monitoring {
+  // Return canonical RPC stats
+  rpc GetCanonicalRpcStats(google.protobuf.Empty) returns (CanonicalRpcStats) {
+  }
+
+  // Query the server for specific stats
+  rpc GetStats(StatsRequest) returns (StatsResponse) {
+  }
+
+  // Request the server to stream back snapshots of the requested stats
+  rpc WatchStats(StatsRequest) returns (stream StatsResponse) {
+  }
+
+
+  // Return request traces.
+  rpc GetRequestTraces(TraceRequest) returns(TraceResponse) {
+  // TODO(aveitch): Please define the messages here
+  }
+
+  // Return application-defined groups of monitoring data.
+  // This is a low level facility to allow extension of the monitoring API to
+  // application-specific monitoring data. Frameworks may use this to define
+  // additional groups of monitoring data made available by servers.
+  rpc GetCustomMonitoringData(MonitoringDataGroup)
+    returns (CustomMonitoringData) {
+  }
+
+}
+
+// Canonical RPC stats exported by gRPC.
+message CanonicalRpcStats {
+  StatsResponse rpc_client_errors = 1;
+  StatsResponse rpc_client_completed_rpcs = 2;
+  StatsResponse rpc_client_started_rpcs = 3;
+  StatsResponse rpc_client_elapsed_time = 4;
+  StatsResponse rpc_client_server_elapsed_time = 5;
+  StatsResponse rpc_client_request_bytes = 6;
+  StatsResponse rpc_client_response_bytes = 7;
+  StatsResponse rpc_client_request_count = 8;
+  StatsResponse rpc_client_response_count = 9;
+  StatsResponse rpc_server_errors = 10;
+  StatsResponse rpc_server_completed_rpcs = 11;
+  StatsResponse rpc_server_server_elapsed_time = 12;
+  StatsResponse rpc_server_request_bytes = 13;
+  StatsResponse rpc_server_response_bytes = 14;
+  StatsResponse rpc_server_request_count = 15;
+  StatsResponse rpc_server_response_count = 16;
+  StatsResponse rpc_server_elapsed_time = 17;
+  //TODO(ericgribkoff) Add minute-hour interval stats.
+}
+
+// This message is sent when requesting a set of stats (Census Views) from
+// a client system, as part of the MonitoringService API's.
+message StatsRequest {
+  // An optional set of ViewDescriptor names. Only Views using these
+  // descriptors will be sent back in the response. If no names are provided,
+  // then all Views present in the client system will be included in every
+  // response. If measurement_names is also provided, then Views matching the
+  // intersection of the two are returned.
+  // TODO(aveitch): Consider making this a list of regexes or prefix matches in
+  // the future.
+  repeated string view_names = 1;
+
+  // An optional set of MeasurementDescriptor names. Only Views using these
+  // descriptors will be sent back in the response. If no names are provided,
+  // then all Views present in the client system will be included in every
+  // response. If view_names is also provided, then Views matching the
+  // intersection of the two are returned.
+  // TODO(aveitch): Consider making this a list of regexes or prefix matches in
+  // the future.
+  repeated string measurement_names = 2;
+
+  // By default, the MeasurementDescriptors and ViewDescriptors corresponding to
+  // the Views that are returned in a StatsResponse will be included in the
+  // first such response. Set this to true to have them not sent.
+  bool dont_include_descriptors_in_first_response = 3;
+}
+
+// This message contains all information relevant to a single View. It is the
+// return type for GetStats and WatchStats, and used in CanonicalRpcStats.
+message StatsResponse {
+  // A StatsResponse can optionally contain the MeasurementDescriptor and
+  // ViewDescriptor for the View. These will be sent in the first WatchStats
+  // response, or all GetStats and GetCanonicalRpcStats responses. These will
+  // not be set for {Get,Watch}Stats if
+  // dont_include_descriptors_in_first_response is set to true in the
+  // StatsRequest.
+  google.instrumentation.MeasurementDescriptor measurement_descriptor = 1;
+  google.instrumentation.ViewDescriptor view_descriptor = 2;
+
+  // The View data.
+  google.instrumentation.View view = 3;
+}
+
+message TraceRequest {
+  // TODO(aveitch): Complete definition of this type
+}
+
+message TraceResponse {
+  // TODO(aveitch): Complete definition of this type
+}
+
+message MonitoringDataGroup {
+  string name = 1;  // name of a group of monitoring data
+}
+
+// The wrapper for custom monitoring data.
+message CustomMonitoringData {
+  // can be any application specific monitoring data
+  google.protobuf.Any contents = 1;
+}

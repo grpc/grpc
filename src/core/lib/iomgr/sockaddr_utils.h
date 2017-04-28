@@ -50,7 +50,7 @@ int grpc_sockaddr_to_v4mapped(const grpc_resolved_address *addr,
                               grpc_resolved_address *addr6_out);
 
 /* If addr is ::, 0.0.0.0, or ::ffff:0.0.0.0, writes the port number to
-   *port_out (if not NULL) and returns true, otherwise returns false. */
+ *port_out (if not NULL) and returns true, otherwise returns false. */
 int grpc_sockaddr_is_wildcard(const grpc_resolved_address *addr, int *port_out);
 
 /* Writes 0.0.0.0:port and [::]:port to separate sockaddrs. */
@@ -84,6 +84,10 @@ int grpc_sockaddr_set_port(const grpc_resolved_address *addr, int port);
 int grpc_sockaddr_to_string(char **out, const grpc_resolved_address *addr,
                             int normalize);
 
+/* Returns the URI string corresponding to \a addr */
 char *grpc_sockaddr_to_uri(const grpc_resolved_address *addr);
+
+/* Returns the URI scheme corresponding to \a addr */
+const char *grpc_sockaddr_get_uri_scheme(const grpc_resolved_address *addr);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H */

@@ -50,8 +50,7 @@ static void store_ensure_capacity(grpc_credentials_md_store *store) {
 grpc_credentials_md_store *grpc_credentials_md_store_create(
     size_t initial_capacity) {
   grpc_credentials_md_store *store =
-      gpr_malloc(sizeof(grpc_credentials_md_store));
-  memset(store, 0, sizeof(grpc_credentials_md_store));
+      gpr_zalloc(sizeof(grpc_credentials_md_store));
   if (initial_capacity > 0) {
     store->entries = gpr_malloc(initial_capacity * sizeof(grpc_credentials_md));
     store->allocated = initial_capacity;

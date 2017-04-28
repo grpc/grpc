@@ -43,6 +43,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/workqueue.h"
@@ -90,7 +92,7 @@ static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
 
   for (i = 0; i < num_fds; i++) {
     grpc_fd_shutdown(exec_ctx, tfds[i].fd,
-                     GRPC_ERROR_CREATE("test_fd_cleanup"));
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_fd_cleanup"));
     grpc_exec_ctx_flush(exec_ctx);
 
     grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd, "test_fd_cleanup");
@@ -104,7 +106,7 @@ static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
 static void test_pollset_init(test_pollset *pollsets, int num_pollsets) {
   int i;
   for (i = 0; i < num_pollsets; i++) {
-    pollsets[i].pollset = gpr_malloc(grpc_pollset_size());
+    pollsets[i].pollset = gpr_zalloc(grpc_pollset_size());
     grpc_pollset_init(pollsets[i].pollset, &pollsets[i].mu);
   }
 }
@@ -139,23 +141,25 @@ static void increment(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
  * polling_island_merge()[ev_epoll_linux.c], where the parent relationship was
  * inverted.
  */
+
+#define NUM_FDS 2
+#define NUM_POLLSETS 2
+#define NUM_CLOSURES 4
+
 static void test_pollset_queue_merge_items() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  const int num_fds = 2;
-  const int num_pollsets = 2;
-  const int num_closures = 4;
-  test_fd tfds[num_fds];
-  int fds[num_fds];
-  test_pollset pollsets[num_pollsets];
-  grpc_closure closures[num_closures];
+  test_fd tfds[NUM_FDS];
+  int fds[NUM_FDS];
+  test_pollset pollsets[NUM_POLLSETS];
+  grpc_closure closures[NUM_CLOSURES];
   int i;
   int result = 0;
 
-  test_fd_init(tfds, fds, num_fds);
-  test_pollset_init(pollsets, num_pollsets);
+  test_fd_init(tfds, fds, NUM_FDS);
+  test_pollset_init(pollsets, NUM_POLLSETS);
 
   /* Two distinct polling islands, each with their own FD and pollset. */
-  for (i = 0; i < num_fds; i++) {
+  for (i = 0; i < NUM_FDS; i++) {
     grpc_pollset_add_fd(&exec_ctx, pollsets[i].pollset, tfds[i].fd);
     grpc_exec_ctx_flush(&exec_ctx);
   }
@@ -173,7 +177,7 @@ static void test_pollset_queue_merge_items() {
   grpc_closure_init(
       closures + 3, increment, &result,
       grpc_workqueue_scheduler(grpc_fd_get_polling_island(tfds[1].fd)));
-  for (i = 0; i < num_closures; ++i) {
+  for (i = 0; i < NUM_CLOSURES; ++i) {
     grpc_closure_sched(&exec_ctx, closures + i, GRPC_ERROR_NONE);
   }
 
@@ -186,7 +190,7 @@ static void test_pollset_queue_merge_items() {
    * the merged polling island.
    */
   grpc_pollset_worker *worker = NULL;
-  for (i = 0; i < num_closures; ++i) {
+  for (i = 0; i < NUM_CLOSURES; ++i) {
     const gpr_timespec deadline = gpr_time_add(
         gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(2, GPR_TIMESPAN));
     gpr_mu_lock(pollsets[1].mu);
@@ -196,12 +200,16 @@ static void test_pollset_queue_merge_items() {
                           gpr_now(GPR_CLOCK_MONOTONIC), deadline));
     gpr_mu_unlock(pollsets[1].mu);
   }
-  GPR_ASSERT(result == num_closures);
+  GPR_ASSERT(result == NUM_CLOSURES);
 
-  test_fd_cleanup(&exec_ctx, tfds, num_fds);
-  test_pollset_cleanup(&exec_ctx, pollsets, num_pollsets);
+  test_fd_cleanup(&exec_ctx, tfds, NUM_FDS);
+  test_pollset_cleanup(&exec_ctx, pollsets, NUM_POLLSETS);
   grpc_exec_ctx_finish(&exec_ctx);
 }
+
+#undef NUM_FDS
+#undef NUM_POLLSETS
+#undef NUM_CLOSURES
 
 /*
  * Cases to test:
@@ -213,18 +221,20 @@ static void test_pollset_queue_merge_items() {
  *     case 4.2) Polling islands of fd and pollset are NOT-equal (This results
  *     in a merge)
  * */
+
+#define NUM_FDS 8
+#define NUM_POLLSETS 4
+
 static void test_add_fd_to_pollset() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  const int num_fds = 8;
-  const int num_pollsets = 4;
-  test_fd tfds[num_fds];
-  int fds[num_fds];
-  test_pollset pollsets[num_pollsets];
+  test_fd tfds[NUM_FDS];
+  int fds[NUM_FDS];
+  test_pollset pollsets[NUM_POLLSETS];
   void *expected_pi = NULL;
   int i;
 
-  test_fd_init(tfds, fds, num_fds);
-  test_pollset_init(pollsets, num_pollsets);
+  test_fd_init(tfds, fds, NUM_FDS);
+  test_pollset_init(pollsets, NUM_POLLSETS);
 
   /*Step 1.
    * Create three polling islands (This will exercise test case 1 and 2) with
@@ -285,20 +295,108 @@ static void test_add_fd_to_pollset() {
 
   /* Compare Fd:0's polling island with that of all other Fds */
   expected_pi = grpc_fd_get_polling_island(tfds[0].fd);
-  for (i = 1; i < num_fds; i++) {
+  for (i = 1; i < NUM_FDS; i++) {
     GPR_ASSERT(grpc_are_polling_islands_equal(
         expected_pi, grpc_fd_get_polling_island(tfds[i].fd)));
   }
 
   /* Compare Fd:0's polling island with that of all other pollsets */
-  for (i = 0; i < num_pollsets; i++) {
+  for (i = 0; i < NUM_POLLSETS; i++) {
     GPR_ASSERT(grpc_are_polling_islands_equal(
         expected_pi, grpc_pollset_get_polling_island(pollsets[i].pollset)));
   }
 
-  test_fd_cleanup(&exec_ctx, tfds, num_fds);
-  test_pollset_cleanup(&exec_ctx, pollsets, num_pollsets);
+  test_fd_cleanup(&exec_ctx, tfds, NUM_FDS);
+  test_pollset_cleanup(&exec_ctx, pollsets, NUM_POLLSETS);
   grpc_exec_ctx_finish(&exec_ctx);
+}
+
+#undef NUM_FDS
+#undef NUM_POLLSETS
+
+typedef struct threading_shared {
+  gpr_mu *mu;
+  grpc_pollset *pollset;
+  grpc_wakeup_fd *wakeup_fd;
+  grpc_fd *wakeup_desc;
+  grpc_closure on_wakeup;
+  int wakeups;
+} threading_shared;
+
+static __thread int thread_wakeups = 0;
+
+static void test_threading_loop(void *arg) {
+  threading_shared *shared = arg;
+  while (thread_wakeups < 1000000) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_pollset_worker *worker;
+    gpr_mu_lock(shared->mu);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, shared->pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+    gpr_mu_unlock(shared->mu);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+}
+
+static void test_threading_wakeup(grpc_exec_ctx *exec_ctx, void *arg,
+                                  grpc_error *error) {
+  threading_shared *shared = arg;
+  ++shared->wakeups;
+  ++thread_wakeups;
+  if (error == GRPC_ERROR_NONE) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "consume_wakeup", grpc_wakeup_fd_consume_wakeup(shared->wakeup_fd)));
+    grpc_fd_notify_on_read(exec_ctx, shared->wakeup_desc, &shared->on_wakeup);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_next",
+                                 grpc_wakeup_fd_wakeup(shared->wakeup_fd)));
+  }
+}
+
+static void test_threading(void) {
+  threading_shared shared;
+  shared.pollset = gpr_zalloc(grpc_pollset_size());
+  grpc_pollset_init(shared.pollset, &shared.mu);
+
+  gpr_thd_id thds[10];
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
+    gpr_thd_options opt = gpr_thd_options_default();
+    gpr_thd_options_set_joinable(&opt);
+    gpr_thd_new(&thds[i], test_threading_loop, &shared, &opt);
+  }
+  grpc_wakeup_fd fd;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&fd)));
+  shared.wakeup_fd = &fd;
+  shared.wakeup_desc = grpc_fd_create(fd.read_fd, "wakeup");
+  shared.wakeups = 0;
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_pollset_add_fd(&exec_ctx, shared.pollset, shared.wakeup_desc);
+    grpc_fd_notify_on_read(
+        &exec_ctx, shared.wakeup_desc,
+        grpc_closure_init(&shared.on_wakeup, test_threading_wakeup, &shared,
+                          grpc_schedule_on_exec_ctx));
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_first",
+                               grpc_wakeup_fd_wakeup(shared.wakeup_fd)));
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
+    gpr_thd_join(thds[i]);
+  }
+  fd.read_fd = 0;
+  grpc_wakeup_fd_destroy(&fd);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_fd_shutdown(&exec_ctx, shared.wakeup_desc, GRPC_ERROR_CANCELLED);
+    grpc_fd_orphan(&exec_ctx, shared.wakeup_desc, NULL, NULL, "done");
+    grpc_pollset_shutdown(&exec_ctx, shared.pollset,
+                          grpc_closure_create(destroy_pollset, shared.pollset,
+                                              grpc_schedule_on_exec_ctx));
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  gpr_free(shared.pollset);
 }
 
 int main(int argc, char **argv) {
@@ -310,6 +408,7 @@ int main(int argc, char **argv) {
   if (poll_strategy != NULL && strcmp(poll_strategy, "epoll") == 0) {
     test_add_fd_to_pollset();
     test_pollset_queue_merge_items();
+    test_threading();
   } else {
     gpr_log(GPR_INFO,
             "Skipping the test. The test is only relevant for 'epoll' "

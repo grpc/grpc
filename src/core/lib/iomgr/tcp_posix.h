@@ -47,14 +47,13 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
-#define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
-
 extern int grpc_tcp_trace;
 
 /* Create a tcp endpoint given a file desciptor and a read slice size.
    Takes ownership of fd. */
-grpc_endpoint *grpc_tcp_create(grpc_fd *fd, grpc_resource_quota *resource_quota,
-                               size_t read_slice_size, const char *peer_string);
+grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                               const grpc_channel_args *args,
+                               const char *peer_string);
 
 /* Return the tcp endpoint's fd, or -1 if this is not available. Does not
    release the fd.

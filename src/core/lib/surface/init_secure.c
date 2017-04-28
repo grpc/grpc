@@ -31,6 +31,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/surface/init.h"
 
 #include <limits.h>
@@ -43,7 +45,7 @@
 #include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/tsi/transport_security_interface.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 void grpc_security_pre_init(void) {
   grpc_register_tracer("secure_endpoint", &grpc_trace_secure_endpoint);
@@ -56,7 +58,7 @@ static bool maybe_prepend_client_auth_filter(
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {
-      if (0 == strcmp(GRPC_SECURITY_CONNECTOR_ARG, args->args[i].key)) {
+      if (0 == strcmp(GRPC_ARG_SECURITY_CONNECTOR, args->args[i].key)) {
         return grpc_channel_stack_builder_prepend_filter(
             builder, &grpc_client_auth_filter, NULL, NULL);
       }

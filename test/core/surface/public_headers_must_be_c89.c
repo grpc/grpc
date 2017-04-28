@@ -52,6 +52,7 @@
 #include <grpc/impl/codegen/status.h>
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/load_reporting.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>

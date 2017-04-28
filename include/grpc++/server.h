@@ -55,12 +55,10 @@ struct grpc_server;
 
 namespace grpc {
 
-class GenericServerContext;
 class AsyncGenericService;
-class ServerAsyncStreamingInterface;
+class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
-class ThreadPoolInterface;
 
 /// Models a gRPC server.
 ///
@@ -88,6 +86,11 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
     virtual void PreSynchronousRequest(ServerContext* context) = 0;
     /// Called after application callback for each synchronous server request
     virtual void PostSynchronousRequest(ServerContext* context) = 0;
+    /// Called before server is started.
+    virtual void PreServerStart(Server* server) {}
+    /// Called after a server port is added.
+    virtual void AddPort(Server* server, const grpc::string& addr,
+                         ServerCredentials* creds, int port) {}
   };
   /// Set the global callback object. Can only be called once. Does not take
   /// ownership of callbacks, and expects the pointed to object to be alive
@@ -96,6 +99,11 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
 
   // Returns a \em raw pointer to the underlying grpc_server instance.
   grpc_server* c_server();
+
+  /// Returns the health check service.
+  HealthCheckServiceInterface* GetHealthCheckService() const {
+    return health_check_service_.get();
+  }
 
  private:
   friend class AsyncGenericService;
@@ -170,9 +178,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// caller is required to keep all completion queues live until the server is
   /// destroyed.
   /// \param num_cqs How many completion queues does \a cqs hold.
-  ///
-  /// \return true on a successful shutdown.
-  bool Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
+  void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
 
@@ -214,6 +220,9 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   grpc_server* server_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;
+
+  std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
+  bool health_check_service_disabled_;
 };
 
 }  // namespace grpc

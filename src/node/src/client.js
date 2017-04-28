@@ -108,7 +108,7 @@ function _write(chunk, encoding, callback) {
        but passing an object that causes a serialization failure is a misuse
        of the API anyway, so that's OK. The primary purpose here is to give the
        programmer a useful error and to stop the stream properly */
-    this.call.cancelWithStatus(grpc.status.INTERNAL, "Serialization failure");
+    this.call.cancelWithStatus(grpc.status.INTERNAL, 'Serialization failure');
     callback(e);
   }
   if (_.isFinite(encoding)) {
@@ -780,6 +780,8 @@ exports.makeClientConstructor = function(methods, serviceName,
     _.assign(Client.prototype[name], attrs);
   });
 
+  Client.service = methods;
+
   return Client;
 };
 
@@ -820,27 +822,6 @@ exports.waitForClientReady = function(client, deadline, callback) {
     }
   };
   checkState();
-};
-
-/**
- * Creates a constructor for clients for the given service
- * @param {ProtoBuf.Reflect.Service} service The service to generate a client
- *     for
- * @param {Object=} options Options to apply to the client
- * @return {function(string, Object)} New client constructor
- */
-exports.makeProtobufClientConstructor =  function(service, options) {
-  var method_attrs = common.getProtobufServiceAttrs(service, options);
-  var deprecatedArgumentOrder = false;
-  if (options) {
-    deprecatedArgumentOrder = options.deprecatedArgumentOrder;
-  }
-  var Client = exports.makeClientConstructor(
-      method_attrs, common.fullyQualifiedName(service),
-      deprecatedArgumentOrder);
-  Client.service = service;
-  Client.service.grpc_options = options;
-  return Client;
 };
 
 /**

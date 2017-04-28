@@ -199,16 +199,37 @@ PHP_METHOD(ChannelCredentials, createInsecure) {
   RETURN_NULL();
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_setDefaultRootsPem, 0, 0, 1)
+  ZEND_ARG_INFO(0, pem_roots)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_createDefault, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_createSsl, 0, 0, 0)
+  ZEND_ARG_INFO(0, pem_root_certs)
+  ZEND_ARG_INFO(0, pem_private_key)
+  ZEND_ARG_INFO(0, pem_cert_chain)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_createComposite, 0, 0, 2)
+  ZEND_ARG_INFO(0, channel_creds)
+  ZEND_ARG_INFO(0, call_creds)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_createInsecure, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry channel_credentials_methods[] = {
-  PHP_ME(ChannelCredentials, setDefaultRootsPem, NULL,
+  PHP_ME(ChannelCredentials, setDefaultRootsPem, arginfo_setDefaultRootsPem,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(ChannelCredentials, createDefault, NULL,
+  PHP_ME(ChannelCredentials, createDefault, arginfo_createDefault,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(ChannelCredentials, createSsl, NULL,
+  PHP_ME(ChannelCredentials, createSsl, arginfo_createSsl,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(ChannelCredentials, createComposite, NULL,
+  PHP_ME(ChannelCredentials, createComposite, arginfo_createComposite,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(ChannelCredentials, createInsecure, NULL,
+  PHP_ME(ChannelCredentials, createInsecure, arginfo_createInsecure,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_FE_END
 };

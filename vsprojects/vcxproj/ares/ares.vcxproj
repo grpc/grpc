@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1769D06D-F18C-B4C2-B019-31D7F83F3C9A}</ProjectGuid>
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+    <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '11.0'" Label="Configuration">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'" Label="Configuration">
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)\..\vsprojects\global.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\winsock.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <TargetName>ares</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <TargetName>ares</TargetName>
+  </PropertyGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_data.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_dns.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_getenv.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_getopt.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_inet_net_pton.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_iphlpapi.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_ipv6.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_library_init.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_llist.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_nowarn.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_platform.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_private.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_rules.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_setup.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_strcasecmp.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_strdup.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\ares_version.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\bitncmp.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\config-win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\cares\setup_once.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\ares_build.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\config_linux\ares_config.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\cares\config_darwin\ares_config.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares__close_sockets.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares__get_hostent.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares__read_line.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares__timeval.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_cancel.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_create_query.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_data.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_destroy.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_expand_name.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_expand_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_fds.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_free_hostent.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_free_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_getenv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_gethostbyaddr.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_gethostbyname.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_getnameinfo.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_getopt.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_getsock.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_init.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_library_init.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_llist.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_mkquery.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_nowarn.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_options.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_a_reply.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_aaaa_reply.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_mx_reply.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_naptr_reply.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_ns_reply.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_ptr_reply.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_soa_reply.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_srv_reply.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_parse_txt_reply.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_platform.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_process.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_query.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_search.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_send.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_strcasecmp.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_strdup.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_strerror.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_timeout.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_version.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\ares_writev.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\bitncmp.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\inet_net_pton.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\inet_ntop.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\cares\cares\windows_port.c">
+    </ClCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+  </Target>
+</Project>
+

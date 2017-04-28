@@ -134,10 +134,8 @@ class _ServicerMethods(object):
 
 
 class _Service(
-        collections.namedtuple('_Service', (
-            'servicer_methods',
-            'server',
-            'stub',))):
+        collections.namedtuple('_Service', ('servicer_methods', 'server',
+                                            'stub',))):
     """A live and running service.
 
   Attributes:

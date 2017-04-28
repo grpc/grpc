@@ -31,6 +31,12 @@
  *
  */
 
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
+   using that endpoint. Because of various transitive includes in uv.h,
+   including windows.h on Windows, uv.h must be included before other system
+   headers. Therefore, sockaddr.h must always be included first */
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include "test/core/util/mock_endpoint.h"
 
 #include <inttypes.h>
@@ -83,8 +89,9 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
   gpr_mu_lock(&m->mu);
   if (m->on_read) {
-    grpc_closure_sched(exec_ctx, m->on_read, GRPC_ERROR_CREATE_REFERENCING(
-                                                 "Endpoint Shutdown", &why, 1));
+    grpc_closure_sched(exec_ctx, m->on_read,
+                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                           "Endpoint Shutdown", &why, 1));
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->mu);

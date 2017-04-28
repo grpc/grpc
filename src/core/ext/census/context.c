@@ -200,7 +200,7 @@ static bool tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
     // allocate new memory if needed
     tags->kvm_size += 2 * CENSUS_MAX_TAG_KV_LEN + TAG_HEADER_SIZE;
     char *new_kvm = gpr_malloc(tags->kvm_size);
-    memcpy(new_kvm, tags->kvm, tags->kvm_used);
+    if (tags->kvm_used > 0) memcpy(new_kvm, tags->kvm, tags->kvm_used);
     gpr_free(tags->kvm);
     tags->kvm = new_kvm;
   }

@@ -33,8 +33,6 @@
 
 #include "test/cpp/interop/client_helper.h"
 
-#include <unistd.h>
-
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -90,6 +88,9 @@ grpc::string GetOauth2AccessToken() {
   gpr_free(token);
   return access_token;
 }
+
+void UpdateActions(
+    std::unordered_map<grpc::string, std::function<bool()>>* actions) {}
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
     const grpc::string& test_case) {

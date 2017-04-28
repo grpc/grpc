@@ -27,6 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+require 'etc'
 require 'mkmf'
 
 LIBDIR = RbConfig::CONFIG['libdir']
@@ -64,12 +65,14 @@ ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 ENV['AR'] = RbConfig::CONFIG['AR'] + ' rcs'
 ENV['CC'] = RbConfig::CONFIG['CC']
+ENV['CXX'] = RbConfig::CONFIG['CXX']
 ENV['LD'] = ENV['CC']
 
 ENV['AR'] = 'libtool -o' if RUBY_PLATFORM =~ /darwin/
 
 ENV['EMBED_OPENSSL'] = 'true'
 ENV['EMBED_ZLIB'] = 'true'
+ENV['EMBED_CARES'] = 'true'
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
 ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
 ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
@@ -80,7 +83,9 @@ ENV['BUILDDIR'] = output_dir
 
 unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
-  system("make -j -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config}")
+  nproc = 4
+  nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
+  system("make -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config} Q=")
   exit 1 unless $? == 0
 end
 
@@ -102,7 +107,6 @@ $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
-$CFLAGS << ' -Werror '
 $CFLAGS << ' -Wno-format '
 
 output = File.join('grpc', 'grpc_c')

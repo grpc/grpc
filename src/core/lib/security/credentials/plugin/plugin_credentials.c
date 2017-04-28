@@ -126,8 +126,7 @@ static void plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                         void *user_data) {
   grpc_plugin_credentials *c = (grpc_plugin_credentials *)creds;
   if (c->plugin.get_metadata != NULL) {
-    grpc_metadata_plugin_request *request = gpr_malloc(sizeof(*request));
-    memset(request, 0, sizeof(*request));
+    grpc_metadata_plugin_request *request = gpr_zalloc(sizeof(*request));
     request->user_data = user_data;
     request->cb = cb;
     c->plugin.get_metadata(c->plugin.state, context,
@@ -142,11 +141,10 @@ static grpc_call_credentials_vtable plugin_vtable = {
 
 grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin, void *reserved) {
-  grpc_plugin_credentials *c = gpr_malloc(sizeof(*c));
+  grpc_plugin_credentials *c = gpr_zalloc(sizeof(*c));
   GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
                  (reserved));
   GPR_ASSERT(reserved == NULL);
-  memset(c, 0, sizeof(*c));
   c->base.type = plugin.type;
   c->base.vtable = &plugin_vtable;
   gpr_ref_init(&c->base.refcount, 1);

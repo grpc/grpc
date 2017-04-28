@@ -31,6 +31,7 @@
 
 from __future__ import print_function
 
+import logging
 import multiprocessing
 import os
 import platform
@@ -128,6 +129,8 @@ _TAG_COLOR = {
     'SKIPPED': 'cyan'
     }
 
+_FORMAT = '%(asctime)-15s %(message)s'
+logging.basicConfig(level=logging.INFO, format=_FORMAT)
 
 def message(tag, msg, explanatory_text=None, do_newline=False):
   if message.old_tag == tag and message.old_msg == msg and not explanatory_text:
@@ -137,8 +140,8 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
   try:
     if platform_string() == 'windows' or not sys.stdout.isatty():
       if explanatory_text:
-        print(explanatory_text)
-      print('%s: %s' % (tag, msg))
+        logging.info(explanatory_text)
+      logging.info('%s: %s', tag, msg)
     else:
       sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
           _BEGINNING_OF_LINE,
@@ -345,7 +348,7 @@ class Jobset(object):
   """Manages one run of jobs."""
 
   def __init__(self, check_cancelled, maxjobs, newline_on_success, travis,
-               stop_on_failure, add_env, quiet_success):
+               stop_on_failure, add_env, quiet_success, max_time):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
@@ -357,6 +360,7 @@ class Jobset(object):
     self._stop_on_failure = stop_on_failure
     self._add_env = add_env
     self._quiet_success = quiet_success
+    self._max_time = max_time
     self.resultset = {}
     self._remaining = None
     self._start_time = time.time()
@@ -376,6 +380,12 @@ class Jobset(object):
   def start(self, spec):
     """Start a job. Return True on success, False on failure."""
     while True:
+      if self._max_time > 0 and time.time() - self._start_time > self._max_time:
+        skipped_job_result = JobResult()
+        skipped_job_result.state = 'SKIPPED'
+        message('SKIPPED', spec.shortname, do_newline=True)
+        self.resultset[spec.shortname] = [skipped_job_result]
+        return True
       if self.cancelled(): return False
       current_cpu_cost = self.cpu_cost()
       if current_cpu_cost == 0: break
@@ -471,19 +481,20 @@ def run(cmdlines,
         stop_on_failure=False,
         add_env={},
         skip_jobs=False,
-        quiet_success=False):
+        quiet_success=False,
+        max_time=-1):
   if skip_jobs:
-    results = {}
+    resultset = {}
     skipped_job_result = JobResult()
     skipped_job_result.state = 'SKIPPED'
     for job in cmdlines:
       message('SKIPPED', job.shortname, do_newline=True)
-      results[job.shortname] = [skipped_job_result]
-    return results
+      resultset[job.shortname] = [skipped_job_result]
+    return 0, resultset
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure, add_env,
-              quiet_success)
+              quiet_success, max_time)
   for cmdline, remaining in tag_remaining(cmdlines):
     if not js.start(cmdline):
       break

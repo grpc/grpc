@@ -39,7 +39,7 @@ RUN yum update -y
 RUN yum remove -y git
 RUN yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel gcc
 RUN cd /usr/src && \
-  wget https://kernel.org/pub/software/scm/git/git-2.0.5.tar.gz && \
+  curl -O -L https://kernel.org/pub/software/scm/git/git-2.0.5.tar.gz && \
   tar xzf git-2.0.5.tar.gz
 RUN cd /usr/src/git-2.0.5 && \
   make prefix=/usr/local/git all && \
@@ -53,6 +53,7 @@ RUN /opt/python/cp27-cp27m/bin/pip install cython
 RUN /opt/python/cp27-cp27mu/bin/pip install cython
 RUN /opt/python/cp34-cp34m/bin/pip install cython
 RUN /opt/python/cp35-cp35m/bin/pip install cython
+RUN /opt/python/cp36-cp36m/bin/pip install cython
 
 ####################################################
 # Install auditwheel with fix for namespace packages

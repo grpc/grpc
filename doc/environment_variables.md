@@ -35,6 +35,7 @@ some configuration as environment variables that can be set.
   A comma separated list of tracers that provide additional insight into how
   gRPC C core is processing requests via debug logs. Available tracers include:
   - api - traces api calls to the C core
+  - bdp_estimator - traces behavior of bdp estimation logic
   - call_error - traces the possible errors contributing to final call status
   - channel - traces operations on the C core channel stack
   - combiner - traces combiner lock state
@@ -54,6 +55,7 @@ some configuration as environment variables that can be set.
   - queue_timeout
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
+  - timer - timers (alarms) in the grpc internals
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
 
@@ -68,3 +70,11 @@ some configuration as environment variables that can be set.
   - DEBUG - log all gRPC messages
   - INFO - log INFO and ERROR message
   - ERROR - log only errors
+
+* GRPC_DNS_RESOLVER
+  Declares which DNS resolver to use. The default is ares if gRPC is built with
+  c-ares support. Otherwise, the value of this environment variable is ignored.
+  Available DNS resolver include:
+  - native (default)- a DNS resolver based around getaddrinfo(), creates a new thread to
+    perform name resolution
+  - ares - a DNS resolver based around the c-ares library

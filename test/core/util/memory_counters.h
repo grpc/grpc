@@ -34,13 +34,13 @@
 #ifndef GRPC_TEST_CORE_UTIL_MEMORY_COUNTERS_H
 #define GRPC_TEST_CORE_UTIL_MEMORY_COUNTERS_H
 
-#include <stddef.h>
+#include <grpc/support/atm.h>
 
 struct grpc_memory_counters {
-  size_t total_size_relative;
-  size_t total_size_absolute;
-  size_t total_allocs_relative;
-  size_t total_allocs_absolute;
+  gpr_atm total_size_relative;
+  gpr_atm total_size_absolute;
+  gpr_atm total_allocs_relative;
+  gpr_atm total_allocs_absolute;
 };
 
 void grpc_memory_counters_init();

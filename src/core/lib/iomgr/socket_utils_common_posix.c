@@ -91,7 +91,7 @@ grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
     return GRPC_OS_ERROR(errno, "getsockopt(SO_NOSIGPIPE)");
   }
   if ((newval != 0) != (val != 0)) {
-    return GRPC_ERROR_CREATE("Failed to set SO_NOSIGPIPE");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_NOSIGPIPE");
   }
 #endif
   return GRPC_ERROR_NONE;
@@ -165,7 +165,7 @@ grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse) {
     return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEADDR)");
   }
   if ((newval != 0) != val) {
-    return GRPC_ERROR_CREATE("Failed to set SO_REUSEADDR");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_REUSEADDR");
   }
 
   return GRPC_ERROR_NONE;
@@ -174,7 +174,8 @@ grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse) {
 /* set a socket to reuse old addresses */
 grpc_error *grpc_set_socket_reuse_port(int fd, int reuse) {
 #ifndef SO_REUSEPORT
-  return GRPC_ERROR_CREATE("SO_REUSEPORT unavailable on compiling system");
+  return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "SO_REUSEPORT unavailable on compiling system");
 #else
   int val = (reuse != 0);
   int newval;
@@ -186,7 +187,7 @@ grpc_error *grpc_set_socket_reuse_port(int fd, int reuse) {
     return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEPORT)");
   }
   if ((newval != 0) != val) {
-    return GRPC_ERROR_CREATE("Failed to set SO_REUSEPORT");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_REUSEPORT");
   }
 
   return GRPC_ERROR_NONE;
@@ -205,7 +206,7 @@ grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
     return GRPC_OS_ERROR(errno, "getsockopt(TCP_NODELAY)");
   }
   if ((newval != 0) != val) {
-    return GRPC_ERROR_CREATE("Failed to set TCP_NODELAY");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set TCP_NODELAY");
   }
   return GRPC_ERROR_NONE;
 }
@@ -214,7 +215,7 @@ grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
 grpc_error *grpc_set_socket_with_mutator(int fd, grpc_socket_mutator *mutator) {
   GPR_ASSERT(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd)) {
-    return GRPC_ERROR_CREATE("grpc_socket_mutator failed.");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("grpc_socket_mutator failed.");
   }
   return GRPC_ERROR_NONE;
 }
@@ -269,7 +270,8 @@ static grpc_error *error_for_fd(int fd, const grpc_resolved_address *addr) {
   char *addr_str;
   grpc_sockaddr_to_string(&addr_str, addr, 0);
   grpc_error *err = grpc_error_set_str(GRPC_OS_ERROR(errno, "socket"),
-                                       GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+                                       GRPC_ERROR_STR_TARGET_ADDRESS,
+                                       grpc_slice_from_copied_string(addr_str));
   gpr_free(addr_str);
   return err;
 }
@@ -277,11 +279,25 @@ static grpc_error *error_for_fd(int fd, const grpc_resolved_address *addr) {
 grpc_error *grpc_create_dualstack_socket(
     const grpc_resolved_address *resolved_addr, int type, int protocol,
     grpc_dualstack_mode *dsmode, int *newfd) {
+  return grpc_create_dualstack_socket_using_factory(NULL, resolved_addr, type,
+                                                    protocol, dsmode, newfd);
+}
+
+static int create_socket(grpc_socket_factory *factory, int domain, int type,
+                         int protocol) {
+  return (factory != NULL)
+             ? grpc_socket_factory_socket(factory, domain, type, protocol)
+             : socket(domain, type, protocol);
+}
+
+grpc_error *grpc_create_dualstack_socket_using_factory(
+    grpc_socket_factory *factory, const grpc_resolved_address *resolved_addr,
+    int type, int protocol, grpc_dualstack_mode *dsmode, int *newfd) {
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   int family = addr->sa_family;
   if (family == AF_INET6) {
     if (grpc_ipv6_loopback_available()) {
-      *newfd = socket(family, type, protocol);
+      *newfd = create_socket(factory, family, type, protocol);
     } else {
       *newfd = -1;
       errno = EAFNOSUPPORT;
@@ -303,7 +319,7 @@ grpc_error *grpc_create_dualstack_socket(
     family = AF_INET;
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
-  *newfd = socket(family, type, protocol);
+  *newfd = create_socket(factory, family, type, protocol);
   return error_for_fd(*newfd, resolved_addr);
 }
 

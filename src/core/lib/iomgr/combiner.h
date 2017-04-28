@@ -48,8 +48,27 @@
 // Initialize the lock, with an optional workqueue to shift load to when
 // necessary
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
-// Destroy the lock
-void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
+
+//#define GRPC_COMBINER_REFCOUNT_DEBUG
+#ifdef GRPC_COMBINER_REFCOUNT_DEBUG
+#define GRPC_COMBINER_DEBUG_ARGS \
+  , const char *file, int line, const char *reason
+#define GRPC_COMBINER_REF(combiner, reason) \
+  grpc_combiner_ref((combiner), __FILE__, __LINE__, (reason))
+#define GRPC_COMBINER_UNREF(exec_ctx, combiner, reason) \
+  grpc_combiner_unref((exec_ctx), (combiner), __FILE__, __LINE__, (reason))
+#else
+#define GRPC_COMBINER_DEBUG_ARGS
+#define GRPC_COMBINER_REF(combiner, reason) grpc_combiner_ref((combiner))
+#define GRPC_COMBINER_UNREF(exec_ctx, combiner, reason) \
+  grpc_combiner_unref((exec_ctx), (combiner))
+#endif
+
+// Ref/unref the lock, for when we're sharing the lock ownership
+// Prefer to use the macros above
+grpc_combiner *grpc_combiner_ref(grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS);
+void grpc_combiner_unref(grpc_exec_ctx *exec_ctx,
+                         grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS);
 // Fetch a scheduler to schedule closures against
 grpc_closure_scheduler *grpc_combiner_scheduler(grpc_combiner *lock,
                                                 bool covered_by_poller);

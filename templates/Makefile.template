@@ -324,7 +324,7 @@
   USE_BUILT_PROTOC = false
   endif
 
-  GTEST_LIB = -Ithird_party/googletest/include -Ithird_party/googletest third_party/googletest/src/gtest-all.cc
+  GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc -Ithird_party/googletest/googlemock/include -Ithird_party/googletest/googlemock third_party/googletest/googlemock/src/gmock-all.cc
   GTEST_LIB += -lgflags
   ifeq ($(V),1)
   E = @:
@@ -418,7 +418,7 @@
   SHARED_VERSION_CPP = -${settings.cpp_version.major}
   SHARED_VERSION_CSHARP = -${settings.csharp_version.major}
   else ifeq ($(SYSTEM),Darwin)
-  EXECUTABLE_SUFFIX = 
+  EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = dylib
   SHARED_EXT_CPP = dylib
   SHARED_EXT_CSHARP = dylib
@@ -427,7 +427,7 @@
   SHARED_VERSION_CPP =
   SHARED_VERSION_CSHARP =
   else
-  EXECUTABLE_SUFFIX = 
+  EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = so.$(CORE_VERSION)
   SHARED_EXT_CPP = so.$(CPP_VERSION)
   SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
@@ -448,6 +448,7 @@
   OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
   PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0 protobuf
+  CARES_CHECK_CMD = $(PKG_CONFIG) --exists libcares
   else # HAS_PKG_CONFIG
 
   ifeq ($(SYSTEM),MINGW32)
@@ -461,6 +462,7 @@
   BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) ${defaults.boringssl.CPPFLAGS} $(CFLAGS) ${defaults.boringssl.CFLAGS} -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
   ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
   PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
+  CARES_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/c-ares.c -lcares $(LDFLAGS)
 
   endif # HAS_PKG_CONFIG
 
@@ -500,12 +502,17 @@
   ifeq ($(HAS_SYSTEM_PROTOBUF),true)
   CACHE_MK += HAS_SYSTEM_PROTOBUF = true,
   endif
+  HAS_SYSTEM_CARES ?=  $(shell $(CARES_CHECK_CMD) 2> /dev/null && echo true || echo false)
+  ifeq ($(HAS_SYSTEM_CARES),true)
+  CACHE_MK += HAS_SYSTEM_CARES = true,
+  endif
   else
   # override system libraries if the config requires a custom compiled library
   HAS_SYSTEM_OPENSSL_ALPN = false
   HAS_SYSTEM_OPENSSL_NPN = false
   HAS_SYSTEM_ZLIB = false
   HAS_SYSTEM_PROTOBUF = false
+  HAS_SYSTEM_CARES = false
   endif
 
   HAS_PROTOC ?= $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -564,6 +571,12 @@
   HAS_EMBEDDED_PROTOBUF = true
   endif
 
+  ifeq ($(wildcard third_party/cares/cares/ares.h),)
+  HAS_EMBEDDED_CARES = false
+  else
+  HAS_EMBEDDED_CARES = true
+  endif
+
   PC_REQUIRES_GRPC =
   PC_LIBS_GRPC =
 
@@ -593,6 +606,37 @@
   else
   PC_LIBS_GRPC += -lz
   LIBS += z
+  endif
+  endif
+
+  CARES_PKG_CONFIG = false
+
+  ifeq ($(HAS_SYSTEM_CARES),false)
+  ifeq ($(HAS_EMBEDDED_CARES), true)
+  EMBED_CARES ?= true
+  else
+  DEP_MISSING += cares
+  EMBED_CARES ?= broken
+  endif
+  else
+  EMBED_CARES ?= false
+  endif
+
+  ifeq ($(EMBED_CARES),true)
+  CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
+  CARES_MERGE_OBJS = $(LIBARES_OBJS)
+  CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
+  CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
+  LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
+  else
+  ifeq ($(HAS_PKG_CONFIG),true)
+  PC_REQUIRES_GRPC += libcares
+  CPPFLAGS += $(shell $(PKG_CONFIG) --cflags libcares)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L libcares)
+  LIBS += $(patsubst -l%,%,$(shell $(PKG_CONFIG) --libs-only-l libcares))
+  else
+  PC_LIBS_GRPC += -lcares
+  LIBS += cares
   endif
   endif
 
@@ -685,7 +729,7 @@
   PC_REQUIRES_GRPCXX =
   PC_LIBS_GRPCXX =
 
-  CPPFLAGS := -Ithird_party/googletest/include $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googlemock/include $(CPPFLAGS)
 
   PROTOC_PLUGINS_ALL =\
   % for tgt in targets:
@@ -877,6 +921,7 @@
   	$(PERFTOOLS_CHECK_CMD) || true
   	$(PROTOBUF_CHECK_CMD) || true
   	$(PROTOC_CHECK_VERSION_CMD) || true
+  	$(CARES_CHECK_CMD) || true
 
   third_party/protobuf/configure:
   	$(E) "[AUTOGEN] Preparing protobuf"
@@ -1208,6 +1253,14 @@
   $(GENDIR)/${p}.pb.cc: protoc_dep_error
   $(GENDIR)/${p}.grpc.pb.cc: protoc_dep_error
   else
+  <%
+    pluginflags=""
+  %>
+  % if p in ["src/proto/grpc/testing/compiler_test", "src/proto/grpc/testing/echo"]:
+  <%
+    pluginflags="generate_mock_code=true:"
+  %>
+  % endif
   $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating protobuf CC file from $<"
   	$(Q) mkdir -p `dirname $@`
@@ -1216,7 +1269,7 @@
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=${pluginflags}$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
   endif
 
   % endfor
@@ -1445,7 +1498,7 @@
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP)\
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP)\
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
@@ -1466,6 +1519,9 @@
   % if lib.name != 'z':
   $(ZLIB_DEP) \
   % endif
+  % if lib.name != 'ares':
+  $(CARES_DEP) \
+  % endif
   % endif
   % if lib.language == 'c++':
    $(PROTOBUF_DEP)\
@@ -1474,6 +1530,7 @@
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
+   $(CARES_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1486,6 +1543,7 @@
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
+   $(CARES_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1505,12 +1563,12 @@
     out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
     out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
 
-    common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
+    common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
@@ -1535,7 +1593,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
@@ -1555,6 +1613,8 @@
     ldflags = '$(LDFLAGS)'
     if lib.get('LDFLAGS', None):
       ldflags += ' ' + lib['LDFLAGS']
+
+    common = common + ' $(LDLIBS)'
   %>
 
   % if lib.build == "all":
@@ -1573,7 +1633,7 @@
   ifeq ($(SYSTEM),HP-UX)
   	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
   else
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.core_version.major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
   endif
@@ -1738,6 +1798,11 @@
   endif
   % endif
 
+  % if tgt.get('defaults', None):
+  %  for name, value in defaults.get(tgt.defaults).iteritems():
+  $(${tgt.name.upper()}_OBJS): ${name} += ${value}
+  %  endfor
+  % endif
   % for src in tgt.src:
   $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
   % for dep in tgt.deps:

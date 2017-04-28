@@ -31,7 +31,7 @@
  *
  */
 
-#include <sys/signal.h>
+#include <signal.h>
 
 #include <chrono>
 #include <thread>

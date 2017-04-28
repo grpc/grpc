@@ -82,7 +82,9 @@
 #define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
 
 /* TODO(zyc) Check the content of incomming data instead of using this length */
-#define EXPECTED_INCOMING_DATA_LENGTH (size_t)310
+/* The 'bad' server will start sending responses after reading this amount of
+ * data from the client. */
+#define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200
 
 struct rpc_state {
   char *target;
@@ -134,8 +136,10 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   }
 
   gpr_log(GPR_DEBUG, "got %" PRIuPTR " bytes, expected %" PRIuPTR " bytes",
-          state.incoming_data_length, EXPECTED_INCOMING_DATA_LENGTH);
-  if (state.incoming_data_length > EXPECTED_INCOMING_DATA_LENGTH) {
+          state.incoming_data_length,
+          SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD);
+  if (state.incoming_data_length >=
+      SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD) {
     handle_write(exec_ctx);
   } else {
     grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,
@@ -174,7 +178,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cq_verifier *cqv;
   grpc_slice details;
 
-  state.cq = grpc_completion_queue_create(NULL);
+  state.cq = grpc_completion_queue_create_for_next(NULL);
   cqv = cq_verifier_create(state.cq);
   gpr_join_host_port(&state.target, "127.0.0.1", target_port);
   state.channel = grpc_insecure_channel_create(state.target, NULL, NULL);
@@ -232,7 +236,7 @@ static void cleanup_rpc(grpc_exec_ctx *exec_ctx) {
   grpc_event ev;
   grpc_slice_buffer_destroy_internal(exec_ctx, &state.temp_incoming_buffer);
   grpc_slice_buffer_destroy_internal(exec_ctx, &state.outgoing_buffer);
-  grpc_call_destroy(state.call);
+  grpc_call_unref(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
     ev = grpc_completion_queue_next(state.cq, n_sec_deadline(1), NULL);
@@ -299,7 +303,7 @@ static void run_test(const char *response_payload,
 
   /* clean up */
   grpc_endpoint_shutdown(&exec_ctx, state.tcp,
-                         GRPC_ERROR_CREATE("Test Shutdown"));
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   grpc_endpoint_destroy(&exec_ctx, state.tcp);
   cleanup_rpc(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);

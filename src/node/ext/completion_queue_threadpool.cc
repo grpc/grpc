@@ -34,14 +34,14 @@
 /* I don't like using #ifndef, but I don't see a better way to do this */
 #ifndef GRPC_UV
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 
+#include "call.h"
+#include "completion_queue.h"
 #include "grpc/grpc.h"
 #include "grpc/support/log.h"
 #include "grpc/support/time.h"
-#include "completion_queue.h"
-#include "call.h"
 
 namespace grpc {
 namespace node {
@@ -78,6 +78,8 @@ class CompletionQueueAsyncWorker : public Nan::AsyncWorker {
   void HandleErrorCallback();
 
  private:
+  static void TryAddWorker();
+
   grpc_event result;
 
   static grpc_completion_queue *queue;
@@ -109,8 +111,8 @@ CompletionQueueAsyncWorker::CompletionQueueAsyncWorker()
 CompletionQueueAsyncWorker::~CompletionQueueAsyncWorker() {}
 
 void CompletionQueueAsyncWorker::Execute() {
-  result =
-      grpc_completion_queue_next(queue, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  result = grpc_completion_queue_next(queue, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                      NULL);
   if (!result.success) {
     SetErrorMessage("The async function encountered an error");
   }
@@ -118,66 +120,44 @@ void CompletionQueueAsyncWorker::Execute() {
 
 grpc_completion_queue *CompletionQueueAsyncWorker::GetQueue() { return queue; }
 
-void CompletionQueueAsyncWorker::Next() {
-#ifndef GRPC_UV
-  Nan::HandleScope scope;
-  if (current_threads < max_queue_threads) {
+void CompletionQueueAsyncWorker::TryAddWorker() {
+  if (current_threads < max_queue_threads && waiting_next_calls > 0) {
     current_threads += 1;
+    waiting_next_calls -= 1;
     CompletionQueueAsyncWorker *worker = new CompletionQueueAsyncWorker();
     Nan::AsyncQueueWorker(worker);
-  } else {
-    waiting_next_calls += 1;
   }
   GPR_ASSERT(current_threads <= max_queue_threads);
   GPR_ASSERT((current_threads == max_queue_threads) ||
              (waiting_next_calls == 0));
-#endif
+}
+
+void CompletionQueueAsyncWorker::Next() {
+  waiting_next_calls += 1;
+  TryAddWorker();
 }
 
 void CompletionQueueAsyncWorker::Init(Local<Object> exports) {
   Nan::HandleScope scope;
   current_threads = 0;
   waiting_next_calls = 0;
-  queue = grpc_completion_queue_create(NULL);
+  queue = grpc_completion_queue_create_for_next(NULL);
 }
 
 void CompletionQueueAsyncWorker::HandleOKCallback() {
   Nan::HandleScope scope;
-  if (waiting_next_calls > 0) {
-    waiting_next_calls -= 1;
-    // Old worker removed, new worker added. current_threads += 0
-    CompletionQueueAsyncWorker *worker = new CompletionQueueAsyncWorker();
-    Nan::AsyncQueueWorker(worker);
-  } else {
-    current_threads -= 1;
-  }
-  GPR_ASSERT(current_threads <= max_queue_threads);
-  GPR_ASSERT((current_threads == max_queue_threads) ||
-             (waiting_next_calls == 0));
-  Nan::Callback *callback = GetTagCallback(result.tag);
-  Local<Value> argv[] = {Nan::Null(), GetTagNodeValue(result.tag)};
-  callback->Call(2, argv);
+  current_threads -= 1;
+  TryAddWorker();
+  CompleteTag(result.tag, NULL);
 
   DestroyTag(result.tag);
 }
 
 void CompletionQueueAsyncWorker::HandleErrorCallback() {
-  if (waiting_next_calls > 0) {
-    waiting_next_calls -= 1;
-    // Old worker removed, new worker added. current_threads += 0
-    CompletionQueueAsyncWorker *worker = new CompletionQueueAsyncWorker();
-    Nan::AsyncQueueWorker(worker);
-  } else {
-    current_threads -= 1;
-  }
-  GPR_ASSERT(current_threads <= max_queue_threads);
-  GPR_ASSERT((current_threads == max_queue_threads) ||
-             (waiting_next_calls == 0));
   Nan::HandleScope scope;
-  Nan::Callback *callback = GetTagCallback(result.tag);
-  Local<Value> argv[] = {Nan::Error(ErrorMessage())};
-
-  callback->Call(1, argv);
+  current_threads -= 1;
+  TryAddWorker();
+  CompleteTag(result.tag, ErrorMessage());
 
   DestroyTag(result.tag);
 }
@@ -188,9 +168,7 @@ grpc_completion_queue *GetCompletionQueue() {
   return CompletionQueueAsyncWorker::GetQueue();
 }
 
-void CompletionQueueNext() {
-  CompletionQueueAsyncWorker::Next();
-}
+void CompletionQueueNext() { CompletionQueueAsyncWorker::Next(); }
 
 void CompletionQueueInit(Local<Object> exports) {
   CompletionQueueAsyncWorker::Init(exports);
@@ -199,4 +177,4 @@ void CompletionQueueInit(Local<Object> exports) {
 }  // namespace node
 }  // namespace grpc
 
-#endif  /* GRPC_UV */
+#endif /* GRPC_UV */

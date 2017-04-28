@@ -60,7 +60,7 @@ void test_tcp_server_init(test_tcp_server *server,
   grpc_closure_init(&server->shutdown_complete, on_server_destroyed, server,
                     grpc_schedule_on_exec_ctx);
   server->shutdown = 0;
-  server->pollset = gpr_malloc(grpc_pollset_size());
+  server->pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(server->pollset, &server->mu);
   server->on_connect = on_connect;
   server->cb_data = user_data;

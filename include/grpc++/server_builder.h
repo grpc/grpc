@@ -39,6 +39,7 @@
 #include <memory>
 #include <vector>
 
+#include <grpc++/impl/channel_argument_option.h>
 #include <grpc++/impl/server_builder_option.h>
 #include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/support/config.h>
@@ -130,6 +131,13 @@ class ServerBuilder {
   /// Only useful if this is a Synchronous server.
   ServerBuilder& SetSyncServerOption(SyncServerOption option, int value);
 
+  /// Add a channel argument (an escape hatch to tuning core library parameters
+  /// directly)
+  template <class T>
+  ServerBuilder& AddChannelArgument(const grpc::string& arg, const T& value) {
+    return SetOption(MakeChannelArgumentOption(arg, value));
+  }
+
   /// Tries to bind \a server to the given \a addr.
   ///
   /// It can be invoked multiple times.
@@ -187,10 +195,7 @@ class ServerBuilder {
 
   struct SyncServerSettings {
     SyncServerSettings()
-        : num_cqs(1),
-          min_pollers(1),
-          max_pollers(INT_MAX),
-          cq_timeout_msec(1000) {}
+        : num_cqs(1), min_pollers(1), max_pollers(2), cq_timeout_msec(10000) {}
 
     // Number of server completion queues to create to listen to incoming RPCs.
     int num_cqs;

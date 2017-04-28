@@ -164,7 +164,8 @@ class _Servicer(object):
 
 def _generic_handler(servicer):
     method_handlers = {
-        _UNARY_UNARY: grpc.unary_unary_rpc_method_handler(
+        _UNARY_UNARY:
+        grpc.unary_unary_rpc_method_handler(
             servicer.unary_unary,
             request_deserializer=_REQUEST_DESERIALIZER,
             response_serializer=_RESPONSE_SERIALIZER),
@@ -172,7 +173,8 @@ def _generic_handler(servicer):
         grpc.unary_stream_rpc_method_handler(servicer.unary_stream),
         _STREAM_UNARY:
         grpc.stream_unary_rpc_method_handler(servicer.stream_unary),
-        _STREAM_STREAM: grpc.stream_stream_rpc_method_handler(
+        _STREAM_STREAM:
+        grpc.stream_stream_rpc_method_handler(
             servicer.stream_stream,
             request_deserializer=_REQUEST_DESERIALIZER,
             response_serializer=_RESPONSE_SERIALIZER),
@@ -192,25 +194,15 @@ class MetadataCodeDetailsTest(unittest.TestCase):
 
         channel = grpc.insecure_channel('localhost:{}'.format(port))
         self._unary_unary = channel.unary_unary(
-            '/'.join((
-                '',
-                _SERVICE,
-                _UNARY_UNARY,)),
+            '/'.join(('', _SERVICE, _UNARY_UNARY,)),
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,)
-        self._unary_stream = channel.unary_stream('/'.join((
-            '',
-            _SERVICE,
-            _UNARY_STREAM,)),)
-        self._stream_unary = channel.stream_unary('/'.join((
-            '',
-            _SERVICE,
-            _STREAM_UNARY,)),)
+        self._unary_stream = channel.unary_stream(
+            '/'.join(('', _SERVICE, _UNARY_STREAM,)),)
+        self._stream_unary = channel.stream_unary(
+            '/'.join(('', _SERVICE, _STREAM_UNARY,)),)
         self._stream_stream = channel.stream_stream(
-            '/'.join((
-                '',
-                _SERVICE,
-                _STREAM_STREAM,)),
+            '/'.join(('', _SERVICE, _STREAM_STREAM,)),
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,)
 

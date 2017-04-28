@@ -161,7 +161,6 @@
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #elif defined(__linux__)
-#define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_PLATFORM_STRING "linux"
 #define GPR_LITTLE_ENDIAN 1
 #ifndef _BSD_SOURCE
@@ -192,6 +191,11 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#ifdef __GLIBC__
+#define GPR_POSIX_CRASH_HANDLER 1
+#else /* musl libc */
+#define GRPC_MSG_IOVLEN_TYPE int
+#endif
 #elif defined(__APPLE__)
 #include <Availability.h>
 #include <TargetConditionals.h>
@@ -314,6 +318,12 @@
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
 
+#if defined(__has_include)
+#if __has_include(<atomic>)
+#define GRPC_HAS_CXX11_ATOMIC
+#endif /* __has_include(<atomic>) */
+#endif /* defined(__has_include) */
+
 #ifndef GPR_PLATFORM_STRING
 #warning "GPR_PLATFORM_STRING not auto-detected"
 #define GPR_PLATFORM_STRING "unknown"
@@ -325,6 +335,10 @@
 #endif
 
 #ifdef _MSC_VER
+#ifdef _PYTHON_MSVC
+// The Python 3.5 Windows runtime is missing InetNtop
+#define GPR_WIN_INET_NTOP
+#endif  // _PYTHON_MSVC
 #if _MSC_VER < 1700
 typedef __int8 int8_t;
 typedef __int16 int16_t;
@@ -392,11 +406,21 @@ typedef unsigned __int64 uint64_t;
    power of two */
 #define GPR_MAX_ALIGNMENT 16
 
+#ifndef GRPC_ARES
+#ifdef GPR_WINDOWS
+#define GRPC_ARES 0
+#else
+#define GRPC_ARES 1
+#endif
+#endif
+
 #ifndef GRPC_MUST_USE_RESULT
 #if defined(__GNUC__) && !defined(__MINGW32__)
 #define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
+#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))
 #else
 #define GRPC_MUST_USE_RESULT
+#define GPR_ALIGN_STRUCT(n)
 #endif
 #endif
 

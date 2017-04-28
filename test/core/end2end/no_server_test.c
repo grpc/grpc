@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   cqv = cq_verifier_create(cq);
 
   /* create a call, channel to a non existant server */
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
           .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(cq);
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
 

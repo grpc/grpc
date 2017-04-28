@@ -34,6 +34,7 @@ import hashlib
 import itertools
 import json
 import math
+import sys
 import tabulate
 import time
 
@@ -49,6 +50,7 @@ TIME_FROM_LAST_IMPORTANT = object()
 argp = argparse.ArgumentParser(description='Process output of basic_prof builds')
 argp.add_argument('--source', default='latency_trace.txt', type=str)
 argp.add_argument('--fmt', choices=tabulate.tabulate_formats, default='simple')
+argp.add_argument('--out', default='-', type=str)
 args = argp.parse_args()
 
 class LineItem(object):
@@ -246,16 +248,20 @@ FORMAT = [
   ('TO_SCOPE_END', time_format(TIME_TO_SCOPE_END)),
 ]
 
+out = sys.stdout
+if args.out != '-':
+  out = open(args.out, 'w')
+
 if args.fmt == 'html':
-  print '<html>'
-  print '<head>'
-  print '<title>Profile Report</title>'
-  print '</head>'
+  print >>out, '<html>'
+  print >>out, '<head>'
+  print >>out, '<title>Profile Report</title>'
+  print >>out, '</head>'
 
 accounted_for = 0
 for cs in call_stacks:
   if args.fmt in BANNER:
-    print BANNER[args.fmt] % {
+    print >>out, BANNER[args.fmt] % {
         'count': cs.count,
     }
   header, _ = zip(*FORMAT)
@@ -265,7 +271,7 @@ for cs in call_stacks:
     for _, fn in FORMAT:
       fields.append(fn(line))
     table.append(fields)
-  print tabulate.tabulate(table, header, tablefmt=args.fmt)
+  print >>out, tabulate.tabulate(table, header, tablefmt=args.fmt)
   accounted_for += cs.count
   if accounted_for > .99 * total_stacks:
     break

@@ -40,9 +40,44 @@
   # https://n8.io/converting-a-c-library-to-gyp/
   {
     'variables': {
-      'runtime%': 'node'
+      'runtime%': 'node',
+      # UV integration in C core is enabled by default. It can be disabled
+      # by setting this argument to anything else.
+      'grpc_uv%': 'true',
+      # Some Node installations use the system installation of OpenSSL, and on
+      # some systems, the system OpenSSL still does not have ALPN support. This
+      # will let users recompile gRPC to work without ALPN.
+      'grpc_alpn%': 'true',
+      # Indicates that the library should be built with gcov.
+      'grpc_gcov%': 'false'
     },
     'target_defaults': {
+      'configurations': {
+        % for name, args in configs.iteritems():
+        %  if name in ['dbg', 'opt']:
+        '${{'dbg':'Debug', 'opt': 'Release'}[name]}': {
+          % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines')]:
+          %  if args.get(arg, None) is not None:
+          '${prop}': [
+            % for item in args.get(arg).split():
+              '${item}',
+            % endfor
+          ],
+          %  endif
+          % endfor
+        },
+        %  endif
+        % endfor
+      },
+      % for arg, prop in [('CPPFLAGS', 'cflags'), ('LDFLAGS', 'ldflags')]:
+      %  if defaults['global'].get(arg, None) is not None:
+      '${prop}': [
+        % for item in defaults['global'].get(arg).split():
+          '${item}',
+        % endfor
+      ],
+      %  endif
+      % endfor
       'include_dirs': [
         '.',
         'include'
@@ -51,10 +86,24 @@
         'GPR_BACKWARDS_COMPATIBILITY_MODE'
       ],
       'conditions': [
-        ['runtime=="node"', {
+        ['grpc_uv=="true"', {
           'defines': [
+            'GRPC_ARES=0',
+            # Disabling this while bugs are ironed out. Uncomment this to
+            # re-enable libuv integration in C core.
             'GRPC_UV'
           ]
+        }],
+        ['grpc_gcov=="true"', {
+          % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines'), ('LDFLAGS', 'ldflags')]:
+          %  if configs['gcov'].get(arg, None) is not None:
+          '${prop}': [
+            % for item in configs['gcov'].get(arg).split():
+              '${item}',
+            % endfor
+          ],
+          %  endif
+          % endfor
         }],
         ['OS!="win" and runtime=="electron"', {
           "defines": [
@@ -70,19 +119,16 @@
             'OPENSSL_NO_ASM'
           ]
         }, {
-          # Based on logic above, we know that this must be a non-Windows system
-          'variables': {
-            # The output of "node --version" is "v[version]". We use cut to
-            # remove the first character.
-            'target%': '<!(node --version | cut -c2-)'
-          },
-          # Empirically, Node only exports ALPN symbols if its major version is >0.
-          # io.js always reports versions >0 and always exports ALPN symbols.
-          # Therefore, Node's major version will be truthy if and only if it
-          # supports ALPN. The target is "[major].[minor].[patch]". We split by
-          # periods and take the first field to get the major version.
-          'defines': [
-            'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)'
+          'conditions': [
+            ['grpc_alpn=="true"', {
+              'defines': [
+                'TSI_OPENSSL_ALPN_SUPPORT=1'
+              ],
+            }, {
+              'defines': [
+                'TSI_OPENSSL_ALPN_SUPPORT=0'
+              ],
+            }]
           ],
           'include_dirs': [
             '<(node_root_dir)/deps/openssl/openssl/include',
@@ -101,7 +147,8 @@
         }],
         ['OS == "win"', {
           "include_dirs": [
-            "third_party/zlib"
+            "third_party/zlib",
+            "third_party/cares/cares"
           ],
           "defines": [
             '_WIN32_WINNT=0x0600',
@@ -120,25 +167,9 @@
             "ws2_32"
           ]
         }, { # OS != "win"
-          'variables': {
-            'config': '<!(echo $CONFIG)',
-          },
           'include_dirs': [
-            '<(node_root_dir)/deps/zlib'
-          ],
-          'conditions': [
-            ['config=="gcov"', {
-              'cflags': [
-                '-ftest-coverage',
-                '-fprofile-arcs',
-                '-O0'
-              ],
-              'ldflags': [
-                '-ftest-coverage',
-                '-fprofile-arcs'
-              ]
-            }
-           ]
+            '<(node_root_dir)/deps/zlib',
+            '<(node_root_dir)/deps/cares/include'
           ]
         }]
       ]
@@ -174,7 +205,7 @@
           % endfor
         ]
       }],
-      ['OS == "win"', {
+      ['OS == "win" and runtime!="electron"', {
         'targets': [
           {
             # IMPORTANT WINDOWS BUILD INFORMATION
@@ -185,10 +216,13 @@
             # when including the Node headers. The remedy for this is to remove
             # the OpenSSL headers, from the downloaded Node development package,
             # which is typically located in `.node-gyp` in your home directory.
+            #
+            # This is not true of Electron, which does not have OpenSSL headers.
             'target_name': 'WINDOWS_BUILD_WARNING',
-            'actions': [
+            'rules': [
               {
-                'action_name': 'WINDOWS_BUILD_WARNING',
+                'rule_name': 'WINDOWS_BUILD_WARNING',
+                'extension': 'S',
                 'inputs': [
                   'package.json'
                 ],
@@ -230,6 +264,13 @@
       }]
     ],
     'targets': [
+  <%
+      for lib in libs:
+        if 'grpc' in lib.transitive_deps or lib.name == 'grpc':
+          lib.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
+      for module in node_modules:
+        module.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
+  %>
       % for module in node_modules:
       % for lib in libs:
       % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):
@@ -268,15 +309,9 @@
         ],
         'cflags': [
           '-std=c++11',
-          '-Wall',
           '-pthread',
-          '-g',
           '-zdefs',
-          '-Werror',
           '-Wno-error=deprecated-declarations'
-        ],
-        'ldflags': [
-          '-g'
         ],
         "conditions": [
           ['OS=="win" or runtime=="electron"', {

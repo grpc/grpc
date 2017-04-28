@@ -44,14 +44,9 @@ _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
 
 class RpcMethodHandler(
         collections.namedtuple('_RpcMethodHandler', (
-            'request_streaming',
-            'response_streaming',
-            'request_deserializer',
-            'response_serializer',
-            'unary_unary',
-            'unary_stream',
-            'stream_unary',
-            'stream_stream',)), grpc.RpcMethodHandler):
+            'request_streaming', 'response_streaming', 'request_deserializer',
+            'response_serializer', 'unary_unary', 'unary_stream',
+            'stream_unary', 'stream_stream',)), grpc.RpcMethodHandler):
     pass
 
 

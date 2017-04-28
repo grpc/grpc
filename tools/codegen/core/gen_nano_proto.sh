@@ -32,8 +32,8 @@
 # Example usage:
 #   tools/codegen/core/gen_nano_proto.sh \
 #     src/proto/grpc/lb/v1/load_balancer.proto \
-#     $PWD/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1 \
-#     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1
+#     $PWD/src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1 \
+#     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1
 #
 # Exit statuses:
 # 1: Incorrect number of arguments
@@ -83,7 +83,7 @@ popd
 
 # this should be the same version as the submodule we compile against
 # ideally we'd update this as a template to ensure that
-pip install protobuf==3.0.0
+pip install protobuf==3.2.0
 
 pushd "$(dirname $INPUT_PROTO)" > /dev/null
 

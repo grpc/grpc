@@ -93,8 +93,9 @@ void grpc_httpcli_context_init(grpc_httpcli_context *context) {
   context->pollset_set = grpc_pollset_set_create();
 }
 
-void grpc_httpcli_context_destroy(grpc_httpcli_context *context) {
-  grpc_pollset_set_destroy(context->pollset_set);
+void grpc_httpcli_context_destroy(grpc_exec_ctx *exec_ctx,
+                                  grpc_httpcli_context *context) {
+  grpc_pollset_set_destroy(exec_ctx, context->pollset_set);
 }
 
 static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
@@ -125,13 +126,15 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
 
 static void append_error(internal_request *req, grpc_error *error) {
   if (req->overall_error == GRPC_ERROR_NONE) {
-    req->overall_error = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
+    req->overall_error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
   }
   grpc_resolved_address *addr = &req->addresses->addrs[req->next_address - 1];
   char *addr_text = grpc_sockaddr_to_uri(addr);
   req->overall_error = grpc_error_add_child(
       req->overall_error,
-      grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
+      grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
+                         grpc_slice_from_copied_string(addr_text)));
   gpr_free(addr_text);
 }
 
@@ -189,8 +192,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   internal_request *req = arg;
 
   if (!ep) {
-    next_address(exec_ctx, req,
-                 GRPC_ERROR_CREATE("Unexplained handshake failure"));
+    next_address(exec_ctx, req, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                    "Unexplained handshake failure"));
     return;
   }
 
@@ -220,8 +223,8 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   }
   if (req->next_address == req->addresses->naddrs) {
     finish(exec_ctx, req,
-           GRPC_ERROR_CREATE_REFERENCING("Failed HTTP requests to all targets",
-                                         &req->overall_error, 1));
+           GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+               "Failed HTTP requests to all targets", &req->overall_error, 1));
     return;
   }
   addr = &req->addresses->addrs[req->next_address++];

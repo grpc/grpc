@@ -33,18 +33,9 @@ import collections
 import grpc
 import six
 
-INVOCATION_INITIAL_METADATA = (
-    ('0', 'abc'),
-    ('1', 'def'),
-    ('2', 'ghi'),)
-SERVICE_INITIAL_METADATA = (
-    ('3', 'jkl'),
-    ('4', 'mno'),
-    ('5', 'pqr'),)
-SERVICE_TERMINAL_METADATA = (
-    ('6', 'stu'),
-    ('7', 'vwx'),
-    ('8', 'yza'),)
+INVOCATION_INITIAL_METADATA = (('0', 'abc'), ('1', 'def'), ('2', 'ghi'),)
+SERVICE_INITIAL_METADATA = (('3', 'jkl'), ('4', 'mno'), ('5', 'pqr'),)
+SERVICE_TERMINAL_METADATA = (('6', 'stu'), ('7', 'vwx'), ('8', 'yza'),)
 DETAILS = 'test details'
 
 
@@ -103,7 +94,6 @@ def test_secure_channel(target, channel_credentials, server_host_override):
     An implementations.Channel to the remote host through which RPCs may be
       conducted.
   """
-    channel = grpc.secure_channel(target, channel_credentials, ((
-        'grpc.ssl_target_name_override',
-        server_host_override,),))
+    channel = grpc.secure_channel(target, channel_credentials, (
+        ('grpc.ssl_target_name_override', server_host_override,),))
     return channel

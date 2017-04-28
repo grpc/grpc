@@ -243,12 +243,37 @@ PHP_METHOD(Channel, close) {
   }
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 2)
+  ZEND_ARG_INFO(0, target)
+  ZEND_ARG_INFO(0, args)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getTarget, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getConnectivityState, 0, 0, 0)
+  ZEND_ARG_INFO(0, try_to_connect)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_watchConnectivityState, 0, 0, 2)
+  ZEND_ARG_INFO(0, last_state)
+  ZEND_ARG_INFO(0, deadline)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_close, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry channel_methods[] = {
-  PHP_ME(Channel, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-  PHP_ME(Channel, getTarget, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Channel, getConnectivityState, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Channel, watchConnectivityState, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC)
+  PHP_ME(Channel, __construct, arginfo_construct,
+         ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+  PHP_ME(Channel, getTarget, arginfo_getTarget,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Channel, getConnectivityState, arginfo_getConnectivityState,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Channel, watchConnectivityState, arginfo_watchConnectivityState,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Channel, close, arginfo_close,
+         ZEND_ACC_PUBLIC)
   PHP_FE_END
 };
 

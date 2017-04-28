@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.2.0-dev
+PROJECT_NUMBER         = 1.4.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -764,6 +764,7 @@ INPUT                  = doc/PROTOCOL-HTTP2.md \
 doc/PROTOCOL-WEB.md \
 doc/binary-logging.md \
 doc/c-style-guide.md \
+doc/combiner-explainer.md \
 doc/command_line_tool.md \
 doc/compression.md \
 doc/compression_cookbook.md \
@@ -779,13 +780,16 @@ doc/fail_fast.md \
 doc/g_stands_for.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
+doc/http2-interop-test-descriptions.md \
+doc/internationalization.md \
 doc/interop-test-descriptions.md \
 doc/load-balancing.md \
 doc/naming.md \
-doc/negative-http2-interop-test-descriptions.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
+doc/server_side_auth.md \
 doc/service_config.md \
+doc/status_ordering.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
 doc/wait-for-ready.md \
@@ -795,10 +799,13 @@ include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
 include/grpc++/create_channel.h \
 include/grpc++/create_channel_posix.h \
+include/grpc++/ext/health_check_service_server_builder_option.h \
 include/grpc++/generic/async_generic_service.h \
 include/grpc++/generic/generic_stub.h \
 include/grpc++/grpc++.h \
+include/grpc++/health_check_service_interface.h \
 include/grpc++/impl/call.h \
+include/grpc++/impl/channel_argument_option.h \
 include/grpc++/impl/client_unary_call.h \
 include/grpc++/impl/codegen/async_stream.h \
 include/grpc++/impl/codegen/async_unary_call.h \
@@ -810,12 +817,14 @@ include/grpc++/impl/codegen/client_unary_call.h \
 include/grpc++/impl/codegen/completion_queue.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
+include/grpc++/impl/codegen/config_protobuf.h \
 include/grpc++/impl/codegen/core_codegen.h \
 include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
 include/grpc++/impl/codegen/grpc_library.h \
 include/grpc++/impl/codegen/metadata_map.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
+include/grpc++/impl/codegen/proto_utils.h \
 include/grpc++/impl/codegen/rpc_method.h \
 include/grpc++/impl/codegen/rpc_service_method.h \
 include/grpc++/impl/codegen/security/auth_context.h \
@@ -826,7 +835,6 @@ include/grpc++/impl/codegen/service_type.h \
 include/grpc++/impl/codegen/slice.h \
 include/grpc++/impl/codegen/status.h \
 include/grpc++/impl/codegen/status_code_enum.h \
-include/grpc++/impl/codegen/status_helper.h \
 include/grpc++/impl/codegen/string_ref.h \
 include/grpc++/impl/codegen/stub_options.h \
 include/grpc++/impl/codegen/sync_stream.h \
@@ -861,6 +869,12 @@ include/grpc++/support/string_ref.h \
 include/grpc++/support/stub_options.h \
 include/grpc++/support/sync_stream.h \
 include/grpc++/support/time.h \
+include/grpc/byte_buffer.h \
+include/grpc/byte_buffer_reader.h \
+include/grpc/compression.h \
+include/grpc/grpc.h \
+include/grpc/grpc_posix.h \
+include/grpc/grpc_security_constants.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -879,7 +893,11 @@ include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
-include/grpc/impl/codegen/sync_windows.h
+include/grpc/impl/codegen/sync_windows.h \
+include/grpc/load_reporting.h \
+include/grpc/slice.h \
+include/grpc/slice_buffer.h \
+include/grpc/status.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

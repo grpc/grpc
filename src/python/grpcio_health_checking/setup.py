@@ -40,14 +40,15 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import health_commands
 import grpc_version
 
-PACKAGE_DIRECTORIES = {'': '.',}
+PACKAGE_DIRECTORIES = {
+    '': '.',
+}
 
 SETUP_REQUIRES = (
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),)
 
-INSTALL_REQUIRES = (
-    'protobuf>=3.0.0',
-    'grpcio>={version}'.format(version=grpc_version.VERSION),)
+INSTALL_REQUIRES = ('protobuf>=3.2.0',
+                    'grpcio>={version}'.format(version=grpc_version.VERSION),)
 
 COMMAND_CLASS = {
     # Run preprocess from the repository *before* doing any packaging!
@@ -58,6 +59,10 @@ COMMAND_CLASS = {
 setuptools.setup(
     name='grpcio-health-checking',
     version=grpc_version.VERSION,
+    description='Standard Health Checking Service for gRPC',
+    author='The gRPC Authors',
+    author_email='grpc-io@googlegroups.com',
+    url='http://www.grpc.io',
     license='3-clause BSD',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),

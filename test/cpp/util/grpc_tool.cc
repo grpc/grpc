@@ -33,7 +33,7 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
-#include <unistd.h>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -48,11 +48,18 @@
 #include <grpc++/security/credentials.h>
 #include <grpc++/support/string_ref.h>
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/proto_file_parser.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 #include "test/cpp/util/service_describer.h"
+
+#if GPR_WINDOWS
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace grpc {
 namespace testing {
@@ -314,6 +321,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
 
   std::vector<grpc::string> service_list;
   if (!desc_db.GetServices(&service_list)) {
+    fprintf(stderr, "Received an error when querying services endpoint.\n");
     return false;
   }
 
@@ -484,7 +492,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     CliCall call(channel, formatted_method_name, client_metadata);
 
     if (FLAGS_infile.empty()) {
-      if (isatty(STDIN_FILENO)) {
+      if (isatty(fileno(stdin))) {
         print_mode = true;
         fprintf(stderr, "reading streaming request message from stdin...\n");
       }
@@ -566,7 +574,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     } else {
       std::stringstream input_stream;
       if (FLAGS_infile.empty()) {
-        if (isatty(STDIN_FILENO)) {
+        if (isatty(fileno(stdin))) {
           fprintf(stderr, "reading request message from stdin...\n");
         }
         input_stream << std::cin.rdbuf();
@@ -668,7 +676,7 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   } else {
     std::stringstream input_stream;
     if (FLAGS_infile.empty()) {
-      if (isatty(STDIN_FILENO)) {
+      if (isatty(fileno(stdin))) {
         fprintf(stderr, "reading request message from stdin...\n");
       }
       input_stream << std::cin.rdbuf();

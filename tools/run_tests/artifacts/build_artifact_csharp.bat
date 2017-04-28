@@ -29,10 +29,16 @@
 
 @rem Builds C# artifacts on Windows
 
-@call vsprojects\build_vs2013.bat %* || goto :error
+set ARCHITECTURE=%1
+
+@call tools\run_tests\helper_scripts\pre_build_csharp.bat %ARCHITECTURE% || goto :error
+
+cd cmake\build\%ARCHITECTURE%
+cmake --build . --target grpc_csharp_ext --config Release
+cd ..\..\..
 
 mkdir artifacts
-copy /Y vsprojects\Release\grpc_csharp_ext.dll artifacts || copy /Y vsprojects\x64\Release\grpc_csharp_ext.dll artifacts || goto :error
+copy /Y cmake\build\Win32\Release\grpc_csharp_ext.dll artifacts || copy /Y cmake\build\x64\Release\grpc_csharp_ext.dll artifacts || goto :error
 
 goto :EOF
 

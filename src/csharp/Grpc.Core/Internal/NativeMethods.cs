@@ -115,7 +115,8 @@ namespace Grpc.Core.Internal
 
         public readonly Delegates.grpcsharp_sizeof_grpc_event_delegate grpcsharp_sizeof_grpc_event;
 
-        public readonly Delegates.grpcsharp_completion_queue_create_delegate grpcsharp_completion_queue_create;
+        public readonly Delegates.grpcsharp_completion_queue_create_async_delegate grpcsharp_completion_queue_create_async;
+        public readonly Delegates.grpcsharp_completion_queue_create_sync_delegate grpcsharp_completion_queue_create_sync;
         public readonly Delegates.grpcsharp_completion_queue_shutdown_delegate grpcsharp_completion_queue_shutdown;
         public readonly Delegates.grpcsharp_completion_queue_next_delegate grpcsharp_completion_queue_next;
         public readonly Delegates.grpcsharp_completion_queue_pluck_delegate grpcsharp_completion_queue_pluck;
@@ -147,6 +148,12 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_server_cancel_all_calls_delegate grpcsharp_server_cancel_all_calls;
         public readonly Delegates.grpcsharp_server_shutdown_and_notify_callback_delegate grpcsharp_server_shutdown_and_notify_callback;
         public readonly Delegates.grpcsharp_server_destroy_delegate grpcsharp_server_destroy;
+
+        public readonly Delegates.grpcsharp_call_auth_context_delegate grpcsharp_call_auth_context;
+        public readonly Delegates.grpcsharp_auth_context_peer_identity_property_name_delegate grpcsharp_auth_context_peer_identity_property_name;
+        public readonly Delegates.grpcsharp_auth_context_property_iterator_delegate grpcsharp_auth_context_property_iterator;
+        public readonly Delegates.grpcsharp_auth_property_iterator_next_delegate grpcsharp_auth_property_iterator_next;
+        public readonly Delegates.grpcsharp_auth_context_release_delegate grpcsharp_auth_context_release;
 
         public readonly Delegates.gprsharp_now_delegate gprsharp_now;
         public readonly Delegates.gprsharp_inf_future_delegate gprsharp_inf_future;
@@ -223,7 +230,8 @@ namespace Grpc.Core.Internal
 
             this.grpcsharp_sizeof_grpc_event = GetMethodDelegate<Delegates.grpcsharp_sizeof_grpc_event_delegate>(library);
 
-            this.grpcsharp_completion_queue_create = GetMethodDelegate<Delegates.grpcsharp_completion_queue_create_delegate>(library);
+            this.grpcsharp_completion_queue_create_async = GetMethodDelegate<Delegates.grpcsharp_completion_queue_create_async_delegate>(library);
+            this.grpcsharp_completion_queue_create_sync = GetMethodDelegate<Delegates.grpcsharp_completion_queue_create_sync_delegate>(library);
             this.grpcsharp_completion_queue_shutdown = GetMethodDelegate<Delegates.grpcsharp_completion_queue_shutdown_delegate>(library);
             this.grpcsharp_completion_queue_next = GetMethodDelegate<Delegates.grpcsharp_completion_queue_next_delegate>(library);
             this.grpcsharp_completion_queue_pluck = GetMethodDelegate<Delegates.grpcsharp_completion_queue_pluck_delegate>(library);
@@ -255,6 +263,12 @@ namespace Grpc.Core.Internal
             this.grpcsharp_server_cancel_all_calls = GetMethodDelegate<Delegates.grpcsharp_server_cancel_all_calls_delegate>(library);
             this.grpcsharp_server_shutdown_and_notify_callback = GetMethodDelegate<Delegates.grpcsharp_server_shutdown_and_notify_callback_delegate>(library);
             this.grpcsharp_server_destroy = GetMethodDelegate<Delegates.grpcsharp_server_destroy_delegate>(library);
+
+            this.grpcsharp_call_auth_context = GetMethodDelegate<Delegates.grpcsharp_call_auth_context_delegate>(library);
+            this.grpcsharp_auth_context_peer_identity_property_name = GetMethodDelegate<Delegates.grpcsharp_auth_context_peer_identity_property_name_delegate>(library);
+            this.grpcsharp_auth_context_property_iterator = GetMethodDelegate<Delegates.grpcsharp_auth_context_property_iterator_delegate>(library);
+            this.grpcsharp_auth_property_iterator_next = GetMethodDelegate<Delegates.grpcsharp_auth_property_iterator_next_delegate>(library);
+            this.grpcsharp_auth_context_release = GetMethodDelegate<Delegates.grpcsharp_auth_context_release_delegate>(library);
 
             this.gprsharp_now = GetMethodDelegate<Delegates.gprsharp_now_delegate>(library);
             this.gprsharp_inf_future = GetMethodDelegate<Delegates.gprsharp_inf_future_delegate>(library);
@@ -371,7 +385,8 @@ namespace Grpc.Core.Internal
 
             public delegate int grpcsharp_sizeof_grpc_event_delegate();
 
-            public delegate CompletionQueueSafeHandle grpcsharp_completion_queue_create_delegate();
+            public delegate CompletionQueueSafeHandle grpcsharp_completion_queue_create_async_delegate();
+            public delegate CompletionQueueSafeHandle grpcsharp_completion_queue_create_sync_delegate();
             public delegate void grpcsharp_completion_queue_shutdown_delegate(CompletionQueueSafeHandle cq);
             public delegate CompletionQueueEvent grpcsharp_completion_queue_next_delegate(CompletionQueueSafeHandle cq);
             public delegate CompletionQueueEvent grpcsharp_completion_queue_pluck_delegate(CompletionQueueSafeHandle cq, IntPtr tag);
@@ -403,6 +418,12 @@ namespace Grpc.Core.Internal
             public delegate void grpcsharp_server_cancel_all_calls_delegate(ServerSafeHandle server);
             public delegate void grpcsharp_server_shutdown_and_notify_callback_delegate(ServerSafeHandle server, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
             public delegate void grpcsharp_server_destroy_delegate(IntPtr server);
+
+            public delegate AuthContextSafeHandle grpcsharp_call_auth_context_delegate(CallSafeHandle call);
+            public delegate IntPtr grpcsharp_auth_context_peer_identity_property_name_delegate(AuthContextSafeHandle authContext);  // returns const char*
+            public delegate AuthContextSafeHandle.NativeAuthPropertyIterator grpcsharp_auth_context_property_iterator_delegate(AuthContextSafeHandle authContext);
+            public delegate IntPtr grpcsharp_auth_property_iterator_next_delegate(ref AuthContextSafeHandle.NativeAuthPropertyIterator iterator);  // returns const auth_property*
+            public delegate void grpcsharp_auth_context_release_delegate(IntPtr authContext);
 
             public delegate Timespec gprsharp_now_delegate(ClockType clockType);
             public delegate Timespec gprsharp_inf_future_delegate(ClockType clockType);

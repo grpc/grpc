@@ -253,6 +253,13 @@ extern id const kGRPCTrailersKey;
  */
 + (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path;
 
+/**
+ * Set the dispatch queue to be used for callbacks.
+ *
+ * This configuration is only effective before the call starts.
+ */
+- (void)setResponseDispatchQueue:(dispatch_queue_t)queue;
+
 // TODO(jcanizales): Let specify a deadline. As a category of GRXWriter?
 @end
 

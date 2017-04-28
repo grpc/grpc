@@ -84,7 +84,7 @@ module GRPC
     # channel:
     #
     # - :channel_override
-    # when present, this must be a pre-created GRPC::Channel.  If it's
+    # when present, this must be a pre-created GRPC::Core::Channel.  If it's
     # present the host and arbitrary keyword arg areignored, and the RPC
     # connection uses this channel.
     #

@@ -38,7 +38,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -63,12 +64,20 @@ static grpc_channel *client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
     const char *target, grpc_client_channel_type type,
     const grpc_channel_args *args) {
+  if (target == NULL) {
+    gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
+    return NULL;
+  }
   // Add channel arg containing the server URI.
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   arg.key = GRPC_ARG_SERVER_URI;
-  arg.value.string = (char *)target;
-  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  arg.value.string =
+      grpc_resolver_factory_add_default_prefix_if_needed(exec_ctx, target);
+  const char *to_remove[] = {GRPC_ARG_SERVER_URI};
+  grpc_channel_args *new_args =
+      grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
+  gpr_free(arg.value.string);
   grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
                                               GRPC_CLIENT_CHANNEL, NULL);
   grpc_channel_args_destroy(exec_ctx, new_args);

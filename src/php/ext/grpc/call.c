@@ -65,7 +65,7 @@ static zend_object_handlers call_ce_handlers;
 /* Frees and destroys an instance of wrapped_grpc_call */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_call)
   if (p->owned && p->wrapped != NULL) {
-    grpc_call_destroy(p->wrapped);
+    grpc_call_unref(p->wrapped);
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
@@ -104,7 +104,8 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
     str_key = ecalloc(key_len + 1, sizeof(char));
     memcpy(str_key, GRPC_SLICE_START_PTR(elem->key), key_len);
     str_val = ecalloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
-    memcpy(str_val, GRPC_SLICE_START_PTR(elem->value), GRPC_SLICE_LENGTH(elem->value));
+    memcpy(str_val, GRPC_SLICE_START_PTR(elem->value),
+           GRPC_SLICE_LENGTH(elem->value));
     if (php_grpc_zend_hash_find(array_hash, str_key, key_len, (void **)&data)
         == SUCCESS) {
       if (Z_TYPE_P(data) != IS_ARRAY) {
@@ -115,7 +116,8 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
         efree(str_val);
         return NULL;
       }
-      php_grpc_add_next_index_stringl(data, str_val, GRPC_SLICE_LENGTH(elem->value),
+      php_grpc_add_next_index_stringl(data, str_val,
+                                      GRPC_SLICE_LENGTH(elem->value),
                                       false);
     } else {
       PHP_GRPC_MAKE_STD_ZVAL(inner_array);
@@ -172,8 +174,10 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
       if (Z_TYPE_P(value) != IS_STRING) {
         return false;
       }
-      metadata->metadata[metadata->count].key = grpc_slice_from_copied_string(key1);
-      metadata->metadata[metadata->count].value = grpc_slice_from_copied_buffer(Z_STRVAL_P(value), Z_STRLEN_P(value));
+      metadata->metadata[metadata->count].key =
+        grpc_slice_from_copied_string(key1);
+      metadata->metadata[metadata->count].value =
+        grpc_slice_from_copied_buffer(Z_STRVAL_P(value), Z_STRLEN_P(value));
       metadata->count += 1;
     PHP_GRPC_HASH_FOREACH_END()
   PHP_GRPC_HASH_FOREACH_END()
@@ -233,7 +237,8 @@ PHP_METHOD(Call, __construct) {
       grpc_slice_from_copied_string(host_override) : grpc_empty_slice();
   call->wrapped =
     grpc_channel_create_call(channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS,
-                             completion_queue, method_slice, host_override != NULL ? &host_slice : NULL,
+                             completion_queue, method_slice,
+                             host_override != NULL ? &host_slice : NULL,
                              deadline->wrapped, NULL);
   grpc_slice_unref(method_slice);
   grpc_slice_unref(host_slice);
@@ -384,8 +389,10 @@ PHP_METHOD(Call, startBatch) {
                                1 TSRMLS_CC);
           goto cleanup;
         }
-        send_status_details = grpc_slice_from_copied_string(Z_STRVAL_P(inner_value));
-        ops[op_num].data.send_status_from_server.status_details = &send_status_details;
+        send_status_details = grpc_slice_from_copied_string(
+          Z_STRVAL_P(inner_value));
+        ops[op_num].data.send_status_from_server.status_details =
+          &send_status_details;
       } else {
         zend_throw_exception(spl_ce_InvalidArgumentException,
                              "String status details is required",
@@ -557,12 +564,33 @@ PHP_METHOD(Call, setCredentials) {
   RETURN_LONG(error);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 3)
+  ZEND_ARG_INFO(0, channel)
+  ZEND_ARG_INFO(0, method)
+  ZEND_ARG_INFO(0, deadline)
+  ZEND_ARG_INFO(0, host_override)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_startBatch, 0, 0, 1)
+  ZEND_ARG_INFO(0, ops)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getPeer, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_cancel, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_setCredentials, 0, 0, 1)
+  ZEND_ARG_INFO(0, credentials)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry call_methods[] = {
-  PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-  PHP_ME(Call, startBatch, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, getPeer, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, setCredentials, NULL, ZEND_ACC_PUBLIC)
+  PHP_ME(Call, __construct, arginfo_construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+  PHP_ME(Call, startBatch, arginfo_startBatch, ZEND_ACC_PUBLIC)
+  PHP_ME(Call, getPeer, arginfo_getPeer, ZEND_ACC_PUBLIC)
+  PHP_ME(Call, cancel, arginfo_cancel, ZEND_ACC_PUBLIC)
+  PHP_ME(Call, setCredentials, arginfo_setCredentials, ZEND_ACC_PUBLIC)
   PHP_FE_END
 };
 

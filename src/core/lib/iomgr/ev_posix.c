@@ -111,6 +111,12 @@ static void try_engine(const char *engine) {
   }
 }
 
+/* This should be used for testing purposes ONLY */
+void grpc_set_event_engine_test_only(
+    const grpc_event_engine_vtable *ev_engine) {
+  g_event_engine = ev_engine;
+}
+
 /* Call this only after calling grpc_event_engine_init() */
 const char *grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
@@ -191,10 +197,6 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   g_event_engine->pollset_shutdown(exec_ctx, pollset, closure);
 }
 
-void grpc_pollset_reset(grpc_pollset *pollset) {
-  g_event_engine->pollset_reset(pollset);
-}
-
 void grpc_pollset_destroy(grpc_pollset *pollset) {
   g_event_engine->pollset_destroy(pollset);
 }
@@ -219,8 +221,9 @@ grpc_pollset_set *grpc_pollset_set_create(void) {
   return g_event_engine->pollset_set_create();
 }
 
-void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {
-  g_event_engine->pollset_set_destroy(pollset_set);
+void grpc_pollset_set_destroy(grpc_exec_ctx *exec_ctx,
+                              grpc_pollset_set *pollset_set) {
+  g_event_engine->pollset_set_destroy(exec_ctx, pollset_set);
 }
 
 void grpc_pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
