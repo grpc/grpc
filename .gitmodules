@@ -14,9 +14,6 @@
 [submodule "third_party/boringssl"]
 	path = third_party/boringssl
 	url = https://github.com/google/boringssl.git
-[submodule "third_party/thrift"]
-	path = third_party/thrift
-	url = https://github.com/apache/thrift.git
 [submodule "third_party/benchmark"]
 	path = third_party/benchmark
 	url = https://github.com/google/benchmark
