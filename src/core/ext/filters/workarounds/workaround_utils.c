@@ -41,7 +41,9 @@ static void destroy_user_agent_md(void *user_agent_md) {
 static user_agent_parser user_agent_parsers[GRPC_MAX_WORKAROUND_ID];
 
 grpc_user_agent_md *grpc_parse_user_agent(grpc_mdelem md) {
-  grpc_user_agent_md *user_agent_md = (grpc_user_agent_md*)grpc_mdelem_get_user_data(md, destroy_user_agent_md);
+  grpc_user_agent_md *user_agent_md =
+      (grpc_user_agent_md *)grpc_mdelem_get_user_data(md,
+                                                      destroy_user_agent_md);
 
   if (NULL != user_agent_md) {
     return user_agent_md;

@@ -112,7 +112,8 @@ static void start_transport_stream_op_batch(
   }
 
   if (op->send_message) {
-    /* Send message happens after client's user-agent (initial metadata) is received, so workaround_active must be set already */
+    /* Send message happens after client's user-agent (initial metadata) is
+     * received, so workaround_active must be set already */
     if (calld->workaround_active) {
       op->payload->send_message.send_message->flags |= GRPC_WRITE_NO_COMPRESS;
     }
@@ -204,15 +205,16 @@ const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
 
 static bool register_workaround_cronet_compression(
     grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
-  const grpc_channel_args *channel_args =
+  const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  const grpc_arg *a =
-      grpc_channel_args_find(channel_args, GRPC_ARG_WORKAROUND_CRONET_COMPRESSION);
+  const grpc_arg* a = grpc_channel_args_find(
+      channel_args, GRPC_ARG_WORKAROUND_CRONET_COMPRESSION);
   if (a == NULL) {
     return true;
   }
   if (a->type != GRPC_ARG_INTEGER) {
-    gpr_log(GPR_ERROR, "%s ignored: it must be an integer", GRPC_ARG_WORKAROUND_CRONET_COMPRESSION);
+    gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
+            GRPC_ARG_WORKAROUND_CRONET_COMPRESSION);
     return true;
   }
   if (a->value.integer == 0) {

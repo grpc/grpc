@@ -808,6 +808,7 @@ filegroups:
   plugin: grpc_workaround_cronet_compression_filter
   uses:
   - grpc_base
+  - grpc_server_backward_compatibility
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
