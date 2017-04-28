@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0-dev</span>
+   &#160;<span id="projectnumber">3.0.0</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_2b106b2ccf4cfd2ff2da25af9c57b427.html">include</a></li><li class="navelem"><a class="el" href="dir_8cf71b155ec1b0359a43d79a35f0146c.html">grpc</a></li><li class="navelem"><a class="el" href="dir_3fe197b36ee46fa49e36f94496d14705.html">impl</a></li><li class="navelem"><a class="el" href="dir_fa41768413baab4953cff871e71b47eb.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_27c65f9b8b3387c47015966ca861342b.html">impl</a></li><li class="navelem"><a class="el" href="dir_2d2a7752fa77ea824010e525334e7867.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -184,7 +184,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error could not determine platform for atm</span></div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_ATM_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> <a class="code" href="impl_2codegen_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">gpr_atm_no_barrier_clamped_add</a>(<a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *value, <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> delta,</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                                       <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> min, <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> max);</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_ATM_H */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="impl_2codegen_2atm_8h_html_acd924aafc13347097cc06c74c8b5a68d"><div class="ttname"><a href="impl_2codegen_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">gpr_atm_no_barrier_clamped_add</a></div><div class="ttdeci">gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm *value, gpr_atm delta, gpr_atm min, gpr_atm max)</div><div class="ttdoc">Adds delta to *value, clamping the result to the range specified by min and max. </div></div>
+<div class="ttc" id="impl_2codegen_2atm__gcc__atomic_8h_html_a0a6314f31fcae0666a93961bed98af51"><div class="ttname"><a href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a></div><div class="ttdeci">intptr_t gpr_atm</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:41</div></div>
 <div class="ttc" id="impl_2codegen_2atm__gcc__atomic_8h_html"><div class="ttname"><a href="impl_2codegen_2atm__gcc__atomic_8h.html">atm_gcc_atomic.h</a></div></div>
 <div class="ttc" id="impl_2codegen_2atm__gcc__sync_8h_html"><div class="ttname"><a href="impl_2codegen_2atm__gcc__sync_8h.html">atm_gcc_sync.h</a></div></div>
 <div class="ttc" id="impl_2codegen_2port__platform_8h_html"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html">port_platform.h</a></div></div>
@@ -192,7 +197,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

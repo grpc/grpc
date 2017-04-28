@@ -6,6 +6,7 @@ var searchData=
   ['grpc_20_28core_29_20compression_20cookbook',['gRPC (Core) Compression Cookbook',['../md_doc_compression_cookbook.html',1,'']]],
   ['grpc_20connection_20backoff_20protocol',['GRPC Connection Backoff Protocol',['../md_doc_connection-backoff.html',1,'']]],
   ['grpc_20connectivity_20semantics_20and_20api',['gRPC Connectivity Semantics and API',['../md_doc_connectivity-semantics-and-api.html',1,'']]],
+  ['grpc_20error',['gRPC Error',['../md_doc_core_grpc-error.html',1,'']]],
   ['grpc_20c_2b_2b_20style_20guide',['GRPC C++ STYLE GUIDE',['../md_doc_cpp-style-guide.html',1,'']]],
   ['grpc_20environment_20variables',['gRPC environment variables',['../md_doc_environment_variables.html',1,'']]],
   ['g_5fstands_5ffor',['g_stands_for',['../md_doc_g_stands_for.html',1,'']]],

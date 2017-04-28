@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0-dev</span>
+   &#160;<span id="projectnumber">3.0.0</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_2b106b2ccf4cfd2ff2da25af9c57b427.html">include</a></li><li class="navelem"><a class="el" href="dir_8cf71b155ec1b0359a43d79a35f0146c.html">grpc</a></li><li class="navelem"><a class="el" href="dir_3fe197b36ee46fa49e36f94496d14705.html">impl</a></li><li class="navelem"><a class="el" href="dir_fa41768413baab4953cff871e71b47eb.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_27c65f9b8b3387c47015966ca861342b.html">impl</a></li><li class="navelem"><a class="el" href="dir_2d2a7752fa77ea824010e525334e7867.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -99,6 +99,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
+<tr class="memitem:a5fb170a483552faeb4b6d4acb674c44c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a5fb170a483552faeb4b6d4acb674c44c">GPR_ATM_MAX</a>&#160;&#160;&#160;INTPTR_MAX</td></tr>
+<tr class="separator:a5fb170a483552faeb4b6d4acb674c44c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5a1f94112dcd03309d6716d43c8edf3f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a5a1f94112dcd03309d6716d43c8edf3f">GPR_ATM_COMPILE_BARRIER_</a>()&#160;&#160;&#160;__asm__ __volatile__(&quot;&quot; : : : &quot;memory&quot;)</td></tr>
 <tr class="separator:a5a1f94112dcd03309d6716d43c8edf3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4ceb46c9b854db0ade8cfe2f37edb878"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a4ceb46c9b854db0ade8cfe2f37edb878">GPR_ATM_LS_BARRIER_</a>()&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__windows_8h.html#a8e58c94aff5c7161bc3cbfde878dd03d">gpr_atm_full_barrier</a>()</td></tr>
@@ -115,6 +117,8 @@ Macros</h2></td></tr>
 <tr class="separator:a1a90e5777158aaa53624822f1f87dd90"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae7c3b215cda868ee9ee778822000c3f2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#ae7c3b215cda868ee9ee778822000c3f2">gpr_atm_rel_cas</a>(p, o, n)&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">gpr_atm_acq_cas</a>((p), (o), (n))</td></tr>
 <tr class="separator:ae7c3b215cda868ee9ee778822000c3f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d29f224b49d4de8bb2b0d7feae64fcb"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a9d29f224b49d4de8bb2b0d7feae64fcb">gpr_atm_full_cas</a>(p, o, n)&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">gpr_atm_acq_cas</a>((p), (o), (n))</td></tr>
+<tr class="separator:a9d29f224b49d4de8bb2b0d7feae64fcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -184,6 +188,38 @@ Typedefs</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a9d29f224b49d4de8bb2b0d7feae64fcb"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define gpr_atm_full_cas</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">p, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">o, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">n&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td>&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">gpr_atm_acq_cas</a>((p), (o), (n))</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="abada8771b338845e4c6ef93c8392582c"></a>
 <div class="memitem">
 <div class="memproto">
@@ -219,6 +255,18 @@ Typedefs</h2></td></tr>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td>&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__windows_8h.html#a8e58c94aff5c7161bc3cbfde878dd03d">gpr_atm_full_barrier</a>()</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a5fb170a483552faeb4b6d4acb674c44c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GPR_ATM_MAX&#160;&#160;&#160;INTPTR_MAX</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -331,7 +379,7 @@ Typedefs</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

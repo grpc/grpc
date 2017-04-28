@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -141,36 +141,44 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;</div>
 <div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="classgrpc_1_1_grpc_library_codegen.html">   52</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_grpc_library_codegen.html">GrpcLibraryCodegen</a> {</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="classgrpc_1_1_grpc_library_codegen.html#a545f94591041b67c3993603ecbd2dedf">   54</a></span>&#160;  <a class="code" href="classgrpc_1_1_grpc_library_codegen.html#a545f94591041b67c3993603ecbd2dedf">GrpcLibraryCodegen</a>() {</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <a class="code" href="core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(<a class="code" href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">g_glip</a> &amp;&amp;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                       <span class="stringliteral">&quot;gRPC library not initialized. See &quot;</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                       <span class="stringliteral">&quot;grpc::internal::GrpcLibraryInitializer.&quot;</span>);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <a class="code" href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">g_glip</a>-&gt;<a class="code" href="classgrpc_1_1_grpc_library_interface.html#a5ddb5274e494472bfbb9133b82be6575">init</a>();</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  }</div>
-<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classgrpc_1_1_grpc_library_codegen.html#a81bacc4d1232580ec824d99bfa059b2d">   60</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1_grpc_library_codegen.html#a81bacc4d1232580ec824d99bfa059b2d">~GrpcLibraryCodegen</a>() {</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <a class="code" href="core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(<a class="code" href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">g_glip</a> &amp;&amp;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                       <span class="stringliteral">&quot;gRPC library not initialized. See &quot;</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                       <span class="stringliteral">&quot;grpc::internal::GrpcLibraryInitializer.&quot;</span>);</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <a class="code" href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">g_glip</a>-&gt;<a class="code" href="classgrpc_1_1_grpc_library_interface.html#a012f005b6db4bf82a691d738ebe59fd7">shutdown</a>();</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  }</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;};</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_GRPC_LIBRARY_H</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="classgrpc_1_1_grpc_library_codegen.html#a6cbc48b7ceffedeb68abd5a21daac729">   54</a></span>&#160;  <a class="code" href="classgrpc_1_1_grpc_library_codegen.html#a6cbc48b7ceffedeb68abd5a21daac729">GrpcLibraryCodegen</a>(<span class="keywordtype">bool</span> call_grpc_init = <span class="keyword">true</span>) : grpc_init_called_(false) {</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordflow">if</span> (call_grpc_init) {</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;      <a class="code" href="core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(<a class="code" href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">g_glip</a> &amp;&amp;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                         <span class="stringliteral">&quot;gRPC library not initialized. See &quot;</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                         <span class="stringliteral">&quot;grpc::internal::GrpcLibraryInitializer.&quot;</span>);</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;      <a class="code" href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">g_glip</a>-&gt;<a class="code" href="classgrpc_1_1_grpc_library_interface.html#a5ddb5274e494472bfbb9133b82be6575">init</a>();</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;      grpc_init_called_ = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    }</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  }</div>
+<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="classgrpc_1_1_grpc_library_codegen.html#a81bacc4d1232580ec824d99bfa059b2d">   63</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1_grpc_library_codegen.html#a81bacc4d1232580ec824d99bfa059b2d">~GrpcLibraryCodegen</a>() {</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keywordflow">if</span> (grpc_init_called_) {</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;      <a class="code" href="core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(<a class="code" href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">g_glip</a> &amp;&amp;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                         <span class="stringliteral">&quot;gRPC library not initialized. See &quot;</span></div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                         <span class="stringliteral">&quot;grpc::internal::GrpcLibraryInitializer.&quot;</span>);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;      <a class="code" href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">g_glip</a>-&gt;<a class="code" href="classgrpc_1_1_grpc_library_interface.html#a012f005b6db4bf82a691d738ebe59fd7">shutdown</a>();</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    }</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  }</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keywordtype">bool</span> grpc_init_called_;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;};</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_GRPC_LIBRARY_H</span></div>
 <div class="ttc" id="core__codegen__interface_8h_html"><div class="ttname"><a href="core__codegen__interface_8h.html">core_codegen_interface.h</a></div></div>
-<div class="ttc" id="core__codegen__interface_8h_html_a39c1421e7081b57c503487659e2653a5"><div class="ttname"><a href="core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a></div><div class="ttdeci">#define GPR_CODEGEN_ASSERT(x)</div><div class="ttdoc">Codegen specific version of GPR_ASSERT. </div><div class="ttdef"><b>Definition:</b> core_codegen_interface.h:121</div></div>
+<div class="ttc" id="core__codegen__interface_8h_html_a39c1421e7081b57c503487659e2653a5"><div class="ttname"><a href="core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a></div><div class="ttdeci">#define GPR_CODEGEN_ASSERT(x)</div><div class="ttdoc">Codegen specific version of GPR_ASSERT. </div><div class="ttdef"><b>Definition:</b> core_codegen_interface.h:122</div></div>
 <div class="ttc" id="namespacegrpc_html_ae98af9599a8d1a02e75bae1a9250e1dc"><div class="ttname"><a href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">grpc::g_glip</a></div><div class="ttdeci">GrpcLibraryInterface * g_glip</div><div class="ttdoc">Initialized by grpc::GrpcLibraryInitializer from &lt;grpc++/impl/grpc_library.h&gt; </div></div>
 <div class="ttc" id="classgrpc_1_1_grpc_library_codegen_html"><div class="ttname"><a href="classgrpc_1_1_grpc_library_codegen.html">grpc::GrpcLibraryCodegen</a></div><div class="ttdoc">Classes that require gRPC to be initialized should inherit from this class. </div><div class="ttdef"><b>Definition:</b> grpc_library.h:52</div></div>
 <div class="ttc" id="classgrpc_1_1_grpc_library_interface_html"><div class="ttname"><a href="classgrpc_1_1_grpc_library_interface.html">grpc::GrpcLibraryInterface</a></div><div class="ttdef"><b>Definition:</b> grpc_library.h:41</div></div>
-<div class="ttc" id="classgrpc_1_1_grpc_library_codegen_html_a545f94591041b67c3993603ecbd2dedf"><div class="ttname"><a href="classgrpc_1_1_grpc_library_codegen.html#a545f94591041b67c3993603ecbd2dedf">grpc::GrpcLibraryCodegen::GrpcLibraryCodegen</a></div><div class="ttdeci">GrpcLibraryCodegen()</div><div class="ttdef"><b>Definition:</b> grpc_library.h:54</div></div>
 <div class="ttc" id="classgrpc_1_1_grpc_library_interface_html_a5ddb5274e494472bfbb9133b82be6575"><div class="ttname"><a href="classgrpc_1_1_grpc_library_interface.html#a5ddb5274e494472bfbb9133b82be6575">grpc::GrpcLibraryInterface::init</a></div><div class="ttdeci">virtual void init()=0</div></div>
-<div class="ttc" id="classgrpc_1_1_grpc_library_codegen_html_a81bacc4d1232580ec824d99bfa059b2d"><div class="ttname"><a href="classgrpc_1_1_grpc_library_codegen.html#a81bacc4d1232580ec824d99bfa059b2d">grpc::GrpcLibraryCodegen::~GrpcLibraryCodegen</a></div><div class="ttdeci">virtual ~GrpcLibraryCodegen()</div><div class="ttdef"><b>Definition:</b> grpc_library.h:60</div></div>
+<div class="ttc" id="classgrpc_1_1_grpc_library_codegen_html_a81bacc4d1232580ec824d99bfa059b2d"><div class="ttname"><a href="classgrpc_1_1_grpc_library_codegen.html#a81bacc4d1232580ec824d99bfa059b2d">grpc::GrpcLibraryCodegen::~GrpcLibraryCodegen</a></div><div class="ttdeci">virtual ~GrpcLibraryCodegen()</div><div class="ttdef"><b>Definition:</b> grpc_library.h:63</div></div>
 <div class="ttc" id="classgrpc_1_1_grpc_library_interface_html_a012f005b6db4bf82a691d738ebe59fd7"><div class="ttname"><a href="classgrpc_1_1_grpc_library_interface.html#a012f005b6db4bf82a691d738ebe59fd7">grpc::GrpcLibraryInterface::shutdown</a></div><div class="ttdeci">virtual void shutdown()=0</div></div>
+<div class="ttc" id="classgrpc_1_1_grpc_library_codegen_html_a6cbc48b7ceffedeb68abd5a21daac729"><div class="ttname"><a href="classgrpc_1_1_grpc_library_codegen.html#a6cbc48b7ceffedeb68abd5a21daac729">grpc::GrpcLibraryCodegen::GrpcLibraryCodegen</a></div><div class="ttdeci">GrpcLibraryCodegen(bool call_grpc_init=true)</div><div class="ttdef"><b>Definition:</b> grpc_library.h:54</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:30 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

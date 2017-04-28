@@ -13,6 +13,7 @@ var searchData=
   ['epoll_2dpolling_2dengine_2emd',['epoll-polling-engine.md',['../epoll-polling-engine_8md.html',1,'']]],
   ['eq',['eq',['../structgrpc__slice__refcount__vtable.html#a9f914a5a0b094a7343a23894b1a2de40',1,'grpc_slice_refcount_vtable']]],
   ['error_5fcode',['error_code',['../classgrpc_1_1_status.html#a78b50cb074bcd9f1dd50e8f212f7e181',1,'grpc::Status']]],
+  ['error_5fdetails',['error_details',['../classgrpc_1_1_status.html#a833996c1c8789062e4adb75df83fec2d',1,'grpc::Status']]],
   ['error_5fmessage',['error_message',['../classgrpc_1_1_status.html#a87888a7acefced58302f89a295940f16',1,'grpc::Status']]],
   ['exec_5fctx_5ffwd_2eh',['exec_ctx_fwd.h',['../exec__ctx__fwd_8h.html',1,'']]]
 ];

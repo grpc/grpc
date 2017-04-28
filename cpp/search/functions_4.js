@@ -9,5 +9,6 @@ var searchData=
   ['end',['end',['../classgrpc_1_1_auth_context.html#a81d358b427e0f1096e148918cdeef991',1,'grpc::AuthContext::end()'],['../classgrpc_1_1string__ref.html#a05a9dc01fb7935e0c6de1aff833e6aa6',1,'grpc::string_ref::end()'],['../classgrpc_1_1_slice.html#a61a8cc0f3ccffcd6ab53dd660bdbaa79',1,'grpc::Slice::end()']]],
   ['ends_5fwith',['ends_with',['../classgrpc_1_1string__ref.html#a07a931b17f1b9f53c48126f38c4a5fb8',1,'grpc::string_ref']]],
   ['error_5fcode',['error_code',['../classgrpc_1_1_status.html#a78b50cb074bcd9f1dd50e8f212f7e181',1,'grpc::Status']]],
+  ['error_5fdetails',['error_details',['../classgrpc_1_1_status.html#a833996c1c8789062e4adb75df83fec2d',1,'grpc::Status']]],
   ['error_5fmessage',['error_message',['../classgrpc_1_1_status.html#a87888a7acefced58302f89a295940f16',1,'grpc::Status']]]
 ];

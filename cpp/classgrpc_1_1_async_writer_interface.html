@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -108,6 +108,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a40c1091ac5cb5243c874da725ae291b4"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_writer_interface.html#a40c1091ac5cb5243c874da725ae291b4">Write</a> (const W &amp;msg, void *tag)=0</td></tr>
 <tr class="memdesc:a40c1091ac5cb5243c874da725ae291b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> with identifying tag <em>tag</em>.  <a href="#a40c1091ac5cb5243c874da725ae291b4">More...</a><br/></td></tr>
 <tr class="separator:a40c1091ac5cb5243c874da725ae291b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a8480dbf5ad95384c929d9db91b6074"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_writer_interface.html#a6a8480dbf5ad95384c929d9db91b6074">Write</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options, void *tag)=0</td></tr>
+<tr class="memdesc:a6a8480dbf5ad95384c929d9db91b6074"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>.  <a href="#a6a8480dbf5ad95384c929d9db91b6074">More...</a><br/></td></tr>
+<tr class="separator:a6a8480dbf5ad95384c929d9db91b6074"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78097d5f23f4aa2c1b919b12800db90d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_writer_interface.html#a78097d5f23f4aa2c1b919b12800db90d">WriteLast</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options, void *tag)</td></tr>
+<tr class="memdesc:a78097d5f23f4aa2c1b919b12800db90d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> and coalesce it with the writing of trailing metadata, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>.  <a href="#a78097d5f23f4aa2c1b919b12800db90d">More...</a><br/></td></tr>
+<tr class="separator:a78097d5f23f4aa2c1b919b12800db90d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;class W&gt;<br/>
@@ -189,13 +195,121 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a6a8480dbf5ad95384c929d9db91b6074"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class W &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classgrpc_1_1_async_writer_interface.html">grpc::AsyncWriterInterface</a>&lt; W &gt;::Write </td>
+          <td>(</td>
+          <td class="paramtype">const W &amp;&#160;</td>
+          <td class="paramname"><em>msg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&#160;</td>
+          <td class="paramname"><em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>tag</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Request the writing of <em>msg</em> using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>. </p>
+<p>Only one write may be outstanding at any given time. This means that after calling Write, one must wait to receive <em>tag</em> from the completion queue BEFORE calling Write again. <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> is used to set the write options of this message. This is thread-safe with respect to <em>Read</em> </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>The message to be written. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">options</td><td>The <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> to be used to write this message. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>The tag identifying the operation. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Implemented in <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a325a7fa8669c6212f36da5cf59ffb80c">grpc::ServerAsyncReaderWriter&lt; W, R &gt;</a>, <a class="el" href="classgrpc_1_1_server_async_writer.html#a370212343d5044083c218b5ee0fa0057">grpc::ServerAsyncWriter&lt; W &gt;</a>, <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#abcea1a4d9d8f6f1070940b1997fe0125">grpc::ClientAsyncReaderWriter&lt; W, R &gt;</a>, and <a class="el" href="classgrpc_1_1_client_async_writer.html#a3f3d8e3e47b7181f7312fd6e3eb32674">grpc::ClientAsyncWriter&lt; W &gt;</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a78097d5f23f4aa2c1b919b12800db90d"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class W &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1_async_writer_interface.html">grpc::AsyncWriterInterface</a>&lt; W &gt;::WriteLast </td>
+          <td>(</td>
+          <td class="paramtype">const W &amp;&#160;</td>
+          <td class="paramname"><em>msg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&#160;</td>
+          <td class="paramname"><em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>tag</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Request the writing of <em>msg</em> and coalesce it with the writing of trailing metadata, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>. </p>
+<p>For client, WriteLast is equivalent of performing Write and WritesDone in a single step. For server, WriteLast buffers the <em>msg</em>. The writing of <em>msg</em> is held until Finish is called, where <em>msg</em> and trailing metadata are coalesced and write is initiated. Note that WriteLast can only buffer <em>msg</em> up to the flow control window size. If <em>msg</em> size is larger than the window size, it will be sent on wire without buffering.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>The message to be written. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">options</td><td>The <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> to be used to write this message. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>The tag identifying the operation. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc++/impl/codegen/<a class="el" href="impl_2codegen_2async__stream_8h_source.html">async_stream.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

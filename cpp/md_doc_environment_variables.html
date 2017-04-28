@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -83,7 +83,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <div class="textblock"><p>gRPC C core based implementations (those contained in this repository) expose some configuration as environment variables that can be set.</p>
 <ul>
-<li>GRPC_ABORT_ON_LEAKS A debugging aid to cause a call to abort() when gRPC objects are leaked past grpc_shutdown(). Set to 1 to cause the abort, if unset or 0 it does not abort the process.</li>
+<li>GRPC_ABORT_ON_LEAKS A debugging aid to cause a call to abort() when gRPC objects are leaked past <a class="el" href="grpc_8h.html#a35f55253e80714c17f4f3a0657e06f1b" title="Shut down the grpc library. ">grpc_shutdown()</a>. Set to 1 to cause the abort, if unset or 0 it does not abort the process.</li>
 <li>GOOGLE_APPLICATION_CREDENTIALS The path to find the credentials to use when Google credentials are created</li>
 <li>GRPC_SSL_CIPHER_SUITES A colon separated list of cipher suites to use with OpenSSL Defaults to: ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-GCM-SHA384</li>
 <li>GRPC_DEFAULT_SSL_ROOTS_FILE_PATH PEM file to load SSL roots from</li>
@@ -114,6 +114,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>queue_timeout</li>
 <li>server_channel - lightweight trace of significant server channel events</li>
 <li>secure_endpoint - traces bytes flowing through encrypted channels</li>
+<li>timer - timers (alarms) in the grpc internals</li>
 <li>transport_security - traces metadata about secure channel establishment</li>
 <li>tcp - traces bytes in and out of a channel</li>
 </ul>
@@ -123,14 +124,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_VERBOSITY Default gRPC logging verbosity - one of:<ul>
 <li>DEBUG - log all gRPC messages</li>
 <li>INFO - log INFO and ERROR message</li>
-<li>ERROR - log only errors </li>
+<li>ERROR - log only errors</li>
+</ul>
+</li>
+<li>GRPC_DNS_RESOLVER Declares which DNS resolver to use. The default is ares if gRPC is built with c-ares support. Otherwise, the value of this environment variable is ignored. Available DNS resolver include:<ul>
+<li>native (default)- a DNS resolver based around getaddrinfo(), creates a new thread to perform name resolution</li>
+<li>ares - a DNS resolver based around the c-ares library </li>
 </ul>
 </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

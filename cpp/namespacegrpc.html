@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -444,8 +444,14 @@ Functions</h2></td></tr>
 <tr class="separator:a892b88cf1c9b9c9a3d2438286413218c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac6cb56443dd770ee50262a69abdb0b40"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ac6cb56443dd770ee50262a69abdb0b40">DefaultHealthCheckServiceEnabled</a> ()</td></tr>
 <tr class="separator:ac6cb56443dd770ee50262a69abdb0b40"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a16ecfcd344f569a6fcfa2c42e3a43aca"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a16ecfcd344f569a6fcfa2c42e3a43aca">FillMetadataArray</a> (const std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;metadata)</td></tr>
-<tr class="separator:a16ecfcd344f569a6fcfa2c42e3a43aca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a983ffd386cf23748febdda5044b68cb1"><td class="memItemLeft" align="right" valign="top">std::unique_ptr<br class="typebreak"/>
+&lt; <a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a983ffd386cf23748febdda5044b68cb1">MakeChannelArgumentOption</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;value)</td></tr>
+<tr class="separator:a983ffd386cf23748febdda5044b68cb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb308dc55d176f32000bb02296dee630"><td class="memItemLeft" align="right" valign="top">std::unique_ptr<br class="typebreak"/>
+&lt; <a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#afb308dc55d176f32000bb02296dee630">MakeChannelArgumentOption</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name, int value)</td></tr>
+<tr class="separator:afb308dc55d176f32000bb02296dee630"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add35c075963d605c19bc01005e0c6def"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#add35c075963d605c19bc01005e0c6def">FillMetadataArray</a> (const std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;metadata, size_t *metadata_count, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;optional_error_details)</td></tr>
+<tr class="separator:add35c075963d605c19bc01005e0c6def"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35d5687ea2da09f9376f2caa42a1db1b"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
 <tr class="memitem:a35d5687ea2da09f9376f2caa42a1db1b"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a35d5687ea2da09f9376f2caa42a1db1b">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
 <tr class="separator:a35d5687ea2da09f9376f2caa42a1db1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -537,6 +543,8 @@ Variables</h2></td></tr>
 <tr class="separator:a7252666b30ae42dcc5336bb4a701d7ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abbcecc18dae64c65df0b6d9aa8bf67a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_core_codegen_interface.html">CoreCodegenInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">g_core_codegen_interface</a></td></tr>
 <tr class="separator:abbcecc18dae64c65df0b6d9aa8bf67a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9c5d7993d059f2994e81c553fe5cfba"><td class="memItemLeft" align="right" valign="top">const char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ab9c5d7993d059f2994e81c553fe5cfba">kBinaryErrorDetailsKey</a> [] = &quot;grpc-status-details-bin&quot;</td></tr>
+<tr class="separator:ab9c5d7993d059f2994e81c553fe5cfba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae98af9599a8d1a02e75bae1a9250e1dc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_grpc_library_interface.html">GrpcLibraryInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">g_glip</a></td></tr>
 <tr class="memdesc:ae98af9599a8d1a02e75bae1a9250e1dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialized by <em>grpc::GrpcLibraryInitializer</em> from &lt;grpc++/impl/grpc_library.h&gt;  <a href="#ae98af9599a8d1a02e75bae1a9250e1dc">More...</a><br/></td></tr>
 <tr class="separator:ae98af9599a8d1a02e75bae1a9250e1dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -938,7 +946,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a16ecfcd344f569a6fcfa2c42e3a43aca"></a>
+<a class="anchor" id="add35c075963d605c19bc01005e0c6def"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -949,8 +957,24 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
           <td class="memname"><a class="el" href="structgrpc__metadata.html">grpc_metadata</a>* grpc::FillMetadataArray </td>
           <td>(</td>
           <td class="paramtype">const std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;&#160;</td>
-          <td class="paramname"><em>metadata</em></td><td>)</td>
+          <td class="paramname"><em>metadata</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">size_t *&#160;</td>
+          <td class="paramname"><em>metadata_count</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramname"><em>optional_error_details</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -1102,6 +1126,58 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div><div class="memdoc">
 
 <p>Builds insecure server credentials. </p>
+
+</div>
+</div>
+<a class="anchor" id="a983ffd386cf23748febdda5044b68cb1"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;<a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a>&gt; grpc::MakeChannelArgumentOption </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="afb308dc55d176f32000bb02296dee630"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;<a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a>&gt; grpc::MakeChannelArgumentOption </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -1630,6 +1706,18 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="ab9c5d7993d059f2994e81c553fe5cfba"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char grpc::kBinaryErrorDetailsKey[] = &quot;grpc-status-details-bin&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a7252666b30ae42dcc5336bb4a701d7ba"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1647,7 +1735,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

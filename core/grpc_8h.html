@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0-dev</span>
+   &#160;<span id="projectnumber">3.0.0</span>
    </div>
   </td>
  </tr>
@@ -82,12 +82,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_2b106b2ccf4cfd2ff2da25af9c57b427.html">include</a></li><li class="navelem"><a class="el" href="dir_8cf71b155ec1b0359a43d79a35f0146c.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#define-members">Macros</a> &#124;
+<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
@@ -105,14 +107,42 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div>
 <p><a href="grpc_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
+<tr class="memitem:a52497b2b6db8035126a8b45467a14d97"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a52497b2b6db8035126a8b45467a14d97">GRPC_CQ_CURRENT_VERSION</a>&#160;&#160;&#160;1</td></tr>
+<tr class="separator:a52497b2b6db8035126a8b45467a14d97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7fa47963513b9ce50ca4006b9db94c5e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a7fa47963513b9ce50ca4006b9db94c5e">GRPC_MAX_COMPLETION_QUEUE_PLUCKERS</a>&#160;&#160;&#160;6</td></tr>
 <tr class="memdesc:a7fa47963513b9ce50ca4006b9db94c5e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum number of outstanding grpc_completion_queue_pluck executions per completion queue.  <a href="#a7fa47963513b9ce50ca4006b9db94c5e">More...</a><br/></td></tr>
 <tr class="separator:a7fa47963513b9ce50ca4006b9db94c5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a8113e2fd72a5fbb372d691a0c2206422"><td class="memItemLeft" align="right" valign="top">typedef struct <br class="typebreak"/>
+<a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a8113e2fd72a5fbb372d691a0c2206422">grpc_completion_queue_attributes</a></td></tr>
+<tr class="separator:a8113e2fd72a5fbb372d691a0c2206422"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7598a0f60120f40389e6e264d23b88a6"><td class="memItemLeft" align="right" valign="top">typedef struct <br class="typebreak"/>
+<a class="el" href="grpc_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a></td></tr>
+<tr class="memdesc:a7598a0f60120f40389e6e264d23b88a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The completion queue factory structure is opaque to the callers of grpc.  <a href="#a7598a0f60120f40389e6e264d23b88a6">More...</a><br/></td></tr>
+<tr class="separator:a7598a0f60120f40389e6e264d23b88a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
+<tr class="memitem:a1d6272e15d32381a9ffa027cefd60bf8"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">grpc_cq_completion_type</a> { <a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a3fccd6237614f711bfc1999438ed2676">GRPC_CQ_NEXT</a> = 1, 
+<a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a">GRPC_CQ_PLUCK</a>
+ }</td></tr>
+<tr class="memdesc:a1d6272e15d32381a9ffa027cefd60bf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specifies the type of APIs to use to pop events from the completion queue.  <a href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">More...</a><br/></td></tr>
+<tr class="separator:a1d6272e15d32381a9ffa027cefd60bf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f3d3ec662c2a8ac669c98163d511343"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343">grpc_cq_polling_type</a> { <a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8">GRPC_CQ_DEFAULT_POLLING</a>, 
+<a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343aa291aea150282f3a2366437d8fc93b11">GRPC_CQ_NON_LISTENING</a>, 
+<a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343a30fe3e6720c740094d5295546e9bb849">GRPC_CQ_NON_POLLING</a>
+ }</td></tr>
+<tr class="memdesc:a6f3d3ec662c2a8ac669c98163d511343"><td class="mdescLeft">&#160;</td><td class="mdescRight">Completion queues internally MAY maintain a set of file descriptors in a structure called 'pollset'.  <a href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343">More...</a><br/></td></tr>
+<tr class="separator:a6f3d3ec662c2a8ac669c98163d511343"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab04022748000f50c2590230f985acbc"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aab04022748000f50c2590230f985acbc">grpc_server_register_method_payload_handling</a> { <a class="el" href="grpc_8h.html#aab04022748000f50c2590230f985acbca366bf1a7d2e4cafb3a606436876a1555">GRPC_SRM_PAYLOAD_NONE</a>, 
 <a class="el" href="grpc_8h.html#aab04022748000f50c2590230f985acbcaf954872e80a453fe2fd41c81c3a2b7cf">GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER</a>
  }</td></tr>
@@ -144,6 +174,16 @@ Functions</h2></td></tr>
 <tr class="memitem:a62cdc0eb52e0d7742c2f1b72e4cb4850"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a62cdc0eb52e0d7742c2f1b72e4cb4850">grpc_g_stands_for</a> (void)</td></tr>
 <tr class="memdesc:a62cdc0eb52e0d7742c2f1b72e4cb4850"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a string specifying what the 'g' in gRPC stands for.  <a href="#a62cdc0eb52e0d7742c2f1b72e4cb4850">More...</a><br/></td></tr>
 <tr class="separator:a62cdc0eb52e0d7742c2f1b72e4cb4850"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7e0ae56f1bbfd9746805bc0161f80bc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> const <br class="typebreak"/>
+<a class="el" href="grpc_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aa7e0ae56f1bbfd9746805bc0161f80bc">grpc_completion_queue_factory_lookup</a> (const <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a> *attributes)</td></tr>
+<tr class="memdesc:aa7e0ae56f1bbfd9746805bc0161f80bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the completion queue factory based on the attributes.  <a href="#aa7e0ae56f1bbfd9746805bc0161f80bc">More...</a><br/></td></tr>
+<tr class="separator:aa7e0ae56f1bbfd9746805bc0161f80bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a687672b2c261e965286e36f66e3adbef"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a687672b2c261e965286e36f66e3adbef">grpc_completion_queue_create_for_next</a> (void *reserved)</td></tr>
+<tr class="memdesc:a687672b2c261e965286e36f66e3adbef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper function to create a completion queue with grpc_cq_completion_type of GRPC_CQ_NEXT and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.  <a href="#a687672b2c261e965286e36f66e3adbef">More...</a><br/></td></tr>
+<tr class="separator:a687672b2c261e965286e36f66e3adbef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9ceac4996a8c73159e3dc8dd560b882"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ae9ceac4996a8c73159e3dc8dd560b882">grpc_completion_queue_create_for_pluck</a> (void *reserved)</td></tr>
+<tr class="memdesc:ae9ceac4996a8c73159e3dc8dd560b882"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper function to create a completion queue with grpc_cq_completion_type of GRPC_CQ_PLUCK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.  <a href="#ae9ceac4996a8c73159e3dc8dd560b882">More...</a><br/></td></tr>
+<tr class="separator:ae9ceac4996a8c73159e3dc8dd560b882"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae1dc1e6cbb21d67a62db56ab8ef8c787"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ae1dc1e6cbb21d67a62db56ab8ef8c787">grpc_completion_queue_create</a> (void *reserved)</td></tr>
 <tr class="memdesc:ae1dc1e6cbb21d67a62db56ab8ef8c787"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a completion queue.  <a href="#ae1dc1e6cbb21d67a62db56ab8ef8c787">More...</a><br/></td></tr>
 <tr class="separator:ae1dc1e6cbb21d67a62db56ab8ef8c787"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -290,6 +330,18 @@ Functions</h2></td></tr>
 <tr class="separator:a3878872e5415c8b8f7765221a8dc961d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
+<a class="anchor" id="a52497b2b6db8035126a8b45467a14d97"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_CQ_CURRENT_VERSION&#160;&#160;&#160;1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a7fa47963513b9ce50ca4006b9db94c5e"></a>
 <div class="memitem">
 <div class="memproto">
@@ -304,7 +356,79 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a class="anchor" id="a8113e2fd72a5fbb372d691a0c2206422"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a>  <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a7598a0f60120f40389e6e264d23b88a6"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a> <a class="el" href="grpc_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The completion queue factory structure is opaque to the callers of grpc. </p>
+
+</div>
+</div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
+<a class="anchor" id="a1d6272e15d32381a9ffa027cefd60bf8"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">grpc_cq_completion_type</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Specifies the type of APIs to use to pop events from the completion queue. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a1d6272e15d32381a9ffa027cefd60bf8a3fccd6237614f711bfc1999438ed2676"></a>GRPC_CQ_NEXT</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a"></a>GRPC_CQ_PLUCK</em>&#160;</td><td class="fielddoc">
+</td></tr>
+</table>
+
+</div>
+</div>
+<a class="anchor" id="a6f3d3ec662c2a8ac669c98163d511343"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343">grpc_cq_polling_type</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Completion queues internally MAY maintain a set of file descriptors in a structure called 'pollset'. </p>
+<p>This enum specifies if a completion queue has an associated pollset and any restrictions on the type of file descriptors that can be present in the pollset.</p>
+<p>I/O progress can only be made when <a class="el" href="grpc_8h.html#ab43d55077bcbeb324044d3dcd26a5c80" title="Blocks until an event is available, the completion queue is being shut down, or deadline is reached...">grpc_completion_queue_next()</a> or <a class="el" href="grpc_8h.html#a0292bf7a0c794771cd66766dc4b8276c" title="Blocks until an event with tag &#39;tag&#39; is available, the completion queue is being shutdown or deadline...">grpc_completion_queue_pluck()</a> are called on the completion queue (unless the grpc_cq_polling_type is GRPC_CQ_NON_POLLING) and hence it is very important to actively call these APIs </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8"></a>GRPC_CQ_DEFAULT_POLLING</em>&#160;</td><td class="fielddoc">
+<p>The completion queue will have an associated pollset and there is no restriction on the type of file descriptors the pollset may contain. </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a6f3d3ec662c2a8ac669c98163d511343aa291aea150282f3a2366437d8fc93b11"></a>GRPC_CQ_NON_LISTENING</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a6f3d3ec662c2a8ac669c98163d511343a30fe3e6720c740094d5295546e9bb849"></a>GRPC_CQ_NON_POLLING</em>&#160;</td><td class="fielddoc">
+</td></tr>
+</table>
+
+</div>
+</div>
 <a class="anchor" id="aab04022748000f50c2590230f985acbc"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1040,6 +1164,42 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a687672b2c261e965286e36f66e3adbef"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a>* grpc_completion_queue_create_for_next </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Helper function to create a completion queue with grpc_cq_completion_type of GRPC_CQ_NEXT and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING. </p>
+
+</div>
+</div>
+<a class="anchor" id="ae9ceac4996a8c73159e3dc8dd560b882"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a>* grpc_completion_queue_create_for_pluck </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Helper function to create a completion queue with grpc_cq_completion_type of GRPC_CQ_PLUCK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING. </p>
+
+</div>
+</div>
 <a class="anchor" id="af77734d6350953db5d730f7213aac639"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1056,6 +1216,25 @@ Functions</h2></td></tr>
 
 <p>Destroy a completion queue. </p>
 <p>The caller must ensure that the queue is drained and no threads are executing grpc_completion_queue_next </p>
+
+</div>
+</div>
+<a class="anchor" id="aa7e0ae56f1bbfd9746805bc0161f80bc"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> const <a class="el" href="grpc_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a>* grpc_completion_queue_factory_lookup </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a> *&#160;</td>
+          <td class="paramname"><em>attributes</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the completion queue factory based on the attributes. </p>
+<p>MAY return a NULL if no factory can be found </p>
 
 </div>
 </div>
@@ -1946,7 +2125,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

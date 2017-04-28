@@ -3,6 +3,7 @@ var searchData=
   ['c_2dstyle_2dguide_2emd',['c-style-guide.md',['../c-style-guide_8md.html',1,'']]],
   ['census_2eh',['census.h',['../census_8h.html',1,'']]],
   ['cmdline_2eh',['cmdline.h',['../cmdline_8h.html',1,'']]],
+  ['combiner_2dexplainer_2emd',['combiner-explainer.md',['../combiner-explainer_8md.html',1,'']]],
   ['command_5fline_5ftool_2emd',['command_line_tool.md',['../command__line__tool_8md.html',1,'']]],
   ['compression_2eh',['compression.h',['../compression_8h.html',1,'']]],
   ['compression_2emd',['compression.md',['../compression_8md.html',1,'']]],

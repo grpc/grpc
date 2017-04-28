@@ -25,6 +25,7 @@ var searchData=
   ['grpc_5fcall_5fdetails',['grpc_call_details',['../structgrpc__call__details.html',1,'']]],
   ['grpc_5fchannel_5fargs',['grpc_channel_args',['../structgrpc__channel__args.html',1,'']]],
   ['grpc_5fchannel_5finfo',['grpc_channel_info',['../structgrpc__channel__info.html',1,'']]],
+  ['grpc_5fcompletion_5fqueue_5fattributes',['grpc_completion_queue_attributes',['../structgrpc__completion__queue__attributes.html',1,'']]],
   ['grpc_5fcompression_5foptions',['grpc_compression_options',['../structgrpc__compression__options.html',1,'']]],
   ['grpc_5fevent',['grpc_event',['../structgrpc__event.html',1,'']]],
   ['grpc_5fload_5freporting_5fcost_5fcontext',['grpc_load_reporting_cost_context',['../structgrpc__load__reporting__cost__context.html',1,'']]],

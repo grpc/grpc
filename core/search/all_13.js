@@ -4,5 +4,6 @@ var searchData=
   ['value_5flength',['value_length',['../structgrpc__auth__property.html#a07359a178c29240cab42a89ef047b101',1,'grpc_auth_property']]],
   ['values',['values',['../structgrpc__load__reporting__cost__context.html#a58bccfecffc68233ec834f07613a421b',1,'grpc_load_reporting_cost_context']]],
   ['values_5fcount',['values_count',['../structgrpc__load__reporting__cost__context.html#a3d52c7f1be9c65ba2b595066ecc540fa',1,'grpc_load_reporting_cost_context']]],
+  ['version',['version',['../structgrpc__completion__queue__attributes.html#a77193c57fac60071d907ceda3be64f72',1,'grpc_completion_queue_attributes']]],
   ['vtable',['vtable',['../structgrpc__arg.html#ac7a5ce7474a9d144aa42ed39fbe63fb7',1,'grpc_arg::vtable()'],['../structgrpc__slice__refcount.html#ab35b82d586e9ca84f9d42af591616f98',1,'grpc_slice_refcount::vtable()'],['../structgpr__avl.html#aa1c488ec103792114a136e527b0ccba1',1,'gpr_avl::vtable()']]]
 ];

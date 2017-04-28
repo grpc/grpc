@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0-dev</span>
+   &#160;<span id="projectnumber">3.0.0</span>
    </div>
   </td>
  </tr>
@@ -222,11 +222,53 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <ol type="1">
 <li>Sets MAX_CONCURRENT_STREAMS to one after the connection is made.</li>
 </ol>
-<p><em>The assertion that the MAX_CONCURRENT_STREAMS limit is upheld occurs in the http2 library we used.</em> </p>
+<p><em>The assertion that the MAX_CONCURRENT_STREAMS limit is upheld occurs in the http2 library we used.</em></p>
+<h3>data_frame_padding</h3>
+<p>This test verifies that the client can correctly receive padded http2 data frames. It also stresses the client's flow control (there is a high chance that the sender will deadlock if the client's flow control logic doesn't correctly account for padding).</p>
+<p>Client Procedure: (Note this is the same procedure as in the "large_unary" gRPC interop tests. Clients should use their "large_unary" gRPC interop test implementations.) Procedure:</p>
+<ol type="1">
+<li><p class="startli">Client calls UnaryCall with:</p>
+<p class="startli">``` { response_size: 314159 payload:{ body: 271828 bytes of zeros } } ```</p>
+</li>
+</ol>
+<p>Client asserts:</p>
+<ul>
+<li>call was successful</li>
+<li>response payload body is 314159 bytes in size</li>
+<li>clients are free to assert that the response payload body contents are zero and comparing the entire response message against a golden response</li>
+</ul>
+<p>Server Procedure:</p>
+<ol type="1">
+<li>Reply to the client's request with a <code>SimpleResponse</code>, with a payload body length of <code>SimpleRequest.response_size</code>. But send it across specific http2 data frames as follows:<ul>
+<li>Each http2 data frame contains a 5 byte payload and 255 bytes of padding.</li>
+</ul>
+</li>
+</ol>
+<ul>
+<li>Note the 5 byte payload and 255 byte padding are partly arbitrary, and other numbers are also ok. With 255 bytes of padding for each 5 bytes of payload containing actual gRPC message, the 300KB response size will multiply into around 15 megabytes of flow control debt, which should stress flow control accounting.</li>
+</ul>
+<h3>no_df_padding_sanity_test</h3>
+<p>This test verifies that the client can correctly receive a series of small data frames. Note that this test is intentionally a slight variation of "data_frame_padding", with the only difference being that this test doesn't use data frame padding when the response is sent. This test is primarily meant to prove correctness of the http2 server implementation and highlight failures of the "data_frame_padding" test.</p>
+<p>Client Procedure: (Note this is the same procedure as in the "large_unary" gRPC interop tests. Clients should use their "large_unary" gRPC interop test implementations.) Procedure:</p>
+<ol type="1">
+<li><p class="startli">Client calls UnaryCall with:</p>
+<p class="startli">``` { response_size: 314159 payload:{ body: 271828 bytes of zeros } } ```</p>
+</li>
+</ol>
+<p>Client asserts:</p>
+<ul>
+<li>call was successful</li>
+<li>response payload body is 314159 bytes in size</li>
+<li>clients are free to assert that the response payload body contents are zero and comparing the entire response message against a golden response</li>
+</ul>
+<p>Server Procedure:</p>
+<ol type="1">
+<li>Reply to the client's request with a <code>SimpleResponse</code>, with a payload body length of <code>SimpleRequest.response_size</code>. But send it across series of http2 data frames that contain 5 bytes of "payload" and zero bytes of "padding" (the padding flags on the data frames should not be set). </li>
+</ol>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

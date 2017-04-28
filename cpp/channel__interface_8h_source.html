@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -216,10 +216,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;}  <span class="comment">// namespace grpc</span></div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_CHANNEL_INTERFACE_H</span></div>
-<div class="ttc" id="classgrpc_1_1_client_async_reader_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_async_reader_writer.html">grpc::ClientAsyncReaderWriter</a></div><div class="ttdef"><b>Definition:</b> async_stream.h:249</div></div>
+<div class="ttc" id="classgrpc_1_1_client_async_reader_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_async_reader_writer.html">grpc::ClientAsyncReaderWriter</a></div><div class="ttdef"><b>Definition:</b> async_stream.h:298</div></div>
 <div class="ttc" id="classgrpc_1_1_client_reader_html"><div class="ttname"><a href="classgrpc_1_1_client_reader.html">grpc::ClientReader</a></div><div class="ttdef"><b>Definition:</b> channel_interface.h:49</div></div>
 <div class="ttc" id="grpc_09_09_2impl_2codegen_2status_8h_html"><div class="ttname"><a href="grpc_09_09_2impl_2codegen_2status_8h.html">status.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_set_interface_html"><div class="ttname"><a href="classgrpc_1_1_call_op_set_interface.html">grpc::CallOpSetInterface</a></div><div class="ttdoc">An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...</div><div class="ttdef"><b>Definition:</b> call.h:540</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_set_interface_html"><div class="ttname"><a href="classgrpc_1_1_call_op_set_interface.html">grpc::CallOpSetInterface</a></div><div class="ttdoc">An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...</div><div class="ttdef"><b>Definition:</b> call.h:598</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_interface_html_ac2e0a00712088ca461359a78eb0e2c69"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html#ac2e0a00712088ca461359a78eb0e2c69">grpc::ChannelInterface::NotifyOnStateChange</a></div><div class="ttdeci">void NotifyOnStateChange(grpc_connectivity_state last_observed, T deadline, CompletionQueue *cq, void *tag)</div><div class="ttdoc">Return the tag on cq when the channel state is changed or deadline expires. </div><div class="ttdef"><b>Definition:</b> channel_interface.h:74</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_interface_html_a68e987e7b87ca5a2668419736f9ee9b1"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">grpc::ChannelInterface::GetState</a></div><div class="ttdeci">virtual grpc_connectivity_state GetState(bool try_to_connect)=0</div><div class="ttdoc">Get the current channel state. </div></div>
 <div class="ttc" id="classgrpc_1_1_time_point_html_adb76465d3bf0fef9ad5b918f0ea6a9b6"><div class="ttname"><a href="classgrpc_1_1_time_point.html#adb76465d3bf0fef9ad5b918f0ea6a9b6">grpc::TimePoint::raw_time</a></div><div class="ttdeci">gpr_timespec raw_time()</div><div class="ttdef"><b>Definition:</b> time.h:57</div></div>
@@ -229,9 +229,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="classgrpc_1_1_channel_interface_html_a4aac0a120f3498d1151460ef89ce8446"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html#a4aac0a120f3498d1151460ef89ce8446">grpc::ChannelInterface::BlockingUnaryCall</a></div><div class="ttdeci">friend Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &amp;method, ClientContext *context, const InputMessage &amp;request, OutputMessage *result)</div><div class="ttdef"><b>Definition:</b> client_unary_call.h:52</div></div>
 <div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a></div><div class="ttdeci">grpc_connectivity_state</div><div class="ttdoc">Connectivity state of a channel. </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:42</div></div>
 <div class="ttc" id="impl_2codegen_2time_8h_html"><div class="ttname"><a href="impl_2codegen_2time_8h.html">time.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1_call.html">grpc::Call</a></div><div class="ttdef"><b>Definition:</b> call.h:617</div></div>
+<div class="ttc" id="classgrpc_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1_call.html">grpc::Call</a></div><div class="ttdef"><b>Definition:</b> call.h:675</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_interface_html"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></div><div class="ttdoc">Codegen interface for grpc::Channel. </div><div class="ttdef"><b>Definition:</b> channel_interface.h:64</div></div>
-<div class="ttc" id="classgrpc_1_1_client_async_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_async_writer.html">grpc::ClientAsyncWriter</a></div><div class="ttdef"><b>Definition:</b> async_stream.h:177</div></div>
+<div class="ttc" id="classgrpc_1_1_client_async_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_async_writer.html">grpc::ClientAsyncWriter</a></div><div class="ttdef"><b>Definition:</b> async_stream.h:210</div></div>
 <div class="ttc" id="connectivity__state_8h_html"><div class="ttname"><a href="connectivity__state_8h.html">connectivity_state.h</a></div></div>
 <div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea">GRPC_CHANNEL_READY</a></div><div class="ttdoc">channel is ready for work </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:50</div></div>
 <div class="ttc" id="classgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue.h). </div><div class="ttdef"><b>Definition:</b> completion_queue.h:101</div></div>
@@ -241,13 +241,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="classgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn&#39;t, why? </div><div class="ttdef"><b>Definition:</b> status.h:45</div></div>
 <div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdef"><b>Definition:</b> gpr_types.h:63</div></div>
 <div class="ttc" id="classgrpc_1_1_client_reader_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_reader_writer.html">grpc::ClientReaderWriter</a></div><div class="ttdef"><b>Definition:</b> channel_interface.h:53</div></div>
-<div class="ttc" id="classgrpc_1_1_client_async_reader_html"><div class="ttname"><a href="classgrpc_1_1_client_async_reader.html">grpc::ClientAsyncReader</a></div><div class="ttdef"><b>Definition:</b> async_stream.h:111</div></div>
+<div class="ttc" id="classgrpc_1_1_client_async_reader_html"><div class="ttname"><a href="classgrpc_1_1_client_async_reader.html">grpc::ClientAsyncReader</a></div><div class="ttdef"><b>Definition:</b> async_stream.h:144</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_interface_html_a31d360cd218614814d68e01e07ce55cc"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html#a31d360cd218614814d68e01e07ce55cc">grpc::ChannelInterface::WaitForConnected</a></div><div class="ttdeci">bool WaitForConnected(T deadline)</div><div class="ttdoc">Wait for this channel to be connected. </div><div class="ttdef"><b>Definition:</b> channel_interface.h:90</div></div>
 <div class="ttc" id="classgrpc_1_1_client_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_writer.html">grpc::ClientWriter</a></div><div class="ttdef"><b>Definition:</b> channel_interface.h:51</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:30 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

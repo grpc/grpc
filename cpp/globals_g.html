@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -70,6 +70,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow3" class="tabs2">
     <ul class="tablist">
       <li class="current"><a href="globals.html"><span>All</span></a></li>
+      <li><a href="globals_func.html"><span>Functions</span></a></li>
       <li><a href="globals_type.html"><span>Typedefs</span></a></li>
       <li><a href="globals_enum.html"><span>Enumerations</span></a></li>
       <li><a href="globals_eval.html"><span>Enumerator</span></a></li>
@@ -101,10 +102,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock">Here is a list of all functions, variables, defines, enums, and typedefs with links to the files they belong to:</div>
 
 <h3><a class="anchor" id="index_g"></a>- g -</h3><ul>
+<li>GPR_ALIGN_STRUCT
+: <a class="el" href="port__platform_8h.html#aafd38282877816cf1eea110c65fdf14b">port_platform.h</a>
+</li>
 <li>gpr_atm
 : <a class="el" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">atm_gcc_atomic.h</a>
-, <a class="el" href="atm__gcc__sync_8h.html#a0a6314f31fcae0666a93961bed98af51">atm_gcc_sync.h</a>
 , <a class="el" href="atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51">atm_windows.h</a>
+, <a class="el" href="atm__gcc__sync_8h.html#a0a6314f31fcae0666a93961bed98af51">atm_gcc_sync.h</a>
 </li>
 <li>gpr_atm_acq_cas
 : <a class="el" href="atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">atm_gcc_sync.h</a>
@@ -116,9 +120,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="atm__gcc__sync_8h.html#a5a1f94112dcd03309d6716d43c8edf3f">atm_gcc_sync.h</a>
 </li>
 <li>gpr_atm_full_barrier
-: <a class="el" href="atm__gcc__sync_8h.html#a95f86e51ae9a479026bd237cb792193e">atm_gcc_sync.h</a>
+: <a class="el" href="atm__gcc__atomic_8h.html#a95f86e51ae9a479026bd237cb792193e">atm_gcc_atomic.h</a>
+, <a class="el" href="atm__gcc__sync_8h.html#a95f86e51ae9a479026bd237cb792193e">atm_gcc_sync.h</a>
 , <a class="el" href="atm__windows_8h.html#a8e58c94aff5c7161bc3cbfde878dd03d">atm_windows.h</a>
-, <a class="el" href="atm__gcc__atomic_8h.html#a95f86e51ae9a479026bd237cb792193e">atm_gcc_atomic.h</a>
+</li>
+<li>gpr_atm_full_cas
+: <a class="el" href="atm__gcc__sync_8h.html#a9d29f224b49d4de8bb2b0d7feae64fcb">atm_gcc_sync.h</a>
 </li>
 <li>gpr_atm_full_fetch_add
 : <a class="el" href="atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">atm_gcc_atomic.h</a>
@@ -136,8 +143,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GPR_ATM_LS_BARRIER_
 : <a class="el" href="atm__gcc__sync_8h.html#a4ceb46c9b854db0ade8cfe2f37edb878">atm_gcc_sync.h</a>
 </li>
+<li>GPR_ATM_MAX
+: <a class="el" href="atm__gcc__atomic_8h.html#a5fb170a483552faeb4b6d4acb674c44c">atm_gcc_atomic.h</a>
+, <a class="el" href="atm__gcc__sync_8h.html#a5fb170a483552faeb4b6d4acb674c44c">atm_gcc_sync.h</a>
+, <a class="el" href="atm__windows_8h.html#a5fb170a483552faeb4b6d4acb674c44c">atm_windows.h</a>
+</li>
 <li>gpr_atm_no_barrier_cas
 : <a class="el" href="atm__gcc__sync_8h.html#ad39536b08912ac4a0770655ed334d260">atm_gcc_sync.h</a>
+</li>
+<li>gpr_atm_no_barrier_clamped_add()
+: <a class="el" href="atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">atm.h</a>
 </li>
 <li>gpr_atm_no_barrier_fetch_add
 : <a class="el" href="atm__gcc__atomic_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">atm_gcc_atomic.h</a>
@@ -314,8 +329,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_alarm
 : <a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_types.h</a>
 </li>
+<li>grpc_alarm_cancel()
+: <a class="el" href="grpc_8h.html#aaaf4d5c77eea32e58481b81d07561ba3">grpc.h</a>
+</li>
+<li>grpc_alarm_create()
+: <a class="el" href="grpc_8h.html#a74505bb522ecd43c21cb51651788c621">grpc.h</a>
+</li>
+<li>grpc_alarm_destroy()
+: <a class="el" href="grpc_8h.html#a44294a352d5e6c2d23a213668e2a11cb">grpc.h</a>
+</li>
 <li>GRPC_ALLOW_GPR_SLICE_FUNCTIONS
 : <a class="el" href="gpr__slice_8h.html#aec9e3b59ce21312d75e3c11013f0adab">gpr_slice.h</a>
+</li>
+<li>GRPC_ARES
+: <a class="el" href="port__platform_8h.html#ab977d82eab38f56b6234fc503f4d51c6">port_platform.h</a>
 </li>
 <li>GRPC_ARG_ALLOW_REUSEPORT
 : <a class="el" href="group__grpc__arg__keys.html#ga40e635cf00ea7a10c71ed71c03d97f23">grpc_types.h</a>
@@ -335,6 +362,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_ARG_HTTP2_BDP_PROBE
 : <a class="el" href="group__grpc__arg__keys.html#ga0958b21ee82acd9c77de30a978c59fb2">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY
+: <a class="el" href="group__grpc__arg__keys.html#gacccbdf888685b6d4beda61a3600f4a20">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER
 : <a class="el" href="group__grpc__arg__keys.html#ga216089aecb45149441024ffe5542cbaf">grpc_types.h</a>
 </li>
@@ -344,20 +374,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
 : <a class="el" href="group__grpc__arg__keys.html#gaecc45a63163796ca1bc5453938bdfb36">grpc_types.h</a>
 </li>
-<li>GRPC_ARG_HTTP2_KEEPALIVE_PERMIT_WITHOUT_CALLS
-: <a class="el" href="group__grpc__arg__keys.html#ga25f4eeeb4bc37e5f41319a6aedae34e1">grpc_types.h</a>
-</li>
-<li>GRPC_ARG_HTTP2_KEEPALIVE_TIME
-: <a class="el" href="group__grpc__arg__keys.html#ga94348fa32d1b859ebea9a1c04d865b63">grpc_types.h</a>
-</li>
-<li>GRPC_ARG_HTTP2_KEEPALIVE_TIMEOUT
-: <a class="el" href="group__grpc__arg__keys.html#gaddc1b8fbbef14c438bbd1eeee7a27b86">grpc_types.h</a>
-</li>
 <li>GRPC_ARG_HTTP2_MAX_FRAME_SIZE
 : <a class="el" href="group__grpc__arg__keys.html#ga2ef6e079e5d61b34ce236f50fd38fc83">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_HTTP2_MAX_PING_STRIKES
+: <a class="el" href="group__grpc__arg__keys.html#gaf50a9992745183e14e8c660d954c1d82">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA
 : <a class="el" href="group__grpc__arg__keys.html#ga401cc6c0e567cbbb8b689b091f92dc7e">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS
+: <a class="el" href="group__grpc__arg__keys.html#gac3470e2718001b173a7b8398ab60fe09">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS
 : <a class="el" href="group__grpc__arg__keys.html#gacc0d0f1d3d582d39fcfb7a835b730a6c">grpc_types.h</a>
@@ -374,11 +401,29 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_ARG_INTEGER
 : <a class="el" href="grpc__types_8h.html#a0b06eae05e70404aedbceaebce6de593a8d2f803b8aaf88f34dac1f887826c689">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS
+: <a class="el" href="group__grpc__arg__keys.html#gaf900669f52f137677c4dbb9a7a902c92">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_KEEPALIVE_TIME_MS
+: <a class="el" href="group__grpc__arg__keys.html#gabeeccb441a671122c75384e062b1b91b">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_KEEPALIVE_TIMEOUT_MS
+: <a class="el" href="group__grpc__arg__keys.html#ga78975b982fd17ff190fddf2f90050ee3">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_LB_POLICY_NAME
 : <a class="el" href="group__grpc__arg__keys.html#ga72c2b475e218ecfd36bb7d3551d0295b">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_MAX_CONCURRENT_STREAMS
 : <a class="el" href="group__grpc__arg__keys.html#ga5bb9256d0b457cab219f4d9d765148b6">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS
+: <a class="el" href="group__grpc__arg__keys.html#gaf4574abe94c339c6f21163bca6e7b6b7">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_MAX_CONNECTION_AGE_MS
+: <a class="el" href="group__grpc__arg__keys.html#gabd3a16f46ad2cb5f06064bb607df7b5b">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_MAX_CONNECTION_IDLE_MS
+: <a class="el" href="group__grpc__arg__keys.html#ga8a7a3d98f39302c7859aa09e3f35a12a">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_MAX_MESSAGE_LENGTH
 : <a class="el" href="group__grpc__arg__keys.html#ga50f37feb7c000a23b3b0edf4c31d4367">grpc_types.h</a>
@@ -394,6 +439,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
 : <a class="el" href="group__grpc__arg__keys.html#gab4defdabac3610ef8a5946848592458c">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_MINIMAL_STACK
+: <a class="el" href="group__grpc__arg__keys.html#ga17b79aacf3bbfb0bce6d29bf9867988b">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_POINTER
 : <a class="el" href="grpc__types_8h.html#a0b06eae05e70404aedbceaebce6de593a02a823a7037e2a60b9d9a031fd42591b">grpc_types.h</a>
@@ -413,11 +461,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_ARG_SERVICE_CONFIG
 : <a class="el" href="group__grpc__arg__keys.html#gad60df744eb84ef55a371de9b8bd2373d">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_SOCKET_FACTORY
+: <a class="el" href="group__grpc__arg__keys.html#ga9e1054f78a26481931b10aa0b33f52b7">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_SOCKET_MUTATOR
 : <a class="el" href="group__grpc__arg__keys.html#gabdcf8122824e386dcc23b947473e83e0">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_STRING
 : <a class="el" href="grpc__types_8h.html#a0b06eae05e70404aedbceaebce6de593a215b6b9143ba133ede0e29f79098239d">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE
+: <a class="el" href="group__grpc__arg__keys.html#gadeaad8ae5b50ee8d2fb44d289aeb223d">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE
+: <a class="el" href="group__grpc__arg__keys.html#gae55b7bd57a5344e0083eac4d06c2d51b">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_TCP_READ_CHUNK_SIZE
+: <a class="el" href="group__grpc__arg__keys.html#ga82582ed0fcd7d6b0090f9102d75c765a">grpc_types.h</a>
 </li>
 <li>grpc_arg_type
 : <a class="el" href="grpc__types_8h.html#a0b06eae05e70404aedbceaebce6de593">grpc_types.h</a>
@@ -431,17 +491,56 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_byte_buffer
 : <a class="el" href="grpc__types_8h.html#acf22f6b5ce464dd73df59c9c49f8871c">grpc_types.h</a>
 </li>
+<li>grpc_byte_buffer_copy()
+: <a class="el" href="grpc_2byte__buffer_8h.html#a4ebb8f0714bee2c84fed0be62d0dc259">byte_buffer.h</a>
+</li>
+<li>grpc_byte_buffer_destroy()
+: <a class="el" href="grpc_2byte__buffer_8h.html#a32c878db8b0a48035ce777844360a6f0">byte_buffer.h</a>
+</li>
+<li>grpc_byte_buffer_length()
+: <a class="el" href="grpc_2byte__buffer_8h.html#a9532c0f54de763057e185a950368b0bb">byte_buffer.h</a>
+</li>
+<li>grpc_byte_buffer_reader
+: <a class="el" href="grpc_2byte__buffer_8h.html#a16143f22ea46cc7fa6b53e6cb30715f1">byte_buffer.h</a>
+</li>
+<li>grpc_byte_buffer_reader_destroy()
+: <a class="el" href="grpc_2byte__buffer_8h.html#ae28a4ce16b0d8ddd506f1df3fcb3c619">byte_buffer.h</a>
+</li>
+<li>grpc_byte_buffer_reader_init()
+: <a class="el" href="grpc_2byte__buffer_8h.html#affd8fb29176a60c44fe704983fa87406">byte_buffer.h</a>
+</li>
+<li>grpc_byte_buffer_reader_next()
+: <a class="el" href="grpc_2byte__buffer_8h.html#a8352c7f73cf930c8195e547bd1a5a242">byte_buffer.h</a>
+</li>
+<li>grpc_byte_buffer_reader_readall()
+: <a class="el" href="grpc_2byte__buffer_8h.html#a4cbf1eb762ea3c6c08bcfc46201c7691">byte_buffer.h</a>
+</li>
 <li>grpc_byte_buffer_type
 : <a class="el" href="grpc__types_8h.html#acdc94363b280bde9c82e3d9b5dc3b3e6">grpc_types.h</a>
 </li>
 <li>grpc_call
 : <a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_types.h</a>
 </li>
-<li>grpc_call_error
-: <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_types.h</a>
+<li>grpc_call_cancel()
+: <a class="el" href="grpc_8h.html#ada3c794f1c02477b0d71b12026dd0333">grpc.h</a>
+</li>
+<li>grpc_call_cancel_with_status()
+: <a class="el" href="grpc_8h.html#a5c09d334ae49404386cc0b13559dbb4d">grpc.h</a>
+</li>
+<li>grpc_call_destroy()
+: <a class="el" href="grpc_8h.html#a9100ad0aaa8125219bd7f80527de6753">grpc.h</a>
+</li>
+<li>grpc_call_details_destroy()
+: <a class="el" href="grpc_8h.html#ad18a001bb19d54c4355875062777d21f">grpc.h</a>
+</li>
+<li>grpc_call_details_init()
+: <a class="el" href="grpc_8h.html#afd22cfbc549db65ee265335c3264a57b">grpc.h</a>
 </li>
 <li>GRPC_CALL_ERROR
 : <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba86e7b6bf1fe5dec17fc08ba2f77d1b41">grpc_types.h</a>
+</li>
+<li>grpc_call_error
+: <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_types.h</a>
 </li>
 <li>GRPC_CALL_ERROR_ALREADY_ACCEPTED
 : <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba2f6f332e63eb94df8abedfddb96ae63a">grpc_types.h</a>
@@ -479,17 +578,53 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
 : <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba598dd6646d1a7c88d4bbef1490953ee3">grpc_types.h</a>
 </li>
+<li>grpc_call_error_to_string()
+: <a class="el" href="grpc_8h.html#aff94033db2c0a4c2486f8551399b17cd">grpc.h</a>
+</li>
 <li>GRPC_CALL_ERROR_TOO_MANY_OPERATIONS
 : <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba7e09791915b841c30e9d79c26a5a6454">grpc_types.h</a>
+</li>
+<li>grpc_call_get_peer()
+: <a class="el" href="grpc_8h.html#a96bc6ab4dac03f512a04ea6c19733289">grpc.h</a>
 </li>
 <li>GRPC_CALL_OK
 : <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba32f125b97007cbdb43534e9d6e0989f8">grpc_types.h</a>
 </li>
+<li>grpc_call_set_load_reporting_cost_context()
+: <a class="el" href="grpc_8h.html#ad57686192158efcb53aa585a9772954d">grpc.h</a>
+</li>
+<li>grpc_call_start_batch()
+: <a class="el" href="grpc_8h.html#a693db1327a74ba933ad5e2d26e410622">grpc.h</a>
+</li>
+<li>grpc_census_call_get_context()
+: <a class="el" href="grpc_8h.html#aad6d8b3df48a43605558f86f1ad5c4fd">grpc.h</a>
+</li>
+<li>grpc_census_call_set_context()
+: <a class="el" href="grpc_8h.html#afacf7bcca0bd15d1ae07fa1ff7b94dce">grpc.h</a>
+</li>
 <li>grpc_channel
 : <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_types.h</a>
 </li>
+<li>grpc_channel_check_connectivity_state()
+: <a class="el" href="grpc_8h.html#a783c4ef542c9899f3c2e02c2a956fd6d">grpc.h</a>
+</li>
 <li>GRPC_CHANNEL_CONNECTING
 : <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a3ac13f6c7627f15186760bfd6b7d9299">connectivity_state.h</a>
+</li>
+<li>grpc_channel_create_call()
+: <a class="el" href="grpc_8h.html#a9686ae95702f8d696c134d3a3e02fa97">grpc.h</a>
+</li>
+<li>grpc_channel_create_registered_call()
+: <a class="el" href="grpc_8h.html#ae97cac8dcbadf3b71c6ccb49fa938d8a">grpc.h</a>
+</li>
+<li>grpc_channel_destroy()
+: <a class="el" href="grpc_8h.html#a3af54515116727e18116883e64ee031e">grpc.h</a>
+</li>
+<li>grpc_channel_get_info()
+: <a class="el" href="grpc_8h.html#afacde78420397fae74276ec522bd4dba">grpc.h</a>
+</li>
+<li>grpc_channel_get_target()
+: <a class="el" href="grpc_8h.html#aaa25111c739e1c01ae2d195a23079afd">grpc.h</a>
 </li>
 <li>GRPC_CHANNEL_IDLE
 : <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a304d1b81cec4357a9a6acbcb18248e77">connectivity_state.h</a>
@@ -497,8 +632,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_CHANNEL_INIT
 : <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2ab12cc86bc5568c64ebbdebc9032e4d46">connectivity_state.h</a>
 </li>
+<li>grpc_channel_ping()
+: <a class="el" href="grpc_8h.html#acad1b47029ebf10f80e0db9423401c87">grpc.h</a>
+</li>
 <li>GRPC_CHANNEL_READY
 : <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea">connectivity_state.h</a>
+</li>
+<li>grpc_channel_register_call()
+: <a class="el" href="grpc_8h.html#af09cbd24340547542b6ec3300e973d62">grpc.h</a>
 </li>
 <li>GRPC_CHANNEL_SHUTDOWN
 : <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2afbab6ba9d3b0986cec9184a1c4c8bb6c">connectivity_state.h</a>
@@ -506,8 +647,41 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_CHANNEL_TRANSIENT_FAILURE
 : <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2af5bffd3ffb03795f551b0fa78e44b9b6">connectivity_state.h</a>
 </li>
+<li>grpc_channel_watch_connectivity_state()
+: <a class="el" href="grpc_8h.html#a568bac9fe4004c1dd790e6569b918d2f">grpc.h</a>
+</li>
 <li>grpc_completion_queue
 : <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_types.h</a>
+</li>
+<li>grpc_completion_queue_attributes
+: <a class="el" href="grpc_8h.html#a8113e2fd72a5fbb372d691a0c2206422">grpc.h</a>
+</li>
+<li>grpc_completion_queue_create()
+: <a class="el" href="grpc_8h.html#ae1dc1e6cbb21d67a62db56ab8ef8c787">grpc.h</a>
+</li>
+<li>grpc_completion_queue_create_for_next()
+: <a class="el" href="grpc_8h.html#a687672b2c261e965286e36f66e3adbef">grpc.h</a>
+</li>
+<li>grpc_completion_queue_create_for_pluck()
+: <a class="el" href="grpc_8h.html#ae9ceac4996a8c73159e3dc8dd560b882">grpc.h</a>
+</li>
+<li>grpc_completion_queue_destroy()
+: <a class="el" href="grpc_8h.html#af77734d6350953db5d730f7213aac639">grpc.h</a>
+</li>
+<li>grpc_completion_queue_factory
+: <a class="el" href="grpc_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc.h</a>
+</li>
+<li>grpc_completion_queue_factory_lookup()
+: <a class="el" href="grpc_8h.html#aa7e0ae56f1bbfd9746805bc0161f80bc">grpc.h</a>
+</li>
+<li>grpc_completion_queue_next()
+: <a class="el" href="grpc_8h.html#ab43d55077bcbeb324044d3dcd26a5c80">grpc.h</a>
+</li>
+<li>grpc_completion_queue_pluck()
+: <a class="el" href="grpc_8h.html#a0292bf7a0c794771cd66766dc4b8276c">grpc.h</a>
+</li>
+<li>grpc_completion_queue_shutdown()
+: <a class="el" href="grpc_8h.html#a3e1097e9c970519e357eb556777315ec">grpc.h</a>
 </li>
 <li>grpc_completion_type
 : <a class="el" href="grpc__types_8h.html#ab6454071421a36ebc25952ed448d5b87">grpc_types.h</a>
@@ -542,6 +716,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_compression_algorithm
 : <a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">compression_types.h</a>
 </li>
+<li>grpc_compression_algorithm_for_level()
+: <a class="el" href="compression_8h.html#adc2d1d89d880f67aacc4ce84cd72f8f3">compression.h</a>
+</li>
+<li>grpc_compression_algorithm_name()
+: <a class="el" href="compression_8h.html#a03ef1c76766826058d841d7f4e1213f0">compression.h</a>
+</li>
+<li>grpc_compression_algorithm_parse()
+: <a class="el" href="compression_8h.html#a5054ebec22cc256853a7ac2ed61fd654">compression.h</a>
+</li>
 <li>GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM
 : <a class="el" href="group__grpc__arg__keys.html#ga33cd5668b4ebacb59b657f4674cc1cf5">compression_types.h</a>
 </li>
@@ -557,11 +740,47 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_compression_options
 : <a class="el" href="compression__types_8h.html#a074a1aa6fb56901a795fe53c2adeefde">compression_types.h</a>
 </li>
+<li>grpc_compression_options_disable_algorithm()
+: <a class="el" href="compression_8h.html#a1b58d314775a3651ee2f5f2d3ab4f6d9">compression.h</a>
+</li>
+<li>grpc_compression_options_enable_algorithm()
+: <a class="el" href="compression_8h.html#a79e61d1ac1d226b3b54b73837f28f0ff">compression.h</a>
+</li>
+<li>grpc_compression_options_init()
+: <a class="el" href="compression_8h.html#a2eccdbe5a4d811a7c965d6d67e5cc7d8">compression.h</a>
+</li>
+<li>grpc_compression_options_is_algorithm_enabled()
+: <a class="el" href="compression_8h.html#aba0dfe631311c3f49d1045694bc9b0df">compression.h</a>
+</li>
 <li>GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY
 : <a class="el" href="compression__types_8h.html#a862adef9b36180377a6db217dd5f52fe">compression_types.h</a>
 </li>
 <li>grpc_connectivity_state
 : <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">connectivity_state.h</a>
+</li>
+<li>grpc_cq_completion_type
+: <a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">grpc.h</a>
+</li>
+<li>GRPC_CQ_CURRENT_VERSION
+: <a class="el" href="grpc_8h.html#a52497b2b6db8035126a8b45467a14d97">grpc.h</a>
+</li>
+<li>GRPC_CQ_DEFAULT_POLLING
+: <a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8">grpc.h</a>
+</li>
+<li>GRPC_CQ_NEXT
+: <a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a3fccd6237614f711bfc1999438ed2676">grpc.h</a>
+</li>
+<li>GRPC_CQ_NON_LISTENING
+: <a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343aa291aea150282f3a2366437d8fc93b11">grpc.h</a>
+</li>
+<li>GRPC_CQ_NON_POLLING
+: <a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343a30fe3e6720c740094d5295546e9bb849">grpc.h</a>
+</li>
+<li>GRPC_CQ_PLUCK
+: <a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a">grpc.h</a>
+</li>
+<li>grpc_cq_polling_type
+: <a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343">grpc.h</a>
 </li>
 <li>GRPC_CUSTOM_CODEDINPUTSTREAM
 : <a class="el" href="config__protobuf_8h.html#adab2e3bf138e8ee14fc7dc7957618d2f">config_protobuf.h</a>
@@ -617,6 +836,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH
 : <a class="el" href="grpc__types_8h.html#a4e5d829393a2ad7a98e53c4856057220">grpc_types.h</a>
 </li>
+<li>GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR
+: <a class="el" href="grpc__security__constants_8h.html#a48565da473b7c82fa2453798f620fd59">grpc_security_constants.h</a>
+</li>
+<li>grpc_empty_slice()
+: <a class="el" href="grpc_2slice_8h.html#a5deea1b06b3f4830c91e910cd4379004">slice.h</a>
+</li>
 <li>grpc_event
 : <a class="el" href="grpc__types_8h.html#a07990645ca218f6965fd83edf3f421b7">grpc_types.h</a>
 </li>
@@ -626,8 +851,26 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_FINAL
 : <a class="el" href="impl_2codegen_2config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">config.h</a>
 </li>
+<li>grpc_g_stands_for()
+: <a class="el" href="grpc_8h.html#a62cdc0eb52e0d7742c2f1b72e4cb4850">grpc.h</a>
+</li>
+<li>GRPC_GOOGLE_CREDENTIALS_ENV_VAR
+: <a class="el" href="grpc__security__constants_8h.html#a3874f70577fc9fe15fd2c4ce68a36ecd">grpc_security_constants.h</a>
+</li>
+<li>grpc_header_key_is_legal()
+: <a class="el" href="grpc_8h.html#a25a24cbee66233b54eecb26ba3cd44ae">grpc.h</a>
+</li>
+<li>grpc_header_nonbin_value_is_legal()
+: <a class="el" href="grpc_8h.html#ac98bf44e113cc1430e6f1419b4b22cb0">grpc.h</a>
+</li>
+<li>grpc_init()
+: <a class="el" href="grpc_8h.html#a573aed8e200997856a227c7eb798a185">grpc.h</a>
+</li>
 <li>GRPC_INITIAL_METADATA_CACHEABLE_REQUEST
 : <a class="el" href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">grpc_types.h</a>
+</li>
+<li>GRPC_INITIAL_METADATA_CORKED
+: <a class="el" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">grpc_types.h</a>
 </li>
 <li>GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
 : <a class="el" href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">grpc_types.h</a>
@@ -641,8 +884,35 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
 : <a class="el" href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">grpc_types.h</a>
 </li>
+<li>grpc_insecure_channel_create()
+: <a class="el" href="grpc_8h.html#af41ff1c02a6c4bcf59d6b38daa95d5e4">grpc.h</a>
+</li>
+<li>grpc_insecure_channel_create_from_fd()
+: <a class="el" href="grpc__posix_8h.html#ae01dba904905ef6ad2298f4a85233a41">grpc_posix.h</a>
+</li>
+<li>grpc_is_binary_header()
+: <a class="el" href="grpc_8h.html#a63ace3b4e161d0b5667a5d11dfd602dc">grpc.h</a>
+</li>
+<li>grpc_lame_client_channel_create()
+: <a class="el" href="grpc_8h.html#ab70a06437661ce737e0c4823cbbd73f3">grpc.h</a>
+</li>
+<li>GRPC_LB_TOKEN_MD_KEY
+: <a class="el" href="load__reporting_8h.html#aad02df8e03e2f88bf4b0f54beb904d12">load_reporting.h</a>
+</li>
+<li>grpc_load_reporting_cost_context
+: <a class="el" href="load__reporting_8h.html#ad2110f7867820dc21471987555ba3e36">load_reporting.h</a>
+</li>
+<li>GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
+: <a class="el" href="grpc_8h.html#a7fa47963513b9ce50ca4006b9db94c5e">grpc.h</a>
+</li>
 <li>grpc_metadata
 : <a class="el" href="grpc__types_8h.html#a1da84eaead787d991c5a0c87aed7c30b">grpc_types.h</a>
+</li>
+<li>grpc_metadata_array_destroy()
+: <a class="el" href="grpc_8h.html#a60d82644a7c9d97ada453796b4b2f711">grpc.h</a>
+</li>
+<li>grpc_metadata_array_init()
+: <a class="el" href="grpc_8h.html#a0c8d5a1d0d3b3e862c3a71fbb78e9b50">grpc.h</a>
 </li>
 <li>GRPC_MUST_USE_RESULT
 : <a class="el" href="port__platform_8h.html#aef49047a3be38448a61332117b306686">port_platform.h</a>
@@ -704,29 +974,206 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_QUEUE_TIMEOUT
 : <a class="el" href="grpc__types_8h.html#ab6454071421a36ebc25952ed448d5b87a4339ea61236e103b6555fdf9b6cffab6">grpc_types.h</a>
 </li>
+<li>grpc_raw_byte_buffer_create()
+: <a class="el" href="grpc_2byte__buffer_8h.html#a5ab72d6615ee89c975c46ad4e50c1387">byte_buffer.h</a>
+</li>
+<li>grpc_raw_byte_buffer_from_reader()
+: <a class="el" href="grpc_2byte__buffer_8h.html#ac7407c6fa60073adb166ca4f3cfbc8e7">byte_buffer.h</a>
+</li>
+<li>grpc_raw_compressed_byte_buffer_create()
+: <a class="el" href="grpc_2byte__buffer_8h.html#a49ca36baa74fa2f9ae0c615bf53cec7d">byte_buffer.h</a>
+</li>
+<li>grpc_register_plugin()
+: <a class="el" href="grpc_8h.html#afb2c29a4f1805be6903261d6f4cfefd0">grpc.h</a>
+</li>
 <li>grpc_resource_quota
 : <a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_types.h</a>
+</li>
+<li>grpc_resource_quota_arg_vtable()
+: <a class="el" href="grpc_8h.html#a3878872e5415c8b8f7765221a8dc961d">grpc.h</a>
+</li>
+<li>grpc_resource_quota_create()
+: <a class="el" href="grpc_8h.html#aaf12188fc8a1a4a686595606891a42af">grpc.h</a>
+</li>
+<li>grpc_resource_quota_ref()
+: <a class="el" href="grpc_8h.html#ab66f2f37d2688c0587d19c472a17dca0">grpc.h</a>
+</li>
+<li>grpc_resource_quota_resize()
+: <a class="el" href="grpc_8h.html#aee71b01d5d8e91607258d01e1d15785d">grpc.h</a>
+</li>
+<li>grpc_resource_quota_unref()
+: <a class="el" href="grpc_8h.html#a704afb1a7423e76a9b6264ba840ba54b">grpc.h</a>
 </li>
 <li>grpc_server
 : <a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_types.h</a>
 </li>
+<li>grpc_server_add_insecure_channel_from_fd()
+: <a class="el" href="grpc__posix_8h.html#a9a7bbbb272a485556cf84f96905b1c78">grpc_posix.h</a>
+</li>
+<li>grpc_server_add_insecure_http2_port()
+: <a class="el" href="grpc_8h.html#a5ca4074294f4acbc5cf8c16208a871fc">grpc.h</a>
+</li>
+<li>grpc_server_cancel_all_calls()
+: <a class="el" href="grpc_8h.html#adedae229ffe970c9e4da9595319e0fcb">grpc.h</a>
+</li>
+<li>grpc_server_create()
+: <a class="el" href="grpc_8h.html#ab39d2a2fa68e430fec31facdfaca59ec">grpc.h</a>
+</li>
+<li>grpc_server_destroy()
+: <a class="el" href="grpc_8h.html#a9d4171777584a2ff3380328a6b463a24">grpc.h</a>
+</li>
+<li>grpc_server_register_completion_queue()
+: <a class="el" href="grpc_8h.html#a098116a78dbf2f635a9934be014d2bd8">grpc.h</a>
+</li>
+<li>grpc_server_register_method()
+: <a class="el" href="grpc_8h.html#afdc7d1e04d9fa62641aeccfc732ea0bc">grpc.h</a>
+</li>
+<li>grpc_server_register_method_payload_handling
+: <a class="el" href="grpc_8h.html#aab04022748000f50c2590230f985acbc">grpc.h</a>
+</li>
+<li>grpc_server_register_non_listening_completion_queue()
+: <a class="el" href="grpc_8h.html#a8be1e6025540b47bfdbbf0ae059ec65d">grpc.h</a>
+</li>
+<li>grpc_server_request_call()
+: <a class="el" href="grpc_8h.html#ad8472547ac3173e746b1e7980c1208b5">grpc.h</a>
+</li>
+<li>grpc_server_request_registered_call()
+: <a class="el" href="grpc_8h.html#a0946b5fdc9c1d55de6f62e7a9335de25">grpc.h</a>
+</li>
+<li>grpc_server_shutdown_and_notify()
+: <a class="el" href="grpc_8h.html#a5950aea48195923a1f4f585b1ecb6ba0">grpc.h</a>
+</li>
+<li>grpc_server_start()
+: <a class="el" href="grpc_8h.html#ab2213d7fae4c33c47c824266f268859c">grpc.h</a>
+</li>
+<li>grpc_shutdown()
+: <a class="el" href="grpc_8h.html#a35f55253e80714c17f4f3a0657e06f1b">grpc.h</a>
+</li>
 <li>grpc_slice
 : <a class="el" href="grpc_2impl_2codegen_2slice_8h.html#a2a5f8eaa5d8784bfec46ac983644dca2">slice.h</a>
+</li>
+<li>grpc_slice_buf_cmp()
+: <a class="el" href="grpc_2slice_8h.html#ab66e2a9f5f74e59001b5ec5fd40f0c03">slice.h</a>
+</li>
+<li>grpc_slice_buf_start_eq()
+: <a class="el" href="grpc_2slice_8h.html#a0ea487d89fdecd0a19b7f16beb9c8c11">slice.h</a>
+</li>
+<li>grpc_slice_buffer_add()
+: <a class="el" href="slice__buffer_8h.html#ab26ac15839a7837066d0ebabc30313a9">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_add_indexed()
+: <a class="el" href="slice__buffer_8h.html#a14c17527c0b0e8a1a67d354cba8e5575">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_addn()
+: <a class="el" href="slice__buffer_8h.html#a97d103b34483f9497366a9d251389b95">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_destroy()
+: <a class="el" href="slice__buffer_8h.html#a47be0cfbcaf8e0824133e61019f18966">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_init()
+: <a class="el" href="slice__buffer_8h.html#a3a073a017852ef88d7a8b884cecd3998">slice_buffer.h</a>
 </li>
 <li>GRPC_SLICE_BUFFER_INLINE_ELEMENTS
 : <a class="el" href="grpc_2impl_2codegen_2slice_8h.html#a81db47a2be0a079aa797cd77f3864809">slice.h</a>
 </li>
+<li>grpc_slice_buffer_move_first()
+: <a class="el" href="slice__buffer_8h.html#afadc904499b2963055d9f472b63f147a">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_move_first_into_buffer()
+: <a class="el" href="slice__buffer_8h.html#ab0a50399722f66965800c42b8d5f2c9d">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_move_into()
+: <a class="el" href="slice__buffer_8h.html#aa173423d301fcac2089714659333e460">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_pop()
+: <a class="el" href="slice__buffer_8h.html#a67bfa3c38bffb8aca49f9d0fc01f4441">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_reset_and_unref()
+: <a class="el" href="slice__buffer_8h.html#a250c487f6db5a26977fa416bca797ee7">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_swap()
+: <a class="el" href="slice__buffer_8h.html#ab800ef0de532e142680e9fcc15c48ea7">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_take_first()
+: <a class="el" href="slice__buffer_8h.html#a661a050b772ca79a99757ee2768b32d3">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_tiny_add()
+: <a class="el" href="slice__buffer_8h.html#ab82975f2bc426f66150a0ab17c25b583">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_trim_end()
+: <a class="el" href="slice__buffer_8h.html#a5d7f97d62303d96d05d349865be9bdc5">slice_buffer.h</a>
+</li>
+<li>grpc_slice_buffer_undo_take_first()
+: <a class="el" href="slice__buffer_8h.html#a2196ab49aa3b3f2889b1d65b6bd4cbd5">slice_buffer.h</a>
+</li>
+<li>grpc_slice_chr()
+: <a class="el" href="grpc_2slice_8h.html#a73658b48cf21aca48c3f93a6cfbf826a">slice.h</a>
+</li>
+<li>grpc_slice_cmp()
+: <a class="el" href="grpc_2slice_8h.html#a8c2a57340b8ff85c5bc17ecffe941a8d">slice.h</a>
+</li>
+<li>grpc_slice_default_eq_impl()
+: <a class="el" href="grpc_2slice_8h.html#acc97ac4bfd72bc3769c50ba45ab138b4">slice.h</a>
+</li>
+<li>grpc_slice_default_hash_impl()
+: <a class="el" href="grpc_2slice_8h.html#ae3bc03683d5fa57d5a0bcfb101f57eb0">slice.h</a>
+</li>
+<li>grpc_slice_dup()
+: <a class="el" href="grpc_2slice_8h.html#a42773de860145a1165110a9317f8ee0b">slice.h</a>
+</li>
 <li>GRPC_SLICE_END_PTR
 : <a class="el" href="grpc_2impl_2codegen_2slice_8h.html#a96535019e10a540192c1f276ec049a56">slice.h</a>
+</li>
+<li>grpc_slice_eq()
+: <a class="el" href="grpc_2slice_8h.html#a70619fe975944cdf1a2e043651f82e22">slice.h</a>
+</li>
+<li>grpc_slice_from_copied_buffer()
+: <a class="el" href="grpc_2slice_8h.html#a696e371c99b269438dc229c4e7de074b">slice.h</a>
+</li>
+<li>grpc_slice_from_copied_string()
+: <a class="el" href="grpc_2slice_8h.html#afd48c29f9625011186d7501c1fb0cb81">slice.h</a>
+</li>
+<li>grpc_slice_from_static_buffer()
+: <a class="el" href="grpc_2slice_8h.html#a0156c0520f9f84dc4b76327d7fac69d6">slice.h</a>
+</li>
+<li>grpc_slice_from_static_string()
+: <a class="el" href="grpc_2slice_8h.html#afa530f9246432b90ba07de2a0721ddce">slice.h</a>
+</li>
+<li>grpc_slice_hash()
+: <a class="el" href="grpc_2slice_8h.html#a0e67b41a2542cba4e3b297572c98d128">slice.h</a>
 </li>
 <li>GRPC_SLICE_INLINED_SIZE
 : <a class="el" href="grpc_2impl_2codegen_2slice_8h.html#ae65fc74cb3afbcd3299a1c93f90bae20">slice.h</a>
 </li>
+<li>grpc_slice_intern()
+: <a class="el" href="grpc_2slice_8h.html#ad3fa3526b24943714f57f86386819966">slice.h</a>
+</li>
 <li>GRPC_SLICE_IS_EMPTY
 : <a class="el" href="grpc_2impl_2codegen_2slice_8h.html#a829178b3baec8b96a992a5607ad3ed93">slice.h</a>
 </li>
+<li>grpc_slice_is_equivalent()
+: <a class="el" href="grpc_2slice_8h.html#ad3265621ff8d97c638d9e75bf1d24be9">slice.h</a>
+</li>
 <li>GRPC_SLICE_LENGTH
 : <a class="el" href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">slice.h</a>
+</li>
+<li>grpc_slice_malloc()
+: <a class="el" href="grpc_2slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">slice.h</a>
+</li>
+<li>grpc_slice_new()
+: <a class="el" href="grpc_2slice_8h.html#a85704b2e5f1c8d70e728e86ad6d1ca0a">slice.h</a>
+</li>
+<li>grpc_slice_new_with_len()
+: <a class="el" href="grpc_2slice_8h.html#a44c5429ec66267a094b4a1e63f9a31e5">slice.h</a>
+</li>
+<li>grpc_slice_new_with_user_data()
+: <a class="el" href="grpc_2slice_8h.html#a2b8d182acadc3f04ebdb97e31b8aace9">slice.h</a>
+</li>
+<li>grpc_slice_rchr()
+: <a class="el" href="grpc_2slice_8h.html#a65358088c9740be137d8185c55bae49d">slice.h</a>
+</li>
+<li>grpc_slice_ref()
+: <a class="el" href="grpc_2slice_8h.html#aaf6dd367abbe7883973588f411928c6e">slice.h</a>
 </li>
 <li>grpc_slice_refcount
 : <a class="el" href="grpc_2impl_2codegen_2slice_8h.html#acb7fc89ea8343fde6d0c09f1ea70dbc4">slice.h</a>
@@ -737,14 +1184,80 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_SLICE_SET_LENGTH
 : <a class="el" href="grpc_2impl_2codegen_2slice_8h.html#a6791fa7be0a1a9144e005cfea7baea84">slice.h</a>
 </li>
+<li>grpc_slice_slice()
+: <a class="el" href="grpc_2slice_8h.html#a6f85310018397819080c87347b69b517">slice.h</a>
+</li>
+<li>grpc_slice_split_head()
+: <a class="el" href="grpc_2slice_8h.html#ac630cdfb54ff37e0490c3ebe9efd585e">slice.h</a>
+</li>
+<li>grpc_slice_split_tail()
+: <a class="el" href="grpc_2slice_8h.html#a5aedc925ae6e2bae484fe82383fac025">slice.h</a>
+</li>
 <li>GRPC_SLICE_START_PTR
 : <a class="el" href="grpc_2impl_2codegen_2slice_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">slice.h</a>
+</li>
+<li>grpc_slice_str_cmp()
+: <a class="el" href="grpc_2slice_8h.html#aada74a5bebd5aad23cc4028e8cc98d4e">slice.h</a>
+</li>
+<li>grpc_slice_sub()
+: <a class="el" href="grpc_2slice_8h.html#ac334a6c6ad0a729fd4fe521df9f5ecc5">slice.h</a>
+</li>
+<li>grpc_slice_sub_no_ref()
+: <a class="el" href="grpc_2slice_8h.html#a3812672f29793b5a30a1cacc131b38da">slice.h</a>
+</li>
+<li>grpc_slice_to_c_string()
+: <a class="el" href="grpc_2slice_8h.html#af9b5772739f4f87de043449af582e0a5">slice.h</a>
+</li>
+<li>grpc_slice_unref()
+: <a class="el" href="grpc_2slice_8h.html#ac9952d98910886ca44ac416d547d0e08">slice.h</a>
+</li>
+<li>grpc_socket_factory
+: <a class="el" href="grpc__types_8h.html#a6bb7fdad6ac88edb9468eb46c801ddb0">grpc_types.h</a>
 </li>
 <li>grpc_socket_mutator
 : <a class="el" href="grpc__types_8h.html#a72c4781284bb0c964d281e6e46cf4a90">grpc_types.h</a>
 </li>
+<li>GRPC_SRM_PAYLOAD_NONE
+: <a class="el" href="grpc_8h.html#aab04022748000f50c2590230f985acbca366bf1a7d2e4cafb3a606436876a1555">grpc.h</a>
+</li>
+<li>GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER
+: <a class="el" href="grpc_8h.html#aab04022748000f50c2590230f985acbcaf954872e80a453fe2fd41c81c3a2b7cf">grpc.h</a>
+</li>
+<li>grpc_ssl_client_certificate_request_type
+: <a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09">grpc_security_constants.h</a>
+</li>
+<li>GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE
+: <a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09a8bced4a94b58d31fd0718d3203da376f">grpc_security_constants.h</a>
+</li>
+<li>GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+: <a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09a1041edab0ab12d270937f066f1e1ea0d">grpc_security_constants.h</a>
+</li>
+<li>GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
+: <a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09a6522b7d489da328ef7c9745039a93f42">grpc_security_constants.h</a>
+</li>
+<li>GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY
+: <a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09a7390ee04c71c633589eefdad872c2048">grpc_security_constants.h</a>
+</li>
+<li>GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
+: <a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09af7c66a36be648bf7e396a145654d79f1">grpc_security_constants.h</a>
+</li>
+<li>GRPC_SSL_ROOTS_OVERRIDE_FAIL
+: <a class="el" href="grpc__security__constants_8h.html#a90c47ae1d8c33145342170fe615fa68ca0c132ade28f3f56729b82119fc9f8142">grpc_security_constants.h</a>
+</li>
+<li>GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY
+: <a class="el" href="grpc__security__constants_8h.html#a90c47ae1d8c33145342170fe615fa68caa0fdee0e3b14865c1ee4e7d89a46cc64">grpc_security_constants.h</a>
+</li>
+<li>GRPC_SSL_ROOTS_OVERRIDE_OK
+: <a class="el" href="grpc__security__constants_8h.html#a90c47ae1d8c33145342170fe615fa68cadc1832235a9330a02cfa9a753eab70bc">grpc_security_constants.h</a>
+</li>
+<li>grpc_ssl_roots_override_result
+: <a class="el" href="grpc__security__constants_8h.html#a90c47ae1d8c33145342170fe615fa68c">grpc_security_constants.h</a>
+</li>
 <li>GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
 : <a class="el" href="group__grpc__arg__keys.html#ga218bf55b665134a11baf07ada5980825">grpc_types.h</a>
+</li>
+<li>GRPC_SSL_TRANSPORT_SECURITY_TYPE
+: <a class="el" href="grpc__security__constants_8h.html#a35a35c597b7090b8ac7e2d854c9bcc7a">grpc_security_constants.h</a>
 </li>
 <li>GRPC_STATUS__DO_NOT_USE
 : <a class="el" href="grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108ebab924d4c4c646bdb3130162b8e359dd96">status.h</a>
@@ -803,6 +1316,21 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_STATUS_UNKNOWN
 : <a class="el" href="grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eba5f02c0e431162618ab422d27fd39dd08">status.h</a>
 </li>
+<li>GRPC_TCP_DEFAULT_READ_SLICE_SIZE
+: <a class="el" href="group__grpc__arg__keys.html#ga1f91c3aec64a436d29051c8d415b1053">grpc_types.h</a>
+</li>
+<li>grpc_tracer_set_enabled()
+: <a class="el" href="grpc_8h.html#a0bcbc8d69b256843facb8339d812ae2e">grpc.h</a>
+</li>
+<li>GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME
+: <a class="el" href="grpc__security__constants_8h.html#aff82fdff9e7c40c4dd4bdc650e38e25a">grpc_security_constants.h</a>
+</li>
+<li>grpc_use_signal()
+: <a class="el" href="grpc__posix_8h.html#a0dd4f6903c0919775d45189990067d14">grpc_posix.h</a>
+</li>
+<li>grpc_version_string()
+: <a class="el" href="grpc_8h.html#a8bf40c680565d2d3b29b85e8a9e661f3">grpc.h</a>
+</li>
 <li>GRPC_WRITE_BUFFER_HINT
 : <a class="el" href="grpc__types_8h.html#adf29fd8b7df2ecc47d14a7f5a3a079c0">grpc_types.h</a>
 </li>
@@ -812,6 +1340,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_WRITE_USED_MASK
 : <a class="el" href="grpc__types_8h.html#a3317259e1098b2b6f49982d6997bbf6a">grpc_types.h</a>
 </li>
+<li>GRPC_X509_CN_PROPERTY_NAME
+: <a class="el" href="grpc__security__constants_8h.html#afee5e0fade6e0af1954529f1f08afe0c">grpc_security_constants.h</a>
+</li>
+<li>GRPC_X509_PEM_CERT_PROPERTY_NAME
+: <a class="el" href="grpc__security__constants_8h.html#ad46c3fd565d6a24eeb25d1fdc342cb28">grpc_security_constants.h</a>
+</li>
+<li>GRPC_X509_SAN_PROPERTY_NAME
+: <a class="el" href="grpc__security__constants_8h.html#a1412421653b7999544296f56025a0f36">grpc_security_constants.h</a>
+</li>
 <li>GRPCAPI
 : <a class="el" href="port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">port_platform.h</a>
 </li>
@@ -819,7 +1356,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

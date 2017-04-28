@@ -14,6 +14,8 @@ var searchData=
   ['context_5f',['context_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a04daf9d2fca21bc2bb78cc7823f2f118',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['copy',['copy',['../structgrpc__arg__pointer__vtable.html#a4b937861a8c7c8165fcb3bfc831dd95e',1,'grpc_arg_pointer_vtable']]],
   ['count',['count',['../structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4',1,'grpc_metadata_array::count()'],['../structgrpc__op.html#ac5983d0a5d60c26ca2d1b37d31ba2e2a',1,'grpc_op::count()'],['../structgrpc__slice__buffer.html#ac6b9b99f100ac02280fe6ba0edc754cc',1,'grpc_slice_buffer::count()'],['../structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470',1,'gpr_refcount::count()']]],
+  ['cq_5fcompletion_5ftype',['cq_completion_type',['../structgrpc__completion__queue__attributes.html#a088c45a02ce2162ac11979e453939f6e',1,'grpc_completion_queue_attributes']]],
+  ['cq_5fpolling_5ftype',['cq_polling_type',['../structgrpc__completion__queue__attributes.html#a9cfd2d6b5b395d9d8f8592b994c30575',1,'grpc_completion_queue_attributes']]],
   ['cs',['cs',['../structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c',1,'gpr_mu']]],
   ['current',['current',['../structgrpc__byte__buffer__reader.html#acebe9b66a2fb35a613f9342de0f6ca91',1,'grpc_byte_buffer_reader']]]
 ];
