@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -131,6 +131,22 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a58a983a81a17d0b8f3996164f55912ef"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#a58a983a81a17d0b8f3996164f55912ef">get_buffer_hint</a> () const </td></tr>
 <tr class="memdesc:a58a983a81a17d0b8f3996164f55912ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get value for the flag indicating that the write may be buffered and need not go out on the wire immediately.  <a href="#a58a983a81a17d0b8f3996164f55912ef">More...</a><br/></td></tr>
 <tr class="separator:a58a983a81a17d0b8f3996164f55912ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abda047d0f7b1f18fbbfb5f9858c33f9d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#abda047d0f7b1f18fbbfb5f9858c33f9d">set_corked</a> ()</td></tr>
+<tr class="memdesc:abda047d0f7b1f18fbbfb5f9858c33f9d"><td class="mdescLeft">&#160;</td><td class="mdescRight">corked bit: aliases set_buffer_hint currently, with the intent that set_buffer_hint will be removed in the future  <a href="#abda047d0f7b1f18fbbfb5f9858c33f9d">More...</a><br/></td></tr>
+<tr class="separator:abda047d0f7b1f18fbbfb5f9858c33f9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae98f2a75fa805f2ba5f7fe5202d43c2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#aae98f2a75fa805f2ba5f7fe5202d43c2">clear_corked</a> ()</td></tr>
+<tr class="separator:aae98f2a75fa805f2ba5f7fe5202d43c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abd69a47aeaa341f6f94a540d648751c0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#abd69a47aeaa341f6f94a540d648751c0">is_corked</a> () const </td></tr>
+<tr class="separator:abd69a47aeaa341f6f94a540d648751c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad930c28f5c32832e1d48ee30bf0858e3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#ad930c28f5c32832e1d48ee30bf0858e3">set_last_message</a> ()</td></tr>
+<tr class="memdesc:ad930c28f5c32832e1d48ee30bf0858e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">last-message bit: indicates this is the last message in a stream client-side: makes Write the equivalent of performing Write, WritesDone in a single step server-side: hold the Write until the service handler returns (sync api) or until Finish is called (async api)  <a href="#ad930c28f5c32832e1d48ee30bf0858e3">More...</a><br/></td></tr>
+<tr class="separator:ad930c28f5c32832e1d48ee30bf0858e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a279b18ed840b64f145572ab5b34df9a7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#a279b18ed840b64f145572ab5b34df9a7">clear_last_messsage</a> ()</td></tr>
+<tr class="memdesc:a279b18ed840b64f145572ab5b34df9a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears flag indicating that this is the last message in a stream, disabling coalescing.  <a href="#a279b18ed840b64f145572ab5b34df9a7">More...</a><br/></td></tr>
+<tr class="separator:a279b18ed840b64f145572ab5b34df9a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a196c8fe4ed181e95efacf74be931bb79"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#a196c8fe4ed181e95efacf74be931bb79">is_last_message</a> () const </td></tr>
+<tr class="memdesc:a196c8fe4ed181e95efacf74be931bb79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get value for the flag indicating that this is the last message, and should be coalesced with trailing metadata.  <a href="#a196c8fe4ed181e95efacf74be931bb79">More...</a><br/></td></tr>
+<tr class="separator:a196c8fe4ed181e95efacf74be931bb79"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe3d32a3e5879022e7b8f1c6a7533841"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#abe3d32a3e5879022e7b8f1c6a7533841">operator=</a> (const <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;rhs)</td></tr>
 <tr class="separator:abe3d32a3e5879022e7b8f1c6a7533841"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -233,6 +249,54 @@ Public Member Functions</h2></td></tr>
 
 <p>Clears flag indicating that the write may be buffered and need not go out on the wire immediately. </p>
 <dl class="section see"><dt>See Also</dt><dd><a class="el" href="grpc__types_8h.html#adf29fd8b7df2ecc47d14a7f5a3a079c0" title="Hint that the write may be buffered and need not go out on the wire immediately. ">GRPC_WRITE_BUFFER_HINT</a> </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="aae98f2a75fa805f2ba5f7fe5202d43c2"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&amp; grpc::WriteOptions::clear_corked </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a279b18ed840b64f145572ab5b34df9a7"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&amp; grpc::WriteOptions::clear_last_messsage </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Clears flag indicating that this is the last message in a stream, disabling coalescing. </p>
 
 </div>
 </div>
@@ -339,6 +403,55 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="abd69a47aeaa341f6f94a540d648751c0"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool grpc::WriteOptions::is_corked </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a196c8fe4ed181e95efacf74be931bb79"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool grpc::WriteOptions::is_last_message </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get value for the flag indicating that this is the last message, and should be coalesced with trailing metadata. </p>
+<dl class="section see"><dt>See Also</dt><dd>GRPC_WRITE_LAST_MESSAGE </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="abe3d32a3e5879022e7b8f1c6a7533841"></a>
 <div class="memitem">
 <div class="memproto">
@@ -389,6 +502,56 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="abda047d0f7b1f18fbbfb5f9858c33f9d"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&amp; grpc::WriteOptions::set_corked </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>corked bit: aliases set_buffer_hint currently, with the intent that set_buffer_hint will be removed in the future </p>
+
+</div>
+</div>
+<a class="anchor" id="ad930c28f5c32832e1d48ee30bf0858e3"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&amp; grpc::WriteOptions::set_last_message </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>last-message bit: indicates this is the last message in a stream client-side: makes Write the equivalent of performing Write, WritesDone in a single step server-side: hold the Write until the service handler returns (sync api) or until Finish is called (async api) </p>
+
+</div>
+</div>
 <a class="anchor" id="afe5f12d1bf9ed01b7a833458dc889b66"></a>
 <div class="memitem">
 <div class="memproto">
@@ -421,7 +584,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

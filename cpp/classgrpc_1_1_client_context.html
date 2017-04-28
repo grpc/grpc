@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -164,6 +164,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a67a71b32afe1d71189aa3a24146ec61d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a67a71b32afe1d71189aa3a24146ec61d">set_compression_algorithm</a> (<a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm)</td></tr>
 <tr class="memdesc:a67a71b32afe1d71189aa3a24146ec61d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set <em>algorithm</em> to be the compression algorithm used for the client call.  <a href="#a67a71b32afe1d71189aa3a24146ec61d">More...</a><br/></td></tr>
 <tr class="separator:a67a71b32afe1d71189aa3a24146ec61d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af79c64534c7b208594ba8e76021e2696"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#af79c64534c7b208594ba8e76021e2696">set_initial_metadata_corked</a> (bool corked)</td></tr>
+<tr class="memdesc:af79c64534c7b208594ba8e76021e2696"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag whether the initial metadata should be <em>corked</em>.  <a href="#af79c64534c7b208594ba8e76021e2696">More...</a><br/></td></tr>
+<tr class="separator:af79c64534c7b208594ba8e76021e2696"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a905d667d96613e022cd83c13dbedb4c3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a905d667d96613e022cd83c13dbedb4c3">peer</a> () const </td></tr>
 <tr class="memdesc:a905d667d96613e022cd83c13dbedb4c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the peer uri in a string.  <a href="#a905d667d96613e022cd83c13dbedb4c3">More...</a><br/></td></tr>
 <tr class="separator:a905d667d96613e022cd83c13dbedb4c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -775,6 +778,39 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="af79c64534c7b208594ba8e76021e2696"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::ClientContext::set_initial_metadata_corked </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>corked</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Flag whether the initial metadata should be <em>corked</em>. </p>
+<p>If <em>corked</em> is true, then the initial metadata will be colasced with the write of first message in the stream.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">corked</td><td>The flag indicating whether the initial metadata is to be corked or not. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="aa342af7349c88727e8bd4c765a000ae5"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1139,7 +1175,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

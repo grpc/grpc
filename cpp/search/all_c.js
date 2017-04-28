@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['makechannelargumentoption',['MakeChannelArgumentOption',['../namespacegrpc.html#a983ffd386cf23748febdda5044b68cb1',1,'grpc::MakeChannelArgumentOption(const grpc::string &amp;name, const grpc::string &amp;value)'],['../namespacegrpc.html#afb308dc55d176f32000bb02296dee630',1,'grpc::MakeChannelArgumentOption(const grpc::string &amp;name, int value)']]],
   ['map',['map',['../classgrpc_1_1_metadata_map.html#ab2094f6d46c7d4b87182111a96ed06e4',1,'grpc::MetadataMap::map()'],['../classgrpc_1_1_metadata_map.html#a3f2e6c00f7306d4611c4670c767da2ac',1,'grpc::MetadataMap::map() const ']]],
   ['markmethodasync',['MarkMethodAsync',['../classgrpc_1_1_service.html#aee6aa99200b5c6ef6e4660f54f0ac23e',1,'grpc::Service']]],
   ['markmethodgeneric',['MarkMethodGeneric',['../classgrpc_1_1_service.html#a2fb1874b038f8ea80031608ac59835f3',1,'grpc::Service']]],
@@ -17,8 +18,8 @@ var searchData=
   ['metadatamap',['MetadataMap',['../classgrpc_1_1_metadata_map.html',1,'grpc']]],
   ['metadatamap',['MetadataMap',['../classgrpc_1_1_metadata_map.html#acf482481ebacb8e2c4191e3dd38b2ea9',1,'grpc::MetadataMap']]],
   ['method',['method',['../structgrpc__call__details.html#a86024f71c0534c2e454a73f241691717',1,'grpc_call_details::method()'],['../classgrpc_1_1_generic_server_context.html#ae08880fa4adb490326953ad905715c37',1,'grpc::GenericServerContext::method()']]],
-  ['method_5fhandler_5fimpl_2eh',['method_handler_impl.h',['../codegen_2method__handler__impl_8h.html',1,'']]],
   ['method_5fhandler_5fimpl_2eh',['method_handler_impl.h',['../method__handler__impl_8h.html',1,'']]],
+  ['method_5fhandler_5fimpl_2eh',['method_handler_impl.h',['../codegen_2method__handler__impl_8h.html',1,'']]],
   ['method_5ftype',['method_type',['../classgrpc_1_1_rpc_method.html#a1de5a64a1e57b5938c4733f9152291b6',1,'grpc::RpcMethod']]],
   ['methoddescriptor',['MethodDescriptor',['../namespacegrpc_1_1protobuf.html#a8efefadec7fe436dcc7657c6d6f4569a',1,'grpc::protobuf']]],
   ['methodhandler',['MethodHandler',['../classgrpc_1_1_method_handler.html',1,'grpc']]],

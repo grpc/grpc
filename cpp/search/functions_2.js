@@ -2,7 +2,7 @@ var searchData=
 [
   ['c_5fbitmask',['c_bitmask',['../classgrpc_1_1_propagation_options.html#aa4845c50ba91dfd526a225adc81fcd36',1,'grpc::PropagationOptions']]],
   ['c_5fcall',['c_call',['../classgrpc_1_1_client_context.html#a9fba10daf95815d2e1e94fa886a00459',1,'grpc::ClientContext::c_call()'],['../classgrpc_1_1_server_context.html#ac23879ea6fee39bbe27c6b6192989d61',1,'grpc::ServerContext::c_call()']]],
-  ['c_5fchannel_5fargs',['c_channel_args',['../classgrpc_1_1_channel_arguments.html#a0f747e720ad77a31a25cc0c3f4942479',1,'grpc::ChannelArguments']]],
+  ['c_5fchannel_5fargs',['c_channel_args',['../classgrpc_1_1_channel_arguments.html#a0809bc0694b2996de4fd9d15e9acaf2a',1,'grpc::ChannelArguments']]],
   ['c_5fresource_5fquota',['c_resource_quota',['../classgrpc_1_1_resource_quota.html#a79e91c946f9ed0cd2baab04ec56e35d9',1,'grpc::ResourceQuota']]],
   ['c_5fserver',['c_server',['../classgrpc_1_1_server.html#a7ff9f4e7ef7d51747dc362dcae9483fd',1,'grpc::Server']]],
   ['c_5fslice',['c_slice',['../classgrpc_1_1_slice.html#ad104691f0410004542b38396511b34f3',1,'grpc::Slice']]],
@@ -29,6 +29,8 @@ var searchData=
   ['channelcredentials',['ChannelCredentials',['../classgrpc_1_1_channel_credentials.html#a961606a781db020e7dbd100c00b8071b',1,'grpc::ChannelCredentials']]],
   ['clear',['Clear',['../classgrpc_1_1_write_options.html#a9fc0e51224292b15dcfefec342fa0e02',1,'grpc::WriteOptions::Clear()'],['../classgrpc_1_1_byte_buffer.html#a185b593e5c7d2b888fa377989a6bae80',1,'grpc::ByteBuffer::Clear()']]],
   ['clear_5fbuffer_5fhint',['clear_buffer_hint',['../classgrpc_1_1_write_options.html#a897ba94e51b1f6ead41ade8f92efa89f',1,'grpc::WriteOptions']]],
+  ['clear_5fcorked',['clear_corked',['../classgrpc_1_1_write_options.html#aae98f2a75fa805f2ba5f7fe5202d43c2',1,'grpc::WriteOptions']]],
+  ['clear_5flast_5fmesssage',['clear_last_messsage',['../classgrpc_1_1_write_options.html#a279b18ed840b64f145572ab5b34df9a7',1,'grpc::WriteOptions']]],
   ['clear_5fno_5fcompression',['clear_no_compression',['../classgrpc_1_1_write_options.html#a7bc26dd151ed56bc49329ca895fe15e7',1,'grpc::WriteOptions']]],
   ['client_5fmetadata',['client_metadata',['../classgrpc_1_1_server_context.html#a090072163b57931e24bc9583b478f997',1,'grpc::ServerContext']]],
   ['clientasyncreader',['ClientAsyncReader',['../classgrpc_1_1_client_async_reader.html#aa14e3bc04d9852009f8b3094ce0d3ed4',1,'grpc::ClientAsyncReader']]],

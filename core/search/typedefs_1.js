@@ -28,6 +28,8 @@ var searchData=
   ['grpc_5fchannel',['grpc_channel',['../grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e',1,'grpc_types.h']]],
   ['grpc_5fchannel_5fcredentials',['grpc_channel_credentials',['../grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b',1,'grpc_security.h']]],
   ['grpc_5fcompletion_5fqueue',['grpc_completion_queue',['../grpc__types_8h.html#a895faab0e6035445750e43482651ba2f',1,'grpc_types.h']]],
+  ['grpc_5fcompletion_5fqueue_5fattributes',['grpc_completion_queue_attributes',['../grpc_8h.html#a8113e2fd72a5fbb372d691a0c2206422',1,'grpc.h']]],
+  ['grpc_5fcompletion_5fqueue_5ffactory',['grpc_completion_queue_factory',['../grpc_8h.html#a7598a0f60120f40389e6e264d23b88a6',1,'grpc.h']]],
   ['grpc_5fcompletion_5ftype',['grpc_completion_type',['../grpc__types_8h.html#a70454b2958c92c1cd8feeaa45f157b74',1,'grpc_types.h']]],
   ['grpc_5fcompression_5foptions',['grpc_compression_options',['../compression__types_8h.html#a074a1aa6fb56901a795fe53c2adeefde',1,'compression_types.h']]],
   ['grpc_5fcredentials_5fplugin_5fmetadata_5fcb',['grpc_credentials_plugin_metadata_cb',['../grpc__security_8h.html#acc59d2e9577dc4429895b9cd89450106',1,'grpc_security.h']]],
@@ -43,6 +45,7 @@ var searchData=
   ['grpc_5fslice',['grpc_slice',['../impl_2codegen_2slice_8h.html#a2a5f8eaa5d8784bfec46ac983644dca2',1,'slice.h']]],
   ['grpc_5fslice_5frefcount',['grpc_slice_refcount',['../impl_2codegen_2slice_8h.html#acb7fc89ea8343fde6d0c09f1ea70dbc4',1,'slice.h']]],
   ['grpc_5fslice_5frefcount_5fvtable',['grpc_slice_refcount_vtable',['../impl_2codegen_2slice_8h.html#a0ba9a84b74d6308678a2f53212b5b3fd',1,'slice.h']]],
+  ['grpc_5fsocket_5ffactory',['grpc_socket_factory',['../grpc__types_8h.html#a6bb7fdad6ac88edb9468eb46c801ddb0',1,'grpc_types.h']]],
   ['grpc_5fsocket_5fmutator',['grpc_socket_mutator',['../grpc__types_8h.html#a72c4781284bb0c964d281e6e46cf4a90',1,'grpc_types.h']]],
   ['grpc_5fssl_5froots_5foverride_5fcallback',['grpc_ssl_roots_override_callback',['../grpc__security_8h.html#a005f46357a959bbfbb7b1241a933ef43',1,'grpc_security.h']]]
 ];

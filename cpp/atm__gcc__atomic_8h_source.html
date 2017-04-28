@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -132,66 +132,73 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="port__platform_8h.html">grpc/impl/codegen/port_platform.h</a>&gt;</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;</div>
 <div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">   41</a></span>&#160;<span class="keyword">typedef</span> intptr_t <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a>;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#ifdef GPR_LOW_LEVEL_COUNTERS</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> gpr_counter_atm_cas;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keyword">extern</span> <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> gpr_counter_atm_add;</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor">#define GPR_ATM_INC_COUNTER(counter) \</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="preprocessor">  __atomic_fetch_add(&amp;counter, 1, __ATOMIC_RELAXED)</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ATM_INC_CAS_THEN(blah) \</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="preprocessor">  (GPR_ATM_INC_COUNTER(gpr_counter_atm_cas), blah)</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ATM_INC_ADD_THEN(blah) \</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor">  (GPR_ATM_INC_COUNTER(gpr_counter_atm_add), blah)</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">   53</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ATM_INC_CAS_THEN(blah) blah</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a9c18195c74f7c1fb80e26462ea55d2ab">   54</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ATM_INC_ADD_THEN(blah) blah</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a95f86e51ae9a479026bd237cb792193e">   57</a></span>&#160;<span class="preprocessor">#define gpr_atm_full_barrier() (__atomic_thread_fence(__ATOMIC_SEQ_CST))</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a44607f95f7ee40eba592c7fe10960a06">   59</a></span>&#160;<span class="preprocessor">#define gpr_atm_acq_load(p) (__atomic_load_n((p), __ATOMIC_ACQUIRE))</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#aa647aa9c97294a6709bbf2ac401cd9a6">   60</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_atm_no_barrier_load(p) (__atomic_load_n((p), __ATOMIC_RELAXED))</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a42e3982d45ae4cec439a12b8fcd618e9">   61</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_atm_rel_store(p, value) \</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="preprocessor">  (__atomic_store_n((p), (intptr_t)(value), __ATOMIC_RELEASE))</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#afad47d4c311c5439371fcdd4a0b6794e">   63</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_atm_no_barrier_store(p, value) \</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor">  (__atomic_store_n((p), (intptr_t)(value), __ATOMIC_RELAXED))</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00066"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">   66</a></span>&#160;<span class="preprocessor">#define gpr_atm_no_barrier_fetch_add(p, delta) \</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="preprocessor">  GPR_ATM_INC_ADD_THEN(                        \</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor">      __atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_RELAXED))</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">   69</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_atm_full_fetch_add(p, delta) \</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor">  GPR_ATM_INC_ADD_THEN(                  \</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">      __atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_ACQ_REL))</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keyword">static</span> __inline <span class="keywordtype">int</span> <a class="code" href="atm__gcc__sync_8h.html#ad39536b08912ac4a0770655ed334d260">gpr_atm_no_barrier_cas</a>(<a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> o, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> n) {</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_compare_exchange_n(</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;      p, &amp;o, n, 0, __ATOMIC_RELAXED, __ATOMIC_RELAXED));</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;}</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="keyword">static</span> __inline <span class="keywordtype">int</span> <a class="code" href="atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">gpr_atm_acq_cas</a>(<a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> o, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> n) {</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_compare_exchange_n(</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;      p, &amp;o, n, 0, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED));</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;}</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="keyword">static</span> __inline <span class="keywordtype">int</span> <a class="code" href="atm__gcc__sync_8h.html#ae7c3b215cda868ee9ee778822000c3f2">gpr_atm_rel_cas</a>(<a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> o, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> n) {</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_compare_exchange_n(</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;      p, &amp;o, n, 0, __ATOMIC_RELEASE, __ATOMIC_RELAXED));</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;}</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;</div>
-<div class="line"><a name="l00088"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a724691b6d48f35bbd9f575c82fdfb526">   88</a></span>&#160;<span class="preprocessor">#define gpr_atm_full_xchg(p, n) \</span></div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="preprocessor">  GPR_ATM_INC_CAS_THEN(__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL))</span></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_ATM_GCC_ATOMIC_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a5fb170a483552faeb4b6d4acb674c44c">   42</a></span>&#160;<span class="preprocessor">#define GPR_ATM_MAX INTPTR_MAX</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#ifdef GPR_LOW_LEVEL_COUNTERS</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> gpr_counter_atm_cas;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keyword">extern</span> <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> gpr_counter_atm_add;</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="preprocessor">#define GPR_ATM_INC_COUNTER(counter) \</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="preprocessor">  __atomic_fetch_add(&amp;counter, 1, __ATOMIC_RELAXED)</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ATM_INC_CAS_THEN(blah) \</span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="preprocessor">  (GPR_ATM_INC_COUNTER(gpr_counter_atm_cas), blah)</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ATM_INC_ADD_THEN(blah) \</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="preprocessor">  (GPR_ATM_INC_COUNTER(gpr_counter_atm_add), blah)</span></div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">   54</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ATM_INC_CAS_THEN(blah) blah</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a9c18195c74f7c1fb80e26462ea55d2ab">   55</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ATM_INC_ADD_THEN(blah) blah</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a95f86e51ae9a479026bd237cb792193e">   58</a></span>&#160;<span class="preprocessor">#define gpr_atm_full_barrier() (__atomic_thread_fence(__ATOMIC_SEQ_CST))</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a44607f95f7ee40eba592c7fe10960a06">   60</a></span>&#160;<span class="preprocessor">#define gpr_atm_acq_load(p) (__atomic_load_n((p), __ATOMIC_ACQUIRE))</span></div>
+<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#aa647aa9c97294a6709bbf2ac401cd9a6">   61</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_atm_no_barrier_load(p) (__atomic_load_n((p), __ATOMIC_RELAXED))</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a42e3982d45ae4cec439a12b8fcd618e9">   62</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_atm_rel_store(p, value) \</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">  (__atomic_store_n((p), (intptr_t)(value), __ATOMIC_RELEASE))</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#afad47d4c311c5439371fcdd4a0b6794e">   64</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_atm_no_barrier_store(p, value) \</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="preprocessor">  (__atomic_store_n((p), (intptr_t)(value), __ATOMIC_RELAXED))</span></div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">   67</a></span>&#160;<span class="preprocessor">#define gpr_atm_no_barrier_fetch_add(p, delta) \</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor">  GPR_ATM_INC_ADD_THEN(                        \</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">      __atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_RELAXED))</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">   70</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_atm_full_fetch_add(p, delta) \</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">  GPR_ATM_INC_ADD_THEN(                  \</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor">      __atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_ACQ_REL))</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keyword">static</span> __inline <span class="keywordtype">int</span> <a class="code" href="atm__gcc__sync_8h.html#ad39536b08912ac4a0770655ed334d260">gpr_atm_no_barrier_cas</a>(<a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> o, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> n) {</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_compare_exchange_n(</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;      p, &amp;o, n, 0, __ATOMIC_RELAXED, __ATOMIC_RELAXED));</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;}</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keyword">static</span> __inline <span class="keywordtype">int</span> <a class="code" href="atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">gpr_atm_acq_cas</a>(<a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> o, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> n) {</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_compare_exchange_n(</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;      p, &amp;o, n, 0, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED));</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;}</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="keyword">static</span> __inline <span class="keywordtype">int</span> <a class="code" href="atm__gcc__sync_8h.html#ae7c3b215cda868ee9ee778822000c3f2">gpr_atm_rel_cas</a>(<a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> o, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> n) {</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_compare_exchange_n(</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;      p, &amp;o, n, 0, __ATOMIC_RELEASE, __ATOMIC_RELAXED));</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;}</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="keyword">static</span> __inline <span class="keywordtype">int</span> <a class="code" href="atm__gcc__sync_8h.html#a9d29f224b49d4de8bb2b0d7feae64fcb">gpr_atm_full_cas</a>(<a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> o, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> n) {</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_compare_exchange_n(</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;      p, &amp;o, n, 0, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED));</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;}</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;</div>
+<div class="line"><a name="l00094"></a><span class="lineno"><a class="line" href="atm__gcc__atomic_8h.html#a724691b6d48f35bbd9f575c82fdfb526">   94</a></span>&#160;<span class="preprocessor">#define gpr_atm_full_xchg(p, n) \</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="preprocessor">  GPR_ATM_INC_CAS_THEN(__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL))</span></div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_ATM_GCC_ATOMIC_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="port__platform_8h_html"><div class="ttname"><a href="port__platform_8h.html">port_platform.h</a></div></div>
 <div class="ttc" id="atm__gcc__atomic_8h_html_a0a6314f31fcae0666a93961bed98af51"><div class="ttname"><a href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a></div><div class="ttdeci">intptr_t gpr_atm</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:41</div></div>
-<div class="ttc" id="atm__gcc__atomic_8h_html_af498a174edbc5b41c4d972480f892eac"><div class="ttname"><a href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a></div><div class="ttdeci">#define GPR_ATM_INC_CAS_THEN(blah)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:53</div></div>
-<div class="ttc" id="atm__gcc__sync_8h_html_a1a90e5777158aaa53624822f1f87dd90"><div class="ttname"><a href="atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">gpr_atm_acq_cas</a></div><div class="ttdeci">#define gpr_atm_acq_cas(p, o, n)</div><div class="ttdef"><b>Definition:</b> atm_gcc_sync.h:84</div></div>
-<div class="ttc" id="atm__gcc__sync_8h_html_ad39536b08912ac4a0770655ed334d260"><div class="ttname"><a href="atm__gcc__sync_8h.html#ad39536b08912ac4a0770655ed334d260">gpr_atm_no_barrier_cas</a></div><div class="ttdeci">#define gpr_atm_no_barrier_cas(p, o, n)</div><div class="ttdef"><b>Definition:</b> atm_gcc_sync.h:83</div></div>
-<div class="ttc" id="atm__gcc__sync_8h_html_ae7c3b215cda868ee9ee778822000c3f2"><div class="ttname"><a href="atm__gcc__sync_8h.html#ae7c3b215cda868ee9ee778822000c3f2">gpr_atm_rel_cas</a></div><div class="ttdeci">#define gpr_atm_rel_cas(p, o, n)</div><div class="ttdef"><b>Definition:</b> atm_gcc_sync.h:85</div></div>
+<div class="ttc" id="atm__gcc__sync_8h_html_a9d29f224b49d4de8bb2b0d7feae64fcb"><div class="ttname"><a href="atm__gcc__sync_8h.html#a9d29f224b49d4de8bb2b0d7feae64fcb">gpr_atm_full_cas</a></div><div class="ttdeci">#define gpr_atm_full_cas(p, o, n)</div><div class="ttdef"><b>Definition:</b> atm_gcc_sync.h:87</div></div>
+<div class="ttc" id="atm__gcc__atomic_8h_html_af498a174edbc5b41c4d972480f892eac"><div class="ttname"><a href="atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a></div><div class="ttdeci">#define GPR_ATM_INC_CAS_THEN(blah)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:54</div></div>
+<div class="ttc" id="atm__gcc__sync_8h_html_a1a90e5777158aaa53624822f1f87dd90"><div class="ttname"><a href="atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">gpr_atm_acq_cas</a></div><div class="ttdeci">#define gpr_atm_acq_cas(p, o, n)</div><div class="ttdef"><b>Definition:</b> atm_gcc_sync.h:85</div></div>
+<div class="ttc" id="atm__gcc__sync_8h_html_ad39536b08912ac4a0770655ed334d260"><div class="ttname"><a href="atm__gcc__sync_8h.html#ad39536b08912ac4a0770655ed334d260">gpr_atm_no_barrier_cas</a></div><div class="ttdeci">#define gpr_atm_no_barrier_cas(p, o, n)</div><div class="ttdef"><b>Definition:</b> atm_gcc_sync.h:84</div></div>
+<div class="ttc" id="atm__gcc__sync_8h_html_ae7c3b215cda868ee9ee778822000c3f2"><div class="ttname"><a href="atm__gcc__sync_8h.html#ae7c3b215cda868ee9ee778822000c3f2">gpr_atm_rel_cas</a></div><div class="ttdeci">#define gpr_atm_rel_cas(p, o, n)</div><div class="ttdef"><b>Definition:</b> atm_gcc_sync.h:86</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

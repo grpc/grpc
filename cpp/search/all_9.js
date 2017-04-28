@@ -18,6 +18,8 @@ var searchData=
   ['internationalization_2emd',['internationalization.md',['../internationalization_8md.html',1,'']]],
   ['interop_2dtest_2ddescriptions_2emd',['interop-test-descriptions.md',['../interop-test-descriptions_8md.html',1,'']]],
   ['invalid_5fargument',['INVALID_ARGUMENT',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba8d75876e087d1950914920f499d4a8d2',1,'grpc']]],
+  ['is_5fcorked',['is_corked',['../classgrpc_1_1_write_options.html#abd69a47aeaa341f6f94a540d648751c0',1,'grpc::WriteOptions']]],
+  ['is_5flast_5fmessage',['is_last_message',['../classgrpc_1_1_write_options.html#a196c8fe4ed181e95efacf74be931bb79',1,'grpc::WriteOptions']]],
   ['is_5fset',['is_set',['../classgrpc_1_1_call_op_send_initial_metadata.html#a7fb9bccd2fa23e882728d0b7fde196b3',1,'grpc::CallOpSendInitialMetadata::is_set()'],['../classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a',1,'grpc::ServerBuilder::is_set()'],['../structgrpc__compression__options.html#a6549e90bb2bf4002f2b59c57841df278',1,'grpc_compression_options::is_set()'],['../structgrpc__op.html#aaf3faa71e11b8211bc6f1c25870fb80b',1,'grpc_op::is_set()']]],
   ['isblocking',['IsBlocking',['../classgrpc_1_1_auth_metadata_processor.html#a6cfe6ac34d5a25f14a5528462077243c',1,'grpc::AuthMetadataProcessor::IsBlocking()'],['../classgrpc_1_1_metadata_credentials_plugin.html#ab3515201a954de40b0784647c057a95c',1,'grpc::MetadataCredentialsPlugin::IsBlocking()']]],
   ['iscancelled',['IsCancelled',['../classgrpc_1_1_server_context.html#ae52a89bbf70c27be3325080000757864',1,'grpc::ServerContext']]],

@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['makechannelargumentoption',['MakeChannelArgumentOption',['../namespacegrpc.html#a983ffd386cf23748febdda5044b68cb1',1,'grpc::MakeChannelArgumentOption(const grpc::string &amp;name, const grpc::string &amp;value)'],['../namespacegrpc.html#afb308dc55d176f32000bb02296dee630',1,'grpc::MakeChannelArgumentOption(const grpc::string &amp;name, int value)']]],
   ['map',['map',['../classgrpc_1_1_metadata_map.html#ab2094f6d46c7d4b87182111a96ed06e4',1,'grpc::MetadataMap::map()'],['../classgrpc_1_1_metadata_map.html#a3f2e6c00f7306d4611c4670c767da2ac',1,'grpc::MetadataMap::map() const ']]],
   ['markmethodasync',['MarkMethodAsync',['../classgrpc_1_1_service.html#aee6aa99200b5c6ef6e4660f54f0ac23e',1,'grpc::Service']]],
   ['markmethodgeneric',['MarkMethodGeneric',['../classgrpc_1_1_service.html#a2fb1874b038f8ea80031608ac59835f3',1,'grpc::Service']]],

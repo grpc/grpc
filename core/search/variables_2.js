@@ -13,6 +13,8 @@ var searchData=
   ['copy_5fkey',['copy_key',['../structgpr__avl__vtable.html#aaf2b05b749fa808f45b50e5b20d959ac',1,'gpr_avl_vtable']]],
   ['copy_5fvalue',['copy_value',['../structgpr__avl__vtable.html#a92e4dbcc6b3a3964dfe12f51e81f3fbd',1,'gpr_avl_vtable']]],
   ['count',['count',['../structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4',1,'grpc_metadata_array::count()'],['../structgrpc__op.html#ac5983d0a5d60c26ca2d1b37d31ba2e2a',1,'grpc_op::count()'],['../structgrpc__slice__buffer.html#ac6b9b99f100ac02280fe6ba0edc754cc',1,'grpc_slice_buffer::count()'],['../structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470',1,'gpr_refcount::count()']]],
+  ['cq_5fcompletion_5ftype',['cq_completion_type',['../structgrpc__completion__queue__attributes.html#a088c45a02ce2162ac11979e453939f6e',1,'grpc_completion_queue_attributes']]],
+  ['cq_5fpolling_5ftype',['cq_polling_type',['../structgrpc__completion__queue__attributes.html#a9cfd2d6b5b395d9d8f8592b994c30575',1,'grpc_completion_queue_attributes']]],
   ['cs',['cs',['../structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c',1,'gpr_mu']]],
   ['ctx',['ctx',['../structgrpc__auth__property__iterator.html#a971904d29fa6f6ca6a853d078cae2f58',1,'grpc_auth_property_iterator']]],
   ['current',['current',['../structgrpc__byte__buffer__reader.html#ac777178cbde7955eb927b7aca32296d1',1,'grpc_byte_buffer_reader']]]

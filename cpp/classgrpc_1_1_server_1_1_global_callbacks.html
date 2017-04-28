@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -117,6 +117,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0700ca2be64da5a8caf318ed99dff165"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_global_callbacks.html#a0700ca2be64da5a8caf318ed99dff165">PreServerStart</a> (<a class="el" href="classgrpc_1_1_server.html">Server</a> *server)</td></tr>
 <tr class="memdesc:a0700ca2be64da5a8caf318ed99dff165"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called before server is started.  <a href="#a0700ca2be64da5a8caf318ed99dff165">More...</a><br/></td></tr>
 <tr class="separator:a0700ca2be64da5a8caf318ed99dff165"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb619af2fa2546007a5e50b441c135f0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_global_callbacks.html#aeb619af2fa2546007a5e50b441c135f0">AddPort</a> (<a class="el" href="classgrpc_1_1_server.html">Server</a> *server, int port)</td></tr>
+<tr class="memdesc:aeb619af2fa2546007a5e50b441c135f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called after a server port is added.  <a href="#aeb619af2fa2546007a5e50b441c135f0">More...</a><br/></td></tr>
+<tr class="separator:aeb619af2fa2546007a5e50b441c135f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Global Callbacks. </p>
@@ -146,6 +149,42 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="aeb619af2fa2546007a5e50b441c135f0"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void grpc::Server::GlobalCallbacks::AddPort </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_server.html">Server</a> *&#160;</td>
+          <td class="paramname"><em>server</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>port</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Called after a server port is added. </p>
+
+</div>
+</div>
 <a class="anchor" id="a3a20848314924c94c349508e970138e9"></a>
 <div class="memitem">
 <div class="memproto">
@@ -256,7 +295,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

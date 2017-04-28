@@ -14,8 +14,8 @@ var searchData=
   ['service_5fconfig_5fjson',['service_config_json',['../structgrpc__channel__info.html#a578275f6c9da1610e3bf2f99a89d14ba',1,'grpc_channel_info']]],
   ['service_5furl',['service_url',['../structgrpc__auth__metadata__context.html#a67ff8c2ebf38b5511da3d3194d72e01d',1,'grpc_auth_metadata_context']]],
   ['severity',['severity',['../structgpr__log__func__args.html#af0b4b9d8beace1cae0d1a24783d70ccc',1,'gpr_log_func_args']]],
-  ['slice_2eh',['slice.h',['../slice_8h.html',1,'']]],
   ['slice_2eh',['slice.h',['../impl_2codegen_2slice_8h.html',1,'']]],
+  ['slice_2eh',['slice.h',['../slice_8h.html',1,'']]],
   ['slice_5fbuffer',['slice_buffer',['../structgrpc__byte__buffer.html#ab551d5a2ca46d9bc3adc8bbc0f816590',1,'grpc_byte_buffer']]],
   ['slice_5fbuffer_2eh',['slice_buffer.h',['../slice__buffer_8h.html',1,'']]],
   ['slices',['slices',['../structgrpc__slice__buffer.html#ac37e9d19ec31eab8f429d2b4af908256',1,'grpc_slice_buffer']]],
@@ -24,6 +24,7 @@ var searchData=
   ['status_2eh',['status.h',['../impl_2codegen_2status_8h.html',1,'']]],
   ['status_2eh',['status.h',['../status_8h.html',1,'']]],
   ['status_5fdetails',['status_details',['../structgrpc__op.html#a8b2173ff9ae109e69441735772dcabfd',1,'grpc_op']]],
+  ['status_5fordering_2emd',['status_ordering.md',['../status__ordering_8md.html',1,'']]],
   ['statuscodes_2emd',['statuscodes.md',['../statuscodes_8md.html',1,'']]],
   ['stress_5ftest_5fframework_2emd',['stress_test_framework.md',['../stress__test__framework_8md.html',1,'']]],
   ['string',['string',['../structgrpc__arg.html#a05bc3701718db73608ef3598480e8fa8',1,'grpc_arg']]],
@@ -35,8 +36,8 @@ var searchData=
   ['sync_2eh',['sync.h',['../impl_2codegen_2sync_8h.html',1,'']]],
   ['sync_5fgeneric_2eh',['sync_generic.h',['../support_2sync__generic_8h.html',1,'']]],
   ['sync_5fgeneric_2eh',['sync_generic.h',['../impl_2codegen_2sync__generic_8h.html',1,'']]],
-  ['sync_5fposix_2eh',['sync_posix.h',['../support_2sync__posix_8h.html',1,'']]],
   ['sync_5fposix_2eh',['sync_posix.h',['../impl_2codegen_2sync__posix_8h.html',1,'']]],
-  ['sync_5fwindows_2eh',['sync_windows.h',['../impl_2codegen_2sync__windows_8h.html',1,'']]],
-  ['sync_5fwindows_2eh',['sync_windows.h',['../support_2sync__windows_8h.html',1,'']]]
+  ['sync_5fposix_2eh',['sync_posix.h',['../support_2sync__posix_8h.html',1,'']]],
+  ['sync_5fwindows_2eh',['sync_windows.h',['../support_2sync__windows_8h.html',1,'']]],
+  ['sync_5fwindows_2eh',['sync_windows.h',['../impl_2codegen_2sync__windows_8h.html',1,'']]]
 ];

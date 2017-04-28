@@ -1,6 +1,7 @@
 var searchData=
 [
   ['gpr_5fasprintf',['gpr_asprintf',['../string__util_8h.html#acf4ee571585b7e7785cad0eec91857fa',1,'string_util.h']]],
+  ['gpr_5fatm_5fno_5fbarrier_5fclamped_5fadd',['gpr_atm_no_barrier_clamped_add',['../impl_2codegen_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d',1,'atm.h']]],
   ['gpr_5favl_5fadd',['gpr_avl_add',['../avl_8h.html#a58fe0294f7ed3d27b61a71a56a7bcc61',1,'avl.h']]],
   ['gpr_5favl_5fcreate',['gpr_avl_create',['../avl_8h.html#a1dab3c1a92471b256b82ca8bd8f96d88',1,'avl.h']]],
   ['gpr_5favl_5fget',['gpr_avl_get',['../avl_8h.html#adfb9b46b5306de2954335b198a0b677f',1,'avl.h']]],
@@ -68,6 +69,7 @@ var searchData=
   ['gpr_5frealloc',['gpr_realloc',['../alloc_8h.html#a4282437d10bb2b1a2c44d665a97984f4',1,'alloc.h']]],
   ['gpr_5fref',['gpr_ref',['../support_2sync_8h.html#a2653bdd931dc3e35ef24f52b4ab074ee',1,'sync.h']]],
   ['gpr_5fref_5finit',['gpr_ref_init',['../support_2sync_8h.html#afb46be51462503426660193b7d49f599',1,'sync.h']]],
+  ['gpr_5fref_5fis_5funique',['gpr_ref_is_unique',['../support_2sync_8h.html#a532b23d0393bf91ebcc221f5855c17fa',1,'sync.h']]],
   ['gpr_5fref_5fnon_5fzero',['gpr_ref_non_zero',['../support_2sync_8h.html#ad152a5820acaa9ca6163bcbe45d078d6',1,'sync.h']]],
   ['gpr_5frefn',['gpr_refn',['../support_2sync_8h.html#a91472a0360a87654379b3b6eb0fe942e',1,'sync.h']]],
   ['gpr_5fset_5fallocation_5ffunctions',['gpr_set_allocation_functions',['../alloc_8h.html#a2a32fcafdda423e2a11b4130d55951b4',1,'alloc.h']]],
@@ -157,7 +159,10 @@ var searchData=
   ['grpc_5fchannel_5fregister_5fcall',['grpc_channel_register_call',['../grpc_8h.html#af09cbd24340547542b6ec3300e973d62',1,'grpc.h']]],
   ['grpc_5fchannel_5fwatch_5fconnectivity_5fstate',['grpc_channel_watch_connectivity_state',['../grpc_8h.html#a568bac9fe4004c1dd790e6569b918d2f',1,'grpc.h']]],
   ['grpc_5fcompletion_5fqueue_5fcreate',['grpc_completion_queue_create',['../grpc_8h.html#ae1dc1e6cbb21d67a62db56ab8ef8c787',1,'grpc.h']]],
+  ['grpc_5fcompletion_5fqueue_5fcreate_5ffor_5fnext',['grpc_completion_queue_create_for_next',['../grpc_8h.html#a687672b2c261e965286e36f66e3adbef',1,'grpc.h']]],
+  ['grpc_5fcompletion_5fqueue_5fcreate_5ffor_5fpluck',['grpc_completion_queue_create_for_pluck',['../grpc_8h.html#ae9ceac4996a8c73159e3dc8dd560b882',1,'grpc.h']]],
   ['grpc_5fcompletion_5fqueue_5fdestroy',['grpc_completion_queue_destroy',['../grpc_8h.html#af77734d6350953db5d730f7213aac639',1,'grpc.h']]],
+  ['grpc_5fcompletion_5fqueue_5ffactory_5flookup',['grpc_completion_queue_factory_lookup',['../grpc_8h.html#aa7e0ae56f1bbfd9746805bc0161f80bc',1,'grpc.h']]],
   ['grpc_5fcompletion_5fqueue_5fnext',['grpc_completion_queue_next',['../grpc_8h.html#ab43d55077bcbeb324044d3dcd26a5c80',1,'grpc.h']]],
   ['grpc_5fcompletion_5fqueue_5fpluck',['grpc_completion_queue_pluck',['../grpc_8h.html#a0292bf7a0c794771cd66766dc4b8276c',1,'grpc.h']]],
   ['grpc_5fcompletion_5fqueue_5fshutdown',['grpc_completion_queue_shutdown',['../grpc_8h.html#a3e1097e9c970519e357eb556777315ec',1,'grpc.h']]],

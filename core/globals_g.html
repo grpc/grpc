@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0-dev</span>
+   &#160;<span id="projectnumber">3.0.0</span>
    </div>
   </td>
  </tr>
@@ -101,6 +101,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock">Here is a list of all functions, variables, defines, enums, and typedefs with links to the files they belong to:</div>
 
 <h3><a class="anchor" id="index_g"></a>- g -</h3><ul>
+<li>GPR_ALIGN_STRUCT
+: <a class="el" href="impl_2codegen_2port__platform_8h.html#aafd38282877816cf1eea110c65fdf14b">port_platform.h</a>
+</li>
 <li>gpr_allocation_functions
 : <a class="el" href="alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7">alloc.h</a>
 </li>
@@ -114,9 +117,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">log.h</a>
 </li>
 <li>gpr_atm
-: <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">atm_gcc_atomic.h</a>
+: <a class="el" href="impl_2codegen_2atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51">atm_windows.h</a>
+, <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">atm_gcc_atomic.h</a>
 , <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a0a6314f31fcae0666a93961bed98af51">atm_gcc_sync.h</a>
-, <a class="el" href="impl_2codegen_2atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51">atm_windows.h</a>
 </li>
 <li>gpr_atm_acq_cas
 : <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">atm_gcc_sync.h</a>
@@ -131,6 +134,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a95f86e51ae9a479026bd237cb792193e">atm_gcc_atomic.h</a>
 , <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a95f86e51ae9a479026bd237cb792193e">atm_gcc_sync.h</a>
 , <a class="el" href="impl_2codegen_2atm__windows_8h.html#a8e58c94aff5c7161bc3cbfde878dd03d">atm_windows.h</a>
+</li>
+<li>gpr_atm_full_cas
+: <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a9d29f224b49d4de8bb2b0d7feae64fcb">atm_gcc_sync.h</a>
 </li>
 <li>gpr_atm_full_fetch_add
 : <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">atm_gcc_atomic.h</a>
@@ -148,8 +154,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GPR_ATM_LS_BARRIER_
 : <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a4ceb46c9b854db0ade8cfe2f37edb878">atm_gcc_sync.h</a>
 </li>
+<li>GPR_ATM_MAX
+: <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a5fb170a483552faeb4b6d4acb674c44c">atm_gcc_atomic.h</a>
+, <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a5fb170a483552faeb4b6d4acb674c44c">atm_gcc_sync.h</a>
+, <a class="el" href="impl_2codegen_2atm__windows_8h.html#a5fb170a483552faeb4b6d4acb674c44c">atm_windows.h</a>
+</li>
 <li>gpr_atm_no_barrier_cas
 : <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#ad39536b08912ac4a0770655ed334d260">atm_gcc_sync.h</a>
+</li>
+<li>gpr_atm_no_barrier_clamped_add()
+: <a class="el" href="impl_2codegen_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">atm.h</a>
 </li>
 <li>gpr_atm_no_barrier_fetch_add
 : <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">atm_gcc_atomic.h</a>
@@ -475,12 +489,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="impl_2codegen_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">sync_posix.h</a>
 , <a class="el" href="impl_2codegen_2sync__windows_8h.html#a6a752a459fe345c616c26b5a556ccc13">sync_windows.h</a>
 </li>
+<li>gpr_once_init()
+: <a class="el" href="support_2sync_8h.html#a1157f44f131ce5f000744bea273347bc">sync.h</a>
+</li>
 <li>GPR_ONCE_INIT
 : <a class="el" href="impl_2codegen_2sync__posix_8h.html#a8edd7eb4f6860a4f79defbad49c35666">sync_posix.h</a>
 , <a class="el" href="impl_2codegen_2sync__windows_8h.html#a8edd7eb4f6860a4f79defbad49c35666">sync_windows.h</a>
-</li>
-<li>gpr_once_init()
-: <a class="el" href="support_2sync_8h.html#a1157f44f131ce5f000744bea273347bc">sync.h</a>
 </li>
 <li>GPR_PLATFORM_STRING
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#a99f34e9b119908109486e91abedc933e">port_platform.h</a>
@@ -496,6 +510,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>gpr_ref_init()
 : <a class="el" href="support_2sync_8h.html#afb46be51462503426660193b7d49f599">sync.h</a>
+</li>
+<li>gpr_ref_is_unique()
+: <a class="el" href="support_2sync_8h.html#a532b23d0393bf91ebcc221f5855c17fa">sync.h</a>
 </li>
 <li>gpr_ref_non_zero()
 : <a class="el" href="support_2sync_8h.html#ad152a5820acaa9ca6163bcbe45d078d6">sync.h</a>
@@ -620,11 +637,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>gpr_stats_inc()
 : <a class="el" href="support_2sync_8h.html#a8d1f3e75040086f0da4d7fc4e94a5b2b">sync.h</a>
 </li>
-<li>gpr_stats_init()
-: <a class="el" href="support_2sync_8h.html#a05c0002cb69dbce4d94819f65551fca2">sync.h</a>
-</li>
 <li>GPR_STATS_INIT
 : <a class="el" href="impl_2codegen_2sync__generic_8h.html#ada230498c8e2aca51e9349709e70e1ef">sync_generic.h</a>
+</li>
+<li>gpr_stats_init()
+: <a class="el" href="support_2sync_8h.html#a05c0002cb69dbce4d94819f65551fca2">sync.h</a>
 </li>
 <li>gpr_stats_read()
 : <a class="el" href="support_2sync_8h.html#ab451d39b50836fcad4ed48f080b7f648">sync.h</a>
@@ -795,6 +812,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_ALLOW_GPR_SLICE_FUNCTIONS
 : <a class="el" href="gpr__slice_8h.html#aec9e3b59ce21312d75e3c11013f0adab">gpr_slice.h</a>
 </li>
+<li>GRPC_ARES
+: <a class="el" href="impl_2codegen_2port__platform_8h.html#ab977d82eab38f56b6234fc503f4d51c6">port_platform.h</a>
+</li>
 <li>GRPC_ARG_ALLOW_REUSEPORT
 : <a class="el" href="group__grpc__arg__keys.html#ga40e635cf00ea7a10c71ed71c03d97f23">grpc_types.h</a>
 </li>
@@ -813,6 +833,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_ARG_HTTP2_BDP_PROBE
 : <a class="el" href="group__grpc__arg__keys.html#ga0958b21ee82acd9c77de30a978c59fb2">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY
+: <a class="el" href="group__grpc__arg__keys.html#gacccbdf888685b6d4beda61a3600f4a20">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER
 : <a class="el" href="group__grpc__arg__keys.html#ga216089aecb45149441024ffe5542cbaf">grpc_types.h</a>
 </li>
@@ -822,20 +845,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
 : <a class="el" href="group__grpc__arg__keys.html#gaecc45a63163796ca1bc5453938bdfb36">grpc_types.h</a>
 </li>
-<li>GRPC_ARG_HTTP2_KEEPALIVE_PERMIT_WITHOUT_CALLS
-: <a class="el" href="group__grpc__arg__keys.html#ga25f4eeeb4bc37e5f41319a6aedae34e1">grpc_types.h</a>
-</li>
-<li>GRPC_ARG_HTTP2_KEEPALIVE_TIME
-: <a class="el" href="group__grpc__arg__keys.html#ga94348fa32d1b859ebea9a1c04d865b63">grpc_types.h</a>
-</li>
-<li>GRPC_ARG_HTTP2_KEEPALIVE_TIMEOUT
-: <a class="el" href="group__grpc__arg__keys.html#gaddc1b8fbbef14c438bbd1eeee7a27b86">grpc_types.h</a>
-</li>
 <li>GRPC_ARG_HTTP2_MAX_FRAME_SIZE
 : <a class="el" href="group__grpc__arg__keys.html#ga2ef6e079e5d61b34ce236f50fd38fc83">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_HTTP2_MAX_PING_STRIKES
+: <a class="el" href="group__grpc__arg__keys.html#gaf50a9992745183e14e8c660d954c1d82">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA
 : <a class="el" href="group__grpc__arg__keys.html#ga401cc6c0e567cbbb8b689b091f92dc7e">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS
+: <a class="el" href="group__grpc__arg__keys.html#gac3470e2718001b173a7b8398ab60fe09">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS
 : <a class="el" href="group__grpc__arg__keys.html#gacc0d0f1d3d582d39fcfb7a835b730a6c">grpc_types.h</a>
@@ -852,11 +872,29 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_ARG_INTEGER
 : <a class="el" href="grpc__types_8h.html#a0b06eae05e70404aedbceaebce6de593a8d2f803b8aaf88f34dac1f887826c689">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS
+: <a class="el" href="group__grpc__arg__keys.html#gaf900669f52f137677c4dbb9a7a902c92">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_KEEPALIVE_TIME_MS
+: <a class="el" href="group__grpc__arg__keys.html#gabeeccb441a671122c75384e062b1b91b">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_KEEPALIVE_TIMEOUT_MS
+: <a class="el" href="group__grpc__arg__keys.html#ga78975b982fd17ff190fddf2f90050ee3">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_LB_POLICY_NAME
 : <a class="el" href="group__grpc__arg__keys.html#ga72c2b475e218ecfd36bb7d3551d0295b">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_MAX_CONCURRENT_STREAMS
 : <a class="el" href="group__grpc__arg__keys.html#ga5bb9256d0b457cab219f4d9d765148b6">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS
+: <a class="el" href="group__grpc__arg__keys.html#gaf4574abe94c339c6f21163bca6e7b6b7">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_MAX_CONNECTION_AGE_MS
+: <a class="el" href="group__grpc__arg__keys.html#gabd3a16f46ad2cb5f06064bb607df7b5b">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_MAX_CONNECTION_IDLE_MS
+: <a class="el" href="group__grpc__arg__keys.html#ga8a7a3d98f39302c7859aa09e3f35a12a">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_MAX_MESSAGE_LENGTH
 : <a class="el" href="group__grpc__arg__keys.html#ga50f37feb7c000a23b3b0edf4c31d4367">grpc_types.h</a>
@@ -872,6 +910,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
 : <a class="el" href="group__grpc__arg__keys.html#gab4defdabac3610ef8a5946848592458c">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_MINIMAL_STACK
+: <a class="el" href="group__grpc__arg__keys.html#ga17b79aacf3bbfb0bce6d29bf9867988b">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_POINTER
 : <a class="el" href="grpc__types_8h.html#a0b06eae05e70404aedbceaebce6de593a02a823a7037e2a60b9d9a031fd42591b">grpc_types.h</a>
@@ -891,11 +932,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_ARG_SERVICE_CONFIG
 : <a class="el" href="group__grpc__arg__keys.html#gad60df744eb84ef55a371de9b8bd2373d">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_SOCKET_FACTORY
+: <a class="el" href="group__grpc__arg__keys.html#ga9e1054f78a26481931b10aa0b33f52b7">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_SOCKET_MUTATOR
 : <a class="el" href="group__grpc__arg__keys.html#gabdcf8122824e386dcc23b947473e83e0">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_STRING
 : <a class="el" href="grpc__types_8h.html#a0b06eae05e70404aedbceaebce6de593a215b6b9143ba133ede0e29f79098239d">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE
+: <a class="el" href="group__grpc__arg__keys.html#gadeaad8ae5b50ee8d2fb44d289aeb223d">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE
+: <a class="el" href="group__grpc__arg__keys.html#gae55b7bd57a5344e0083eac4d06c2d51b">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_TCP_READ_CHUNK_SIZE
+: <a class="el" href="group__grpc__arg__keys.html#ga82582ed0fcd7d6b0090f9102d75c765a">grpc_types.h</a>
 </li>
 <li>grpc_arg_type
 : <a class="el" href="grpc__types_8h.html#a0b06eae05e70404aedbceaebce6de593">grpc_types.h</a>
@@ -1128,11 +1181,26 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_completion_queue
 : <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_types.h</a>
 </li>
+<li>grpc_completion_queue_attributes
+: <a class="el" href="grpc_8h.html#a8113e2fd72a5fbb372d691a0c2206422">grpc.h</a>
+</li>
 <li>grpc_completion_queue_create()
 : <a class="el" href="grpc_8h.html#ae1dc1e6cbb21d67a62db56ab8ef8c787">grpc.h</a>
 </li>
+<li>grpc_completion_queue_create_for_next()
+: <a class="el" href="grpc_8h.html#a687672b2c261e965286e36f66e3adbef">grpc.h</a>
+</li>
+<li>grpc_completion_queue_create_for_pluck()
+: <a class="el" href="grpc_8h.html#ae9ceac4996a8c73159e3dc8dd560b882">grpc.h</a>
+</li>
 <li>grpc_completion_queue_destroy()
 : <a class="el" href="grpc_8h.html#af77734d6350953db5d730f7213aac639">grpc.h</a>
+</li>
+<li>grpc_completion_queue_factory
+: <a class="el" href="grpc_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc.h</a>
+</li>
+<li>grpc_completion_queue_factory_lookup()
+: <a class="el" href="grpc_8h.html#aa7e0ae56f1bbfd9746805bc0161f80bc">grpc.h</a>
 </li>
 <li>grpc_completion_queue_next()
 : <a class="el" href="grpc_8h.html#ab43d55077bcbeb324044d3dcd26a5c80">grpc.h</a>
@@ -1224,6 +1292,30 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_connectivity_state
 : <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">connectivity_state.h</a>
 </li>
+<li>grpc_cq_completion_type
+: <a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">grpc.h</a>
+</li>
+<li>GRPC_CQ_CURRENT_VERSION
+: <a class="el" href="grpc_8h.html#a52497b2b6db8035126a8b45467a14d97">grpc.h</a>
+</li>
+<li>GRPC_CQ_DEFAULT_POLLING
+: <a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8">grpc.h</a>
+</li>
+<li>GRPC_CQ_NEXT
+: <a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a3fccd6237614f711bfc1999438ed2676">grpc.h</a>
+</li>
+<li>GRPC_CQ_NON_LISTENING
+: <a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343aa291aea150282f3a2366437d8fc93b11">grpc.h</a>
+</li>
+<li>GRPC_CQ_NON_POLLING
+: <a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343a30fe3e6720c740094d5295546e9bb849">grpc.h</a>
+</li>
+<li>GRPC_CQ_PLUCK
+: <a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a">grpc.h</a>
+</li>
+<li>grpc_cq_polling_type
+: <a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343">grpc.h</a>
+</li>
 <li>grpc_credentials_plugin_metadata_cb
 : <a class="el" href="grpc__security_8h.html#acc59d2e9577dc4429895b9cd89450106">grpc_security.h</a>
 </li>
@@ -1274,6 +1366,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>GRPC_INITIAL_METADATA_CACHEABLE_REQUEST
 : <a class="el" href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">grpc_types.h</a>
+</li>
+<li>GRPC_INITIAL_METADATA_CORKED
+: <a class="el" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">grpc_types.h</a>
 </li>
 <li>GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
 : <a class="el" href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">grpc_types.h</a>
@@ -1641,6 +1736,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_slice_unref()
 : <a class="el" href="slice_8h.html#ac9952d98910886ca44ac416d547d0e08">slice.h</a>
 </li>
+<li>grpc_socket_factory
+: <a class="el" href="grpc__types_8h.html#a6bb7fdad6ac88edb9468eb46c801ddb0">grpc_types.h</a>
+</li>
 <li>grpc_socket_mutator
 : <a class="el" href="grpc__types_8h.html#a72c4781284bb0c964d281e6e46cf4a90">grpc_types.h</a>
 </li>
@@ -1755,6 +1853,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_STATUS_UNKNOWN
 : <a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eba5f02c0e431162618ab422d27fd39dd08">status.h</a>
 </li>
+<li>GRPC_TCP_DEFAULT_READ_SLICE_SIZE
+: <a class="el" href="group__grpc__arg__keys.html#ga1f91c3aec64a436d29051c8d415b1053">grpc_types.h</a>
+</li>
 <li>grpc_tracer_set_enabled()
 : <a class="el" href="grpc_8h.html#a0bcbc8d69b256843facb8339d812ae2e">grpc.h</a>
 </li>
@@ -1792,7 +1893,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

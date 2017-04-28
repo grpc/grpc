@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
   </td>
  </tr>
@@ -121,6 +121,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a40c1091ac5cb5243c874da725ae291b4 inherit pub_methods_classgrpc_1_1_async_writer_interface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_writer_interface.html#a40c1091ac5cb5243c874da725ae291b4">Write</a> (const W &amp;msg, void *tag)=0</td></tr>
 <tr class="memdesc:a40c1091ac5cb5243c874da725ae291b4 inherit pub_methods_classgrpc_1_1_async_writer_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> with identifying tag <em>tag</em>.  <a href="#a40c1091ac5cb5243c874da725ae291b4">More...</a><br/></td></tr>
 <tr class="separator:a40c1091ac5cb5243c874da725ae291b4 inherit pub_methods_classgrpc_1_1_async_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a8480dbf5ad95384c929d9db91b6074 inherit pub_methods_classgrpc_1_1_async_writer_interface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_writer_interface.html#a6a8480dbf5ad95384c929d9db91b6074">Write</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options, void *tag)=0</td></tr>
+<tr class="memdesc:a6a8480dbf5ad95384c929d9db91b6074 inherit pub_methods_classgrpc_1_1_async_writer_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>.  <a href="#a6a8480dbf5ad95384c929d9db91b6074">More...</a><br/></td></tr>
+<tr class="separator:a6a8480dbf5ad95384c929d9db91b6074 inherit pub_methods_classgrpc_1_1_async_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78097d5f23f4aa2c1b919b12800db90d inherit pub_methods_classgrpc_1_1_async_writer_interface"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_writer_interface.html#a78097d5f23f4aa2c1b919b12800db90d">WriteLast</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options, void *tag)</td></tr>
+<tr class="memdesc:a78097d5f23f4aa2c1b919b12800db90d inherit pub_methods_classgrpc_1_1_async_writer_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> and coalesce it with the writing of trailing metadata, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>.  <a href="#a78097d5f23f4aa2c1b919b12800db90d">More...</a><br/></td></tr>
+<tr class="separator:a78097d5f23f4aa2c1b919b12800db90d inherit pub_methods_classgrpc_1_1_async_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_async_reader_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_async_reader_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_async_reader_interface.html">grpc::AsyncReaderInterface&lt; R &gt;</a></td></tr>
 <tr class="memitem:ac7845d2df90fb380008aadb7f5f2f379 inherit pub_methods_classgrpc_1_1_async_reader_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_reader_interface.html#ac7845d2df90fb380008aadb7f5f2f379">~AsyncReaderInterface</a> ()</td></tr>
 <tr class="separator:ac7845d2df90fb380008aadb7f5f2f379 inherit pub_methods_classgrpc_1_1_async_reader_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -177,7 +183,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 20 2017 15:38:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -1,8 +1,9 @@
 var searchData=
 [
   ['overview',['Overview',['../md_doc__p_r_o_t_o_c_o_l-_w_e_b.html',1,'']]],
+  ['ordering_20status_20and_20reads_20in_20the_20grpc_20api',['Ordering Status and Reads in the gRPC API',['../md_doc_status_ordering.html',1,'']]],
   ['obfuscated',['obfuscated',['../structgrpc__metadata.html#a737f2161d2ccc9da44f340d923c97658',1,'grpc_metadata']]],
-  ['ok',['OK',['../classgrpc_1_1_status.html#acbac12f241ad08f449aa1b9086ec7acc',1,'grpc::Status::OK()'],['../classgrpc_1_1_core_codegen_interface.html#a8cbf222da90eae854d072d3b2ef8e3ce',1,'grpc::CoreCodegenInterface::ok()'],['../classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc',1,'grpc::Status::ok()'],['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43baf6f3078af147d683afc70e09695c7a65',1,'grpc::OK()']]],
+  ['ok',['ok',['../classgrpc_1_1_core_codegen_interface.html#a8cbf222da90eae854d072d3b2ef8e3ce',1,'grpc::CoreCodegenInterface::ok()'],['../classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc',1,'grpc::Status::ok() const '],['../classgrpc_1_1_status.html#acbac12f241ad08f449aa1b9086ec7acc',1,'grpc::Status::OK()'],['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43baf6f3078af147d683afc70e09695c7a65',1,'grpc::OK()']]],
   ['op',['op',['../structgrpc__op.html#a702bcecc2462646b6740ed7c05f42115',1,'grpc_op']]],
   ['operator_21_3d',['operator!=',['../classgrpc_1_1_auth_property_iterator.html#af3d2671fe70be36b2ed26a75874f2fc1',1,'grpc::AuthPropertyIterator::operator!=()'],['../namespacegrpc.html#a48f3e907b6269b7f0f8095fa2db0afe3',1,'grpc::operator!=()']]],
   ['operator_2a',['operator*',['../classgrpc_1_1_auth_property_iterator.html#a564f39b91f4168c6f660bbd3144f1f0e',1,'grpc::AuthPropertyIterator']]],
