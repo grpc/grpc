@@ -87,8 +87,6 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx,
               ->workaround_active[GRPC_WORKAROUND_ID_CRONET_COMPRESSION]) {
         calld->workaround_active = true;
       }
-      // Remove with caching
-      gpr_free(user_agent_md);
     }
   }
 
