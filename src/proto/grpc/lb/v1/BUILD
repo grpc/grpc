@@ -29,51 +29,11 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_test(
-    name = "dns_resolver_connectivity_test",
-    srcs = ["dns_resolver_connectivity_test.c"],
-    copts = ["-std=c99"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
+package(default_visibility = ["//visibility:public"])
 
-cc_test(
-    name = "dns_resolver_test",
-    srcs = ["dns_resolver_test.c"],
-    copts = ["-std=c99"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 
-cc_test(
-    name = "sockaddr_resolver_test",
-    srcs = ["sockaddr_resolver_test.c"],
-    copts = ["-std=c99"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-cc_test(
-    name = "fake_resolver_test",
-    srcs = ["fake_resolver_test.c"],
-    copts = ["-std=c99"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/end2end:fake_resolver",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
+grpc_proto_library(
+    name = "load_balancer_proto",
+    srcs = ["load_balancer.proto"],
 )

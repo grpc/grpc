@@ -31,7 +31,6 @@
  *
  */
 
-#include <arpa/inet.h>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -51,6 +50,7 @@
 #include <gtest/gtest.h>
 
 extern "C" {
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/end2end/fake_resolver.h"
 }
 
@@ -369,7 +369,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
   const grpc::string server_host_;
   const size_t num_backends_;
   const size_t num_balancers_;
-  CompletionQueue cli_cq_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
 
