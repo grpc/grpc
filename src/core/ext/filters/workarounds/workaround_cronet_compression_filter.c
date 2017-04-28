@@ -206,6 +206,9 @@ const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
 
 static bool register_workaround_cronet_compression(
     grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
+  if (!grpc_workaround_is_enabled(GRPC_WORKAROUND_ID_CRONET_COMPRESSION)) {
+    return true;
+  }
   grpc_register_workaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION,
                            parse_user_agent);
   return grpc_channel_stack_builder_prepend_filter(
