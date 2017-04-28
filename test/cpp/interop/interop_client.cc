@@ -946,14 +946,14 @@ bool InteropClient::DoCustomMetadata() {
   const grpc::string kInitialMetadataValue("test_initial_metadata_value");
   const grpc::string kEchoTrailingBinMetadataKey(
       "x-grpc-test-echo-trailing-bin");
-  const grpc::string kTrailingBinValue("\x0a\x0b\x0a\x0b\x0a\x0b");
   ;
 
   {
     gpr_log(GPR_DEBUG, "Sending RPC with custom metadata");
+    const grpc::string kTrailingBinValue4B("\xab\xab\xab\xab");
     ClientContext context;
     context.AddMetadata(kEchoInitialMetadataKey, kInitialMetadataValue);
-    context.AddMetadata(kEchoTrailingBinMetadataKey, kTrailingBinValue);
+    context.AddMetadata(kEchoTrailingBinMetadataKey, kTrailingBinValue4B);
     SimpleRequest request;
     SimpleResponse response;
     request.set_response_size(kLargeResponseSize);
@@ -973,16 +973,17 @@ bool InteropClient::DoCustomMetadata() {
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     GPR_ASSERT(iter != server_trailing_metadata.end());
     GPR_ASSERT(grpc::string(iter->second.begin(), iter->second.end()) ==
-               kTrailingBinValue);
+               kTrailingBinValue4B);
 
     gpr_log(GPR_DEBUG, "Done testing RPC with custom metadata");
   }
 
   {
     gpr_log(GPR_DEBUG, "Sending stream with custom metadata");
+    const grpc::string kTrailingBinValue3B("\xab\xab\xab\xab");
     ClientContext context;
     context.AddMetadata(kEchoInitialMetadataKey, kInitialMetadataValue);
-    context.AddMetadata(kEchoTrailingBinMetadataKey, kTrailingBinValue);
+    context.AddMetadata(kEchoTrailingBinMetadataKey, kTrailingBinValue3B);
     std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
                                        StreamingOutputCallResponse>>
         stream(serviceStub_.Get()->FullDuplexCall(&context));
@@ -1024,7 +1025,7 @@ bool InteropClient::DoCustomMetadata() {
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     GPR_ASSERT(iter != server_trailing_metadata.end());
     GPR_ASSERT(grpc::string(iter->second.begin(), iter->second.end()) ==
-               kTrailingBinValue);
+               kTrailingBinValue3B);
 
     gpr_log(GPR_DEBUG, "Done testing stream with custom metadata");
   }

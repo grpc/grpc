@@ -690,7 +690,7 @@ Procedure:
 
     ```
     key: "x-grpc-test-echo-initial", value: "test_initial_metadata_value"
-    key: "x-grpc-test-echo-trailing-bin", value: 0xababab
+    key: "x-grpc-test-echo-trailing-bin", value: 0xabababab
     ```
 
     to a UnaryCall with request:
@@ -703,6 +703,7 @@ Procedure:
       }
     }
     ```
+    Note the binary header value should be sent in 4 bytes.
 
  2. The client attaches custom metadata with the following keys and values:
 
@@ -724,14 +725,15 @@ Procedure:
     }
     ```
 
-    and then half-closes
+    and then half-closes.
+    Note the binary header value should be sent in 3 bytes.
 
 Client asserts:
 * call was successful
 * metadata with key `"x-grpc-test-echo-initial"` and value
   `"test_initial_metadata_value"`is received in the initial metadata for calls
   in Procedure steps 1 and 2.
-* metadata with key `"x-grpc-test-echo-trailing-bin"` and value `0xababab` is
+* metadata with key `"x-grpc-test-echo-trailing-bin"` and the sent value is
   received in the trailing metadata for calls in Procedure steps 1 and 2.
 
 

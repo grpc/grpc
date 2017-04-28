@@ -600,14 +600,13 @@ class NamedTests
     initial_metadata_key = "x-grpc-test-echo-initial"
     initial_metadata_value = "test_initial_metadata_value"
     trailing_metadata_key = "x-grpc-test-echo-trailing-bin"
-    trailing_metadata_value = "\x0a\x0b\x0a\x0b\x0a\x0b"
 
     metadata = {
-      initial_metadata_key => initial_metadata_value,
-      trailing_metadata_key => trailing_metadata_value
+      initial_metadata_key => initial_metadata_value
     }
 
     # Testing with UnaryCall
+    metadata[trailing_metadata_key] = "\xab\xab\xab\xab"
     payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
     req = SimpleRequest.new(response_type: :COMPRESSABLE,
 			    response_size: wanted_response_size,
@@ -632,6 +631,7 @@ class NamedTests
     end
 
     # Testing with FullDuplex
+    metadata[trailing_metadata_key] = "\xab\xab\xab"
     req_cls, p_cls = StreamingOutputCallRequest, ResponseParameters
     duplex_req = req_cls.new(payload: Payload.new(body: nulls(req_size)),
                   response_type: :COMPRESSABLE,
