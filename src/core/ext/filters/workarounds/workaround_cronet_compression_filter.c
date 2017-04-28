@@ -206,7 +206,18 @@ const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
 
 static bool register_workaround_cronet_compression(
     grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
-  if (!grpc_workaround_is_enabled(GRPC_WORKAROUND_ID_CRONET_COMPRESSION)) {
+  const grpc_channel_args *channel_args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  const grpc_arg *a =
+      grpc_channel_args_find(channel_args, GRPC_ARG_WORKAROUND_CRONET_COMPRESSION);
+  if (a == NULL) {
+    return true;
+  }
+  if (a->type != GRPC_ARG_INTEGER) {
+    gpr_log(GPR_ERROR, "%s ignored: it must be an integer", GRPC_ARG_WORKAROUND_CRONET_COMPRESSION);
+    return true;
+  }
+  if (a->value.integer == 0) {
     return true;
   }
   grpc_register_workaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION,

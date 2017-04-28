@@ -36,14 +36,6 @@
 
 static user_agent_parser user_agent_parsers[GRPC_MAX_WORKAROUND_ID];
 
-/* Workarounds enabled by user */
-static bool workaround_enabled[GRPC_MAX_WORKAROUND_ID];
-
-/* Workarounds supported by C core */
-static bool workaround_supported[GRPC_MAX_WORKAROUND_ID] = {
-  true    /* GRPC_WORKAROUND_ID_CRONET_COMPRESSION */
-};
-
 grpc_user_agent_md *grpc_parse_user_agent(grpc_mdelem md) {
   grpc_user_agent_md *user_agent_md;
 
@@ -62,18 +54,4 @@ grpc_user_agent_md *grpc_parse_user_agent(grpc_mdelem md) {
 void grpc_register_workaround(uint32_t id, user_agent_parser parser) {
   GPR_ASSERT(id < GRPC_MAX_WORKAROUND_ID);
   user_agent_parsers[id] = parser;
-}
-
-bool grpc_workaround_is_enabled(uint32_t id) {
-  GPR_ASSERT(id < GRPC_MAX_WORKAROUND_ID);
-  return workaround_enabled[id];
-}
-
-bool grpc_enable_workaround(uint32_t id) {
-  if (workaround_supported[id]) {
-    workaround_enabled[id] = true;
-    return true;
-  } else {
-    return false;
-  }
 }
