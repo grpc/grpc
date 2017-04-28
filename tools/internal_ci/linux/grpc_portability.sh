@@ -37,4 +37,4 @@ git submodule update --init
 
 # download docker images from dockerhub
 export DOCKERHUB_ORGANIZATION=grpctesting
-tools/run_tests/run_tests_matrix.py -f portability linux
+tools/run_tests/run_tests_matrix.py -f portability linux --internal_ci
