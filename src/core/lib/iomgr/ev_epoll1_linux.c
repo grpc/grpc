@@ -601,7 +601,6 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     if (worker->next != worker) {
       assert(worker->next->initialized_cv);
       gpr_atm_no_barrier_store(&g_active_poller, (gpr_atm)worker->next);
-      gpr_log(GPR_DEBUG, "Picked sibling worker %p for poller", worker);
       worker->next->kick_state = KICKED_FOR_POLL;
       gpr_cv_signal(&worker->next->cv);
       if (grpc_exec_ctx_has_work(exec_ctx)) {
@@ -629,9 +628,8 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
           if (inspect_worker != NULL) {
             if (gpr_atm_no_barrier_cas(&g_active_poller, 0,
                                        (gpr_atm)inspect_worker)) {
-              GPR_ASSERT(inspect_worker->initialized_cv);
               inspect_worker->kick_state = KICKED_FOR_POLL;
-              gpr_cv_signal(&inspect_worker->cv);
+              if (inspect_worker->initialized_cv) gpr_cv_signal(&inspect_worker->cv);
             }
             // even if we didn't win the cas, there's a worker, we can stop
             found_worker = true;
