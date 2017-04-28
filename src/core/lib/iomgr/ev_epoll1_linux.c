@@ -390,11 +390,9 @@ static void pollset_global_shutdown(void) {
 }
 
 static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
-  static gpr_atm next_neighbourhood;
-
   gpr_mu_init(&pollset->mu);
   *mu = &pollset->mu;
-  pollset->neighbourhood = &g_neighbourhoods[(size_t)gpr_atm_no_barrier_fetch_add(&next_neighbourhood, 1) % g_num_neighbourhoods];
+  pollset->neighbourhood = &g_neighbourhoods[gpr_cpu_current_cpu()];
   pollset->seen_inactive = true;
   pollset->next = pollset->prev = pollset;
 }
