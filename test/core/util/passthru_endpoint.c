@@ -102,13 +102,14 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown");
   } else if (m->on_read != NULL) {
     for (size_t i = 0; i < slices->count; i++) {
-      grpc_slice_buffer_add(m->on_read_out, grpc_slice_ref(slices->slices[i]));
+      grpc_slice_buffer_add(m->on_read_out, grpc_slice_copy(slices->slices[i]));
     }
     grpc_closure_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE);
     m->on_read = NULL;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
-      grpc_slice_buffer_add(&m->read_buffer, grpc_slice_ref(slices->slices[i]));
+      grpc_slice_buffer_add(&m->read_buffer,
+                            grpc_slice_copy(slices->slices[i]));
     }
   }
   gpr_mu_unlock(&m->parent->mu);
