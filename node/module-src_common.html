@@ -133,6 +133,68 @@ code. None of them should be used directly by gRPC users.</div>
 
         
             
+<h4 class="name" id=".defaultGrpcOptions"><span class="type-signature">(static) </span>defaultGrpcOptions<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Default options for loading proto files into gRPC
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line86">line 86</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
 <h4 class="name" id=".logger"><span class="type-signature">(static) </span>logger<span class="type-signature"></span></h4>
 
 
@@ -177,7 +239,7 @@ code. None of them should be used directly by gRPC users.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line171">line 171</a>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line65">line 65</a>
     </li></ul></dd>
     
 
@@ -239,7 +301,7 @@ code. None of them should be used directly by gRPC users.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line176">line 176</a>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line70">line 70</a>
     </li></ul></dd>
     
 
@@ -260,586 +322,6 @@ code. None of them should be used directly by gRPC users.</div>
 
     
         <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    <h4 class="name" id=".deserializeCls"><span class="type-signature">(static) </span>deserializeCls<span class="signature">(cls, binaryAsBase64<span class="signature-attributes">opt</span>, longsAsStrings<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {function}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Get a function that deserializes a specific type of protobuf.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>cls</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">The constructor of the message type to deserialize</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>binaryAsBase64</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">bool</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Deserialize bytes fields as base64 strings
-    instead of Buffers. Defaults to false</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>longsAsStrings</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">bool</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Deserialize long values as strings instead of
-    objects. Defaults to true</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line53">line 53</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    The deserialization function
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">function</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".fullyQualifiedName"><span class="type-signature">(static) </span>fullyQualifiedName<span class="signature">(value)</span><span class="type-signature"> &rarr; {string}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Get the fully qualified (dotted) name of a ProtoBuf.Reflect value.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>value</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">ProtoBuf.Reflect.Namespace</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The value to get the name of</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line98">line 98</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    The fully qualified name of the value
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">string</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".getProtobufServiceAttrs"><span class="type-signature">(static) </span>getProtobufServiceAttrs<span class="signature">(service, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Return a map from method names to method attributes for the service.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>service</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">ProtoBuf.Reflect.Service</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">The service to get attributes for</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>options</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Options to apply to these attributes</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line136">line 136</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    The attributes map
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Object</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
 
         
             
@@ -969,7 +451,7 @@ code. None of them should be used directly by gRPC users.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line183">line 183</a>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line77">line 77</a>
     </li></ul></dd>
     
 
@@ -992,159 +474,6 @@ code. None of them should be used directly by gRPC users.</div>
 
 
 
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".serializeCls"><span class="type-signature">(static) </span>serializeCls<span class="signature">(Cls)</span><span class="type-signature"> &rarr; {function}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Get a function that serializes objects to a buffer by protobuf class.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>Cls</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The constructor of the message type to serialize</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line80">line 80</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    The serialization function
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">function</span>
-
-
-    </dd>
-</dl>
-
-    
 
 
 
@@ -1266,7 +595,7 @@ function is given, just uses the identity;
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line118">line 118</a>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line50">line 50</a>
     </li></ul></dd>
     
 
@@ -1330,13 +659,13 @@ function is given, just uses the identity;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_credentials.html">src/credentials</a></li><li><a href="module-src_metadata.html">src/metadata</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_metadata-Metadata.html">Metadata</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#credentials">credentials</a></li><li><a href="global.html#getClientChannel">getClientChannel</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#logVerbosity">logVerbosity</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#Metadata">Metadata</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#setLogger">setLogger</a></li><li><a href="global.html#setLogVerbosity">setLogVerbosity</a></li><li><a href="global.html#status">status</a></li><li><a href="global.html#waitForClientReady">waitForClientReady</a></li><li><a href="global.html#writeFlags">writeFlags</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_credentials.html">src/credentials</a></li><li><a href="module-src_metadata.html">src/metadata</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_metadata-Metadata.html">Metadata</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#credentials">credentials</a></li><li><a href="global.html#deserializeCls">deserializeCls</a></li><li><a href="global.html#fullyQualifiedName">fullyQualifiedName</a></li><li><a href="global.html#getClientChannel">getClientChannel</a></li><li><a href="global.html#getProtobufServiceAttrs">getProtobufServiceAttrs</a></li><li><a href="global.html#isProbablyProtobufJs5">isProbablyProtobufJs5</a></li><li><a href="global.html#isProbablyProtobufJs6">isProbablyProtobufJs6</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#logVerbosity">logVerbosity</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#Metadata">Metadata</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#serializeCls">serializeCls</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#setLogger">setLogger</a></li><li><a href="global.html#setLogVerbosity">setLogVerbosity</a></li><li><a href="global.html#status">status</a></li><li><a href="global.html#waitForClientReady">waitForClientReady</a></li><li><a href="global.html#writeFlags">writeFlags</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Mar 21 2017 11:29:55 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Thu Apr 27 2017 17:35:39 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>
