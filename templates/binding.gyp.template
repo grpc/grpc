@@ -41,9 +41,6 @@
   {
     'variables': {
       'runtime%': 'node',
-      # UV integration in C core is enabled by default. It can be disabled
-      # by setting this argument to anything else.
-      'grpc_uv%': 'true',
       # Some Node installations use the system installation of OpenSSL, and on
       # some systems, the system OpenSSL still does not have ALPN support. This
       # will let users recompile gRPC to work without ALPN.
@@ -87,17 +84,11 @@
         'include'
       ],
       'defines': [
-        'GPR_BACKWARDS_COMPATIBILITY_MODE'
+        'GPR_BACKWARDS_COMPATIBILITY_MODE',
+        'GRPC_ARES=0',
+        'GRPC_UV'
       ],
       'conditions': [
-        ['grpc_uv=="true"', {
-          'defines': [
-            'GRPC_ARES=0',
-            # Disabling this while bugs are ironed out. Uncomment this to
-            # re-enable libuv integration in C core.
-            'GRPC_UV'
-          ]
-        }],
         ['grpc_gcov=="true"', {
           % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines'), ('LDFLAGS', 'ldflags')]:
           %  if configs['gcov'].get(arg, None) is not None:

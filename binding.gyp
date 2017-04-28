@@ -39,9 +39,6 @@
 {
   'variables': {
     'runtime%': 'node',
-    # UV integration in C core is enabled by default. It can be disabled
-    # by setting this argument to anything else.
-    'grpc_uv%': 'true',
     # Some Node installations use the system installation of OpenSSL, and on
     # some systems, the system OpenSSL still does not have ALPN support. This
     # will let users recompile gRPC to work without ALPN.
@@ -90,17 +87,11 @@
       'include'
     ],
     'defines': [
-      'GPR_BACKWARDS_COMPATIBILITY_MODE'
+      'GPR_BACKWARDS_COMPATIBILITY_MODE',
+      'GRPC_ARES=0',
+      'GRPC_UV'
     ],
     'conditions': [
-      ['grpc_uv=="true"', {
-        'defines': [
-          'GRPC_ARES=0',
-          # Disabling this while bugs are ironed out. Uncomment this to
-          # re-enable libuv integration in C core.
-          'GRPC_UV'
-        ]
-      }],
       ['grpc_gcov=="true"', {
         'cflags': [
             '-O0',
@@ -951,13 +942,10 @@
         "src/node/ext/call_credentials.cc",
         "src/node/ext/channel.cc",
         "src/node/ext/channel_credentials.cc",
-        "src/node/ext/completion_queue_threadpool.cc",
-        "src/node/ext/completion_queue_uv.cc",
+        "src/node/ext/completion_queue.cc",
         "src/node/ext/node_grpc.cc",
         "src/node/ext/server.cc",
         "src/node/ext/server_credentials.cc",
-        "src/node/ext/server_generic.cc",
-        "src/node/ext/server_uv.cc",
         "src/node/ext/slice.cc",
         "src/node/ext/timeval.cc",
       ],
