@@ -395,7 +395,6 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->mu);
   *mu = &pollset->mu;
   pollset->neighbourhood = &g_neighbourhoods[(size_t)gpr_atm_no_barrier_fetch_add(&next_neighbourhood, 1) % g_num_neighbourhoods];
-gpr_log(GPR_DEBUG, "nh=%d", (int)(pollset->neighbourhood - g_neighbourhoods));
   pollset->seen_inactive = true;
   pollset->next = pollset->prev = pollset;
 }
@@ -451,7 +450,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset_maybe_finish_shutdown(exec_ctx, pollset);
 }
 
-#define MAX_EPOLL_EVENTS 100
+#define MAX_EPOLL_EVENTS 10
 
 static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
                                            gpr_timespec now) {
