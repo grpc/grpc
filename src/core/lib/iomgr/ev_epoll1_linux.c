@@ -96,7 +96,7 @@ static void fd_global_shutdown(void);
  * Pollset Declarations
  */
 
-typedef enum { UNKICKED, KICKED, KICKED_FOR_POLL } kick_state;
+typedef enum { UNKICKED, KICKED, DESIGNATED_POLLER } kick_state;
 
 struct grpc_pollset_worker {
   kick_state kick_state;
@@ -572,7 +572,7 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
       if (neighbourhood->seen_inactive) {
         neighbourhood->seen_inactive = false;
         if (gpr_atm_no_barrier_cas(&g_active_poller, 0, (gpr_atm)worker)) {
-          worker->kick_state = KICKED_FOR_POLL;
+          worker->kick_state = DESIGNATED_POLLER;
         }
       }
     }
@@ -591,7 +591,7 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
     *now = gpr_now(now->clock_type);
   }
 
-  return worker->kick_state == KICKED_FOR_POLL &&
+  return worker->kick_state == DESIGNATED_POLLER &&
          pollset->shutdown_closure == NULL;
 }
 
@@ -611,7 +611,7 @@ static bool check_neighbourhood_for_available_poller(
     if (inspect_worker != NULL) {
       if (gpr_atm_no_barrier_cas(&g_active_poller, 0,
                                  (gpr_atm)inspect_worker)) {
-        inspect_worker->kick_state = KICKED_FOR_POLL;
+        inspect_worker->kick_state = DESIGNATED_POLLER;
         if (inspect_worker->initialized_cv) {
           gpr_cv_signal(&inspect_worker->cv);
         }
@@ -641,7 +641,7 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     if (worker->next != worker) {
       assert(worker->next->initialized_cv);
       gpr_atm_no_barrier_store(&g_active_poller, (gpr_atm)worker->next);
-      worker->next->kick_state = KICKED_FOR_POLL;
+      worker->next->kick_state = DESIGNATED_POLLER;
       gpr_cv_signal(&worker->next->cv);
       if (grpc_exec_ctx_has_work(exec_ctx)) {
         gpr_mu_unlock(&pollset->mu);
@@ -746,7 +746,7 @@ static grpc_error *pollset_kick(grpc_pollset *pollset,
     } else {
       return GRPC_ERROR_NONE;
     }
-  } else if (specific_worker->kick_state != UNKICKED) {
+  } else if (specific_worker->kick_state == KICKED) {
     return GRPC_ERROR_NONE;
   } else if (gpr_tls_get(&g_current_thread_worker) ==
              (intptr_t)specific_worker) {
