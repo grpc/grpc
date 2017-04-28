@@ -713,7 +713,7 @@ static grpc_error *pollset_kick(grpc_pollset *pollset,
     } else {
       return GRPC_ERROR_NONE;
     }
-  } else if (specific_worker->kick_state != KICKED) {
+  } else if (specific_worker->kick_state != UNKICKED) {
     return GRPC_ERROR_NONE;
   } else if (gpr_tls_get(&g_current_thread_worker) ==
              (intptr_t)specific_worker) {
