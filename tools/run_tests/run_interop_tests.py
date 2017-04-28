@@ -888,6 +888,10 @@ argp.add_argument('-t', '--travis',
                   default=False,
                   action='store_const',
                   const=True)
+argp.add_argument('-v', '--verbose',
+                  default=False,
+                  action='store_const',
+                  const=True)
 argp.add_argument('--use_docker',
                   default=False,
                   action='store_const',
@@ -989,6 +993,9 @@ if args.use_docker:
 
   if build_jobs:
     jobset.message('START', 'Building interop docker images.', do_newline=True)
+    if args.verbose:
+      print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
+
     num_failures, _ = jobset.run(
         build_jobs, newline_on_success=True, maxjobs=args.jobs)
     if num_failures == 0:
@@ -1163,6 +1170,9 @@ try:
 
   if args.manual_run:
     print('All tests will skipped --manual_run option is active.')
+
+  if args.verbose:
+    print('Jobs to run: \n%s\n' % '\n'.join(str(job) for job in jobs))
 
   num_failures, resultset = jobset.run(jobs, newline_on_success=True,
                                        maxjobs=args.jobs,
