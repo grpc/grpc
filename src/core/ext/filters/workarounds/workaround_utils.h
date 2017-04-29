@@ -34,7 +34,7 @@
 
 #include "src/core/lib/transport/metadata.h"
 
-#define GRPC_WORKAROUND_PRIORITY_HIGH 9999
+#define GRPC_WORKAROUND_PRIORITY_HIGH 10001
 
 typedef enum {
   GRPC_WORKAROUND_ID_CRONET_COMPRESSION = 0,

@@ -31,7 +31,6 @@
 
 #include "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -41,7 +40,7 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata.h"
 
-typedef struct call_data {
+    typedef struct call_data {
   // Receive closures are chained: we inject this closure as the
   // recv_initial_metadata_ready up-call on transport_stream_op, and remember to
   // call our next_recv_initial_metadata_ready member after handling it.

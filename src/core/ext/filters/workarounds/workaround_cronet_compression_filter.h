@@ -36,4 +36,5 @@
 
 extern const grpc_channel_filter grpc_workaround_cronet_compression_filter;
 
-#endif /* GRPC_CORE_EXT_FILTERS_WORKAROUNDS_WORKAROUND_CRONET_COMPRESSION_FILTER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_WORKAROUNDS_WORKAROUND_CRONET_COMPRESSION_FILTER_H \
+          */
