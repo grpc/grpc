@@ -154,19 +154,19 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
   }
   // Create frame protector.
   tsi_frame_protector *protector;
-  tsi_result status = tsi_handshaker_result_create_frame_protector(
+  tsi_result result = tsi_handshaker_result_create_frame_protector(
       h->handshaker_result, NULL, &protector);
-  if (status != TSI_OK) {
+  if (result != TSI_OK) {
     error = grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Frame protector creation failed"),
-        status);
+        result);
     security_handshake_failed_locked(exec_ctx, h, error);
     goto done;
   }
   // Get unused bytes.
   unsigned char *unused_bytes = NULL;
   size_t unused_bytes_size = 0;
-  status = tsi_handshaker_result_get_unused_bytes(
+  result = tsi_handshaker_result_get_unused_bytes(
       h->handshaker_result, &unused_bytes, &unused_bytes_size);
   if (unused_bytes_size > 0) {
     gpr_slice slice =
@@ -202,11 +202,11 @@ done:
 static grpc_error *check_peer_locked(grpc_exec_ctx *exec_ctx,
                                      security_handshaker *h) {
   tsi_peer peer;
-  tsi_result status =
+  tsi_result result =
       tsi_handshaker_result_extract_peer(h->handshaker_result, &peer);
-  if (status != TSI_OK) {
+  if (result != TSI_OK) {
     return grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Peer extraction failed"), status);
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Peer extraction failed"), result);
   }
   grpc_security_connector_check_peer(exec_ctx, h->connector, peer,
                                      &h->auth_context, &h->on_peer_checked);
@@ -214,51 +214,49 @@ static grpc_error *check_peer_locked(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_error *on_handshake_next_done_locked(
-    grpc_exec_ctx *exec_ctx, security_handshaker *h, tsi_result status,
+    grpc_exec_ctx *exec_ctx, security_handshaker *h, tsi_result result,
     const unsigned char *bytes_to_send, size_t bytes_to_send_size,
-    tsi_handshaker_result *result) {
+    tsi_handshaker_result *handshaker_result) {
   grpc_error *error = GRPC_ERROR_NONE;
   // Read more if we need to.
-  if (status == TSI_INCOMPLETE_DATA) {
+  if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
     grpc_endpoint_read(exec_ctx, h->args->endpoint, h->args->read_buffer,
                        &h->on_handshake_data_received_from_peer);
     return error;
   }
-
-  if (status != TSI_OK) {
+  if (result != TSI_OK) {
     return grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), status);
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), result);
   }
 
-  // If there are data to send to the peer, send data.
-  if (bytes_to_send_size > 0) {
-    grpc_slice to_send = grpc_slice_from_copied_buffer(
-        (const char *)bytes_to_send, bytes_to_send_size);
-    grpc_slice_buffer_reset_and_unref(&h->outgoing);
-    grpc_slice_buffer_add(&h->outgoing, to_send);
-    grpc_endpoint_write(exec_ctx, h->args->endpoint, &h->outgoing,
-                        &h->on_handshake_data_sent_to_peer);
-  }
+  // Send data to peer.
+  grpc_slice to_send = grpc_slice_from_copied_buffer(
+      (const char *)bytes_to_send, bytes_to_send_size);
+  grpc_slice_buffer_reset_and_unref(&h->outgoing);
+  grpc_slice_buffer_add(&h->outgoing, to_send);
+  grpc_endpoint_write(exec_ctx, h->args->endpoint, &h->outgoing,
+                      &h->on_handshake_data_sent_to_peer);
 
   // If handshake has completed, check peer and so on.
-  if (result != NULL) {
-    h->handshaker_result = result;
+  if (handshaker_result != NULL) {
+    h->handshaker_result = handshaker_result;
     error = check_peer_locked(exec_ctx, h);
   }
   return error;
 }
 
 static void on_handshake_next_done_grpc_wrapper(
-    tsi_result status, void *user_data, const unsigned char *bytes_to_send,
-    size_t bytes_to_send_size, tsi_handshaker_result *result) {
+    tsi_result result, void *user_data, const unsigned char *bytes_to_send,
+    size_t bytes_to_send_size, tsi_handshaker_result *handshaker_result) {
   security_handshaker *h = user_data;
   // This callback will be invoked by TSI in a non-grpc thread, so it's
   // safe to create our own exec_ctx here.
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock(&h->mu);
-  grpc_error *error = on_handshake_next_done_locked(
-      &exec_ctx, h, status, bytes_to_send, bytes_to_send_size, result);
+  grpc_error *error =
+      on_handshake_next_done_locked(&exec_ctx, h, result, bytes_to_send,
+                                    bytes_to_send_size, handshaker_result);
   if (error != GRPC_ERROR_NONE) {
     security_handshake_failed_locked(&exec_ctx, h, error);
     gpr_mu_unlock(&h->mu);
@@ -275,19 +273,20 @@ static grpc_error *do_handshaker_next_locked(
   // Invoke TSI handshaker.
   unsigned char *bytes_to_send = NULL;
   size_t bytes_to_send_size = 0;
-  tsi_handshaker_result *result = NULL;
-  tsi_result status = tsi_handshaker_next(
+  tsi_handshaker_result *handshaker_result = NULL;
+  tsi_result result = tsi_handshaker_next(
       h->handshaker, bytes_received, bytes_received_size, &bytes_to_send,
-      &bytes_to_send_size, &result, &on_handshake_next_done_grpc_wrapper, h);
-  if (status == TSI_ASYNC) {
+      &bytes_to_send_size, &handshaker_result,
+      &on_handshake_next_done_grpc_wrapper, h);
+  if (result == TSI_ASYNC) {
     // Handshaker operating asynchronously. Nothing else to do here;
     // callback will be invoked in a TSI thread.
     return GRPC_ERROR_NONE;
   }
   // Handshaker returned synchronously. Invoke callback directly in
   // this thread with our existing exec_ctx.
-  return on_handshake_next_done_locked(exec_ctx, h, status, bytes_to_send,
-                                       bytes_to_send_size, result);
+  return on_handshake_next_done_locked(exec_ctx, h, result, bytes_to_send,
+                                       bytes_to_send_size, handshaker_result);
 }
 
 static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
@@ -344,9 +343,7 @@ static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx, void *arg,
     security_handshaker_unref(exec_ctx, h);
     return;
   }
-  if (h->handshaker_result != NULL) {
-    check_peer_locked(exec_ctx, h);
-  } else {
+  if (h->handshaker_result == NULL) {
     grpc_endpoint_read(exec_ctx, h->args->endpoint, h->args->read_buffer,
                        &h->on_handshake_data_received_from_peer);
   }
