@@ -191,6 +191,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "census_intrusive_hash_map_test", 
+    "src": [
+      "test/core/census/intrusive_hash_map_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "census_resource_test", 
     "src": [
       "test/core/census/resource_test.c"
@@ -7461,6 +7478,7 @@
       "src/core/ext/census/gen/census.pb.h", 
       "src/core/ext/census/gen/trace_context.pb.h", 
       "src/core/ext/census/grpc_filter.h", 
+      "src/core/ext/census/intrusive_hash_map.h", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/resource.h", 
       "src/core/ext/census/rpc_metric_id.h", 
@@ -7491,6 +7509,8 @@
       "src/core/ext/census/grpc_filter.h", 
       "src/core/ext/census/grpc_plugin.c", 
       "src/core/ext/census/initialize.c", 
+      "src/core/ext/census/intrusive_hash_map.c", 
+      "src/core/ext/census/intrusive_hash_map.h", 
       "src/core/ext/census/mlog.c", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/operation.c", 
