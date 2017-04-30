@@ -161,13 +161,14 @@ static bool parse_user_agent(grpc_mdelem md) {
   char* user_agent_str = grpc_slice_to_c_string(GRPC_MDVALUE(md));
   bool grpc_objc_specifier_seen = false;
   bool cronet_specifier_seen = false;
-  char *major_version = user_agent_str, *minor_version;
+  char *major_version_str = user_agent_str, *minor_version_str;
+  long major_version, minor_version;
 
   char* head = strtok(user_agent_str, " ");
   while (head != NULL) {
     if (!grpc_objc_specifier_seen &&
         0 == strncmp(head, grpc_objc_specifier, grpc_objc_specifier_len)) {
-      major_version = head + grpc_objc_specifier_len;
+      major_version_str = head + grpc_objc_specifier_len;
       grpc_objc_specifier_seen = true;
     } else if (grpc_objc_specifier_seen &&
                0 == strncmp(head, cronet_specifier, cronet_specifier_len)) {
@@ -178,14 +179,16 @@ static bool parse_user_agent(grpc_mdelem md) {
     head = strtok(NULL, " ");
   }
   if (grpc_objc_specifier_seen) {
-    major_version = strtok(major_version, ".");
-    minor_version = strtok(NULL, ".");
+    major_version_str = strtok(major_version_str, ".");
+    minor_version_str = strtok(NULL, ".");
+    major_version = atol(major_version_str);
+    minor_version = atol(minor_version_str);
   }
 
   gpr_free(user_agent_str);
   return (grpc_objc_specifier_seen && cronet_specifier_seen &&
-          (atol(major_version) < 1 ||
-           (atol(major_version) == 1 && atol(minor_version) <= 3)));
+          (major_version < 1 ||
+           (major_version == 1 && minor_version <= 3)));
 }
 
 const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
