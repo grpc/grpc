@@ -48,12 +48,22 @@ DEFINE_string(ssl_client_key_file, "", "Path to client key file. --enable_ssl mu
 namespace grpc {
 namespace testing {
 
+static void CheckForInvalidSslFlags(const string& flag) {
+  if (!FLAGS_ssl_server_roots_file.empty() || !FLAGS_ssl_client_cert_chain_file.empty()
+      || !FLAGS_ssl_client_key_file.empty()) {
+    std::cerr << "SSL specific flags cannot be used with " << flag << " flag." << std::endl;
+    exit(2);
+  }
+}
+
 std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
     const {
   if (!FLAGS_enable_ssl) {
+    CheckForInvalidSslFlags("--noenable_ssl");
     return grpc::InsecureChannelCredentials();
   } else {
     if (FLAGS_use_auth) {
+      CheckForInvalidSslFlags("--use_auth");
       return grpc::GoogleDefaultCredentials();
     } else {
       auto options = grpc::SslCredentialsOptions();
@@ -66,7 +76,7 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
         options.pem_root_certs = ca_buffer.str();
       }
       if ((FLAGS_ssl_client_cert_chain_file.empty() && !FLAGS_ssl_client_key_file.empty())
-          || (!FLAGS_ssl_client_cert_chain_file.empty() && FLAGS_ssl_client_key_file.empty()) {
+          || (!FLAGS_ssl_client_cert_chain_file.empty() && FLAGS_ssl_client_key_file.empty())) {
         std::cerr << "Both --ssl_client_cert_chain_file and --ssl_client_key_file must be specified." << std::endl;
         exit(2);
       }
