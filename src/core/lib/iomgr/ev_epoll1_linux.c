@@ -109,8 +109,6 @@ struct grpc_pollset_worker {
 typedef struct pollset_neighbourhood {
   gpr_mu mu;
   grpc_pollset *active_root;
-  grpc_pollset *inactive_root;
-  bool seen_inactive;
   char pad[GPR_CACHELINE_SIZE];
 } pollset_neighbourhood;
 
@@ -373,7 +371,6 @@ static grpc_error *pollset_global_init(void) {
       gpr_malloc(sizeof(*g_neighbour_scan_state) * g_num_neighbourhoods);
   for (size_t i = 0; i < g_num_neighbourhoods; i++) {
     gpr_mu_init(&g_neighbourhoods[i].mu);
-    g_neighbourhoods[i].seen_inactive = true;
   }
   return GRPC_ERROR_NONE;
 }
@@ -403,9 +400,6 @@ static void pollset_destroy(grpc_pollset *pollset) {
   pollset->next->prev = pollset->prev;
   if (pollset == pollset->neighbourhood->active_root) {
     pollset->neighbourhood->active_root =
-        pollset->next == pollset ? NULL : pollset->next;
-  } else if (pollset == pollset->neighbourhood->inactive_root) {
-    pollset->neighbourhood->inactive_root =
         pollset->next == pollset ? NULL : pollset->next;
   }
   gpr_mu_unlock(&pollset->neighbourhood->mu);
@@ -532,25 +526,6 @@ static void verify_neighbourhood_lists(pollset_neighbourhood *neighbourhood) {
 }
 #endif
 
-static void move_pollset_to_neighbourhood_list(grpc_pollset *pollset,
-                                               grpc_pollset **from_root,
-                                               grpc_pollset **to_root) {
-  // remove from old list
-  pollset->prev->next = pollset->next;
-  pollset->next->prev = pollset->prev;
-  if (*from_root == pollset) {
-    *from_root = pollset->next == pollset ? NULL : pollset->next;
-  }
-  // add to new list
-  if (*to_root == NULL) {
-    *to_root = pollset->next = pollset->prev = pollset;
-  } else {
-    pollset->next = *to_root;
-    pollset->prev = pollset->next->prev;
-    pollset->next->prev = pollset->prev->next = pollset;
-  }
-}
-
 static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
                          grpc_pollset_worker **worker_hdl, gpr_timespec *now,
                          gpr_timespec deadline) {
@@ -561,20 +536,29 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
   if (pollset->seen_inactive) {
     // pollset has been observed to be inactive, we need to move back to the
     // active list
-    pollset_neighbourhood *neighbourhood = pollset->neighbourhood;
+    pollset_neighbourhood *neighbourhood = pollset->neighbourhood = &g_neighbourhoods[gpr_cpu_current_cpu()];
     gpr_mu_unlock(&pollset->mu);
     // pollset unlocked: state may change (even worker->kick_state)
+retry_lock_neighbourhood:
     gpr_mu_lock(&neighbourhood->mu);
     gpr_mu_lock(&pollset->mu);
     if (pollset->seen_inactive) {
+      if (neighbourhood != pollset->neighbourhood) {
+        gpr_mu_unlock(&neighbourhood->mu);
+        neighbourhood = pollset->neighbourhood;
+        gpr_mu_unlock(&pollset->mu);
+        goto retry_lock_neighbourhood;
+      }
       pollset->seen_inactive = false;
-      move_pollset_to_neighbourhood_list(pollset, &neighbourhood->inactive_root,
-                                         &neighbourhood->active_root);
-      if (neighbourhood->seen_inactive) {
-        neighbourhood->seen_inactive = false;
+      if (neighbourhood->active_root == NULL) {
+        neighbourhood->active_root = pollset->next = pollset->prev = pollset;
         if (gpr_atm_no_barrier_cas(&g_active_poller, 0, (gpr_atm)worker)) {
           worker->kick_state = DESIGNATED_POLLER;
         }
+      } else {
+        pollset->next = neighbourhood->active_root;
+        pollset->prev = pollset->next->prev;
+        pollset->next->prev = pollset->prev->next = pollset;
       }
     }
     gpr_mu_unlock(&neighbourhood->mu);
@@ -627,14 +611,18 @@ static bool check_neighbourhood_for_available_poller(
     }
     if (!found_worker) {
       inspect->seen_inactive = true;
-      move_pollset_to_neighbourhood_list(inspect, &neighbourhood->active_root,
-                                         &neighbourhood->inactive_root);
+      if (inspect == neighbourhood->active_root) {
+        if (inspect->next == neighbourhood->active_root) {
+          neighbourhood->active_root = NULL;
+        } else {
+          neighbourhood->active_root = inspect->next;
+        }
+      }
+      inspect->next->prev = inspect->prev;
+      inspect->prev->next = inspect->next;
     }
     gpr_mu_unlock(&inspect->mu);
   } while (!found_worker);
-  if (!found_worker) {
-    neighbourhood->seen_inactive = true;
-  }
   return found_worker;
 }
 
@@ -646,7 +634,7 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (gpr_atm_no_barrier_load(&g_active_poller) == (gpr_atm)worker) {
     GPR_ASSERT(!pollset->seen_inactive);
     if (worker->next != worker && worker->next->kick_state == UNKICKED) {
-      assert(worker->next->initialized_cv);
+      GPR_ASSERT(worker->next->initialized_cv);
       gpr_atm_no_barrier_store(&g_active_poller, (gpr_atm)worker->next);
       worker->next->kick_state = DESIGNATED_POLLER;
       gpr_cv_signal(&worker->next->cv);
@@ -674,17 +662,15 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
           g_neighbour_scan_state[i] = false;
         }
       }
-      if (!found_worker) {
-        for (size_t i = 0; !found_worker && i < g_num_neighbourhoods; i++) {
-          if (g_neighbour_scan_state[i]) continue;
-          pollset_neighbourhood *neighbourhood =
-              &g_neighbourhoods[(poller_neighbourhood_idx + i) %
-                                g_num_neighbourhoods];
-          gpr_mu_lock(&neighbourhood->mu);
-          found_worker =
-              check_neighbourhood_for_available_poller(neighbourhood);
-          gpr_mu_unlock(&neighbourhood->mu);
-        }
+      for (size_t i = 0; !found_worker && i < g_num_neighbourhoods; i++) {
+        if (g_neighbour_scan_state[i]) continue;
+        pollset_neighbourhood *neighbourhood =
+            &g_neighbourhoods[(poller_neighbourhood_idx + i) %
+                              g_num_neighbourhoods];
+        gpr_mu_lock(&neighbourhood->mu);
+        found_worker =
+            check_neighbourhood_for_available_poller(neighbourhood);
+        gpr_mu_unlock(&neighbourhood->mu);
       }
       grpc_exec_ctx_flush(exec_ctx);
       gpr_mu_lock(&pollset->mu);
@@ -717,6 +703,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (begin_worker(pollset, &worker, worker_hdl, &now, deadline)) {
     gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
     GPR_ASSERT(!pollset->shutdown_closure);
+    GPR_ASSERT(!pollset->seen_inactive);
     gpr_mu_unlock(&pollset->mu);
     append_error(&error, pollset_epoll(exec_ctx, pollset, now, deadline),
                  err_desc);
