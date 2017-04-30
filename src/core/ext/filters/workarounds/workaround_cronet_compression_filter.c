@@ -40,7 +40,7 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata.h"
 
-    typedef struct call_data {
+typedef struct call_data {
   // Receive closures are chained: we inject this closure as the
   // recv_initial_metadata_ready up-call on transport_stream_op, and remember to
   // call our next_recv_initial_metadata_ready member after handling it.
@@ -187,8 +187,7 @@ static bool parse_user_agent(grpc_mdelem md) {
 
   gpr_free(user_agent_str);
   return (grpc_objc_specifier_seen && cronet_specifier_seen &&
-          (major_version < 1 ||
-           (major_version == 1 && minor_version <= 3)));
+          (major_version < 1 || (major_version == 1 && minor_version <= 3)));
 }
 
 const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
