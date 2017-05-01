@@ -100,6 +100,8 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   }
 
   void AddToLabel(std::ostream& out, benchmark::State& state) {
+    grpc_chttp2_transport* client =
+        reinterpret_cast<grpc_chttp2_transport*>(client_transport_);
     out << " writes/iter:"
         << ((double)stats_.num_writes / (double)state.iterations())
         << " cli_transport_stalls/iter:"
@@ -115,7 +117,8 @@ class TrickledCHTTP2 : public EndpointPairFixture {
             (double)state.iterations())
         << " svr_stream_stalls/iter:"
         << ((double)server_stats_.streams_stalled_due_to_stream_flow_control /
-            (double)state.iterations());
+            (double)state.iterations())
+        << " cli_bw_est:" << (double)client->bdp_estimator.bw_est;
   }
 
   void Log(int64_t iteration) {

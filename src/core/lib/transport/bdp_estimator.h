@@ -63,6 +63,8 @@ void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name);
 // Returns true if a reasonable estimate could be obtained
 bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
                                      int64_t *estimate);
+// Returns true if a reasonable estimate could be obtained
+bool grpc_bdp_estimator_get_bw(grpc_bdp_estimator *estimator, double *bw);
 // Returns true if the user should schedule a ping
 bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes);
