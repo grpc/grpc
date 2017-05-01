@@ -6026,8 +6026,7 @@
       "grpc++_codegen_base_src", 
       "grpc++_codegen_proto", 
       "grpc++_config_proto", 
-      "grpc_test_util", 
-      "thrift_util"
+      "grpc_test_util"
     ], 
     "headers": [
       "src/proto/grpc/health/v1/health.grpc.pb.h", 
@@ -9126,24 +9125,6 @@
     "src": [
       "include/grpc++/test/mock_stream.h", 
       "include/grpc++/test/server_context_test_spouse.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "grpc++_codegen_base"
-    ], 
-    "headers": [
-      "include/grpc++/impl/codegen/thrift_serializer.h", 
-      "include/grpc++/impl/codegen/thrift_utils.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c++", 
-    "name": "thrift_util", 
-    "src": [
-      "include/grpc++/impl/codegen/thrift_serializer.h", 
-      "include/grpc++/impl/codegen/thrift_utils.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

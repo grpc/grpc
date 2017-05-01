@@ -34,8 +34,8 @@ licenses(["notice"])  # 3-clause BSD
 cc_binary(
     name = "testso.so",
     srcs = [],
-    deps = ["//:grpc++_unsecure"],
     linkshared = 1,
+    deps = ["//:grpc++_unsecure"],
 )
 
 cc_library(
@@ -104,5 +104,29 @@ cc_test(
     ],
 )
 
-
-
+cc_binary(
+    name = "grpc_cli",
+    srcs = [
+        "cli_call.cc",
+        "cli_call.h",
+        "cli_credentials.cc",
+        "cli_credentials.h",
+        "config_grpc_cli.h",
+        "grpc_cli.cc",
+        "grpc_tool.cc",
+        "grpc_tool.h",
+        "proto_file_parser.cc",
+        "proto_file_parser.h",
+        "proto_reflection_descriptor_database.cc",
+        "proto_reflection_descriptor_database.h",
+        "service_describer.cc",
+        "service_describer.h",
+        "test_config.h",
+        "test_config_cc.cc",
+    ],
+    deps = [
+        "//:grpc++",
+        "//external:gflags",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+)
