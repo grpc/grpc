@@ -129,6 +129,7 @@ class SynchronousStreamingClient : public SynchronousClient {
         context_(num_threads_),
         stream_(num_threads_),
         messages_per_stream_(config.messages_per_stream()),
+        short_stream_opt_(config.short_stream_optimization()),
         messages_issued_(num_threads_) {
     StartThreads(num_threads_);
   }
@@ -154,11 +155,13 @@ class SynchronousStreamingClient : public SynchronousClient {
   std::vector<grpc::ClientContext> context_;
   std::vector<std::unique_ptr<StreamType>> stream_;
   const int messages_per_stream_;
+  const bool short_stream_opt_;
   std::vector<int> messages_issued_;
 
   void FinishStream(HistogramEntry* entry, size_t thread_idx) {
     Status s = stream_[thread_idx]->Finish();
     // don't set the value since the stream is failed and shouldn't be timed
+    // or a stream-end (and already timed)
     entry->set_status(s.error_code());
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Stream %" PRIuPTR " received an error %s", thread_idx,
@@ -176,6 +179,9 @@ class SynchronousStreamingPingPongClient final
   SynchronousStreamingPingPongClient(const ClientConfig& config)
       : SynchronousStreamingClient(config) {
     for (size_t thread_idx = 0; thread_idx < num_threads_; thread_idx++) {
+      if (short_stream_opt_) {
+        context_[thread_idx].set_initial_metadata_corked(true);
+      }
       auto* stub = channels_[thread_idx % channels_.size()].get_stub();
       stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
       messages_issued_[thread_idx] = 0;
@@ -202,8 +208,17 @@ class SynchronousStreamingPingPongClient final
     }
     GPR_TIMER_SCOPE("SynchronousStreamingPingPongClient::ThreadFunc", 0);
     double start = UsageTimer::Now();
-    if (stream_[thread_idx]->Write(request_) &&
-        stream_[thread_idx]->Read(&responses_[thread_idx])) {
+    bool use_write_last =
+        short_stream_opt_ && (messages_per_stream_ != 0) &&
+        (messages_issued_[thread_idx] + 1 == messages_per_stream_);
+    bool write_ok;
+    if (use_write_last) {
+      stream_[thread_idx]->WriteLast(request_, WriteOptions());
+      write_ok = true;
+    } else {
+      write_ok = stream_[thread_idx]->Write(request_);
+    }
+    if (write_ok && stream_[thread_idx]->Read(&responses_[thread_idx])) {
       entry->set_value((UsageTimer::Now() - start) * 1e9);
       // don't set the status since there isn't one yet
       if ((messages_per_stream_ != 0) &&
@@ -215,9 +230,14 @@ class SynchronousStreamingPingPongClient final
         // Fall through to the below resetting code after finish
       }
     }
-    stream_[thread_idx]->WritesDone();
+    if (!use_write_last) {
+      stream_[thread_idx]->WritesDone();
+    }
     FinishStream(entry, thread_idx);
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    if (short_stream_opt_) {
+      context_[thread_idx].set_initial_metadata_corked(true);
+    }
     stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
     messages_issued_[thread_idx] = 0;
     return true;

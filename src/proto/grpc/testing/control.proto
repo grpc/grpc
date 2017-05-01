@@ -107,6 +107,9 @@ message ClientConfig {
 
   // Number of messages on a stream before it gets finished/restarted
   int32 messages_per_stream = 18;
+
+  // Use short-stream optimizations: cork initial metadata and Write/Finish
+  bool short_stream_optimization = 19; 
 }
 
 message ClientStatus { ClientStats stats = 1; }

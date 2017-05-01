@@ -340,12 +340,14 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
         req_(req),
         response_(),
         next_state_(State::INVALID),
+        wrote_last_(false),
         callback_(on_done),
         next_issue_(next_issue),
         start_req_(start_req) {}
   ~ClientRpcContextStreamingPingPongImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
-    StartInternal(cq, config.messages_per_stream());
+    StartInternal(cq, config.messages_per_stream(),
+                  config.short_stream_optimization());
   }
   bool RunNextState(bool ok, HistogramEntry* entry) override {
     while (true) {
@@ -368,7 +370,14 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
           }
           start_ = UsageTimer::Now();
           next_state_ = State::WRITE_DONE;
-          stream_->Write(req_, ClientRpcContext::tag(this));
+          if (short_stream_opt_ && (messages_per_stream_ != 0) &&
+              (messages_issued_ + 1 == messages_per_stream_)) {
+            wrote_last_ = true;
+            stream_->WriteLast(req_, WriteOptions(),
+                               ClientRpcContext::tag(this));
+          } else {
+            stream_->Write(req_, ClientRpcContext::tag(this));
+          }
           return true;
         case State::WRITE_DONE:
           if (!ok) {
@@ -384,8 +393,13 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
           if ((messages_per_stream_ != 0) &&
               (++messages_issued_ >= messages_per_stream_)) {
             next_state_ = State::WRITES_DONE_DONE;
-            stream_->WritesDone(ClientRpcContext::tag(this));
-            return true;
+            if (!wrote_last_) {
+              stream_->WritesDone(ClientRpcContext::tag(this));
+              return true;
+            } else {
+              // Already did the WritesDone so just loop around
+              break;
+            }
           }
           next_state_ = State::STREAM_IDLE;
           break;  // loop around
@@ -407,7 +421,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
     auto* clone = new ClientRpcContextStreamingPingPongImpl(
         stub_, req_, next_issue_, start_req_, callback_);
     std::lock_guard<ClientRpcContext> lclone(*clone);
-    clone->StartInternal(cq, messages_per_stream_);
+    clone->StartInternal(cq, messages_per_stream_, short_stream_opt_);
   }
 
  private:
@@ -428,6 +442,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
     FINISH_DONE
   };
   State next_state_;
+  bool wrote_last_;
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<gpr_timespec()> next_issue_;
   std::function<std::unique_ptr<
@@ -442,11 +457,17 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
   // Allow a limit on number of messages in a stream
   int messages_per_stream_;
   int messages_issued_;
+  bool short_stream_opt_;
 
-  void StartInternal(CompletionQueue* cq, int messages_per_stream) {
+  void StartInternal(CompletionQueue* cq, int messages_per_stream,
+                     bool short_stream_opt) {
     cq_ = cq;
     messages_per_stream_ = messages_per_stream;
     messages_issued_ = 0;
+    short_stream_opt_ = short_stream_opt;
+    if (short_stream_opt) {
+      context_.set_initial_metadata_corked(true);
+    }
     next_state_ = State::STREAM_IDLE;
     stream_ = start_req_(stub_, &context_, cq, ClientRpcContext::tag(this));
   }
@@ -740,12 +761,14 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         req_(req),
         response_(),
         next_state_(State::INVALID),
+        wrote_last_(false),
         callback_(on_done),
         next_issue_(next_issue),
         start_req_(start_req) {}
   ~ClientRpcContextGenericStreamingImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
-    StartInternal(cq, config.messages_per_stream());
+    StartInternal(cq, config.messages_per_stream(),
+                  config.short_stream_optimization());
   }
   bool RunNextState(bool ok, HistogramEntry* entry) override {
     while (true) {
@@ -768,7 +791,14 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           }
           start_ = UsageTimer::Now();
           next_state_ = State::WRITE_DONE;
-          stream_->Write(req_, ClientRpcContext::tag(this));
+          if (short_stream_opt_ && (messages_per_stream_ != 0) &&
+              (messages_issued_ + 1 == messages_per_stream_)) {
+            wrote_last_ = true;
+            stream_->WriteLast(req_, WriteOptions(),
+                               ClientRpcContext::tag(this));
+          } else {
+            stream_->Write(req_, ClientRpcContext::tag(this));
+          }
           return true;
         case State::WRITE_DONE:
           if (!ok) {
@@ -784,8 +814,13 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           if ((messages_per_stream_ != 0) &&
               (++messages_issued_ >= messages_per_stream_)) {
             next_state_ = State::WRITES_DONE_DONE;
-            stream_->WritesDone(ClientRpcContext::tag(this));
-            return true;
+            if (!wrote_last_) {
+              stream_->WritesDone(ClientRpcContext::tag(this));
+              return true;
+            } else {
+              // Already did the WritesDone so just loop around
+              break;
+            }
           }
           next_state_ = State::STREAM_IDLE;
           break;  // loop around
@@ -807,7 +842,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
     auto* clone = new ClientRpcContextGenericStreamingImpl(
         stub_, req_, next_issue_, start_req_, callback_);
     std::lock_guard<ClientRpcContext> lclone(*clone);
-    clone->StartInternal(cq, messages_per_stream_);
+    clone->StartInternal(cq, messages_per_stream_, short_stream_opt_);
   }
 
  private:
@@ -828,6 +863,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
     FINISH_DONE
   };
   State next_state_;
+  bool wrote_last_;
   std::function<void(grpc::Status, ByteBuffer*)> callback_;
   std::function<gpr_timespec()> next_issue_;
   std::function<std::unique_ptr<grpc::GenericClientAsyncReaderWriter>(
@@ -841,13 +877,19 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
   // Allow a limit on number of messages in a stream
   int messages_per_stream_;
   int messages_issued_;
+  bool short_stream_opt_;
 
-  void StartInternal(CompletionQueue* cq, int messages_per_stream) {
+  void StartInternal(CompletionQueue* cq, int messages_per_stream,
+                     bool short_stream_opt) {
     cq_ = cq;
     const grpc::string kMethodName(
         "/grpc.testing.BenchmarkService/StreamingCall");
     messages_per_stream_ = messages_per_stream;
     messages_issued_ = 0;
+    short_stream_opt_ = short_stream_opt;
+    if (short_stream_opt) {
+      context_.set_initial_metadata_corked(true);
+    }
     next_state_ = State::STREAM_IDLE;
     stream_ = start_req_(stub_, &context_, kMethodName, cq,
                          ClientRpcContext::tag(this));
