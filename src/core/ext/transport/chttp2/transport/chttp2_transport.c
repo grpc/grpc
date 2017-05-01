@@ -2152,7 +2152,7 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       (int64_t)bdp -
       (int64_t)t->settings[GRPC_LOCAL_SETTINGS]
                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  if (delta == 0 || (delta > -bdp / 10 && delta < bdp / 10)) {
+  if (delta == 0 || (delta > -bdp / 15 && delta < bdp / 15)) {
     return;
   }
   if (grpc_bdp_estimator_trace) {
