@@ -1409,18 +1409,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "thrift_util",
-    language = "c++",
-    public_hdrs = [
-        "include/grpc++/impl/codegen/thrift_serializer.h",
-        "include/grpc++/impl/codegen/thrift_utils.h",
-    ],
-    deps = [
-        "grpc++_codegen_base",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc++_reflection",
     srcs = [
         "src/cpp/ext/proto_server_reflection.cc",
