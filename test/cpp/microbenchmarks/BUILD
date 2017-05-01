@@ -34,7 +34,9 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
 grpc_cc_test(
     name = "noop-benchmark",
     srcs = ["noop-benchmark.cc"],
-    deps = ["//external:benchmark"],
+    external_deps = [
+        "benchmark",
+    ],
 )
 
 grpc_cc_library(
