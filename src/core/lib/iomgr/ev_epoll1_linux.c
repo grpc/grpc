@@ -402,7 +402,7 @@ static void pollset_destroy(grpc_pollset *pollset) {
   if (!pollset->seen_inactive) {
     pollset_neighbourhood *neighbourhood = pollset->neighbourhood;
     gpr_mu_unlock(&pollset->mu);
-retry_lock_neighbourhood:
+  retry_lock_neighbourhood:
     gpr_mu_lock(&neighbourhood->mu);
     gpr_mu_lock(&pollset->mu);
     if (!pollset->seen_inactive) {
@@ -462,7 +462,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset_maybe_finish_shutdown(exec_ctx, pollset);
 }
 
-#define MAX_EPOLL_EVENTS 10
+#define MAX_EPOLL_EVENTS 100
 
 static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
                                            gpr_timespec now) {
@@ -652,7 +652,8 @@ static bool check_neighbourhood_for_available_poller(
     if (!found_worker) {
       inspect->seen_inactive = true;
       if (inspect == neighbourhood->active_root) {
-          neighbourhood->active_root = inspect->next == inspect ? NULL : inspect->next;
+        neighbourhood->active_root =
+            inspect->next == inspect ? NULL : inspect->next;
       }
       inspect->next->prev = inspect->prev;
       inspect->prev->next = inspect->next;
