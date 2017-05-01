@@ -28,14 +28,27 @@ If you plan to build from source and run tests, install the following as well:
  $ [sudo] apt-get install clang libc++-dev
 ```
 
-## Mac OSX
+## macOS 
 
-For a Mac system, git is not available by default. You will first need to
-install Xcode from the Mac AppStore and then run the following command from a
-terminal:
+On a Mac, you will first need to
+install Xcode or
+[Command Line Tools for Xcode](https://developer.apple.com/download/more/)
+and then run the following command from a terminal:
 
 ```sh
  $ [sudo] xcode-select --install
+```
+
+To build gRPC from source, you may also need to install the following
+packages, which you can get from [Homebrew](https://brew.sh):
+
+```sh
+ $ brew install autoconf automake libtool shtool
+```
+
+If you plan to build from source and run tests, install the following as well:
+```sh
+ $ brew install gflags
 ```
 
 ## Protoc

@@ -9,18 +9,18 @@ def generate_cc_impl(ctx):
   protos = [f for src in ctx.attr.srcs for f in src.proto.direct_sources]
   includes = [f for src in ctx.attr.srcs for f in src.proto.transitive_imports]
   outs = []
+  # label_len is length of the path from WORKSPACE root to the location of this build file
+  label_len = len(ctx.label.package) + 1
   if ctx.executable.plugin:
-    outs += [proto.basename[:-len(".proto")] + ".grpc.pb.h" for proto in protos]
-    outs += [proto.basename[:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
+    outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.h" for proto in protos]
+    outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
     if ctx.attr.generate_mock:
-      outs += [proto.basename[:-len(".proto")] + "_mock.grpc.pb.h" for proto in protos]
+      outs += [proto.path[label_len:-len(".proto")] + "_mock.grpc.pb.h" for proto in protos]
   else:
-    outs += [proto.basename[:-len(".proto")] + ".pb.h" for proto in protos]
-    outs += [proto.basename[:-len(".proto")] + ".pb.cc" for proto in protos]
+    outs += [proto.path[label_len:-len(".proto")] + ".pb.h" for proto in protos]
+    outs += [proto.path[label_len:-len(".proto")] + ".pb.cc" for proto in protos]
   out_files = [ctx.new_file(out) for out in outs]
-  # The following should be replaced with ctx.configuration.buildout
-  # whenever this is added to Skylark.
-  dir_out = out_files[0].dirname[:-len(protos[0].dirname)]
+  dir_out = str(ctx.genfiles_dir.path)
 
   arguments = []
   if ctx.executable.plugin:

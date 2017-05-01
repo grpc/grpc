@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,44 +31,59 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_GPR_TYPES_H
-#define GRPC_IMPL_CODEGEN_GPR_TYPES_H
+#include "src/core/lib/support/memory.h"
+#include <gtest/gtest.h>
+#include "test/core/util/test_config.h"
 
-#include <grpc/impl/codegen/port_platform.h>
+namespace grpc_core {
+namespace testing {
 
-#include <stddef.h>
+struct Foo {
+  Foo(int p, int q) : a(p), b(q) {}
+  int a;
+  int b;
+};
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+TEST(MemoryTest, NewDeleteTest) { Delete(New<int>()); }
 
-/* The clocks we support. */
-typedef enum {
-  /* Monotonic clock. Epoch undefined. Always moves forwards. */
-  GPR_CLOCK_MONOTONIC = 0,
-  /* Realtime clock. May jump forwards or backwards. Settable by
-     the system administrator. Has its epoch at 0:00:00 UTC 1 Jan 1970. */
-  GPR_CLOCK_REALTIME,
-  /* CPU cycle time obtained by rdtsc instruction on x86 platforms. Epoch
-     undefined. Degrades to GPR_CLOCK_REALTIME on other platforms. */
-  GPR_CLOCK_PRECISE,
-  /* Unmeasurable clock type: no base, created by taking the difference
-     between two times */
-  GPR_TIMESPAN
-} gpr_clock_type;
-
-/* Analogous to struct timespec. On some machines, absolute times may be in
- * local time. */
-typedef struct gpr_timespec {
-  int64_t tv_sec;
-  int32_t tv_nsec;
-  /** Against which clock was this time measured? (or GPR_TIMESPAN if
-      this is a relative time meaure) */
-  gpr_clock_type clock_type;
-} gpr_timespec;
-
-#ifdef __cplusplus
+TEST(MemoryTest, NewDeleteWithArgTest) {
+  int* i = New<int>(42);
+  EXPECT_EQ(42, *i);
+  Delete(i);
 }
-#endif
 
-#endif /* GRPC_IMPL_CODEGEN_GPR_TYPES_H */
+TEST(MemoryTest, NewDeleteWithArgsTest) {
+  Foo* p = New<Foo>(1, 2);
+  EXPECT_EQ(1, p->a);
+  EXPECT_EQ(2, p->b);
+  Delete(p);
+}
+
+TEST(MemoryTest, MakeUniqueTest) { MakeUnique<int>(); }
+
+TEST(MemoryTest, MakeUniqueWithArgTest) {
+  auto i = MakeUnique<int>(42);
+  EXPECT_EQ(42, *i);
+}
+
+TEST(MemoryTest, UniquePtrWithCustomDeleter) {
+  int n = 0;
+  class IncrementingDeleter {
+   public:
+    void operator()(int* p) { ++*p; }
+  };
+  {
+    UniquePtr<int, IncrementingDeleter> p(&n);
+    EXPECT_EQ(0, n);
+  }
+  EXPECT_EQ(1, n);
+}
+
+}  // namespace testing
+}  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  grpc_test_init(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
