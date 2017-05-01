@@ -173,10 +173,6 @@ def grpc_end2end_tests():
       ':fake_resolver',
       ':http_proxy',
       ':proxy',
-      '//test/core/util:grpc_test_util',
-      '//:grpc',
-      '//test/core/util:gpr_test_util',
-      '//:gpr',
     ]
   )
 
@@ -185,7 +181,13 @@ def grpc_end2end_tests():
       name = '%s_test' % f,
       srcs = ['fixtures/%s.c' % f],
       language = "C",
-      deps = [':end2end_tests']
+      deps = [
+        ':end2end_tests',
+        '//test/core/util:grpc_test_util',
+        '//:grpc',
+        '//test/core/util:gpr_test_util',
+        '//:gpr',
+      ],
     )
     for t, topt in END2END_TESTS.items():
       #print(compatible(fopt, topt), f, t, fopt, topt)
