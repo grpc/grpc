@@ -57,6 +57,7 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
+#include "src/core/lib/support/fork.h"
 
 /*******************************************************************************
  * FD declarations
@@ -81,6 +82,7 @@ struct grpc_fd {
 
   gpr_mu mu;
   int shutdown;
+  int disable_shutdown;
   int closed;
   int released;
   grpc_error *shutdown_error;
@@ -120,6 +122,12 @@ struct grpc_fd {
 
   /* The pollset that last noticed and notified that the fd is readable */
   grpc_pollset *read_notifier_pollset;
+
+  /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
+  fd_postfork_handler postfork_handler;
+  void *postfork_handler_arg;
+  struct grpc_fd *global_next;
+  struct grpc_fd *global_prev;
 };
 
 static grpc_wakeup_fd global_wakeup_fd;
@@ -166,6 +174,10 @@ static void fd_unref(grpc_fd *fd);
 
 #define CLOSURE_NOT_READY ((grpc_closure *)0)
 #define CLOSURE_READY ((grpc_closure *)1)
+
+/* Forking forward declarations */
+static void global_fork_fd_list_add(grpc_fd *fd);
+static void global_fork_fd_list_remove(grpc_fd *fd);
 
 /*******************************************************************************
  * pollset declarations
@@ -308,6 +320,9 @@ static void unref_by(grpc_fd *fd, int n) {
   old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     gpr_mu_destroy(&fd->mu);
+    if (grpc_fork_support_enabled()) {
+      global_fork_fd_list_remove(fd);
+    }
     grpc_iomgr_unregister_object(&fd->iomgr_object);
     if (fd->shutdown) GRPC_ERROR_UNREF(fd->shutdown_error);
     gpr_free(fd);
@@ -321,6 +336,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_mu_init(&r->mu);
   gpr_atm_rel_store(&r->refst, 1);
   r->shutdown = 0;
+  r->disable_shutdown = 0;
   r->read_closure = CLOSURE_NOT_READY;
   r->write_closure = CLOSURE_NOT_READY;
   r->fd = fd;
@@ -331,6 +347,9 @@ static grpc_fd *fd_create(int fd, const char *name) {
   r->closed = 0;
   r->released = 0;
   r->read_notifier_pollset = NULL;
+  r->postfork_handler = NULL;
+  r->postfork_handler_arg = NULL;
+  global_fork_fd_list_add(r);
 
   char *name2;
   gpr_asprintf(&name2, "%s fd=%d", name, fd);
@@ -509,7 +528,10 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
     fd->shutdown = 1;
     fd->shutdown_error = why;
     /* signal read/write closed to OS so that future operations fail */
-    shutdown(fd->fd, SHUT_RDWR);
+    if (!fd->disable_shutdown) {
+      shutdown(fd->fd, SHUT_RDWR);
+    }
+
     set_ready_locked(exec_ctx, fd, &fd->read_closure);
     set_ready_locked(exec_ctx, fd, &fd->write_closure);
   } else {
@@ -523,6 +545,12 @@ static bool fd_is_shutdown(grpc_fd *fd) {
   bool r = fd->shutdown;
   gpr_mu_unlock(&fd->mu);
   return r;
+}
+
+static void fd_disable_shutdown(grpc_fd *fd) {
+  gpr_mu_lock(&fd->mu);
+  fd->disable_shutdown = 1;
+  gpr_mu_unlock(&fd->mu);
 }
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
@@ -1521,6 +1549,71 @@ static void global_cv_fd_table_shutdown() {
 }
 
 /*******************************************************************************
+ * Engine Postfork Handlers
+ */
+
+static gpr_mu g_fd_mu;
+static grpc_fd *g_root_fd = NULL;
+
+static void global_fork_fd_list_add(grpc_fd *fd) {
+  if (grpc_fork_support_enabled()) {
+    gpr_mu_lock(&g_fd_mu);
+    fd->global_prev = NULL;
+    fd->global_next = g_root_fd;
+    if (g_root_fd) {
+      g_root_fd->global_prev = fd;
+    }
+    g_root_fd = fd;
+    gpr_mu_unlock(&g_fd_mu);
+  }
+}
+
+static void global_fork_fd_list_remove(grpc_fd *fd) {
+  if (grpc_fork_support_enabled()) {
+    gpr_mu_lock(&g_fd_mu);
+    if (fd->global_prev) {
+      fd->global_prev->global_next = fd->global_next;
+    }
+    if (fd->global_next) {
+      fd->global_next->global_prev = fd->global_prev;
+    }
+    if (g_root_fd == fd) {
+      g_root_fd = g_root_fd->global_next;
+    }
+    gpr_mu_unlock(&g_fd_mu);
+  }
+}
+
+static void fd_register_postfork_handler(grpc_fd *fd,
+                                         fd_postfork_handler handler,
+                                         void *arg) {
+  fd->postfork_handler = handler;
+  fd->postfork_handler_arg = arg;
+}
+
+static void fd_postfork(grpc_fd *fd) {
+  if (!fd_is_orphaned(fd)) {
+    if (fd->postfork_handler) {
+      fd->fd = fd->postfork_handler(fd, fd->postfork_handler_arg);
+    } else {
+      close(fd->fd);
+      fd->fd = socket(AF_INET, SOCK_STREAM, 0);
+      shutdown(fd->fd, SHUT_RDWR);
+    }
+  }
+}
+
+static void fork_engine(void) {
+  gpr_mu_lock(&g_fd_mu);
+  grpc_fd *fd = g_root_fd;
+  while (fd != NULL) {
+    fd_postfork(fd);
+    fd = fd->global_next;
+  }
+  gpr_mu_unlock(&g_fd_mu);
+}
+
+/*******************************************************************************
  * event engine binding
  */
 
@@ -1539,10 +1632,12 @@ static const grpc_event_engine_vtable vtable = {
     .fd_orphan = fd_orphan,
     .fd_shutdown = fd_shutdown,
     .fd_is_shutdown = fd_is_shutdown,
+    .fd_disable_shutdown = fd_disable_shutdown,
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
     .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
     .fd_get_workqueue = fd_get_workqueue,
+    .fd_register_postfork_handler = fd_register_postfork_handler,
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,
@@ -1567,12 +1662,16 @@ static const grpc_event_engine_vtable vtable = {
     .workqueue_scheduler = workqueue_scheduler,
 
     .shutdown_engine = shutdown_engine,
+    .fork_engine = fork_engine,
 };
 
 const grpc_event_engine_vtable *grpc_init_poll_posix(void) {
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
+
+  gpr_mu_init(&g_fd_mu);
+
   if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
     return NULL;
   }

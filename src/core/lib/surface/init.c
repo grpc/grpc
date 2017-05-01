@@ -51,6 +51,8 @@
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/fork.h"
+#include "src/core/lib/support/thd_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -73,6 +75,7 @@ static int g_initializations;
 
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
+  grpc_fork_support_init();
   gpr_mu_init(&g_init_mu);
   grpc_register_built_in_plugins();
   g_initializations = 0;
@@ -131,6 +134,7 @@ void grpc_init(void) {
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
     gpr_time_init();
+    gpr_thd_init();
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();

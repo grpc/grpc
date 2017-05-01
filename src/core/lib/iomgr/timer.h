@@ -106,6 +106,6 @@ void grpc_timer_consume_kick(void);
 
 /* the following must be implemented by each iomgr implementation */
 
-void grpc_kick_poller(void);
+grpc_error *grpc_kick_poller(void);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_H */

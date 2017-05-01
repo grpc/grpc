@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,46 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
-#define GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
+#include "src/core/lib/iomgr/port.h"
 
-#include <grpc/support/time.h>
+#ifdef GRPC_POSIX_FORK
 
-/* Internal interfaces between modules within the gpr support library.  */
-void gpr_thd_init();
+#include <string.h>
 
-/* Wait for all outstanding threads to finish, up to deadline */
-int gpr_await_threads(gpr_timespec deadline);
+#include <grpc/fork.h>
+#include <grpc/support/log.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/useful.h>
 
-#endif /* GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H */
+#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/fork.h"
+#include "src/core/lib/support/thd_internal.h"
+
+int grpc_prefork() {
+  if (!grpc_fork_support_enabled()) {
+    gpr_log(GPR_ERROR,
+            "Fork support not enabled; try running with the "
+            "environment variable GRPC_ENABLE_FORK_SUPPORT=1");
+    return 0;
+  }
+  if (!gpr_await_threads(
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_seconds(3, GPR_TIMESPAN)))) {
+    gpr_log(GPR_ERROR, "gRPC thread still active! Cannot fork!");
+    return 0;
+  }
+  return 1;
+}
+
+void grpc_postfork_parent() {
+  // Reserving API space for future use
+}
+
+void grpc_postfork_child() {
+  grpc_wakeup_fds_postfork();
+  grpc_fork_engine();
+}
+
+#endif  // GRPC_POSIX_FORK

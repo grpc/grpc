@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,13 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
-#define GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
+#ifndef GRPC_CORE_LIB_SUPPORT_FORK_H
+#define GRPC_CORE_LIB_SUPPORT_FORK_H
 
-#include <grpc/support/time.h>
+void grpc_fork_support_init(void);
 
-/* Internal interfaces between modules within the gpr support library.  */
-void gpr_thd_init();
+int grpc_fork_support_enabled(void);
 
-/* Wait for all outstanding threads to finish, up to deadline */
-int gpr_await_threads(gpr_timespec deadline);
+void grpc_enable_fork_support(int enable);
 
-#endif /* GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_FORK_H */

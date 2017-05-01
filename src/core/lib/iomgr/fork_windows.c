@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,20 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
-#define GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
+#include "src/core/lib/iomgr/port.h"
 
-#include <grpc/support/time.h>
+#ifndef GRPC_POSIX_FORK
 
-/* Internal interfaces between modules within the gpr support library.  */
-void gpr_thd_init();
+#include <grpc/fork.h>
+#include <grpc/support/log.h>
 
-/* Wait for all outstanding threads to finish, up to deadline */
-int gpr_await_threads(gpr_timespec deadline);
+int grpc_prefork() {
+  gpr_log(GPR_ERROR, "Forking not supported on Windows");
+  return 0;
+}
 
-#endif /* GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H */
+void grpc_postfork_parent() {}
+
+void grpc_postfork_child() {}
+
+#endif  // GRPC_POSIX_FORK

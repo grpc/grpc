@@ -31,15 +31,40 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
-#define GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
+#include "src/core/lib/support/fork.h"
 
-#include <grpc/support/time.h>
+#include <string.h>
 
-/* Internal interfaces between modules within the gpr support library.  */
-void gpr_thd_init();
+#include <grpc/support/alloc.h>
+#include <grpc/support/useful.h>
 
-/* Wait for all outstanding threads to finish, up to deadline */
-int gpr_await_threads(gpr_timespec deadline);
+#include "src/core/lib/support/env.h"
 
-#endif /* GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H */
+int fork_support_enabled;
+
+void grpc_fork_support_init() {
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  fork_support_enabled = 1;
+#else
+  fork_support_enabled = 0;
+  char *env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
+  if (env != NULL) {
+    static const char *truthy[] = {"yes",  "Yes",  "YES", "true",
+                                   "True", "TRUE", "1"};
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
+      if (0 == strcmp(env, truthy[i])) {
+        fork_support_enabled = 1;
+      }
+    }
+    gpr_free(env);
+  }
+#endif
+}
+
+int grpc_fork_support_enabled() {
+  return fork_support_enabled;
+}
+
+void grpc_enable_fork_support(int enable) {
+  fork_support_enabled = enable;
+}

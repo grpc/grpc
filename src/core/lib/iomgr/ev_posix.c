@@ -155,6 +155,13 @@ grpc_fd *grpc_fd_create(int fd, const char *name) {
   return g_event_engine->fd_create(fd, name);
 }
 
+void grpc_fork_engine() { g_event_engine->fork_engine(); }
+
+void grpc_fd_register_postfork_handler(grpc_fd *fd, fd_postfork_handler handler,
+                                       void *arg) {
+  g_event_engine->fd_register_postfork_handler(fd, handler, arg);
+}
+
 grpc_workqueue *grpc_fd_get_workqueue(grpc_fd *fd) {
   return g_event_engine->fd_get_workqueue(fd);
 }
@@ -174,6 +181,10 @@ void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
 
 bool grpc_fd_is_shutdown(grpc_fd *fd) {
   return g_event_engine->fd_is_shutdown(fd);
+}
+
+void grpc_fd_disable_shutdown(grpc_fd *fd) {
+  g_event_engine->fd_disable_shutdown(fd);
 }
 
 void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,

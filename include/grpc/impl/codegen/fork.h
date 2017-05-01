@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,34 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
-#define GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
+#ifndef GRPC_IMPL_CODEGEN_FORK_H
+#define GRPC_IMPL_CODEGEN_FORK_H
 
-#include <grpc/support/time.h>
+/**
+ * gRPC applications should call this before calling fork().  There should be no
+ * active gRPC function calls between calling grpc_prefork() and
+ * grpc_postfork_parent()/grpc_postfork_child().
+ *
+ * Returns 1 on success, 0 otherwise.
+ *
+ * Typical use:
+ * assert(grpc_prefork() == 1);
+ * int pid = fork();
+ * if (pid) {
+ *  grpc_postfork_parent();
+ *  // Parent process..
+ * } else {
+ *  grpc_postfork_child();
+ *  // Child process...
+ * }
+ */
 
-/* Internal interfaces between modules within the gpr support library.  */
-void gpr_thd_init();
+int grpc_prefork();
 
-/* Wait for all outstanding threads to finish, up to deadline */
-int gpr_await_threads(gpr_timespec deadline);
+void grpc_postfork_parent();
 
-#endif /* GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H */
+void grpc_postfork_child();
+
+void grpc_postfork_parent();
+
+#endif /* GRPC_IMPL_CODEGEN_FORK_H */
