@@ -219,7 +219,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   tcp->read_slices = read_slices;
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, read_slices);
 
-  tcp->read_slice = grpc_slice_malloc(8192);
+  tcp->read_slice = GRPC_SLICE_MALLOC(8192);
 
   buffer.len = (ULONG)GRPC_SLICE_LENGTH(
       tcp->read_slice);  // we know slice size fits in 32bit.

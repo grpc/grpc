@@ -31,39 +31,50 @@
  *
  */
 
-#include "src/core/lib/surface/lame_client.h"
-
 #include <grpc/grpc.h>
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/support/atomic.h"
+
+extern "C" {
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/static_metadata.h"
+}
 
-typedef struct {
+namespace grpc_core {
+
+namespace {
+
+struct CallData {
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
-  gpr_atm filled_metadata;
-} call_data;
+  grpc_core::atomic<bool> filled_metadata;
+};
 
-typedef struct {
+struct ChannelData {
   grpc_status_code error_code;
   const char *error_message;
-} channel_data;
+};
 
 static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                           grpc_metadata_batch *mdb) {
-  call_data *calld = elem->call_data;
-  if (!gpr_atm_no_barrier_cas(&calld->filled_metadata, 0, 1)) {
+  CallData *calld = static_cast<CallData *>(elem->call_data);
+  bool expected = false;
+  if (!calld->filled_metadata.compare_exchange_strong(
+          expected, true, grpc_core::memory_order_relaxed,
+          grpc_core::memory_order_relaxed)) {
     return;
   }
-  channel_data *chand = elem->channel_data;
+  ChannelData *chand = static_cast<ChannelData *>(elem->channel_data);
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
   calld->status.md = grpc_mdelem_from_slices(
@@ -83,7 +94,6 @@ static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void lame_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   if (op->recv_initial_metadata) {
     fill_metadata(exec_ctx, elem,
                   op->payload->recv_initial_metadata.recv_initial_metadata);
@@ -127,8 +137,6 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
-  call_data *calld = elem->call_data;
-  gpr_atm_no_barrier_store(&calld->filled_metadata, 0);
   return GRPC_ERROR_NONE;
 }
 
@@ -149,18 +157,22 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
-const grpc_channel_filter grpc_lame_filter = {
-    lame_start_transport_stream_op_batch,
-    lame_start_transport_op,
-    sizeof(call_data),
-    init_call_elem,
+}  // namespace
+
+}  // namespace grpc_core
+
+extern "C" const grpc_channel_filter grpc_lame_filter = {
+    grpc_core::lame_start_transport_stream_op_batch,
+    grpc_core::lame_start_transport_op,
+    sizeof(grpc_core::CallData),
+    grpc_core::init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    lame_get_peer,
-    lame_get_channel_info,
+    grpc_core::destroy_call_elem,
+    sizeof(grpc_core::ChannelData),
+    grpc_core::init_channel_elem,
+    grpc_core::destroy_channel_elem,
+    grpc_core::lame_get_peer,
+    grpc_core::lame_get_channel_info,
     "lame-client",
 };
 
@@ -171,7 +183,6 @@ grpc_channel *grpc_lame_client_channel_create(const char *target,
                                               const char *error_message) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_element *elem;
-  channel_data *chand;
   grpc_channel *channel = grpc_channel_create(&exec_ctx, target, NULL,
                                               GRPC_CLIENT_LAME_CHANNEL, NULL);
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
@@ -180,7 +191,7 @@ grpc_channel *grpc_lame_client_channel_create(const char *target,
       "error_message=%s)",
       3, (target, (int)error_code, error_message));
   GPR_ASSERT(elem->filter == &grpc_lame_filter);
-  chand = (channel_data *)elem->channel_data;
+  auto chand = static_cast<grpc_core::ChannelData *>(elem->channel_data);
   chand->error_code = error_code;
   chand->error_message = error_message;
   grpc_exec_ctx_finish(&exec_ctx);

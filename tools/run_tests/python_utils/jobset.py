@@ -208,6 +208,11 @@ class JobSpec(object):
   def __repr__(self):
     return 'JobSpec(shortname=%s, cmdline=%s)' % (self.shortname, self.cmdline)
 
+  def __str__(self):
+    return '%s: %s %s' % (self.shortname,
+                          ' '.join('%s=%s' % kv for kv in self.environ.items()),
+                          ' '.join(self.cmdline))
+
 
 class JobResult(object):
   def __init__(self):

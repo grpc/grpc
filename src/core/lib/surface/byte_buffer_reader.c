@@ -124,7 +124,7 @@ grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader *reader) {
   grpc_slice in_slice;
   size_t bytes_read = 0;
   const size_t input_size = grpc_byte_buffer_length(reader->buffer_out);
-  grpc_slice out_slice = grpc_slice_malloc(input_size);
+  grpc_slice out_slice = GRPC_SLICE_MALLOC(input_size);
   uint8_t *const outbuf = GRPC_SLICE_START_PTR(out_slice); /* just an alias */
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
