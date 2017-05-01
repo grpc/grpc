@@ -26,7 +26,7 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""Entry points into the Beta API of gRPC Python."""
+"""***DEPRECATED***  Entry points into the beta API of gRPC Python."""
 
 # threading is referenced from specification in this module.
 import threading  # pylint: disable=unused-import
