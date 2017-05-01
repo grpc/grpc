@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.face.face &mdash; grpcio 1.2.0 documentation</title>
+  <title>grpc.framework.interfaces.face.face &mdash; grpcio 1.3.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../../../search.html"/>
-    <link rel="top" title="grpcio 1.2.0 documentation" href="../../../../../index.html"/>
+    <link rel="top" title="grpcio 1.3.0 documentation" href="../../../../../index.html"/>
         <link rel="up" title="grpc" href="../../../../grpc.html"/> 
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.2.0
+                1.3.0
               </div>
             
           
@@ -145,8 +145,6 @@
     
     
       <li class="wy-breadcrumbs-aside">
-        
-            
         
       </li>
     
@@ -247,8 +245,8 @@
 <span class="sd">      details value was received.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-    <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
-<div class="viewcode-block" id="Abortion.Kind"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Abortion.Kind">[docs]</a>    <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<div class="viewcode-block" id="Abortion.Kind"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Abortion.Kind">[docs]</a>    <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
+    <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Types of RPC abortion.&quot;&quot;&quot;</span>
 
         <span class="n">CANCELLED</span> <span class="o">=</span> <span class="s1">&#39;cancelled&#39;</span>
@@ -316,13 +314,13 @@
 <div class="viewcode-block" id="RpcContext"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext">[docs]</a><span class="k">class</span> <span class="nc">RpcContext</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Provides RPC-related information and action.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="RpcContext.is_active"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.is_active">[docs]</a>    <span class="k">def</span> <span class="nf">is_active</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcContext.is_active"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.is_active">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">is_active</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Describes whether the RPC is active or has terminated.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="RpcContext.time_remaining"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.time_remaining">[docs]</a>    <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcContext.time_remaining"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.time_remaining">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Describes the length of allowed time remaining for the RPC.</span>
 
 <span class="sd">    Returns:</span>
@@ -332,8 +330,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="RpcContext.add_abortion_callback"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.add_abortion_callback">[docs]</a>    <span class="k">def</span> <span class="nf">add_abortion_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcContext.add_abortion_callback"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.add_abortion_callback">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_abortion_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Registers a callback to be called if the RPC is aborted.</span>
 
 <span class="sd">    Args:</span>
@@ -342,16 +340,16 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="RpcContext.cancel"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcContext.cancel"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.cancel">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Cancels the RPC.</span>
 
 <span class="sd">    Idempotent and has no effect if the RPC has already terminated.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="RpcContext.protocol_context"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.protocol_context">[docs]</a>    <span class="k">def</span> <span class="nf">protocol_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcContext.protocol_context"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.protocol_context">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">protocol_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accesses a custom object specified by an implementation provider.</span>
 
 <span class="sd">    Returns:</span>
@@ -364,8 +362,8 @@
 <div class="viewcode-block" id="Call"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Call">[docs]</a><span class="k">class</span> <span class="nc">Call</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">RpcContext</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Invocation-side utility object for an RPC.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Call.initial_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Call.initial_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Call.initial_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Call.initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accesses the initial metadata from the service-side of the RPC.</span>
 
 <span class="sd">    This method blocks until the value is available or is known not to have been</span>
@@ -377,8 +375,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Call.terminal_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Call.terminal_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">terminal_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Call.terminal_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Call.terminal_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">terminal_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accesses the terminal metadata from the service-side of the RPC.</span>
 
 <span class="sd">    This method blocks until the value is available or is known not to have been</span>
@@ -390,8 +388,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Call.code"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Call.code">[docs]</a>    <span class="k">def</span> <span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Call.code"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Call.code">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accesses the code emitted by the service-side of the RPC.</span>
 
 <span class="sd">    This method blocks until the value is available or is known not to have been</span>
@@ -403,8 +401,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Call.details"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Call.details">[docs]</a>    <span class="k">def</span> <span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Call.details"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Call.details">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accesses the details value emitted by the service-side of the RPC.</span>
 
 <span class="sd">    This method blocks until the value is available or is known not to have been</span>
@@ -420,8 +418,8 @@
 <div class="viewcode-block" id="ServicerContext"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext">[docs]</a><span class="k">class</span> <span class="nc">ServicerContext</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">RpcContext</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;A context object passed to method implementations.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.invocation_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext.invocation_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">invocation_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ServicerContext.invocation_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext.invocation_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">invocation_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accesses the metadata from the invocation-side of the RPC.</span>
 
 <span class="sd">    This method blocks until the value is available or is known not to have been</span>
@@ -433,8 +431,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.initial_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext.initial_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
+<div class="viewcode-block" id="ServicerContext.initial_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext.initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accepts the service-side initial metadata value of the RPC.</span>
 
 <span class="sd">    This method need not be called by method implementations if they have no</span>
@@ -446,8 +444,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.terminal_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext.terminal_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">terminal_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terminal_metadata</span><span class="p">):</span>
+<div class="viewcode-block" id="ServicerContext.terminal_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext.terminal_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">terminal_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terminal_metadata</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accepts the service-side terminal metadata value of the RPC.</span>
 
 <span class="sd">    This method need not be called by method implementations if they have no</span>
@@ -459,8 +457,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.code"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext.code">[docs]</a>    <span class="k">def</span> <span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+<div class="viewcode-block" id="ServicerContext.code"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext.code">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accepts the service-side code of the RPC.</span>
 
 <span class="sd">    This method need not be called by method implementations if they have no</span>
@@ -472,8 +470,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ServicerContext.details"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext.details">[docs]</a>    <span class="k">def</span> <span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+<div class="viewcode-block" id="ServicerContext.details"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ServicerContext.details">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accepts the service-side details of the RPC.</span>
 
 <span class="sd">    This method need not be called by method implementations if they have no</span>
@@ -489,8 +487,8 @@
 <div class="viewcode-block" id="ResponseReceiver"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ResponseReceiver">[docs]</a><span class="k">class</span> <span class="nc">ResponseReceiver</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Invocation-side object used to accept the output of an RPC.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ResponseReceiver.initial_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ResponseReceiver.initial_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
+<div class="viewcode-block" id="ResponseReceiver.initial_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ResponseReceiver.initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Receives the initial metadata from the service-side of the RPC.</span>
 
 <span class="sd">    Args:</span>
@@ -499,8 +497,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ResponseReceiver.response"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ResponseReceiver.response">[docs]</a>    <span class="k">def</span> <span class="nf">response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+<div class="viewcode-block" id="ResponseReceiver.response"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ResponseReceiver.response">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Receives a response from the service-side of the RPC.</span>
 
 <span class="sd">    Args:</span>
@@ -508,8 +506,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ResponseReceiver.complete"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ResponseReceiver.complete">[docs]</a>    <span class="k">def</span> <span class="nf">complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terminal_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+<div class="viewcode-block" id="ResponseReceiver.complete"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.ResponseReceiver.complete">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terminal_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Receives the completion values emitted from the service-side of the RPC.</span>
 
 <span class="sd">    Args:</span>
@@ -524,8 +522,8 @@
 <div class="viewcode-block" id="UnaryUnaryMultiCallable"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryMultiCallable</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Affords invoking a unary-unary RPC in any call style.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="UnaryUnaryMultiCallable.__call__"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.__call__"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">request</span><span class="p">,</span>
                  <span class="n">timeout</span><span class="p">,</span>
                  <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -552,8 +550,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="UnaryUnaryMultiCallable.future"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.future">[docs]</a>    <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.future"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.future">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
 
 <span class="sd">    Args:</span>
@@ -572,8 +570,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="UnaryUnaryMultiCallable.event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.event">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
               <span class="n">request</span><span class="p">,</span>
               <span class="n">receiver</span><span class="p">,</span>
               <span class="n">abortion_callback</span><span class="p">,</span>
@@ -602,8 +600,8 @@
 <div class="viewcode-block" id="UnaryStreamMultiCallable"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">UnaryStreamMultiCallable</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Affords invoking a unary-stream RPC in any call style.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="UnaryStreamMultiCallable.__call__"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="UnaryStreamMultiCallable.__call__"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Invokes the underlying RPC.</span>
 
 <span class="sd">    Args:</span>
@@ -621,8 +619,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="UnaryStreamMultiCallable.event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="UnaryStreamMultiCallable.event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.event">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
               <span class="n">request</span><span class="p">,</span>
               <span class="n">receiver</span><span class="p">,</span>
               <span class="n">abortion_callback</span><span class="p">,</span>
@@ -651,8 +649,8 @@
 <div class="viewcode-block" id="StreamUnaryMultiCallable"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">StreamUnaryMultiCallable</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Affords invoking a stream-unary RPC in any call style.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="StreamUnaryMultiCallable.__call__"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="StreamUnaryMultiCallable.__call__"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">request_iterator</span><span class="p">,</span>
                  <span class="n">timeout</span><span class="p">,</span>
                  <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -679,8 +677,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="StreamUnaryMultiCallable.future"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.future">[docs]</a>    <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="StreamUnaryMultiCallable.future"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.future">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                <span class="n">request_iterator</span><span class="p">,</span>
                <span class="n">timeout</span><span class="p">,</span>
                <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -703,8 +701,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="StreamUnaryMultiCallable.event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="StreamUnaryMultiCallable.event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.event">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
               <span class="n">receiver</span><span class="p">,</span>
               <span class="n">abortion_callback</span><span class="p">,</span>
               <span class="n">timeout</span><span class="p">,</span>
@@ -732,8 +730,8 @@
 <div class="viewcode-block" id="StreamStreamMultiCallable"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamStreamMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">StreamStreamMultiCallable</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Affords invoking a stream-stream RPC in any call style.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="StreamStreamMultiCallable.__call__"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamStreamMultiCallable.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="StreamStreamMultiCallable.__call__"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamStreamMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">request_iterator</span><span class="p">,</span>
                  <span class="n">timeout</span><span class="p">,</span>
                  <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -755,8 +753,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="StreamStreamMultiCallable.event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamStreamMultiCallable.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="StreamStreamMultiCallable.event"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamStreamMultiCallable.event">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
               <span class="n">receiver</span><span class="p">,</span>
               <span class="n">abortion_callback</span><span class="p">,</span>
               <span class="n">timeout</span><span class="p">,</span>
@@ -829,8 +827,8 @@
 <div class="viewcode-block" id="MultiMethodImplementation"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.MultiMethodImplementation">[docs]</a><span class="k">class</span> <span class="nc">MultiMethodImplementation</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;A general type able to service many methods.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="MultiMethodImplementation.service"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.MultiMethodImplementation.service">[docs]</a>    <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<div class="viewcode-block" id="MultiMethodImplementation.service"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.MultiMethodImplementation.service">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Services an RPC.</span>
 
 <span class="sd">    Args:</span>
@@ -860,8 +858,8 @@
 <div class="viewcode-block" id="GenericStub"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub">[docs]</a><span class="k">class</span> <span class="nc">GenericStub</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Affords RPC invocation via generic methods.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.blocking_unary_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.blocking_unary_unary">[docs]</a>    <span class="k">def</span> <span class="nf">blocking_unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="GenericStub.blocking_unary_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.blocking_unary_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">blocking_unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                              <span class="n">group</span><span class="p">,</span>
                              <span class="n">method</span><span class="p">,</span>
                              <span class="n">request</span><span class="p">,</span>
@@ -895,8 +893,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.future_unary_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.future_unary_unary">[docs]</a>    <span class="k">def</span> <span class="nf">future_unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="GenericStub.future_unary_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.future_unary_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">future_unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                            <span class="n">group</span><span class="p">,</span>
                            <span class="n">method</span><span class="p">,</span>
                            <span class="n">request</span><span class="p">,</span>
@@ -922,8 +920,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.inline_unary_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.inline_unary_stream">[docs]</a>    <span class="k">def</span> <span class="nf">inline_unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="GenericStub.inline_unary_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.inline_unary_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">inline_unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                             <span class="n">group</span><span class="p">,</span>
                             <span class="n">method</span><span class="p">,</span>
                             <span class="n">request</span><span class="p">,</span>
@@ -948,8 +946,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.blocking_stream_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.blocking_stream_unary">[docs]</a>    <span class="k">def</span> <span class="nf">blocking_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="GenericStub.blocking_stream_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.blocking_stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">blocking_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                               <span class="n">group</span><span class="p">,</span>
                               <span class="n">method</span><span class="p">,</span>
                               <span class="n">request_iterator</span><span class="p">,</span>
@@ -983,8 +981,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.future_stream_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.future_stream_unary">[docs]</a>    <span class="k">def</span> <span class="nf">future_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="GenericStub.future_stream_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.future_stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">future_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                             <span class="n">group</span><span class="p">,</span>
                             <span class="n">method</span><span class="p">,</span>
                             <span class="n">request_iterator</span><span class="p">,</span>
@@ -1010,8 +1008,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.inline_stream_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.inline_stream_stream">[docs]</a>    <span class="k">def</span> <span class="nf">inline_stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="GenericStub.inline_stream_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.inline_stream_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">inline_stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                              <span class="n">group</span><span class="p">,</span>
                              <span class="n">method</span><span class="p">,</span>
                              <span class="n">request_iterator</span><span class="p">,</span>
@@ -1036,8 +1034,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.event_unary_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.event_unary_unary">[docs]</a>    <span class="k">def</span> <span class="nf">event_unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="GenericStub.event_unary_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.event_unary_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">event_unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                           <span class="n">group</span><span class="p">,</span>
                           <span class="n">method</span><span class="p">,</span>
                           <span class="n">request</span><span class="p">,</span>
@@ -1065,8 +1063,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.event_unary_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.event_unary_stream">[docs]</a>    <span class="k">def</span> <span class="nf">event_unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="GenericStub.event_unary_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.event_unary_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">event_unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                            <span class="n">group</span><span class="p">,</span>
                            <span class="n">method</span><span class="p">,</span>
                            <span class="n">request</span><span class="p">,</span>
@@ -1094,8 +1092,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.event_stream_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.event_stream_unary">[docs]</a>    <span class="k">def</span> <span class="nf">event_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="GenericStub.event_stream_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.event_stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">event_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                            <span class="n">group</span><span class="p">,</span>
                            <span class="n">method</span><span class="p">,</span>
                            <span class="n">receiver</span><span class="p">,</span>
@@ -1122,8 +1120,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.event_stream_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.event_stream_stream">[docs]</a>    <span class="k">def</span> <span class="nf">event_stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="GenericStub.event_stream_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.event_stream_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">event_stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                             <span class="n">group</span><span class="p">,</span>
                             <span class="n">method</span><span class="p">,</span>
                             <span class="n">receiver</span><span class="p">,</span>
@@ -1150,8 +1148,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.unary_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.unary_unary">[docs]</a>    <span class="k">def</span> <span class="nf">unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+<div class="viewcode-block" id="GenericStub.unary_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.unary_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Creates a UnaryUnaryMultiCallable for a unary-unary method.</span>
 
 <span class="sd">    Args:</span>
@@ -1163,8 +1161,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.unary_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.unary_stream">[docs]</a>    <span class="k">def</span> <span class="nf">unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+<div class="viewcode-block" id="GenericStub.unary_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.unary_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Creates a UnaryStreamMultiCallable for a unary-stream method.</span>
 
 <span class="sd">    Args:</span>
@@ -1176,8 +1174,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.stream_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.stream_unary">[docs]</a>    <span class="k">def</span> <span class="nf">stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+<div class="viewcode-block" id="GenericStub.stream_unary"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Creates a StreamUnaryMultiCallable for a stream-unary method.</span>
 
 <span class="sd">    Args:</span>
@@ -1189,8 +1187,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GenericStub.stream_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.stream_stream">[docs]</a>    <span class="k">def</span> <span class="nf">stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+<div class="viewcode-block" id="GenericStub.stream_stream"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.stream_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Creates a StreamStreamMultiCallable for a stream-stream method.</span>
 
 <span class="sd">    Args:</span>
@@ -1255,7 +1253,8 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../../',
-            VERSION:'1.2.0',
+            VERSION:'1.3.0',
+            LANGUAGE:'en',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -1,51 +1,51 @@
-grpc.framework.foundation package
-=================================
+grpc\.framework\.foundation package
+===================================
 
 Submodules
 ----------
 
-grpc.framework.foundation.abandonment module
---------------------------------------------
+grpc\.framework\.foundation\.abandonment module
+-----------------------------------------------
 
 .. automodule:: grpc.framework.foundation.abandonment
     :members:
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.foundation.callable_util module
-----------------------------------------------
+grpc\.framework\.foundation\.callable\_util module
+--------------------------------------------------
 
 .. automodule:: grpc.framework.foundation.callable_util
     :members:
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.foundation.future module
----------------------------------------
+grpc\.framework\.foundation\.future module
+------------------------------------------
 
 .. automodule:: grpc.framework.foundation.future
     :members:
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.foundation.logging_pool module
----------------------------------------------
+grpc\.framework\.foundation\.logging\_pool module
+-------------------------------------------------
 
 .. automodule:: grpc.framework.foundation.logging_pool
     :members:
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.foundation.stream module
----------------------------------------
+grpc\.framework\.foundation\.stream module
+------------------------------------------
 
 .. automodule:: grpc.framework.foundation.stream
     :members:
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.foundation.stream_util module
---------------------------------------------
+grpc\.framework\.foundation\.stream\_util module
+------------------------------------------------
 
 .. automodule:: grpc.framework.foundation.stream_util
     :members:

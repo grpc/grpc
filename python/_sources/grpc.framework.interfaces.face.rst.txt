@@ -1,19 +1,19 @@
-grpc.framework.interfaces.face package
-======================================
+grpc\.framework\.interfaces\.face package
+=========================================
 
 Submodules
 ----------
 
-grpc.framework.interfaces.face.face module
-------------------------------------------
+grpc\.framework\.interfaces\.face\.face module
+----------------------------------------------
 
 .. automodule:: grpc.framework.interfaces.face.face
     :members:
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.interfaces.face.utilities module
------------------------------------------------
+grpc\.framework\.interfaces\.face\.utilities module
+---------------------------------------------------
 
 .. automodule:: grpc.framework.interfaces.face.utilities
     :members:

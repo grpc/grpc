@@ -1,19 +1,19 @@
-grpc.framework.interfaces.base package
-======================================
+grpc\.framework\.interfaces\.base package
+=========================================
 
 Submodules
 ----------
 
-grpc.framework.interfaces.base.base module
-------------------------------------------
+grpc\.framework\.interfaces\.base\.base module
+----------------------------------------------
 
 .. automodule:: grpc.framework.interfaces.base.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.interfaces.base.utilities module
------------------------------------------------
+grpc\.framework\.interfaces\.base\.utilities module
+---------------------------------------------------
 
 .. automodule:: grpc.framework.interfaces.base.utilities
     :members:

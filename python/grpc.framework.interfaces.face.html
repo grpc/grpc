@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.face package &mdash; grpcio 1.2.0 documentation</title>
+  <title>grpc.framework.interfaces.face package &mdash; grpcio 1.3.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="grpcio 1.2.0 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.3.0 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
         <link rel="prev" title="grpc.framework.interfaces.base package" href="grpc.framework.interfaces.base.html"/> 
 
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                1.2.0
+                1.3.0
               </div>
             
           
@@ -229,37 +229,37 @@ details value was received.</p>
 <p>Types of RPC abortion.</p>
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.face.face.Abortion.Kind.CANCELLED">
-<code class="descname">CANCELLED</code><em class="property"> = 'cancelled'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.CANCELLED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">CANCELLED</code><em class="property"> = ‘cancelled’</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.CANCELLED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.face.face.Abortion.Kind.EXPIRED">
-<code class="descname">EXPIRED</code><em class="property"> = 'expired'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.EXPIRED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">EXPIRED</code><em class="property"> = ‘expired’</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.EXPIRED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_FAILURE">
-<code class="descname">LOCAL_FAILURE</code><em class="property"> = 'local failure'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_FAILURE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">LOCAL_FAILURE</code><em class="property"> = ‘local failure’</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_FAILURE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_SHUTDOWN">
-<code class="descname">LOCAL_SHUTDOWN</code><em class="property"> = 'local shutdown'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<code class="descname">LOCAL_SHUTDOWN</code><em class="property"> = ‘local shutdown’</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.face.face.Abortion.Kind.NETWORK_FAILURE">
-<code class="descname">NETWORK_FAILURE</code><em class="property"> = 'network failure'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.NETWORK_FAILURE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">NETWORK_FAILURE</code><em class="property"> = ‘network failure’</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.NETWORK_FAILURE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_FAILURE">
-<code class="descname">REMOTE_FAILURE</code><em class="property"> = 'remote failure'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_FAILURE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">REMOTE_FAILURE</code><em class="property"> = ‘remote failure’</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_FAILURE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_SHUTDOWN">
-<code class="descname">REMOTE_SHUTDOWN</code><em class="property"> = 'remote shutdown'</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<code class="descname">REMOTE_SHUTDOWN</code><em class="property"> = ‘remote shutdown’</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -399,7 +399,7 @@ the attribute will be a StreamStreamMultiCallable with which to invoke an RPC.</
 <dt id="grpc.framework.interfaces.face.face.ExpirationError">
 <em class="property">exception </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">ExpirationError</code><span class="sig-paren">(</span><em>initial_metadata</em>, <em>terminal_metadata</em>, <em>code</em>, <em>details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#ExpirationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.ExpirationError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.interfaces.face.face.AbortionError</span></code></a></p>
-<p>Indicates that an RPC has expired (&#8220;timed out&#8221;).</p>
+<p>Indicates that an RPC has expired (“timed out”).</p>
 </dd></dl>
 
 <dl class="class">
@@ -419,14 +419,14 @@ RPC abortion).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
-<li><strong>with_call</strong> &#8211; Whether or not to include return a Call for the RPC in addition
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>request_iterator</strong> – An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of the RPC.</li>
+<li><strong>with_call</strong> – Whether or not to include return a Call for the RPC in addition
 to the response.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -439,7 +439,7 @@ implementation affording custom state and behavior.</li>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211; Indicating that the RPC was aborted.</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> – Indicating that the RPC was aborted.</p>
 </td>
 </tr>
 </tbody>
@@ -458,14 +458,14 @@ RPC abortion).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
-<li><strong>with_call</strong> &#8211; Whether or not to include return a Call for the RPC in addition
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>request</strong> – The request value for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of the RPC.</li>
+<li><strong>with_call</strong> – Whether or not to include return a Call for the RPC in addition
 to the response.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -478,7 +478,7 @@ implementation affording custom state and behavior.</li>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211; Indicating that the RPC was aborted.</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> – Indicating that the RPC was aborted.</p>
 </td>
 </tr>
 </tbody>
@@ -494,14 +494,14 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>receiver</strong> &#8211; A ResponseReceiver to be passed the response data of the RPC.</li>
-<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>receiver</strong> – A ResponseReceiver to be passed the response data of the RPC.</li>
+<li><strong>abortion_callback</strong> – A callback to be called and passed an Abortion value
 in the event of RPC abortion.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of the RPC.</li>
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -527,14 +527,14 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>receiver</strong> &#8211; A ResponseReceiver to be passed the response data of the RPC.</li>
-<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>receiver</strong> – A ResponseReceiver to be passed the response data of the RPC.</li>
+<li><strong>abortion_callback</strong> – A callback to be called and passed an Abortion value
 in the event of RPC abortion.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of the RPC.</li>
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -560,15 +560,15 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>receiver</strong> &#8211; A ResponseReceiver to be passed the response data of the RPC.</li>
-<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>request</strong> – The request value for the RPC.</li>
+<li><strong>receiver</strong> – A ResponseReceiver to be passed the response data of the RPC.</li>
+<li><strong>abortion_callback</strong> – A callback to be called and passed an Abortion value
 in the event of RPC abortion.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of the RPC.</li>
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -589,15 +589,15 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>receiver</strong> &#8211; A ResponseReceiver to be passed the response data of the RPC.</li>
-<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>request</strong> – The request value for the RPC.</li>
+<li><strong>receiver</strong> – A ResponseReceiver to be passed the response data of the RPC.</li>
+<li><strong>abortion_callback</strong> – A callback to be called and passed an Abortion value
 in the event of RPC abortion.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of the RPC.</li>
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -618,21 +618,21 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>request_iterator</strong> – An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of the RPC.</li>
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
 <dt>An object that is both a Call for the RPC and a future.Future. In the</dt>
-<dd><p class="first last">event of RPC completion, the return Future&#8217;s result value will be the
+<dd><p class="first last">event of RPC completion, the return Future’s result value will be the
 response value of the RPC. In the event of RPC abortion, the returned
-Future&#8217;s exception value will be an AbortionError.</p>
+Future’s exception value will be an AbortionError.</p>
 </dd>
 </dl>
 </p>
@@ -651,21 +651,21 @@ Future&#8217;s exception value will be an AbortionError.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>request</strong> – The request value for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of the RPC.</li>
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
 <dt>An object that is both a Call for the RPC and a future.Future. In the</dt>
-<dd><p class="first last">event of RPC completion, the return Future&#8217;s result value will be the
+<dd><p class="first last">event of RPC completion, the return Future’s result value will be the
 response value of the RPC. In the event of RPC abortion, the returned
-Future&#8217;s exception value will be an AbortionError.</p>
+Future’s exception value will be an AbortionError.</p>
 </dd>
 </dl>
 </p>
@@ -684,12 +684,12 @@ Future&#8217;s exception value will be an AbortionError.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>request_iterator</strong> – An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of the RPC.</li>
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -716,12 +716,12 @@ AbortionError indicating abortion of the RPC.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>request</strong> – The request value for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of the RPC.</li>
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -748,8 +748,8 @@ AbortionError indicating abortion of the RPC.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
 </ul>
 </td>
 </tr>
@@ -769,8 +769,8 @@ AbortionError indicating abortion of the RPC.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
 </ul>
 </td>
 </tr>
@@ -790,8 +790,8 @@ AbortionError indicating abortion of the RPC.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
 </ul>
 </td>
 </tr>
@@ -811,8 +811,8 @@ AbortionError indicating abortion of the RPC.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
 </ul>
 </td>
 </tr>
@@ -948,11 +948,11 @@ style.Service.EVENT.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the RPC.</li>
-<li><strong>method</strong> &#8211; The method identifier of the RPC.</li>
-<li><strong>response_consumer</strong> &#8211; A stream.Consumer to be called to accept the response
+<li><strong>group</strong> – The group identifier of the RPC.</li>
+<li><strong>method</strong> – The method identifier of the RPC.</li>
+<li><strong>response_consumer</strong> – A stream.Consumer to be called to accept the response
 values of the RPC.</li>
-<li><strong>context</strong> &#8211; a ServicerContext object.</li>
+<li><strong>context</strong> – a ServicerContext object.</li>
 </ul>
 </td>
 </tr>
@@ -969,9 +969,9 @@ at all.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211; May or may not be raised when the RPC has been
+<li><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> – May or may not be raised when the RPC has been
 aborted.</li>
-<li><a class="reference internal" href="#grpc.framework.interfaces.face.face.NoSuchMethodError" title="grpc.framework.interfaces.face.face.NoSuchMethodError"><code class="xref py py-exc docutils literal"><span class="pre">NoSuchMethodError</span></code></a> &#8211; If this MultiMethod does not recognize the given group
+<li><a class="reference internal" href="#grpc.framework.interfaces.face.face.NoSuchMethodError" title="grpc.framework.interfaces.face.face.NoSuchMethodError"><code class="xref py py-exc docutils literal"><span class="pre">NoSuchMethodError</span></code></a> – If this MultiMethod does not recognize the given group
 and name for the RPC and is not able to service the RPC.</li>
 </ul>
 </td>
@@ -1036,10 +1036,10 @@ and name for the RPC and is not able to service the RPC.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>terminal_metadata</strong> &#8211; The terminal metadata object emitted from the
+<li><strong>terminal_metadata</strong> – The terminal metadata object emitted from the
 service-side of the RPC.</li>
-<li><strong>code</strong> &#8211; The code object emitted from the service-side of the RPC.</li>
-<li><strong>details</strong> &#8211; The details object emitted from the service-side of the RPC.</li>
+<li><strong>code</strong> – The code object emitted from the service-side of the RPC.</li>
+<li><strong>details</strong> – The details object emitted from the service-side of the RPC.</li>
 </ul>
 </td>
 </tr>
@@ -1055,7 +1055,7 @@ service-side of the RPC.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>initial_metadata</strong> &#8211; The initial metadata object emitted from the
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>initial_metadata</strong> – The initial metadata object emitted from the
 service-side of the RPC.</td>
 </tr>
 </tbody>
@@ -1070,7 +1070,7 @@ service-side of the RPC.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>response</strong> &#8211; A response object emitted from the service-side of the RPC.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>response</strong> – A response object emitted from the service-side of the RPC.</td>
 </tr>
 </tbody>
 </table>
@@ -1091,7 +1091,7 @@ service-side of the RPC.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>abortion_callback</strong> &#8211; A callable to be called and passed an Abortion value
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>abortion_callback</strong> – A callable to be called and passed an Abortion value
 in the event of RPC abortion.</td>
 </tr>
 </tbody>
@@ -1162,7 +1162,7 @@ code to transmit.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>code</strong> &#8211; The code of the RPC to be transmitted to the invocation side of the
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>code</strong> – The code of the RPC to be transmitted to the invocation side of the
 RPC.</td>
 </tr>
 </tbody>
@@ -1179,7 +1179,7 @@ service-side details to transmit.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>details</strong> &#8211; The service-side details value of the RPC to be transmitted to
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>details</strong> – The service-side details value of the RPC to be transmitted to
 the invocation side of the RPC.</td>
 </tr>
 </tbody>
@@ -1196,7 +1196,7 @@ service-side initial metadata to transmit.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>initial_metadata</strong> &#8211; The service-side initial metadata value of the RPC to
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>initial_metadata</strong> – The service-side initial metadata value of the RPC to
 be transmitted to the invocation side of the RPC.</td>
 </tr>
 </tbody>
@@ -1233,7 +1233,7 @@ service-side terminal metadata to transmit.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>terminal_metadata</strong> &#8211; The service-side terminal metadata value of the RPC to
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>terminal_metadata</strong> – The service-side terminal metadata value of the RPC to
 be transmitted to the invocation side of the RPC.</td>
 </tr>
 </tbody>
@@ -1256,11 +1256,11 @@ be transmitted to the invocation side of the RPC.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+<li><strong>request_iterator</strong> – An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of
 the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -1287,13 +1287,13 @@ AbortionError indicating abortion of the RPC.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>receiver</strong> &#8211; A ResponseReceiver to be passed the response data of the RPC.</li>
-<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+<li><strong>receiver</strong> – A ResponseReceiver to be passed the response data of the RPC.</li>
+<li><strong>abortion_callback</strong> – A callback to be called and passed an Abortion value
 in the event of RPC abortion.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of
 the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -1326,13 +1326,13 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+<li><strong>request_iterator</strong> – An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of
 the RPC.</li>
-<li><strong>with_call</strong> &#8211; Whether or not to include return a Call for the RPC in addition
+<li><strong>with_call</strong> – Whether or not to include return a Call for the RPC in addition
 to the response.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -1345,7 +1345,7 @@ implementation affording custom state and behavior.</li>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211; Indicating that the RPC was aborted.</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> – Indicating that the RPC was aborted.</p>
 </td>
 </tr>
 </tbody>
@@ -1361,13 +1361,13 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>receiver</strong> &#8211; A ResponseReceiver to be passed the response data of the RPC.</li>
-<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+<li><strong>receiver</strong> – A ResponseReceiver to be passed the response data of the RPC.</li>
+<li><strong>abortion_callback</strong> – A callback to be called and passed an Abortion value
 in the event of RPC abortion.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of
 the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -1393,20 +1393,20 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+<li><strong>request_iterator</strong> – An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of
 the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
 <dt>An object that is both a Call for the RPC and a future.Future. In the</dt>
-<dd><p class="first last">event of RPC completion, the return Future&#8217;s result value will be the
+<dd><p class="first last">event of RPC completion, the return Future’s result value will be the
 response value of the RPC. In the event of RPC abortion, the returned
-Future&#8217;s exception value will be an AbortionError.</p>
+Future’s exception value will be an AbortionError.</p>
 </dd>
 </dl>
 </p>
@@ -1432,11 +1432,11 @@ Future&#8217;s exception value will be an AbortionError.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+<li><strong>request</strong> – The request value for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of
 the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -1463,14 +1463,14 @@ AbortionError indicating abortion of the RPC.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>receiver</strong> &#8211; A ResponseReceiver to be passed the response data of the RPC.</li>
-<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+<li><strong>request</strong> – The request value for the RPC.</li>
+<li><strong>receiver</strong> – A ResponseReceiver to be passed the response data of the RPC.</li>
+<li><strong>abortion_callback</strong> – A callback to be called and passed an Abortion value
 in the event of RPC abortion.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of
 the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -1498,13 +1498,13 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+<li><strong>request</strong> – The request value for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of
 the RPC.</li>
-<li><strong>with_call</strong> &#8211; Whether or not to include return a Call for the RPC in addition
+<li><strong>with_call</strong> – Whether or not to include return a Call for the RPC in addition
 to the response.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -1517,7 +1517,7 @@ implementation affording custom state and behavior.</li>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211; Indicating that the RPC was aborted.</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> – Indicating that the RPC was aborted.</p>
 </td>
 </tr>
 </tbody>
@@ -1533,14 +1533,14 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>receiver</strong> &#8211; A ResponseReceiver to be passed the response data of the RPC.</li>
-<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+<li><strong>request</strong> – The request value for the RPC.</li>
+<li><strong>receiver</strong> – A ResponseReceiver to be passed the response data of the RPC.</li>
+<li><strong>abortion_callback</strong> – A callback to be called and passed an Abortion value
 in the event of RPC abortion.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of
 the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -1561,20 +1561,20 @@ implementation affording custom state and behavior.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+<li><strong>request</strong> – The request value for the RPC.</li>
+<li><strong>timeout</strong> – A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> – A metadata value to be passed to the service-side of
 the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
 <dt>An object that is both a Call for the RPC and a future.Future. In the</dt>
-<dd><p class="first last">event of RPC completion, the return Future&#8217;s result value will be the
+<dd><p class="first last">event of RPC completion, the return Future’s result value will be the
 response value of the RPC. In the event of RPC abortion, the returned
-Future&#8217;s exception value will be an AbortionError.</p>
+Future’s exception value will be an AbortionError.</p>
 </dd>
 </dl>
 </p>
@@ -1589,7 +1589,7 @@ Future&#8217;s exception value will be an AbortionError.</p>
 </div>
 <div class="section" id="module-grpc.framework.interfaces.face.utilities">
 <span id="grpc-framework-interfaces-face-utilities-module"></span><h2>grpc.framework.interfaces.face.utilities module<a class="headerlink" href="#module-grpc.framework.interfaces.face.utilities" title="Permalink to this headline">¶</a></h2>
-<p>Utilities for RPC Framework&#8217;s Face interface.</p>
+<p>Utilities for RPC Framework’s Face interface.</p>
 <dl class="function">
 <dt id="grpc.framework.interfaces.face.utilities.stream_stream_event">
 <code class="descclassname">grpc.framework.interfaces.face.utilities.</code><code class="descname">stream_stream_event</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/utilities.html#stream_stream_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.utilities.stream_stream_event" title="Permalink to this definition">¶</a></dt>
@@ -1598,7 +1598,7 @@ Future&#8217;s exception value will be an AbortionError.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a stream-stream RPC method as a callable
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> – The implementation of a stream-stream RPC method as a callable
 value that takes a stream.Consumer to which to pass the response values
 of the RPC and an face.ServicerContext and returns a stream.Consumer to
 which the request values of the RPC should be passed.</td>
@@ -1617,7 +1617,7 @@ which the request values of the RPC should be passed.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a stream-stream RPC method as a callable
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> – The implementation of a stream-stream RPC method as a callable
 value that takes an iterator of request values and an
 face.ServicerContext object and returns an iterator of response values.</td>
 </tr>
@@ -1635,7 +1635,7 @@ face.ServicerContext object and returns an iterator of response values.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a stream-unary RPC method as a callable
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> – The implementation of a stream-unary RPC method as a callable
 value that takes a response callback to which to pass the response value
 of the RPC and an face.ServicerContext and returns a stream.Consumer to
 which the request values of the RPC should be passed.</td>
@@ -1654,7 +1654,7 @@ which the request values of the RPC should be passed.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a stream-unary RPC method as a callable
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> – The implementation of a stream-unary RPC method as a callable
 value that takes an iterator of request values and an
 face.ServicerContext object and returns a response value.</td>
 </tr>
@@ -1672,7 +1672,7 @@ face.ServicerContext object and returns a response value.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a unary-stream RPC method as a callable
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> – The implementation of a unary-stream RPC method as a callable
 value that takes a request value, a stream.Consumer to which to pass the
 the response values of the RPC, and an face.ServicerContext.</td>
 </tr>
@@ -1690,7 +1690,7 @@ the response values of the RPC, and an face.ServicerContext.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a unary-stream RPC method as a callable
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> – The implementation of a unary-stream RPC method as a callable
 value that takes a request value and an face.ServicerContext object and
 returns an iterator of response values.</td>
 </tr>
@@ -1708,7 +1708,7 @@ returns an iterator of response values.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a unary-unary RPC method as a callable
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> – The implementation of a unary-unary RPC method as a callable
 value that takes a request value, a response callback to which to pass
 the response value of the RPC, and an face.ServicerContext.</td>
 </tr>
@@ -1726,7 +1726,7 @@ the response value of the RPC, and an face.ServicerContext.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a unary-unary RPC method as a callable value
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> – The implementation of a unary-unary RPC method as a callable value
 that takes a request value and an face.ServicerContext object and
 returns a response value.</td>
 </tr>
@@ -1784,7 +1784,8 @@ returns a response value.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.0',
+            VERSION:'1.3.0',
+            LANGUAGE:'en',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -1,19 +1,19 @@
-grpc.framework.common package
-=============================
+grpc\.framework\.common package
+===============================
 
 Submodules
 ----------
 
-grpc.framework.common.cardinality module
-----------------------------------------
+grpc\.framework\.common\.cardinality module
+-------------------------------------------
 
 .. automodule:: grpc.framework.common.cardinality
     :members:
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.common.style module
-----------------------------------
+grpc\.framework\.common\.style module
+-------------------------------------
 
 .. automodule:: grpc.framework.common.style
     :members:

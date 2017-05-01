@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.base package &mdash; grpcio 1.2.0 documentation</title>
+  <title>grpc.framework.interfaces.base package &mdash; grpcio 1.3.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="grpcio 1.2.0 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.3.0 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
         <link rel="next" title="grpc.framework.interfaces.face package" href="grpc.framework.interfaces.face.html"/>
         <link rel="prev" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/> 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.2.0
+                1.3.0
               </div>
             
           
@@ -184,7 +184,7 @@
 <div class="section" id="module-grpc.framework.interfaces.base.base">
 <span id="grpc-framework-interfaces-base-base-module"></span><h2>grpc.framework.interfaces.base.base module<a class="headerlink" href="#module-grpc.framework.interfaces.base.base" title="Permalink to this headline">¶</a></h2>
 <p>The base interface of RPC Framework.</p>
-<p>Implementations of this interface support the conduct of &#8220;operations&#8221;:
+<p>Implementations of this interface support the conduct of “operations”:
 exchanges between two distinct ends of an arbitrary number of data payloads
 and metadata such as a name for the operation, initial and terminal metadata
 in each direction, and flow control. These operations may be used for transfers
@@ -228,7 +228,7 @@ applications choose.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>action</strong> &#8211; A callable that accepts no arguments.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>action</strong> – A callable that accepts no arguments.</td>
 </tr>
 </tbody>
 </table>
@@ -243,19 +243,19 @@ applications choose.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the invoked operation.</li>
-<li><strong>method</strong> &#8211; The method identifier of the invoked operation.</li>
-<li><strong>subscription</strong> &#8211; A Subscription to which the results of the operation will be
+<li><strong>group</strong> – The group identifier of the invoked operation.</li>
+<li><strong>method</strong> – The method identifier of the invoked operation.</li>
+<li><strong>subscription</strong> – A Subscription to which the results of the operation will be
 passed.</li>
-<li><strong>timeout</strong> &#8211; A length of time in seconds to allow for the operation.</li>
-<li><strong>initial_metadata</strong> &#8211; An initial metadata value to be sent to the other side
+<li><strong>timeout</strong> – A length of time in seconds to allow for the operation.</li>
+<li><strong>initial_metadata</strong> – An initial metadata value to be sent to the other side
 of the operation. May be None if the initial metadata will be later
 passed via the returned operator or if there will be no initial metadata
 passed at all.</li>
-<li><strong>payload</strong> &#8211; An initial payload for the operation.</li>
-<li><strong>completion</strong> &#8211; A Completion value indicating the end of transmission to the
+<li><strong>payload</strong> – An initial payload for the operation.</li>
+<li><strong>completion</strong> – A Completion value indicating the end of transmission to the
 other side of the operation.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Base interface
+<li><strong>protocol_options</strong> – A value specified by the provider of a Base interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
@@ -296,13 +296,13 @@ this call should later be passed.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.base.base.End.start">
 <code class="descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#End.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.End.start" title="Permalink to this definition">¶</a></dt>
-<dd><p>Starts this object&#8217;s service of operations.</p>
+<dd><p>Starts this object’s service of operations.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="grpc.framework.interfaces.base.base.End.stop">
 <code class="descname">stop</code><span class="sig-paren">(</span><em>grace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#End.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.End.stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stops this object&#8217;s service of operations.</p>
+<dd><p>Stops this object’s service of operations.</p>
 <p>This object will refuse service of new operations as soon as this method is
 called but operations under way at the time of the call may be given a
 grace period during which they are allowed to finish.</p>
@@ -310,7 +310,7 @@ grace period during which they are allowed to finish.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grace</strong> &#8211; A duration of time in seconds to allow ongoing operations to
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grace</strong> – A duration of time in seconds to allow ongoing operations to
 terminate before being forcefully terminated by the stopping of this
 End. May be zero to terminate all ongoing operations and immediately
 stop.</td>
@@ -365,7 +365,7 @@ operation along with indication of operation termination. May be None.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>callback</strong> &#8211; A callable to be passed an Outcome value on operation
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>callback</strong> – A callable to be passed an Outcome value on operation
 termination.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
@@ -394,7 +394,7 @@ passed callback will not be called as a result of this method call.</dd>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exception</strong> &#8211; An exception germane to the operation failure. May be None.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exception</strong> – An exception germane to the operation failure. May be None.</td>
 </tr>
 </tbody>
 </table>
@@ -403,7 +403,7 @@ passed callback will not be called as a result of this method call.</dd>
 <dl class="method">
 <dt id="grpc.framework.interfaces.base.base.OperationContext.outcome">
 <code class="descname">outcome</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#OperationContext.outcome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.OperationContext.outcome" title="Permalink to this definition">¶</a></dt>
-<dd><p>Indicates the operation&#8217;s outcome (or that the operation is ongoing).</p>
+<dd><p>Indicates the operation’s outcome (or that the operation is ongoing).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -450,13 +450,13 @@ timed out. Zero is returned if the operation has terminated.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>initial_metadata</strong> &#8211; An initial metadata value. Only one may ever be
+<li><strong>initial_metadata</strong> – An initial metadata value. Only one may ever be
 communicated in each direction for an operation, and they must be
 communicated no later than either the first payload or the completion.</li>
-<li><strong>payload</strong> &#8211; A payload value.</li>
-<li><strong>completion</strong> &#8211; A Completion value. May only ever be non-None once in either
+<li><strong>payload</strong> – A payload value.</li>
+<li><strong>completion</strong> – A Completion value. May only ever be non-None once in either
 direction, and no payloads may be passed after it has been communicated.</li>
-<li><strong>allowance</strong> &#8211; A positive integer communicating the number of additional
+<li><strong>allowance</strong> – A positive integer communicating the number of additional
 payloads allowed to be passed by the remote side of the operation.</li>
 </ul>
 </td>
@@ -499,47 +499,47 @@ provided.</p>
 <p>Ways in which an operation can terminate.</p>
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Outcome.Kind.CANCELLED">
-<code class="descname">CANCELLED</code><em class="property"> = 'cancelled'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.CANCELLED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">CANCELLED</code><em class="property"> = ‘cancelled’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.CANCELLED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Outcome.Kind.COMPLETED">
-<code class="descname">COMPLETED</code><em class="property"> = 'completed'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.COMPLETED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">COMPLETED</code><em class="property"> = ‘completed’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.COMPLETED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Outcome.Kind.EXPIRED">
-<code class="descname">EXPIRED</code><em class="property"> = 'expired'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.EXPIRED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">EXPIRED</code><em class="property"> = ‘expired’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.EXPIRED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_FAILURE">
-<code class="descname">LOCAL_FAILURE</code><em class="property"> = 'local failure'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_FAILURE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">LOCAL_FAILURE</code><em class="property"> = ‘local failure’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_FAILURE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_SHUTDOWN">
-<code class="descname">LOCAL_SHUTDOWN</code><em class="property"> = 'local shutdown'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<code class="descname">LOCAL_SHUTDOWN</code><em class="property"> = ‘local shutdown’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Outcome.Kind.RECEPTION_FAILURE">
-<code class="descname">RECEPTION_FAILURE</code><em class="property"> = 'reception failure'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.RECEPTION_FAILURE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">RECEPTION_FAILURE</code><em class="property"> = ‘reception failure’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.RECEPTION_FAILURE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_FAILURE">
-<code class="descname">REMOTE_FAILURE</code><em class="property"> = 'remote failure'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_FAILURE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">REMOTE_FAILURE</code><em class="property"> = ‘remote failure’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_FAILURE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_SHUTDOWN">
-<code class="descname">REMOTE_SHUTDOWN</code><em class="property"> = 'remote shutdown'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<code class="descname">REMOTE_SHUTDOWN</code><em class="property"> = ‘remote shutdown’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Outcome.Kind.TRANSMISSION_FAILURE">
-<code class="descname">TRANSMISSION_FAILURE</code><em class="property"> = 'transmission failure'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.TRANSMISSION_FAILURE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">TRANSMISSION_FAILURE</code><em class="property"> = ‘transmission failure’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.TRANSMISSION_FAILURE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -559,7 +559,7 @@ provided.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>protocol_context</strong> &#8211; The protocol context object for the operation.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>protocol_context</strong> – The protocol context object for the operation.</td>
 </tr>
 </tbody>
 </table>
@@ -581,11 +581,11 @@ provided.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>group</strong> &#8211; The group identifier of the operation to be serviced.</li>
-<li><strong>method</strong> &#8211; The method identifier of the operation to be serviced.</li>
-<li><strong>context</strong> &#8211; An OperationContext object affording contextual information and
+<li><strong>group</strong> – The group identifier of the operation to be serviced.</li>
+<li><strong>method</strong> – The method identifier of the operation to be serviced.</li>
+<li><strong>context</strong> – An OperationContext object affording contextual information and
 actions.</li>
-<li><strong>output_operator</strong> &#8211; An Operator that will accept output values of the
+<li><strong>output_operator</strong> – An Operator that will accept output values of the
 operation.</li>
 </ul>
 </td>
@@ -599,9 +599,9 @@ operation.</li>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference internal" href="#grpc.framework.interfaces.base.base.NoSuchMethodError" title="grpc.framework.interfaces.base.base.NoSuchMethodError"><code class="xref py py-exc docutils literal"><span class="pre">NoSuchMethodError</span></code></a> &#8211; If this Servicer does not handle operations with the
+<li><a class="reference internal" href="#grpc.framework.interfaces.base.base.NoSuchMethodError" title="grpc.framework.interfaces.base.base.NoSuchMethodError"><code class="xref py py-exc docutils literal"><span class="pre">NoSuchMethodError</span></code></a> – If this Servicer does not handle operations with the
 given group and method.</li>
-<li><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211; If the operation has been aborted and there no
+<li><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> – If the operation has been aborted and there no
 longer is any reason to service the operation.</li>
 </ul>
 </td>
@@ -616,7 +616,7 @@ longer is any reason to service the operation.</li>
 <dt id="grpc.framework.interfaces.base.base.Subscription">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.base.base.</code><code class="descname">Subscription</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#Subscription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Describes customer code&#8217;s interest in values from the other side.</p>
+<p>Describes customer code’s interest in values from the other side.</p>
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Subscription.kind">
 <code class="descname">kind</code><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.kind" title="Permalink to this definition">¶</a></dt>
@@ -661,17 +661,17 @@ Kind.FULL.</p>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Subscription.Kind.FULL">
-<code class="descname">FULL</code><em class="property"> = 'full'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.FULL" title="Permalink to this definition">¶</a></dt>
+<code class="descname">FULL</code><em class="property"> = ‘full’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.FULL" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Subscription.Kind.NONE">
-<code class="descname">NONE</code><em class="property"> = 'none'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.NONE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">NONE</code><em class="property"> = ‘none’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.NONE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Subscription.Kind.TERMINATION_ONLY">
-<code class="descname">TERMINATION_ONLY</code><em class="property"> = 'termination only'</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.TERMINATION_ONLY" title="Permalink to this definition">¶</a></dt>
+<code class="descname">TERMINATION_ONLY</code><em class="property"> = ‘termination only’</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.TERMINATION_ONLY" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -691,9 +691,9 @@ Kind.FULL.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>terminal_metadata</strong> &#8211; A terminal metadata value for an operaton.</li>
-<li><strong>code</strong> &#8211; A code value for an operation.</li>
-<li><strong>message</strong> &#8211; A message value for an operation.</li>
+<li><strong>terminal_metadata</strong> – A terminal metadata value for an operaton.</li>
+<li><strong>code</strong> – A code value for an operation.</li>
+<li><strong>message</strong> – A message value for an operation.</li>
 </ul>
 </td>
 </tr>
@@ -707,14 +707,14 @@ Kind.FULL.</p>
 <dl class="function">
 <dt id="grpc.framework.interfaces.base.utilities.full_subscription">
 <code class="descclassname">grpc.framework.interfaces.base.utilities.</code><code class="descname">full_subscription</code><span class="sig-paren">(</span><em>operator</em>, <em>protocol_receiver</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/base/utilities.html#full_subscription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.utilities.full_subscription" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a &#8220;full&#8221; base.Subscription for the given base.Operator.</p>
+<dd><p>Creates a “full” base.Subscription for the given base.Operator.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>operator</strong> &#8211; A base.Operator to be used in an operation.</li>
-<li><strong>protocol_receiver</strong> &#8211; A base.ProtocolReceiver to be used in an operation.</li>
+<li><strong>operator</strong> – A base.Operator to be used in an operation.</li>
+<li><strong>protocol_receiver</strong> – A base.ProtocolReceiver to be used in an operation.</li>
 </ul>
 </td>
 </tr>
@@ -780,7 +780,8 @@ Kind.FULL.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.0',
+            VERSION:'1.3.0',
+            LANGUAGE:'en',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

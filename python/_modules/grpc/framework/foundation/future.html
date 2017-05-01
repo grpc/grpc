@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.foundation.future &mdash; grpcio 1.2.0 documentation</title>
+  <title>grpc.framework.foundation.future &mdash; grpcio 1.3.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../../search.html"/>
-    <link rel="top" title="grpcio 1.2.0 documentation" href="../../../../index.html"/>
+    <link rel="top" title="grpcio 1.3.0 documentation" href="../../../../index.html"/>
         <link rel="up" title="grpc" href="../../../grpc.html"/> 
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.2.0
+                1.3.0
               </div>
             
           
@@ -145,8 +145,6 @@
     
     
       <li class="wy-breadcrumbs-aside">
-        
-            
         
       </li>
     
@@ -237,8 +235,8 @@
     <span class="c1"># COMPLETED&lt;Result_Type&gt;</span>
     <span class="c1"># UNCANCELLABLE</span>
     <span class="c1"># NOT_IMMEDIATELY_DETERMINABLE</span>
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.cancel"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Future.cancel"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.cancel">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Attempts to cancel the computation.</span>
 
 <span class="sd">    This method does not block.</span>
@@ -268,8 +266,8 @@
     <span class="c1">#</span>
     <span class="c1"># Notice how giving the cancel method the right semantics obviates most</span>
     <span class="c1"># reasons for this method to exist.</span>
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.cancelled"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.cancelled">[docs]</a>    <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Future.cancelled"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.cancelled">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Describes whether the computation was cancelled.</span>
 
 <span class="sd">    This method does not block.</span>
@@ -282,8 +280,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.running"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.running">[docs]</a>    <span class="k">def</span> <span class="nf">running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Future.running"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.running">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Describes whether the computation is taking place.</span>
 
 <span class="sd">    This method does not block.</span>
@@ -299,8 +297,8 @@
     <span class="c1"># would rather this only returned True in cases in which the underlying</span>
     <span class="c1"># computation completed successfully. A computation&#39;s having been cancelled</span>
     <span class="c1"># conflicts with considering that computation &quot;done&quot;.</span>
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.done"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.done">[docs]</a>    <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Future.done"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.done">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Describes whether the computation has taken place.</span>
 
 <span class="sd">    This method does not block.</span>
@@ -312,8 +310,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.result"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.result">[docs]</a>    <span class="k">def</span> <span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Future.result"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.result">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accesses the outcome of the computation or raises its exception.</span>
 
 <span class="sd">    This method may return immediately or may block.</span>
@@ -335,8 +333,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.exception"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.exception">[docs]</a>    <span class="k">def</span> <span class="nf">exception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Future.exception"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.exception">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">exception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the exception raised by the computation.</span>
 
 <span class="sd">    This method may return immediately or may block.</span>
@@ -358,8 +356,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.traceback"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.traceback">[docs]</a>    <span class="k">def</span> <span class="nf">traceback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Future.traceback"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.traceback">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">traceback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Access the traceback of the exception raised by the computation.</span>
 
 <span class="sd">    This method may return immediately or may block.</span>
@@ -381,8 +379,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Future.add_done_callback"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.add_done_callback">[docs]</a>    <span class="k">def</span> <span class="nf">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+<div class="viewcode-block" id="Future.add_done_callback"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.add_done_callback">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a function to be called at completion of the computation.</span>
 
 <span class="sd">    The callback will be passed this Future object describing the outcome of</span>
@@ -431,7 +429,8 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../',
-            VERSION:'1.2.0',
+            VERSION:'1.3.0',
+            LANGUAGE:'en',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
