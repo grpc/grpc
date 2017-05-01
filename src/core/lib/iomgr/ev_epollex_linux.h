@@ -37,6 +37,6 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
-const grpc_event_engine_vtable *grpc_init_epollex_linux(void);
+const grpc_event_engine_vtable *grpc_init_epollex_linux(bool explicitly_requested);
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLLEX_LINUX_H */

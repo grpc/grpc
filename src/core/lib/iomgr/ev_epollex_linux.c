@@ -36,7 +36,7 @@
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL
 
-#include "src/core/lib/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/iomgr/ev_epollex_linux.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -1493,7 +1493,7 @@ static const grpc_event_engine_vtable vtable = {
     .shutdown_engine = shutdown_engine,
 };
 
-const grpc_event_engine_vtable *grpc_init_epollex_linux(void) {
+const grpc_event_engine_vtable *grpc_init_epollex_linux(bool explicitly_requested) {
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
@@ -1518,7 +1518,7 @@ const grpc_event_engine_vtable *grpc_init_epollex_linux(void) {
 #include "src/core/lib/iomgr/ev_posix.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable *grpc_init_epollex_linux(void) { return NULL; }
+const grpc_event_engine_vtable *grpc_init_epollex_linux(bool explicitly_requested) { return NULL; }
 #endif /* defined(GRPC_POSIX_SOCKET) */
 
 #endif /* !defined(GRPC_LINUX_EPOLL) */

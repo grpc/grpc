@@ -34,7 +34,7 @@
 
 /* This test only relevant on linux systems where epoll() is available */
 #ifdef GRPC_LINUX_EPOLL
-#include "src/core/lib/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
 #include <errno.h>
@@ -405,13 +405,13 @@ int main(int argc, char **argv) {
   grpc_iomgr_init();
 
   poll_strategy = grpc_get_poll_strategy_name();
-  if (poll_strategy != NULL && strcmp(poll_strategy, "epoll") == 0) {
+  if (poll_strategy != NULL && strcmp(poll_strategy, "epollsig") == 0) {
     test_add_fd_to_pollset();
     test_pollset_queue_merge_items();
     test_threading();
   } else {
     gpr_log(GPR_INFO,
-            "Skipping the test. The test is only relevant for 'epoll' "
+            "Skipping the test. The test is only relevant for 'epollsig' "
             "strategy. and the current strategy is: '%s'",
             poll_strategy);
   }

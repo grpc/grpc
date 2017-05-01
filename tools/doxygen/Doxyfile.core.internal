@@ -1074,10 +1074,12 @@ src/core/lib/iomgr/endpoint_pair_windows.c \
 src/core/lib/iomgr/error.c \
 src/core/lib/iomgr/error.h \
 src/core/lib/iomgr/error_internal.h \
-src/core/lib/iomgr/ev_epoll_linux.c \
-src/core/lib/iomgr/ev_epoll_linux.h \
+src/core/lib/iomgr/ev_epoll1_linux.c \
+src/core/lib/iomgr/ev_epoll1_linux.h \
 src/core/lib/iomgr/ev_epollex_linux.c \
 src/core/lib/iomgr/ev_epollex_linux.h \
+src/core/lib/iomgr/ev_epollsig_linux.c \
+src/core/lib/iomgr/ev_epollsig_linux.h \
 src/core/lib/iomgr/ev_poll_posix.c \
 src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.c \
@@ -1383,6 +1385,8 @@ src/core/tsi/ssl_transport_security.h \
 src/core/tsi/ssl_types.h \
 src/core/tsi/transport_security.c \
 src/core/tsi/transport_security.h \
+src/core/tsi/transport_security_adapter.c \
+src/core/tsi/transport_security_adapter.h \
 src/core/tsi/transport_security_interface.h \
 third_party/nanopb/pb.h \
 third_party/nanopb/pb_common.c \

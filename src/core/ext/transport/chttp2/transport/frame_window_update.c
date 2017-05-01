@@ -41,7 +41,7 @@
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_update, grpc_transport_one_way_stats *stats) {
   static const size_t frame_size = 13;
-  grpc_slice slice = grpc_slice_malloc(frame_size);
+  grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
   stats->header_bytes += frame_size;
   uint8_t *p = GRPC_SLICE_START_PTR(slice);
 

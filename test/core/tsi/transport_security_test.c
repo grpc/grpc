@@ -376,6 +376,8 @@ static void test_handshaker_invalid_args(void) {
              TSI_INVALID_ARGUMENT);
   GPR_ASSERT(tsi_handshaker_get_bytes_to_send_to_peer(NULL, NULL, NULL) ==
              TSI_INVALID_ARGUMENT);
+  GPR_ASSERT(tsi_handshaker_next(NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL) ==
+             TSI_INVALID_ARGUMENT);
 }
 
 static void test_handshaker_invalid_state(void) {

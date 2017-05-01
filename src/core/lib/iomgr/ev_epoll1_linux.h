@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,39 +31,14 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_MPSCQ_H
-#define GRPC_CORE_LIB_SUPPORT_MPSCQ_H
+#ifndef GRPC_CORE_LIB_IOMGR_EV_EPOLL1_LINUX_H
+#define GRPC_CORE_LIB_IOMGR_EV_EPOLL1_LINUX_H
 
-#include <grpc/support/atm.h>
-#include <stdbool.h>
-#include <stddef.h>
+#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/port.h"
 
-// Multiple-producer single-consumer lock free queue, based upon the
-// implementation from Dmitry Vyukov here:
-// http://www.1024cores.net/home/lock-free-algorithms/queues/intrusive-mpsc-node-based-queue
+// a polling engine that utilizes a singleton epoll set and turnstile polling
 
-// List node (include this in a data structure at the top, and add application
-// fields after it - to simulate inheritance)
-typedef struct gpr_mpscq_node { gpr_atm next; } gpr_mpscq_node;
+const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request);
 
-// Actual queue type
-typedef struct gpr_mpscq {
-  gpr_atm head;
-  // make sure head & tail don't share a cacheline
-  char padding[GPR_CACHELINE_SIZE];
-  gpr_mpscq_node *tail;
-  gpr_mpscq_node stub;
-} gpr_mpscq;
-
-void gpr_mpscq_init(gpr_mpscq *q);
-void gpr_mpscq_destroy(gpr_mpscq *q);
-// Push a node
-void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n);
-// Pop a node (returns NULL if no node is ready - which doesn't indicate that
-// the queue is empty!!)
-gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q);
-
-// Pop a node; sets *empty to true if the queue is empty, or false if it is not
-gpr_mpscq_node *gpr_mpscq_pop_and_check_end(gpr_mpscq *q, bool *empty);
-
-#endif /* GRPC_CORE_LIB_SUPPORT_MPSCQ_H */
+#endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLL1_LINUX_H */
