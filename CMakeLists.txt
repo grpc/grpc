@@ -3276,8 +3276,6 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_windows.h
   include/grpc++/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
-  include/grpc++/impl/codegen/thrift_serializer.h
-  include/grpc++/impl/codegen/thrift_utils.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -11108,6 +11106,7 @@ if (gRPC_BUILD_TESTS)
 add_executable(memory_test
   test/core/support/memory_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11126,6 +11125,8 @@ target_include_directories(memory_test
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
