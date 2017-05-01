@@ -123,7 +123,7 @@ static void finish_frame(framer_state *st, int is_header_boundary,
    output before beginning */
 static void begin_frame(framer_state *st) {
   st->header_idx =
-      grpc_slice_buffer_add_indexed(st->output, grpc_slice_malloc(9));
+      grpc_slice_buffer_add_indexed(st->output, GRPC_SLICE_MALLOC(9));
   st->output_length_at_start_of_frame = st->output->length;
 }
 

@@ -113,13 +113,17 @@ class TCP : public FullstackFixture {
  public:
   TCP(Service* service, const FixtureConfiguration& fixture_configuration =
                             FixtureConfiguration())
-      : FullstackFixture(service, fixture_configuration, MakeAddress()) {}
+      : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
+
+  ~TCP() { grpc_recycle_unused_port(port_); }
 
  private:
-  static grpc::string MakeAddress() {
-    int port = grpc_pick_unused_port_or_die();
+  int port_;
+
+  static grpc::string MakeAddress(int* port) {
+    *port = grpc_pick_unused_port_or_die();
     std::stringstream addr;
-    addr << "localhost:" << port;
+    addr << "localhost:" << *port;
     return addr.str();
   }
 };
@@ -128,14 +132,18 @@ class UDS : public FullstackFixture {
  public:
   UDS(Service* service, const FixtureConfiguration& fixture_configuration =
                             FixtureConfiguration())
-      : FullstackFixture(service, fixture_configuration, MakeAddress()) {}
+      : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
+
+  ~UDS() { grpc_recycle_unused_port(port_); }
 
  private:
-  static grpc::string MakeAddress() {
-    int port = grpc_pick_unused_port_or_die();  // just for a unique id - not a
-                                                // real port
+  int port_;
+
+  static grpc::string MakeAddress(int* port) {
+    *port = grpc_pick_unused_port_or_die();  // just for a unique id - not a
+                                             // real port
     std::stringstream addr;
-    addr << "unix:/tmp/bm_fullstack." << port;
+    addr << "unix:/tmp/bm_fullstack." << *port;
     return addr.str();
   }
 };

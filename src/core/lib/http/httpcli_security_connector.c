@@ -106,9 +106,8 @@ static grpc_security_connector_vtable httpcli_ssl_vtable = {
     httpcli_ssl_destroy, httpcli_ssl_check_peer};
 
 static grpc_security_status httpcli_ssl_channel_security_connector_create(
-    grpc_exec_ctx *exec_ctx, const unsigned char *pem_root_certs,
-    size_t pem_root_certs_size, const char *secure_peer_name,
-    grpc_channel_security_connector **sc) {
+    grpc_exec_ctx *exec_ctx, const char *pem_root_certs,
+    const char *secure_peer_name, grpc_channel_security_connector **sc) {
   tsi_result result = TSI_OK;
   grpc_httpcli_ssl_channel_security_connector *c;
 
@@ -126,8 +125,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     c->secure_peer_name = gpr_strdup(secure_peer_name);
   }
   result = tsi_create_ssl_client_handshaker_factory(
-      NULL, 0, NULL, 0, pem_root_certs, pem_root_certs_size, NULL, NULL, NULL,
-      0, &c->handshaker_factory);
+      NULL, pem_root_certs, NULL, NULL, 0, &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -173,10 +171,9 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
                           void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
                                           grpc_endpoint *endpoint)) {
   grpc_channel_security_connector *sc = NULL;
-  const unsigned char *pem_root_certs = NULL;
   on_done_closure *c = gpr_malloc(sizeof(*c));
-  size_t pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
-  if (pem_root_certs == NULL || pem_root_certs_size == 0) {
+  const char *pem_root_certs = grpc_get_default_ssl_roots();
+  if (pem_root_certs == NULL) {
     gpr_log(GPR_ERROR, "Could not get default pem root certs.");
     on_done(exec_ctx, arg, NULL);
     gpr_free(c);
@@ -186,8 +183,7 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
   c->arg = arg;
   c->handshake_mgr = grpc_handshake_manager_create();
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
-                 exec_ctx, pem_root_certs, pem_root_certs_size, host, &sc) ==
-             GRPC_SECURITY_OK);
+                 exec_ctx, pem_root_certs, host, &sc) == GRPC_SECURITY_OK);
   grpc_channel_security_connector_add_handshakers(exec_ctx, sc,
                                                   c->handshake_mgr);
   grpc_handshake_manager_do_handshake(

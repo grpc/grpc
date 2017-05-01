@@ -188,9 +188,13 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\profiling\timers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\arena.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\atomic.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\atomic_with_atm.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\atomic_with_std.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\backoff.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\block_annotate.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\memory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\spinlock.h" />
