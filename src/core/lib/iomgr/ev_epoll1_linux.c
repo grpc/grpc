@@ -669,7 +669,6 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (worker_hdl != NULL) *worker_hdl = NULL;
   worker->kick_state = KICKED;
   if (gpr_atm_no_barrier_load(&g_active_poller) == (gpr_atm)worker) {
-    GPR_ASSERT(!pollset->seen_inactive);
     if (worker->next != worker && worker->next->kick_state == UNKICKED) {
       GPR_ASSERT(worker->next->initialized_cv);
       gpr_atm_no_barrier_store(&g_active_poller, (gpr_atm)worker->next);
