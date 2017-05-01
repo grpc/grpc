@@ -306,16 +306,14 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   std::vector<std::pair<Status, EchoResponse>> SendRpc(const string& message,
                                                        int num_rpcs,
-                                                       int deadline_ms = 1000) {
+                                                       int timeout_ms = 1000) {
     std::vector<std::pair<Status, EchoResponse>> results;
     EchoRequest request;
     EchoResponse response;
-    const auto deadline = std::chrono::system_clock::now() +
-                          std::chrono::milliseconds(deadline_ms);
     request.set_message(message);
     for (int i = 0; i < num_rpcs; i++) {
       ClientContext context;
-      context.set_deadline(deadline);
+      context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
       Status status = stub_->Echo(&context, request, &response);
       results.push_back(std::make_pair(status, response));
     }
@@ -411,8 +409,8 @@ TEST_F(SingleBalancerTest, Vanilla) {
 }
 
 TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
-  constexpr int kServerlistDelayMs = 500;
-  constexpr int kCallDeadlineMs = 1000;
+  const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
+  const int kCallDeadlineMs = 1000 * grpc_test_slowdown_factor();
 
   // First response is an empty serverlist, sent right away.
   ScheduleResponseForBalancer(0, LoadBalanceResponse(), 0);
