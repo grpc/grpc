@@ -46,6 +46,11 @@ packages, which you can get from [Homebrew](https://brew.sh):
  $ brew install autoconf automake libtool shtool
 ```
 
+If you plan to build from source and run tests, install the following as well:
+```sh
+ $ brew install gflags
+```
+
 ## Protoc
 
 By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
