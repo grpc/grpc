@@ -243,6 +243,13 @@ exports.getClientChannel = client.getClientChannel;
 
 exports.waitForClientReady = client.waitForClientReady;
 
+exports.InterceptorProvider = client.InterceptorProvider;
+exports.StatusBuilder = client.StatusBuilder;
+exports.ListenerBuilder = client.ListenerBuilder;
+exports.RequesterBuilder = client.RequesterBuilder;
+exports.InterceptingCall = client.InterceptingCall;
+exports.MethodType = client.MethodType;
+
 /**
  * @memberof grpc
  * @alias grpc.closeClient
