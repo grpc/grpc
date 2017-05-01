@@ -1,27 +1,27 @@
-grpc.beta package
-=================
+grpc\.beta package
+==================
 
 Submodules
 ----------
 
-grpc.beta.implementations module
---------------------------------
+grpc\.beta\.implementations module
+----------------------------------
 
 .. automodule:: grpc.beta.implementations
     :members:
     :undoc-members:
     :show-inheritance:
 
-grpc.beta.interfaces module
----------------------------
+grpc\.beta\.interfaces module
+-----------------------------
 
 .. automodule:: grpc.beta.interfaces
     :members:
     :undoc-members:
     :show-inheritance:
 
-grpc.beta.utilities module
---------------------------
+grpc\.beta\.utilities module
+----------------------------
 
 .. automodule:: grpc.beta.utilities
     :members:

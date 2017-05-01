@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.beta package &mdash; grpcio 1.2.0 documentation</title>
+  <title>grpc.beta package &mdash; grpcio 1.3.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="grpcio 1.2.0 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.3.0 documentation" href="index.html"/>
         <link rel="up" title="grpc package" href="grpc.html"/>
         <link rel="next" title="grpc.framework package" href="grpc.framework.html"/>
         <link rel="prev" title="grpc package" href="grpc.html"/> 
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.2.0
+                1.3.0
               </div>
             
           
@@ -188,24 +188,24 @@
 <em class="property">class </em><code class="descclassname">grpc.beta.implementations.</code><code class="descname">Channel</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#Channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.Channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>A channel to a remote host through which RPCs may be conducted.</p>
-<p>Only the &#8220;subscribe&#8221; and &#8220;unsubscribe&#8221; methods are supported for application
-use. This class&#8217; instance constructor and all other attributes are
+<p>Only the “subscribe” and “unsubscribe” methods are supported for application
+use. This class’ instance constructor and all other attributes are
 unsupported.</p>
 <dl class="method">
 <dt id="grpc.beta.implementations.Channel.subscribe">
 <code class="descname">subscribe</code><span class="sig-paren">(</span><em>callback</em>, <em>try_to_connect=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#Channel.subscribe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.Channel.subscribe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subscribes to this Channel&#8217;s connectivity.</p>
+<dd><p>Subscribes to this Channel’s connectivity.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>callback</strong> &#8211; A callable to be invoked and passed an
-interfaces.ChannelConnectivity identifying this Channel&#8217;s connectivity.
+<li><strong>callback</strong> – A callable to be invoked and passed an
+interfaces.ChannelConnectivity identifying this Channel’s connectivity.
 The callable will be invoked immediately upon subscription and again for
-every change to this Channel&#8217;s connectivity thereafter until it is
+every change to this Channel’s connectivity thereafter until it is
 unsubscribed.</li>
-<li><strong>try_to_connect</strong> &#8211; A boolean indicating whether or not this Channel should
+<li><strong>try_to_connect</strong> – A boolean indicating whether or not this Channel should
 attempt to connect if it is not already connected and ready to conduct
 RPCs.</li>
 </ul>
@@ -218,13 +218,13 @@ RPCs.</li>
 <dl class="method">
 <dt id="grpc.beta.implementations.Channel.unsubscribe">
 <code class="descname">unsubscribe</code><span class="sig-paren">(</span><em>callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#Channel.unsubscribe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.Channel.unsubscribe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unsubscribes a callback from this Channel&#8217;s connectivity.</p>
+<dd><p>Unsubscribes a callback from this Channel’s connectivity.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>callback</strong> &#8211; A callable previously registered with this Channel from having
-been passed to its &#8220;subscribe&#8221; method.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>callback</strong> – A callable previously registered with this Channel from having
+been passed to its “subscribe” method.</td>
 </tr>
 </tbody>
 </table>
@@ -261,11 +261,11 @@ functions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>channel</strong> &#8211; A Channel for the returned face.DynamicStub to use.</li>
-<li><strong>service</strong> &#8211; The package-qualified full name of the service.</li>
-<li><strong>cardinalities</strong> &#8211; A dictionary from RPC method name to cardinality.Cardinality
+<li><strong>channel</strong> – A Channel for the returned face.DynamicStub to use.</li>
+<li><strong>service</strong> – The package-qualified full name of the service.</li>
+<li><strong>cardinalities</strong> – A dictionary from RPC method name to cardinality.Cardinality
 value identifying the cardinality of the RPC method.</li>
-<li><strong>options</strong> &#8211; An optional StubOptions value further customizing the functionality
+<li><strong>options</strong> – An optional StubOptions value further customizing the functionality
 of the returned face.DynamicStub.</li>
 </ul>
 </td>
@@ -286,8 +286,8 @@ of the returned face.DynamicStub.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>channel</strong> &#8211; A Channel for use by the created stub.</li>
-<li><strong>options</strong> &#8211; A StubOptions customizing the created stub.</li>
+<li><strong>channel</strong> – A Channel for use by the created stub.</li>
+<li><strong>options</strong> – A StubOptions customizing the created stub.</li>
 </ul>
 </td>
 </tr>
@@ -306,7 +306,7 @@ of the returned face.DynamicStub.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>credentials</strong> &#8211; A GoogleCredentials object from the oauth2client library.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>credentials</strong> – A GoogleCredentials object from the oauth2client library.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A CallCredentials object for use in a GRPCCallOptions object.</td>
 </tr>
@@ -323,9 +323,9 @@ of the returned face.DynamicStub.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>host</strong> &#8211; The name of the remote host to which to connect.</li>
-<li><strong>port</strong> &#8211; The port of the remote host to which to connect.
-If None only the &#8216;host&#8217; part will be used.</li>
+<li><strong>host</strong> – The name of the remote host to which to connect.</li>
+<li><strong>port</strong> – The port of the remote host to which to connect.
+If None only the ‘host’ part will be used.</li>
 </ul>
 </td>
 </tr>
@@ -345,10 +345,10 @@ If None only the &#8216;host&#8217; part will be used.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>host</strong> &#8211; The name of the remote host to which to connect.</li>
-<li><strong>port</strong> &#8211; The port of the remote host to which to connect.
-If None only the &#8216;host&#8217; part will be used.</li>
-<li><strong>channel_credentials</strong> &#8211; A ChannelCredentials.</li>
+<li><strong>host</strong> – The name of the remote host to which to connect.</li>
+<li><strong>port</strong> – The port of the remote host to which to connect.
+If None only the ‘host’ part will be used.</li>
+<li><strong>channel_credentials</strong> – A ChannelCredentials.</li>
 </ul>
 </td>
 </tr>
@@ -368,9 +368,9 @@ If None only the &#8216;host&#8217; part will be used.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>service_implementations</strong> &#8211; A dictionary from service name-method name pair to
+<li><strong>service_implementations</strong> – A dictionary from service name-method name pair to
 face.MethodImplementation.</li>
-<li><strong>options</strong> &#8211; An optional ServerOptions value further customizing the
+<li><strong>options</strong> – An optional ServerOptions value further customizing the
 functionality of the returned Server.</li>
 </ul>
 </td>
@@ -392,19 +392,19 @@ functionality of the returned Server.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>multi_method_implementation</strong> &#8211; A face.MultiMethodImplementation to be called
+<li><strong>multi_method_implementation</strong> – A face.MultiMethodImplementation to be called
 to service an RPC if the server has no specific method implementation for
 the name of the RPC for which service was requested.</li>
-<li><strong>request_deserializers</strong> &#8211; A dictionary from service name-method name pair to
+<li><strong>request_deserializers</strong> – A dictionary from service name-method name pair to
 request deserialization behavior.</li>
-<li><strong>response_serializers</strong> &#8211; A dictionary from service name-method name pair to
+<li><strong>response_serializers</strong> – A dictionary from service name-method name pair to
 response serialization behavior.</li>
-<li><strong>thread_pool</strong> &#8211; A thread pool to use in stubs.</li>
-<li><strong>thread_pool_size</strong> &#8211; The size of thread pool to create for use in stubs;
+<li><strong>thread_pool</strong> – A thread pool to use in stubs.</li>
+<li><strong>thread_pool_size</strong> – The size of thread pool to create for use in stubs;
 ignored if thread_pool has been passed.</li>
-<li><strong>default_timeout</strong> &#8211; A duration in seconds to allow for RPC service when
+<li><strong>default_timeout</strong> – A duration in seconds to allow for RPC service when
 servicing RPCs that did not include a timeout value when invoked.</li>
-<li><strong>maximum_timeout</strong> &#8211; A duration in seconds to allow for RPC service when
+<li><strong>maximum_timeout</strong> – A duration in seconds to allow for RPC service when
 servicing RPCs no matter what timeout value was passed when the RPC was
 invoked.</li>
 </ul>
@@ -427,16 +427,16 @@ invoked.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>host</strong> &#8211; A host string to set on RPC calls.</li>
-<li><strong>request_serializers</strong> &#8211; A dictionary from service name-method name pair to
+<li><strong>host</strong> – A host string to set on RPC calls.</li>
+<li><strong>request_serializers</strong> – A dictionary from service name-method name pair to
 request serialization behavior.</li>
-<li><strong>response_deserializers</strong> &#8211; A dictionary from service name-method name pair to
+<li><strong>response_deserializers</strong> – A dictionary from service name-method name pair to
 response deserialization behavior.</li>
-<li><strong>metadata_transformer</strong> &#8211; A callable that given a metadata object produces
+<li><strong>metadata_transformer</strong> – A callable that given a metadata object produces
 another metadata object to be used in the underlying communication on the
 wire.</li>
-<li><strong>thread_pool</strong> &#8211; A thread pool to use in stubs.</li>
-<li><strong>thread_pool_size</strong> &#8211; The size of thread pool to create for use in stubs;
+<li><strong>thread_pool</strong> – A thread pool to use in stubs.</li>
+<li><strong>thread_pool_size</strong> – The size of thread pool to create for use in stubs;
 ignored if thread_pool has been passed.</li>
 </ul>
 </td>
@@ -511,13 +511,13 @@ other functions.</p>
 <dt id="grpc.beta.interfaces.Server.add_insecure_port">
 <code class="descname">add_insecure_port</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/interfaces.html#Server.add_insecure_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.Server.add_insecure_port" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reserves a port for insecure RPC service once this Server becomes active.</p>
-<p>This method may only be called before calling this Server&#8217;s start method is
+<p>This method may only be called before calling this Server’s start method is
 called.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> &#8211; The address for which to open a port.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> – The address for which to open a port.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
 <dt>An integer port on which RPCs will be serviced after this link has been</dt>
@@ -535,15 +535,15 @@ contained in the passed address was zero.</dd>
 <dt id="grpc.beta.interfaces.Server.add_secure_port">
 <code class="descname">add_secure_port</code><span class="sig-paren">(</span><em>address</em>, <em>server_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/interfaces.html#Server.add_secure_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.Server.add_secure_port" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reserves a port for secure RPC service after this Server becomes active.</p>
-<p>This method may only be called before calling this Server&#8217;s start method is
+<p>This method may only be called before calling this Server’s start method is
 called.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>address</strong> &#8211; The address for which to open a port.</li>
-<li><strong>server_credentials</strong> &#8211; A ServerCredentials.</li>
+<li><strong>address</strong> – The address for which to open a port.</li>
+<li><strong>server_credentials</strong> – A ServerCredentials.</li>
 </ul>
 </td>
 </tr>
@@ -564,7 +564,7 @@ contained in the passed address was zero.</p>
 <dl class="method">
 <dt id="grpc.beta.interfaces.Server.start">
 <code class="descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/interfaces.html#Server.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.Server.start" title="Permalink to this definition">¶</a></dt>
-<dd><p>Starts this Server&#8217;s service of RPCs.</p>
+<dd><p>Starts this Server’s service of RPCs.</p>
 <p>This method may only be called while the server is not serving RPCs (i.e. it
 is not idempotent).</p>
 </dd></dl>
@@ -572,7 +572,7 @@ is not idempotent).</p>
 <dl class="method">
 <dt id="grpc.beta.interfaces.Server.stop">
 <code class="descname">stop</code><span class="sig-paren">(</span><em>grace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/interfaces.html#Server.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.Server.stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stops this Server&#8217;s service of RPCs.</p>
+<dd><p>Stops this Server’s service of RPCs.</p>
 <p>All calls to this method immediately stop service of new RPCs. When existing
 RPCs are aborted is controlled by the grace period parameter passed to this
 method.</p>
@@ -585,8 +585,8 @@ later.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grace</strong> &#8211; A duration of time in seconds to allow existing RPCs to complete
-before being aborted by this Server&#8217;s stopping. May be zero for
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grace</strong> – A duration of time in seconds to allow existing RPCs to complete
+before being aborted by this Server’s stopping. May be zero for
 immediate abortion of all in-progress RPCs.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A threading.Event that will be set when this Server has completely
@@ -612,10 +612,10 @@ very early in the grace period).</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>disable_compression</strong> &#8211; A boolean indicating whether or not compression should
+<li><strong>disable_compression</strong> – A boolean indicating whether or not compression should
 be disabled for the request object of the RPC. Only valid for
 request-unary RPCs.</li>
-<li><strong>credentials</strong> &#8211; A CallCredentials object to use for the invoked RPC.</li>
+<li><strong>credentials</strong> – A CallCredentials object to use for the invoked RPC.</li>
 </ul>
 </td>
 </tr>
@@ -633,13 +633,13 @@ request-unary RPCs.</li>
 <dd><p>Creates a future.Future tracking when an implementations.Channel is ready.</p>
 <p>Cancelling the returned future.Future does not tell the given
 implementations.Channel to abandon attempts it may have been making to
-connect; cancelling merely deactivates the return future.Future&#8217;s
-subscription to the given implementations.Channel&#8217;s connectivity.</p>
+connect; cancelling merely deactivates the return future.Future’s
+subscription to the given implementations.Channel’s connectivity.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>channel</strong> &#8211; An implementations.Channel.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>channel</strong> – An implementations.Channel.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
 <dt>A future.Future that matures when the given Channel has connectivity</dt>
@@ -701,7 +701,8 @@ subscription to the given implementations.Channel&#8217;s connectivity.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.0',
+            VERSION:'1.3.0',
+            LANGUAGE:'en',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

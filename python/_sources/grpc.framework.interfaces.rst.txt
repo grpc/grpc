@@ -1,5 +1,5 @@
-grpc.framework.interfaces package
-=================================
+grpc\.framework\.interfaces package
+===================================
 
 Subpackages
 -----------

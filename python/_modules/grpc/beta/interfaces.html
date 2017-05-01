@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.beta.interfaces &mdash; grpcio 1.2.0 documentation</title>
+  <title>grpc.beta.interfaces &mdash; grpcio 1.3.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="grpcio 1.2.0 documentation" href="../../../index.html"/>
+    <link rel="top" title="grpcio 1.3.0 documentation" href="../../../index.html"/>
         <link rel="up" title="grpc" href="../../grpc.html"/> 
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.2.0
+                1.3.0
               </div>
             
           
@@ -145,8 +145,6 @@
     
     
       <li class="wy-breadcrumbs-aside">
-        
-            
         
       </li>
     
@@ -238,8 +236,8 @@
 <div class="viewcode-block" id="GRPCServicerContext"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCServicerContext">[docs]</a><span class="k">class</span> <span class="nc">GRPCServicerContext</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Exposes gRPC-specific options and behaviors to code servicing RPCs.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GRPCServicerContext.peer"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCServicerContext.peer">[docs]</a>    <span class="k">def</span> <span class="nf">peer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="GRPCServicerContext.peer"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCServicerContext.peer">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">peer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Identifies the peer that invoked the RPC being serviced.</span>
 
 <span class="sd">    Returns:</span>
@@ -247,8 +245,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GRPCServicerContext.disable_next_response_compression"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCServicerContext.disable_next_response_compression">[docs]</a>    <span class="k">def</span> <span class="nf">disable_next_response_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="GRPCServicerContext.disable_next_response_compression"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCServicerContext.disable_next_response_compression">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">disable_next_response_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables compression of the next response passed by the application.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
@@ -256,8 +254,8 @@
 <div class="viewcode-block" id="GRPCInvocationContext"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCInvocationContext">[docs]</a><span class="k">class</span> <span class="nc">GRPCInvocationContext</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Exposes gRPC-specific options and behaviors to code invoking RPCs.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="GRPCInvocationContext.disable_next_request_compression"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCInvocationContext.disable_next_request_compression">[docs]</a>    <span class="k">def</span> <span class="nf">disable_next_request_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="GRPCInvocationContext.disable_next_request_compression"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCInvocationContext.disable_next_request_compression">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">disable_next_request_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disables compression of the next request passed by the application.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
@@ -265,8 +263,8 @@
 <div class="viewcode-block" id="Server"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server">[docs]</a><span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Services RPCs.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Server.add_insecure_port"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.add_insecure_port">[docs]</a>    <span class="k">def</span> <span class="nf">add_insecure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+<div class="viewcode-block" id="Server.add_insecure_port"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.add_insecure_port">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_insecure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Reserves a port for insecure RPC service once this Server becomes active.</span>
 
 <span class="sd">    This method may only be called before calling this Server&#39;s start method is</span>
@@ -283,8 +281,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Server.add_secure_port"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.add_secure_port">[docs]</a>    <span class="k">def</span> <span class="nf">add_secure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">server_credentials</span><span class="p">):</span>
+<div class="viewcode-block" id="Server.add_secure_port"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.add_secure_port">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_secure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">server_credentials</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Reserves a port for secure RPC service after this Server becomes active.</span>
 
 <span class="sd">    This method may only be called before calling this Server&#39;s start method is</span>
@@ -302,8 +300,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Server.start"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Server.start"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.start">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Starts this Server&#39;s service of RPCs.</span>
 
 <span class="sd">    This method may only be called while the server is not serving RPCs (i.e. it</span>
@@ -311,8 +309,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Server.stop"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">):</span>
+<div class="viewcode-block" id="Server.stop"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.stop">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Stops this Server&#39;s service of RPCs.</span>
 
 <span class="sd">    All calls to this method immediately stop service of new RPCs. When existing</span>
@@ -375,7 +373,8 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'1.2.0',
+            VERSION:'1.3.0',
+            LANGUAGE:'en',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

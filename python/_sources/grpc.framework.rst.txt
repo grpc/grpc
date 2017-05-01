@@ -1,5 +1,5 @@
-grpc.framework package
-======================
+grpc\.framework package
+=======================
 
 Subpackages
 -----------

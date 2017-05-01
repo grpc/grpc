@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.base.base &mdash; grpcio 1.2.0 documentation</title>
+  <title>grpc.framework.interfaces.base.base &mdash; grpcio 1.3.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../../../search.html"/>
-    <link rel="top" title="grpcio 1.2.0 documentation" href="../../../../../index.html"/>
+    <link rel="top" title="grpcio 1.3.0 documentation" href="../../../../../index.html"/>
         <link rel="up" title="grpc" href="../../../../grpc.html"/> 
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.2.0
+                1.3.0
               </div>
             
           
@@ -145,8 +145,6 @@
     
     
       <li class="wy-breadcrumbs-aside">
-        
-            
         
       </li>
     
@@ -245,8 +243,8 @@
 <span class="sd">      provided.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-    <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
-<div class="viewcode-block" id="Outcome.Kind"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Outcome.Kind">[docs]</a>    <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<div class="viewcode-block" id="Outcome.Kind"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Outcome.Kind">[docs]</a>    <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
+    <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Ways in which an operation can terminate.&quot;&quot;&quot;</span>
 
         <span class="n">COMPLETED</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
@@ -273,8 +271,8 @@
 <div class="viewcode-block" id="OperationContext"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext">[docs]</a><span class="k">class</span> <span class="nc">OperationContext</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Provides operation-related information and action.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="OperationContext.outcome"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.outcome">[docs]</a>    <span class="k">def</span> <span class="nf">outcome</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="OperationContext.outcome"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.outcome">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">outcome</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Indicates the operation&#39;s outcome (or that the operation is ongoing).</span>
 
 <span class="sd">    Returns:</span>
@@ -283,8 +281,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="OperationContext.add_termination_callback"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.add_termination_callback">[docs]</a>    <span class="k">def</span> <span class="nf">add_termination_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+<div class="viewcode-block" id="OperationContext.add_termination_callback"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.add_termination_callback">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_termination_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a function to be called upon operation termination.</span>
 
 <span class="sd">    Args:</span>
@@ -299,8 +297,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="OperationContext.time_remaining"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.time_remaining">[docs]</a>    <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="OperationContext.time_remaining"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.time_remaining">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Describes the length of allowed time remaining for the operation.</span>
 
 <span class="sd">    Returns:</span>
@@ -310,13 +308,13 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="OperationContext.cancel"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="OperationContext.cancel"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.cancel">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Cancels the operation if the operation has not yet terminated.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="OperationContext.fail"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.fail">[docs]</a>    <span class="k">def</span> <span class="nf">fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception</span><span class="p">):</span>
+<div class="viewcode-block" id="OperationContext.fail"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.fail">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Indicates that the operation has failed.</span>
 
 <span class="sd">    Args:</span>
@@ -328,8 +326,8 @@
 <div class="viewcode-block" id="Operator"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Operator">[docs]</a><span class="k">class</span> <span class="nc">Operator</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;An interface through which to participate in an operation.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Operator.advance"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Operator.advance">[docs]</a>    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="Operator.advance"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Operator.advance">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                 <span class="n">initial_metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">payload</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">completion</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -352,8 +350,8 @@
 <div class="viewcode-block" id="ProtocolReceiver"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.ProtocolReceiver">[docs]</a><span class="k">class</span> <span class="nc">ProtocolReceiver</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;A means of receiving protocol values during an operation.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="ProtocolReceiver.context"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.ProtocolReceiver.context">[docs]</a>    <span class="k">def</span> <span class="nf">context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protocol_context</span><span class="p">):</span>
+<div class="viewcode-block" id="ProtocolReceiver.context"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.ProtocolReceiver.context">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protocol_context</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Accepts the protocol context object for the operation.</span>
 
 <span class="sd">    Args:</span>
@@ -381,8 +379,8 @@
 <span class="sd">      Kind.FULL.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-    <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
-<div class="viewcode-block" id="Subscription.Kind"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Subscription.Kind">[docs]</a>    <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<div class="viewcode-block" id="Subscription.Kind"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Subscription.Kind">[docs]</a>    <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
+    <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
 
         <span class="n">NONE</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
         <span class="n">TERMINATION_ONLY</span> <span class="o">=</span> <span class="s1">&#39;termination only&#39;</span>
@@ -392,8 +390,8 @@
 <div class="viewcode-block" id="Servicer"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Servicer">[docs]</a><span class="k">class</span> <span class="nc">Servicer</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Interface for service implementations.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="Servicer.service"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Servicer.service">[docs]</a>    <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">output_operator</span><span class="p">):</span>
+<div class="viewcode-block" id="Servicer.service"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Servicer.service">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">output_operator</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Services an operation.</span>
 
 <span class="sd">    Args:</span>
@@ -420,13 +418,13 @@
 <div class="viewcode-block" id="End"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End">[docs]</a><span class="k">class</span> <span class="nc">End</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Common type for entry-point objects on both sides of an operation.&quot;&quot;&quot;</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="End.start"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="End.start"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.start">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Starts this object&#39;s service of operations.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="End.stop"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">):</span>
+<div class="viewcode-block" id="End.stop"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.stop">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Stops this object&#39;s service of operations.</span>
 
 <span class="sd">    This object will refuse service of new operations as soon as this method is</span>
@@ -449,8 +447,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="End.operate"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.operate">[docs]</a>    <span class="k">def</span> <span class="nf">operate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="End.operate"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.operate">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">operate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                 <span class="n">group</span><span class="p">,</span>
                 <span class="n">method</span><span class="p">,</span>
                 <span class="n">subscription</span><span class="p">,</span>
@@ -486,8 +484,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="End.operation_stats"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.operation_stats">[docs]</a>    <span class="k">def</span> <span class="nf">operation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="End.operation_stats"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.operation_stats">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">operation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Reports the number of terminated operations broken down by outcome.</span>
 
 <span class="sd">    Returns:</span>
@@ -496,8 +494,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<div class="viewcode-block" id="End.add_idle_action"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.add_idle_action">[docs]</a>    <span class="k">def</span> <span class="nf">add_idle_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+<div class="viewcode-block" id="End.add_idle_action"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.add_idle_action">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_idle_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds an action to be called when this End has no ongoing operations.</span>
 
 <span class="sd">    Args:</span>
@@ -540,7 +538,8 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../../',
-            VERSION:'1.2.0',
+            VERSION:'1.3.0',
+            LANGUAGE:'en',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
