@@ -301,6 +301,7 @@ class AsyncUnaryClient final
   static std::unique_ptr<grpc::ClientAsyncResponseReader<SimpleResponse>>
   StartReq(BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
            const SimpleRequest& request, CompletionQueue* cq) {
+    ctx->set_deadline(gpr_time_from_millis(3000, GPR_TIMESPAN));
     return stub->AsyncUnaryCall(ctx, request, cq);
   };
   static ClientRpcContext* SetupCtx(BenchmarkService::Stub* stub,

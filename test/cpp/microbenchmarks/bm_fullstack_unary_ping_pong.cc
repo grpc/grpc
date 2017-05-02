@@ -141,6 +141,9 @@ static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
 
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator)
     ->Apply(SweepSizesArgs);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP,
+                   Client_SetDeadline<GPR_CLOCK_REALTIME, 3000>, NoOpMutator)
+    ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, MinTCP, NoOpMutator, NoOpMutator)
     ->Apply(SweepSizesArgs);
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator)
