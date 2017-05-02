@@ -113,8 +113,13 @@ def _ping_pong_scenario(name, rpc_type,
                         outstanding=None,
                         resource_quota_size=None,
                         messages_per_stream=None,
+                        qps=None,
                         excluded_poll_engines=[]):
   """Creates a basic ping pong scenario."""
+  if qps is None:
+    load_params = {'closed_loop': {}}
+  else:
+    load_params = {'poisson': {'offered_load': qps}}
   scenario = {
     'name': name,
     'num_servers': 1,
@@ -126,9 +131,7 @@ def _ping_pong_scenario(name, rpc_type,
       'client_channels': 1,
       'async_client_threads': 1,
       'rpc_type': rpc_type,
-      'load_params': {
-        'closed_loop': {}
-      },
+      'load_params': load_params,
       'histogram_params': HISTOGRAM_PARAMS,
     },
     'server_config': {
@@ -319,6 +322,16 @@ class CXXLanguage:
               server_type='%s_SERVER' % synchronicity.upper(),
               async_server_threads=1,
               secure=secure)
+
+          for qps in geometric_progression(100, 100000, 10):
+            yield _ping_pong_scenario(
+                'cpp_protobuf_%s_%s_ping_pong_%dqps_%s' % (synchronicity, rpc_type, qps, secstr),
+                rpc_type=rpc_type.upper(),
+                client_type='%s_CLIENT' % synchronicity.upper(),
+                server_type='%s_SERVER' % synchronicity.upper(),
+                async_server_threads=1,
+                qps=qps,
+                secure=secure)
 
           for size in geometric_progression(1, 1024*1024*1024+1, 8):
               yield _ping_pong_scenario(
