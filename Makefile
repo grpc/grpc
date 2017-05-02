@@ -3104,8 +3104,10 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -3943,8 +3945,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/filters/load_reporting/load_reporting.c \
     src/core/ext/filters/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
