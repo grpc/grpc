@@ -35,7 +35,7 @@ cd $(dirname $0)/../../..
 
 git submodule update --init
 
-tools/run_tests/run_tests_matrix.py -f basictests macos --internal_ci --build_only || FAILED="true"
+tools/run_tests/run_tests_matrix.py -f basictests macos --internal_ci || FAILED="true"
 
 # kill port_server.py to prevent the build from hanging
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
