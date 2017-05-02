@@ -548,9 +548,7 @@ static bool fd_is_shutdown(grpc_fd *fd) {
 }
 
 static void fd_disable_shutdown(grpc_fd *fd) {
-  gpr_mu_lock(&fd->mu);
   fd->disable_shutdown = 1;
-  gpr_mu_unlock(&fd->mu);
 }
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
