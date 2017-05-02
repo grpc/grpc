@@ -1121,7 +1121,9 @@ TEST_P(End2endTest, BinaryTrailerTest) {
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
-  auto trailers = context.GetServerTrailingMetadata();
+  // The server response had no payload, so the trailers will be reported
+  // in initial metadata instead of trailing metadata.
+  auto trailers = context.GetServerInitialMetadata();
   EXPECT_EQ(1u, trailers.count(kDebugInfoTrailerKey));
   auto iter = trailers.find(kDebugInfoTrailerKey);
   EXPECT_EQ(expected_string, iter->second);

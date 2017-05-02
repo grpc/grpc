@@ -143,6 +143,8 @@ END2END_TESTS = {
         proxyable=False, cpu_cost=LOWCPU),
     'request_with_payload': default_test_options._replace(cpu_cost=LOWCPU),
     'server_finishes_request': default_test_options._replace(cpu_cost=LOWCPU),
+    'server_sends_trailers_only': default_test_options._replace(
+        cpu_cost=LOWCPU),
     'shutdown_finishes_calls': default_test_options._replace(cpu_cost=LOWCPU),
     'shutdown_finishes_tags': default_test_options._replace(cpu_cost=LOWCPU),
     'simple_cacheable_request': default_test_options._replace(cpu_cost=LOWCPU),

@@ -4523,6 +4523,7 @@ add_library(end2end_tests
   test/core/end2end/tests/request_with_payload.c
   test/core/end2end/tests/resource_quota_server.c
   test/core/end2end/tests/server_finishes_request.c
+  test/core/end2end/tests/server_sends_trailers_only.c
   test/core/end2end/tests/shutdown_finishes_calls.c
   test/core/end2end/tests/shutdown_finishes_tags.c
   test/core/end2end/tests/simple_cacheable_request.c
@@ -4620,6 +4621,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/request_with_payload.c
   test/core/end2end/tests/resource_quota_server.c
   test/core/end2end/tests/server_finishes_request.c
+  test/core/end2end/tests/server_sends_trailers_only.c
   test/core/end2end/tests/shutdown_finishes_calls.c
   test/core/end2end/tests/shutdown_finishes_tags.c
   test/core/end2end/tests/simple_cacheable_request.c
