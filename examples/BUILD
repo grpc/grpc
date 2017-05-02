@@ -33,20 +33,34 @@ load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 
 grpc_proto_library(
     name = "auth_sample",
-    srcs = ["auth_sample.proto"],
+    srcs = ["protos/auth_sample.proto"],
 )
 
 grpc_proto_library(
     name = "hellostreamingworld",
-    srcs = ["hellostreamingworld.proto"],
+    srcs = ["protos/hellostreamingworld.proto"],
 )
 
 grpc_proto_library(
     name = "helloworld",
-    srcs = ["helloworld.proto"],
+    srcs = ["protos/helloworld.proto"],
 )
 
 grpc_proto_library(
     name = "route_guide",
-    srcs = ["route_guide.proto"],
+    srcs = ["protos/route_guide.proto"],
+)
+
+cc_binary(
+    name = "greeter_client",
+    srcs = ["cpp/helloworld/greeter_client.cc"],
+    deps = ["helloworld"],
+    defines = ["BAZEL_BUILD"],
+)
+
+cc_binary(
+    name = "greeter_server",
+    srcs = ["cpp/helloworld/greeter_server.cc"],
+    deps = ["helloworld"],
+    defines = ["BAZEL_BUILD"],
 )
