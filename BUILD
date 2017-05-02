@@ -338,6 +338,7 @@ grpc_cc_library(
         "src/core/lib/support/env_linux.c",
         "src/core/lib/support/env_posix.c",
         "src/core/lib/support/env_windows.c",
+        "src/core/lib/support/fork.c",
         "src/core/lib/support/histogram.c",
         "src/core/lib/support/host_port.c",
         "src/core/lib/support/log.c",

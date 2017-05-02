@@ -40,7 +40,7 @@
 
 #include "src/core/lib/support/env.h"
 
-int fork_support_enabled;
+static int fork_support_enabled;
 
 void grpc_fork_support_init() {
 #ifdef GRPC_ENABLE_FORK_SUPPORT
