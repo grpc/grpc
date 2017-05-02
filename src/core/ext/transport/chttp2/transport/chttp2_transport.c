@@ -316,8 +316,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->last_pid_update = gpr_now(GPR_CLOCK_MONOTONIC);
   grpc_pid_controller_init(
       &t->pid_controller,
-      (grpc_pid_controller_args){.gain_p = 4,
-                                 .gain_i = 8,
+      (grpc_pid_controller_args){.gain_p = 12,
+                                 .gain_i = 6,
                                  .gain_d = 0,
                                  .initial_control_value = log2(DEFAULT_WINDOW),
                                  .min_control_value = -1,
