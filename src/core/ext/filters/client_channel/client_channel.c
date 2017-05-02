@@ -795,6 +795,7 @@ typedef struct client_channel_call_data {
 
   subchannel_creation_phase creation_phase;
   grpc_connected_subchannel *connected_subchannel;
+  grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
   grpc_polling_entity *pollent;
 
   grpc_transport_stream_op_batch **waiting_ops;
@@ -944,7 +945,8 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
         .path = calld->path,
         .start_time = calld->call_start_time,
         .deadline = calld->deadline,
-        .arena = calld->arena};
+        .arena = calld->arena,
+        .context = calld->subchannel_call_context};
     grpc_error *new_error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
     gpr_atm_rel_store(&calld->subchannel_call,
@@ -973,6 +975,7 @@ typedef struct {
   grpc_metadata_batch *initial_metadata;
   uint32_t initial_metadata_flags;
   grpc_connected_subchannel **connected_subchannel;
+  grpc_call_context_element *subchannel_call_context;
   grpc_closure *on_ready;
   grpc_call_element *elem;
   grpc_closure closure;
@@ -984,7 +987,8 @@ typedef struct {
 static bool pick_subchannel_locked(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_metadata_batch *initial_metadata, uint32_t initial_metadata_flags,
-    grpc_connected_subchannel **connected_subchannel, grpc_closure *on_ready,
+    grpc_connected_subchannel **connected_subchannel,
+    grpc_call_context_element *subchannel_call_context, grpc_closure *on_ready,
     grpc_error *error);
 
 static void continue_picking_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -995,10 +999,10 @@ static void continue_picking_locked(grpc_exec_ctx *exec_ctx, void *arg,
   } else if (error != GRPC_ERROR_NONE) {
     grpc_closure_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_REF(error));
   } else {
-    if (pick_subchannel_locked(exec_ctx, cpa->elem, cpa->initial_metadata,
-                               cpa->initial_metadata_flags,
-                               cpa->connected_subchannel, cpa->on_ready,
-                               GRPC_ERROR_NONE)) {
+    if (pick_subchannel_locked(
+            exec_ctx, cpa->elem, cpa->initial_metadata,
+            cpa->initial_metadata_flags, cpa->connected_subchannel,
+            cpa->subchannel_call_context, cpa->on_ready, GRPC_ERROR_NONE)) {
       grpc_closure_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_NONE);
     }
   }
@@ -1008,7 +1012,8 @@ static void continue_picking_locked(grpc_exec_ctx *exec_ctx, void *arg,
 static bool pick_subchannel_locked(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_metadata_batch *initial_metadata, uint32_t initial_metadata_flags,
-    grpc_connected_subchannel **connected_subchannel, grpc_closure *on_ready,
+    grpc_connected_subchannel **connected_subchannel,
+    grpc_call_context_element *subchannel_call_context, grpc_closure *on_ready,
     grpc_error *error) {
   GPR_TIMER_BEGIN("pick_subchannel", 0);
 
@@ -1076,8 +1081,8 @@ static bool pick_subchannel_locked(
     GRPC_LB_POLICY_REF(lb_policy, "pick_subchannel_wrapping");
     w_on_pick_arg->lb_policy = lb_policy;
     const bool pick_done = grpc_lb_policy_pick_locked(
-        exec_ctx, lb_policy, &inputs, connected_subchannel, NULL,
-        &w_on_pick_arg->wrapper_closure);
+        exec_ctx, lb_policy, &inputs, connected_subchannel,
+        subchannel_call_context, NULL, &w_on_pick_arg->wrapper_closure);
     if (pick_done) {
       /* synchronous grpc_lb_policy_pick call. Unref the LB policy. */
       GRPC_LB_POLICY_UNREF(exec_ctx, w_on_pick_arg->lb_policy,
@@ -1100,6 +1105,7 @@ static bool pick_subchannel_locked(
     cpa->initial_metadata = initial_metadata;
     cpa->initial_metadata_flags = initial_metadata_flags;
     cpa->connected_subchannel = connected_subchannel;
+    cpa->subchannel_call_context = subchannel_call_context;
     cpa->on_ready = on_ready;
     cpa->elem = elem;
     grpc_closure_init(&cpa->closure, continue_picking_locked, cpa,
@@ -1158,7 +1164,7 @@ static void start_transport_stream_op_batch_locked_inner(
           break;
         case GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL:
           pick_subchannel_locked(
-              exec_ctx, elem, NULL, 0, &calld->connected_subchannel, NULL,
+              exec_ctx, elem, NULL, 0, &calld->connected_subchannel, NULL, NULL,
               GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error));
           break;
       }
@@ -1183,7 +1189,8 @@ static void start_transport_stream_op_batch_locked_inner(
             exec_ctx, elem,
             op->payload->send_initial_metadata.send_initial_metadata,
             op->payload->send_initial_metadata.send_initial_metadata_flags,
-            &calld->connected_subchannel, &calld->next_step, GRPC_ERROR_NONE)) {
+            &calld->connected_subchannel, calld->subchannel_call_context,
+            &calld->next_step, GRPC_ERROR_NONE)) {
       calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
     } else {
@@ -1200,7 +1207,8 @@ static void start_transport_stream_op_batch_locked_inner(
         .path = calld->path,
         .start_time = calld->call_start_time,
         .deadline = calld->deadline,
-        .arena = calld->arena};
+        .arena = calld->arena,
+        .context = calld->subchannel_call_context};
     grpc_error *error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
     gpr_atm_rel_store(&calld->subchannel_call,
@@ -1354,6 +1362,12 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   if (calld->connected_subchannel != NULL) {
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, calld->connected_subchannel,
                                     "picked");
+  }
+  for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
+    if (calld->subchannel_call_context[i].value != NULL) {
+      calld->subchannel_call_context[i].destroy(
+          calld->subchannel_call_context[i].value);
+    }
   }
   gpr_free(calld->waiting_ops);
   grpc_closure_sched(exec_ctx, then_schedule_closure, GRPC_ERROR_NONE);
