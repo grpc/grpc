@@ -547,9 +547,7 @@ static bool fd_is_shutdown(grpc_fd *fd) {
   return r;
 }
 
-static void fd_disable_shutdown(grpc_fd *fd) {
-  fd->disable_shutdown = 1;
-}
+static void fd_disable_shutdown(grpc_fd *fd) { fd->disable_shutdown = 1; }
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
