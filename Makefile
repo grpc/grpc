@@ -308,10 +308,6 @@ else
 TMPOUT = `mktemp /tmp/test-out-XXXXXX`
 endif
 
-# Detect if we can use C++11
-CXX11_CHECK_CMD = $(CXX) -std=c++11 -o $(TMPOUT) -c test/build/c++11.cc
-HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
-
 CHECK_SHADOW_WORKS_CMD = $(CC) -std=c99 -Werror -Wshadow -o $(TMPOUT) -c test/build/shadow.c
 HAS_WORKING_SHADOW = $(shell $(CHECK_SHADOW_WORKS_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_WORKING_SHADOW),true)
@@ -342,11 +338,7 @@ HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
 
 CFLAGS += -std=c99 -Wsign-conversion -Wconversion $(W_SHADOW) $(W_EXTRA_SEMI)
-ifeq ($(HAS_CXX11),true)
 CXXFLAGS += -std=c++11
-else
-CXXFLAGS += -std=c++0x
-endif
 CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
 LDFLAGS += -g
 
