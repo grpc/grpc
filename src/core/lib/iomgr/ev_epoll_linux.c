@@ -1028,12 +1028,9 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
 static int fd_wrapped_fd(grpc_fd *fd) {
   int ret_fd = -1;
-  gpr_mu_lock(&fd->po.mu);
   if (!fd->orphaned) {
     ret_fd = fd->fd;
   }
-  gpr_mu_unlock(&fd->po.mu);
-
   return ret_fd;
 }
 
