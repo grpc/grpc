@@ -77,6 +77,10 @@ def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
         ET.SubElement(xml_test, 'error', message='Timeout')
       elif result.state == 'SKIPPED':
         ET.SubElement(xml_test, 'skipped', message='Skipped')
+  # ensure the report directory exists
+  report_dir = os.path.dirname(os.path.abspath(xml_report))
+  if not os.path.exists(report_dir):
+    os.makedirs(report_dir)
   tree = ET.ElementTree(root)
   tree.write(xml_report, encoding='UTF-8')
 

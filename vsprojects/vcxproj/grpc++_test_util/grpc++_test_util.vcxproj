@@ -197,8 +197,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_serializer.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.h" />

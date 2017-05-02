@@ -622,9 +622,17 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
 
     for (StringPairSet::iterator it = imports_set.begin();
          it != imports_set.end(); ++it) {
-      var["ModuleName"] = std::get<0>(*it);
+      auto module_name = std::get<0>(*it);
       var["ModuleAlias"] = std::get<1>(*it);
-      out->Print(var, "import $ModuleName$ as $ModuleAlias$\n");
+      const size_t last_dot_pos = module_name.rfind('.');
+      if (last_dot_pos == grpc::string::npos) {
+        var["ImportStatement"] = "import " + module_name;
+      } else {
+        var["ImportStatement"] = "from " + module_name.substr(0, last_dot_pos) +
+                                 " import " +
+                                 module_name.substr(last_dot_pos + 1);
+      }
+      out->Print(var, "$ImportStatement$ as $ModuleAlias$\n");
     }
   }
   return true;

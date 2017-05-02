@@ -1284,7 +1284,7 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
                   "Received empty server list. Picks will stay pending until a "
                   "response with > 0 servers is received");
         }
-        grpc_grpclb_destroy_serverlist(glb_policy->serverlist);
+        grpc_grpclb_destroy_serverlist(serverlist);
       }
     } else { /* serverlist == NULL */
       gpr_log(GPR_ERROR, "Invalid LB response received: '%s'. Ignoring.",
