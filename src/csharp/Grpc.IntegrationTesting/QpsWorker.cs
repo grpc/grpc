@@ -95,10 +95,13 @@ namespace Grpc.IntegrationTesting
                 Ports = { new ServerPort(host, options.DriverPort, ServerCredentials.Insecure )}
             };
             int boundPort = server.Ports.Single().BoundPort;
-            Console.WriteLine("Running qps worker server on " + string.Format("{0}:{1}", host, boundPort));
+            GrpcEnvironment.Logger.Info("Running qps worker server on {0}:{1}", host, boundPort);
             server.Start();
             await tcs.Task;
             await server.ShutdownAsync();
+
+            GrpcEnvironment.Logger.Info("GC collection counts (after shutdown): gen0 {0}, gen1 {1}, gen2 {2}, gen3 {3}",
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), GC.CollectionCount(3));
         }
     }
 }

@@ -33,18 +33,14 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-# TODO(jtattermusch): get rid of the system inspection eventually
-nproc || true
-lsb_release -dc || true
-gcc --version || true
-clang --version || true
-docker --version || true
-
-# Need to increase open files limit for c tests
-ulimit -n 2000
-
 git submodule update --init
 
-# download docker images from dockerhub
-export DOCKERHUB_ORGANIZATION=grpctesting
-tools/run_tests/run_tests_matrix.py -f basictests linux --internal_ci
+tools/run_tests/run_tests_matrix.py -f basictests macos --internal_ci || FAILED="true"
+
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
