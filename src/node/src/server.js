@@ -779,6 +779,11 @@ Server.prototype.addService = function(service, implementation) {
   });
 };
 
+var logAddProtoServiceDeprecationOnce = _.once(function() {
+    common.log(grpc.logVerbosity.INFO,
+               'Server#addProtoService is deprecated. Use addService instead');
+});
+
 /**
  * Add a proto service to the server, with a corresponding implementation
  * @deprecated Use grpc.load and Server#addService instead
@@ -790,8 +795,7 @@ Server.prototype.addProtoService = function(service, implementation) {
   var options;
   var protobuf_js_5_common = require('./protobuf_js_5_common');
   var protobuf_js_6_common = require('./protobuf_js_6_common');
-  common.log(grpc.logVerbosity.INFO,
-             'Server#addProtoService is deprecated. Use addService instead');
+  logAddProtoServiceDeprecationOnce();
   if (protobuf_js_5_common.isProbablyProtobufJs5(service)) {
     options = _.defaults(service.grpc_options, common.defaultGrpcOptions);
     this.addService(
