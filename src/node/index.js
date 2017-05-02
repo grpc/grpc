@@ -64,8 +64,6 @@ grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
  *   Buffers. Defaults to false
  * - longsAsStrings: deserialize long values as strings instead of objects.
  *   Defaults to true
- * - enumsAsStrings: deserialize enum values as strings instead of numbers.
- *   Defaults to true
  * - deprecatedArgumentOrder: Use the beta method argument order for client
  *   methods, with optional arguments after the callback. Defaults to false.
  *   This option is only a temporary stopgap measure to smooth an API breakage.
