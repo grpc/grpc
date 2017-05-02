@@ -27,16 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cc_binary(
-    name = "greeter_client",
-    srcs = ["greeter_client.cc"],
-    deps = ["//examples/protos:helloworld"],
-    defines = ["BAZEL_BUILD"],
-)
+licenses(["notice"])  # 3-clause BSD
 
-cc_binary(
-    name = "greeter_server",
-    srcs = ["greeter_server.cc"],
-    deps = ["//examples/protos:helloworld"],
-    defines = ["BAZEL_BUILD"],
+package(default_visibility = ["//visibility:public"])
+
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+
+grpc_proto_library(
+    name = "load_balancer_proto",
+    srcs = ["load_balancer.proto"],
 )
