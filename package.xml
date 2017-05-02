@@ -10,7 +10,7 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2017-03-01</date>
+ <date>2017-05-02</date>
  <time>16:06:07</time>
  <version>
   <release>1.3.1RC1</release>
@@ -22,8 +22,7 @@
  </stability>
  <license>BSD</license>
  <notes>
-- Added arg info macros #9751
-- Updated codegen to be consistent with protobuf #9492
+- gRPC Core 1.3 uptake
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1027,79 +1026,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_server.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_method.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_data.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_dns.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_getenv.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_getopt.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_inet_net_pton.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_iphlpapi.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_ipv6.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_library_init.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_llist.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_nowarn.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_platform.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_private.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_rules.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_setup.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_strcasecmp.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_strdup.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_version.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/bitncmp.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/config-win32.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/setup_once.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/ares_build.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/config_linux/ares_config.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/config_darwin/ares_config.h" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares__close_sockets.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares__get_hostent.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares__read_line.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares__timeval.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_cancel.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_create_query.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_data.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_destroy.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_expand_name.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_expand_string.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_fds.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_free_hostent.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_free_string.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_getenv.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_gethostbyaddr.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_gethostbyname.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_getnameinfo.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_getopt.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_getsock.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_init.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_library_init.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_llist.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_mkquery.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_nowarn.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_options.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_parse_a_reply.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_parse_aaaa_reply.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_parse_mx_reply.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_parse_naptr_reply.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_parse_ns_reply.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_parse_ptr_reply.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_parse_soa_reply.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_parse_srv_reply.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_parse_txt_reply.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_platform.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_process.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_query.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_search.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_send.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_strcasecmp.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_strdup.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_strerror.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_timeout.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_version.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/ares_writev.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/bitncmp.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/inet_net_pton.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/inet_ntop.c" role="src" />
-    <file baseinstalldir="/" name="third_party/cares/cares/windows_port.c" role="src" />
   </dir>
  </contents>
  <dependencies>
@@ -1409,6 +1335,22 @@ Update to wrap gRPC C Core version 0.10.0
     <api>beta</api>
    </stability>
    <date>2017-03-01</date>
+   <license>BSD</license>
+   <notes>
+- Added arg info macros #9751
+- Updated codegen to be consistent with protobuf #9492
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0</release>
+    <api>1.2.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2017-03-20</date>
    <license>BSD</license>
    <notes>
 - Added arg info macros #9751
