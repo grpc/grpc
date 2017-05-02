@@ -1451,12 +1451,12 @@ static void watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx, void *arg,
 
 void grpc_client_channel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
-    grpc_connectivity_state *state, grpc_closure *on_complete) {
+    grpc_connectivity_state *state, grpc_closure *closure) {
   channel_data *chand = elem->channel_data;
   external_connectivity_watcher *w = gpr_malloc(sizeof(*w));
   w->chand = chand;
   w->pollset = pollset;
-  w->on_complete = on_complete;
+  w->on_complete = closure;
   w->state = state;
   grpc_pollset_set_add_pollset(exec_ctx, chand->interested_parties, pollset);
   GRPC_CHANNEL_STACK_REF(w->chand->owning_stack,
