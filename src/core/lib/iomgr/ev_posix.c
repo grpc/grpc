@@ -45,6 +45,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
@@ -66,6 +67,7 @@ typedef struct {
 
 static const event_engine_factory g_factories[] = {
     {"epoll", grpc_init_epoll_linux},
+    {"epoll-threadpool", grpc_init_epoll_thread_pool_linux},
     {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
 };
