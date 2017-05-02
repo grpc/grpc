@@ -60,6 +60,8 @@ typedef struct {
   void *tag;
 } plucker;
 
+gpr_atm g_num_work_calls;
+
 typedef struct {
   bool can_get_pollset;
   bool can_listen;
@@ -592,6 +594,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       gpr_mu_lock(cc->mu);
       continue;
     } else {
+      gpr_atm_no_barrier_fetch_add(&g_num_work_calls, 1);
       grpc_error *err = cc->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cc),
                                                 NULL, now, iteration_deadline);
       if (err != GRPC_ERROR_NONE) {
@@ -784,6 +787,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(cc->mu);
     } else {
+      gpr_atm_no_barrier_fetch_add(&g_num_work_calls, 1);
       grpc_error *err = cc->poller_vtable->work(
           &exec_ctx, POLLSET_FROM_CQ(cc), &worker, now, iteration_deadline);
       if (err != GRPC_ERROR_NONE) {

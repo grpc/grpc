@@ -72,6 +72,8 @@ DEFINE_string(qps_server_target_override, "",
               "Override QPS server target to configure in client configs."
               "Only applicable if there is a single benchmark server.");
 
+extern "C" gpr_atm g_num_work_calls;
+
 namespace grpc {
 namespace testing {
 
@@ -101,6 +103,11 @@ static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
   for (int i = 0; *success && i < result->server_success_size(); i++) {
     *success = result->server_success(i);
   }
+
+  gpr_log(
+      GPR_DEBUG, "pollset.work calls/second: %lf",
+      (double)gpr_atm_no_barrier_load(&g_num_work_calls) /
+          (double)(scenario.warmup_seconds() + scenario.benchmark_seconds()));
 
   return result;
 }
