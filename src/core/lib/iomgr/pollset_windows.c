@@ -227,6 +227,4 @@ grpc_error *grpc_pollset_kick(grpc_pollset *p,
   return GRPC_ERROR_NONE;
 }
 
-void grpc_kick_poller(void) { grpc_iocp_kick(); }
-
 #endif /* GRPC_WINSOCK_SOCKET */

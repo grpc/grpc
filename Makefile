@@ -2967,6 +2967,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -3291,6 +3292,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -3601,6 +3603,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -3829,6 +3832,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -4225,6 +4229,7 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -4558,6 +4563,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -5317,6 +5323,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \

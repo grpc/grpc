@@ -93,8 +93,6 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_set_del_fd)(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 
-  grpc_error *(*kick_poller)(void);
-
   void (*shutdown_engine)(void);
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG

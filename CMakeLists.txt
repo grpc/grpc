@@ -984,6 +984,7 @@ add_library(grpc
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1310,6 +1311,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1621,6 +1623,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1877,6 +1880,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -2296,6 +2300,7 @@ add_library(grpc++
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -2621,6 +2626,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -3390,6 +3396,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c

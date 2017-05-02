@@ -431,6 +431,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_manager.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\udp_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.h" />
@@ -685,6 +686,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_generic.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_manager.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.c">
     </ClCompile>

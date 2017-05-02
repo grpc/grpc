@@ -260,8 +260,6 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
   g_event_engine->pollset_set_del_fd(exec_ctx, pollset_set, fd);
 }
 
-grpc_error *grpc_kick_poller(void) { return g_event_engine->kick_poller(); }
-
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
                                    int line, const char *reason) {

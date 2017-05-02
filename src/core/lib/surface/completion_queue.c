@@ -580,31 +580,18 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       dump_pending_tags(cc);
       break;
     }
-    /* Check alarms - these are a global resource so we just ping
-       each time through on every pollset.
-       May update deadline to ensure timely wakeups.
-       TODO(ctiller): can this work be localized? */
-    gpr_timespec iteration_deadline = deadline;
-    if (grpc_timer_check(&exec_ctx, now, &iteration_deadline)) {
-      GPR_TIMER_MARK("alarm_triggered", 0);
+    grpc_error *err = cc->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cc),
+                                              NULL, now, deadline);
+    if (err != GRPC_ERROR_NONE) {
       gpr_mu_unlock(cc->mu);
-      grpc_exec_ctx_flush(&exec_ctx);
-      gpr_mu_lock(cc->mu);
-      continue;
-    } else {
-      grpc_error *err = cc->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cc),
-                                                NULL, now, iteration_deadline);
-      if (err != GRPC_ERROR_NONE) {
-        gpr_mu_unlock(cc->mu);
-        const char *msg = grpc_error_string(err);
-        gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
+      const char *msg = grpc_error_string(err);
+      gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
 
-        GRPC_ERROR_UNREF(err);
-        memset(&ret, 0, sizeof(ret));
-        ret.type = GRPC_QUEUE_TIMEOUT;
-        dump_pending_tags(cc);
-        break;
-      }
+      GRPC_ERROR_UNREF(err);
+      memset(&ret, 0, sizeof(ret));
+      ret.type = GRPC_QUEUE_TIMEOUT;
+      dump_pending_tags(cc);
+      break;
     }
     is_finished_arg.first_loop = false;
   }
@@ -773,31 +760,19 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       dump_pending_tags(cc);
       break;
     }
-    /* Check alarms - these are a global resource so we just ping
-       each time through on every pollset.
-       May update deadline to ensure timely wakeups.
-       TODO(ctiller): can this work be localized? */
-    gpr_timespec iteration_deadline = deadline;
-    if (grpc_timer_check(&exec_ctx, now, &iteration_deadline)) {
-      GPR_TIMER_MARK("alarm_triggered", 0);
+    grpc_error *err = cc->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cc),
+                                              &worker, now, deadline);
+    if (err != GRPC_ERROR_NONE) {
+      del_plucker(cc, tag, &worker);
       gpr_mu_unlock(cc->mu);
-      grpc_exec_ctx_flush(&exec_ctx);
-      gpr_mu_lock(cc->mu);
-    } else {
-      grpc_error *err = cc->poller_vtable->work(
-          &exec_ctx, POLLSET_FROM_CQ(cc), &worker, now, iteration_deadline);
-      if (err != GRPC_ERROR_NONE) {
-        del_plucker(cc, tag, &worker);
-        gpr_mu_unlock(cc->mu);
-        const char *msg = grpc_error_string(err);
-        gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
+      const char *msg = grpc_error_string(err);
+      gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
 
-        GRPC_ERROR_UNREF(err);
-        memset(&ret, 0, sizeof(ret));
-        ret.type = GRPC_QUEUE_TIMEOUT;
-        dump_pending_tags(cc);
-        break;
-      }
+      GRPC_ERROR_UNREF(err);
+      memset(&ret, 0, sizeof(ret));
+      ret.type = GRPC_QUEUE_TIMEOUT;
+      dump_pending_tags(cc);
+      break;
     }
     is_finished_arg.first_loop = false;
     del_plucker(cc, tag, &worker);
