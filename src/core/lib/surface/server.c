@@ -1047,6 +1047,7 @@ void *grpc_server_register_method(
     grpc_server *server, const char *method, const char *host,
     grpc_server_register_method_payload_handling payload_handling,
     uint32_t flags) {
+  GPR_ASSERT(!server->started);
   registered_method *m;
   GRPC_API_TRACE(
       "grpc_server_register_method(server=%p, method=%s, host=%s, "

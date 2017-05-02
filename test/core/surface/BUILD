@@ -186,3 +186,15 @@ cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+cc_test(
+    name = "server_get_call_test",
+    srcs = ["server_get_call_test.c"],
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
