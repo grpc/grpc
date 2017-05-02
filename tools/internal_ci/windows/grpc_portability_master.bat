@@ -36,7 +36,7 @@ cd /d %~dp0\..\..\..
 
 git submodule update --init
 
-python tools/run_tests/run_tests_matrix.py -f portability windows -j 1 --inner_jobs 8 || goto :error
+python tools/run_tests/run_tests_matrix.py -f portability windows -j 1 --inner_jobs 8 --internal_ci || goto :error
 goto :EOF
 
 :error
