@@ -148,7 +148,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = n_seconds_from_now(1000);
+  gpr_timespec deadline = n_seconds_from_now(300);
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
