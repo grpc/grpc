@@ -259,7 +259,7 @@ static void eps_unref(grpc_exec_ctx *exec_ctx, epoll_set *eps);
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 static void eps_add_ref_dbg(epoll_set *eps, const char *reason,
-                           const char *file, int line) {
+                            const char *file, int line) {
   long old_cnt = gpr_atm_acq_load(&eps->ref_count);
   eps_add_ref(eps);
   gpr_log(GPR_DEBUG, "Add ref eps: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
@@ -267,7 +267,7 @@ static void eps_add_ref_dbg(epoll_set *eps, const char *reason,
 }
 
 static void eps_unref_dbg(grpc_exec_ctx *exec_ctx, epoll_set *eps,
-                         const char *reason, const char *file, int line) {
+                          const char *reason, const char *file, int line) {
   long old_cnt = gpr_atm_acq_load(&eps->ref_count);
   eps_unref(exec_ctx, eps);
   gpr_log(GPR_DEBUG, "Unref eps: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
@@ -320,7 +320,7 @@ static void eps_unref(grpc_exec_ctx *exec_ctx, epoll_set *eps) {
 }
 
 static void epoll_set_add_fd_locked(epoll_set *eps, grpc_fd *fd,
-                                         grpc_error **error) {
+                                    grpc_error **error) {
   int err;
   struct epoll_event ev;
   char *err_msg;
@@ -345,8 +345,8 @@ static void epoll_set_add_fd_locked(epoll_set *eps, grpc_fd *fd,
 }
 
 static void epoll_set_add_wakeup_fd_locked(epoll_set *eps,
-                                                grpc_wakeup_fd *wakeup_fd,
-                                                grpc_error **error) {
+                                           grpc_wakeup_fd *wakeup_fd,
+                                           grpc_error **error) {
   struct epoll_event ev;
   int err;
   char *err_msg;
@@ -367,8 +367,8 @@ static void epoll_set_add_wakeup_fd_locked(epoll_set *eps,
   }
 }
 
-static void epoll_set_remove_fd(epoll_set *eps, grpc_fd *fd,
-                                     bool is_fd_closed, grpc_error **error) {
+static void epoll_set_remove_fd(epoll_set *eps, grpc_fd *fd, bool is_fd_closed,
+                                grpc_error **error) {
   int err;
   char *err_msg;
   const char *err_desc = "epoll_set_remove_fd";
@@ -823,8 +823,8 @@ static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
 }
 
-static void pollset_release_epoll_set(grpc_exec_ctx *exec_ctx,
-                                           grpc_pollset *ps, char *reason) {
+static void pollset_release_epoll_set(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
+                                      char *reason) {
   if (ps->eps != NULL) {
     EPS_UNREF(exec_ctx, ps->eps, reason);
   }
@@ -871,8 +871,7 @@ static void pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
-                                    epoll_set *eps) {
+static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx, epoll_set *eps) {
   if (gpr_mu_trylock(&eps->workqueue_read_mu)) {
     gpr_mpscq_node *n = gpr_mpscq_pop(&eps->workqueue_items);
     gpr_mu_unlock(&eps->workqueue_read_mu);
@@ -899,8 +898,8 @@ static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
 }
 
 #define GRPC_EPOLL_MAX_EVENTS 100
-static void do_epoll_wait(grpc_exec_ctx *exec_ctx, int epoll_fd,
-                          epoll_set *eps, grpc_error **error) {
+static void do_epoll_wait(grpc_exec_ctx *exec_ctx, int epoll_fd, epoll_set *eps,
+                          grpc_error **error) {
   struct epoll_event ep_ev[GRPC_EPOLL_MAX_EVENTS];
   int ep_rv;
   char *err_msg;
@@ -954,7 +953,7 @@ static void do_epoll_wait(grpc_exec_ctx *exec_ctx, int epoll_fd,
 }
 
 static void epoll_set_work(grpc_exec_ctx *exec_ctx, epoll_set *eps,
-                                grpc_error **error) {
+                           grpc_error **error) {
   int epoll_fd = -1;
   GPR_TIMER_BEGIN("epoll_set_work", 0);
 
@@ -1189,8 +1188,7 @@ static bool init_dedicated_epoll_sets() {
   grpc_error *error = GRPC_ERROR_NONE;
   bool is_success = true;
 
-  g_epoll_sets =
-      (epoll_set **)malloc(g_num_eps * sizeof(epoll_set *));
+  g_epoll_sets = (epoll_set **)malloc(g_num_eps * sizeof(epoll_set *));
 
   for (size_t i = 0; i < g_num_eps; i++) {
     g_epoll_sets[i] = epoll_set_create(&error);
@@ -1220,8 +1218,7 @@ static void shutdown_dedicated_epoll_sets() {
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   for (size_t i = 0; i < g_num_eps; i++) {
-    EPS_UNREF(&exec_ctx, g_epoll_sets[i],
-             "shutdown_dedicated_epoll_sets");
+    EPS_UNREF(&exec_ctx, g_epoll_sets[i], "shutdown_dedicated_epoll_sets");
   }
   grpc_exec_ctx_finish(&exec_ctx);
 
@@ -1316,8 +1313,7 @@ const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(void) {
     return NULL;
   }
 
-  if (!GRPC_LOG_IF_ERROR("epoll_set_global_init",
-                         epoll_set_global_init())) {
+  if (!GRPC_LOG_IF_ERROR("epoll_set_global_init", epoll_set_global_init())) {
     return NULL;
   }
 
