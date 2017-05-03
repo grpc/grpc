@@ -55,14 +55,14 @@ namespace grpc {
 /// compatibility.
 class string_ref {
  public:
-  // types
+  /// types
   typedef const char* const_iterator;
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-  // constants
+  /// constants
   const static size_t npos;
 
-  // construct/copy.
+  /// construct/copy.
   string_ref() : data_(nullptr), length_(0) {}
   string_ref(const string_ref& other)
       : data_(other.data_), length_(other.length_) {}
@@ -76,7 +76,7 @@ class string_ref {
   string_ref(const char* s, size_t l) : data_(s), length_(l) {}
   string_ref(const grpc::string& s) : data_(s.data()), length_(s.length()) {}
 
-  // iterators
+  /// iterators
   const_iterator begin() const { return data_; }
   const_iterator end() const { return data_ + length_; }
   const_iterator cbegin() const { return data_; }
@@ -94,16 +94,16 @@ class string_ref {
     return const_reverse_iterator(begin());
   }
 
-  // capacity
+  /// capacity
   size_t size() const { return length_; }
   size_t length() const { return length_; }
   size_t max_size() const { return length_; }
   bool empty() const { return length_ == 0; }
 
-  // element access
+  /// element access
   const char* data() const { return data_; }
 
-  // string operations
+  /// string operations
   int compare(string_ref x) const {
     size_t min_size = length_ < x.length_ ? length_ : x.length_;
     int r = memcmp(data_, x.data_, min_size);
@@ -144,7 +144,7 @@ class string_ref {
   size_t length_;
 };
 
-// Comparison operators
+/// Comparison operators
 inline bool operator==(string_ref x, string_ref y) { return x.compare(y) == 0; }
 inline bool operator!=(string_ref x, string_ref y) { return x.compare(y) != 0; }
 inline bool operator<(string_ref x, string_ref y) { return x.compare(y) < 0; }

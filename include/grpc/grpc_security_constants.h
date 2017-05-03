@@ -45,30 +45,30 @@ extern "C" {
 #define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
 #define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
 
-/* Environment variable that points to the default SSL roots file. This file
+/** Environment variable that points to the default SSL roots file. This file
    must be a PEM encoded file with all the roots such as the one that can be
    downloaded from https://pki.google.com/roots.pem.  */
 #define GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR \
   "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"
 
-/* Environment variable that points to the google default application
+/** Environment variable that points to the google default application
    credentials json key or refresh token. Used in the
    grpc_google_default_credentials_create function. */
 #define GRPC_GOOGLE_CREDENTIALS_ENV_VAR "GOOGLE_APPLICATION_CREDENTIALS"
 
-/* Results for the SSL roots override callback. */
+/** Results for the SSL roots override callback. */
 typedef enum {
   GRPC_SSL_ROOTS_OVERRIDE_OK,
-  GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY, /* Do not try fallback options. */
+  GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY, /** Do not try fallback options. */
   GRPC_SSL_ROOTS_OVERRIDE_FAIL
 } grpc_ssl_roots_override_result;
 
 typedef enum {
-  /* Server does not request client certificate. A client can present a self
+  /** Server does not request client certificate. A client can present a self
      signed or signed certificates if it wishes to do so and they would be
      accepted. */
   GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-  /* Server requests client certificate but does not enforce that the client
+  /** Server requests client certificate but does not enforce that the client
      presents a certificate.
 
      If the client presents a certificate, the client authentication is left to
@@ -77,7 +77,7 @@ typedef enum {
      The key cert pair should still be valid for the SSL connection to be
      established. */
   GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-  /* Server requests client certificate but does not enforce that the client
+  /** Server requests client certificate but does not enforce that the client
      presents a certificate.
 
      If the client presents a certificate, the client authentication is done by
@@ -87,7 +87,7 @@ typedef enum {
      The key cert pair should still be valid for the SSL connection to be
      established. */
   GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
-  /* Server requests client certificate but enforces that the client presents a
+  /** Server requests client certificate but enforces that the client presents a
      certificate.
 
      If the client presents a certificate, the client authentication is left to
@@ -96,7 +96,7 @@ typedef enum {
      The key cert pair should still be valid for the SSL connection to be
      established. */
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-  /* Server requests client certificate but enforces that the client presents a
+  /** Server requests client certificate but enforces that the client presents a
      certificate.
 
      The cerificate presented by the client is verified by grpc framework (The

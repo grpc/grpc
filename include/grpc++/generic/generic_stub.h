@@ -43,14 +43,14 @@ class CompletionQueue;
 typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericClientAsyncReaderWriter;
 
-// Generic stubs provide a type-unsafe interface to call gRPC methods
-// by name.
+/// Generic stubs provide a type-unsafe interface to call gRPC methods
+/// by name.
 class GenericStub final {
  public:
   explicit GenericStub(std::shared_ptr<ChannelInterface> channel)
       : channel_(channel) {}
 
-  // begin a call to a named method
+  /// begin a call to a named method
   std::unique_ptr<GenericClientAsyncReaderWriter> Call(
       ClientContext* context, const grpc::string& method, CompletionQueue* cq,
       void* tag);

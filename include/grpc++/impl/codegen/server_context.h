@@ -91,7 +91,7 @@ class InteropServerContextInspector;
 class ServerContextTestSpouse;
 }  // namespace testing
 
-// Interface of server side rpc context.
+/// Interface of server side rpc context.
 class ServerContext {
  public:
   ServerContext();  // for async calls
@@ -106,9 +106,9 @@ class ServerContext {
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
-  // IsCancelled is always safe to call when using sync API
-  // When using async API, it is only safe to call IsCancelled after
-  // the AsyncNotifyWhenDone tag has been delivered
+  /// IsCancelled is always safe to call when using sync API
+  /// When using async API, it is only safe to call IsCancelled after
+  /// the AsyncNotifyWhenDone tag has been delivered
   bool IsCancelled() const;
 
   // Cancel the Call from the server. This is a best-effort API and depending on

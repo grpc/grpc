@@ -516,7 +516,7 @@ class ServerReaderWriterInterface : public ServerStreamingInterface,
                                     public WriterInterface<W>,
                                     public ReaderInterface<R> {};
 
-// Actual implementation of bi-directional streaming
+/// Actual implementation of bi-directional streaming
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody final {
@@ -576,7 +576,7 @@ class ServerReaderWriterBody final {
 };
 }  // namespace internal
 
-// class to represent the user API for a bidirectional streaming call
+/// class to represent the user API for a bidirectional streaming call
 template <class W, class R>
 class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
  public:

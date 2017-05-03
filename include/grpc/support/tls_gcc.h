@@ -38,7 +38,7 @@
 
 #include <grpc/support/log.h>
 
-/* Thread local storage based on gcc compiler primitives.
+/** Thread local storage based on gcc compiler primitives.
    #include tls.h to use this - and see that file for documentation */
 
 #ifndef NDEBUG
@@ -58,7 +58,7 @@ struct gpr_gcc_thread_local {
     *((tls)->inited) = true;               \
   } while (0)
 
-/* It is allowed to call gpr_tls_init after gpr_tls_destroy is called. */
+/** It is allowed to call gpr_tls_init after gpr_tls_destroy is called. */
 #define gpr_tls_destroy(tls)      \
   do {                            \
     GPR_ASSERT(*((tls)->inited)); \
