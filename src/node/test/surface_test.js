@@ -43,9 +43,8 @@ var ProtoBuf = require('protobufjs');
 
 var grpc = require('..');
 
-var math_proto = new ProtoBuf.Root();
-math_proto = math_proto.loadSync(__dirname +
-    '/../../proto/math/math.proto', {keepCase: true});
+var math_proto = ProtoBuf.loadProtoFile(__dirname +
+    '/../../proto/math/math.proto');
 
 var mathService = math_proto.lookup('math.Math');
 var mathServiceAttrs = grpc.loadObject(
@@ -332,9 +331,7 @@ describe('Echo service', function() {
   var server;
   var client;
   before(function() {
-    var test_proto = new ProtoBuf.Root();
-    test_proto = test_proto.loadSync(__dirname + '/echo_service.proto',
-                                         {keepCase: true});
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
     var echo_service = test_proto.lookup('EchoService');
     var Client = grpc.loadObject(echo_service);
     server = new grpc.Server();
@@ -354,6 +351,13 @@ describe('Echo service', function() {
     client.echo({value: 'test value', value2: 3}, function(error, response) {
       assert.ifError(error);
       assert.deepEqual(response, {value: 'test value', value2: 3});
+      done();
+    });
+  });
+  it('Should convert an undefined argument to default values', function(done) {
+    client.echo(undefined, function(error, response) {
+      assert.ifError(error);
+      assert.deepEqual(response, {value: '', value2: 0});
       done();
     });
   });
@@ -457,9 +461,7 @@ describe('Echo metadata', function() {
   var server;
   var metadata;
   before(function() {
-    var test_proto = new ProtoBuf.Root();
-    test_proto = test_proto.loadSync(__dirname + '/test_service.proto',
-                                         {keepCase: true});
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
     var test_service = test_proto.lookup('TestService');
     var Client = grpc.loadObject(test_service);
     server = new grpc.Server();
@@ -560,9 +562,7 @@ describe('Client malformed response handling', function() {
   var client;
   var badArg = new Buffer([0xFF]);
   before(function() {
-    var test_proto = new ProtoBuf.Root();
-    test_proto = test_proto.loadSync(__dirname + '/test_service.proto',
-                                         {keepCase: true});
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
     var test_service = test_proto.lookup('TestService');
     var malformed_test_service = {
       unary: {
@@ -669,9 +669,7 @@ describe('Server serialization failure handling', function() {
   var client;
   var server;
   before(function() {
-    var test_proto = new ProtoBuf.Root();
-    test_proto = test_proto.loadSync(__dirname + '/test_service.proto',
-                                         {keepCase: true});
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
     var test_service = test_proto.lookup('TestService');
     var malformed_test_service = {
       unary: {
@@ -772,16 +770,13 @@ describe('Server serialization failure handling', function() {
   });
 });
 describe('Other conditions', function() {
-  var test_service;
   var Client;
   var client;
   var server;
   var port;
   before(function() {
-    var test_proto = new ProtoBuf.Root();
-    test_proto = test_proto.loadSync(__dirname + '/test_service.proto',
-                                         {keepCase: true});
-    test_service = test_proto.lookup('TestService');
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_service = test_proto.lookup('TestService');
     Client = grpc.loadObject(test_service);
     server = new grpc.Server();
     var trailer_metadata = new grpc.Metadata();
@@ -1121,15 +1116,12 @@ describe('Call propagation', function() {
   var proxy;
   var proxy_impl;
 
-  var test_service;
   var Client;
   var client;
   var server;
   before(function() {
-    var test_proto = new ProtoBuf.Root();
-    test_proto = test_proto.loadSync(__dirname + '/test_service.proto',
-                                         {keepCase: true});
-    test_service = test_proto.lookup('TestService');
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_service = test_proto.lookup('TestService');
     server = new grpc.Server();
     Client = grpc.loadObject(test_service);
     server.addService(Client.service, {
