@@ -58,8 +58,6 @@ typedef struct grpc_event_engine_vtable {
                              grpc_closure *closure);
   bool (*fd_is_shutdown)(grpc_fd *fd);
   grpc_workqueue *(*fd_get_workqueue)(grpc_fd *fd);
-  grpc_pollset *(*fd_get_read_notifier_pollset)(grpc_exec_ctx *exec_ctx,
-                                                grpc_fd *fd);
 
   void (*pollset_init)(grpc_pollset *pollset, gpr_mu **mu);
   void (*pollset_shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -161,10 +159,6 @@ void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 /* Exactly the same semantics as above, except based on writable events.  */
 void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
-
-/* Return the read notifier pollset from the fd */
-grpc_pollset *grpc_fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
-                                                grpc_fd *fd);
 
 /* pollset_posix functions */
 
