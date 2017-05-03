@@ -35,7 +35,12 @@ cd $(dirname $0)/../../..
 
 git submodule update --init
 
-# download fuzzer docker image from dockerhub
-export DOCKERHUB_ORGANIZATION=grpctesting
-config=asan-trace-cmp tools/jenkins/run_fuzzer.sh json_fuzzer_test
+tools/run_tests/run_tests_matrix.py -f basictests macos --internal_ci || FAILED="true"
 
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi

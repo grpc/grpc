@@ -414,7 +414,8 @@ static void rr_exit_idle_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 
 static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                           const grpc_lb_policy_pick_args *pick_args,
-                          grpc_connected_subchannel **target, void **user_data,
+                          grpc_connected_subchannel **target,
+                          grpc_call_context_element *context, void **user_data,
                           grpc_closure *on_complete) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,34 +31,35 @@
  *
  */
 
-#include <grpc++/security/credentials.h>
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
 
-#include <memory>
+#include <stdbool.h>
 
-#include <grpc/grpc.h>
-#include <gtest/gtest.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
-namespace grpc {
-namespace testing {
+typedef struct grpc_grpclb_client_stats grpc_grpclb_client_stats;
 
-class CredentialsTest : public ::testing::Test {
- protected:
-};
+grpc_grpclb_client_stats* grpc_grpclb_client_stats_create();
+grpc_grpclb_client_stats* grpc_grpclb_client_stats_ref(
+    grpc_grpclb_client_stats* client_stats);
+void grpc_grpclb_client_stats_unref(grpc_grpclb_client_stats* client_stats);
 
-TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
-  std::shared_ptr<CallCredentials> bad1 = GoogleRefreshTokenCredentials("");
-  EXPECT_EQ(static_cast<CallCredentials*>(nullptr), bad1.get());
-}
+void grpc_grpclb_client_stats_add_call_started(
+    grpc_grpclb_client_stats* client_stats);
+void grpc_grpclb_client_stats_add_call_finished(
+    bool finished_with_drop_for_rate_limiting,
+    bool finished_with_drop_for_load_balancing,
+    bool finished_with_client_failed_to_send, bool finished_known_received,
+    grpc_grpclb_client_stats* client_stats);
 
-TEST_F(CredentialsTest, DefaultCredentials) {
-  auto creds = GoogleDefaultCredentials();
-}
+void grpc_grpclb_client_stats_get(
+    grpc_grpclb_client_stats* client_stats, int64_t* num_calls_started,
+    int64_t* num_calls_finished,
+    int64_t* num_calls_finished_with_drop_for_rate_limiting,
+    int64_t* num_calls_finished_with_drop_for_load_balancing,
+    int64_t* num_calls_finished_with_client_failed_to_send,
+    int64_t* num_calls_finished_known_received);
 
-}  // namespace testing
-}  // namespace grpc
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int ret = RUN_ALL_TESTS();
-  return ret;
-}
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H \
+          */
