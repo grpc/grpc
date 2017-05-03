@@ -104,27 +104,8 @@ struct grpc_fd {
   struct grpc_fd *freelist_next;
   grpc_closure *on_done_closure;
 
-  /* The pollset that last noticed that the fd is readable. The actual type
-   * stored in this is (grpc_pollset *) */
-  gpr_atm read_notifier_pollset;
-
   grpc_iomgr_object iomgr_object;
 };
-
-/* Reference counting for fds */
-// #define GRPC_FD_REF_COUNT_DEBUG
-#ifdef GRPC_FD_REF_COUNT_DEBUG
-static void fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
-static void fd_unref(grpc_fd *fd, const char *reason, const char *file,
-                     int line);
-#define GRPC_FD_REF(fd, reason) fd_ref(fd, reason, __FILE__, __LINE__)
-#define GRPC_FD_UNREF(fd, reason) fd_unref(fd, reason, __FILE__, __LINE__)
-#else
-static void fd_ref(grpc_fd *fd);
-static void fd_unref(grpc_fd *fd);
-#define GRPC_FD_REF(fd, reason) fd_ref(fd)
-#define GRPC_FD_UNREF(fd, reason) fd_unref(fd)
-#endif
 
 static void fd_global_init(void);
 static void fd_global_shutdown(void);
@@ -150,12 +131,11 @@ static void fd_global_shutdown(void);
 typedef struct polling_island {
   grpc_closure_scheduler workqueue_scheduler;
 
-  gpr_mu mu;
   /* Ref count. Use PI_ADD_REF() and PI_UNREF() macros to increment/decrement
-     the refcount.
-     Once the ref count becomes zero, this structure is destroyed which means
-     we should ensure that there is never a scenario where a PI_ADD_REF() is
-     racing with a PI_UNREF() that just made the ref_count zero. */
+     the refcount. Once the ref count becomes zero, this structure is destroyed
+     which means we should ensure that there is never a scenario where a
+     PI_ADD_REF() is racing with a PI_UNREF() that just made the ref_count
+     zero. */
   gpr_atm ref_count;
 
   /* Number of threads currently polling on this island */
@@ -170,16 +150,11 @@ typedef struct polling_island {
   /* Wakeup fd used to wake pollers to check the contents of workqueue_items */
   grpc_wakeup_fd workqueue_wakeup_fd;
 
+  /* Is the polling island shutdown */
+  gpr_atm is_shutdown;
+
   /* The fd of the underlying epoll set */
   int epoll_fd;
-
-  /* The file descriptors in the epoll set */
-  /* TODO: sreek - We no longer need this (and since no other structure in this
-   * polling engine keeps a reference to grpc_fd, we actually no longer need a
-   * ref count field in FD. Just a flag to say wheter it is orphaned or not */
-  size_t fd_cnt;
-  size_t fd_capacity;
-  grpc_fd **fds;
 } polling_island;
 
 /*******************************************************************************
@@ -202,7 +177,6 @@ struct grpc_pollset {
   bool shutting_down;          /* Is the pollset shutting down ? */
   bool finish_shutdown_called; /* Is the 'finish_shutdown_locked()' called ? */
   grpc_closure *shutdown_done; /* Called after after shutdown is complete */
-  gpr_atm is_shutdown;
 };
 
 /*******************************************************************************
@@ -216,13 +190,19 @@ struct grpc_pollset_set {
  * Dedicated polling threads and pollsets - Declarations
  */
 
-size_t g_num_pollsets = 0;
-struct grpc_pollset *g_pollsets = NULL;
+size_t g_num_pi = 1;
+struct polling_island **g_polling_islands = NULL;
+size_t g_num_threads_per_pi = 1;
 gpr_thd_id *g_poller_threads = NULL;
 
-static void add_fd_to_global_pollset(grpc_fd *fd);
-static bool init_dedicated_pollsets();
-static void shutdown_dedicated_pollsets();
+/* Used as read-notifier pollsets for fds. We won't be using read notifier
+ * pollsets with this polling engine. So it does not matter what pollset we
+ * return */
+grpc_pollset g_read_notifier;
+
+static void add_fd_to_dedicated_pi(grpc_fd *fd);
+static bool init_dedicated_polling_islands();
+static void shutdown_dedicated_polling_islands();
 static void poller_thread_loop(void *arg);
 static void start_dedicated_poller_threads();
 static void shutdown_dedicated_poller_threads();
@@ -342,51 +322,31 @@ static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi) {
   }
 }
 
-/* The caller is expected to hold pi->mu lock before calling this function */
-static void polling_island_add_fds_locked(polling_island *pi, grpc_fd **fds,
-                                          size_t fd_count, bool add_fd_refs,
-                                          grpc_error **error) {
+static void polling_island_add_fd_locked(polling_island *pi, grpc_fd *fd,
+                                         grpc_error **error) {
   int err;
-  size_t i;
   struct epoll_event ev;
   char *err_msg;
-  const char *err_desc = "polling_island_add_fds";
+  const char *err_desc = "polling_island_add_fd_locked";
 
 #ifdef GRPC_TSAN
   /* See the definition of g_epoll_sync for more context */
   gpr_atm_rel_store(&g_epoll_sync, (gpr_atm)0);
 #endif /* defined(GRPC_TSAN) */
 
-  for (i = 0; i < fd_count; i++) {
-    ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
-    ev.data.ptr = fds[i];
-    err = epoll_ctl(pi->epoll_fd, EPOLL_CTL_ADD, fds[i]->fd, &ev);
-    if (err < 0) {
-      if (errno != EEXIST) {
-        gpr_asprintf(
-            &err_msg,
-            "epoll_ctl (epoll_fd: %d) add fd: %d failed with error: %d (%s)",
-            pi->epoll_fd, fds[i]->fd, errno, strerror(errno));
-        append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
-        gpr_free(err_msg);
-      }
-
-      continue;
-    }
-
-    if (pi->fd_cnt == pi->fd_capacity) {
-      pi->fd_capacity = GPR_MAX(pi->fd_capacity + 8, pi->fd_cnt * 3 / 2);
-      pi->fds = gpr_realloc(pi->fds, sizeof(grpc_fd *) * pi->fd_capacity);
-    }
-
-    pi->fds[pi->fd_cnt++] = fds[i];
-    if (add_fd_refs) {
-      GRPC_FD_REF(fds[i], "polling_island");
-    }
+  ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
+  ev.data.ptr = fd;
+  err = epoll_ctl(pi->epoll_fd, EPOLL_CTL_ADD, fd->fd, &ev);
+  if (err < 0 && errno != EEXIST) {
+    gpr_asprintf(
+        &err_msg,
+        "epoll_ctl (epoll_fd: %d) add fd: %d failed with error: %d (%s)",
+        pi->epoll_fd, fd->fd, errno, strerror(errno));
+    append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
+    gpr_free(err_msg);
   }
 }
 
-/* The caller is expected to hold pi->mu before calling this */
 static void polling_island_add_wakeup_fd_locked(polling_island *pi,
                                                 grpc_wakeup_fd *wakeup_fd,
                                                 grpc_error **error) {
@@ -410,12 +370,9 @@ static void polling_island_add_wakeup_fd_locked(polling_island *pi,
   }
 }
 
-/* The caller is expected to hold pi->mu lock before calling this function */
-static void polling_island_remove_fd_locked(polling_island *pi, grpc_fd *fd,
-                                            bool is_fd_closed,
-                                            grpc_error **error) {
+static void polling_island_remove_fd(polling_island *pi, grpc_fd *fd,
+                                     bool is_fd_closed, grpc_error **error) {
   int err;
-  size_t i;
   char *err_msg;
   const char *err_desc = "polling_island_remove_fd";
 
@@ -432,19 +389,10 @@ static void polling_island_remove_fd_locked(polling_island *pi, grpc_fd *fd,
       gpr_free(err_msg);
     }
   }
-
-  for (i = 0; i < pi->fd_cnt; i++) {
-    if (pi->fds[i] == fd) {
-      pi->fds[i] = pi->fds[--pi->fd_cnt];
-      GRPC_FD_UNREF(fd, "polling_island");
-      break;
-    }
-  }
 }
 
 /* Might return NULL in case of an error */
-static polling_island *polling_island_create(grpc_fd *initial_fd,
-                                             grpc_error **error) {
+static polling_island *polling_island_create(grpc_error **error) {
   polling_island *pi = NULL;
   const char *err_desc = "polling_island_create";
 
@@ -452,10 +400,6 @@ static polling_island *polling_island_create(grpc_fd *initial_fd,
 
   pi = gpr_malloc(sizeof(*pi));
   pi->workqueue_scheduler.vtable = &workqueue_scheduler_vtable;
-  gpr_mu_init(&pi->mu);
-  pi->fd_cnt = 0;
-  pi->fd_capacity = 0;
-  pi->fds = NULL;
   pi->epoll_fd = -1;
 
   gpr_mu_init(&pi->workqueue_read_mu);
@@ -464,6 +408,8 @@ static polling_island *polling_island_create(grpc_fd *initial_fd,
 
   gpr_atm_rel_store(&pi->ref_count, 0);
   gpr_atm_rel_store(&pi->poller_count, 0);
+
+  gpr_atm_rel_store(&pi->is_shutdown, false);
 
   if (!append_error(error, grpc_wakeup_fd_init(&pi->workqueue_wakeup_fd),
                     err_desc)) {
@@ -480,10 +426,6 @@ static polling_island *polling_island_create(grpc_fd *initial_fd,
   polling_island_add_wakeup_fd_locked(pi, &global_wakeup_fd, error);
   polling_island_add_wakeup_fd_locked(pi, &pi->workqueue_wakeup_fd, error);
 
-  if (initial_fd != NULL) {
-    polling_island_add_fds_locked(pi, &initial_fd, 1, true, error);
-  }
-
 done:
   if (*error != GRPC_ERROR_NONE) {
     polling_island_delete(pi);
@@ -493,18 +435,15 @@ done:
 }
 
 static void polling_island_delete(polling_island *pi) {
-  GPR_ASSERT(pi->fd_cnt == 0);
-
   if (pi->epoll_fd >= 0) {
     close(pi->epoll_fd);
   }
+
   GPR_ASSERT(gpr_atm_no_barrier_load(&pi->workqueue_item_count) == 0);
   gpr_mu_destroy(&pi->workqueue_read_mu);
   gpr_mpscq_destroy(&pi->workqueue_items);
-  gpr_mu_destroy(&pi->mu);
   grpc_wakeup_fd_destroy(&pi->workqueue_wakeup_fd);
 
-  gpr_free(pi->fds);
   gpr_free(pi);
 }
 
@@ -590,6 +529,7 @@ static void polling_island_global_shutdown() {
 static grpc_fd *fd_freelist = NULL;
 static gpr_mu fd_freelist_mu;
 
+// #define GRPC_FD_REF_COUNT_DEBUG
 #ifdef GRPC_FD_REF_COUNT_DEBUG
 #define REF_BY(fd, n, reason) ref_by(fd, n, reason, __FILE__, __LINE__)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
@@ -634,22 +574,6 @@ static void unref_by(grpc_fd *fd, int n) {
   }
 }
 
-/* Increment refcount by two to avoid changing the orphan bit */
-#ifdef GRPC_FD_REF_COUNT_DEBUG
-static void fd_ref(grpc_fd *fd, const char *reason, const char *file,
-                   int line) {
-  ref_by(fd, 2, reason, file, line);
-}
-
-static void fd_unref(grpc_fd *fd, const char *reason, const char *file,
-                     int line) {
-  unref_by(fd, 2, reason, file, line);
-}
-#else
-static void fd_ref(grpc_fd *fd) { ref_by(fd, 2); }
-static void fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
-#endif
-
 static void fd_global_init(void) { gpr_mu_init(&fd_freelist_mu); }
 
 static void fd_global_shutdown(void) {
@@ -690,7 +614,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
   new_fd->orphaned = false;
   grpc_lfev_init(&new_fd->read_closure);
   grpc_lfev_init(&new_fd->write_closure);
-  gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = NULL;
   new_fd->on_done_closure = NULL;
@@ -704,7 +627,9 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, (void *)new_fd, fd_name);
 #endif
   gpr_free(fd_name);
-  add_fd_to_global_pollset(new_fd);
+
+  /* Associate the fd with one of the dedicated pi */
+  add_fd_to_dedicated_pi(new_fd);
   return new_fd;
 }
 
@@ -744,20 +669,10 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
      to be alive (and not added to freelist) until the end of this function */
   REF_BY(fd, 1, reason);
 
-  /* Remove the fd from the polling island:
-     - Get a lock on the latest polling island (i.e the last island in the
-       linked list pointed by fd->pi). This is the island that
-       would actually contain the fd
-     - Remove the fd from the latest polling island
-     - Unlock the latest polling island
-     - Set fd->pi to NULL (but remove the ref on the polling island
-       before doing this.) */
+  /* Remove the fd from the polling island */
   if (fd->pi != NULL) {
     polling_island *pi = fd->pi;
-    gpr_mu_lock(&pi->mu);
-    polling_island_remove_fd_locked(pi, fd, is_fd_closed, &error);
-    gpr_mu_unlock(&pi->mu);
-
+    polling_island_remove_fd(pi, fd, is_fd_closed, &error);
     unref_pi = fd->pi;
     fd->pi = NULL;
   }
@@ -777,10 +692,11 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   GRPC_ERROR_UNREF(error);
 }
 
+/* This polling engine doesn't really need the read notifier functionality. So
+ * it just returns a dummy read notifier pollset */
 static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
                                                   grpc_fd *fd) {
-  gpr_atm notifier = gpr_atm_acq_load(&fd->read_notifier_pollset);
-  return (grpc_pollset *)notifier;
+  return &g_read_notifier;
 }
 
 static bool fd_is_shutdown(grpc_fd *fd) {
@@ -812,6 +728,7 @@ static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { return NULL; }
 /*******************************************************************************
  * Pollset Definitions
  */
+/* TODO: sreek - Not needed anymore */
 GPR_TLS_DECL(g_current_thread_pollset);
 GPR_TLS_DECL(g_current_thread_worker);
 
@@ -938,20 +855,10 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   pollset->shutting_down = false;
   pollset->finish_shutdown_called = false;
   pollset->shutdown_done = NULL;
-  gpr_atm_no_barrier_store(&pollset->is_shutdown, 0);
 }
 
-static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
-                               grpc_pollset *notifier) {
+static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
-
-  /* Note, it is possible that fd_become_readable might be called twice with
-     different 'notifier's when an fd becomes readable and it is in two epoll
-     sets (This can happen briefly during polling island merges). In such cases
-     it does not really matter which notifer is set as the read_notifier_pollset
-     (They would both point to the same polling island anyway) */
-  /* Use release store to match with acquire load in fd_get_read_notifier */
-  gpr_atm_rel_store(&fd->read_notifier_pollset, (gpr_atm)notifier);
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
@@ -1034,22 +941,17 @@ static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
 }
 
 #define GRPC_EPOLL_MAX_EVENTS 100
-static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
-                                   grpc_pollset *pollset, polling_island *pi,
-                                   grpc_error **error) {
+static void do_epoll_wait(grpc_exec_ctx *exec_ctx, int epoll_fd,
+                          polling_island *pi, grpc_error **error) {
   struct epoll_event ep_ev[GRPC_EPOLL_MAX_EVENTS];
   int ep_rv;
   char *err_msg;
-  const char *err_desc = "pollset_do_epoll_pwait";
+  const char *err_desc = "do_epoll_wait";
 
   int timeout_ms = -1;
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
-  // gpr_log(GPR_ERROR, "epoll_wait(%d)..", epoll_fd);
   ep_rv = epoll_wait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms);
-  /* gpr_log(GPR_ERROR, "epoll_wait(%d) returned: %d (errno: %d - %s)",
-     epoll_fd, ep_rv, errno, strerror(errno)); */
-
   GRPC_SCHEDULING_END_BLOCKING_REGION;
 
   if (ep_rv < 0) {
@@ -1076,7 +978,7 @@ static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
                    err_desc);
       maybe_do_workqueue_work(exec_ctx, pi);
     } else if (data_ptr == &polling_island_wakeup_fd) {
-      gpr_atm_rel_store(&pollset->is_shutdown, 1);
+      gpr_atm_rel_store(&pi->is_shutdown, 1);
       gpr_log(GPR_INFO, "pollset poller: shutdown set");
     } else {
       grpc_fd *fd = data_ptr;
@@ -1084,7 +986,7 @@ static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
       int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
       int write_ev = ep_ev[i].events & EPOLLOUT;
       if (read_ev || cancel) {
-        fd_become_readable(exec_ctx, fd, pollset);
+        fd_become_readable(exec_ctx, fd);
       }
       if (write_ev || cancel) {
         fd_become_writable(exec_ctx, fd);
@@ -1093,37 +995,19 @@ static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
   }
 }
 
-static void pollset_add_polling_island(grpc_pollset *ps, grpc_error **error) {
-  GPR_ASSERT(ps->pi == NULL);
-  ps->pi = polling_island_create(NULL, error);
-  if (ps->pi) {
-    PI_ADD_REF(ps->pi, "ps");
-    GRPC_POLLING_TRACE(
-        "pollset_add_polling_island: pollset: %p created new pi: %p",
-        (void *)ps, (void *)ps->pi);
-  }
-}
-
-/* Note: Make sure the pollset has a polling island (i.e pollset->pi != NULL)
- * before calling this */
-static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
-                                    grpc_pollset *pollset, grpc_error **error) {
-  GPR_ASSERT(pollset->pi);
-
+static void polling_island_work(grpc_exec_ctx *exec_ctx, polling_island *pi,
+                                grpc_error **error) {
   int epoll_fd = -1;
-  polling_island *pi = NULL;
-  GPR_TIMER_BEGIN("pollset_work_and_unlock", 0);
+  GPR_TIMER_BEGIN("polling_island_work", 0);
 
   /* Since epoll_fd is immutable, it is safe to read it without a lock on the
      polling island. */
-  pi = pollset->pi;
   epoll_fd = pi->epoll_fd;
 
   /* Add an extra ref so that the island does not get destroyed (which means
      the epoll_fd won't be closed) while we are are doing an epoll_wait() on the
      epoll_fd */
   PI_ADD_REF(pi, "ps_work");
-  gpr_mu_unlock(&pollset->mu);
 
   /* If we get some workqueue work to do, it might end up completing an item on
      the completion queue, so there's no need to poll... so we skip that and
@@ -1131,7 +1015,9 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   if (!maybe_do_workqueue_work(exec_ctx, pi)) {
     gpr_atm_no_barrier_fetch_add(&pi->poller_count, 1);
     g_current_thread_polling_island = pi;
-    pollset_do_epoll_pwait(exec_ctx, epoll_fd, pollset, pi, error);
+
+    do_epoll_wait(exec_ctx, epoll_fd, pi, error);
+
     g_current_thread_polling_island = NULL;
     gpr_atm_no_barrier_fetch_add(&pi->poller_count, -1);
   }
@@ -1143,7 +1029,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
      code when there is an island merge while we are doing epoll_wait() above */
   PI_UNREF(exec_ctx, pi, "ps_work");
 
-  GPR_TIMER_END("pollset_work_and_unlock", 0);
+  GPR_TIMER_END("polling_island_work", 0);
 }
 
 /* pollset->mu lock must be held by the caller before calling this.
@@ -1210,49 +1096,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   return error;
 }
 
-static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
+static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
-  /* fd MUST have a NULL polling island and pollset MUST have a non-NULL polling
-   * island*/
-  GPR_ASSERT(fd->pi == NULL);
-  GPR_ASSERT(ps->pi);
-
-  GPR_TIMER_BEGIN("pollset_add_fd", 0);
-
-  grpc_error *error = GRPC_ERROR_NONE;
-  polling_island *pi = NULL;
-
-  gpr_mu_lock(&ps->mu);
-  gpr_mu_lock(&fd->mu);
-
-  /* Early out if we are trying to add an 'fd' to a 'pollset' but the fd is
-   * already orphaned */
-  if (fd->orphaned) {
-    gpr_mu_unlock(&ps->mu);
-    gpr_mu_unlock(&fd->mu);
-    return;
-  }
-
-  pi = ps->pi;
-  gpr_mu_lock(&pi->mu);
-  polling_island_add_fds_locked(pi, &fd, 1, true, &error);
-  gpr_mu_unlock(&pi->mu);
-
-  PI_ADD_REF(pi, "fd");
-  fd->pi = pi;
-
-  GRPC_POLLING_TRACE("pollset_add_fd: ps->pi = %p. Add fd: %d", (void *)pi,
-                     fd->fd);
-
-  gpr_mu_unlock(&ps->mu);
-  gpr_mu_unlock(&fd->mu);
-
-  GRPC_LOG_IF_ERROR("pollset_add_fd", error);
-  GPR_TIMER_END("pollset_add_fd", 0);
-}
-
-static void pollset_add_fd_no_op(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                                 grpc_fd *fd) {
   /* Nothing to do */
 }
 
@@ -1307,10 +1152,11 @@ static void pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
 
 static void shutdown_engine(void) {
   shutdown_dedicated_poller_threads();
-  shutdown_dedicated_pollsets();
+  shutdown_dedicated_polling_islands();
   fd_global_shutdown();
   pollset_global_shutdown();
   polling_island_global_shutdown();
+  gpr_log(GPR_INFO, "ev-epoll-threadpool engine shutdown complete");
 }
 
 static const grpc_event_engine_vtable vtable = {
@@ -1331,7 +1177,7 @@ static const grpc_event_engine_vtable vtable = {
     .pollset_destroy = pollset_destroy,
     .pollset_work = pollset_work,
     .pollset_kick = pollset_kick,
-    .pollset_add_fd = pollset_add_fd_no_op,
+    .pollset_add_fd = pollset_add_fd,
 
     .pollset_set_create = pollset_set_create,
     .pollset_set_destroy = pollset_set_destroy,
@@ -1354,55 +1200,85 @@ static const grpc_event_engine_vtable vtable = {
 /*****************************************************************************
  * Dedicated polling threads and pollsets - Definitions
  */
-static void add_fd_to_global_pollset(grpc_fd *fd) {
-  size_t idx = ((size_t)rand()) % g_num_pollsets;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  pollset_add_fd(&exec_ctx, &g_pollsets[idx], fd);
-  grpc_exec_ctx_finish(&exec_ctx);
+static void add_fd_to_dedicated_pi(grpc_fd *fd) {
+  GPR_ASSERT(fd->pi == NULL);
+  GPR_TIMER_BEGIN("add_fd_to_dedicated_pi", 0);
+
+  grpc_error *error = GRPC_ERROR_NONE;
+  size_t idx = ((size_t)rand()) % g_num_pi;
+  polling_island *pi = g_polling_islands[idx];
+
+  gpr_mu_lock(&fd->mu);
+
+  if (fd->orphaned) {
+    gpr_mu_unlock(&fd->mu);
+    return; /* Early out */
+  }
+
+  polling_island_add_fd_locked(pi, fd, &error);
+  PI_ADD_REF(pi, "fd");
+  fd->pi = pi;
+
+  GRPC_POLLING_TRACE("add_fd_to_dedicated_pi (fd: %d, pi idx = %ld)", fd->fd,
+                     idx);
+  gpr_mu_unlock(&fd->mu);
+
+  GRPC_LOG_IF_ERROR("add_fd_to_dedicated_pi", error);
+  GPR_TIMER_END("add_fd_to_dedicated_pi", 0);
 }
 
-static bool init_dedicated_pollsets() {
-  gpr_mu *temp_mu;
+static bool init_dedicated_polling_islands() {
   grpc_error *error = GRPC_ERROR_NONE;
   bool is_success = true;
 
-  g_num_pollsets = (size_t)gpr_cpu_num_cores();
-  g_pollsets = (grpc_pollset *)malloc(g_num_pollsets * sizeof(grpc_pollset));
+  g_polling_islands =
+      (polling_island **)malloc(g_num_pi * sizeof(polling_island *));
 
-  for (size_t i = 0; i < g_num_pollsets; i++) {
-    pollset_init(&g_pollsets[i], &temp_mu);
-    pollset_add_polling_island(&g_pollsets[i], &error);
-    if (g_pollsets[i].pi == NULL) {
+  for (size_t i = 0; i < g_num_pi; i++) {
+    g_polling_islands[i] = polling_island_create(&error);
+    if (g_polling_islands[i] == NULL) {
+      gpr_log(GPR_ERROR, "Error in creating a dedicated polling island");
+      g_num_pi = i; /* Helps cleanup */
+      shutdown_dedicated_polling_islands();
       is_success = false;
-      break;
+      goto done;
     }
+
+    PI_ADD_REF(g_polling_islands[i], "init_dedicated_polling_islands");
   }
 
-  if (is_success) {
-    gpr_log(GPR_INFO, "Created %ld dedicated pollsets", g_num_pollsets);
-  } else {
-    shutdown_dedicated_pollsets();
-  }
+  gpr_mu *mu;
+  pollset_init(&g_read_notifier, &mu);
 
-  GRPC_LOG_IF_ERROR("init_dedicated_pollsets", error);
+done:
+  GRPC_LOG_IF_ERROR("init_dedicated_polling_islands", error);
   return is_success;
 }
 
-static void shutdown_dedicated_pollsets() {
-  if (g_pollsets) {
-    gpr_free(g_pollsets);
-    g_pollsets = NULL;
+static void shutdown_dedicated_polling_islands() {
+  if (!g_polling_islands) {
+    return;
   }
+
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  for (size_t i = 0; i < g_num_pi; i++) {
+    PI_UNREF(&exec_ctx, g_polling_islands[i],
+             "shutdown_dedicated_polling_islands");
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+
+  gpr_free(g_polling_islands);
+  g_polling_islands = NULL;
+  pollset_destroy(&g_read_notifier);
 }
 
 static void poller_thread_loop(void *arg) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_error *error = GRPC_ERROR_NONE;
-  grpc_pollset *ps = (grpc_pollset *)arg;
+  polling_island *pi = (polling_island *)arg;
 
-  while (!gpr_atm_acq_load(&ps->is_shutdown)) {
-    gpr_mu_lock(&ps->mu);
-    pollset_work_and_unlock(&exec_ctx, ps, &error);
+  while (!gpr_atm_acq_load(&pi->is_shutdown)) {
+    polling_island_work(&exec_ctx, pi, &error);
     grpc_exec_ctx_flush(&exec_ctx);
   }
 
@@ -1410,41 +1286,41 @@ static void poller_thread_loop(void *arg) {
   GRPC_LOG_IF_ERROR("poller_thread_loop", error);
 }
 
-/* g_pollsets MUST be initialized before calling this */
+/* g_polling_islands MUST be initialized before calling this */
 static void start_dedicated_poller_threads() {
-  GPR_ASSERT(g_pollsets);
-  gpr_log(GPR_ERROR, "Starting poller threads");
+  GPR_ASSERT(g_polling_islands);
+
+  gpr_log(GPR_INFO, "Starting poller threads");
 
   /* One thread per pollset */
-  g_poller_threads = (gpr_thd_id *)malloc(g_num_pollsets * sizeof(gpr_thd_id));
+  g_poller_threads = (gpr_thd_id *)malloc(g_num_pi * sizeof(gpr_thd_id));
   gpr_thd_options options = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&options);
 
-  for (size_t i = 0; i < g_num_pollsets; i++) {
+  for (size_t i = 0; i < g_num_pi; i++) {
     gpr_thd_new(&g_poller_threads[i], poller_thread_loop,
-                (void *)&g_pollsets[i], &options);
+                (void *)g_polling_islands[i], &options);
   }
 }
 
 static void shutdown_dedicated_poller_threads() {
   GPR_ASSERT(g_poller_threads);
-  GPR_ASSERT(g_pollsets);
+  GPR_ASSERT(g_polling_islands);
   grpc_error *error = GRPC_ERROR_NONE;
 
   gpr_log(GPR_INFO, "Shutting down pollers");
 
-  for (size_t i = 0; i < g_num_pollsets; i++) {
-    gpr_mu_lock(&g_pollsets[i].mu);
-    polling_island *pi = g_pollsets[i].pi;
-    gpr_mu_lock(&pi->mu);
+  polling_island *pi = NULL;
+  for (size_t i = 0; i < g_num_pi; i++) {
+    pi = g_polling_islands[i];
     polling_island_add_wakeup_fd_locked(pi, &polling_island_wakeup_fd, &error);
-    gpr_mu_unlock(&pi->mu);
   }
 
-  for (size_t i = 0; i < g_num_pollsets; i++) {
+  for (size_t i = 0; i < g_num_pi; i++) {
     gpr_thd_join(g_poller_threads[i]);
   }
 
+  gpr_log(GPR_ERROR, "polling island delete called");
   GRPC_LOG_IF_ERROR("shutdown_dedicated_poller_threads", error);
   gpr_free(g_poller_threads);
   g_poller_threads = NULL;
@@ -1476,10 +1352,6 @@ const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(void) {
     return NULL;
   }
 
-  if (!init_dedicated_pollsets()) {
-    return NULL;
-  }
-
   fd_global_init();
 
   if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
@@ -1488,6 +1360,10 @@ const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(void) {
 
   if (!GRPC_LOG_IF_ERROR("polling_island_global_init",
                          polling_island_global_init())) {
+    return NULL;
+  }
+
+  if (!init_dedicated_polling_islands()) {
     return NULL;
   }
 
