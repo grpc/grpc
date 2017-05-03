@@ -74,7 +74,7 @@
 
 typedef struct round_robin_lb_policy round_robin_lb_policy;
 
-int grpc_lb_round_robin_trace = 0;
+grpc_tracer_flag grpc_lb_round_robin_trace;
 
 /** List of entities waiting for a pick.
  *
@@ -198,7 +198,7 @@ static void advance_last_picked_locked(round_robin_lb_policy *p) {
     GPR_ASSERT(p->ready_list_last_pick == &p->ready_list);
   }
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG,
             "[READYLIST, RR: %p] ADVANCED LAST PICK. NOW AT NODE %p (SC %p, "
             "CSC %p)",
@@ -228,7 +228,7 @@ static ready_list *add_connected_sc_locked(round_robin_lb_policy *p,
     p->ready_list.prev->next = new_elem;
     p->ready_list.prev = new_elem;
   }
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "[READYLIST] ADDING NODE %p (Conn. SC %p)",
             (void *)new_elem, (void *)sd->subchannel);
   }
@@ -256,7 +256,7 @@ static void remove_disconnected_sc_locked(round_robin_lb_policy *p,
     node->next->prev = node->prev;
   }
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "[READYLIST] REMOVED NODE %p (SC %p)", (void *)node,
             (void *)node->subchannel);
   }
@@ -276,7 +276,7 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   ready_list *elem;
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "Destroying Round Robin policy at %p", (void *)pol);
   }
 
@@ -312,7 +312,7 @@ static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pending_pick *pp;
   size_t i;
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "Shutting down Round Robin policy at %p", (void *)pol);
   }
 
@@ -421,7 +421,7 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   pending_pick *pp;
   ready_list *selected;
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "Round Robin %p trying to pick", (void *)pol);
   }
 
@@ -434,7 +434,7 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if (user_data != NULL) {
       *user_data = selected->user_data;
     }
-    if (grpc_lb_round_robin_trace) {
+    if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_DEBUG,
               "[RR PICK] TARGET <-- CONNECTED SUBCHANNEL %p (NODE %p)",
               (void *)*target, (void *)selected);
@@ -566,7 +566,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         if (pp->user_data != NULL) {
           *pp->user_data = selected->user_data;
         }
-        if (grpc_lb_round_robin_trace) {
+        if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
           gpr_log(GPR_DEBUG,
                   "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",
                   (void *)selected->subchannel, (void *)selected);
@@ -724,7 +724,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     sc_args.args = new_args;
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
-    if (grpc_lb_round_robin_trace) {
+    if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
       char *address_uri =
           grpc_sockaddr_to_uri(&addresses->addresses[i].address);
       gpr_log(GPR_DEBUG, "Created subchannel %p for address uri %s",
@@ -768,7 +768,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "Created RR policy at %p with %lu subchannels",
             (void *)p, (unsigned long)p->num_subchannels);
   }

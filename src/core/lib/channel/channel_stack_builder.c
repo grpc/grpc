@@ -38,7 +38,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-int grpc_trace_channel_stack_builder = 0;
+grpc_tracer_flag grpc_trace_channel_stack_builder;
 
 typedef struct filter_node {
   struct filter_node *next;

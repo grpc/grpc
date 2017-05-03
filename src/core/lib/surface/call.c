@@ -244,8 +244,8 @@ struct grpc_call {
   void *saved_receiving_stream_ready_bctlp;
 };
 
-int grpc_call_error_trace = 0;
-int grpc_compression_trace = 0;
+grpc_tracer_flag grpc_call_error_trace;
+grpc_tracer_flag grpc_compression_trace;
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
@@ -702,7 +702,7 @@ static void get_final_status(grpc_call *call,
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     status[i] = unpack_received_status(gpr_atm_acq_load(&call->status[i]));
   }
-  if (grpc_call_error_trace) {
+  if (GRPC_TRACER_ON(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "get_final_status %s", call->is_client ? "CLI" : "SVR");
     for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
       if (status[i].is_set) {
@@ -1259,7 +1259,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   }
 
   if (error != GRPC_ERROR_NONE) {
-    if (grpc_trace_operation_failures) {
+    if (GRPC_TRACER_ON(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
     }
     grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
@@ -1355,8 +1355,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(call->encodings_accepted_by_peer != 0);
   if (!GPR_BITGET(call->encodings_accepted_by_peer,
                   call->incoming_compression_algorithm)) {
-    extern int grpc_compression_trace;
-    if (grpc_compression_trace) {
+    if (GRPC_TRACER_ON(grpc_compression_trace)) {
       char *algo_name = NULL;
       grpc_compression_algorithm_name(call->incoming_compression_algorithm,
                                       &algo_name);

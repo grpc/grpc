@@ -66,6 +66,9 @@ void grpc_iomgr_init(void) {
   g_root_object.name = "root";
   grpc_network_status_init();
   grpc_iomgr_platform_init();
+}
+
+void grpc_iomgr_start(void) {
   grpc_timer_manager_init();
 }
 

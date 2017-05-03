@@ -36,11 +36,12 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "src/core/lib/debug/trace.h"
 
 #define GRPC_BDP_SAMPLES 16
 #define GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE 3
 
-extern int grpc_bdp_estimator_trace;
+extern grpc_tracer_flag grpc_bdp_estimator_trace;
 
 typedef enum {
   GRPC_BDP_PING_UNSCHEDULED,

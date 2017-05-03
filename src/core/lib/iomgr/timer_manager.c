@@ -45,11 +45,11 @@ typedef struct completed_thread {
 } completed_thread;
 
 static gpr_mu g_mu;
+static bool g_threaded;
 static gpr_cv g_cv_wait;
 static gpr_cv g_cv_shutdown;
 static int g_thread_count;
 static int g_waiter_count;
-static bool g_shutdown;
 static completed_thread *g_completed_threads;
 static bool g_kicked;
 
@@ -83,6 +83,14 @@ static void start_timer_thread_and_unlock(void) {
   gpr_thd_new(&thd, timer_thread, NULL, &opt);
 }
 
+void grpc_timer_manager_tick() {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  gpr_timespec next = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  grpc_timer_check(&exec_ctx, now, &next);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 static void timer_thread(void *unused) {
   grpc_exec_ctx exec_ctx =
       GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
@@ -93,7 +101,7 @@ static void timer_thread(void *unused) {
       gpr_mu_lock(&g_mu);
       --g_waiter_count;
       bool start_thread = g_waiter_count == 0;
-      if (start_thread && !g_shutdown) {
+      if (start_thread && g_threaded) {
         start_timer_thread_and_unlock();
       } else {
         gpr_mu_unlock(&g_mu);
@@ -105,7 +113,7 @@ static void timer_thread(void *unused) {
       gpr_mu_unlock(&g_mu);
     } else {
       gpr_mu_lock(&g_mu);
-      if (g_shutdown) break;
+      if (!g_threaded) break;
       if (gpr_cv_wait(&g_cv_wait, &g_mu, next)) {
         if (g_kicked) {
           grpc_timer_consume_kick();
@@ -130,32 +138,56 @@ static void timer_thread(void *unused) {
   gpr_log(GPR_DEBUG, "End timer thread");
 }
 
+static void start_threads(void) {
+  gpr_mu_lock(&g_mu);
+  if (!g_threaded) {
+    g_threaded = true;
+    start_timer_thread_and_unlock();
+  } else {
+    g_threaded = false;
+    gpr_mu_unlock(&g_mu);
+  }
+}
+
 void grpc_timer_manager_init(void) {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv_wait);
   gpr_cv_init(&g_cv_shutdown);
+  g_threaded = false;
   g_thread_count = 0;
   g_waiter_count = 0;
-  g_shutdown = false;
   g_completed_threads = NULL;
 
+  start_threads();
+}
+
+static void stop_threads(void) {
   gpr_mu_lock(&g_mu);
-  start_timer_thread_and_unlock();
+  if (g_threaded) {
+    g_threaded = false;
+    gpr_cv_broadcast(&g_cv_wait);
+    while (g_thread_count > 0) {
+      gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+      gc_completed_threads();
+    }
+  }
+  gpr_mu_unlock(&g_mu);
 }
 
 void grpc_timer_manager_shutdown(void) {
-  gpr_mu_lock(&g_mu);
-  g_shutdown = true;
-  gpr_cv_broadcast(&g_cv_wait);
-  while (g_thread_count > 0) {
-    gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
-    gc_completed_threads();
-  }
-  gpr_mu_unlock(&g_mu);
+  stop_threads();
 
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_cv_wait);
   gpr_cv_destroy(&g_cv_shutdown);
+}
+
+void grpc_timer_manager_set_threading(bool threaded) {
+  if (threaded) {
+    start_threads();
+  } else {
+    stop_threads();
+  }
 }
 
 void grpc_kick_poller(void) {
