@@ -162,7 +162,8 @@ typedef struct {
 /** Maximum message length that the channel can receive. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
-/** \deprecated For backward compatibility. */
+/** \deprecated For backward compatibility. Use GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+    instead. */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
 /** Maximum message length that the channel can send. Int valued, bytes.
     -1 means unlimited. */
@@ -206,7 +207,7 @@ typedef struct {
 /** Minimum time (in milliseconds) between successive ping frames being sent */
 #define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
   "grpc.http2.min_time_between_pings_ms"
-/* Channel arg to override the http2 :scheme header */
+/** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can we send before needing to send a data frame or header
     frame?
@@ -256,15 +257,16 @@ typedef struct {
 /** The time between the first and second connection attempts, in ms */
 #define GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS \
   "grpc.initial_reconnect_backoff_ms"
-/* The caller of the secure_channel_create functions may override the target
-   name used for SSL host name checking using this channel argument which is of
-   type \a GRPC_ARG_STRING. This *should* be used for testing only.
-   If this argument is not specified, the name used for SSL host name checking
-   will be the target parameter (assuming that the secure channel is an SSL
-   channel). If this parameter is specified and the underlying is not an SSL
-   channel, it will just be ignored. */
+/** The caller of the secure_channel_create functions may override the target
+    name used for SSL host name checking using this channel argument which is of
+    type \a GRPC_ARG_STRING. This *should* be used for testing only.
+    If this argument is not specified, the name used for SSL host name checking
+    will be the target parameter (assuming that the secure channel is an SSL
+    channel). If this parameter is specified and the underlying is not an SSL
+    channel, it will just be ignored. */
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
-/* Maximum metadata size, in bytes. */
+/** Maximum metadata size, in bytes. Note this limit applies to the max sum of
+    all metadata key-value entries in a batch of headers. */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
@@ -285,9 +287,12 @@ typedef struct {
  * possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
   "grpc.use_cronet_packet_coalescing"
-/* Channel arg (integer) setting how large a slice to try and read from the wire
-each time recvmsg (or equivalent) is called */
+/** Channel arg (integer) setting how large a slice to try and read from the wire
+each time recvmsg (or equivalent) is called **/
 #define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
+/** Note this is not a "channel arg" key. This is the default slice size to use
+ * when trying to read from the wire if the GRPC_ARG_TCP_READ_CHUNK_SIZE
+ * channel arg is unspecified. */
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 #define GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_min_read_chunk_size"
