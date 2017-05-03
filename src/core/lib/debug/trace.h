@@ -38,8 +38,10 @@
 #include <grpc/support/port_platform.h>
 #include <stdbool.h>
 
-#if defined(__has_feature) && __has_feature(thread_sanitizer)
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
 #define GRPC_THREADSAFE_TRACER
+#endif
 #endif
 
 typedef struct {
