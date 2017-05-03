@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,53 +31,35 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_THRIFT_UTILS_H
-#define GRPCXX_IMPL_CODEGEN_THRIFT_UTILS_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
 
-#include <grpc++/impl/codegen/config.h>
-#include <grpc++/impl/codegen/core_codegen_interface.h>
-#include <grpc++/impl/codegen/serialization_traits.h>
-#include <grpc++/impl/codegen/status.h>
-#include <grpc++/impl/codegen/status_code_enum.h>
-#include <grpc++/impl/codegen/thrift_serializer.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
-#include <grpc/impl/codegen/slice.h>
-#include <cstdint>
-#include <cstdlib>
+#include <stdbool.h>
 
-namespace grpc {
+#include <grpc/impl/codegen/grpc_types.h>
 
-using apache::thrift::util::ThriftSerializerCompact;
+typedef struct grpc_grpclb_client_stats grpc_grpclb_client_stats;
 
-template <class T>
-class SerializationTraits<T, typename std::enable_if<std::is_base_of<
-                                 apache::thrift::TBase, T>::value>::type> {
- public:
-  static Status Serialize(const T& msg, grpc_byte_buffer** bp,
-                          bool* own_buffer) {
-    *own_buffer = true;
+grpc_grpclb_client_stats* grpc_grpclb_client_stats_create();
+grpc_grpclb_client_stats* grpc_grpclb_client_stats_ref(
+    grpc_grpclb_client_stats* client_stats);
+void grpc_grpclb_client_stats_unref(grpc_grpclb_client_stats* client_stats);
 
-    ThriftSerializerCompact serializer;
-    serializer.Serialize(msg, bp);
+void grpc_grpclb_client_stats_add_call_started(
+    grpc_grpclb_client_stats* client_stats);
+void grpc_grpclb_client_stats_add_call_finished(
+    bool finished_with_drop_for_rate_limiting,
+    bool finished_with_drop_for_load_balancing,
+    bool finished_with_client_failed_to_send, bool finished_known_received,
+    grpc_grpclb_client_stats* client_stats);
 
-    return Status(StatusCode::OK, "ok");
-  }
+void grpc_grpclb_client_stats_get(
+    grpc_grpclb_client_stats* client_stats, int64_t* num_calls_started,
+    int64_t* num_calls_finished,
+    int64_t* num_calls_finished_with_drop_for_rate_limiting,
+    int64_t* num_calls_finished_with_drop_for_load_balancing,
+    int64_t* num_calls_finished_with_client_failed_to_send,
+    int64_t* num_calls_finished_known_received);
 
-  static Status Deserialize(grpc_byte_buffer* buffer, T* msg,
-                            int max_receive_message_size) {
-    if (!buffer) {
-      return Status(StatusCode::INTERNAL, "No payload");
-    }
-
-    ThriftSerializerCompact deserializer;
-    deserializer.Deserialize(buffer, msg);
-
-    grpc_byte_buffer_destroy(buffer);
-
-    return Status(StatusCode::OK, "ok");
-  }
-};
-
-}  // namespace grpc
-
-#endif  // GRPCXX_IMPL_CODEGEN_THRIFT_UTILS_H
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H \
+          */

@@ -55,6 +55,13 @@ grpc_slice grpc_empty_slice(void) {
   return out;
 }
 
+grpc_slice grpc_slice_copy(grpc_slice s) {
+  grpc_slice out = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(s));
+  memcpy(GRPC_SLICE_START_PTR(out), GRPC_SLICE_START_PTR(s),
+         GRPC_SLICE_LENGTH(s));
+  return out;
+}
+
 grpc_slice grpc_slice_ref_internal(grpc_slice slice) {
   if (slice.refcount) {
     slice.refcount->vtable->ref(slice.refcount);
@@ -198,7 +205,7 @@ grpc_slice grpc_slice_new_with_len(void *p, size_t len,
 
 grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t length) {
   if (length == 0) return grpc_empty_slice();
-  grpc_slice slice = grpc_slice_malloc(length);
+  grpc_slice slice = GRPC_SLICE_MALLOC(length);
   memcpy(GRPC_SLICE_START_PTR(slice), source, length);
   return slice;
 }
@@ -228,35 +235,42 @@ static const grpc_slice_refcount_vtable malloc_vtable = {
     malloc_ref, malloc_unref, grpc_slice_default_eq_impl,
     grpc_slice_default_hash_impl};
 
+grpc_slice grpc_slice_malloc_large(size_t length) {
+  grpc_slice slice;
+
+  /* Memory layout used by the slice created here:
+
+     +-----------+----------------------------------------------------------+
+     | refcount  | bytes                                                    |
+     +-----------+----------------------------------------------------------+
+
+     refcount is a malloc_refcount
+     bytes is an array of bytes of the requested length
+     Both parts are placed in the same allocation returned from gpr_malloc */
+  malloc_refcount *rc = gpr_malloc(sizeof(malloc_refcount) + length);
+
+  /* Initial refcount on rc is 1 - and it's up to the caller to release
+     this reference. */
+  gpr_ref_init(&rc->refs, 1);
+
+  rc->base.vtable = &malloc_vtable;
+  rc->base.sub_refcount = &rc->base;
+
+  /* Build up the slice to be returned. */
+  /* The slices refcount points back to the allocated block. */
+  slice.refcount = &rc->base;
+  /* The data bytes are placed immediately after the refcount struct */
+  slice.data.refcounted.bytes = (uint8_t *)(rc + 1);
+  /* And the length of the block is set to the requested length */
+  slice.data.refcounted.length = length;
+  return slice;
+}
+
 grpc_slice grpc_slice_malloc(size_t length) {
   grpc_slice slice;
 
   if (length > sizeof(slice.data.inlined.bytes)) {
-    /* Memory layout used by the slice created here:
-
-       +-----------+----------------------------------------------------------+
-       | refcount  | bytes                                                    |
-       +-----------+----------------------------------------------------------+
-
-       refcount is a malloc_refcount
-       bytes is an array of bytes of the requested length
-       Both parts are placed in the same allocation returned from gpr_malloc */
-    malloc_refcount *rc = gpr_malloc(sizeof(malloc_refcount) + length);
-
-    /* Initial refcount on rc is 1 - and it's up to the caller to release
-       this reference. */
-    gpr_ref_init(&rc->refs, 1);
-
-    rc->base.vtable = &malloc_vtable;
-    rc->base.sub_refcount = &rc->base;
-
-    /* Build up the slice to be returned. */
-    /* The slices refcount points back to the allocated block. */
-    slice.refcount = &rc->base;
-    /* The data bytes are placed immediately after the refcount struct */
-    slice.data.refcounted.bytes = (uint8_t *)(rc + 1);
-    /* And the length of the block is set to the requested length */
-    slice.data.refcounted.length = length;
+    return grpc_slice_malloc_large(length);
   } else {
     /* small slice: just inline the data */
     slice.refcount = NULL;
@@ -306,7 +320,8 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
   return subset;
 }
 
-grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
+grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice *source, size_t split,
+                                           grpc_slice_ref_whom ref_whom) {
   grpc_slice tail;
 
   if (source->refcount == NULL) {
@@ -320,26 +335,44 @@ grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
   } else {
     size_t tail_length = source->data.refcounted.length - split;
     GPR_ASSERT(source->data.refcounted.length >= split);
-    if (tail_length < sizeof(tail.data.inlined.bytes)) {
+    if (tail_length < sizeof(tail.data.inlined.bytes) &&
+        ref_whom != GRPC_SLICE_REF_TAIL) {
       /* Copy out the bytes - it'll be cheaper than refcounting */
       tail.refcount = NULL;
       tail.data.inlined.length = (uint8_t)tail_length;
       memcpy(tail.data.inlined.bytes, source->data.refcounted.bytes + split,
              tail_length);
+      source->refcount = source->refcount->sub_refcount;
     } else {
       /* Build the result */
-      tail.refcount = source->refcount->sub_refcount;
-      /* Bump the refcount */
-      tail.refcount->vtable->ref(tail.refcount);
+      switch (ref_whom) {
+        case GRPC_SLICE_REF_TAIL:
+          tail.refcount = source->refcount->sub_refcount;
+          source->refcount = &noop_refcount;
+          break;
+        case GRPC_SLICE_REF_HEAD:
+          tail.refcount = &noop_refcount;
+          source->refcount = source->refcount->sub_refcount;
+          break;
+        case GRPC_SLICE_REF_BOTH:
+          tail.refcount = source->refcount->sub_refcount;
+          source->refcount = source->refcount->sub_refcount;
+          /* Bump the refcount */
+          tail.refcount->vtable->ref(tail.refcount);
+          break;
+      }
       /* Point into the source array */
       tail.data.refcounted.bytes = source->data.refcounted.bytes + split;
       tail.data.refcounted.length = tail_length;
     }
-    source->refcount = source->refcount->sub_refcount;
     source->data.refcounted.length = split;
   }
 
   return tail;
+}
+
+grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
+  return grpc_slice_split_tail_maybe_ref(source, split, GRPC_SLICE_REF_BOTH);
 }
 
 grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
@@ -459,7 +492,7 @@ int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
 }
 
 grpc_slice grpc_slice_dup(grpc_slice a) {
-  grpc_slice copy = grpc_slice_malloc(GRPC_SLICE_LENGTH(a));
+  grpc_slice copy = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(a));
   memcpy(GRPC_SLICE_START_PTR(copy), GRPC_SLICE_START_PTR(a),
          GRPC_SLICE_LENGTH(a));
   return copy;

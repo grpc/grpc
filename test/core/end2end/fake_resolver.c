@@ -56,9 +56,6 @@
 
 #include "test/core/end2end/fake_resolver.h"
 
-#define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
-  "grpc.fake_resolver.response_generator"
-
 //
 // fake_resolver
 //

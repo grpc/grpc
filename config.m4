@@ -190,7 +190,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -262,6 +262,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
+    src/core/tsi/transport_security_adapter.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/filters/client_channel/channel_connectivity.c \
@@ -290,8 +291,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
