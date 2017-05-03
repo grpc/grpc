@@ -175,7 +175,13 @@ echo 4096 | sudo tee /proc/sys/kernel/perf_event_mlock_kb
 git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 
 # Install scipy and numpy for benchmarking scripts
-sudo apt-get install -y python-scipy python-numpy
+sudo apt-get install -y python-scipy python-numpy python3-numpy
+
+# Tensorflow dependencies (https://www.tensorflow.org/install/install_sources)
+# Install bazel (https://bazel.build/versions/master/docs/install-ubuntu.html)
+echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
+sudo apt-get update && sudo apt-get install -y bazel
 
 # Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
 # This needs to happen as the last step to prevent Jenkins master from connecting
