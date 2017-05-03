@@ -1067,8 +1067,7 @@ static bool pick_subchannel_locked(
       }
     }
     const grpc_lb_policy_pick_args inputs = {
-        initial_metadata, initial_metadata_flags, &calld->lb_token_mdelem,
-        gpr_inf_future(GPR_CLOCK_MONOTONIC)};
+        initial_metadata, initial_metadata_flags, &calld->lb_token_mdelem};
 
     // Wrap the user-provided callback in order to hold a strong reference to
     // the LB policy for the duration of the pick.
