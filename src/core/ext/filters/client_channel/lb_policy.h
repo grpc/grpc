@@ -43,9 +43,6 @@
 typedef struct grpc_lb_policy grpc_lb_policy;
 typedef struct grpc_lb_policy_vtable grpc_lb_policy_vtable;
 
-typedef void (*grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel,
-                                   grpc_status_code status, const char *errmsg);
-
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable *vtable;
   gpr_atm ref_pair;
@@ -76,7 +73,8 @@ struct grpc_lb_policy_vtable {
   /** \see grpc_lb_policy_pick */
   int (*pick_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                      const grpc_lb_policy_pick_args *pick_args,
-                     grpc_connected_subchannel **target, void **user_data,
+                     grpc_connected_subchannel **target,
+                     grpc_call_context_element *context, void **user_data,
                      grpc_closure *on_complete);
 
   /** \see grpc_lb_policy_cancel_pick */
@@ -156,6 +154,8 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
     \a target will be set to the selected subchannel, or NULL on failure.
     Upon success, \a user_data will be set to whatever opaque information
     may need to be propagated from the LB policy, or NULL if not needed.
+    \a context will be populated with context to pass to the subchannel
+    call, if needed.
 
     If the pick succeeds and a result is known immediately, a non-zero
     value will be returned.  Otherwise, \a on_complete will be invoked
@@ -167,6 +167,7 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
 int grpc_lb_policy_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                                const grpc_lb_policy_pick_args *pick_args,
                                grpc_connected_subchannel **target,
+                               grpc_call_context_element *context,
                                void **user_data, grpc_closure *on_complete);
 
 /** Perform a connected subchannel ping (see \a grpc_connected_subchannel_ping)

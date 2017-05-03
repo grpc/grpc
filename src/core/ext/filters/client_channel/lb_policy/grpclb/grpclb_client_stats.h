@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,34 +31,35 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CONTEXT_H
-#define GRPC_CORE_LIB_CHANNEL_CONTEXT_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
 
-/// Call object context pointers.
+#include <stdbool.h>
 
-/// Call context is represented as an array of \a grpc_call_context_elements.
-/// This enum represents the indexes into the array, where each index
-/// contains a different type of value.
-typedef enum {
-  /// Value is either a \a grpc_client_security_context or a
-  /// \a grpc_server_security_context.
-  GRPC_CONTEXT_SECURITY = 0,
+#include <grpc/impl/codegen/grpc_types.h>
 
-  /// Value is a \a census_context.
-  GRPC_CONTEXT_TRACING,
+typedef struct grpc_grpclb_client_stats grpc_grpclb_client_stats;
 
-  /// Reserved for traffic_class_context.
-  GRPC_CONTEXT_TRAFFIC,
+grpc_grpclb_client_stats* grpc_grpclb_client_stats_create();
+grpc_grpclb_client_stats* grpc_grpclb_client_stats_ref(
+    grpc_grpclb_client_stats* client_stats);
+void grpc_grpclb_client_stats_unref(grpc_grpclb_client_stats* client_stats);
 
-  /// Value is a \a grpc_grpclb_client_stats.
-  GRPC_GRPCLB_CLIENT_STATS,
+void grpc_grpclb_client_stats_add_call_started(
+    grpc_grpclb_client_stats* client_stats);
+void grpc_grpclb_client_stats_add_call_finished(
+    bool finished_with_drop_for_rate_limiting,
+    bool finished_with_drop_for_load_balancing,
+    bool finished_with_client_failed_to_send, bool finished_known_received,
+    grpc_grpclb_client_stats* client_stats);
 
-  GRPC_CONTEXT_COUNT
-} grpc_context_index;
+void grpc_grpclb_client_stats_get(
+    grpc_grpclb_client_stats* client_stats, int64_t* num_calls_started,
+    int64_t* num_calls_finished,
+    int64_t* num_calls_finished_with_drop_for_rate_limiting,
+    int64_t* num_calls_finished_with_drop_for_load_balancing,
+    int64_t* num_calls_finished_with_client_failed_to_send,
+    int64_t* num_calls_finished_known_received);
 
-typedef struct {
-  void *value;
-  void (*destroy)(void *);
-} grpc_call_context_element;
-
-#endif /* GRPC_CORE_LIB_CHANNEL_CONTEXT_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H \
+          */
