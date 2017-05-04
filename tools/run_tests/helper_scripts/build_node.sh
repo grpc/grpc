@@ -46,6 +46,4 @@ case "$CONFIG" in
   *) config_flag='--release' ;;
 esac
 
-uv_flag=$2
-
-npm install --unsafe-perm --build-from-source $uv_flag $config_flag
+npm install --unsafe-perm --build-from-source $config_flag

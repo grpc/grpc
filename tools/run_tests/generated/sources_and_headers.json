@@ -3291,6 +3291,29 @@
     ], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "grpclb_end2end_test", 
+    "src": [
+      "test/cpp/end2end/grpclb_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "grpclb_test", 
     "src": [
       "test/cpp/grpclb/grpclb_test.cc"
@@ -5914,8 +5937,7 @@
       "grpc++_codegen_base_src", 
       "grpc++_codegen_proto", 
       "grpc++_config_proto", 
-      "grpc_test_util", 
-      "thrift_util"
+      "grpc_test_util"
     ], 
     "headers": [
       "src/proto/grpc/health/v1/health.grpc.pb.h", 
@@ -7986,8 +8008,10 @@
       "nanopb"
     ], 
     "headers": [
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
@@ -7995,10 +8019,14 @@
     "language": "c", 
     "name": "grpc_lb_policy_grpclb", 
     "src": [
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
@@ -8016,8 +8044,10 @@
       "nanopb"
     ], 
     "headers": [
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
@@ -8025,10 +8055,14 @@
     "language": "c", 
     "name": "grpc_lb_policy_grpclb_secure", 
     "src": [
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
@@ -8900,24 +8934,6 @@
     "src": [
       "include/grpc++/test/mock_stream.h", 
       "include/grpc++/test/server_context_test_spouse.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "grpc++_codegen_base"
-    ], 
-    "headers": [
-      "include/grpc++/impl/codegen/thrift_serializer.h", 
-      "include/grpc++/impl/codegen/thrift_utils.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c++", 
-    "name": "thrift_util", 
-    "src": [
-      "include/grpc++/impl/codegen/thrift_serializer.h", 
-      "include/grpc++/impl/codegen/thrift_utils.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

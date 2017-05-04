@@ -45,13 +45,20 @@ packages, which you can get from [Homebrew](https://brew.sh):
 ```sh
  $ brew install autoconf automake libtool shtool
 ```
+If you plan to build from source and run tests, install the following as well:
+```sh
+ $ brew install gflags
+```
 
 ###HP-UX
+
+Install the following, to build from source:
 
 * GNU make
 * gcc-4.8.5
 * openssl-1.0.2j
 * zlib-1.2.8
+
 
 ## Protoc
 

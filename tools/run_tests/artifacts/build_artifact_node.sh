@@ -48,7 +48,7 @@ electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 )
 
 for version in ${node_versions[@]}
 do
-  ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH
+  ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH --grpc_alpine=true
   cp -r build/stage/* artifacts/
 done
 
