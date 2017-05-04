@@ -248,7 +248,6 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify_custom(cqv, 120);
-  gpr_log(GPR_INFO, "status: %d", status);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
