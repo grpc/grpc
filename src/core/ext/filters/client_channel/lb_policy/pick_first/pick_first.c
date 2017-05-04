@@ -64,9 +64,9 @@ typedef struct {
   grpc_connected_subchannel *selected;
 
   /** have we started picking? */
-  int started_picking;
+  bool started_picking;
   /** are we shut down? */
-  int shutdown;
+  bool shutdown;
   /** which subchannel are we watching? */
   size_t checking_subchannel;
   /** what is the connectivity of that channel? */
@@ -96,7 +96,7 @@ static void pf_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
-  p->shutdown = 1;
+  p->shutdown = true;
   pp = p->pending_picks;
   p->pending_picks = NULL;
   grpc_connectivity_state_set(
@@ -170,7 +170,7 @@ static void pf_cancel_picks_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 }
 
 static void start_picking(grpc_exec_ctx *exec_ctx, pick_first_lb_policy *p) {
-  p->started_picking = 1;
+  p->started_picking = true;
   p->checking_subchannel = 0;
   p->checking_connectivity = GRPC_CHANNEL_IDLE;
   GRPC_LB_POLICY_WEAK_REF(&p->base, "pick_first_connectivity");
@@ -195,7 +195,7 @@ static int pf_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
 
-  /* Check atomically for a selected channel */
+  /* If we've already selected a channel, keep using it. */
   if (p->selected != NULL) {
     *target = GRPC_CONNECTED_SUBCHANNEL_REF(p->selected, "picked");
     return 1;
@@ -409,7 +409,9 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_addrs = 0;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
-    if (!addresses->addresses[i].is_balancer) ++num_addrs;
+    if (!addresses->addresses[i].is_balancer && !addresses->addresses[i].drop) {
+      ++num_addrs;
+    }
   }
   if (num_addrs == 0) return NULL;
 
@@ -421,6 +423,8 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     /* Skip balancer addresses, since we only know how to handle backends. */
     if (addresses->addresses[i].is_balancer) continue;
+    /* Skip drop addresses. */
+    if (addresses->addresses[i].drop) continue;
 
     if (addresses->addresses[i].user_data != NULL) {
       gpr_log(GPR_ERROR,

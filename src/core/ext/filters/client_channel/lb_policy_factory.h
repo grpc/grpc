@@ -57,6 +57,7 @@ struct grpc_lb_policy_factory {
  * Those who don't will simply ignore it and will correspondingly return NULL in
  * their namesake pick() output argument. */
 typedef struct grpc_lb_address {
+  bool drop;
   grpc_resolved_address address;
   bool is_balancer;
   char *balancer_name; /* For secure naming. */
@@ -91,6 +92,8 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses *addresses, size_t index,
                                    void *address, size_t address_len,
                                    bool is_balancer, const char *balancer_name,
                                    void *user_data);
+void grpc_lb_addresses_set_drop_address(grpc_lb_addresses *addresses,
+                                        size_t index, void *user_data);
 
 /** Sets the value of the address at index \a index of \a addresses from \a uri.
  * Returns true upon success, false otherwise. Takes ownership of \a
