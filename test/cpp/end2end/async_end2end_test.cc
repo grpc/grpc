@@ -212,14 +212,16 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
 
 class TestScenario {
  public:
-  TestScenario(bool non_block, const grpc::string& creds_type, bool hcs,
-               const grpc::string& content)
+  TestScenario(bool non_block, bool inproc_stub, const grpc::string& creds_type,
+               bool hcs, const grpc::string& content)
       : disable_blocking(non_block),
+        inproc(inproc_stub),
         health_check_service(hcs),
         credentials_type(creds_type),
         message_content(content) {}
   void Log() const;
   bool disable_blocking;
+  bool inproc;
   bool health_check_service;
   // Although the below grpc::string's are logically const, we can't declare
   // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
@@ -232,6 +234,7 @@ static std::ostream& operator<<(std::ostream& out,
                                 const TestScenario& scenario) {
   return out << "TestScenario{disable_blocking="
              << (scenario.disable_blocking ? "true" : "false")
+             << ", inproc=" << (scenario.inproc ? "true" : "false")
              << ", credentials='" << scenario.credentials_type
              << ", health_check_service="
              << (scenario.health_check_service ? "true" : "false")
@@ -294,7 +297,9 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
-        CreateCustomChannel(server_address_.str(), channel_creds, args);
+        !(GetParam().inproc)
+            ? CreateCustomChannel(server_address_.str(), channel_creds, args)
+            : server_->InProcessChannel(args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -512,7 +517,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
   // up until server read is initiated. For write of send_request smaller than
   // the flow control window size, the request can take the free ride with
   // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking)
         .Expect(2, true)
         .Expect(3, true)
@@ -523,7 +528,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
   } else {
     Verifier(GetParam().disable_blocking)
@@ -807,7 +812,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
   // up until server read is initiated. For write of send_request smaller than
   // the flow control window size, the request can take the free ride with
   // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking)
         .Expect(2, true)
         .Expect(3, true)
@@ -818,7 +823,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
   } else {
     Verifier(GetParam().disable_blocking)
@@ -875,7 +880,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
   // up until server read is initiated. For write of send_request smaller than
   // the flow control window size, the request can take the free ride with
   // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking)
         .Expect(2, true)
         .Expect(3, true)
@@ -886,7 +891,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
   } else {
     Verifier(GetParam().disable_blocking)
@@ -1223,7 +1228,9 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
-      CreateCustomChannel(server_address_.str(), channel_creds, args);
+      !(GetParam().inproc)
+          ? CreateCustomChannel(server_address_.str(), channel_creds, args)
+          : server_->InProcessChannel(args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
   EchoRequest send_request;
@@ -1732,8 +1739,14 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   std::vector<grpc::string> credentials_types;
   std::vector<grpc::string> messages;
 
-  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
-                                                      nullptr) != nullptr) {
+  auto insec_ok = [] {
+    // Only allow insecure credentials type when it is registered with the
+    // provider. User may create providers that do not have insecure.
+    return GetCredentialsProvider()->GetChannelCredentials(
+               kInsecureCredentialsType, nullptr) != nullptr;
+  };
+
+  if (insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
   auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
@@ -1755,13 +1768,18 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   // TODO (sreek) Renable tests with health check service after the issue
   // https://github.com/grpc/grpc/issues/11223 is resolved
   for (auto health_check_service : {false}) {
-    for (auto cred = credentials_types.begin(); cred != credentials_types.end();
-         ++cred) {
-      for (auto msg = messages.begin(); msg != messages.end(); msg++) {
-        scenarios.emplace_back(false, *cred, health_check_service, *msg);
+    for (auto msg = messages.begin(); msg != messages.end(); msg++) {
+      for (auto cred = credentials_types.begin();
+           cred != credentials_types.end(); ++cred) {
+        scenarios.emplace_back(false, false, *cred, health_check_service, *msg);
         if (test_disable_blocking) {
-          scenarios.emplace_back(true, *cred, health_check_service, *msg);
+          scenarios.emplace_back(true, false, *cred, health_check_service,
+                                 *msg);
         }
+      }
+      if (insec_ok()) {
+        scenarios.emplace_back(false, true, kInsecureCredentialsType,
+                               health_check_service, *msg);
       }
     }
   }

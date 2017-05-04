@@ -294,6 +294,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
+    src/core/ext/transport/inproc/inproc_plugin.c \
+    src/core/ext/transport/inproc/inproc_transport.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c \
@@ -673,6 +675,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/inproc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)

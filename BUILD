@@ -837,6 +837,7 @@ grpc_cc_library(
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
+        "grpc_transport_inproc",
         "grpc_workaround_cronet_compression_filter",
         "grpc_server_backward_compatibility",
     ],
@@ -1379,6 +1380,21 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_transport_chttp2",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_transport_inproc",
+    srcs = [
+        "src/core/ext/transport/inproc/inproc_plugin.c",
+        "src/core/ext/transport/inproc/inproc_transport.c",
+    ],
+    hdrs = [
+        "src/core/ext/transport/inproc/inproc_transport.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
     ],
 )
 

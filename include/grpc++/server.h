@@ -95,6 +95,9 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
     return health_check_service_.get();
   }
 
+  /// Establish a channel for in-process communication
+  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
+
  private:
   friend class AsyncGenericService;
   friend class ServerBuilder;

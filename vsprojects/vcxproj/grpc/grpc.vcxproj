@@ -480,6 +480,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\client_load_reporting_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_channel.h" />
@@ -936,6 +937,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_transport.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\client_load_reporting_filter.c">
     </ClCompile>

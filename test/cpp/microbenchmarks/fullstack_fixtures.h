@@ -66,14 +66,21 @@ class FullstackFixture : public BaseFixture {
   FullstackFixture(Service* service, const FixtureConfiguration& config,
                    const grpc::string& address) {
     ServerBuilder b;
-    b.AddListeningPort(address, InsecureServerCredentials());
+    if (address.length() > 0) {
+      b.AddListeningPort(address, InsecureServerCredentials());
+    }
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
     config.ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
-    channel_ = CreateCustomChannel(address, InsecureChannelCredentials(), args);
+    if (address.length() > 0) {
+      channel_ =
+          CreateCustomChannel(address, InsecureChannelCredentials(), args);
+    } else {
+      channel_ = server_->InProcessChannel(args);
+    }
   }
 
   virtual ~FullstackFixture() {
@@ -137,6 +144,15 @@ class UDS : public FullstackFixture {
     addr << "unix:/tmp/bm_fullstack." << *port;
     return addr.str();
   }
+};
+
+class InProcess : public FullstackFixture {
+ public:
+  InProcess(Service* service,
+            const FixtureConfiguration& fixture_configuration =
+                FixtureConfiguration())
+      : FullstackFixture(service, fixture_configuration, "") {}
+  ~InProcess() {}
 };
 
 class EndpointPairFixture : public BaseFixture {
@@ -279,6 +295,7 @@ class MinStackize : public Base {
 
 typedef MinStackize<TCP> MinTCP;
 typedef MinStackize<UDS> MinUDS;
+typedef MinStackize<InProcess> MinInProcess;
 typedef MinStackize<SockPair> MinSockPair;
 typedef MinStackize<InProcessCHTTP2> MinInProcessCHTTP2;
 
