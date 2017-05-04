@@ -41,12 +41,13 @@
 #include <string.h>
 
 #include <grpc/support/log.h>
+#include "src/core/lib/debug/trace.h"
 #include "test/core/util/test_config.h"
 
 #define MAX_CB 30
 
-extern int grpc_timer_trace;
-extern int grpc_timer_check_trace;
+extern grpc_tracer_flag grpc_timer_trace;
+extern grpc_tracer_flag grpc_timer_check_trace;
 
 static int cb_called[MAX_CB][2];
 
@@ -63,8 +64,8 @@ static void add_test(void) {
   gpr_log(GPR_INFO, "add_test");
 
   grpc_timer_list_init(start);
-  grpc_timer_trace = 1;
-  grpc_timer_check_trace = 1;
+  grpc_timer_trace.value = 1;
+  grpc_timer_check_trace.value = 1;
   memset(cb_called, 0, sizeof(cb_called));
 
   /* 10 ms timers.  will expire in the current epoch */
@@ -138,8 +139,8 @@ void destruction_test(void) {
   gpr_log(GPR_INFO, "destruction_test");
 
   grpc_timer_list_init(gpr_time_0(GPR_CLOCK_REALTIME));
-  grpc_timer_trace = 1;
-  grpc_timer_check_trace = 1;
+  grpc_timer_trace.value = 1;
+  grpc_timer_check_trace.value = 1;
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_timer_init(
