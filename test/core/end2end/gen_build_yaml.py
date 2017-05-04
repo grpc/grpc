@@ -83,7 +83,7 @@ END2END_FIXTURES = {
 TestOptions = collections.namedtuple(
     'TestOptions',
     'needs_fullstack needs_dns proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allow_compression timeout_seconds exclude_configs')
-default_test_options = TestOptions(False, False, True, False, True, 1.0, [], False, False, True, 300 [])
+default_test_options = TestOptions(False, False, True, False, True, 1.0, [], False, False, True, 300, [])
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 LOWCPU = 0.1
@@ -272,7 +272,8 @@ def main():
           {
               'name': '%s_test' % f,
               'args': [t],
-              'exclude_configs': END2END_FIXTURES[f].exclude_configs,
+              'exclude_configs': list(set(END2END_FIXTURES[f].exclude_configs) |
+                                     set(END2END_TESTS[t].exclude_configs)),
               'exclude_iomgrs': list(set(END2END_FIXTURES[f].exclude_iomgrs) |
                                      set(END2END_TESTS[t].exclude_iomgrs)),
               'platforms': END2END_FIXTURES[f].platforms,
@@ -290,7 +291,8 @@ def main():
           {
               'name': '%s_nosec_test' % f,
               'args': [t],
-              'exclude_configs': END2END_FIXTURES[f].exclude_configs,
+              'exclude_configs': list(set(END2END_FIXTURES[f].exclude_configs) |
+                                     set(END2END_TESTS[t].exclude_configs)),
               'exclude_iomgrs': list(set(END2END_FIXTURES[f].exclude_iomgrs) |
                                      set(END2END_TESTS[t].exclude_iomgrs)),
               'platforms': END2END_FIXTURES[f].platforms,
