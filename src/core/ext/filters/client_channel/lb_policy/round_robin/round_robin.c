@@ -74,7 +74,7 @@
 
 typedef struct round_robin_lb_policy round_robin_lb_policy;
 
-grpc_tracer_flag grpc_lb_round_robin_trace;
+grpc_tracer_flag grpc_lb_round_robin_trace = GRPC_TRACER_INITIALIZER(false);
 
 /** List of entities waiting for a pick.
  *

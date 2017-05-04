@@ -42,7 +42,7 @@
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
 
-grpc_tracer_flag grpc_combiner_trace;
+grpc_tracer_flag grpc_combiner_trace = GRPC_TRACER_INITIALIZER(false);
 
 #define GRPC_COMBINER_TRACE(fn)                \
   do {                                         \

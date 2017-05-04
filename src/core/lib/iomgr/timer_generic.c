@@ -56,8 +56,8 @@
 #define MIN_QUEUE_WINDOW_DURATION 0.01
 #define MAX_QUEUE_WINDOW_DURATION 1
 
-grpc_tracer_flag grpc_timer_trace;
-grpc_tracer_flag grpc_timer_check_trace;
+grpc_tracer_flag grpc_timer_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_timer_check_trace = GRPC_TRACER_INITIALIZER(false);
 
 typedef struct {
   gpr_mu mu;

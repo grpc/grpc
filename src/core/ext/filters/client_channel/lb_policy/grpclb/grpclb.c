@@ -138,7 +138,7 @@
 #define GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_GRPCLB_RECONNECT_JITTER 0.2
 
-grpc_tracer_flag grpc_lb_glb_trace;
+grpc_tracer_flag grpc_lb_glb_trace = GRPC_TRACER_INITIALIZER(false);
 
 /* add lb_token of selected subchannel (address) to the call's initial
  * metadata */

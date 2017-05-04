@@ -50,9 +50,9 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/event_string.h"
 
-grpc_tracer_flag grpc_trace_operation_failures;
+grpc_tracer_flag grpc_trace_operation_failures = GRPC_TRACER_INITIALIZER(false);
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_pending_tags;
+grpc_tracer_flag grpc_trace_pending_tags = GRPC_TRACER_INITIALIZER(false);
 #endif
 
 typedef struct {

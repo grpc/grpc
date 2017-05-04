@@ -41,7 +41,7 @@
 
 /* --- Tracing. --- */
 
-grpc_tracer_flag tsi_tracing_enabled;
+grpc_tracer_flag tsi_tracing_enabled = GRPC_TRACER_INITIALIZER(false);
 
 /* --- tsi_result common implementation. --- */
 

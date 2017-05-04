@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-grpc_tracer_flag grpc_trace_channel;
+grpc_tracer_flag grpc_trace_channel = GRPC_TRACER_INITIALIZER(false);
 
 /* Memory layouts.
 

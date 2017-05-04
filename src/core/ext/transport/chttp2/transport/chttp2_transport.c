@@ -89,8 +89,8 @@ static bool g_default_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
-grpc_tracer_flag grpc_http_trace;
-grpc_tracer_flag grpc_flowctl_trace;
+grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_flowctl_trace = GRPC_TRACER_INITIALIZER(false);
 
 static const grpc_transport_vtable vtable;
 
@@ -2787,7 +2787,8 @@ static void benign_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
-  } else if (error == GRPC_ERROR_NONE && GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+  } else if (error == GRPC_ERROR_NONE &&
+             GRPC_TRACER_ON(grpc_resource_quota_trace)) {
     gpr_log(GPR_DEBUG,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",

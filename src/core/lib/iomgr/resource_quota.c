@@ -44,7 +44,7 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 
-grpc_tracer_flag grpc_resource_quota_trace;
+grpc_tracer_flag grpc_resource_quota_trace = GRPC_TRACER_INITIALIZER(false);
 
 #define MEMORY_USAGE_ESTIMATION_MAX 65536
 
@@ -313,7 +313,8 @@ static bool rq_alloc(grpc_exec_ctx *exec_ctx,
                 resource_quota->name, resource_user->name, amt,
                 resource_quota->free_pool);
       }
-    } else if (GRPC_TRACER_ON(grpc_resource_quota_trace) && resource_user->free_pool >= 0) {
+    } else if (GRPC_TRACER_ON(grpc_resource_quota_trace) &&
+               resource_user->free_pool >= 0) {
       gpr_log(GPR_DEBUG, "RQ %s %s: discard already satisfied alloc request",
               resource_quota->name, resource_user->name);
     }
