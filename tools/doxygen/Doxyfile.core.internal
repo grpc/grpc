@@ -1034,6 +1034,9 @@ src/core/ext/transport/chttp2/transport/stream_map.h \
 src/core/ext/transport/chttp2/transport/varint.c \
 src/core/ext/transport/chttp2/transport/varint.h \
 src/core/ext/transport/chttp2/transport/writing.c \
+src/core/ext/transport/inproc/inproc_plugin.c \
+src/core/ext/transport/inproc/inproc_transport.c \
+src/core/ext/transport/inproc/inproc_transport.h \
 src/core/lib/README.md \
 src/core/lib/channel/README.md \
 src/core/lib/channel/channel_args.c \
