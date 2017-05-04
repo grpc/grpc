@@ -110,7 +110,7 @@ static void fd_global_init(void);
 static void fd_global_shutdown(void);
 
 /*******************************************************************************
- * Polling island Declarations
+ * epoll set Declarations
  */
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -130,6 +130,10 @@ static void fd_global_shutdown(void);
 typedef struct epoll_set {
   grpc_closure_scheduler workqueue_scheduler;
 
+  /* Mutex poller should acquire to poll this. This enforces that only one
+   * poller can be polling on epoll_set at any time */
+  gpr_mu mu;
+
   /* Ref count. Use EPS_ADD_REF() and EPS_UNREF() macros to increment/decrement
      the refcount. Once the ref count becomes zero, this structure is destroyed
      which means we should ensure that there is never a scenario where a
@@ -137,7 +141,7 @@ typedef struct epoll_set {
      zero. */
   gpr_atm ref_count;
 
-  /* Number of threads currently polling on this island */
+  /* Number of threads currently polling on this epoll set*/
   gpr_atm poller_count;
   /* Mutex guarding the read end of the workqueue (must be held to pop from
    * workqueue_items) */
@@ -189,6 +193,7 @@ struct grpc_pollset_set {};
 
 size_t g_num_eps = 1;
 struct epoll_set **g_epoll_sets = NULL;
+gpr_atm g_next_eps;
 size_t g_num_threads_per_eps = 1;
 gpr_thd_id *g_poller_threads = NULL;
 
@@ -219,16 +224,13 @@ static bool append_error(grpc_error **composite, grpc_error *error,
 }
 
 /*******************************************************************************
- * Polling island Definitions
+ * epoll set Definitions
  */
 
-/* The wakeup fd that is used to wake up all threads in a Polling island. This
-   is useful in the epoll set merge operation where we need to wakeup all
-   the threads currently polling the smaller epoll set (so that they can
-   start polling the new/merged epoll set)
-
-   NOTE: This fd is initialized to be readable and MUST NOT be consumed i.e the
-   threads that woke up MUST NOT call grpc_wakeup_fd_consume_wakeup() */
+/* The wakeup fd that is used to wake up all threads in an epoll_set informing
+   that the epoll set is shutdown.  This wakeup fd initialized to be readable
+   and MUST NOT be consumed i.e the threads that woke up MUST NOT call
+   grpc_wakeup_fd_consume_wakeup() */
 static grpc_wakeup_fd epoll_set_wakeup_fd;
 
 /* The epoll set being polled right now.
@@ -399,6 +401,7 @@ static epoll_set *epoll_set_create(grpc_error **error) {
   eps->workqueue_scheduler.vtable = &workqueue_scheduler_vtable;
   eps->epoll_fd = -1;
 
+  gpr_mu_init(&eps->mu);
   gpr_mu_init(&eps->workqueue_read_mu);
   gpr_mpscq_init(&eps->workqueue_items);
   gpr_atm_rel_store(&eps->workqueue_item_count, 0);
@@ -437,6 +440,7 @@ static void epoll_set_delete(epoll_set *eps) {
   }
 
   GPR_ASSERT(gpr_atm_no_barrier_load(&eps->workqueue_item_count) == 0);
+  gpr_mu_destroy(&eps->mu);
   gpr_mu_destroy(&eps->workqueue_read_mu);
   gpr_mpscq_destroy(&eps->workqueue_items);
   grpc_wakeup_fd_destroy(&eps->workqueue_wakeup_fd);
@@ -897,6 +901,19 @@ static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx, epoll_set *eps) {
   return false;
 }
 
+/* Blocking call */
+static void acquire_epoll_lease(epoll_set *eps) {
+  if (g_num_threads_per_eps > 1) {
+    gpr_mu_lock(&eps->mu);
+  }
+}
+
+static void release_epoll_lease(epoll_set *eps) {
+  if (g_num_threads_per_eps > 1) {
+    gpr_mu_unlock(&eps->mu);
+  }
+}
+
 #define GRPC_EPOLL_MAX_EVENTS 100
 static void do_epoll_wait(grpc_exec_ctx *exec_ctx, int epoll_fd, epoll_set *eps,
                           grpc_error **error) {
@@ -908,7 +925,9 @@ static void do_epoll_wait(grpc_exec_ctx *exec_ctx, int epoll_fd, epoll_set *eps,
   int timeout_ms = -1;
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
+  acquire_epoll_lease(eps);
   ep_rv = epoll_wait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms);
+  release_epoll_lease(eps);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
 
   if (ep_rv < 0) {
@@ -961,11 +980,6 @@ static void epoll_set_work(grpc_exec_ctx *exec_ctx, epoll_set *eps,
      epoll set. */
   epoll_fd = eps->epoll_fd;
 
-  /* Add an extra ref so that the island does not get destroyed (which means
-     the epoll_fd won't be closed) while we are are doing an epoll_wait() on the
-     epoll_fd */
-  EPS_ADD_REF(eps, "ps_work");
-
   /* If we get some workqueue work to do, it might end up completing an item on
      the completion queue, so there's no need to poll... so we skip that and
      redo the complete loop to verify */
@@ -978,13 +992,6 @@ static void epoll_set_work(grpc_exec_ctx *exec_ctx, epoll_set *eps,
     g_current_thread_epoll_set = NULL;
     gpr_atm_no_barrier_fetch_add(&eps->poller_count, -1);
   }
-
-  /* Before leaving, release the extra ref we added to the epoll set. It
-     is important to use "eps" here (i.e our old copy of pollset->eps
-     that we got before releasing the epoll set lock). This is because
-     pollset->eps pointer might get udpated in other parts of the
-     code when there is an island merge while we are doing epoll_wait() above */
-  EPS_UNREF(exec_ctx, eps, "ps_work");
 
   GPR_TIMER_END("epoll_set_work", 0);
 }
@@ -1162,7 +1169,7 @@ static void add_fd_to_eps(grpc_fd *fd) {
   GPR_TIMER_BEGIN("add_fd_to_eps", 0);
 
   grpc_error *error = GRPC_ERROR_NONE;
-  size_t idx = ((size_t)rand()) % g_num_eps;
+  size_t idx = (size_t)gpr_atm_no_barrier_fetch_add(&g_next_eps, 1) % g_num_eps;
   epoll_set *eps = g_epoll_sets[idx];
 
   gpr_mu_lock(&fd->mu);
@@ -1176,8 +1183,7 @@ static void add_fd_to_eps(grpc_fd *fd) {
   EPS_ADD_REF(eps, "fd");
   fd->eps = eps;
 
-  GRPC_POLLING_TRACE("add_fd_to_eps (fd: %d, eps idx = %ld)", fd->fd,
-                     idx);
+  GRPC_POLLING_TRACE("add_fd_to_eps (fd: %d, eps idx = %ld)", fd->fd, idx);
   gpr_mu_unlock(&fd->mu);
 
   GRPC_LOG_IF_ERROR("add_fd_to_eps", error);
@@ -1203,6 +1209,7 @@ static bool init_epoll_sets() {
     EPS_ADD_REF(g_epoll_sets[i], "init_epoll_sets");
   }
 
+  gpr_atm_no_barrier_store(&g_next_eps, 0);
   gpr_mu *mu;
   pollset_init(&g_read_notifier, &mu);
 
@@ -1247,14 +1254,14 @@ static void start_poller_threads() {
 
   gpr_log(GPR_INFO, "Starting poller threads");
 
-  /* One thread per pollset */
-  g_poller_threads = (gpr_thd_id *)malloc(g_num_eps * sizeof(gpr_thd_id));
+  size_t num_threads = g_num_eps * g_num_threads_per_eps;
+  g_poller_threads = (gpr_thd_id *)malloc(num_threads * sizeof(gpr_thd_id));
   gpr_thd_options options = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&options);
 
-  for (size_t i = 0; i < g_num_eps; i++) {
+  for (size_t i = 0; i < num_threads; i++) {
     gpr_thd_new(&g_poller_threads[i], poller_thread_loop,
-                (void *)g_epoll_sets[i], &options);
+                (void *)g_epoll_sets[i % g_num_eps], &options);
   }
 }
 
@@ -1266,7 +1273,8 @@ static void shutdown_poller_threads() {
   gpr_log(GPR_INFO, "Shutting down pollers");
 
   epoll_set *eps = NULL;
-  for (size_t i = 0; i < g_num_eps; i++) {
+  size_t num_threads = g_num_eps * g_num_threads_per_eps;
+  for (size_t i = 0; i < num_threads; i++) {
     eps = g_epoll_sets[i];
     epoll_set_add_wakeup_fd_locked(eps, &epoll_set_wakeup_fd, &error);
   }
