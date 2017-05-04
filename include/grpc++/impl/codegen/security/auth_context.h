@@ -49,7 +49,6 @@ class SecureAuthContext;
 
 typedef std::pair<grpc::string_ref, grpc::string_ref> AuthProperty;
 
-/// TODO: Should this class have a comment?
 class AuthPropertyIterator
     : public std::iterator<std::input_iterator_tag, const AuthProperty> {
  public:
