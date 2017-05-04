@@ -81,4 +81,6 @@ message ClientStats {
 
   // Number of failed requests (one row per status code seen)
   repeated RequestResultCount request_results = 5;
+
+  uint64 cq_poll_count = 6;
 }

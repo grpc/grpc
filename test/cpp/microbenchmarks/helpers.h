@@ -35,6 +35,7 @@
 #define TEST_CPP_MICROBENCHMARKS_COUNTERS_H
 
 #include <sstream>
+#include <string>
 
 extern "C" {
 #include <grpc/support/port_platform.h>
@@ -79,6 +80,7 @@ class TrackCounters {
  public:
   virtual void Finish(benchmark::State& state);
   virtual void AddToLabel(std::ostream& out, benchmark::State& state);
+  virtual void AppendToLabel(std::ostream& out, std::string metric, double value);
 
  private:
 #ifdef GPR_LOW_LEVEL_COUNTERS

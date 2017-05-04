@@ -241,6 +241,8 @@ message ScenarioResultSummary
   // Number of requests that succeeded/failed
   double successful_requests_per_second = 13;
   double failed_requests_per_second = 14;
+
+  double client_polls_per_request = 15;
 }
 
 // Results of a single benchmark scenario.

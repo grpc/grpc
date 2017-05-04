@@ -76,6 +76,9 @@ class Reporter {
   /** Reports server cpu usage. */
   virtual void ReportCpuUsage(const ScenarioResult& result) = 0;
 
+  /** Reports server cpu usage. */
+  virtual void ReportPollCount(const ScenarioResult& result) = 0;
+
  private:
   const string name_;
 };
@@ -93,6 +96,7 @@ class CompositeReporter : public Reporter {
   void ReportLatency(const ScenarioResult& result) override;
   void ReportTimes(const ScenarioResult& result) override;
   void ReportCpuUsage(const ScenarioResult& result) override;
+  void ReportPollCount(const ScenarioResult& result) override;
 
  private:
   std::vector<std::unique_ptr<Reporter> > reporters_;
@@ -109,6 +113,7 @@ class GprLogReporter : public Reporter {
   void ReportLatency(const ScenarioResult& result) override;
   void ReportTimes(const ScenarioResult& result) override;
   void ReportCpuUsage(const ScenarioResult& result) override;
+  void ReportPollCount(const ScenarioResult& result) override;
 };
 
 /** Dumps the report to a JSON file. */
@@ -123,6 +128,7 @@ class JsonReporter : public Reporter {
   void ReportLatency(const ScenarioResult& result) override;
   void ReportTimes(const ScenarioResult& result) override;
   void ReportCpuUsage(const ScenarioResult& result) override;
+  void ReportPollCount(const ScenarioResult& result) override;
 
   const string report_file_;
 };
@@ -138,6 +144,7 @@ class RpcReporter : public Reporter {
   void ReportLatency(const ScenarioResult& result) override;
   void ReportTimes(const ScenarioResult& result) override;
   void ReportCpuUsage(const ScenarioResult& result) override;
+  void ReportPollCount(const ScenarioResult& result) override;
 
   std::unique_ptr<ReportQpsScenarioService::Stub> stub_;
 };

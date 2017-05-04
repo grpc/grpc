@@ -150,7 +150,8 @@ class Client {
   Client()
       : timer_(new UsageTimer),
         interarrival_timer_(),
-        started_requests_(false) {
+        started_requests_(false),
+        last_reset_poll_count_(0) {
     gpr_event_init(&start_requests_);
   }
   virtual ~Client() {}
@@ -162,6 +163,7 @@ class Client {
 
     MaybeStartRequests();
 
+    int last_reset_poll_count_to_use = last_reset_poll_count_;
     if (reset) {
       std::vector<Histogram> to_merge(threads_.size());
       std::vector<StatusHistogram> to_merge_status(threads_.size());
@@ -176,6 +178,7 @@ class Client {
         MergeStatusHistogram(to_merge_status[i], &statuses);
       }
       timer_result = timer->Mark();
+      last_reset_poll_count_ = GetPollCount();
     } else {
       // merge snapshots of each thread histogram
       for (size_t i = 0; i < threads_.size(); i++) {
@@ -195,6 +198,9 @@ class Client {
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
+    gpr_log(GPR_INFO, "*****poll count : %d %d %d", GetPollCount(), last_reset_poll_count_, last_reset_poll_count_to_use);
+
+    stats.set_cq_poll_count(GetPollCount() - last_reset_poll_count_to_use);
     return stats;
   }
 
@@ -207,6 +213,11 @@ class Client {
     while (threads_remaining_ != 0) {
       threads_complete_.wait(g);
     }
+  }
+
+  virtual int GetPollCount() {
+    // For sync client.
+    return 0;
   }
 
  protected:
@@ -350,6 +361,8 @@ class Client {
 
   gpr_event start_requests_;
   bool started_requests_;
+
+  int last_reset_poll_count_;
 
   void MaybeStartRequests() {
     if (!started_requests_) {
