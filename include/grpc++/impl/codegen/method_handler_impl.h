@@ -40,7 +40,7 @@
 
 namespace grpc {
 
-// A wrapper class of an application provided rpc method handler.
+/// A wrapper class of an application provided rpc method handler.
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler : public MethodHandler {
  public:
@@ -77,7 +77,7 @@ class RpcMethodHandler : public MethodHandler {
   }
 
  private:
-  // Application provided rpc handler function.
+  /// Application provided rpc handler function.
   std::function<Status(ServiceType*, ServerContext*, const RequestType*,
                        ResponseType*)>
       func_;
@@ -85,7 +85,7 @@ class RpcMethodHandler : public MethodHandler {
   ServiceType* service_;
 };
 
-// A wrapper class of an application provided client streaming handler.
+/// A wrapper class of an application provided client streaming handler.
 template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler : public MethodHandler {
  public:
@@ -125,7 +125,7 @@ class ClientStreamingHandler : public MethodHandler {
   ServiceType* service_;
 };
 
-// A wrapper class of an application provided server streaming handler.
+/// A wrapper class of an application provided server streaming handler.
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler : public MethodHandler {
  public:
@@ -166,13 +166,13 @@ class ServerStreamingHandler : public MethodHandler {
   ServiceType* service_;
 };
 
-// A wrapper class of an application provided bidi-streaming handler.
-// This also applies to server-streamed implementation of a unary method
-// with the additional requirement that such methods must have done a
-// write for status to be ok
-// Since this is used by more than 1 class, the service is not passed in.
-// Instead, it is expected to be an implicitly-captured argument of func
-// (through bind or something along those lines)
+/// A wrapper class of an application provided bidi-streaming handler.
+/// This also applies to server-streamed implementation of a unary method
+/// with the additional requirement that such methods must have done a
+/// write for status to be ok
+/// Since this is used by more than 1 class, the service is not passed in.
+/// Instead, it is expected to be an implicitly-captured argument of func
+/// (through bind or something along those lines)
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler : public MethodHandler {
  public:
@@ -250,7 +250,7 @@ class SplitServerStreamingHandler
             ServerSplitStreamer<RequestType, ResponseType>, false>(func) {}
 };
 
-// Handle unknown method by returning UNIMPLEMENTED error.
+/// Handle unknown method by returning UNIMPLEMENTED error.
 class UnknownMethodHandler : public MethodHandler {
  public:
   template <class T>
