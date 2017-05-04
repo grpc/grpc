@@ -242,6 +242,7 @@ message ScenarioResultSummary
   double successful_requests_per_second = 13;
   double failed_requests_per_second = 14;
 
+  // Number of polls called inside completion queue per request
   double client_polls_per_request = 15;
   double server_polls_per_request = 16;
 }

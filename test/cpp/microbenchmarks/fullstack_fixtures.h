@@ -100,17 +100,10 @@ class FullstackFixture : public BaseFixture {
     }
   }
 
-  void Finish(benchmark::State& state) {
-    std::ostringstream out;
-    AddToLabel(out, state);
-    AppendToLabel(
-        out, "polls/iter",
-        (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations());
-    auto label = out.str();
-    if (label.length() && label[0] == ' ') {
-      label = label.substr(1);
-    }
-    state.SetLabel(label);
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    BaseFixture::AddToLabel(out, state);
+    out << " polls/iter:"
+        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -225,17 +218,10 @@ class EndpointPairFixture : public BaseFixture {
     }
   }
 
-  void Finish(benchmark::State& state) {
-    std::ostringstream out;
-    AddToLabel(out, state);
-    AppendToLabel(
-        out, "polls/iter",
-        (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations());
-    auto label = out.str();
-    if (label.length() && label[0] == ' ') {
-      label = label.substr(1);
-    }
-    state.SetLabel(label);
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    BaseFixture::AddToLabel(out, state);
+    out << " polls/iter:"
+        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -271,7 +257,7 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << ((double)stats_.num_writes / (double)state.iterations());
+        << (double)stats_.num_writes / (double)state.iterations();
   }
 
  private:

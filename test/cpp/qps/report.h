@@ -76,7 +76,7 @@ class Reporter {
   /** Reports server cpu usage. */
   virtual void ReportCpuUsage(const ScenarioResult& result) = 0;
 
-  /** Reports server cpu usage. */
+  /** Reports client and server poll usage inside completion queue. */
   virtual void ReportPollCount(const ScenarioResult& result) = 0;
 
  private:
