@@ -621,6 +621,8 @@ TEST_F(SingleBalancerTest, Drop) {
   // Try to connect before sending RPCs, to avoid non-determinism caused
   // by races between connection establishment and RPCs being sent.
   channel_->GetState(true /* try_to_connect */);
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(1000, GPR_TIMESPAN)));
   // Send 100 RPCs for each server and drop address.
   const auto& statuses_and_responses =
       SendRpc(kMessage_, kNumRpcsPerAddress * (num_backends_ + 3));
@@ -702,6 +704,8 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
   // Try to connect before sending RPCs, to avoid non-determinism caused
   // by races between connection establishment and RPCs being sent.
   channel_->GetState(true /* try_to_connect */);
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(1000, GPR_TIMESPAN)));
   // Send 100 RPCs for each server and drop address.
   const auto& statuses_and_responses =
       SendRpc(kMessage_, kNumRpcsPerAddress * (num_backends_ + 3));
