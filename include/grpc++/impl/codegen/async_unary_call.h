@@ -71,7 +71,7 @@ class ClientAsyncResponseReader final
         ClientAsyncResponseReader(call, context, request);
   }
 
-  // always allocated against a call arena, no memory free required
+  /// always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
     assert(size == sizeof(ClientAsyncResponseReader));
   }

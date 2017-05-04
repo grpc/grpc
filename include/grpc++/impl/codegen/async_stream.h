@@ -155,7 +155,7 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
         ClientAsyncReader(call, context, request, tag);
   }
 
-  // always allocated against a call arena, no memory free required
+  /// always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
     assert(size == sizeof(ClientAsyncReader));
   }
@@ -235,7 +235,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
         ClientAsyncWriter(call, context, response, tag);
   }
 
-  // always allocated against a call arena, no memory free required
+  /// always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
     assert(size == sizeof(ClientAsyncWriter));
   }
@@ -338,7 +338,7 @@ class ClientAsyncReaderWriter final
         ClientAsyncReaderWriter(call, context, tag);
   }
 
-  // always allocated against a call arena, no memory free required
+  /// always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
     assert(size == sizeof(ClientAsyncReaderWriter));
   }

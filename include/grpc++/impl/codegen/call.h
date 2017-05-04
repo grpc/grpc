@@ -634,7 +634,7 @@ class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
   }
 };
 
-// Straightforward wrapping of the C call object
+/// Straightforward wrapping of the C call object
 class Call final {
  public:
   /** call is owned by the caller */

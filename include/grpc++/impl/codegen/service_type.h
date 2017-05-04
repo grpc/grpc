@@ -61,6 +61,7 @@ class ServerAsyncStreamingInterface {
   virtual void BindCall(Call* call) = 0;
 };
 
+/// Desriptor of an RPC service and its various RPC methods
 class Service {
  public:
   Service() : server_(nullptr) {}
