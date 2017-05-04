@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,34 +31,12 @@
  *
  */
 
-#include <grpc++/security/credentials.h>
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H
 
-#include <memory>
+#include "src/core/lib/channel/channel_stack.h"
 
-#include <grpc/grpc.h>
-#include <gtest/gtest.h>
+extern const grpc_channel_filter grpc_client_load_reporting_filter;
 
-namespace grpc {
-namespace testing {
-
-class CredentialsTest : public ::testing::Test {
- protected:
-};
-
-TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
-  std::shared_ptr<CallCredentials> bad1 = GoogleRefreshTokenCredentials("");
-  EXPECT_EQ(static_cast<CallCredentials*>(nullptr), bad1.get());
-}
-
-TEST_F(CredentialsTest, DefaultCredentials) {
-  auto creds = GoogleDefaultCredentials();
-}
-
-}  // namespace testing
-}  // namespace grpc
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int ret = RUN_ALL_TESTS();
-  return ret;
-}
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H \
+          */

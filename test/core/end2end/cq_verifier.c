@@ -189,23 +189,6 @@ int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
   return res;
 }
 
-static void verify_matches(expectation *e, grpc_event *ev) {
-  GPR_ASSERT(e->type == ev->type);
-  switch (e->type) {
-    case GRPC_QUEUE_SHUTDOWN:
-      gpr_log(GPR_ERROR, "premature queue shutdown");
-      abort();
-      break;
-    case GRPC_OP_COMPLETE:
-      GPR_ASSERT(e->success == ev->success);
-      break;
-    case GRPC_QUEUE_TIMEOUT:
-      gpr_log(GPR_ERROR, "not implemented");
-      abort();
-      break;
-  }
-}
-
 static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
   char *tmp;
 
@@ -214,7 +197,7 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
 
   switch (e->type) {
     case GRPC_OP_COMPLETE:
-      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d %s:%d", e->success,
+      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE success=%d %s:%d", e->success,
                    e->file, e->line);
       gpr_strvec_add(buf, tmp);
       break;
@@ -247,6 +230,33 @@ static void fail_no_event_received(cq_verifier *v) {
   gpr_free(msg);
   abort();
 }
+
+static void verify_matches(expectation *e, grpc_event *ev) {
+  GPR_ASSERT(e->type == ev->type);
+  switch (e->type) {
+    case GRPC_OP_COMPLETE:
+      if (e->success != ev->success) {
+        gpr_strvec expected;
+        gpr_strvec_init(&expected);
+        expectation_to_strvec(&expected, e);
+        char *s = gpr_strvec_flatten(&expected, NULL);
+        gpr_strvec_destroy(&expected);
+        gpr_log(GPR_ERROR, "actual success does not match expected: %s", s);
+        gpr_free(s);
+        abort();
+      }
+      break;
+    case GRPC_QUEUE_SHUTDOWN:
+      gpr_log(GPR_ERROR, "premature queue shutdown");
+      abort();
+      break;
+    case GRPC_QUEUE_TIMEOUT:
+      gpr_log(GPR_ERROR, "not implemented");
+      abort();
+      break;
+  }
+}
+
 
 void cq_verify(cq_verifier *v) { cq_verify_custom(v, 10); }
 

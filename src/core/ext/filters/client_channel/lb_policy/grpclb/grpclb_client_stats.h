@@ -31,45 +31,35 @@
  *
  */
 
-#ifndef GRPC_UV
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
 
-#include "server.h"
+#include <stdbool.h>
 
-#include <nan.h>
-#include <node.h>
-#include "grpc/grpc.h"
-#include "grpc/support/time.h"
+#include <grpc/impl/codegen/grpc_types.h>
 
-namespace grpc {
-namespace node {
+typedef struct grpc_grpclb_client_stats grpc_grpclb_client_stats;
 
-Server::Server(grpc_server *server) : wrapped_server(server) {
-  grpc_completion_queue_attributes attrs = {
-      GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_NON_LISTENING};
-  shutdown_queue = grpc_completion_queue_create(
-      grpc_completion_queue_factory_lookup(&attrs), &attrs, NULL);
-  grpc_server_register_completion_queue(server, shutdown_queue, NULL);
-}
+grpc_grpclb_client_stats* grpc_grpclb_client_stats_create();
+grpc_grpclb_client_stats* grpc_grpclb_client_stats_ref(
+    grpc_grpclb_client_stats* client_stats);
+void grpc_grpclb_client_stats_unref(grpc_grpclb_client_stats* client_stats);
 
-Server::~Server() {
-  this->ShutdownServer();
-  grpc_completion_queue_shutdown(this->shutdown_queue);
-  grpc_completion_queue_destroy(this->shutdown_queue);
-}
+void grpc_grpclb_client_stats_add_call_started(
+    grpc_grpclb_client_stats* client_stats);
+void grpc_grpclb_client_stats_add_call_finished(
+    bool finished_with_drop_for_rate_limiting,
+    bool finished_with_drop_for_load_balancing,
+    bool finished_with_client_failed_to_send, bool finished_known_received,
+    grpc_grpclb_client_stats* client_stats);
 
-void Server::ShutdownServer() {
-  if (this->wrapped_server != NULL) {
-    grpc_server_shutdown_and_notify(this->wrapped_server, this->shutdown_queue,
-                                    NULL);
-    grpc_server_cancel_all_calls(this->wrapped_server);
-    grpc_completion_queue_pluck(this->shutdown_queue, NULL,
-                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-    grpc_server_destroy(this->wrapped_server);
-    this->wrapped_server = NULL;
-  }
-}
+void grpc_grpclb_client_stats_get(
+    grpc_grpclb_client_stats* client_stats, int64_t* num_calls_started,
+    int64_t* num_calls_finished,
+    int64_t* num_calls_finished_with_drop_for_rate_limiting,
+    int64_t* num_calls_finished_with_drop_for_load_balancing,
+    int64_t* num_calls_finished_with_client_failed_to_send,
+    int64_t* num_calls_finished_known_received);
 
-}  // namespace grpc
-}  // namespace node
-
-#endif /* GRPC_UV */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H \
+          */
