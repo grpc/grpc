@@ -95,8 +95,7 @@
    headers. Therefore, sockaddr.h must always be included first */
 #include "src/core/lib/iomgr/sockaddr.h"
 
-#include <errno.h>
-
+#include <limits.h>
 #include <string.h>
 
 #include <grpc/byte_buffer_reader.h>
@@ -310,8 +309,8 @@ typedef struct glb_lb_policy {
   grpc_client_channel_factory *cc_factory;
   grpc_channel_args *args;
 
-  /** deadline for the LB's call */
-  gpr_timespec deadline;
+  /** timeout in milliseconds for the LB call. 0 means no deadline. */
+  int lb_call_timeout_ms;
 
   /** for communicating with the LB server */
   grpc_channel *lb_channel;
@@ -917,6 +916,10 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   glb_policy->cc_factory = args->client_channel_factory;
   GPR_ASSERT(glb_policy->cc_factory != NULL);
 
+  arg = grpc_channel_args_find(args->args, GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS);
+  glb_policy->lb_call_timeout_ms = grpc_channel_arg_get_integer(
+      arg, (grpc_integer_options){0, 0, INT_MAX});
+
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   grpc_arg new_arg;
@@ -1089,7 +1092,6 @@ static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   }
 
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  glb_policy->deadline = pick_args->deadline;
   bool pick_done;
 
   if (glb_policy->rr_policy != NULL) {
@@ -1275,11 +1277,17 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
    * glb_policy->base.interested_parties, which is comprised of the polling
    * entities from \a client_channel. */
   grpc_slice host = grpc_slice_from_copied_string(glb_policy->server_name);
+  gpr_timespec deadline =
+      glb_policy->lb_call_timeout_ms == 0
+      ? gpr_inf_future(GPR_CLOCK_MONOTONIC)
+      : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_millis(glb_policy->lb_call_timeout_ms,
+                                          GPR_TIMESPAN));
   glb_policy->lb_call = grpc_channel_create_pollset_set_call(
       exec_ctx, glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
       glb_policy->base.interested_parties,
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
-      &host, glb_policy->deadline, NULL);
+      &host, deadline, NULL);
   grpc_slice_unref_internal(exec_ctx, host);
 
   if (glb_policy->client_stats != NULL) {
