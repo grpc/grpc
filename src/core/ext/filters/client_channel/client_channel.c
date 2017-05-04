@@ -991,10 +991,10 @@ static void continue_picking_locked(grpc_exec_ctx *exec_ctx, void *arg,
   } else if (error != GRPC_ERROR_NONE) {
     grpc_closure_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_REF(error));
   } else {
-    if (pick_subchannel_locked(
-            exec_ctx, cpa->elem, cpa->initial_metadata,
-            cpa->initial_metadata_flags, cpa->connected_subchannel,
-            cpa->subchannel_call_context, cpa->on_ready)) {
+    if (pick_subchannel_locked(exec_ctx, cpa->elem, cpa->initial_metadata,
+                               cpa->initial_metadata_flags,
+                               cpa->connected_subchannel,
+                               cpa->subchannel_call_context, cpa->on_ready)) {
       grpc_closure_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_NONE);
     }
   }
