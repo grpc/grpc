@@ -198,7 +198,8 @@ class Client {
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
-    gpr_log(GPR_INFO, "*****poll count : %d %d %d", GetPollCount(), last_reset_poll_count_, last_reset_poll_count_to_use);
+    gpr_log(GPR_INFO, "*****poll count : %d %d %d", GetPollCount(),
+            last_reset_poll_count_, last_reset_poll_count_to_use);
 
     stats.set_cq_poll_count(GetPollCount() - last_reset_poll_count_to_use);
     return stats;

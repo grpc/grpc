@@ -49,7 +49,8 @@ namespace testing {
 
 class Server {
  public:
-  explicit Server(const ServerConfig& config) : timer_(new UsageTimer), last_reset_poll_count_(0) {
+  explicit Server(const ServerConfig& config)
+      : timer_(new UsageTimer), last_reset_poll_count_(0) {
     cores_ = gpr_cpu_num_cores();
     if (config.port()) {
       port_ = config.port();

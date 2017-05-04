@@ -80,7 +80,8 @@ class TrackCounters {
  public:
   virtual void Finish(benchmark::State& state);
   virtual void AddToLabel(std::ostream& out, benchmark::State& state);
-  virtual void AppendToLabel(std::ostream& out, std::string metric, double value);
+  virtual void AppendToLabel(std::ostream& out, std::string metric,
+                             double value);
 
  private:
 #ifdef GPR_LOW_LEVEL_COUNTERS

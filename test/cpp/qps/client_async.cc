@@ -209,16 +209,16 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
   }
 
-int GetPollCount() {
-  int count = 0;
-  int i = 0;
-  for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
-    int k = (int)grpc_get_cq_poll_num((*cq)->cq());
-    gpr_log(GPR_INFO, "%d: per cq poll:%d", i++, k);
-    count += k;
+  int GetPollCount() {
+    int count = 0;
+    // int i = 0;
+    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
+      int k = (int)grpc_get_cq_poll_num((*cq)->cq());
+      // gpr_log(GPR_INFO, "%d: per cq poll:%d", i++, k);
+      count += k;
+    }
+    return count;
   }
-  return count;
-}
 
  protected:
   const int num_async_threads_;

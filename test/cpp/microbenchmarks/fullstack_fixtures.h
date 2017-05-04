@@ -100,10 +100,12 @@ class FullstackFixture : public BaseFixture {
     }
   }
 
-  void Finish(benchmark::State &state) {
+  void Finish(benchmark::State& state) {
     std::ostringstream out;
     AddToLabel(out, state);
-    AppendToLabel(out, "polls/iter", (double)grpc_get_cq_poll_num(this->cq()->cq())/state.iterations());
+    AppendToLabel(
+        out, "polls/iter",
+        (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations());
     auto label = out.str();
     if (label.length() && label[0] == ' ') {
       label = label.substr(1);
@@ -223,17 +225,19 @@ class EndpointPairFixture : public BaseFixture {
     }
   }
 
-  void Finish(benchmark::State &state) {
+  void Finish(benchmark::State& state) {
     std::ostringstream out;
     AddToLabel(out, state);
-    AppendToLabel(out, "polls/iter", (double)grpc_get_cq_poll_num(this->cq()->cq())/state.iterations());
+    AppendToLabel(
+        out, "polls/iter",
+        (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations());
     auto label = out.str();
     if (label.length() && label[0] == ' ') {
       label = label.substr(1);
     }
     state.SetLabel(label);
   }
-  
+
   ServerCompletionQueue* cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
 

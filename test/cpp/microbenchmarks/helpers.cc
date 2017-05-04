@@ -68,6 +68,7 @@ void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
 #endif
 }
 
-void TrackCounters::AppendToLabel(std::ostream& out, std::string metric, double value) {
+void TrackCounters::AppendToLabel(std::ostream &out, std::string metric,
+                                  double value) {
   out << " " << key << ":" << value;
 }

@@ -182,10 +182,14 @@ static void postprocess_scenario_result(ScenarioResult* result) {
     result->mutable_summary()->set_failed_requests_per_second(failures /
                                                               time_estimate);
   }
-  gpr_log(GPR_INFO, "client poll count : %f", sum(result->client_stats(), CliPollCount));
-  result->mutable_summary()->set_client_polls_per_request(sum(result->client_stats(), CliPollCount)/histogram.Count());
-  gpr_log(GPR_INFO, "server poll count : %f", sum(result->server_stats(), SvrPollCount));
-  result->mutable_summary()->set_server_polls_per_request(sum(result->server_stats(), SvrPollCount)/histogram.Count());
+  gpr_log(GPR_INFO, "client poll count : %f",
+          sum(result->client_stats(), CliPollCount));
+  result->mutable_summary()->set_client_polls_per_request(
+      sum(result->client_stats(), CliPollCount) / histogram.Count());
+  gpr_log(GPR_INFO, "server poll count : %f",
+          sum(result->server_stats(), SvrPollCount));
+  result->mutable_summary()->set_server_polls_per_request(
+      sum(result->server_stats(), SvrPollCount) / histogram.Count());
 }
 
 std::unique_ptr<ScenarioResult> RunScenario(
