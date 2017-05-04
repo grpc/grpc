@@ -54,7 +54,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
-#include "test/core/end2end/fake_resolver.h"
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 
 //
 // fake_resolver
@@ -98,7 +98,7 @@ static void fake_resolver_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
                                                    fake_resolver* r) {
   if (r->next_completion != NULL && r->next_results != NULL) {
     *r->target_result =
-        grpc_channel_args_merge(r->channel_args, r->next_results);
+        grpc_channel_args_union(r->next_results, r->channel_args);
     grpc_channel_args_destroy(exec_ctx, r->next_results);
     grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
@@ -240,11 +240,13 @@ static char* fake_resolver_get_default_authority(grpc_resolver_factory* factory,
 
 static const grpc_resolver_factory_vtable fake_resolver_factory_vtable = {
     fake_resolver_factory_ref, fake_resolver_factory_unref,
-    fake_resolver_create, fake_resolver_get_default_authority, "test"};
+    fake_resolver_create, fake_resolver_get_default_authority, "fake"};
 
 static grpc_resolver_factory fake_resolver_factory = {
     &fake_resolver_factory_vtable};
 
-void grpc_fake_resolver_init(void) {
+void grpc_resolver_fake_init(void) {
   grpc_register_resolver_type(&fake_resolver_factory);
 }
+
+void grpc_resolver_fake_shutdown(void) {}

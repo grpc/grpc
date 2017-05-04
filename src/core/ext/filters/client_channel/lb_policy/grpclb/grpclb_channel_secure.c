@@ -76,11 +76,13 @@ grpc_channel *grpc_lb_policy_grpclb_create_lb_channel(
   return lb_channel;
 }
 
-grpc_channel_args *get_lb_channel_args(grpc_exec_ctx *exec_ctx,
-                                       grpc_slice_hash_table *targets_info,
-                                       const grpc_channel_args *args) {
-  const grpc_arg targets_info_arg =
-      grpc_lb_targets_info_create_channel_arg(targets_info);
+grpc_channel_args *grpc_lb_policy_grpclb_build_lb_channel_args(
+    grpc_exec_ctx *exec_ctx, grpc_slice_hash_table *targets_info,
+    grpc_fake_resolver_response_generator *response_generator,
+    const grpc_channel_args *args) {
+  const grpc_arg to_add[] = {
+      grpc_lb_targets_info_create_channel_arg(targets_info),
+      grpc_fake_resolver_response_generator_arg(response_generator)};
   /* We strip out the channel arg for the LB policy name, since we want
    * to use the default (pick_first) in this case.
    *
@@ -99,9 +101,10 @@ grpc_channel_args *get_lb_channel_args(grpc_exec_ctx *exec_ctx,
    * channel (the client channel factory will re-add this arg with
    * the right value). */
   static const char *keys_to_remove[] = {
-      GRPC_ARG_LB_POLICY_NAME, GRPC_ARG_LB_ADDRESSES, GRPC_ARG_SERVER_URI};
+      GRPC_ARG_LB_POLICY_NAME, GRPC_ARG_LB_ADDRESSES, GRPC_ARG_SERVER_URI,
+      GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR};
   /* Add the targets info table to be used for secure naming */
   return grpc_channel_args_copy_and_add_and_remove(
-      args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &targets_info_arg,
-      1);
+      args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), to_add,
+      GPR_ARRAY_SIZE(to_add));
 }

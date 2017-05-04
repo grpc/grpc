@@ -50,8 +50,8 @@
 #include <gtest/gtest.h>
 
 extern "C" {
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "test/core/end2end/fake_resolver.h"
 }
 
 #include "test/core/util/port.h"
@@ -181,6 +181,7 @@ class BalancerServiceImpl : public BalancerService {
         shutdown_(false) {}
 
   Status BalanceLoad(ServerContext* context, Stream* stream) override {
+    gpr_log(GPR_INFO, "LB: BalanceLoad");
     LoadBalanceRequest request;
     stream->Read(&request);
     IncreaseRequestCount();
@@ -200,7 +201,10 @@ class BalancerServiceImpl : public BalancerService {
       responses_and_delays = responses_and_delays_;
     }
     for (const auto& response_and_delay : responses_and_delays) {
-      if (shutdown_) break;
+      {
+        std::unique_lock<std::mutex> lock(mu_);
+        if (shutdown_) break;
+      }
       SendResponse(stream, response_and_delay.first, response_and_delay.second);
     }
 
@@ -237,9 +241,13 @@ class BalancerServiceImpl : public BalancerService {
     responses_and_delays_.push_back(std::make_pair(response, send_after_ms));
   }
 
-  void Shutdown() {
+  // Returns true on its first invocation, false otherwise.
+  bool Shutdown() {
     std::unique_lock<std::mutex> lock(mu_);
+    const bool prev = !shutdown_;
     shutdown_ = true;
+    gpr_log(GPR_INFO, "LB: shut down");
+    return prev;
   }
 
   static LoadBalanceResponse BuildResponseForBackends(
@@ -263,8 +271,11 @@ class BalancerServiceImpl : public BalancerService {
   void SendResponse(Stream* stream, const LoadBalanceResponse& response,
                     int delay_ms) {
     gpr_log(GPR_INFO, "LB: sleeping for %d ms...", delay_ms);
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_millis(delay_ms, GPR_TIMESPAN)));
+    if (delay_ms > 0) {
+      gpr_sleep_until(
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_millis(delay_ms, GPR_TIMESPAN)));
+    }
     gpr_log(GPR_INFO, "LB: Woke up! Sending response '%s'",
             response.DebugString().c_str());
     stream->Write(response);
@@ -317,8 +328,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       backend_servers_[i].Shutdown();
     }
     for (size_t i = 0; i < balancers_.size(); ++i) {
-      balancers_[i]->Shutdown();
-      balancer_servers_[i].Shutdown();
+      if (balancers_[i]->Shutdown()) balancer_servers_[i].Shutdown();
     }
     grpc_fake_resolver_response_generator_unref(response_generator_);
   }
@@ -328,7 +338,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_);
     std::ostringstream uri;
-    uri << "test:///servername_not_used";
+    uri << "fake:///servername_not_used";
     channel_ =
         CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
@@ -589,6 +599,251 @@ TEST_F(SingleBalancerTest, RepeatedServerlist) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
+class UpdatesTest : public GrpclbEnd2endTest {
+ public:
+  UpdatesTest() : GrpclbEnd2endTest(4, 3, 0) {}
+};
+
+TEST_F(UpdatesTest, UpdateBalancers) {
+  const std::vector<int> all_backends{GetBackendPorts()};
+  const std::vector<int> first_backend{all_backends[0]};
+  const std::vector<int> second_backend{all_backends[1]};
+
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(all_backends), 0);
+  ScheduleResponseForBalancer(
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend), 0);
+
+  // Start servers and send 10 RPCs per server.
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  auto statuses_and_responses = SendRpc(kMessage_, 10 * num_backends_);
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+
+  for (const auto& status_and_response : statuses_and_responses) {
+    EXPECT_TRUE(status_and_response.first.ok());
+    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+  }
+
+  // Each backend should have gotten 10 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(10, backend_servers_[i].service_->request_count());
+  }
+
+  // Balancer 0 got a single request.
+  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
+
+  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
+
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
+  gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
+  SetNextResolution(addresses);
+  gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
+
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  statuses_and_responses = SendRpc(kMessage_, 10 * num_backends_);
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  for (const auto& status_and_response : statuses_and_responses) {
+    EXPECT_TRUE(status_and_response.first.ok());
+    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+  }
+
+  // gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 2 ==========");
+  // SetNextResolution(addresses);
+  // gpr_log(GPR_INFO, "========= UPDATE 2 DONE ==========");
+
+  gpr_log(GPR_INFO, "========= BEFORE THIRD BATCH ==========");
+  statuses_and_responses = SendRpc(kMessage_, 10 * num_backends_);
+  gpr_log(GPR_INFO, "========= DONE WITH THIRD BATCH ==========");
+  for (const auto& status_and_response : statuses_and_responses) {
+    EXPECT_TRUE(status_and_response.first.ok());
+    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+  }
+
+  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
+
+  EXPECT_EQ(1, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(1, balancer_servers_[1].service_->response_count());
+
+  EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
+
+  // Check LB policy name for the channel.
+  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
+  const std::vector<int> all_backends{GetBackendPorts()};
+  const std::vector<int> first_backend{all_backends[0]};
+  const std::vector<int> second_backend{all_backends[1]};
+  const std::vector<int> two_backend{all_backends.begin(),
+                                     all_backends.begin() + 2};
+
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(all_backends), 0);
+  ScheduleResponseForBalancer(
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend), 0);
+
+  // Start servers and send 10 RPCs per server.
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  auto statuses_and_responses = SendRpc(kMessage_, 10 * num_backends_);
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+
+  // Kill backend 0
+  gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
+  if (balancers_[0]->Shutdown()) balancer_servers_[0].Shutdown();
+  gpr_log(GPR_INFO, "********** KILLED BALANCER 0 *************");
+
+  for (const auto& status_and_response : statuses_and_responses) {
+    EXPECT_TRUE(status_and_response.first.ok());
+    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+  }
+
+  // Each backend should have gotten 10 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(10, backend_servers_[i].service_->request_count());
+  }
+
+  // Balancer 0 got a single request.
+  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
+
+  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
+
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
+  gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
+  SetNextResolution(addresses);
+  gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
+
+  // This is serviced by the existing RR policy
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  statuses_and_responses = SendRpc(kMessage_, 10 * num_backends_);
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  for (const auto& status_and_response : statuses_and_responses) {
+    EXPECT_TRUE(status_and_response.first.ok());
+    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+  }
+
+  gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 2 ==========");
+  SetNextResolution(addresses);
+  gpr_log(GPR_INFO, "========= UPDATE 2 DONE ==========");
+
+  gpr_log(GPR_INFO, "========= BEFORE THIRD BATCH ==========");
+  statuses_and_responses = SendRpc(kMessage_, 10 * num_backends_);
+  gpr_log(GPR_INFO, "========= DONE WITH THIRD BATCH ==========");
+  for (const auto& status_and_response : statuses_and_responses) {
+    EXPECT_TRUE(status_and_response.first.ok());
+    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+  }
+
+  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
+
+  EXPECT_EQ(2, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(2, balancer_servers_[1].service_->response_count());
+
+  EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
+
+  // Check LB policy name for the channel.
+  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(UpdatesTest, UpdateBalancersDeadUpdateRecovery) {
+  const std::vector<int> all_backends{GetBackendPorts()};
+  const std::vector<int> first_backend{all_backends[0]};
+  const std::vector<int> second_backend{all_backends[1]};
+  const std::vector<int> third_backend{all_backends[2]};
+
+  // Kill backends 0 and 1
+  gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
+  if (balancers_[0]->Shutdown()) balancer_servers_[0].Shutdown();
+  gpr_log(GPR_INFO, "********** KILLED BALANCER 0 *************");
+  gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 1 *************");
+  if (balancers_[1]->Shutdown()) balancer_servers_[1].Shutdown();
+  gpr_log(GPR_INFO, "********** KILLED BALANCER 1 *************");
+
+  // initial
+  ScheduleResponseForBalancer(
+      2, BalancerServiceImpl::BuildResponseForBackends(third_backend), 0);
+
+  // Start servers and send 10 RPCs per server.
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  auto statuses_and_responses = SendRpc(kMessage_, 10 * num_backends_);
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  for (const auto& status_and_response : statuses_and_responses) {
+    EXPECT_TRUE(status_and_response.first.ok());
+    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+  }
+
+  // Only backend[2] got requests
+  EXPECT_EQ(40, backend_servers_[2].service_->request_count());
+
+  EXPECT_EQ(0, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(1, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(1, balancer_servers_[2].service_->response_count());
+
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
+  addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
+  gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
+  SetNextResolution(addresses);
+  gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
+
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  statuses_and_responses = SendRpc(kMessage_, 10 * num_backends_);
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  for (const auto& status_and_response : statuses_and_responses) {
+    EXPECT_TRUE(status_and_response.first.ok());
+    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+  }
+  addresses.clear();
+  addresses.emplace_back(AddressData{balancer_servers_[2].port_, true, ""});
+  gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 2 ==========");
+  SetNextResolution(addresses);
+  gpr_log(GPR_INFO, "========= UPDATE 2 DONE ==========");
+  EXPECT_EQ(0, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(1, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(1, balancer_servers_[2].service_->response_count());
+
+  gpr_log(GPR_INFO, "========= BEFORE THIRD BATCH ==========");
+  statuses_and_responses = SendRpc(kMessage_, 10 * num_backends_);
+  gpr_log(GPR_INFO, "========= DONE WITH THIRD BATCH ==========");
+  for (const auto& status_and_response : statuses_and_responses) {
+    EXPECT_TRUE(status_and_response.first.ok());
+    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+  }
+
+  EXPECT_EQ(0, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[0].service_->response_count());
+
+  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
+
+  EXPECT_EQ(2, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(2, balancer_servers_[2].service_->response_count());
+
+  // Check LB policy name for the channel.
+  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
 class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
  public:
   SingleBalancerWithClientLoadReportingTest() : GrpclbEnd2endTest(4, 1, 2) {}
@@ -631,7 +886,6 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
 int main(int argc, char** argv) {
   grpc_init();
   grpc_test_init(argc, argv);
-  grpc_fake_resolver_init();
   ::testing::InitGoogleTest(&argc, argv);
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

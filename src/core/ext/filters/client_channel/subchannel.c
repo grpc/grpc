@@ -306,7 +306,7 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
 grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
                                         const grpc_subchannel_args *args) {
-  grpc_subchannel_key *key = grpc_subchannel_key_create(connector, args);
+  grpc_subchannel_key *key = grpc_subchannel_key_create(args);
   grpc_subchannel *c = grpc_subchannel_index_find(exec_ctx, key);
   if (c) {
     grpc_subchannel_key_destroy(exec_ctx, key);
@@ -768,6 +768,11 @@ void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
 grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
     grpc_subchannel *c) {
   return GET_CONNECTED_SUBCHANNEL(c, acq);
+}
+
+const grpc_subchannel_key *grpc_subchannel_get_key(
+    const grpc_subchannel *subchannel) {
+  return subchannel->key;
 }
 
 grpc_error *grpc_connected_subchannel_create_call(
