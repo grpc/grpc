@@ -208,6 +208,7 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
   const bool write_needed_;
 };
 
+/// TODO: comment this class
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler
     : public TemplatedBidiStreamingHandler<

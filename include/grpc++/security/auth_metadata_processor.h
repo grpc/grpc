@@ -42,6 +42,7 @@
 
 namespace grpc {
 
+/// TODO: Should this class have a comment?
 class AuthMetadataProcessor {
  public:
   typedef std::multimap<grpc::string_ref, grpc::string_ref> InputMetadata;
