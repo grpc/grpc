@@ -183,7 +183,7 @@ typedef struct {
 /** Enable/disable support for deadline checking. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
 #define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
-/** Initial sequence number for http2 transports. Int valued. */
+/** Initial stream ID for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
 /** Amount to read ahead on individual streams. Defaults to 64kb, larger
@@ -257,9 +257,10 @@ typedef struct {
 /** The time between the first and second connection attempts, in ms */
 #define GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS \
   "grpc.initial_reconnect_backoff_ms"
-/** The caller of the secure_channel_create functions may override the target
+/** This *should* be used for testing only.
+    The caller of the secure_channel_create functions may override the target
     name used for SSL host name checking using this channel argument which is of
-    type \a GRPC_ARG_STRING. This *should* be used for testing only.
+    type \a GRPC_ARG_STRING.
     If this argument is not specified, the name used for SSL host name checking
     will be the target parameter (assuming that the secure channel is an SSL
     channel). If this parameter is specified and the underlying is not an SSL
@@ -270,8 +271,8 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
-/** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
-   to fetch an appropriate pointer arg vtable) */
+/** If non-zero, a pointer to a buffer pool (a pointer of type grpc_resource_quota*).
+    (use grpc_resource_quota_arg_vtable() to fetch an appropriate pointer arg vtable) */
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
 /** If non-zero, expand wildcard addresses to a list of local addresses. */
 #define GRPC_ARG_EXPAND_WILDCARD_ADDRS "grpc.expand_wildcard_addrs"
