@@ -805,11 +805,10 @@ void PrintHeaderService(grpc_generator::Printer *printer,
   printer->Indent();
 
   // Service metadata
-  printer->Print(
-      *vars,
-      "static constexpr char const* service_full_name() {\n"
-      "  return \"$Package$$Service$\";\n"
-      "}\n");
+  printer->Print(*vars,
+                 "static constexpr char const* service_full_name() {\n"
+                 "  return \"$Package$$Service$\";\n"
+                 "}\n");
 
   // Client side
   printer->Print(
