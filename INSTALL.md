@@ -46,6 +46,15 @@ packages, which you can get from [Homebrew](https://brew.sh):
  $ brew install autoconf automake libtool shtool
 ```
 
+Tip: when building, 
+you *may* want to explicitly set the `LIBTOOL` and `LIBTOOLIZE`
+environment variables when running `make` to ensure the version
+installed by `brew` is being used:
+
+```sh
+ $ LIBTOOL=glibtool LIBTOOLIZE=glibtoolize make
+```
+
 If you plan to build from source and run tests, install the following as well:
 ```sh
  $ brew install gflags
