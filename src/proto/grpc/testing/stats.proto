@@ -47,6 +47,8 @@ message ServerStats {
 
   // change in idle time of the server (data from proc/stat)
   uint64 idle_cpu_time = 5;
+
+  uint64 cq_poll_count = 6;
 }
 
 // Histogram params based on grpc/support/histogram.c

@@ -128,8 +128,10 @@ void GprLogReporter::ReportCpuUsage(const ScenarioResult& result) {
 }
 
 void GprLogReporter::ReportPollCount(const ScenarioResult& result) {
-  gpr_log(GPR_INFO, "Client Polls per Request: %.2f%%",
+  gpr_log(GPR_INFO, "Client Polls per Request: %.2f",
           result.summary().client_polls_per_request());
+  gpr_log(GPR_INFO, "Server Polls per Request: %.2f",
+          result.summary().server_polls_per_request());
 }
 
 void JsonReporter::ReportQPS(const ScenarioResult& result) {

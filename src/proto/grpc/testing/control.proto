@@ -243,6 +243,7 @@ message ScenarioResultSummary
   double failed_requests_per_second = 14;
 
   double client_polls_per_request = 15;
+  double server_polls_per_request = 16;
 }
 
 // Results of a single benchmark scenario.
