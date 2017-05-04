@@ -160,11 +160,8 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
   int GetPollCount() {
     int count = 0;
-    // int i = 0;
     for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); cq++) {
-      int k = (int)grpc_get_cq_poll_num((*cq)->cq());
-      // gpr_log(GPR_INFO, "%d: per cq poll:%d", i++, k);
-      count += k;
+      count += (int)grpc_get_cq_poll_num((*cq)->cq());
     }
     return count;
   }

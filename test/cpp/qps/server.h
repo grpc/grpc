@@ -63,12 +63,13 @@ class Server {
 
   ServerStats Mark(bool reset) {
     UsageTimer::Result timer_result;
-    int last_reset_poll_count_to_use = last_reset_poll_count_;
+    int cur_poll_count = GetPollCount();
+    int poll_count = cur_poll_count - last_reset_poll_count_;
     if (reset) {
       std::unique_ptr<UsageTimer> timer(new UsageTimer);
       timer.swap(timer_);
       timer_result = timer->Mark();
-      last_reset_poll_count_ = GetPollCount();
+      last_reset_poll_count_ = cur_poll_count;
     } else {
       timer_result = timer_->Mark();
     }
@@ -79,7 +80,7 @@ class Server {
     stats.set_time_user(timer_result.user);
     stats.set_total_cpu_time(timer_result.total_cpu_time);
     stats.set_idle_cpu_time(timer_result.idle_cpu_time);
-    stats.set_cq_poll_count(GetPollCount() - last_reset_poll_count_to_use);
+    stats.set_cq_poll_count(poll_count);
     return stats;
   }
 
