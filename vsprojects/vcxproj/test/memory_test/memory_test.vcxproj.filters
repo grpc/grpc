@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\support\memory_test.cc">
+      <Filter>test\core\support</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{80245c10-56a8-a6ec-0abc-8125f4271d38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{eb61342c-1b95-756a-8b70-42aeb2a55f59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\support">
+      <UniqueIdentifier>{8c8dfaee-c0b7-e843-c50e-427448fe1eb9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

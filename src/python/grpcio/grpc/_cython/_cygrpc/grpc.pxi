@@ -217,6 +217,20 @@ cdef extern from "grpc/grpc.h":
     GRPC_CALL_ERROR_INVALID_FLAGS
     GRPC_CALL_ERROR_INVALID_METADATA
 
+  ctypedef enum grpc_cq_completion_type:
+    GRPC_CQ_NEXT
+    GRPC_CQ_PLUCK
+
+  ctypedef enum grpc_cq_polling_type:
+    GRPC_CQ_DEFAULT_POLLING
+    GRPC_CQ_NON_LISTENING
+    GRPC_CQ_NON_POLLING
+
+  ctypedef struct grpc_completion_queue_attributes:
+    int version
+    grpc_cq_completion_type cq_completion_type
+    grpc_cq_polling_type cq_polling_type
+
   ctypedef enum grpc_connectivity_state:
     GRPC_CHANNEL_IDLE
     GRPC_CHANNEL_CONNECTING
@@ -309,6 +323,14 @@ cdef extern from "grpc/grpc.h":
   void grpc_init() nogil
   void grpc_shutdown() nogil
 
+  ctypedef struct grpc_completion_queue_factory:
+    pass
+
+  grpc_completion_queue_factory *grpc_completion_queue_factory_lookup(
+      const grpc_completion_queue_attributes* attributes) nogil
+  grpc_completion_queue *grpc_completion_queue_create(
+    const grpc_completion_queue_factory* factory,
+    const grpc_completion_queue_attributes* attr, void* reserved) nogil
   grpc_completion_queue *grpc_completion_queue_create_for_next(void *reserved) nogil
 
   grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
@@ -356,8 +378,6 @@ cdef extern from "grpc/grpc.h":
   void grpc_server_register_completion_queue(grpc_server *server,
                                              grpc_completion_queue *cq,
                                              void *reserved) nogil
-  void grpc_server_register_non_listening_completion_queue(
-      grpc_server *server, grpc_completion_queue *cq, void *reserved) nogil
   int grpc_server_add_insecure_http2_port(
       grpc_server *server, const char *addr) nogil
   void grpc_server_start(grpc_server *server) nogil
@@ -502,4 +522,3 @@ cdef extern from "grpc/compression.h":
   int grpc_compression_options_is_algorithm_enabled(
       const grpc_compression_options *opts,
       grpc_compression_algorithm algorithm) nogil
-

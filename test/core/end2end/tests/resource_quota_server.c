@@ -169,6 +169,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   int cancelled_calls_on_client = 0;
   int cancelled_calls_on_server = 0;
   int deadline_exceeded = 0;
+  int unavailable = 0;
 
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -259,6 +260,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
           break;
         case GRPC_STATUS_DEADLINE_EXCEEDED:
           deadline_exceeded++;
+          break;
+        case GRPC_STATUS_UNAVAILABLE:
+          unavailable++;
           break;
         case GRPC_STATUS_OK:
           break;
@@ -358,9 +362,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
 
   gpr_log(GPR_INFO,
           "Done. %d total calls: %d cancelled at server, %d cancelled at "
-          "client, %d timed out.",
+          "client, %d timed out, %d unavailable.",
           NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client,
-          deadline_exceeded);
+          deadline_exceeded, unavailable);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_slice_unref(request_payload_slice);

@@ -189,7 +189,7 @@
 #ifdef __GLIBC__
 #define GPR_POSIX_CRASH_HANDLER 1
 #else /* musl libc */
-#define GRPC_MSG_IOVLEN_TYPE int
+#define GPR_MUSL_LIBC_COMPAT 1
 #endif
 #elif defined(__APPLE__)
 #include <Availability.h>
@@ -289,6 +289,12 @@
 #error "Could not auto-detect platform"
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
+
+#if defined(__has_include)
+#if __has_include(<atomic>)
+#define GRPC_HAS_CXX11_ATOMIC
+#endif /* __has_include(<atomic>) */
+#endif /* defined(__has_include) */
 
 #ifndef GPR_PLATFORM_STRING
 #warning "GPR_PLATFORM_STRING not auto-detected"

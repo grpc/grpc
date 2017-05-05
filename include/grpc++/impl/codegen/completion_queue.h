@@ -102,7 +102,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
-  CompletionQueue() : CompletionQueue(false) {}
+  CompletionQueue()
+      : CompletionQueue(grpc_completion_queue_attributes{
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING}) {}
 
   /// Wrap \a take, taking ownership of the instance.
   ///
@@ -182,6 +184,16 @@ class CompletionQueue : private GrpcLibraryCodegen {
   };
   void CompleteAvalanching();
 
+ protected:
+  /// Private constructor of CompletionQueue only visible to friend classes
+  CompletionQueue(const grpc_completion_queue_attributes& attributes) {
+    cq_ = g_core_codegen_interface->grpc_completion_queue_create(
+        g_core_codegen_interface->grpc_completion_queue_factory_lookup(
+            &attributes),
+        &attributes, NULL);
+    InitialAvalanching();  // reserve this for the future shutdown
+  }
+
  private:
   // Friend synchronous wrappers so that they can access Pluck(), which is
   // a semi-private API geared towards the synchronous implementation.
@@ -214,18 +226,6 @@ class CompletionQueue : private GrpcLibraryCodegen {
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);
-
-  /// Private constructor of CompletionQueue only visible to friend classes
-  CompletionQueue(bool is_pluck) {
-    if (is_pluck) {
-      cq_ = g_core_codegen_interface->grpc_completion_queue_create_for_pluck(
-          nullptr);
-    } else {
-      cq_ = g_core_codegen_interface->grpc_completion_queue_create_for_next(
-          nullptr);
-    }
-    InitialAvalanching();  // reserve this for the future shutdown
-  }
 
   NextStatus AsyncNextInternal(void** tag, bool* ok, gpr_timespec deadline);
 
@@ -289,17 +289,19 @@ class CompletionQueue : private GrpcLibraryCodegen {
 /// by servers. Instantiated by \a ServerBuilder.
 class ServerCompletionQueue : public CompletionQueue {
  public:
-  bool IsFrequentlyPolled() { return is_frequently_polled_; }
+  bool IsFrequentlyPolled() { return polling_type_ != GRPC_CQ_NON_LISTENING; }
 
  private:
-  bool is_frequently_polled_;
+  grpc_cq_polling_type polling_type_;
   friend class ServerBuilder;
   /// \param is_frequently_polled Informs the GRPC library about whether the
   /// server completion queue would be actively polled (by calling Next() or
   /// AsyncNext()). By default all server completion queues are assumed to be
   /// frequently polled.
-  ServerCompletionQueue(bool is_frequently_polled = true)
-      : is_frequently_polled_(is_frequently_polled) {}
+  ServerCompletionQueue(grpc_cq_polling_type polling_type)
+      : CompletionQueue(grpc_completion_queue_attributes{
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type}),
+        polling_type_(polling_type) {}
 };
 
 }  // namespace grpc

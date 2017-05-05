@@ -70,7 +70,7 @@ grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
     n += (new[i] != old[i] || (force_mask & (1u << i)) != 0);
   }
 
-  output = grpc_slice_malloc(9 + 6 * n);
+  output = GRPC_SLICE_MALLOC(9 + 6 * n);
   p = fill_header(GRPC_SLICE_START_PTR(output), 6 * n, 0);
 
   for (i = 0; i < count; i++) {
@@ -91,7 +91,7 @@ grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
 }
 
 grpc_slice grpc_chttp2_settings_ack_create(void) {
-  grpc_slice output = grpc_slice_malloc(9);
+  grpc_slice output = GRPC_SLICE_MALLOC(9);
   fill_header(GRPC_SLICE_START_PTR(output), 0, GRPC_CHTTP2_FLAG_ACK);
   return output;
 }

@@ -615,7 +615,7 @@ void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
   elem->filter->start_transport_op(exec_ctx, elem, op);
 }
 
-static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
+static bool publish_transport_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel *c) {
   grpc_connected_subchannel *con;
   grpc_channel_stack *stk;
@@ -631,15 +631,16 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   if (!grpc_channel_init_create_stack(exec_ctx, builder,
                                       GRPC_CLIENT_SUBCHANNEL)) {
     grpc_channel_stack_builder_destroy(exec_ctx, builder);
-    abort(); /* TODO(ctiller): what to do here (previously we just crashed) */
+    return false;
   }
   grpc_error *error = grpc_channel_stack_builder_finish(
       exec_ctx, builder, 0, 1, connection_destroy, NULL, (void **)&con);
   if (error != GRPC_ERROR_NONE) {
+    grpc_transport_destroy(exec_ctx, c->connecting_result.transport);
     gpr_log(GPR_ERROR, "error initializing subchannel stack: %s",
             grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
-    abort(); /* TODO(ctiller): what to do here? */
+    return false;
   }
   stk = CHANNEL_STACK_FROM_CONNECTION(con);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
@@ -656,7 +657,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
     grpc_channel_stack_destroy(exec_ctx, stk);
     gpr_free(con);
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
-    return;
+    return false;
   }
 
   /* publish */
@@ -678,6 +679,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   /* signal completion */
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker, GRPC_CHANNEL_READY,
                               GRPC_ERROR_NONE, "connected");
+  return true;
 }
 
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
@@ -688,8 +690,9 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_SUBCHANNEL_WEAK_REF(c, "connected");
   gpr_mu_lock(&c->mu);
   c->connecting = false;
-  if (c->connecting_result.transport != NULL) {
-    publish_transport_locked(exec_ctx, c);
+  if (c->connecting_result.transport != NULL &&
+      publish_transport_locked(exec_ctx, c)) {
+    /* do nothing, transport was published */
   } else if (c->disconnected) {
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   } else {
@@ -778,7 +781,7 @@ grpc_error *grpc_connected_subchannel_create_call(
   (*call)->connection = GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   const grpc_call_element_args call_args = {.call_stack = callstk,
                                             .server_transport_data = NULL,
-                                            .context = NULL,
+                                            .context = args->context,
                                             .path = args->path,
                                             .start_time = args->start_time,
                                             .deadline = args->deadline,

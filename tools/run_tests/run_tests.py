@@ -430,10 +430,6 @@ class NodeLanguage(object):
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
                                          'node7', 'electron1.3', 'electron1.6'])
-    if args.iomgr_platform == "uv":
-      self.use_uv = True
-    else:
-      self.use_uv = False
     if self.args.compiler == 'default':
       self.runtime = 'node'
       self.node_version = '7'
@@ -481,7 +477,6 @@ class NodeLanguage(object):
       else:
         config_flag = '--release'
       return [['tools\\run_tests\\helper_scripts\\build_node.bat',
-               '--grpc_uv={}'.format('true' if self.use_uv else 'false'),
                config_flag]]
     else:
       build_script = 'build_node'
@@ -490,8 +485,7 @@ class NodeLanguage(object):
         # building for electron requires a patch version
         self.node_version += '.0'
       return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
-               self.node_version,
-               '--grpc_uv={}'.format('true' if self.use_uv else 'false')]]
+               self.node_version]]
 
   def post_tests_steps(self):
     return []
@@ -763,7 +757,7 @@ class CSharpLanguage(object):
         self._make_options = ['EMBED_OPENSSL=true']
         if self.args.compiler != 'coreclr':
           # On Mac, official distribution of mono is 32bit.
-          self._make_options += ['CFLAGS=-m32', 'LDFLAGS=-m32']
+          self._make_options += ['ARCH_FLAGS=-m32', 'LDFLAGS=-m32']
       else:
         self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
@@ -1210,6 +1204,7 @@ argp.add_argument('--quiet_success',
                        'Useful when running many iterations of each test (argument -n).')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
                   help='Dont try to iterate over many polling strategies when they exist')
+argp.add_argument('--max_time', default=-1, type=int, help='Maximum test runtime in seconds')
 args = argp.parse_args()
 
 if args.force_default_poller:
@@ -1352,7 +1347,8 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
                               '-f', makefile,
                               '-j', '%d' % args.jobs,
                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
-                              'CONFIG=%s' % cfg] +
+                              'CONFIG=%s' % cfg,
+                              'Q='] +
                               language_make_options +
                              ([] if not args.travis else ['JENKINS_BUILD=1']) +
                              targets,
@@ -1465,7 +1461,7 @@ def _build_and_run(
            not re.search(args.regex_exclude, spec.shortname))))
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.
-    if args.travis:
+    if args.travis and args.max_time <= 0:
       massaged_one_run = sorted(one_run, key=lambda x: x.shortname)
     else:
       # whereas otherwise, we want to shuffle things up to give all tests a
@@ -1493,7 +1489,7 @@ def _build_and_run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        quiet_success=args.quiet_success)
+        quiet_success=args.quiet_success, max_time=args.max_time)
     if resultset:
       for k, v in sorted(resultset.items()):
         num_runs, num_failures = _calculate_num_runs_failures(v)

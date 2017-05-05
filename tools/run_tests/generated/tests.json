@@ -2085,6 +2085,28 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
+    "name": "slice_hash_table_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
     "name": "slice_string_helpers_test", 
     "platforms": [
       "linux", 
@@ -3307,7 +3329,7 @@
   }, 
   {
     "args": [
-      "--generated_file_path=gens/src/proto/grpc/testing/compiler_test.grpc.pb.h"
+      "--generated_file_path=gens/src/proto/grpc/testing/"
     ], 
     "ci_platforms": [
       "linux", 
@@ -3366,6 +3388,28 @@
     "gtest": true, 
     "language": "c++", 
     "name": "grpclb_api_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "grpclb_end2end_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -3457,6 +3501,28 @@
       "linux", 
       "mac", 
       "posix"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "memory_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
     ]
   }, 
   {
@@ -85167,6 +85233,29 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/clusterfuzz-testcase-6462055064272896"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/clusterfuzz-testcase-6499902139924480"
     ], 
     "ci_platforms": [
@@ -85237,6 +85326,29 @@
   {
     "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/clusterfuzz-testcase-6723650944237568"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/clusterfuzz-testcase-minimized-5175380371570688"
     ], 
     "ci_platforms": [
       "linux"

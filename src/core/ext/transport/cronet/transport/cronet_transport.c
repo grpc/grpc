@@ -886,6 +886,10 @@ static bool op_can_be_run(grpc_transport_stream_op_batch *curr_op,
                !stream_state->state_op_done[OP_RECV_MESSAGE]) {
       CRONET_LOG(GPR_DEBUG, "Because");
       result = false;
+    } else if (curr_op->cancel_stream &&
+               !stream_state->state_callback_received[OP_CANCELED]) {
+      CRONET_LOG(GPR_DEBUG, "Because");
+      result = false;
     } else if (curr_op->recv_trailing_metadata) {
       /* We aren't done with trailing metadata yet */
       if (!stream_state->state_op_done[OP_RECV_TRAILING_METADATA]) {
@@ -1177,7 +1181,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     } else if (stream_state->rs.remaining_bytes == 0) {
       CRONET_LOG(GPR_DEBUG, "read operation complete");
       grpc_slice read_data_slice =
-          grpc_slice_malloc((uint32_t)stream_state->rs.length_field);
+          GRPC_SLICE_MALLOC((uint32_t)stream_state->rs.length_field);
       uint8_t *dst_p = GRPC_SLICE_START_PTR(read_data_slice);
       memcpy(dst_p, stream_state->rs.read_buffer,
              (size_t)stream_state->rs.length_field);

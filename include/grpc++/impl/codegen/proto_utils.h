@@ -52,7 +52,7 @@ namespace internal {
 
 class GrpcBufferWriterPeer;
 
-const int kGrpcBufferWriterMaxBufferLength = 8192;
+const int kGrpcBufferWriterMaxBufferLength = 1024 * 1024;
 
 class GrpcBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
  public:
