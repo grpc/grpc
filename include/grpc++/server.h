@@ -163,15 +163,17 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// service. The service must exist for the lifetime of the Server instance.
   void RegisterAsyncGenericService(AsyncGenericService* service) override;
 
-  /// Tries to bind \a server to the given \a addr.
+  /// Try binding the server to the given \a addr endpoint
+  /// (port, and optionally including IP address to bind to).
   ///
-  /// It can be invoked multiple times.
+  /// It can be invoked multiple times. Should be used before
+  /// starting the server.
   ///
   /// \param addr The address to try to bind to the server (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.).
   /// \params creds The credentials associated with the server.
   ///
-  /// \return bound port number on sucess, 0 on failure.
+  /// \return bound port number on success, 0 on failure.
   ///
   /// \warning It's an error to call this method on an already started server.
   int AddListeningPort(const grpc::string& addr,
