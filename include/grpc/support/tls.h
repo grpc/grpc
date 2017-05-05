@@ -36,7 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 
-/* Thread local storage.
+/** Thread local storage.
 
    A minimal wrapper that should be implementable across many compilers,
    and implementable efficiently across most modern compilers.

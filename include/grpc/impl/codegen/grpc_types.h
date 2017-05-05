@@ -50,7 +50,7 @@ extern "C" {
 
 typedef enum {
   GRPC_BB_RAW
-  /* Future types may include GRPC_BB_PROTOBUF, etc. */
+  /** Future types may include GRPC_BB_PROTOBUF, etc. */
 } grpc_byte_buffer_type;
 
 typedef struct grpc_byte_buffer {
@@ -340,12 +340,12 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
 } grpc_call_error;
 
-/* Default send/receive message size limits in bytes. -1 for unlimited. */
-/* TODO(roth) Make this match the default receive limit after next release */
+/** Default send/receive message size limits in bytes. -1 for unlimited. */
+/** TODO(roth) Make this match the default receive limit after next release */
 #define GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH -1
 #define GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
 
-/* Write Flags: */
+/** Write Flags: */
 /** Hint that the write may be buffered and need not go out on the wire
     immediately. GRPC is free to buffer the message until the next non-buffered
     write, or until writes_done, but it need not buffer completely or at all. */
@@ -356,7 +356,7 @@ typedef enum grpc_call_error {
 /** Mask of all valid flags. */
 #define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
 
-/* Initial metadata flags */
+/** Initial metadata flags */
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
@@ -379,7 +379,7 @@ typedef enum grpc_call_error {
 
 /** A single metadata element */
 typedef struct grpc_metadata {
-  /* the key, value values are expected to line up with grpc_mdelem: if changing
+  /** the key, value values are expected to line up with grpc_mdelem: if changing
      them, update metadata.h at the same time. */
   grpc_slice key;
   grpc_slice value;
@@ -513,7 +513,7 @@ typedef struct grpc_op {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
       grpc_status_code status;
-      /* optional: set to NULL if no details need sending, non-NULL if they do
+      /** optional: set to NULL if no details need sending, non-NULL if they do
        * pointer will not be retained past the start_batch call
        */
       grpc_slice *status_details;
@@ -553,10 +553,10 @@ typedef struct grpc_op {
 
 /** Information requested from the channel. */
 typedef struct {
-  /* If non-NULL, will be set to point to a string indicating the LB
+  /** If non-NULL, will be set to point to a string indicating the LB
    * policy name.  Caller takes ownership. */
   char **lb_policy_name;
-  /* If non-NULL, will be set to point to a string containing the
+  /** If non-NULL, will be set to point to a string containing the
    * service config used by the channel in JSON form. */
   char **service_config_json;
 } grpc_channel_info;
@@ -600,9 +600,9 @@ typedef enum {
 
 #define GRPC_CQ_CURRENT_VERSION 1
 typedef struct grpc_completion_queue_attributes {
-  /* The version number of this structure. More fields might be added to this
+  /** The version number of this structure. More fields might be added to this
      structure in future. */
-  int version; /* Set to GRPC_CQ_CURRENT_VERSION */
+  int version; /** Set to GRPC_CQ_CURRENT_VERSION */
 
   grpc_cq_completion_type cq_completion_type;
 
