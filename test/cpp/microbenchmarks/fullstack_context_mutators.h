@@ -126,6 +126,15 @@ class Client_AddMetadata : public NoOpMutator {
   }
 };
 
+template <gpr_clock_type kClock, int kMillis>
+class Client_SetDeadline : public NoOpMutator {
+ public:
+  Client_SetDeadline(ClientContext* context) : NoOpMutator(context) {
+    context->set_deadline(gpr_time_add(
+        gpr_now(kClock), gpr_time_from_millis(kMillis, GPR_TIMESPAN)));
+  }
+};
+
 template <class Generator, int kNumKeys>
 class Server_AddInitialMetadata : public NoOpMutator {
  public:
