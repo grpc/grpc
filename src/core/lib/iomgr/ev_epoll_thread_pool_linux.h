@@ -37,6 +37,7 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
-const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(bool requested_explicitly);
+const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(
+    bool requested_explicitly);
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLL_THREAD_POOL_LINUX_H */

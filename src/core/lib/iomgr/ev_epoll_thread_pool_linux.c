@@ -66,9 +66,9 @@
 #include "src/core/lib/support/block_annotate.h"
 
 /* TODO: sreek - Move this to init.c and initialize this like other tracers. */
-#define GRPC_POLLING_TRACE(fmt, ...)       \
-  if (GRPC_TRACER_ON(grpc_polling_trace)) {                \
-    gpr_log(GPR_INFO, (fmt), __VA_ARGS__); \
+#define GRPC_POLLING_TRACE(fmt, ...)        \
+  if (GRPC_TRACER_ON(grpc_polling_trace)) { \
+    gpr_log(GPR_INFO, (fmt), __VA_ARGS__);  \
   }
 
 /* The alarm system needs to be able to wakeup 'some poller' sometimes
@@ -78,7 +78,7 @@
 
 struct epoll_set;
 
-#define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
+#define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
 /*******************************************************************************
  * Fd Declarations
@@ -358,8 +358,8 @@ static void epoll_set_add_wakeup_fd_locked(epoll_set *eps,
     gpr_asprintf(&err_msg,
                  "epoll_ctl (epoll_fd: %d) add wakeup fd: %d failed with "
                  "error: %d (%s)",
-                 eps->epoll_fd, GRPC_WAKEUP_FD_GET_READ_FD(wakeup_fd),
-                 errno, strerror(errno));
+                 eps->epoll_fd, GRPC_WAKEUP_FD_GET_READ_FD(wakeup_fd), errno,
+                 strerror(errno));
     append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
     gpr_free(err_msg);
   }
@@ -1291,7 +1291,8 @@ static bool is_epoll_available() {
   return true;
 }
 
-const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(bool requested_explicitly) {
+const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(
+    bool requested_explicitly) {
   if (!requested_explicitly) return NULL;
 
   if (!grpc_has_wakeup_fd()) {
@@ -1328,6 +1329,9 @@ const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(bool requested
 #include "src/core/lib/iomgr/ev_posix.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable *grpc_init_epoll_linux(bool requested_explicitly) { return NULL; }
+const grpc_event_engine_vtable *grpc_init_epoll_linux(
+    bool requested_explicitly) {
+  return NULL;
+}
 #endif /* defined(GRPC_POSIX_SOCKET) */
 #endif /* !defined(GRPC_LINUX_EPOLL) */

@@ -68,9 +68,7 @@ void grpc_iomgr_init(void) {
   grpc_iomgr_platform_init();
 }
 
-void grpc_iomgr_start(void) {
-  grpc_timer_manager_init();
-}
+void grpc_iomgr_start(void) { grpc_timer_manager_init(); }
 
 static size_t count_objects(void) {
   grpc_iomgr_object *obj;

@@ -65,9 +65,9 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
-#define GRPC_POLLING_TRACE(fmt, ...)       \
-  if (GRPC_TRACER_ON(grpc_polling_trace)) {                \
-    gpr_log(GPR_INFO, (fmt), __VA_ARGS__); \
+#define GRPC_POLLING_TRACE(fmt, ...)        \
+  if (GRPC_TRACER_ON(grpc_polling_trace)) { \
+    gpr_log(GPR_INFO, (fmt), __VA_ARGS__);  \
   }
 
 /* Uncomment the following to enable extra checks on poll_object operations */
@@ -1920,7 +1920,8 @@ const grpc_event_engine_vtable *grpc_init_epollsig_linux(
   }
 
   if (!is_grpc_wakeup_signal_initialized) {
-    /* TODO(ctiller): when other epoll engines are ready, remove the true || to force this to be explitly chosen if needed */
+    /* TODO(ctiller): when other epoll engines are ready, remove the true || to
+     * force this to be explitly chosen if needed */
     if (true || explicit_request) {
       grpc_use_signal(SIGRTMIN + 6);
     } else {

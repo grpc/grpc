@@ -671,7 +671,7 @@ typedef enum {
 #define GRPC_CHTTP2_FLOW_CREDIT_COMMON(phase, transport, id, dst_context,      \
                                        dst_var, amount)                        \
   do {                                                                         \
-    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                                  \
+    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                  \
       grpc_chttp2_flowctl_trace(__FILE__, __LINE__, phase,                     \
                                 GRPC_CHTTP2_FLOWCTL_CREDIT, #dst_context,      \
                                 #dst_var, NULL, #amount, transport->is_client, \

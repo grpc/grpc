@@ -36,12 +36,12 @@
 
 #include <poll.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/workqueue.h"
-#include "src/core/lib/debug/trace.h"
 
 extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
 

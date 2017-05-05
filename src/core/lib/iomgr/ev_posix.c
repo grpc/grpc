@@ -45,14 +45,15 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
-#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h"
+#include "src/core/lib/iomgr/ev_epollex_linux.h"
+#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
-grpc_tracer_flag grpc_polling_trace = GRPC_TRACER_INITIALIZER(false); /* Disabled by default */
+grpc_tracer_flag grpc_polling_trace =
+    GRPC_TRACER_INITIALIZER(false); /* Disabled by default */
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
