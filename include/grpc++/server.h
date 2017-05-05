@@ -60,9 +60,10 @@ class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
 
-/// Models a gRPC server.
+/// Represents a gRPC server.
 ///
-/// Servers are configured and started via \a grpc::ServerBuilder.
+/// Use a \a grpc::ServerBuilder to create, configure, and start
+/// \a Server instances.
 class Server final : public ServerInterface, private GrpcLibraryCodegen {
  public:
   ~Server();
