@@ -110,7 +110,7 @@ class ServerBuilder {
   /// enabled by default.
   ///
   /// Incoming calls compressed with an unsupported algorithm will fail with
-  /// GRPC_STATUS_UNIMPLEMENTED.
+  /// \a GRPC_STATUS_UNIMPLEMENTED.
   ServerBuilder& SetCompressionAlgorithmSupportStatus(
       grpc_compression_algorithm algorithm, bool enabled);
 
