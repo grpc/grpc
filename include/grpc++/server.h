@@ -74,10 +74,12 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// call \a Shutdown for this function to ever return.
   void Wait() override;
 
-  /// Global Callbacks
-  ///
-  /// Can be set exactly once per application to install hooks whenever
-  /// a server event occurs
+  /// Global callbacks are a set of hooks that are called when server
+  /// events occur.  \a SetGlobalCallbacks method is used to register
+  /// the hooks with gRPC.  Note that
+  /// the \a GlobalCallbacks instance will be shared among all
+  /// \a Server instances in an application and can be set exactly
+  /// once per application.
   class GlobalCallbacks {
    public:
     virtual ~GlobalCallbacks() {}
@@ -93,9 +95,11 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
     virtual void AddPort(Server* server, const grpc::string& addr,
                          ServerCredentials* creds, int port) {}
   };
-  /// Set the global callback object. Can only be called once. Does not take
-  /// ownership of callbacks, and expects the pointed to object to be alive
-  /// until all server objects in the process have been destroyed.
+  /// Set the global callback object. Can only be called once per application.
+  /// Does not take ownership of callbacks, and expects the pointed to object
+  /// to be alive until all server objects in the process have been destroyed.
+  /// The same \a GlobalCallbacks object will be used throughout the
+  /// application and is shared among all \a Server objects.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
   // Returns a \em raw pointer to the underlying grpc_server instance.
