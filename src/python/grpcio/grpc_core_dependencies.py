@@ -97,6 +97,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/iomgr/endpoint_pair_uv.c',
   'src/core/lib/iomgr/endpoint_pair_windows.c',
   'src/core/lib/iomgr/error.c',
+  'src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c',
   'src/core/lib/iomgr/ev_epoll_linux.c',
   'src/core/lib/iomgr/ev_poll_posix.c',
   'src/core/lib/iomgr/ev_posix.c',
