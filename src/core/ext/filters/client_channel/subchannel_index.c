@@ -158,15 +158,24 @@ grpc_subchannel *grpc_subchannel_index_find(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel_key *key) {
   enter_ctx(exec_ctx);
 
+gpr_log(GPR_DEBUG, "grpc_subchannel_index_find");
+
   // Lock, and take a reference to the subchannel index.
   // We don't need to do the search under a lock as avl's are immutable.
   gpr_mu_lock(&g_mu);
   gpr_avl index = gpr_avl_ref(g_subchannel_index);
   gpr_mu_unlock(&g_mu);
 
+gpr_log(GPR_DEBUG, ".. got index");
+
   grpc_subchannel *c =
       GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(gpr_avl_get(index, key), "index_find");
+  
+gpr_log(GPR_DEBUG, ".. c=%p", c);
+  
   gpr_avl_unref(index);
+
+gpr_log(GPR_DEBUG, "~grpc_subchannel_index_find");
 
   leave_ctx(exec_ctx);
   return c;
@@ -189,8 +198,11 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
     // - Check to see if a subchannel already exists
     c = gpr_avl_get(index, key);
     if (c != NULL) {
+      c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "index_register");
+    }
+    if (c != NULL) {
       // yes -> we're done
-      GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, constructed, "index_register");
+      GRPC_SUBCHANNEL_UNREF(exec_ctx, constructed, "index_register");
     } else {
       // no -> update the avl and compare/swap
       gpr_avl updated =
