@@ -37,4 +37,4 @@ git submodule update --init
 
 # download docker images from dockerhub
 export DOCKERHUB_ORGANIZATION=grpctesting
-tools/run_tests/run_tests_matrix.py -f c tsan
+tools/run_tests/run_tests_matrix.py -f c tsan --inner_jobs 16 -j 1 --internal_ci

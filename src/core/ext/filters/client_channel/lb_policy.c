@@ -119,9 +119,10 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx,
 int grpc_lb_policy_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                                const grpc_lb_policy_pick_args *pick_args,
                                grpc_connected_subchannel **target,
+                               grpc_call_context_element *context,
                                void **user_data, grpc_closure *on_complete) {
   return policy->vtable->pick_locked(exec_ctx, policy, pick_args, target,
-                                     user_data, on_complete);
+                                     context, user_data, on_complete);
 }
 
 void grpc_lb_policy_cancel_pick_locked(grpc_exec_ctx *exec_ctx,

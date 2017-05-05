@@ -69,6 +69,9 @@ namespace testing {
 // ServiceA leading comment 1
 class ServiceA final {
  public:
+  static constexpr char const* service_full_name() {
+    return "grpc.testing.ServiceA";
+  }
   class StubInterface {
    public:
     virtual ~StubInterface() {}
@@ -373,6 +376,9 @@ class ServiceA final {
 // ServiceB leading comment 1
 class ServiceB final {
  public:
+  static constexpr char const* service_full_name() {
+    return "grpc.testing.ServiceB";
+  }
   class StubInterface {
    public:
     virtual ~StubInterface() {}

@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -28,14 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+licenses(["notice"])  # 3-clause BSD
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+package(default_visibility = ["//visibility:public"])
 
-git submodule update --init
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 
-# download fuzzer docker image from dockerhub
-export DOCKERHUB_ORGANIZATION=grpctesting
-config=asan-trace-cmp tools/jenkins/run_fuzzer.sh json_fuzzer_test
-
+grpc_proto_library(
+    name = "load_balancer_proto",
+    srcs = ["load_balancer.proto"],
+)
