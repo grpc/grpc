@@ -195,7 +195,7 @@ class ServerBuilder {
 
   struct SyncServerSettings {
     SyncServerSettings()
-        : num_cqs(GPR_MAX(1, gpr_cpu_num_cores())),
+        : num_cqs(gpr_cpu_num_cores()),
           min_pollers(1),
           max_pollers(2),
           cq_timeout_msec(10000) {}

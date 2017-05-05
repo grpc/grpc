@@ -46,6 +46,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
+#include "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h"
 #include "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
@@ -77,6 +78,7 @@ static const event_engine_factory g_factories[] = {
     {"epollsig", grpc_init_epollsig_linux},
     {"epoll1", grpc_init_epoll1_linux},
     {"epoll-threadpool", grpc_init_epoll_thread_pool_linux},
+    {"epoll-limited", grpc_init_epoll_limited_pollers_linux},
     {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
 };
