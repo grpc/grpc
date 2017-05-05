@@ -139,15 +139,17 @@ class ServerBuilder {
     return SetOption(MakeChannelArgumentOption(arg, value));
   }
 
-  /// Tries to bind \a server to the given \a addr.
+  /// Enlists an endpoint \a addr (port with an optional IP address) to
+  /// bind the \a grpc::Server object to be created to.
   ///
   /// It can be invoked multiple times.
   ///
   /// \param addr The address to try to bind to the server (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.).
   /// \params creds The credentials associated with the server.
-  /// \param selected_port[out] Upon success, updated to contain the port
-  /// number. \a nullptr otherwise.
+  /// \param selected_port[out] If not `nullptr`, gets populated with the port
+  /// number bound to the \a grpc::Server for the corresponding endpoint after
+  /// it is successfully bound, 0 otherwise.
   ///
   // TODO(dgq): the "port" part seems to be a misnomer.
   ServerBuilder& AddListeningPort(const grpc::string& addr,
