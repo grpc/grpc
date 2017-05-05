@@ -76,7 +76,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx,
   if (GRPC_ERROR_NONE == error) {
     grpc_mdelem md;
     if (get_user_agent_mdelem(calld->recv_initial_metadata, &md)) {
-      grpc_user_agent_md* user_agent_md = grpc_parse_user_agent(md);
+      grpc_workaround_user_agent_md* user_agent_md = grpc_parse_user_agent(md);
       if (user_agent_md
               ->workaround_active[GRPC_WORKAROUND_ID_CRONET_COMPRESSION]) {
         calld->workaround_active = true;
