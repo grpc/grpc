@@ -331,8 +331,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   ac->channel_args = grpc_channel_args_copy(channel_args);
 
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
-            ac->addr_str);
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
+            ac->addr_str, fdobj);
   }
 
   gpr_mu_lock(&ac->mu);

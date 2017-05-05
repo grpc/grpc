@@ -582,6 +582,10 @@ static grpc_error *pollable_add_fd(pollable *p, grpc_fd *fd) {
   const int epfd = p->epfd;
   GPR_ASSERT(epfd != -1);
 
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    gpr_log(GPR_DEBUG, "add fd %p to pollable %p", fd, p);
+  }
+
   gpr_mu_lock(&fd->orphaned_mu);
   if (fd->orphaned) {
     gpr_mu_unlock(&fd->orphaned_mu);
@@ -961,7 +965,8 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
     if (worker->pollable != &pollset->pollable) {
       gpr_mu_unlock(&pollset->pollable.po.mu);
     }
-    if (GRPC_TRACER_ON(grpc_polling_trace) && worker->pollable->root_worker != worker) {
+    if (GRPC_TRACER_ON(grpc_polling_trace) &&
+        worker->pollable->root_worker != worker) {
       gpr_log(GPR_DEBUG, "PS:%p wait %p w=%p for %dms", pollset,
               worker->pollable, worker,
               poll_deadline_to_millis_timeout(deadline, *now));
@@ -1080,6 +1085,10 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
   static const char *err_desc = "pollset_add_fd";
   grpc_error *error = GRPC_ERROR_NONE;
   if (pollset->current_pollable == &g_empty_pollable) {
+    if (GRPC_TRACER_ON(grpc_polling_trace))
+      gpr_log(GPR_DEBUG,
+              "PS:%p add fd %p; transition pollable from empty to fd", pollset,
+              fd);
     /* empty pollable --> single fd pollable */
     append_error(&error, pollset_kick_all(pollset), err_desc);
     pollset->current_pollable = &fd->pollable;
@@ -1088,10 +1097,17 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
     if (!fd_locked) gpr_mu_unlock(&fd->pollable.po.mu);
     REF_BY(fd, 2, "pollset_pollable");
   } else if (pollset->current_pollable == &pollset->pollable) {
+    if (GRPC_TRACER_ON(grpc_polling_trace))
+      gpr_log(GPR_DEBUG, "PS:%p add fd %p; already multipolling", pollset, fd);
     append_error(&error, pollable_add_fd(pollset->current_pollable, fd),
                  err_desc);
   } else if (pollset->current_pollable != &fd->pollable) {
     grpc_fd *had_fd = (grpc_fd *)pollset->current_pollable;
+    if (GRPC_TRACER_ON(grpc_polling_trace))
+      gpr_log(GPR_DEBUG,
+              "PS:%p add fd %p; transition pollable from fd %p to multipoller",
+              pollset, fd, had_fd);
+    append_error(&error, pollset_kick_all(pollset), err_desc);
     pollset->current_pollable = &pollset->pollable;
     if (append_error(&error, pollable_materialize(&pollset->pollable),
                      err_desc)) {
@@ -1458,7 +1474,8 @@ static const grpc_event_engine_vtable vtable = {
     .shutdown_engine = shutdown_engine,
 };
 
-const grpc_event_engine_vtable *grpc_init_epollex_linux(bool explicitly_requested) {
+const grpc_event_engine_vtable *grpc_init_epollex_linux(
+    bool explicitly_requested) {
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
@@ -1483,7 +1500,10 @@ const grpc_event_engine_vtable *grpc_init_epollex_linux(bool explicitly_requeste
 #include "src/core/lib/iomgr/ev_posix.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable *grpc_init_epollex_linux(bool explicitly_requested) { return NULL; }
+const grpc_event_engine_vtable *grpc_init_epollex_linux(
+    bool explicitly_requested) {
+  return NULL;
+}
 #endif /* defined(GRPC_POSIX_SOCKET) */
 
 #endif /* !defined(GRPC_LINUX_EPOLL) */
