@@ -136,9 +136,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
       <Filter>src\core\lib\compression</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
-      <Filter>src\core\lib\debug</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\format_request.c">
       <Filter>src\core\lib\http</Filter>
     </ClCompile>
@@ -483,6 +480,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport_op_string.c">
       <Filter>src\core\lib\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
+      <Filter>src\core\lib\debug</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
       <Filter>third_party\nanopb</Filter>
@@ -860,9 +860,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.h">
       <Filter>src\core\lib\compression</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h">
-      <Filter>src\core\lib\debug</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h">
       <Filter>src\core\lib\http</Filter>
     </ClInclude>
@@ -1165,6 +1162,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h">
       <Filter>src\core\lib\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h">
+      <Filter>src\core\lib\debug</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h">
       <Filter>third_party\nanopb</Filter>

@@ -7732,7 +7732,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_codegen"
+      "grpc_codegen", 
+      "grpc_trace"
     ], 
     "headers": [
       "include/grpc/byte_buffer.h", 
@@ -7755,7 +7756,6 @@
       "src/core/lib/channel/handshaker_registry.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
-      "src/core/lib/debug/trace.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
@@ -7891,8 +7891,6 @@
       "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
       "src/core/lib/compression/message_compress.h", 
-      "src/core/lib/debug/trace.c", 
-      "src/core/lib/debug/trace.h", 
       "src/core/lib/http/format_request.c", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.c", 
@@ -8616,6 +8614,23 @@
   }, 
   {
     "deps": [
+      "gpr"
+    ], 
+    "headers": [
+      "src/core/lib/debug/trace.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_trace", 
+    "src": [
+      "src/core/lib/debug/trace.c", 
+      "src/core/lib/debug/trace.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "grpc_base", 
       "grpc_http_filters", 
@@ -8865,7 +8880,8 @@
   }, 
   {
     "deps": [
-      "gpr"
+      "gpr", 
+      "grpc_trace"
     ], 
     "headers": [
       "src/core/tsi/fake_transport_security.h", 

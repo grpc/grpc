@@ -205,7 +205,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\httpcli.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\parser.h" />
@@ -307,6 +306,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\client_certs.c">
@@ -366,8 +366,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\format_request.c">
     </ClCompile>
@@ -598,6 +596,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport_op_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

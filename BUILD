@@ -450,6 +450,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_trace",
+    srcs = ["src/core/lib/debug/trace.c"],
+    hdrs = ["src/core/lib/debug/trace.h"],
+    deps = [":gpr"],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/channel/channel_args.c",
@@ -461,7 +468,6 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.c",
         "src/core/lib/compression/compression.c",
         "src/core/lib/compression/message_compress.c",
-        "src/core/lib/debug/trace.c",
         "src/core/lib/http/format_request.c",
         "src/core/lib/http/httpcli.c",
         "src/core/lib/http/parser.c",
@@ -588,7 +594,6 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
-        "src/core/lib/debug/trace.h",
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
@@ -709,6 +714,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_codegen",
+        "grpc_trace",
     ],
 )
 
@@ -1246,6 +1252,7 @@ grpc_cc_library(
     language = "c",
     deps = [
         "gpr",
+        "grpc_trace",
     ],
 )
 

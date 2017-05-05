@@ -97,7 +97,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -213,6 +212,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \

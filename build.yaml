@@ -187,7 +187,6 @@ filegroups:
   - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/message_compress.h
-  - src/core/lib/debug/trace.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -299,7 +298,6 @@ filegroups:
   - src/core/lib/channel/handshaker_registry.c
   - src/core/lib/compression/compression.c
   - src/core/lib/compression/message_compress.c
-  - src/core/lib/debug/trace.c
   - src/core/lib/http/format_request.c
   - src/core/lib/http/httpcli.c
   - src/core/lib/http/parser.c
@@ -419,6 +417,7 @@ filegroups:
   - gpr
   uses:
   - grpc_codegen
+  - grpc_trace
 - name: grpc_client_channel
   headers:
   - src/core/ext/filters/client_channel/client_channel.h
@@ -694,6 +693,13 @@ filegroups:
   deps:
   - grpc
   - gpr_test_util
+- name: grpc_trace
+  headers:
+  - src/core/lib/debug/trace.h
+  src:
+  - src/core/lib/debug/trace.c
+  deps:
+  - gpr
 - name: grpc_transport_chttp2
   headers:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
@@ -842,6 +848,8 @@ filegroups:
   deps:
   - gpr
   secure: true
+  uses:
+  - grpc_trace
 - name: grpc++_base
   language: c++
   public_headers:
