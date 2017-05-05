@@ -220,7 +220,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify_custom(cqv, 120);
+  cq_verify_custom(cqv, 150);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
