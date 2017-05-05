@@ -1920,7 +1920,8 @@ const grpc_event_engine_vtable *grpc_init_epollsig_linux(
   }
 
   if (!is_grpc_wakeup_signal_initialized) {
-    if (explicit_request) {
+    /* TODO(ctiller): when other epoll engines are ready, remove the true || to force this to be explitly chosen if needed */
+    if (true || explicit_request) {
       grpc_use_signal(SIGRTMIN + 6);
     } else {
       return NULL;

@@ -410,7 +410,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/endpoint_pair_windows.c )
   s.files += %w( src/core/lib/iomgr/error.c )
   s.files += %w( src/core/lib/iomgr/ev_epoll1_linux.c )
-  s.files += %w( src/core/lib/iomgr/ev_epoll_linux.c )
   s.files += %w( src/core/lib/iomgr/ev_epoll_thread_pool_linux.c )
   s.files += %w( src/core/lib/iomgr/ev_epollex_linux.c )
   s.files += %w( src/core/lib/iomgr/ev_epollsig_linux.c )
