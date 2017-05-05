@@ -41,18 +41,10 @@ clang --version || true
 docker --version || true
 
 # Need to increase open files limit for c tests
-ulimit -n 2000
+ulimit -n 32768
 
 git submodule update --init
 
 # download docker images from dockerhub
 export DOCKERHUB_ORGANIZATION=grpctesting
-tools/run_tests/run_tests.py -l c -t -x sponge_log.xml || FAILED="true"
-
-# kill port_server.py to prevent the build from hanging
-ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+tools/run_tests/run_tests_matrix.py -f basictests linux --inner_jobs 16 -j 1 --internal_ci

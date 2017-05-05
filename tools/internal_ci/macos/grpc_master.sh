@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,26 +28,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package(default_visibility = ["//visibility:public"])
+set -ex
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-grpc_proto_library(
-    name = "auth_sample",
-    srcs = ["auth_sample.proto"],
-)
+git submodule update --init
 
-grpc_proto_library(
-    name = "hellostreamingworld",
-    srcs = ["hellostreamingworld.proto"],
-)
+tools/run_tests/run_tests_matrix.py -f basictests macos --internal_ci || FAILED="true"
 
-grpc_proto_library(
-    name = "helloworld",
-    srcs = ["helloworld.proto"],
-)
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
 
-grpc_proto_library(
-    name = "route_guide",
-    srcs = ["route_guide.proto"],
-)
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi

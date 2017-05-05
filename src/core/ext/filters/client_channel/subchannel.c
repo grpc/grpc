@@ -781,7 +781,7 @@ grpc_error *grpc_connected_subchannel_create_call(
   (*call)->connection = GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   const grpc_call_element_args call_args = {.call_stack = callstk,
                                             .server_transport_data = NULL,
-                                            .context = NULL,
+                                            .context = args->context,
                                             .path = args->path,
                                             .start_time = args->start_time,
                                             .deadline = args->deadline,

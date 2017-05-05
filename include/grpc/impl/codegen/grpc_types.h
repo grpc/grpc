@@ -293,6 +293,9 @@ each time recvmsg (or equivalent) is called */
   "grpc.experimental.tcp_min_read_chunk_size"
 #define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_max_read_chunk_size"
+/* Timeout in milliseconds to use for calls to the grpclb load balancer.
+   If 0 or unset, the balancer calls will have no deadline. */
+#define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION "grpc.socket_factory"
 /** \} */

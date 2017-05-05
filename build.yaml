@@ -488,13 +488,17 @@ filegroups:
   - grpc_base
 - name: grpc_lb_policy_grpclb
   headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
@@ -504,13 +508,17 @@ filegroups:
   - nanopb
 - name: grpc_lb_policy_grpclb_secure
   headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
@@ -995,13 +1003,6 @@ filegroups:
   - include/grpc++/test/server_context_test_spouse.h
   deps:
   - grpc++
-- name: thrift_util
-  language: c++
-  public_headers:
-  - include/grpc++/impl/codegen/thrift_serializer.h
-  - include/grpc++/impl/codegen/thrift_utils.h
-  uses:
-  - grpc++_codegen_base
 libs:
 - name: gpr
   build: all
@@ -1303,7 +1304,6 @@ libs:
   - grpc++_codegen_base_src
   - grpc++_codegen_proto
   - grpc++_config_proto
-  - thrift_util
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -3832,6 +3832,20 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+- name: grpclb_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/end2end/grpclb_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpclb_test
   gtest: false
   build: test
@@ -4518,10 +4532,11 @@ configs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt
 defaults:
   ares:
-    CFLAGS: -Wno-sign-conversion -Wno-invalid-source-encoding
+    CFLAGS: -Wno-sign-conversion $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
     CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
       $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden
-      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
+      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst
+      MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
@@ -4567,13 +4582,10 @@ node_modules:
   - src/node/ext/call_credentials.cc
   - src/node/ext/channel.cc
   - src/node/ext/channel_credentials.cc
-  - src/node/ext/completion_queue_threadpool.cc
-  - src/node/ext/completion_queue_uv.cc
+  - src/node/ext/completion_queue.cc
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
-  - src/node/ext/server_generic.cc
-  - src/node/ext/server_uv.cc
   - src/node/ext/slice.cc
   - src/node/ext/timeval.cc
 openssl_fallback:

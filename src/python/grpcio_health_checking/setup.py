@@ -29,7 +29,6 @@
 """Setup module for the GRPC Python package's optional health checking."""
 
 import os
-import sys
 
 import setuptools
 

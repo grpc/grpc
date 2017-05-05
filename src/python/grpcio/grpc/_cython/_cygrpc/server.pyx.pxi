@@ -85,7 +85,7 @@ cdef class Server:
   def start(self):
     if self.is_started:
       raise ValueError("the server has already started")
-    self.backup_shutdown_queue = CompletionQueue()
+    self.backup_shutdown_queue = CompletionQueue(shutdown_cq=True)
     self.register_completion_queue(self.backup_shutdown_queue)
     self.is_started = True
     with nogil:

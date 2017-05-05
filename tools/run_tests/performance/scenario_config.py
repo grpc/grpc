@@ -310,7 +310,7 @@ class CXXLanguage:
         secure=secure,
         categories=smoketest_categories + [SCALABLE])
 
-      for rpc_type in ['unary', 'streaming']:
+      for rpc_type in ['unary', 'streaming', 'streaming_from_client', 'streaming_from_server']:
         for synchronicity in ['sync', 'async']:
           yield _ping_pong_scenario(
               'cpp_protobuf_%s_%s_ping_pong_%s' % (synchronicity, rpc_type, secstr),
@@ -410,6 +410,21 @@ class CSharpLanguage:
         categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
+        'csharp_generic_async_streaming_ping_pong_insecure_1MB', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        req_size=1024*1024, resp_size=1024*1024,
+        use_generic_payload=True,
+        secure=False,
+        categories=[SMOKETEST, SCALABLE])
+
+    yield _ping_pong_scenario(
+        'csharp_generic_async_streaming_qps_unconstrained_insecure', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        unconstrained_client='async', use_generic_payload=True,
+        secure=False,
+        categories=[SMOKETEST, SCALABLE])
+
+    yield _ping_pong_scenario(
         'csharp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
 
@@ -468,7 +483,6 @@ class CSharpLanguage:
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         req_size=1024*1024, resp_size=1024*1024,
         categories=[SMOKETEST, SCALABLE])
-
 
   def __str__(self):
     return 'csharp'

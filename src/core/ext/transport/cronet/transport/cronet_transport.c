@@ -886,6 +886,10 @@ static bool op_can_be_run(grpc_transport_stream_op_batch *curr_op,
                !stream_state->state_op_done[OP_RECV_MESSAGE]) {
       CRONET_LOG(GPR_DEBUG, "Because");
       result = false;
+    } else if (curr_op->cancel_stream &&
+               !stream_state->state_callback_received[OP_CANCELED]) {
+      CRONET_LOG(GPR_DEBUG, "Because");
+      result = false;
     } else if (curr_op->recv_trailing_metadata) {
       /* We aren't done with trailing metadata yet */
       if (!stream_state->state_op_done[OP_RECV_TRAILING_METADATA]) {

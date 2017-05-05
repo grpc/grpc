@@ -27,13 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Config file for the internal CI (in protobuf text format)
+licenses(["notice"])  # 3-clause BSD
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_fuzzer_client.sh"
-timeout_mins: 1440  # 24 hours is the maximum allowed value
-action {
-  define_artifacts {
-    regex: "git/grpc/fuzzer_output/**"
-  }
-}
+package(default_visibility = ["//visibility:public"])
+
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+
+grpc_proto_library(
+    name = "load_balancer_proto",
+    srcs = ["load_balancer.proto"],
+)

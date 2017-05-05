@@ -1154,6 +1154,7 @@ grpc_python_plugin: $(BINDIR)/$(CONFIG)/grpc_python_plugin
 grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 grpc_tool_test: $(BINDIR)/$(CONFIG)/grpc_tool_test
 grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
+grpclb_end2end_test: $(BINDIR)/$(CONFIG)/grpclb_end2end_test
 grpclb_test: $(BINDIR)/$(CONFIG)/grpclb_test
 health_service_end2end_test: $(BINDIR)/$(CONFIG)/health_service_end2end_test
 http2_client: $(BINDIR)/$(CONFIG)/http2_client
@@ -1582,6 +1583,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
+  $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
   $(BINDIR)/$(CONFIG)/grpclb_test \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
@@ -1703,6 +1705,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
+  $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
   $(BINDIR)/$(CONFIG)/grpclb_test \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
@@ -2085,6 +2088,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_tool_test || ( echo test grpc_tool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_api_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpclb_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpclb_end2end_test || ( echo test grpclb_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_test || ( echo test grpclb_test failed ; exit 1 )
 	$(E) "[RUN]     Testing health_service_end2end_test"
@@ -3103,8 +3108,10 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -3944,8 +3951,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/filters/load_reporting/load_reporting.c \
     src/core/ext/filters/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -5165,8 +5174,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/config_protobuf.h \
-    include/grpc++/impl/codegen/thrift_serializer.h \
-    include/grpc++/impl/codegen/thrift_utils.h \
 
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
 
@@ -8280,8 +8287,8 @@ PUBLIC_HEADERS_C += \
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
-$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
-$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion -Wno-invalid-source-encoding
+$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
+$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
 
 $(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS) 
 	$(E) "[AR]      Creating $@"
@@ -15100,6 +15107,53 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
+
+
+GRPCLB_END2END_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
+    test/cpp/end2end/grpclb_end2end_test.cc \
+
+GRPCLB_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPCLB_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpclb_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/grpclb_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpclb_end2end_test: $(PROTOBUF_DEP) $(GRPCLB_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPCLB_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpclb_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v1/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/grpclb_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpclb_end2end_test: $(GRPCLB_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPCLB_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/grpclb_end2end_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
 GRPCLB_TEST_SRC = \
