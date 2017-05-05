@@ -829,14 +829,18 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_grpclb",
     srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
     ],
     hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
@@ -853,14 +857,18 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_grpclb_secure",
     srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
     ],
     hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
@@ -1400,18 +1408,6 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/config_protobuf.h",
-    ],
-)
-
-grpc_cc_library(
-    name = "thrift_util",
-    language = "c++",
-    public_hdrs = [
-        "include/grpc++/impl/codegen/thrift_serializer.h",
-        "include/grpc++/impl/codegen/thrift_utils.h",
-    ],
-    deps = [
-        "grpc++_codegen_base",
     ],
 )
 
