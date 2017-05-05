@@ -209,7 +209,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
   }
 
-  int GetPollCount() {
+  int GetPollCount() override {
     int count = 0;
     for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
       count += (int)grpc_get_cq_poll_num((*cq)->cq());
