@@ -86,3 +86,30 @@ grpc_cc_library(
         "//test/core/util:gpr_test_util",
     ],
 )
+
+grpc_cc_library(
+    name = "grpc_cli_libs",
+    srcs = [
+        "cli_call.cc",
+        "cli_credentials.cc",
+        "grpc_tool.cc",
+        "proto_file_parser.cc",
+        "service_describer.cc",
+    ],
+    hdrs = [
+        "cli_call.h",
+        "cli_credentials.h",
+        "config_grpc_cli.h",
+        "grpc_tool.h",
+        "proto_file_parser.h",
+        "service_describer.h",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        ":grpc++_proto_reflection_desc_db",
+    ],
+    external_deps = [
+        "gflags",
+    ],
+)
