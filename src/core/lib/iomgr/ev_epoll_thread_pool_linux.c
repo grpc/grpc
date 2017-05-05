@@ -1283,7 +1283,6 @@ static void shutdown_poller_threads() {
     gpr_thd_join(g_poller_threads[i]);
   }
 
-  gpr_log(GPR_ERROR, "epoll set delete called");
   GRPC_LOG_IF_ERROR("shutdown_poller_threads", error);
   gpr_free(g_poller_threads);
   g_poller_threads = NULL;
