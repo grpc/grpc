@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,56 +31,65 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_COMPLETION_QUEUE_ASYNC_WORKER_H_
-#define NET_GRPC_NODE_COMPLETION_QUEUE_ASYNC_WORKER_H_
-#include <nan.h>
+#include <grpc/grpc.h>
+#include <node.h>
+#include <uv.h>
+#include <v8.h>
 
-#include "grpc/grpc.h"
+#include "call.h"
+#include "completion_queue.h"
 
 namespace grpc {
 namespace node {
 
-/* A worker that asynchronously calls completion_queue_next, and queues onto the
-   node event loop a call to the function stored in the event's tag. */
-class CompletionQueueAsyncWorker : public Nan::AsyncWorker {
- public:
-  CompletionQueueAsyncWorker();
+using v8::Local;
+using v8::Object;
+using v8::Value;
 
-  ~CompletionQueueAsyncWorker();
-  /* Calls completion_queue_next with the provided deadline, and stores the
-     event if there was one or sets an error message if there was not */
-  void Execute();
+grpc_completion_queue *queue;
+uv_prepare_t prepare;
+int pending_batches;
 
-  /* Returns the completion queue attached to this class */
-  static grpc_completion_queue *GetQueue();
+void drain_completion_queue(uv_prepare_t *handle) {
+  Nan::HandleScope scope;
+  grpc_event event;
+  (void)handle;
+  do {
+    event = grpc_completion_queue_next(queue, gpr_inf_past(GPR_CLOCK_MONOTONIC),
+                                       NULL);
 
-  /* Convenience function to create a worker with the given arguments and queue
-     it to run asynchronously */
-  static void Next();
+    if (event.type == GRPC_OP_COMPLETE) {
+      const char *error_message;
+      if (event.success) {
+        error_message = NULL;
+      } else {
+        error_message = "The async function encountered an error";
+      }
+      CompleteTag(event.tag, error_message);
+      grpc::node::DestroyTag(event.tag);
+      pending_batches--;
+      if (pending_batches == 0) {
+        uv_prepare_stop(&prepare);
+      }
+    }
+  } while (event.type != GRPC_QUEUE_TIMEOUT);
+}
 
-  /* Initialize the CompletionQueueAsyncWorker class */
-  static void Init(v8::Local<v8::Object> exports);
+grpc_completion_queue *GetCompletionQueue() { return queue; }
 
- protected:
-  /* Called when Execute has succeeded (completed without setting an error
-     message). Calls the saved callback with the event that came from
-     completion_queue_next */
-  void HandleOKCallback();
+void CompletionQueueNext() {
+  if (pending_batches == 0) {
+    GPR_ASSERT(!uv_is_active((uv_handle_t *)&prepare));
+    uv_prepare_start(&prepare, drain_completion_queue);
+  }
+  pending_batches++;
+}
 
-  void HandleErrorCallback();
-
- private:
-  grpc_event result;
-
-  static grpc_completion_queue *queue;
-
-  // Number of grpc_completion_queue_next calls in the thread pool
-  static int current_threads;
-  // Number of grpc_completion_queue_next calls waiting to enter the thread pool
-  static int waiting_next_calls;
-};
+void CompletionQueueInit(Local<Object> exports) {
+  queue = grpc_completion_queue_create_for_next(NULL);
+  uv_prepare_init(uv_default_loop(), &prepare);
+  pending_batches = 0;
+}
 
 }  // namespace node
 }  // namespace grpc
-
-#endif  // NET_GRPC_NODE_COMPLETION_QUEUE_ASYNC_WORKER_H_

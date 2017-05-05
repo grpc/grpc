@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,13 +28,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_fuzzer_client.sh"
-timeout_mins: 1440  # 24 hours is the maximum allowed value
-action {
-  define_artifacts {
-    regex: "git/grpc/fuzzer_output/**"
-  }
-}
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+git submodule update --init
+
+tools/run_tests/run_tests_matrix.py -f basictests macos --internal_ci || FAILED="true"
+
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
