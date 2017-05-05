@@ -116,8 +116,7 @@ static void timer_thread(void *unused) {
       gpr_mu_lock(&g_mu);
       // remove a waiter from the pool, and start another thread if necessary
       --g_waiter_count;
-      bool start_thread = g_waiter_count == 0;
-      if (start_thread && g_threaded) {
+      if (g_waiter_count == 0 && g_threaded) {
         start_timer_thread_and_unlock();
       } else {
         // if there's no thread waiting with a timeout, kick an existing waiter
