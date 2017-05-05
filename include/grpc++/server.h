@@ -102,7 +102,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// application and is shared among all \a Server objects.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
-  // Returns a \em raw pointer to the underlying grpc_server instance.
+  // Returns a \em raw pointer to the underlying \a grpc_server instance.
   grpc_server* c_server();
 
   /// Returns the health check service.
