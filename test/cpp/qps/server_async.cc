@@ -53,10 +53,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/server.h"
 
-extern "C" {
-#include "src/core/lib/surface/completion_queue.h"
-}
-
 namespace grpc {
 namespace testing {
 

@@ -44,6 +44,10 @@
 #include "test/core/util/port.h"
 #include "test/cpp/qps/usage_timer.h"
 
+extern "C" {
+#include "src/core/lib/surface/completion_queue.h"
+}
+
 namespace grpc {
 namespace testing {
 

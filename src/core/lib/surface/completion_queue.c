@@ -227,7 +227,7 @@ struct grpc_completion_queue {
   /* TODO: sreek - This will no longer be needed. Use polling_type set */
   int is_non_listening_server_cq;
   int num_pluckers;
-  gpr_atm num_polls;
+  int num_polls;
   plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
   grpc_closure pollset_shutdown_done;
 
@@ -293,7 +293,7 @@ grpc_completion_queue *grpc_completion_queue_create_internal(
   cc->is_server_cq = 0;
   cc->is_non_listening_server_cq = 0;
   cc->num_pluckers = 0;
-  gpr_atm_no_barrier_store(&cc->num_polls, 0);
+  cc->num_polls = 0;
   gpr_atm_no_barrier_store(&cc->things_queued_ever, 0);
 #ifndef NDEBUG
   cc->outstanding_tag_count = 0;
@@ -311,7 +311,11 @@ grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue *cc) {
 }
 
 gpr_atm grpc_get_cq_poll_num(grpc_completion_queue *cc) {
-  return gpr_atm_no_barrier_load(&cc->num_polls);
+  int cur_num_polls;
+  gpr_mu_lock(cc->mu);
+  cur_num_polls = cc->num_polls;
+  gpr_mu_unlock(cc->mu);
+  return cur_num_polls;
 }
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
@@ -598,7 +602,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       gpr_mu_lock(cc->mu);
       continue;
     } else {
-      gpr_atm_no_barrier_fetch_add(&cc->num_polls, 1);
+      cc->num_polls++;
       grpc_error *err = cc->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cc),
                                                 NULL, now, iteration_deadline);
       if (err != GRPC_ERROR_NONE) {
@@ -791,7 +795,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(cc->mu);
     } else {
-      gpr_atm_no_barrier_fetch_add(&cc->num_polls, 1);
+      cc->num_polls++;
       grpc_error *err = cc->poller_vtable->work(
           &exec_ctx, POLLSET_FROM_CQ(cc), &worker, now, iteration_deadline);
       if (err != GRPC_ERROR_NONE) {

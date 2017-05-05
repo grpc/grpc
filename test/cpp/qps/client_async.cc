@@ -54,10 +54,6 @@
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 
-extern "C" {
-#include "src/core/lib/surface/completion_queue.h"
-}
-
 namespace grpc {
 namespace testing {
 
