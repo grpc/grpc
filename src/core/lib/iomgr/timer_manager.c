@@ -44,18 +44,26 @@ typedef struct completed_thread {
   struct completed_thread *next;
 } completed_thread;
 
+// global mutex
 static gpr_mu g_mu;
+// are we multi-threaded
 static bool g_threaded;
+// cv to wait until a thread is needed
 static gpr_cv g_cv_wait;
+// cv for notification when threading ends
 static gpr_cv g_cv_shutdown;
+// number of threads in the system
 static int g_thread_count;
+// number of threads sitting around waiting
 static int g_waiter_count;
+// linked list of threads that have completed (and need joining)
 static completed_thread *g_completed_threads;
+// was the manager kicked by the timer system
 static bool g_kicked;
+// is there a thread waiting until the next timer should fire?
 static bool g_has_timed_waiter;
+// generation counter to track which thread is waiting for the next timer
 static uint64_t g_timed_waiter_generation;
-
-#define MAX_WAITERS 2
 
 static void timer_thread(void *unused);
 
@@ -147,28 +155,21 @@ static void timer_thread(void *unused) {
         next = inf_future;
         gpr_log(GPR_DEBUG, "sleep until kicked");
       }
-      bool timed_out = gpr_cv_wait(&g_cv_wait, &g_mu, next);
-      // if we timed out and we have too many waiters, maybe exit this thread
-      bool should_stop = (timed_out && g_waiter_count > MAX_WAITERS);
-      gpr_log(GPR_DEBUG, "wait ended: was_timed:%d timed_out:%d kicked:%d",
+      gpr_cv_wait(&g_cv_wait, &g_mu, next);
+      gpr_log(GPR_DEBUG, "wait ended: was_timed:%d kicked:%d",
               my_timed_waiter_generation == g_timed_waiter_generation,
-              timed_out, g_kicked);
+              g_kicked);
       // if this was the timed waiter, then we need to check timers, and flag
       // that there's now no timed waiter... we'll look for a replacement if
       // there's work to do after checking timers (code above)
       if (my_timed_waiter_generation == g_timed_waiter_generation) {
         g_has_timed_waiter = false;
-        should_stop = false;
       }
       // if this was a kick from the timer system, consume it (and don't stop
       // this thread yet)
       if (g_kicked) {
         grpc_timer_consume_kick();
         g_kicked = false;
-        should_stop = false;
-      }
-      if (should_stop) {
-        break;
       }
     }
     gpr_mu_unlock(&g_mu);
