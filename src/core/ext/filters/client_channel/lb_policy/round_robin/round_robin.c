@@ -279,9 +279,10 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   ready_list *elem;
 
-  if (grpc_lb_round_robin_trace) {
-    gpr_log(GPR_DEBUG, "Destroying Round Robin policy at %p", (void *)pol);
-  }
+  // if (grpc_lb_round_robin_trace) { XXX
+  gpr_log(GPR_DEBUG, "Destroying Round Robin policy at %p %zu", (void *)pol,
+          p->num_subchannels);
+  //}
 
   for (size_t i = 0; i < p->num_subchannels; i++) {
     subchannel_data *sd = p->subchannels[i];
@@ -307,6 +308,8 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     elem = tmp;
   }
 
+  gpr_log(GPR_DEBUG, "Done destroying Round Robin policy at %p %zu",
+          (void *)pol, p->num_subchannels);
   gpr_free(p);
 }
 
@@ -315,9 +318,9 @@ static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pending_pick *pp;
   size_t i;
 
-  if (grpc_lb_round_robin_trace) {
-    gpr_log(GPR_DEBUG, "Shutting down Round Robin policy at %p", (void *)pol);
-  }
+  // if (grpc_lb_round_robin_trace) { XXX
+  gpr_log(GPR_DEBUG, "Shutting down Round Robin policy at %p", (void *)pol);
+  //}
 
   p->shutdown = true;
   while ((pp = p->pending_picks)) {
@@ -540,6 +543,8 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_ERROR_REF(error);
 
   if (sd->updating) {
+    gpr_log(GPR_DEBUG, "Disposing of outdated subchannel %p",
+            (void *)sd->subchannel);
     /* remove from ready list if still present */
     if (sd->ready_list_node != NULL) {
       remove_disconnected_sc_locked(p, sd->ready_list_node);
@@ -652,7 +657,8 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
       }
       gpr_free(sd);
       /* unref the "rr_connectivity" weak ref from start_picking */
-      GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "rr_connectivity");
+      GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base,
+                                "rr_connectivity_sc_shutdown");
       break;
   }
   GRPC_ERROR_UNREF(error);
@@ -784,13 +790,12 @@ static bool rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     if (sc_args[i].ignore) continue;
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args[i].args);
-    if (grpc_lb_round_robin_trace) {
-      char *address_uri =
-          grpc_sockaddr_to_uri(&addresses->addresses[i].address);
-      gpr_log(GPR_DEBUG, "Created subchannel %p for address uri %s",
-              (void *)subchannel, address_uri);
-      gpr_free(address_uri);
-    }
+    // if (grpc_lb_round_robin_trace) {
+    char *address_uri = grpc_sockaddr_to_uri(&addresses->addresses[i].address);
+    gpr_log(GPR_DEBUG, "Created subchannel %p for address uri %s",
+            (void *)subchannel, address_uri);
+    gpr_free(address_uri);
+    //}
     if (subchannel != NULL) {
       subchannel_data *sd = gpr_zalloc(sizeof(*sd));
       p->subchannels[new_subchannel_idx] = sd;
@@ -808,7 +813,7 @@ static bool rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
       if (p->started_picking) {
         sd->prev_connectivity_state = GRPC_CHANNEL_INIT;
         sd->curr_connectivity_state = GRPC_CHANNEL_IDLE;
-        GRPC_LB_POLICY_WEAK_REF(&p->base, "rr_update");
+        GRPC_LB_POLICY_WEAK_REF(&p->base, "start_picking_update");
         grpc_subchannel_notify_on_state_change(
             exec_ctx, sd->subchannel, p->base.interested_parties,
             &sd->curr_connectivity_state, &sd->connectivity_changed_closure);

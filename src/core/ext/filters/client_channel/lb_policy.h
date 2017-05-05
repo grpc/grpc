@@ -145,7 +145,7 @@ struct grpc_lb_policy_vtable {
                  const grpc_lb_policy_args *args);
 };
 
-/*#define GRPC_LB_POLICY_REFCOUNT_DEBUG*/
+#define GRPC_LB_POLICY_REFCOUNT_DEBUG
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
 
 /* Strong references: the policy will shutdown when they reach zero */
