@@ -128,7 +128,9 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
   channel_data *cd = (channel_data *)elem->channel_data;
-  grpc_transport_destroy(exec_ctx, cd->transport);
+  if (cd->transport) {
+    grpc_transport_destroy(exec_ctx, cd->transport);
+  }
 }
 
 static char *con_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {

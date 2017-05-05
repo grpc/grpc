@@ -60,27 +60,32 @@ extern "C" {
 typedef struct tsi_ssl_client_handshaker_factory
     tsi_ssl_client_handshaker_factory;
 
+/* Object that holds a private key / certificate chain pair in PEM format. */
+typedef struct {
+  /* private_key is the NULL-terminated string containing the PEM encoding of
+     the client's private key. */
+  const char *private_key;
+
+  /* cert_chain is the NULL-terminated string containing the PEM encoding of
+     the client's certificate chain. */
+  const char *cert_chain;
+} tsi_ssl_pem_key_cert_pair;
+
 /* Creates a client handshaker factory.
-   - pem_private_key is the buffer containing the PEM encoding of the client's
-     private key. This parameter can be NULL if the client does not have a
-     private key.
-   - pem_private_key_size is the size of the associated buffer.
-   - pem_cert_chain is the buffer containing the PEM encoding of the client's
-     certificate chain. This parameter can be NULL if the client does not have
-     a certificate chain.
-   - pem_cert_chain_size is the size of the associated buffer.
-   - pem_roots_cert is the buffer containing the PEM encoding of the server
-     root certificates. This parameter cannot be NULL.
-   - pem_roots_cert_size is the size of the associated buffer.
+   - pem_key_cert_pair is a pointer to the object containing client's private
+     key and certificate chain. This parameter can be NULL if the client does
+     not have such a key/cert pair.
+   - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
+     the client root certificates. This parameter may be NULL if the server does
+     not want the client to be authenticated with SSL.
    - cipher_suites contains an optional list of the ciphers that the client
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
      This parameter can be set to NULL to use the default set of ciphers.
      TODO(jboeuf): Revisit the format of this parameter.
-   - alpn_protocols is an array containing the protocol names that the
-     handshakers created with this factory support. This parameter can be NULL.
-   - alpn_protocols_lengths is an array containing the lengths of the alpn
-     protocols specified in alpn_protocols. This parameter can be NULL.
+   - alpn_protocols is an array containing the NULL terminated protocol names
+     that the handshakers created with this factory support. This parameter can
+     be NULL.
    - num_alpn_protocols is the number of alpn protocols and associated lengths
      specified. If this parameter is 0, the other alpn parameters must be NULL.
    - factory is the address of the factory pointer to be created.
@@ -88,11 +93,9 @@ typedef struct tsi_ssl_client_handshaker_factory
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_client_handshaker_factory(
-    const unsigned char *pem_private_key, size_t pem_private_key_size,
-    const unsigned char *pem_cert_chain, size_t pem_cert_chain_size,
-    const unsigned char *pem_root_certs, size_t pem_root_certs_size,
-    const char *cipher_suites, const unsigned char **alpn_protocols,
-    const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
+    const tsi_ssl_pem_key_cert_pair *pem_key_cert_pair,
+    const char *pem_root_certs, const char *cipher_suites,
+    const char **alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_client_handshaker_factory **factory);
 
 /* Creates a client handshaker.
@@ -122,37 +125,19 @@ typedef struct tsi_ssl_server_handshaker_factory
     tsi_ssl_server_handshaker_factory;
 
 /* Creates a server handshaker factory.
-   - version indicates which version of the specification to use.
-   - pem_private_keys is an array containing the PEM encoding of the server's
-     private keys.  This parameter cannot be NULL. The size of the array is
-     given by the key_cert_pair_count parameter.
-   - pem_private_keys_sizes is the array containing the sizes of the associated
-     buffers.
-   - pem_cert_chains is an array containing the PEM encoding of the server's
-     cert chains.  This parameter cannot be NULL. The size of the array is
-     given by the key_cert_pair_count parameter.
-   - pem_cert_chains_sizes is the array containing the sizes of the associated
-     buffers.
-   - key_cert_pair_count indicates the number of items in the private_key_files
-     and cert_chain_files parameters.
-   - pem_client_roots is the buffer containing the PEM encoding of the client
-     root certificates. This parameter may be NULL in which case the server will
-     not authenticate the client. If not NULL, the force_client_auth parameter
-     specifies if the server will accept only authenticated clients or both
-     authenticated and non-authenticated clients.
-   - pem_client_root_certs_size is the size of the associated buffer.
-   - force_client_auth, if set to non-zero will force the client to authenticate
-     with an SSL cert. Note that this option is ignored if pem_client_root_certs
-     is NULL or pem_client_roots_certs_size is 0
+   - pem_key_cert_pairs is an array private key / certificate chains of the
+     server.
+   - num_key_cert_pairs is the number of items in the pem_key_cert_pairs array.
+   - pem_root_certs is the NULL-terminated string containing the PEM encoding
+     of the server root certificates.
    - cipher_suites contains an optional list of the ciphers that the server
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
      This parameter can be set to NULL to use the default set of ciphers.
      TODO(jboeuf): Revisit the format of this parameter.
-   - alpn_protocols is an array containing the protocol names that the
-     handshakers created with this factory support. This parameter can be NULL.
-   - alpn_protocols_lengths is an array containing the lengths of the alpn
-     protocols specified in alpn_protocols. This parameter can be NULL.
+   - alpn_protocols is an array containing the NULL terminated protocol names
+     that the handshakers created with this factory support. This parameter can
+     be NULL.
    - num_alpn_protocols is the number of alpn protocols and associated lengths
      specified. If this parameter is 0, the other alpn parameters must be NULL.
    - factory is the address of the factory pointer to be created.
@@ -160,13 +145,10 @@ typedef struct tsi_ssl_server_handshaker_factory
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_server_handshaker_factory(
-    const unsigned char **pem_private_keys,
-    const size_t *pem_private_keys_sizes, const unsigned char **pem_cert_chains,
-    const size_t *pem_cert_chains_sizes, size_t key_cert_pair_count,
-    const unsigned char *pem_client_root_certs,
-    size_t pem_client_root_certs_size, int force_client_auth,
-    const char *cipher_suites, const unsigned char **alpn_protocols,
-    const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
+    const tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs, const char *pem_client_root_certs,
+    int force_client_auth, const char *cipher_suites,
+    const char **alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_server_handshaker_factory **factory);
 
 /* Same as tsi_create_ssl_server_handshaker_factory method except uses
@@ -176,15 +158,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
      authenticate with an SSL cert. Note that this option is ignored if
      pem_client_root_certs is NULL or pem_client_roots_certs_size is 0 */
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
-    const unsigned char **pem_private_keys,
-    const size_t *pem_private_keys_sizes, const unsigned char **pem_cert_chains,
-    const size_t *pem_cert_chains_sizes, size_t key_cert_pair_count,
-    const unsigned char *pem_client_root_certs,
-    size_t pem_client_root_certs_size,
+    const tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs, const char *pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
-    const char *cipher_suites, const unsigned char **alpn_protocols,
-    const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_server_handshaker_factory **factory);
+    const char *cipher_suites, const char **alpn_protocols,
+    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory **factory);
 
 /* Creates a server handshaker.
   - self is the factory from which the handshaker will be created.

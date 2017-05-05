@@ -452,6 +452,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel.h" />
@@ -712,7 +713,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
     </ClCompile>
@@ -855,6 +856,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
     </ClCompile>

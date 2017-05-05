@@ -8,6 +8,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/cares)
 
   LIBS="-lpthread $LIBS"
 
@@ -18,8 +20,11 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_LIBRARY(dl)
 
   case $host in
-    *darwin*) ;;
+    *darwin*)
+      PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/config_darwin)
+      ;;
     *)
+      PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/config_linux)
       PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
       PHP_ADD_LIBRARY(rt)
       ;;
@@ -185,7 +190,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -257,6 +262,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
+    src/core/tsi/transport_security_adapter.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/filters/client_channel/channel_connectivity.c \
@@ -622,6 +628,55 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/tls13_server.c \
     third_party/boringssl/ssl/tls_method.c \
     third_party/boringssl/ssl/tls_record.c \
+    third_party/cares/cares/ares__close_sockets.c \
+    third_party/cares/cares/ares__get_hostent.c \
+    third_party/cares/cares/ares__read_line.c \
+    third_party/cares/cares/ares__timeval.c \
+    third_party/cares/cares/ares_cancel.c \
+    third_party/cares/cares/ares_create_query.c \
+    third_party/cares/cares/ares_data.c \
+    third_party/cares/cares/ares_destroy.c \
+    third_party/cares/cares/ares_expand_name.c \
+    third_party/cares/cares/ares_expand_string.c \
+    third_party/cares/cares/ares_fds.c \
+    third_party/cares/cares/ares_free_hostent.c \
+    third_party/cares/cares/ares_free_string.c \
+    third_party/cares/cares/ares_getenv.c \
+    third_party/cares/cares/ares_gethostbyaddr.c \
+    third_party/cares/cares/ares_gethostbyname.c \
+    third_party/cares/cares/ares_getnameinfo.c \
+    third_party/cares/cares/ares_getopt.c \
+    third_party/cares/cares/ares_getsock.c \
+    third_party/cares/cares/ares_init.c \
+    third_party/cares/cares/ares_library_init.c \
+    third_party/cares/cares/ares_llist.c \
+    third_party/cares/cares/ares_mkquery.c \
+    third_party/cares/cares/ares_nowarn.c \
+    third_party/cares/cares/ares_options.c \
+    third_party/cares/cares/ares_parse_a_reply.c \
+    third_party/cares/cares/ares_parse_aaaa_reply.c \
+    third_party/cares/cares/ares_parse_mx_reply.c \
+    third_party/cares/cares/ares_parse_naptr_reply.c \
+    third_party/cares/cares/ares_parse_ns_reply.c \
+    third_party/cares/cares/ares_parse_ptr_reply.c \
+    third_party/cares/cares/ares_parse_soa_reply.c \
+    third_party/cares/cares/ares_parse_srv_reply.c \
+    third_party/cares/cares/ares_parse_txt_reply.c \
+    third_party/cares/cares/ares_platform.c \
+    third_party/cares/cares/ares_process.c \
+    third_party/cares/cares/ares_query.c \
+    third_party/cares/cares/ares_search.c \
+    third_party/cares/cares/ares_send.c \
+    third_party/cares/cares/ares_strcasecmp.c \
+    third_party/cares/cares/ares_strdup.c \
+    third_party/cares/cares/ares_strerror.c \
+    third_party/cares/cares/ares_timeout.c \
+    third_party/cares/cares/ares_version.c \
+    third_party/cares/cares/ares_writev.c \
+    third_party/cares/cares/bitncmp.c \
+    third_party/cares/cares/inet_net_pton.c \
+    third_party/cares/cares/inet_ntop.c \
+    third_party/cares/cares/windows_port.c \
     , $ext_shared, , -Wall -Werror \
     -Wno-parentheses-equality -Wno-unused-value -std=c11 \
     -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
@@ -724,5 +779,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/cares/cares)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/nanopb)
 fi

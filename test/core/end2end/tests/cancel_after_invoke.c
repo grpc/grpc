@@ -49,11 +49,12 @@ static void *tag(intptr_t t) { return (void *)t; }
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
                                             cancellation_mode mode,
+                                            size_t test_ops,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s/%s", test_name, config.name,
-          mode.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s/%s [%" PRIdPTR " ops]", test_name,
+          config.name, mode.name, test_ops);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -108,8 +109,8 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   grpc_op ops[6];
   grpc_op *op;
   grpc_call *c;
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_cancel_after_invoke", mode, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_cancel_after_invoke",
+                                           mode, test_ops, NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -189,7 +190,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   grpc_byte_buffer_destroy(response_payload_recv);
   grpc_slice_unref(details);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
   end_test(&f);

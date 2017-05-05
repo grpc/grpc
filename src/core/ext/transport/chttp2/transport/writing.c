@@ -160,12 +160,18 @@ static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
   return true;
 }
 
+/* How many bytes of incoming flow control would we like to advertise */
 uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
   return (uint32_t)GPR_MIN(
       (int64_t)((1u << 31) - 1),
       t->stream_total_over_incoming_window +
           t->settings[GRPC_SENT_SETTINGS]
                      [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+}
+
+/* How many bytes would we like to put on the wire during a single syscall */
+static uint32_t target_write_size(grpc_chttp2_transport *t) {
+  return 1024 * 1024;
 }
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
@@ -208,10 +214,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
   while (true) {
-    if (t->outbuf.length >
-        GPR_CLAMP(t->settings[GRPC_SENT_SETTINGS]
-                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-                  1024, 1024 * 1024)) {
+    if (t->outbuf.length > target_write_size(t)) {
       partial_write = true;
       break;
     }

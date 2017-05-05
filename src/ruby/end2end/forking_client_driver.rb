@@ -1,4 +1,6 @@
-# Copyright 2017, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,16 +29,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cc_binary(
-    name = "greeter_client",
-    srcs = ["greeter_client.cc"],
-    deps = ["//examples/protos:helloworld"],
-    defines = ["BAZEL_BUILD"],
-)
+require_relative './end2end_common'
 
-cc_binary(
-    name = "greeter_server",
-    srcs = ["greeter_server.cc"],
-    deps = ["//examples/protos:helloworld"],
-    defines = ["BAZEL_BUILD"],
-)
+def main
+  STDERR.puts 'start server'
+  server_runner = ServerRunner.new(EchoServerImpl)
+  server_port = server_runner.run
+
+  # TODO(apolcyn) Can we get rid of this sleep?
+  # Without it, an immediate call to the just started EchoServer
+  # fails with UNAVAILABLE
+  sleep 1
+
+  STDERR.puts 'start client'
+  _, client_pid = start_client('forking_client_client.rb',
+                               server_port)
+
+  begin
+    Timeout.timeout(10) do
+      Process.wait(client_pid)
+    end
+  rescue Timeout::Error
+    STDERR.puts "timeout wait for client pid #{client_pid}"
+    Process.kill('SIGKILL', client_pid)
+    Process.wait(client_pid)
+    STDERR.puts 'killed client child'
+    raise 'Timed out waiting for client process. ' \
+      'It likely hangs when requiring grpc, then forking, then using grpc '
+  end
+
+  client_exit_code = $CHILD_STATUS
+  if client_exit_code != 0
+    fail "forking client client failed, exit code #{client_exit_code}"
+  end
+
+  server_runner.stop
+end
+
+main

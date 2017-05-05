@@ -100,8 +100,11 @@ static rb_data_type_t grpc_rb_compression_options_data_type = {
    Allocate the wrapped grpc compression options and
    initialize it here too. */
 static VALUE grpc_rb_compression_options_alloc(VALUE cls) {
-  grpc_rb_compression_options *wrapper =
-      gpr_malloc(sizeof(grpc_rb_compression_options));
+  grpc_rb_compression_options *wrapper = NULL;
+
+  grpc_ruby_once_init();
+
+  wrapper = gpr_malloc(sizeof(grpc_rb_compression_options));
   wrapper->wrapped = NULL;
   wrapper->wrapped = gpr_malloc(sizeof(grpc_compression_options));
   grpc_compression_options_init(wrapper->wrapped);

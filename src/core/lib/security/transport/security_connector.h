@@ -34,11 +34,14 @@
 #ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_CONNECTOR_H
 #define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_CONNECTOR_H
 
+#include <stdbool.h>
+
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 /* --- status enum. --- */
@@ -184,13 +187,10 @@ grpc_server_security_connector *grpc_fake_server_security_connector_create(
     void);
 
 /* Config for ssl clients. */
+
 typedef struct {
-  unsigned char *pem_private_key;
-  size_t pem_private_key_size;
-  unsigned char *pem_cert_chain;
-  size_t pem_cert_chain_size;
-  unsigned char *pem_root_certs;
-  size_t pem_root_certs_size;
+  tsi_ssl_pem_key_cert_pair pem_key_cert_pair;
+  char *pem_root_certs;
 } grpc_ssl_config;
 
 /* Creates an SSL channel_security_connector.
@@ -211,21 +211,17 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     const grpc_ssl_config *config, const char *target_name,
     const char *overridden_target_name, grpc_channel_security_connector **sc);
 
-/* Gets the default ssl roots. */
-size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs);
+/* Gets the default ssl roots. Returns NULL if not found. */
+const char *grpc_get_default_ssl_roots(void);
 
 /* Exposed for TESTING ONLY!. */
 grpc_slice grpc_get_default_ssl_roots_for_testing(void);
 
 /* Config for ssl servers. */
 typedef struct {
-  unsigned char **pem_private_keys;
-  size_t *pem_private_keys_sizes;
-  unsigned char **pem_cert_chains;
-  size_t *pem_cert_chains_sizes;
+  tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs;
   size_t num_key_cert_pairs;
-  unsigned char *pem_root_certs;
-  size_t pem_root_certs_size;
+  char *pem_root_certs;
   grpc_ssl_client_certificate_request_type client_certificate_request;
 } grpc_ssl_server_config;
 

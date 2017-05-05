@@ -78,15 +78,15 @@ static void maybe_call_write_cb_locked(grpc_exec_ctx *exec_ctx,
 static void te_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                      grpc_slice_buffer *slices, grpc_closure *cb) {
   trickle_endpoint *te = (trickle_endpoint *)ep;
-  for (size_t i = 0; i < slices->count; i++) {
-    grpc_slice_ref_internal(slices->slices[i]);
-  }
   gpr_mu_lock(&te->mu);
   GPR_ASSERT(te->write_cb == NULL);
   if (te->write_buffer.length == 0) {
     te->last_write = gpr_now(GPR_CLOCK_MONOTONIC);
   }
-  grpc_slice_buffer_addn(&te->write_buffer, slices->slices, slices->count);
+  for (size_t i = 0; i < slices->count; i++) {
+    grpc_slice_buffer_add(&te->write_buffer,
+                          grpc_slice_copy(slices->slices[i]));
+  }
   te->write_cb = cb;
   maybe_call_write_cb_locked(exec_ctx, te);
   gpr_mu_unlock(&te->mu);

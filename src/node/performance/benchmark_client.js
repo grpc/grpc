@@ -88,7 +88,10 @@ function timeDiffToNanos(time_diff) {
  */
 function BenchmarkClient(server_targets, channels, histogram_params,
     security_params) {
-  var options = {};
+  var options = {
+    "grpc.max_receive_message_length": -1,
+    "grpc.max_send_message_length": -1
+  };
   var creds;
   if (security_params) {
     var ca_path;
@@ -180,6 +183,8 @@ BenchmarkClient.prototype.startClosedLoop = function(
 
   self.last_wall_time = process.hrtime();
 
+  self.last_usage = process.cpuUsage();
+
   var makeCall;
 
   var argument;
@@ -270,6 +275,8 @@ BenchmarkClient.prototype.startPoisson = function(
 
   self.last_wall_time = process.hrtime();
 
+  self.last_usage = process.cpuUsage();
+
   var makeCall;
 
   var argument;
@@ -354,9 +361,11 @@ BenchmarkClient.prototype.startPoisson = function(
  */
 BenchmarkClient.prototype.mark = function(reset) {
   var wall_time_diff = process.hrtime(this.last_wall_time);
+  var usage_diff = process.cpuUsage(this.last_usage);
   var histogram = this.histogram;
   if (reset) {
     this.last_wall_time = process.hrtime();
+    this.last_usage = process.cpuUsage();
     this.histogram = new Histogram(histogram.resolution,
                                    histogram.max_possible);
   }
@@ -371,9 +380,8 @@ BenchmarkClient.prototype.mark = function(reset) {
       count: histogram.getCount()
     },
     time_elapsed: wall_time_diff[0] + wall_time_diff[1] / 1e9,
-    // Not sure how to measure these values
-    time_user: 0,
-    time_system: 0
+    time_user: usage_diff.user / 1000000,
+    time_system: usage_diff.system / 1000000
   };
 };
 

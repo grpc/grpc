@@ -77,6 +77,10 @@ GPRAPI void grpc_slice_buffer_trim_end(grpc_slice_buffer *src, size_t n,
 /* move the first n bytes of src into dst */
 GPRAPI void grpc_slice_buffer_move_first(grpc_slice_buffer *src, size_t n,
                                          grpc_slice_buffer *dst);
+/* move the first n bytes of src into dst without adding references */
+GPRAPI void grpc_slice_buffer_move_first_no_ref(grpc_slice_buffer *src,
+                                                size_t n,
+                                                grpc_slice_buffer *dst);
 /* move the first n bytes of src into dst (copying them) */
 GPRAPI void grpc_slice_buffer_move_first_into_buffer(grpc_exec_ctx *exec_ctx,
                                                      grpc_slice_buffer *src,

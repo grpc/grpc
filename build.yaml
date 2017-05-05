@@ -13,7 +13,7 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 4.0.0-dev
-  g_stands_for: gentle
+  g_stands_for: gregarious
   version: 1.4.0-dev
 filegroups:
 - name: census
@@ -86,9 +86,13 @@ filegroups:
   headers:
   - src/core/lib/profiling/timers.h
   - src/core/lib/support/arena.h
+  - src/core/lib/support/atomic.h
+  - src/core/lib/support/atomic_with_atm.h
+  - src/core/lib/support/atomic_with_std.h
   - src/core/lib/support/backoff.h
   - src/core/lib/support/block_annotate.h
   - src/core/lib/support/env.h
+  - src/core/lib/support/memory.h
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/spinlock.h
@@ -382,7 +386,7 @@ filegroups:
   - src/core/lib/surface/completion_queue.c
   - src/core/lib/surface/completion_queue_factory.c
   - src/core/lib/surface/event_string.c
-  - src/core/lib/surface/lame_client.c
+  - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.c
   - src/core/lib/surface/server.c
   - src/core/lib/surface/validate_metadata.c
@@ -809,11 +813,13 @@ filegroups:
   - src/core/tsi/ssl_transport_security.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_adapter.h
   - src/core/tsi/transport_security_interface.h
   src:
   - src/core/tsi/fake_transport_security.c
   - src/core/tsi/ssl_transport_security.c
   - src/core/tsi/transport_security.c
+  - src/core/tsi/transport_security_adapter.c
   deps:
   - gpr
   secure: true
@@ -969,16 +975,10 @@ filegroups:
 - name: grpc++_test
   language: c++
   public_headers:
+  - include/grpc++/test/mock_stream.h
   - include/grpc++/test/server_context_test_spouse.h
   deps:
   - grpc++
-- name: thrift_util
-  language: c++
-  public_headers:
-  - include/grpc++/impl/codegen/thrift_serializer.h
-  - include/grpc++/impl/codegen/thrift_utils.h
-  uses:
-  - grpc++_codegen_base
 libs:
 - name: gpr
   build: all
@@ -1276,7 +1276,6 @@ libs:
   - grpc++_codegen_base_src
   - grpc++_codegen_proto
   - grpc++_config_proto
-  - thrift_util
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -1516,6 +1515,7 @@ libs:
   - global
 targets:
 - name: alarm_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1699,7 +1699,7 @@ targets:
   dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
 - name: combiner_test
-  cpu_cost: 30
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1720,6 +1720,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: concurrent_connectivity_test
+  cpu_cost: 2.0
   build: test
   language: c
   src:
@@ -1806,6 +1807,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: ev_epoll_linux_test
+  cpu_cost: 3
   build: test
   language: c
   src:
@@ -1975,6 +1977,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_cpu_test
+  cpu_cost: 30
   build: test
   language: c
   src:
@@ -2024,7 +2027,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_spinlock_test
-  cpu_cost: 10
+  cpu_cost: 3
   build: test
   language: c
   src:
@@ -2806,6 +2809,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: slice_hash_table_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/slice_hash_table_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: slice_string_helpers_test
   build: test
   language: c
@@ -3555,6 +3568,9 @@ targets:
   - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
+  deps:
+  - grpc
+  - gpr
   filegroups:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
@@ -3674,7 +3690,7 @@ targets:
   - grpc
   - gpr
   args:
-  - --generated_file_path=gens/src/proto/grpc/testing/compiler_test.grpc.pb.h
+  - --generated_file_path=gens/src/proto/grpc/testing/
 - name: grpc_cli
   build: test
   run: false
@@ -3917,6 +3933,20 @@ targets:
   - mac
   - linux
   - posix
+- name: memory_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/memory_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: metrics_client
   build: test
   run: false
@@ -3935,6 +3965,8 @@ targets:
   gtest: true
   build: test
   language: c++
+  headers:
+  - include/grpc++/test/mock_stream.h
   src:
   - test/cpp/end2end/mock_test.cc
   deps:
@@ -4344,7 +4376,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
@@ -4356,7 +4388,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
@@ -4367,7 +4399,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address
       -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
@@ -4377,11 +4409,16 @@ configs:
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
+  c++-compat:
+    CFLAGS: -Wc++-compat
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
   counters:
     CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
     DEFINES: NDEBUG
   dbg:
     CPPFLAGS: -O0
+    CXXFLAGS: -fno-exceptions
     DEFINES: _DEBUG DEBUG
   gcov:
     CC: gcc
@@ -4411,7 +4448,7 @@ configs:
       -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: NDEBUG
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
@@ -4422,6 +4459,7 @@ configs:
     LDFLAGS: -rdynamic
   opt:
     CPPFLAGS: -O2
+    CXXFLAGS: -fno-exceptions
     DEFINES: NDEBUG
   stapprof:
     CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
@@ -4432,7 +4470,7 @@ configs:
       -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: GRPC_TSAN
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
@@ -4443,8 +4481,8 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
-    DEFINES: NDEBUG
-    LD: clang
+    DEFINES: NDEBUG GRPC_UBSAN
+    LD: clang++
     LDFLAGS: -fsanitize=undefined,unsigned-integer-overflow
     LDXX: clang++
     compile_the_world: true
@@ -4518,6 +4556,7 @@ php_config_m4:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   headers:
   - src/php/ext/grpc/byte_buffer.h

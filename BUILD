@@ -35,10 +35,11 @@ exports_files(["LICENSE"])
 
 package(default_visibility = ["//visibility:public"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library",
+     "grpc_proto_plugin", "grpc_cc_libraries")
 
 # This should be updated along with build.yaml
-g_stands_for = "gentle"
+g_stands_for = "gregarious"
 
 core_version = "3.0.0-dev"
 
@@ -53,32 +54,45 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "grpc",
+grpc_cc_libraries(
+    name_list = ["grpc", "grpc_unsecure",],
     srcs = [
         "src/core/lib/surface/init.c",
-        "src/core/plugin_registry/grpc_plugin_registry.c",
+    ],
+    additional_src_list = [
+        [
+            "src/core/plugin_registry/grpc_plugin_registry.c",
+        ],
+        [
+            "src/core/lib/surface/init_unsecure.c",
+            "src/core/plugin_registry/grpc_unsecure_plugin_registry.c",
+        ],
     ],
     language = "c",
     standalone = True,
     deps = [
         "census",
         "grpc_base",
-        "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_load_reporting",
         "grpc_max_age_filter",
-        "grpc_resolver_dns_ares",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
-        "grpc_secure",
         "grpc_transport_chttp2_client_insecure",
-        "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_insecure",
-        "grpc_transport_chttp2_server_secure",
         "grpc_message_size_filter",
         "grpc_deadline_filter",
+    ],
+    additional_dep_list = [
+        [
+            "grpc_secure",
+            "grpc_resolver_dns_ares",
+            "grpc_lb_policy_grpclb_secure",
+            "grpc_transport_chttp2_client_secure",
+            "grpc_transport_chttp2_server_secure",
+        ],
+        [],
     ],
 )
 
@@ -94,32 +108,6 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_cronet_client_secure",
         "grpc_http_filters",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_unsecure",
-    srcs = [
-        "src/core/lib/surface/init.c",
-        "src/core/lib/surface/init_unsecure.c",
-        "src/core/plugin_registry/grpc_unsecure_plugin_registry.c",
-    ],
-    language = "c",
-    standalone = True,
-    deps = [
-        "census",
-        "grpc_base",
-        "grpc_lb_policy_grpclb",
-        "grpc_lb_policy_pick_first",
-        "grpc_lb_policy_round_robin",
-        "grpc_load_reporting",
-        "grpc_max_age_filter",
-        "grpc_resolver_dns_native",
-        "grpc_resolver_sockaddr",
-        "grpc_transport_chttp2_client_insecure",
-        "grpc_transport_chttp2_server_insecure",
-        "grpc_message_size_filter",
-        "grpc_deadline_filter",
     ],
 )
 
@@ -163,7 +151,7 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "gpr",
-        "grpc++_base",
+        "grpc++_base_unsecure",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc_unsecure",
@@ -388,6 +376,10 @@ grpc_cc_library(
         "src/core/lib/support/backoff.h",
         "src/core/lib/support/block_annotate.h",
         "src/core/lib/support/env.h",
+        "src/core/lib/support/memory.h",
+        "src/core/lib/support/atomic.h",
+        "src/core/lib/support/atomic_with_atm.h",
+        "src/core/lib/support/atomic_with_std.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
         "src/core/lib/support/spinlock.h",
@@ -555,7 +547,7 @@ grpc_cc_library(
         "src/core/lib/surface/completion_queue.c",
         "src/core/lib/surface/completion_queue_factory.c",
         "src/core/lib/surface/event_string.c",
-        "src/core/lib/surface/lame_client.c",
+        "src/core/lib/surface/lame_client.cc",
         "src/core/lib/surface/metadata_array.c",
         "src/core/lib/surface/server.c",
         "src/core/lib/surface/validate_metadata.c",
@@ -1214,12 +1206,14 @@ grpc_cc_library(
         "src/core/tsi/fake_transport_security.c",
         "src/core/tsi/ssl_transport_security.c",
         "src/core/tsi/transport_security.c",
+        "src/core/tsi/transport_security_adapter.c",
     ],
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/ssl_types.h",
         "src/core/tsi/transport_security.h",
+        "src/core/tsi/transport_security_adapter.h",
         "src/core/tsi/transport_security_interface.h",
     ],
     external_deps = [
@@ -1231,8 +1225,12 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_base",
+grpc_cc_libraries(
+    name_list = ["grpc++_base", "grpc++_base_unsecure"],
+    additional_dep_list = [
+        ["grpc", ],
+        ["grpc_unsecure", ],
+    ],
     srcs = [
         "src/cpp/client/channel_cc.cc",
         "src/cpp/client/client_context.cc",
@@ -1267,7 +1265,7 @@ grpc_cc_library(
         "src/cpp/util/status.cc",
         "src/cpp/util/string_ref.cc",
         "src/cpp/util/time_cc.cc",
-    ],
+        ],
     hdrs = [
         "src/cpp/client/create_channel_internal.h",
         "src/cpp/common/channel_filter.h",
@@ -1276,7 +1274,7 @@ grpc_cc_library(
         "src/cpp/server/health/health.pb.h",
         "src/cpp/server/thread_pool_interface.h",
         "src/cpp/thread_manager/thread_manager.h",
-    ],
+        ],
     language = "c++",
     public_hdrs = [
         "include/grpc++/alarm.h",
@@ -1326,9 +1324,8 @@ grpc_cc_library(
         "include/grpc++/support/stub_options.h",
         "include/grpc++/support/sync_stream.h",
         "include/grpc++/support/time.h",
-    ],
+        ],
     deps = [
-        "grpc",
         "grpc++_codegen_base",
     ],
 )
@@ -1403,18 +1400,6 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/config_protobuf.h",
-    ],
-)
-
-grpc_cc_library(
-    name = "thrift_util",
-    language = "c++",
-    public_hdrs = [
-        "include/grpc++/impl/codegen/thrift_serializer.h",
-        "include/grpc++/impl/codegen/thrift_utils.h",
-    ],
-    deps = [
-        "grpc++_codegen_base",
     ],
 )
 

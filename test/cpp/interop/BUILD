@@ -27,26 +27,64 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package(default_visibility = ["//visibility:public"])
+licenses(["notice"])  # 3-clause BSD
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
-
-grpc_proto_library(
-    name = "auth_sample",
-    srcs = ["auth_sample.proto"],
+cc_library(
+    name = "server_helper_lib",
+    srcs = [
+        "server_helper.cc",
+    ],
+    hdrs = [
+        "server_helper.h",
+    ],
+    deps = [
+        "//test/cpp/util:test_util",
+        "//external:gflags",
+    ],
 )
 
-grpc_proto_library(
-    name = "hellostreamingworld",
-    srcs = ["hellostreamingworld.proto"],
+cc_binary(
+    name = "interop_server",
+    srcs = [
+        "interop_server.cc",
+        "interop_server_bootstrap.cc",
+    ],
+    deps = [
+        ":server_helper_lib",
+        "//:grpc++",
+        "//src/proto/grpc/testing:empty_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/cpp/util:test_config",
+    ],
 )
 
-grpc_proto_library(
-    name = "helloworld",
-    srcs = ["helloworld.proto"],
+cc_library(
+    name = "client_helper_lib",
+    srcs = [
+        "client_helper.cc",
+        "interop_client.cc",
+    ],
+    hdrs = [
+        "client_helper.h",
+        "interop_client.h",
+    ],
+    deps = [
+        "//test/cpp/util:test_util",
+        "//src/proto/grpc/testing:empty_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/security:oauth2_utils",
+        "//test/cpp/util:test_config",
+    ],
 )
 
-grpc_proto_library(
-    name = "route_guide",
-    srcs = ["route_guide.proto"],
+cc_binary(
+    name = "interop_client",
+    srcs = [
+        "client.cc",
+    ],
+    deps = [
+        ":client_helper_lib",
+    ],
 )

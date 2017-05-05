@@ -29,6 +29,15 @@
 
 licenses(["notice"])  # 3-clause BSD
 
+# The following builds a shared-object to confirm that grpc++_unsecure
+# builds properly. Build-only is sufficient here
+cc_binary(
+    name = "testso.so",
+    srcs = [],
+    linkshared = 1,
+    deps = ["//:grpc++_unsecure"],
+)
+
 cc_library(
     name = "test_config",
     srcs = [
@@ -95,5 +104,29 @@ cc_test(
     ],
 )
 
-
-
+cc_binary(
+    name = "grpc_cli",
+    srcs = [
+        "cli_call.cc",
+        "cli_call.h",
+        "cli_credentials.cc",
+        "cli_credentials.h",
+        "config_grpc_cli.h",
+        "grpc_cli.cc",
+        "grpc_tool.cc",
+        "grpc_tool.h",
+        "proto_file_parser.cc",
+        "proto_file_parser.h",
+        "proto_reflection_descriptor_database.cc",
+        "proto_reflection_descriptor_database.h",
+        "service_describer.cc",
+        "service_describer.h",
+        "test_config.h",
+        "test_config_cc.cc",
+    ],
+    deps = [
+        "//:grpc++",
+        "//external:gflags",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+)

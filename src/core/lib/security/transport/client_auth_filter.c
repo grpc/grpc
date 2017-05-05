@@ -343,8 +343,16 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element_args *args) {
   grpc_security_connector *sc =
       grpc_security_connector_find_in_args(args->channel_args);
+  if (sc == NULL) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Security connector missing from client auth filter args");
+  }
   grpc_auth_context *auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
+  if (auth_context == NULL) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Auth context missing from client auth filter args");
+  }
 
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
@@ -353,8 +361,6 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
      handle the case that there's no 'next' filter to call on the up or down
      path */
   GPR_ASSERT(!args->is_last);
-  GPR_ASSERT(sc != NULL);
-  GPR_ASSERT(auth_context != NULL);
 
   /* initialize members */
   chand->security_connector =
