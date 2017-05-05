@@ -60,6 +60,7 @@ class HealthCheckServiceInterface {
 /// NOT thread safe.
 void EnableDefaultHealthCheckService(bool enable);
 
+/// Returns whether the default health checking service is enabled.
 /// NOT thread safe.
 bool DefaultHealthCheckServiceEnabled();
 

@@ -47,7 +47,7 @@ namespace grpc {
 /// all attached entities below the ResourceQuota bound.
 class ResourceQuota final : private GrpcLibraryCodegen {
  public:
-  // \param name - a unique name for this ResourceQuota.
+  /// \param name - a unique name for this ResourceQuota.
   explicit ResourceQuota(const grpc::string& name);
   ResourceQuota();
   ~ResourceQuota();

@@ -131,7 +131,7 @@ functionality is introduced.
 
 # Architecture
 
-A service config is associated with a server name.  The [nameresolver](naming.md)
+A service config is associated with a server name.  The [name resolver](naming.md)
 plugin, when asked to resolve a particular server
 name, will return both the resolved addresses and the service config.
 
