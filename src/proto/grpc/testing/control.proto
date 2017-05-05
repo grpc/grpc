@@ -113,6 +113,9 @@ message ClientConfig {
   string other_client_api = 15;
 
   repeated ChannelArg channel_args = 16;
+
+  // Number of messages on a stream before it gets finished/restarted
+  int32 messages_per_stream = 18;
 }
 
 message ClientStatus { ClientStats stats = 1; }

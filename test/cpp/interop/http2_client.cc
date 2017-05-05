@@ -41,7 +41,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/transport/byte_stream.h"
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/interop/http2_client.h"
 
@@ -108,7 +108,7 @@ bool Http2Client::DoRstAfterData() {
 
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
-  GPR_ASSERT(response.has_payload());  // data should be received
+  // There is no guarantee that data would be received.
 
   gpr_log(GPR_DEBUG, "Done testing reset stream after data");
   return true;

@@ -56,9 +56,11 @@ cc_library(
         "reconnect_server.c",
         "slice_splitter.c",
         "test_tcp_server.c",
+        "trickle_endpoint.c",
     ],
     hdrs = [
         "debugger_macros.h",
+        "trickle_endpoint.h",
         "grpc_profiler.h",
         "mock_endpoint.h",
         "parse_hexstring.h",

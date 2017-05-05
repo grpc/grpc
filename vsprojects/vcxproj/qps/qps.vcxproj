@@ -147,6 +147,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\benchmark_config.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\client.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\driver.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\histogram.h" />
@@ -157,7 +158,6 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\server.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\stats.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.h" />
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.pb.cc">
@@ -200,6 +200,8 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\services.grpc.pb.h">
     </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\benchmark_config.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_async.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_sync.cc">
@@ -217,8 +219,6 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\server_sync.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

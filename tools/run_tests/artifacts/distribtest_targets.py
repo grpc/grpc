@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -38,11 +38,14 @@ import python_utils.jobset as jobset
 
 
 def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
-                   flake_retries=0, timeout_retries=0):
+                   flake_retries=0, timeout_retries=0,
+                   copy_rel_path=None):
   """Creates jobspec for a task running under docker."""
   environ = environ.copy()
   environ['RUN_COMMAND'] = shell_command
-  environ['RELATIVE_COPY_PATH'] = 'test/distrib'
+  # the entire repo will be cloned if copy_rel_path is not set.
+  if copy_rel_path:
+    environ['RELATIVE_COPY_PATH'] = copy_rel_path
 
   docker_args=[]
   for k,v in environ.items():
@@ -102,7 +105,8 @@ class CSharpDistribTest(object):
           'tools/dockerfile/distribtest/csharp_%s_%s' % (
               self.docker_suffix,
               self.arch),
-          'test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix)
+          'test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix,
+          copy_rel_path='test/distrib')
     elif self.platform == 'macos':
       return create_jobspec(self.name,
           ['test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix],
@@ -151,7 +155,8 @@ class NodeDistribTest(object):
                                        self.arch),
                                    '%s test/distrib/node/run_distrib_test.sh %s' % (
                                        linux32,
-                                       self.node_version))
+                                       self.node_version),
+                                   copy_rel_path='test/distrib')
     elif self.platform == 'macos':
       return create_jobspec(self.name,
                             ['test/distrib/node/run_distrib_test.sh',
@@ -185,7 +190,8 @@ class PythonDistribTest(object):
           'tools/dockerfile/distribtest/python_%s_%s' % (
               self.docker_suffix,
               self.arch),
-          'test/distrib/python/run_distrib_test.sh')
+          'test/distrib/python/run_distrib_test.sh',
+          copy_rel_path='test/distrib')
 
   def __str__(self):
     return self.name
@@ -212,7 +218,8 @@ class RubyDistribTest(object):
           'tools/dockerfile/distribtest/ruby_%s_%s' % (
               self.docker_suffix,
               self.arch),
-          'test/distrib/ruby/run_distrib_test.sh')
+          'test/distrib/ruby/run_distrib_test.sh',
+          copy_rel_path='test/distrib')
 
   def __str__(self):
     return self.name
@@ -237,7 +244,8 @@ class PHPDistribTest(object):
                                    'tools/dockerfile/distribtest/php_%s_%s' % (
                                        self.docker_suffix,
                                        self.arch),
-                                   'test/distrib/php/run_distrib_test.sh')
+                                   'test/distrib/php/run_distrib_test.sh',
+                                   copy_rel_path='test/distrib')
     elif self.platform == 'macos':
       return create_jobspec(self.name,
           ['test/distrib/php/run_distrib_test.sh'],

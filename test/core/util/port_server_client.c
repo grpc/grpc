@@ -103,7 +103,7 @@ void grpc_free_port_using_server(int port) {
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("port_server_client/free");
   grpc_httpcli_get(&exec_ctx, &context, &pr.pops, resource_quota, &req,
-                   grpc_timeout_seconds_to_deadline(10),
+                   grpc_timeout_seconds_to_deadline(30),
                    grpc_closure_create(freed_port_from_server, &pr,
                                        grpc_schedule_on_exec_ctx),
                    &rsp);
@@ -162,6 +162,15 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
   if (failed) {
     grpc_httpcli_request req;
     memset(&req, 0, sizeof(req));
+    if (pr->retries >= 5) {
+      gpr_mu_lock(pr->mu);
+      pr->port = 0;
+      GRPC_LOG_IF_ERROR(
+          "pollset_kick",
+          grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops), NULL));
+      gpr_mu_unlock(pr->mu);
+      return;
+    }
     GPR_ASSERT(pr->retries < 10);
     gpr_sleep_until(gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME),
@@ -226,7 +235,7 @@ int grpc_pick_port_using_server(void) {
       grpc_resource_quota_create("port_server_client/pick");
   grpc_httpcli_get(
       &exec_ctx, &context, &pr.pops, resource_quota, &req,
-      grpc_timeout_seconds_to_deadline(10),
+      grpc_timeout_seconds_to_deadline(30),
       grpc_closure_create(got_port_from_server, &pr, grpc_schedule_on_exec_ctx),
       &pr.response);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);

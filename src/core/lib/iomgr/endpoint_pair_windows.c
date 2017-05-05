@@ -83,15 +83,18 @@ static void create_sockets(SOCKET sv[2]) {
 }
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char *name, grpc_resource_quota *resource_quota,
-    size_t read_slice_size) {
+    const char *name, grpc_channel_args *channel_args) {
   SOCKET sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);
-  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"),
-                             resource_quota, "endpoint:server");
-  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"),
-                             resource_quota, "endpoint:client");
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  p.client = grpc_tcp_create(&exec_ctx,
+                             grpc_winsocket_create(sv[1], "endpoint:client"),
+                             channel_args, "endpoint:server");
+  p.server = grpc_tcp_create(&exec_ctx,
+                             grpc_winsocket_create(sv[0], "endpoint:server"),
+                             channel_args, "endpoint:client");
+  grpc_exec_ctx_finish(&exec_ctx);
   return p;
 }
 

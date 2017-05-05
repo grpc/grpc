@@ -1,4 +1,4 @@
-#If you are in a hurry
+# If you are in a hurry
 
 For language-specific installation instructions for gRPC runtime, please
 refer to these documents
@@ -14,25 +14,44 @@ refer to these documents
  * [Ruby](src/ruby): `gem install grpc`
 
 
-#Pre-requisites
+# Pre-requisites
 
-##Linux
+## Linux
 
 ```sh
  $ [sudo] apt-get install build-essential autoconf libtool
 ```
 
-##Mac OSX
+If you plan to build from source and run tests, install the following as well:
+```sh
+ $ [sudo] apt-get install libgflags-dev libgtest-dev
+ $ [sudo] apt-get install clang libc++-dev
+```
 
-For a Mac system, git is not available by default. You will first need to
-install Xcode from the Mac AppStore and then run the following command from a
-terminal:
+## macOS 
+
+On a Mac, you will first need to
+install Xcode or
+[Command Line Tools for Xcode](https://developer.apple.com/download/more/)
+and then run the following command from a terminal:
 
 ```sh
  $ [sudo] xcode-select --install
 ```
 
-##Protoc
+To build gRPC from source, you may also need to install the following
+packages, which you can get from [Homebrew](https://brew.sh):
+
+```sh
+ $ brew install autoconf automake libtool shtool
+```
+
+If you plan to build from source and run tests, install the following as well:
+```sh
+ $ brew install gflags
+```
+
+## Protoc
 
 By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
 you will need the `protoc` compiler to generate stub server and client code.
@@ -43,7 +62,7 @@ repository recursively and it detects that you don't already have it
 installed.
 
 
-#Build from Source
+# Build from Source
 
 For developers who are interested to contribute, here is how to compile the
 gRPC C Core library.
@@ -56,16 +75,16 @@ gRPC C Core library.
  $ [sudo] make install
 ```
 
-##Windows
+## Windows
 
 There are several ways to build under Windows, of varying complexity depending
 on experience with the tools involved.
 
-###Pre-generated Visual Studio solution
+### Pre-generated Visual Studio solution
 
 The pre-generated VS projects & solution are checked into the repository under the [vsprojects](/vsprojects) directory.
-  
-###Building using CMake (with BoringSSL)
+
+### Building using CMake (with BoringSSL)
 - Install [CMake](https://cmake.org/download/).
 - Install [Active State Perl](http://www.activestate.com/activeperl/) (`choco install activeperl`)
 - Install [Ninja](https://ninja-build.org/) (`choco install ninja`)
@@ -81,14 +100,14 @@ The pre-generated VS projects & solution are checked into the repository under t
 ```
 NOTE: Currently you can only use Ninja to build using cmake on Windows (because of the boringssl dependency).
 
-###msys2 (with mingw)
+### msys2 (with mingw)
 
 The Makefile (and source code) should support msys2's mingw32 and mingw64
 compilers. Building with msys2's native compiler is also possible, but
 difficult.
 
 This approach requires having [msys2](https://msys2.github.io/) installed.
-  
+
 ```
 # Install prerequisites
 MSYS2$ pacman -S autoconf automake gcc libtool mingw-w64-x86_64-toolchain perl pkg-config zlib

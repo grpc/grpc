@@ -65,6 +65,13 @@ cc_test(
 )
 
 cc_test(
+    name = "stream_owned_slice_test",
+    srcs = ["stream_owned_slice_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    copts = ['-std=c99']
+)
+
+cc_test(
     name = "timeout_encoding_test",
     srcs = ["timeout_encoding_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],

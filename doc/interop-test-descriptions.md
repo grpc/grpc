@@ -27,7 +27,7 @@ Clients should accept these arguments:
     * Whether to use a plaintext or encrypted connection
 * --use_test_ca=BOOLEAN
     * Whether to replace platform root CAs with
-      [ca.pem](https://github.com/grpc/grpc/blob/master/src/core/lib/tsi/test_creds/ca.pem)
+      [ca.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/ca.pem)
       as the CA root
 * --default_service_account=ACCOUNT_EMAIL
     * Email of the GCE default service account.
@@ -81,9 +81,8 @@ Procedure:
     Client marks the request as cacheable by setting the cacheable flag in the
     request context. Longer term this should be driven by the method option
     specified in the proto file itself.
- 2. Client calls CacheableUnaryCall with `SimpleRequest` request again
-    immediately with the same payload as the previous request. Cacheable flag is
-    also set for this request's context.
+ 2. Client calls CacheableUnaryCall again immediately with the same request and
+    configuration as the previous call.
 
 Client asserts:
 * Both calls were successful
@@ -969,7 +968,7 @@ Servers should accept these arguments:
     * Whether to use a plaintext or encrypted connection
 
 Servers must support TLS with ALPN. They should use
-[server1.pem](https://github.com/grpc/grpc/blob/master/src/core/lib/tsi/test_creds/server1.pem)
+[server1.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/server1.pem)
 for their certificate.
 
 ### EmptyCall
@@ -986,6 +985,7 @@ for the `SimpleRequest.response_type`. If the server does not support the
 `response_type`, then it should fail the RPC with `INVALID_ARGUMENT`.
 
 ### CacheableUnaryCall
+[CacheableUnaryCall]: #cacheableunarycall
 
 Server gets the default SimpleRequest proto as the request. The content of the
 request is ignored. It returns the SimpleResponse proto with the payload set

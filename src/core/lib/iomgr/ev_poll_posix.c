@@ -52,6 +52,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_cv.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
@@ -451,14 +452,16 @@ static grpc_error *fd_shutdown_error(grpc_fd *fd) {
   if (!fd->shutdown) {
     return GRPC_ERROR_NONE;
   } else {
-    return GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1);
+    return GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "FD shutdown", &fd->shutdown_error, 1);
   }
 }
 
 static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure **st, grpc_closure *closure) {
   if (fd->shutdown) {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE("FD shutdown"));
+    grpc_closure_sched(exec_ctx, closure,
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
@@ -696,7 +699,7 @@ static void push_front_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
 static void kick_append_error(grpc_error **composite, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
   if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE("Kick Failure");
+    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Kick Failure");
   }
   *composite = grpc_error_add_child(*composite, error);
 }
@@ -859,7 +862,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
 static void work_combine_error(grpc_error **composite, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
   if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE("pollset_work");
+    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("pollset_work");
   }
   *composite = grpc_error_add_child(*composite, error);
 }
@@ -868,7 +871,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker **worker_hdl,
                                 gpr_timespec now, gpr_timespec deadline) {
   grpc_pollset_worker worker;
-  *worker_hdl = &worker;
+  if (worker_hdl) *worker_hdl = &worker;
   grpc_error *error = GRPC_ERROR_NONE;
 
   /* Avoid malloc for small number of elements. */
@@ -1004,6 +1007,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         }
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
+          grpc_timer_consume_kick();
           work_combine_error(&error,
                              grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd));
         }
@@ -1088,7 +1092,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       gpr_mu_lock(&pollset->mu);
     }
   }
-  *worker_hdl = NULL;
+  if (worker_hdl) *worker_hdl = NULL;
   GPR_TIMER_END("pollset_work", 0);
   GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
   return error;
@@ -1421,7 +1425,7 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
     g_cvfds.pollcount++;
     opt = gpr_thd_options_default();
     gpr_thd_options_set_detached(&opt);
-    gpr_thd_new(&t_id, &run_poll, pargs, &opt);
+    GPR_ASSERT(gpr_thd_new(&t_id, &run_poll, pargs, &opt));
     // We want the poll() thread to trigger the deadline, so wait forever here
     gpr_cv_wait(pollcv, &g_cvfds.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
     if (gpr_atm_no_barrier_load(&pargs->status) == COMPLETED) {

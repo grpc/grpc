@@ -46,7 +46,7 @@
  *
  * Setup:
  * 1. Before calling anything, call global_init() at least once.
- * 1. Call grpc_wakeup_fd_create() to get a wakeup_fd.
+ * 1. Call grpc_wakeup_fd_init() to set up a wakeup_fd.
  * 2. Add the result of GRPC_WAKEUP_FD_FD to the set of monitored file
  *    descriptors for the poll() style API you are using. Monitor the file
  *    descriptor for readability.

@@ -31,7 +31,7 @@
 cd /d %~dp0
 
 @rem extract input artifacts
-powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::ExtractToDirectory('../../../input_artifacts/csharp_nugets_dotnetcli.zip', 'TestNugetFeed');"
+powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::ExtractToDirectory('../../../input_artifacts/csharp_nugets_windows_dotnetcli.zip', 'TestNugetFeed');"
 
 update_version.sh auto
 

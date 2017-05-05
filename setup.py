@@ -52,6 +52,13 @@ PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
 BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
+CARES_INCLUDE = (
+    os.path.join('third_party', 'cares'),
+    os.path.join('third_party', 'cares', 'cares'),)
+if 'linux' in sys.platform:
+  CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
+if 'darwin' in sys.platform:
+  CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_darwin'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -97,6 +104,7 @@ EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
   EXTRA_ENV_COMPILE_ARGS = ''
   if 'win32' in sys.platform and sys.version_info < (3, 5):
+    EXTRA_ENV_COMPILE_ARGS += ' -std=c++11'
     # We use define flags here and don't directly add to DEFINE_MACROS below to
     # ensure that the expert user/builder has a way of turning it off (via the
     # envvars) without adding yet more GRPC-specific envvars.
@@ -107,7 +115,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
       EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
   elif 'win32' in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -D_PYTHON_MSVC'
-  elif "linux" in sys.platform or "darwin" in sys.platform:
+  elif "linux" in sys.platform:
+    EXTRA_ENV_COMPILE_ARGS += ' -std=c++11 -fvisibility=hidden -fno-wrapv'
+  elif "darwin" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden -fno-wrapv'
 
 if EXTRA_ENV_LINK_ARGS is None:
@@ -134,9 +144,12 @@ CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 CYTHON_HELPER_C_FILES = ()
 
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
+if "win32" in sys.platform and "64bit" in platform.architecture()[0]:
+  CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
-    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE)
+    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE +
+    CARES_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
@@ -150,13 +163,17 @@ DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
     ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 if "win32" in sys.platform:
-  DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1),)
+  DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1), ('CARES_STATICLIB', 1),)
   if '64bit' in platform.architecture()[0]:
-    DEFINE_MACROS += (('MS_WIN64', 1),)
+    # TODO(zyc): Re-enble c-ares on x64 windows after fixing the
+    # ares_library_init compilation issue
+    DEFINE_MACROS += (('MS_WIN64', 1), ('GRPC_ARES', 0),)
   elif sys.version_info >= (3, 5):
     # For some reason, this is needed to get access to inet_pton/inet_ntop
     # on msvc, but only for 32 bits
     DEFINE_MACROS += (('NTDDI_VERSION', 0x06000000),)
+else:
+  DEFINE_MACROS += (('HAVE_CONFIG_H', 1),)
 
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
@@ -182,13 +199,25 @@ def cython_extensions_and_necessity():
   cython_module_files = [os.path.join(PYTHON_STEM,
                                name.replace('.', '/') + '.pyx')
                   for name in CYTHON_EXTENSION_MODULE_NAMES]
+  config = os.environ.get('CONFIG', 'opt')
+  prefix = 'libs/' + config + '/'
+  if "darwin" in sys.platform:
+    extra_objects = [prefix + 'libares.a',
+                     prefix + 'libboringssl.a',
+                     prefix + 'libgpr.a',
+                     prefix + 'libgrpc.a']
+    core_c_files = []
+  else:
+    core_c_files = list(CORE_C_FILES)
+    extra_objects = []
   extensions = [
       _extension.Extension(
           name=module_name,
-          sources=[module_file] + list(CYTHON_HELPER_C_FILES) + list(CORE_C_FILES),
+          sources=[module_file] + list(CYTHON_HELPER_C_FILES) + core_c_files,
           include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
           libraries=list(EXTENSION_LIBRARIES),
           define_macros=list(DEFINE_MACROS),
+          extra_objects=extra_objects,
           extra_compile_args=list(CFLAGS),
           extra_link_args=list(LDFLAGS),
       ) for (module_name, module_file) in zip(list(CYTHON_EXTENSION_MODULE_NAMES), cython_module_files)
@@ -206,14 +235,13 @@ PACKAGE_DIRECTORIES = {
 
 INSTALL_REQUIRES = (
     'six>=1.5.2',
-    'enum34>=1.0.4',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
-    'protobuf>=3.0.0',
+    'protobuf>=3.2.0',
 )
 
 if not PY3:
-  INSTALL_REQUIRES += ('futures>=2.2.0',)
+  INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
@@ -265,6 +293,10 @@ PACKAGES = setuptools.find_packages(PYTHON_STEM)
 setuptools.setup(
   name='grpcio',
   version=grpc_version.VERSION,
+  description='HTTP/2-based RPC framework',
+  author='The gRPC Authors',
+  author_email='grpc-io@googlegroups.com',
+  url='http://www.grpc.io',
   license=LICENSE,
   long_description=open(README).read(),
   ext_modules=CYTHON_EXTENSION_MODULES,

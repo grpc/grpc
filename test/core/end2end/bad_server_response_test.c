@@ -178,7 +178,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cq_verifier *cqv;
   grpc_slice details;
 
-  state.cq = grpc_completion_queue_create(NULL);
+  state.cq = grpc_completion_queue_create_for_next(NULL);
   cqv = cq_verifier_create(state.cq);
   gpr_join_host_port(&state.target, "127.0.0.1", target_port);
   state.channel = grpc_insecure_channel_create(state.target, NULL, NULL);
@@ -236,7 +236,7 @@ static void cleanup_rpc(grpc_exec_ctx *exec_ctx) {
   grpc_event ev;
   grpc_slice_buffer_destroy_internal(exec_ctx, &state.temp_incoming_buffer);
   grpc_slice_buffer_destroy_internal(exec_ctx, &state.outgoing_buffer);
-  grpc_call_destroy(state.call);
+  grpc_call_unref(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
     ev = grpc_completion_queue_next(state.cq, n_sec_deadline(1), NULL);
@@ -303,7 +303,7 @@ static void run_test(const char *response_payload,
 
   /* clean up */
   grpc_endpoint_shutdown(&exec_ctx, state.tcp,
-                         GRPC_ERROR_CREATE("Test Shutdown"));
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   grpc_endpoint_destroy(&exec_ctx, state.tcp);
   cleanup_rpc(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);

@@ -73,4 +73,4 @@ void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator);
 // Completes a previously started ping
 void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator);
 
-#endif
+#endif /* GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H */

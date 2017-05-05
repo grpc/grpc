@@ -54,7 +54,7 @@ grpc_error *grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser *p,
   if (length < 8) {
     char *msg;
     gpr_asprintf(&msg, "goaway frame too short (%d bytes)", length);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
   }
@@ -156,13 +156,14 @@ grpc_error *grpc_chttp2_goaway_parser_parse(grpc_exec_ctx *exec_ctx,
       }
       return GRPC_ERROR_NONE;
   }
-  GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
+  GPR_UNREACHABLE_CODE(
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Should never reach here"));
 }
 
 void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
                                grpc_slice debug_data,
                                grpc_slice_buffer *slice_buffer) {
-  grpc_slice header = grpc_slice_malloc(9 + 4 + 4);
+  grpc_slice header = GRPC_SLICE_MALLOC(9 + 4 + 4);
   uint8_t *p = GRPC_SLICE_START_PTR(header);
   uint32_t frame_length;
   GPR_ASSERT(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);

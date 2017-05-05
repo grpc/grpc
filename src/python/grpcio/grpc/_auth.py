@@ -44,7 +44,7 @@ def _create_get_token_callback(callback):
     def get_token_callback(future):
         try:
             access_token = future.result().access_token
-        except Exception as exception:
+        except Exception as exception:  # pylint: disable=broad-except
             _sign_request(callback, None, exception)
         else:
             _sign_request(callback, access_token, None)

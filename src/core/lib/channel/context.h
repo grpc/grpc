@@ -50,8 +50,8 @@ typedef enum {
   /// Reserved for traffic_class_context.
   GRPC_CONTEXT_TRAFFIC,
 
-  /// Costs for Load Reporting.
-  GRPC_CONTEXT_LR_COST,
+  /// Value is a \a grpc_grpclb_client_stats.
+  GRPC_GRPCLB_CLIENT_STATS,
 
   GRPC_CONTEXT_COUNT
 } grpc_context_index;

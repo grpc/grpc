@@ -163,6 +163,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
@@ -171,7 +172,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
@@ -182,7 +182,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\security\oauth2_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h" />
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\debugger_macros.h" />
@@ -198,16 +198,11 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
@@ -230,6 +225,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset.h" />
@@ -244,6 +240,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h" />
@@ -252,6 +249,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_uv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\time_averaged_stats.h" />
@@ -271,6 +269,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_common.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\b64.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_internal.h" />
@@ -282,6 +281,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\channel_init.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\channel_stack_type.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\event_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\init.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.h" />
@@ -317,7 +317,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
     </ClCompile>
@@ -349,23 +349,13 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
     </ClCompile>
@@ -415,6 +405,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.c">
@@ -436,6 +428,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resource_quota.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.c">
     </ClCompile>
@@ -460,6 +454,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_common.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_ifaddrs.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_noifaddrs.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_uv.c">
     </ClCompile>
@@ -505,6 +505,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\b64.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice.c">
@@ -541,9 +543,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
     </ClCompile>

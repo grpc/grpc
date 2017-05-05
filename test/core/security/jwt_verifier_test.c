@@ -44,7 +44,7 @@
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
-#include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/slice/b64.h"
 #include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.

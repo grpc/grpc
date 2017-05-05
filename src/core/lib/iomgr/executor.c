@@ -83,6 +83,9 @@ static void closure_exec_thread_func(void *ignored) {
       while (c != NULL) {
         grpc_closure *next = c->next_data.next;
         grpc_error *error = c->error_data.error;
+#ifndef NDEBUG
+        c->scheduled = false;
+#endif
         c->cb(&exec_ctx, c->cb_arg, error);
         GRPC_ERROR_UNREF(error);
         c = next;
@@ -115,8 +118,8 @@ static void maybe_spawn_locked() {
   /* All previous instances of the thread should have been joined at this point.
    * Spawn time! */
   g_executor.busy = 1;
-  gpr_thd_new(&g_executor.tid, closure_exec_thread_func, NULL,
-              &g_executor.options);
+  GPR_ASSERT(gpr_thd_new(&g_executor.tid, closure_exec_thread_func, NULL,
+                         &g_executor.options));
   g_executor.pending_join = 1;
 }
 
@@ -146,6 +149,9 @@ void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx) {
   while (c != NULL) {
     grpc_closure *next = c->next_data.next;
     grpc_error *error = c->error_data.error;
+#ifndef NDEBUG
+    c->scheduled = false;
+#endif
     c->cb(exec_ctx, c->cb_arg, error);
     GRPC_ERROR_UNREF(error);
     c = next;

@@ -45,7 +45,6 @@ namespace Grpc.Core.Internal
     internal class CallSafeHandle : SafeHandleZeroIsInvalid, INativeCall
     {
         public static readonly CallSafeHandle NullInstance = new CallSafeHandle();
-        static readonly Encoding EncodingUTF8 = System.Text.Encoding.UTF8;
         static readonly NativeMethods Native = NativeMethods.Get();
 
         const uint GRPC_WRITE_BUFFER_HINT = 1;
@@ -140,7 +139,7 @@ namespace Grpc.Core.Internal
                 var ctx = BatchContextSafeHandle.Create();
                 var optionalPayloadLength = optionalPayload != null ? new UIntPtr((ulong)optionalPayload.Length) : UIntPtr.Zero;
                 completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success));
-                var statusDetailBytes = EncodingUTF8.GetBytes(status.Detail);
+                var statusDetailBytes = MarshalUtils.GetBytesUTF8(status.Detail);
                 Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, statusDetailBytes, new UIntPtr((ulong)statusDetailBytes.Length), metadataArray, sendEmptyInitialMetadata,
                     optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
             }
@@ -202,6 +201,11 @@ namespace Grpc.Core.Internal
             {
                 return cstring.GetValue();
             }
+        }
+
+        public AuthContextSafeHandle GetAuthContext()
+        {
+            return Native.grpcsharp_call_auth_context(this);
         }
 
         protected override bool ReleaseHandle()

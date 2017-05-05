@@ -163,11 +163,15 @@
     <ClInclude Include="$(SolutionDir)\..\src\compiler\objective_c_generator_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\php_generator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\php_generator_helpers.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\protobuf_plugin.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator_helpers.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\python_private_generator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_helpers-inl.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_map-inl.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_string-inl.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\schema_interface.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\compiler\cpp_generator.cc">

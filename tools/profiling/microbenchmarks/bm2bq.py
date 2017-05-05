@@ -36,7 +36,7 @@
 import sys
 import json
 import csv
-import os
+import bm_json
 
 columns = [
   ('jenkins_build', 'integer'),
@@ -71,7 +71,16 @@ columns = [
   ('end_of_stream', 'boolean'),
   ('header_bytes_per_iteration', 'float'),
   ('framing_bytes_per_iteration', 'float'),
+  ('nows_per_iteration', 'float'),
 ]
+
+SANITIZE = {
+  'integer': int,
+  'float': float,
+  'boolean': bool,
+  'string': str,
+  'timestamp': str,
+}
 
 if sys.argv[1] == '--schema':
   print ',\n'.join('%s:%s' % (k, t.upper()) for k, t in columns)
@@ -88,143 +97,10 @@ else:
 
 writer = csv.DictWriter(sys.stdout, [c for c,t in columns])
 
-bm_specs = {
-  'BM_UnaryPingPong': {
-    'tpl': ['fixture', 'client_mutator', 'server_mutator'],
-    'dyn': ['request_size', 'response_size'],
-  },
-  'BM_PumpStreamClientToServer': {
-    'tpl': ['fixture'],
-    'dyn': ['request_size'],
-  },
-  'BM_PumpStreamServerToClient': {
-    'tpl': ['fixture'],
-    'dyn': ['request_size'],
-  },
-  'BM_StreamingPingPong': {
-    'tpl': ['fixture', 'client_mutator', 'server_mutator'],
-    'dyn': ['request_size', 'request_count'],
-  },
-  'BM_StreamingPingPongMsgs': {
-    'tpl': ['fixture', 'client_mutator', 'server_mutator'],
-    'dyn': ['request_size'],
-  },
-  'BM_PumpStreamServerToClient_Trickle': {
-    'tpl': [],
-    'dyn': ['request_size', 'bandwidth_kilobits'],
-  },
-  'BM_ErrorStringOnNewError': {
-    'tpl': ['fixture'],
-    'dyn': [],
-  },
-  'BM_ErrorStringRepeatedly': {
-    'tpl': ['fixture'],
-    'dyn': [],
-  },
-  'BM_ErrorGetStatus': {
-    'tpl': ['fixture'],
-    'dyn': [],
-  },
-  'BM_ErrorGetStatusCode': {
-    'tpl': ['fixture'],
-    'dyn': [],
-  },
-  'BM_ErrorHttpError': {
-    'tpl': ['fixture'],
-    'dyn': [],
-  },
-  'BM_HasClearGrpcStatus': {
-    'tpl': ['fixture'],
-    'dyn': [],
-  },
-  'BM_IsolatedFilter' : {
-    'tpl': ['fixture', 'client_mutator'],
-    'dyn': [],
-  },
-  'BM_HpackEncoderEncodeHeader' : {
-    'tpl': ['fixture'],
-    'dyn': ['end_of_stream', 'request_size'],
-  },
-  'BM_HpackParserParseHeader' : {
-    'tpl': ['fixture'],
-    'dyn': [],
-  },
-}
-
-def numericalize(s):
-  if not s: return ''
-  if s[-1] == 'k':
-    return int(s[:-1]) * 1024
-  if s[-1] == 'M':
-    return int(s[:-1]) * 1024 * 1024
-  if 0 <= (ord(s[-1]) - ord('0')) <= 9:
-    return int(s)
-  assert 'not a number: %s' % s
-
-def parse_name(name):
-  if '<' not in name and '/' not in name and name not in bm_specs:
-    return {'name': name}
-  rest = name
-  out = {}
-  tpl_args = []
-  dyn_args = []
-  if '<' in rest:
-    tpl_bit = rest[rest.find('<') + 1 : rest.rfind('>')]
-    arg = ''
-    nesting = 0
-    for c in tpl_bit:
-      if c == '<':
-        nesting += 1
-        arg += c
-      elif c == '>':
-        nesting -= 1
-        arg += c
-      elif c == ',':
-        if nesting == 0:
-          tpl_args.append(arg.strip())
-          arg = ''
-        else:
-          arg += c
-      else:
-        arg += c
-    tpl_args.append(arg.strip())
-    rest = rest[:rest.find('<')] + rest[rest.rfind('>') + 1:]
-  if '/' in rest:
-    s = rest.split('/')
-    rest = s[0]
-    dyn_args = s[1:]
-  name = rest
-  assert name in bm_specs, 'bm_specs needs to be expanded for %s' % name
-  assert len(dyn_args) == len(bm_specs[name]['dyn'])
-  assert len(tpl_args) == len(bm_specs[name]['tpl'])
-  out['name'] = name
-  out.update(dict((k, numericalize(v)) for k, v in zip(bm_specs[name]['dyn'], dyn_args)))
-  out.update(dict(zip(bm_specs[name]['tpl'], tpl_args)))
-  return out
-
-for bm in js['benchmarks']:
-  context = js['context']
-  if 'label' in bm:
-    labels_list = [s.split(':') for s in bm['label'].strip().split(' ') if len(s) and s[0] != '#']
-    for el in labels_list:
-      el[0] = el[0].replace('/iter', '_per_iteration')
-    labels = dict(labels_list)
-  else:
-    labels = {}
-  row = {
-    'jenkins_build': os.environ.get('BUILD_NUMBER', ''),
-    'jenkins_job': os.environ.get('JOB_NAME', ''),
-  }
-  row.update(context)
-  row.update(bm)
-  row.update(parse_name(row['name']))
-  row.update(labels)
-  if 'label' in row:
-    del row['label']
-  if js2:
-    for bm2 in js2['benchmarks']:
-      if bm['name'] == bm2['name']:
-        row['cpu_time'] = bm2['cpu_time']
-        row['real_time'] = bm2['real_time']
-        row['iterations'] = bm2['iterations']
-  writer.writerow(row)
+for row in bm_json.expand_json(js, js2):
+  sane_row = {}
+  for name, sql_type in columns:
+    if name in row:
+      if row[name] == '': continue
+      sane_row[name] = SANITIZE[sql_type](row[name])
+  writer.writerow(sane_row)

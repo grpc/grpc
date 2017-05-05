@@ -3,6 +3,26 @@
     "config": "opt"
   }, 
   {
+    "config": "asan-trace-cmp", 
+    "environ": {
+      "ASAN_OPTIONS": "detect_leaks=1:color=always", 
+      "LSAN_OPTIONS": "suppressions=tools/lsan_suppressions.txt:report_objects=1"
+    }
+  }, 
+  {
+    "config": "dbg"
+  }, 
+  {
+    "config": "asan", 
+    "environ": {
+      "ASAN_OPTIONS": "detect_leaks=1:color=always", 
+      "LSAN_OPTIONS": "suppressions=tools/lsan_suppressions.txt:report_objects=1"
+    }
+  }, 
+  {
+    "config": "msan"
+  }, 
+  {
     "config": "basicprof"
   }, 
   {
@@ -19,14 +39,19 @@
     }
   }, 
   {
-    "config": "asan-trace-cmp", 
+    "config": "c++-compat"
+  }, 
+  {
+    "config": "ubsan", 
     "environ": {
-      "ASAN_OPTIONS": "detect_leaks=1:color=always", 
-      "LSAN_OPTIONS": "suppressions=tools/lsan_suppressions.txt:report_objects=1"
+      "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt"
     }
   }, 
   {
-    "config": "dbg"
+    "config": "tsan", 
+    "environ": {
+      "TSAN_OPTIONS": "suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1"
+    }
   }, 
   {
     "config": "stapprof"
@@ -43,26 +68,7 @@
     ]
   }, 
   {
-    "config": "asan", 
-    "environ": {
-      "ASAN_OPTIONS": "detect_leaks=1:color=always", 
-      "LSAN_OPTIONS": "suppressions=tools/lsan_suppressions.txt:report_objects=1"
-    }
-  }, 
-  {
-    "config": "tsan", 
-    "environ": {
-      "TSAN_OPTIONS": "suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1"
-    }
-  }, 
-  {
-    "config": "ubsan", 
-    "environ": {
-      "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
-    }
-  }, 
-  {
-    "config": "msan"
+    "config": "lto"
   }, 
   {
     "config": "mutrace"

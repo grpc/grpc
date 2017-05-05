@@ -3,34 +3,38 @@
 # not include "unused_" and "ignored_" by default?
 dummy-variables-rgx=^ignored_|^unused_
 
+[DESIGN]
+# NOTE(nathaniel): Not particularly attached to this value; it just seems to
+# be what works for us at the moment (excepting the dead-code-walking Beta
+# API).
+max-args=6
+
+[MISCELLANEOUS]
+# NOTE(nathaniel): We are big fans of "TODO(<issue link>): " and
+# "NOTE(<username or issue link>): ". We do not allow "TODO:",
+# "TODO(<username>):", "FIXME:", or anything else.
+notes=FIXME,XXX
+
 [MESSAGES CONTROL]
 
 #TODO: Enable missing-docstring
 #TODO: Enable too-few-public-methods
-#TODO: Enable too-many-arguments
 #TODO: Enable no-init
 #TODO: Enable duplicate-code
 #TODO: Enable invalid-name
-#TODO: Enable suppressed-message
 #TODO: Enable locally-disabled
 #TODO: Enable protected-access
 #TODO: Enable no-name-in-module
-#TODO: Enable unused-argument
-#TODO: Enable fixme
 #TODO: Enable wrong-import-order
-#TODO: Enable no-value-for-parameter
-#TODO: Enable cyclic-import
-#TODO: Enable redefined-outer-name
+# TODO(https://github.com/PyCQA/pylint/issues/59#issuecomment-283774279):
+# enable cyclic-import after a 1.7-or-later pylint release that recognizes our
+# disable=cyclic-import suppressions.
 #TODO: Enable too-many-instance-attributes
-#TODO: Enable broad-except
-#TODO: Enable too-many-locals
 #TODO: Enable too-many-lines
 #TODO: Enable redefined-variable-type
 #TODO: Enable next-method-called
 #TODO: Enable import-error
 #TODO: Enable useless-else-on-loop
-#TODO: Enable too-many-return-statements
 #TODO: Enable too-many-nested-blocks
-#TODO: Enable super-init-not-called
 
-disable=missing-docstring,too-few-public-methods,too-many-arguments,no-init,duplicate-code,invalid-name,suppressed-message,locally-disabled,protected-access,no-name-in-module,unused-argument,fixme,wrong-import-order,no-value-for-parameter,cyclic-import,redefined-outer-name,too-many-instance-attributes,broad-except,too-many-locals,too-many-lines,redefined-variable-type,next-method-called,import-error,useless-else-on-loop,too-many-return-statements,too-many-nested-blocks,super-init-not-called
+disable=missing-docstring,too-few-public-methods,no-init,duplicate-code,invalid-name,locally-disabled,protected-access,no-name-in-module,wrong-import-order,cyclic-import,too-many-instance-attributes,too-many-lines,redefined-variable-type,next-method-called,import-error,useless-else-on-loop,too-many-nested-blocks

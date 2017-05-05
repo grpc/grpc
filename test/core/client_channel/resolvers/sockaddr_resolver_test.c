@@ -37,7 +37,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
 
@@ -57,7 +57,7 @@ void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(string, 0);
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, string, 0);
   grpc_resolver_args args;
   grpc_resolver *resolver;
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
@@ -84,7 +84,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
 
 static void test_fails(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(string, 0);
+  grpc_uri *uri = grpc_uri_parse(&exec_ctx, string, 0);
   grpc_resolver_args args;
   grpc_resolver *resolver;
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,

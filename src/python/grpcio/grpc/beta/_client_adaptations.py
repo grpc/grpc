@@ -35,6 +35,8 @@ from grpc.framework.common import cardinality
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
 
+# pylint: disable=too-many-arguments,too-many-locals,unused-argument
+
 _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS = {
     grpc.StatusCode.CANCELLED: (face.Abortion.Kind.CANCELLED,
                                 face.CancellationError),
@@ -620,8 +622,8 @@ class _GenericStub(face.GenericStub):
 
 class _DynamicStub(face.DynamicStub):
 
-    def __init__(self, generic_stub, group, cardinalities):
-        self._generic_stub = generic_stub
+    def __init__(self, backing_generic_stub, group, cardinalities):
+        self._generic_stub = backing_generic_stub
         self._group = group
         self._cardinalities = cardinalities
 

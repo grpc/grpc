@@ -33,10 +33,10 @@
 
 #include <string.h>
 
-#include <node.h>
 #include <nan.h>
-#include "grpc/grpc.h"
+#include <node.h>
 #include "grpc/byte_buffer_reader.h"
+#include "grpc/grpc.h"
 #include "grpc/slice.h"
 
 #include "byte_buffer.h"
@@ -45,6 +45,7 @@
 namespace grpc {
 namespace node {
 
+using Nan::Callback;
 using Nan::MaybeLocal;
 
 using v8::Function;
@@ -62,7 +63,11 @@ grpc_byte_buffer *BufferToByteBuffer(Local<Value> buffer) {
 }
 
 namespace {
-void delete_buffer(char *data, void *hint) { delete[] data; }
+void delete_buffer(char *data, void *hint) {
+  grpc_slice *slice = static_cast<grpc_slice *>(hint);
+  grpc_slice_unref(*slice);
+  delete slice;
+}
 }
 
 Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
@@ -75,31 +80,15 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     Nan::ThrowError("Error initializing byte buffer reader.");
     return scope.Escape(Nan::Undefined());
   }
-  grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
-  size_t length = GRPC_SLICE_LENGTH(slice);
-  char *result = new char[length];
-  memcpy(result, GRPC_SLICE_START_PTR(slice), length);
-  grpc_slice_unref(slice);
-  return scope.Escape(MakeFastBuffer(
-      Nan::NewBuffer(result, length, delete_buffer, NULL).ToLocalChecked()));
+  grpc_slice *slice = new grpc_slice;
+  *slice = grpc_byte_buffer_reader_readall(&reader);
+  grpc_byte_buffer_reader_destroy(&reader);
+  char *result = reinterpret_cast<char *>(GRPC_SLICE_START_PTR(*slice));
+  size_t length = GRPC_SLICE_LENGTH(*slice);
+  Local<Value> buf =
+      Nan::NewBuffer(result, length, delete_buffer, slice).ToLocalChecked();
+  return scope.Escape(buf);
 }
 
-Local<Value> MakeFastBuffer(Local<Value> slowBuffer) {
-  Nan::EscapableHandleScope scope;
-  Local<Object> globalObj = Nan::GetCurrentContext()->Global();
-  MaybeLocal<Value> constructorValue = Nan::Get(
-      globalObj, Nan::New("Buffer").ToLocalChecked());
-  Local<Function> bufferConstructor = Local<Function>::Cast(
-      constructorValue.ToLocalChecked());
-  const int argc = 3;
-  Local<Value> consArgs[argc] = {
-    slowBuffer,
-    Nan::New<Number>(::node::Buffer::Length(slowBuffer)),
-    Nan::New<Number>(0)
-  };
-  MaybeLocal<Object> fastBuffer = Nan::NewInstance(bufferConstructor,
-                                                   argc, consArgs);
-  return scope.Escape(fastBuffer.ToLocalChecked());
-}
 }  // namespace node
 }  // namespace grpc

@@ -38,9 +38,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/client_channel.h"
-#include "src/core/ext/client_channel/resolver_registry.h"
-#include "src/core/ext/client_channel/uri_parser.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -83,7 +83,7 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
   const char *server_uri_str = server_uri_arg->value.string;
   GPR_ASSERT(server_uri_str != NULL);
   grpc_uri *server_uri =
-      grpc_uri_parse(server_uri_str, true /* supress errors */);
+      grpc_uri_parse(exec_ctx, server_uri_str, true /* supress errors */);
   GPR_ASSERT(server_uri != NULL);
   const char *server_uri_path;
   server_uri_path =
@@ -96,7 +96,7 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
     const char *target_uri_str =
         grpc_get_subchannel_address_uri_arg(args->args);
     grpc_uri *target_uri =
-        grpc_uri_parse(target_uri_str, false /* suppress errors */);
+        grpc_uri_parse(exec_ctx, target_uri_str, false /* suppress errors */);
     GPR_ASSERT(target_uri != NULL);
     if (target_uri->path[0] != '\0') {  // "path" may be empty
       const grpc_slice key = grpc_slice_from_static_string(
@@ -181,7 +181,8 @@ static grpc_channel *client_channel_factory_create_channel(
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   arg.key = GRPC_ARG_SERVER_URI;
-  arg.value.string = grpc_resolver_factory_add_default_prefix_if_needed(target);
+  arg.value.string =
+      grpc_resolver_factory_add_default_prefix_if_needed(exec_ctx, target);
   const char *to_remove[] = {GRPC_ARG_SERVER_URI};
   grpc_channel_args *new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);

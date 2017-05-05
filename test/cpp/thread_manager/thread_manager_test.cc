@@ -118,7 +118,7 @@ void ThreadManagerTest::PerformTest() {
 
   // The number of times DoWork() was called is equal to the number of times
   // WORK_FOUND was returned
-  gpr_log(GPR_DEBUG, "DoWork() called %ld times",
+  gpr_log(GPR_DEBUG, "DoWork() called %" PRIdPTR " times",
           gpr_atm_no_barrier_load(&num_do_work_));
   GPR_ASSERT(gpr_atm_no_barrier_load(&num_do_work_) ==
              gpr_atm_no_barrier_load(&num_work_found_));

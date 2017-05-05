@@ -44,6 +44,8 @@
 #import "NSData+GRPC.h"
 #import "NSError+GRPC.h"
 
+#import "GRPCOpBatchLog.h"
+
 @implementation GRPCOperation {
 @protected
   // Most operation subclasses don't set any flags in the grpc_op, and rely on the flag member being
@@ -274,6 +276,12 @@
 }
 
 - (void)startBatchWithOperations:(NSArray *)operations errorHandler:(void (^)())errorHandler {
+  // Keep logs of op batches when we are running tests. Disabled when in production for improved
+  // performance.
+#ifdef GRPC_TEST_OBJC
+  [GRPCOpBatchLog addOpBatchToLog:operations];
+#endif
+
   size_t nops = operations.count;
   grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));
   size_t i = 0;
@@ -307,7 +315,7 @@
 }
 
 - (void)dealloc {
-  grpc_call_destroy(_call);
+  grpc_call_unref(_call);
 }
 
 @end

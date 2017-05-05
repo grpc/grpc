@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -30,6 +30,8 @@
 
 """Run test matrix."""
 
+from __future__ import print_function
+
 import argparse
 import multiprocessing
 import os
@@ -49,32 +51,49 @@ _RUNTESTS_TIMEOUT = 4*60*60
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
 
+# report suffix is important for reports to get picked up by internal CI
+_REPORT_SUFFIX = 'sponge_log.xml'
 
-def _docker_jobspec(name, runtests_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
+
+def _report_filename(name):
+  """Generates report file name"""
+  return 'report_%s_%s' % (name, _REPORT_SUFFIX)
+
+
+def _report_filename_internal_ci(name):
+  """Generates report file name that leads to better presentation by internal CI"""
+  return '%s/%s' % (name, _REPORT_SUFFIX)
+
+
+def _docker_jobspec(name, runtests_args=[], runtests_envs={},
+                    inner_jobs=_DEFAULT_INNER_JOBS):
   """Run a single instance of run_tests.py in a docker container"""
   test_job = jobset.JobSpec(
           cmdline=['python', 'tools/run_tests/run_tests.py',
                    '--use_docker',
                    '-t',
                    '-j', str(inner_jobs),
-                   '-x', 'report_%s.xml' % name,
+                   '-x', _report_filename(name),
                    '--report_suite_name', '%s' % name] + runtests_args,
+          environ=runtests_envs,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
   return test_job
 
 
-def _workspace_jobspec(name, runtests_args=[], workspace_name=None, inner_jobs=_DEFAULT_INNER_JOBS):
+def _workspace_jobspec(name, runtests_args=[], workspace_name=None,
+                       runtests_envs={}, inner_jobs=_DEFAULT_INNER_JOBS):
   """Run a single instance of run_tests.py in a separate workspace"""
   if not workspace_name:
     workspace_name = 'workspace_%s' % name
   env = {'WORKSPACE_NAME': workspace_name}
+  env.update(runtests_envs)
   test_job = jobset.JobSpec(
           cmdline=['bash',
                    'tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
                    '-t',
                    '-j', str(inner_jobs),
-                   '-x', '../report_%s.xml' % name,
+                   '-x', '../%s' % _report_filename(name),
                    '--report_suite_name', '%s' % name] + runtests_args,
           environ=env,
           shortname='run_tests_%s' % name,
@@ -84,7 +103,7 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None, inner_jobs=_
 
 def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
                   arch=None, compiler=None,
-                  labels=[], extra_args=[],
+                  labels=[], extra_args=[], extra_envs={},
                   inner_jobs=_DEFAULT_INNER_JOBS):
   result = []
   for language in languages:
@@ -92,19 +111,24 @@ def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
       for config in configs:
         name = '%s_%s_%s_%s' % (language, platform, config, iomgr_platform)
         runtests_args = ['-l', language,
-                         '-c', config]
+                         '-c', config,
+                         '--iomgr_platform', iomgr_platform]
         if arch or compiler:
           name += '_%s_%s' % (arch, compiler)
           runtests_args += ['--arch', arch,
                             '--compiler', compiler]
+        for extra_env in extra_envs:
+          name += '_%s_%s' % (extra_env, extra_envs[extra_env])
 
         runtests_args += extra_args
         if platform == 'linux':
-          job = _docker_jobspec(name=name, runtests_args=runtests_args, inner_jobs=inner_jobs)
+          job = _docker_jobspec(name=name, runtests_args=runtests_args,
+                                runtests_envs=extra_envs, inner_jobs=inner_jobs)
         else:
-          job = _workspace_jobspec(name=name, runtests_args=runtests_args, inner_jobs=inner_jobs)
+          job = _workspace_jobspec(name=name, runtests_args=runtests_args,
+                                   runtests_envs=extra_envs, inner_jobs=inner_jobs)
 
-        job.labels = [platform, config, language] + labels
+        job.labels = [platform, config, language, iomgr_platform] + labels
         result.append(job)
   return result
 
@@ -145,7 +169,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
 
   # sanitizers
   test_jobs += _generate_jobs(languages=['c'],
-                              configs=['msan', 'asan', 'tsan'],
+                              configs=['msan', 'asan', 'tsan', 'ubsan'],
                               platforms=['linux'],
                               labels=['sanitizers'],
                               extra_args=extra_args,
@@ -173,7 +197,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               inner_jobs=inner_jobs)
 
   # portability C and C++ on x64
-  for compiler in ['gcc4.4', 'gcc4.6', 'gcc5.3',
+  for compiler in ['gcc4.4', 'gcc4.6', 'gcc5.3', 'gcc_musl',
                    'clang3.5', 'clang3.6', 'clang3.7']:
     test_jobs += _generate_jobs(languages=['c'],
                                 configs=['dbg'],
@@ -206,6 +230,21 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                   labels=['portability'],
                                   extra_args=extra_args,
                                   inner_jobs=inner_jobs)
+
+  # C and C++ with the c-ares DNS resolver on Linux
+  test_jobs += _generate_jobs(languages=['c', 'c++'],
+                              configs=['dbg'], platforms=['linux'],
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
+
+  # TODO(zyc): Turn on this test after adding c-ares support on windows.
+  # C with the c-ares DNS resolver on Windonws
+  # test_jobs += _generate_jobs(languages=['c'],
+  #                             configs=['dbg'], platforms=['windows'],
+  #                             labels=['portability'],
+  #                             extra_args=extra_args,
+  #                             extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
 
   # cmake build for C and C++
   # TODO(jtattermusch): some of the tests are failing, so we force --build_only
@@ -249,15 +288,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               configs=['dbg'],
                               platforms=['linux'],
                               arch='default',
-                              compiler='electron1.3',
-                              labels=['portability'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
-
-  test_jobs += _generate_jobs(languages=['node'],
-                              configs=['dbg'],
-                              platforms=['linux'],
-                              iomgr_platform='uv',
+                              compiler='electron1.6',
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
@@ -347,7 +378,19 @@ if __name__ == "__main__":
   argp.add_argument('-n', '--runs_per_test', default=1, type=_runs_per_test_type,
                     help='How many times to run each tests. >1 runs implies ' +
                     'omitting passing test from the output & reports.')
+  argp.add_argument('--max_time', default=-1, type=int,
+                    help='Maximum amount of time to run tests for' +
+                         '(other tests will be skipped)')
+  argp.add_argument('--internal_ci',
+                    default=False,
+                    action='store_const',
+                    const=True,
+                    help='Put reports into subdirectories to improve presentation of '
+                    'results by Internal CI.')
   args = argp.parse_args()
+
+  if args.internal_ci:
+    _report_filename = _report_filename_internal_ci  # override the function
 
   extra_args = []
   if args.build_only:
@@ -358,6 +401,8 @@ if __name__ == "__main__":
     extra_args.append('-n')
     extra_args.append('%s' % args.runs_per_test)
     extra_args.append('--quiet_success')
+  if args.max_time > 0:
+    extra_args.extend(('--max_time', '%d' % args.max_time))
 
   all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
              _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)
@@ -412,10 +457,10 @@ if __name__ == "__main__":
                                        maxjobs=args.jobs)
   # Merge skipped tests into results to show skipped tests on report.xml
   if skipped_jobs:
-    skipped_results = jobset.run(skipped_jobs,
-                                 skip_jobs=True)
+    ignored_num_skipped_failures, skipped_results = jobset.run(
+        skipped_jobs, skip_jobs=True)
     resultset.update(skipped_results)
-  report_utils.render_junit_xml_report(resultset, 'report.xml',
+  report_utils.render_junit_xml_report(resultset, _report_filename('aggregate_tests'),
                                        suite_name='aggregate_tests')
 
   if num_failures == 0:

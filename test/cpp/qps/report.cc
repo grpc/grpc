@@ -40,6 +40,9 @@
 #include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/stats.h"
 
+#include <grpc++/client_context.h>
+#include "src/proto/grpc/testing/services.grpc.pb.h"
+
 namespace grpc {
 namespace testing {
 
@@ -139,6 +142,38 @@ void JsonReporter::ReportTimes(const ScenarioResult& result) {
 }
 
 void JsonReporter::ReportCpuUsage(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportQPS(const ScenarioResult& result) {
+  grpc::ClientContext context;
+  grpc::Status status;
+  Void dummy;
+
+  gpr_log(GPR_INFO, "RPC reporter sending scenario result to server");
+  status = stub_->ReportScenario(&context, result, &dummy);
+
+  if (status.ok()) {
+    gpr_log(GPR_INFO, "RpcReporter report RPC success!");
+  } else {
+    gpr_log(GPR_ERROR, "RpcReporter report RPC: code: %d. message: %s",
+            status.error_code(), status.error_message().c_str());
+  }
+}
+
+void RpcReporter::ReportQPSPerCore(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportLatency(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportTimes(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportCpuUsage(const ScenarioResult& result) {
   // NOP - all reporting is handled by ReportQPS.
 }
 

@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "src/compiler/config.h"
+#include "src/compiler/schema_interface.h"
 
 #ifndef GRPC_CUSTOM_STRING
 #include <string>
@@ -64,93 +65,73 @@ struct Parameters {
   bool use_system_headers;
   // Prefix to any grpc include
   grpc::string grpc_search_path;
-};
-
-// A common interface for objects having comments in the source.
-// Return formatted comments to be inserted in generated code.
-struct CommentHolder {
-  virtual ~CommentHolder() {}
-  virtual grpc::string GetLeadingComments() const = 0;
-  virtual grpc::string GetTrailingComments() const = 0;
-};
-
-// An abstract interface representing a method.
-struct Method : public CommentHolder {
-  virtual ~Method() {}
-
-  virtual grpc::string name() const = 0;
-
-  virtual grpc::string input_type_name() const = 0;
-  virtual grpc::string output_type_name() const = 0;
-
-  virtual bool NoStreaming() const = 0;
-  virtual bool ClientOnlyStreaming() const = 0;
-  virtual bool ServerOnlyStreaming() const = 0;
-  virtual bool BidiStreaming() const = 0;
-};
-
-// An abstract interface representing a service.
-struct Service : public CommentHolder {
-  virtual ~Service() {}
-
-  virtual grpc::string name() const = 0;
-
-  virtual int method_count() const = 0;
-  virtual std::unique_ptr<const Method> method(int i) const = 0;
-};
-
-struct Printer {
-  virtual ~Printer() {}
-
-  virtual void Print(const std::map<grpc::string, grpc::string> &vars,
-                     const char *template_string) = 0;
-  virtual void Print(const char *string) = 0;
-  virtual void Indent() = 0;
-  virtual void Outdent() = 0;
-};
-
-// An interface that allows the source generated to be output using various
-// libraries/idls/serializers.
-struct File : public CommentHolder {
-  virtual ~File() {}
-
-  virtual grpc::string filename() const = 0;
-  virtual grpc::string filename_without_ext() const = 0;
-  virtual grpc::string message_header_ext() const = 0;
-  virtual grpc::string service_header_ext() const = 0;
-  virtual grpc::string package() const = 0;
-  virtual std::vector<grpc::string> package_parts() const = 0;
-  virtual grpc::string additional_headers() const = 0;
-
-  virtual int service_count() const = 0;
-  virtual std::unique_ptr<const Service> service(int i) const = 0;
-
-  virtual std::unique_ptr<Printer> CreatePrinter(grpc::string *str) const = 0;
+  // Generate GMOCK code to facilitate unit testing.
+  bool generate_mock_code;
 };
 
 // Return the prologue of the generated header file.
-grpc::string GetHeaderPrologue(File *file, const Parameters &params);
+grpc::string GetHeaderPrologue(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the includes needed for generated header file.
-grpc::string GetHeaderIncludes(File *file, const Parameters &params);
+grpc::string GetHeaderIncludes(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the includes needed for generated source file.
-grpc::string GetSourceIncludes(File *file, const Parameters &params);
+grpc::string GetSourceIncludes(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the epilogue of the generated header file.
-grpc::string GetHeaderEpilogue(File *file, const Parameters &params);
+grpc::string GetHeaderEpilogue(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the prologue of the generated source file.
-grpc::string GetSourcePrologue(File *file, const Parameters &params);
+grpc::string GetSourcePrologue(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the services for generated header file.
-grpc::string GetHeaderServices(File *file, const Parameters &params);
+grpc::string GetHeaderServices(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the services for generated source file.
-grpc::string GetSourceServices(File *file, const Parameters &params);
+grpc::string GetSourceServices(grpc_generator::File *file,
+                               const Parameters &params);
 
 // Return the epilogue of the generated source file.
-grpc::string GetSourceEpilogue(File *file, const Parameters &params);
+grpc::string GetSourceEpilogue(grpc_generator::File *file,
+                               const Parameters &params);
+
+// Return the prologue of the generated mock file.
+grpc::string GetMockPrologue(grpc_generator::File *file,
+                             const Parameters &params);
+
+// Return the includes needed for generated mock file.
+grpc::string GetMockIncludes(grpc_generator::File *file,
+                             const Parameters &params);
+
+// Return the services for generated mock file.
+grpc::string GetMockServices(grpc_generator::File *file,
+                             const Parameters &params);
+
+// Return the epilogue of generated mock file.
+grpc::string GetMockEpilogue(grpc_generator::File *file,
+                             const Parameters &params);
+
+// Return the prologue of the generated mock file.
+grpc::string GetMockPrologue(grpc_generator::File *file,
+                             const Parameters &params);
+
+// Return the includes needed for generated mock file.
+grpc::string GetMockIncludes(grpc_generator::File *file,
+                             const Parameters &params);
+
+// Return the services for generated mock file.
+grpc::string GetMockServices(grpc_generator::File *file,
+                             const Parameters &params);
+
+// Return the epilogue of generated mock file.
+grpc::string GetMockEpilogue(grpc_generator::File *file,
+                             const Parameters &params);
 
 }  // namespace grpc_cpp_generator
 

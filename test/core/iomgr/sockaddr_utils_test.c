@@ -70,6 +70,12 @@ static grpc_resolved_address make_addr6(const uint8_t *data, size_t data_len) {
   return resolved_addr6;
 }
 
+static void set_addr6_scope_id(grpc_resolved_address *addr, uint32_t scope_id) {
+  struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr->addr;
+  GPR_ASSERT(addr6->sin6_family == AF_INET6);
+  addr6->sin6_scope_id = scope_id;
+}
+
 static const uint8_t kMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
                                   0, 0, 0xff, 0xff, 192, 0, 2, 1};
 
@@ -222,6 +228,16 @@ static void test_sockaddr_to_string(void) {
   expect_sockaddr_str("[2001:db8::1]:12345", &input6, 1);
   expect_sockaddr_uri("ipv6:[2001:db8::1]:12345", &input6);
 
+  set_addr6_scope_id(&input6, 2);
+  expect_sockaddr_str("[2001:db8::1%252]:12345", &input6, 0);
+  expect_sockaddr_str("[2001:db8::1%252]:12345", &input6, 1);
+  expect_sockaddr_uri("ipv6:[2001:db8::1%252]:12345", &input6);
+
+  set_addr6_scope_id(&input6, 101);
+  expect_sockaddr_str("[2001:db8::1%25101]:12345", &input6, 0);
+  expect_sockaddr_str("[2001:db8::1%25101]:12345", &input6, 1);
+  expect_sockaddr_uri("ipv6:[2001:db8::1%25101]:12345", &input6);
+
   input6 = make_addr6(kMapped, sizeof(kMapped));
   expect_sockaddr_str("[::ffff:192.0.2.1]:12345", &input6, 0);
   expect_sockaddr_str("192.0.2.1:12345", &input6, 1);
@@ -238,8 +254,6 @@ static void test_sockaddr_to_string(void) {
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 0);
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 1);
   GPR_ASSERT(grpc_sockaddr_to_uri(&dummy) == NULL);
-
-  GPR_ASSERT(errno == 0x7EADBEEF);
 }
 
 static void test_sockaddr_set_get_port(void) {

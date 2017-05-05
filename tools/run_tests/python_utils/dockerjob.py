@@ -70,6 +70,23 @@ def docker_mapped_port(cid, port, timeout_seconds=15):
                   (port, cid))
 
 
+def wait_for_healthy(cid, shortname, timeout_seconds):
+  """Wait timeout_seconds for the container to become healthy"""
+  started = time.time()
+  while time.time() - started < timeout_seconds:
+    try:
+      output = subprocess.check_output(
+          ['docker', 'inspect', '--format="{{.State.Health.Status}}"', cid],
+          stderr=_DEVNULL)
+      if output.strip('\n') == 'healthy':
+        return
+    except subprocess.CalledProcessError as e:
+      pass
+    time.sleep(1)
+  raise Exception('Timed out waiting for %s (%s) to pass health check' %
+                  (shortname, cid))
+
+
 def finish_jobs(jobs):
   """Kills given docker containers and waits for corresponding jobs to finish"""
   for job in jobs:
@@ -112,6 +129,9 @@ class DockerJob:
 
   def mapped_port(self, port):
     return docker_mapped_port(self._container_name, port)
+
+  def wait_for_healthy(self, timeout_seconds):
+    wait_for_healthy(self._container_name, self._spec.shortname, timeout_seconds)
 
   def kill(self, suppress_failure=False):
     """Sends kill signal to the container."""

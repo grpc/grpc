@@ -90,4 +90,4 @@ extern const pb_field_t google_trace_TraceContext_fields[5];
 #endif
 /* @@protoc_insertion_point(eof) */
 
-#endif
+#endif /* GRPC_CORE_EXT_CENSUS_GEN_TRACE_CONTEXT_PB_H */

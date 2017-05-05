@@ -40,12 +40,12 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
-#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/http/client/http_client_filter.h"
+#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/http_client_filter.h"
-#include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/surface/channel.h"
@@ -88,11 +88,20 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
   f.fixture_data = sfd;
-  f.cq = grpc_completion_queue_create(NULL);
+  f.cq = grpc_completion_queue_create_for_next(NULL);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
 
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create("fixture");
-  *sfd = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, 1);
-  grpc_resource_quota_unref(resource_quota);
+  grpc_arg a[] = {{.key = GRPC_ARG_TCP_READ_CHUNK_SIZE,
+                   .type = GRPC_ARG_INTEGER,
+                   .value.integer = 1},
+                  {.key = GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE,
+                   .type = GRPC_ARG_INTEGER,
+                   .value.integer = 1},
+                  {.key = GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
+                   .type = GRPC_ARG_INTEGER,
+                   .value.integer = 1}};
+  grpc_channel_args args = {.num_args = GPR_ARRAY_SIZE(a), .args = a};
+  *sfd = grpc_iomgr_create_endpoint_pair("fixture", &args);
 
   return f;
 }

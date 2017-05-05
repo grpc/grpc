@@ -26,7 +26,7 @@
       "electron-build": "./node_modules/.bin/node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
       "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
       "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
-      "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build"
+      "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build --library=static_library"
     },
     "bundledDependencies": [
       "node-pre-gyp"
@@ -36,7 +36,7 @@
       "lodash": "^4.15.0",
       "nan": "^2.0.0",
       "node-pre-gyp": "^0.6.0",
-      "protobufjs": "^5.0.0"
+      "protobufjs": "^6.7.0"
     },
     "devDependencies": {
       "async": "^2.0.1",
@@ -54,7 +54,7 @@
       "poisson-process": "^0.2.1"
     },
     "engines": {
-      "node": ">=1.1.0"
+      "node": ">=4"
     },
     "binary": {
       "module_name": "grpc_node",

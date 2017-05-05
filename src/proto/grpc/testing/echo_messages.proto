@@ -38,6 +38,13 @@ message DebugInfo {
   string detail = 2;
 }
 
+// Error status client expects to see.
+message ErrorStatus {
+  int32 code = 1;
+  string error_message = 2;
+  string binary_error_details = 3;
+}
+
 message RequestParams {
   bool echo_deadline = 1;
   int32 client_cancel_after_us = 2;
@@ -51,6 +58,8 @@ message RequestParams {
   string expected_transport_security_type = 10;
   DebugInfo debug_info = 11;
   bool server_die = 12; // Server should not see a request with this set.
+  string binary_error_details = 13;
+  ErrorStatus expected_error = 14;
 }
 
 message EchoRequest {

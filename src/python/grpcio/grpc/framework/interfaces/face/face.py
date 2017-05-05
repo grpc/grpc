@@ -42,6 +42,8 @@ from grpc.framework.foundation import abandonment  # pylint: disable=unused-impo
 from grpc.framework.foundation import future  # pylint: disable=unused-import
 from grpc.framework.foundation import stream  # pylint: disable=unused-import
 
+# pylint: disable=too-many-arguments
+
 
 class NoSuchMethodError(Exception):
     """Raised by customer code to indicate an unrecognized method.

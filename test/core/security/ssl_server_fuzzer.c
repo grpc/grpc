@@ -38,6 +38,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_connector.h"
+#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
 
@@ -45,10 +46,6 @@ bool squelch = true;
 // ssl has an array of global gpr_mu's that are never released.
 // Turning this on will fail the leak check.
 bool leak_check = false;
-
-#define SSL_CERT_PATH "src/core/lib/tsi/test_creds/server1.pem"
-#define SSL_KEY_PATH "src/core/lib/tsi/test_creds/server1.key"
-#define SSL_CA_PATH "src/core/lib/tsi/test_creds/ca.pem"
 
 static void discard_write(grpc_slice slice) {}
 
@@ -88,12 +85,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   // Load key pair and establish server SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
+  ca_slice = grpc_slice_from_static_string(test_root_cert);
+  cert_slice = grpc_slice_from_static_string(test_server1_cert);
+  key_slice = grpc_slice_from_static_string(test_server1_key);
   const char *ca_cert = (const char *)GRPC_SLICE_START_PTR(ca_slice);
   pem_key_cert_pair.private_key = (const char *)GRPC_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain = (const char *)GRPC_SLICE_START_PTR(cert_slice);
@@ -121,8 +115,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   // server will wait for more data. Explicitly fail the server by shutting down
   // the endpoint.
   if (!state.done_callback_called) {
-    grpc_endpoint_shutdown(&exec_ctx, mock_endpoint,
-                           GRPC_ERROR_CREATE("Explicit close"));
+    grpc_endpoint_shutdown(
+        &exec_ctx, mock_endpoint,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Explicit close"));
     grpc_exec_ctx_flush(&exec_ctx);
   }
 

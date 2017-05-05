@@ -1004,7 +1004,7 @@ def unary_unary_rpc_method_handler(behavior,
     An RpcMethodHandler for a unary-unary RPC method constructed from the given
       parameters.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.RpcMethodHandler(False, False, request_deserializer,
                                        response_serializer, behavior, None,
                                        None, None)
@@ -1025,7 +1025,7 @@ def unary_stream_rpc_method_handler(behavior,
     An RpcMethodHandler for a unary-stream RPC method constructed from the
       given parameters.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.RpcMethodHandler(False, True, request_deserializer,
                                        response_serializer, None, behavior,
                                        None, None)
@@ -1046,7 +1046,7 @@ def stream_unary_rpc_method_handler(behavior,
     An RpcMethodHandler for a stream-unary RPC method constructed from the
       given parameters.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.RpcMethodHandler(True, False, request_deserializer,
                                        response_serializer, None, None,
                                        behavior, None)
@@ -1068,7 +1068,7 @@ def stream_stream_rpc_method_handler(behavior,
     An RpcMethodHandler for a stream-stream RPC method constructed from the
       given parameters.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.RpcMethodHandler(True, True, request_deserializer,
                                        response_serializer, None, None, None,
                                        behavior)
@@ -1085,7 +1085,7 @@ def method_handlers_generic_handler(service, method_handlers):
   Returns:
     A GenericRpcHandler constructed from the given parameters.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.DictionaryGenericHandler(service, method_handlers)
 
 
@@ -1124,7 +1124,7 @@ def metadata_call_credentials(metadata_plugin, name=None):
   Returns:
     A CallCredentials.
   """
-    from grpc import _plugin_wrapping
+    from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
     if name is None:
         try:
             effective_name = metadata_plugin.__name__
@@ -1147,7 +1147,7 @@ def access_token_call_credentials(access_token):
   Returns:
     A CallCredentials.
   """
-    from grpc import _auth
+    from grpc import _auth  # pylint: disable=cyclic-import
     return metadata_call_credentials(
         _auth.AccessTokenCallCredentials(access_token))
 
@@ -1161,7 +1161,7 @@ def composite_call_credentials(*call_credentials):
   Returns:
     A CallCredentials object composed of the given CallCredentials objects.
   """
-    from grpc import _credential_composition
+    from grpc import _credential_composition  # pylint: disable=cyclic-import
     cygrpc_call_credentials = tuple(
         single_call_credentials._credentials
         for single_call_credentials in call_credentials)
@@ -1180,7 +1180,7 @@ def composite_channel_credentials(channel_credentials, *call_credentials):
     A ChannelCredentials composed of the given ChannelCredentials and
       CallCredentials objects.
   """
-    from grpc import _credential_composition
+    from grpc import _credential_composition  # pylint: disable=cyclic-import
     cygrpc_call_credentials = tuple(
         single_call_credentials._credentials
         for single_call_credentials in call_credentials)
@@ -1237,7 +1237,7 @@ def channel_ready_future(channel):
     A Future that matures when the given Channel has connectivity
       ChannelConnectivity.READY.
   """
-    from grpc import _utilities
+    from grpc import _utilities  # pylint: disable=cyclic-import
     return _utilities.channel_ready_future(channel)
 
 
@@ -1252,7 +1252,7 @@ def insecure_channel(target, options=None):
   Returns:
     A Channel to the target through which RPCs may be conducted.
   """
-    from grpc import _channel
+    from grpc import _channel  # pylint: disable=cyclic-import
     return _channel.Channel(target, () if options is None else options, None)
 
 
@@ -1268,12 +1268,15 @@ def secure_channel(target, credentials, options=None):
   Returns:
     A Channel to the target through which RPCs may be conducted.
   """
-    from grpc import _channel
+    from grpc import _channel  # pylint: disable=cyclic-import
     return _channel.Channel(target, () if options is None else options,
                             credentials._credentials)
 
 
-def server(thread_pool, handlers=None, options=None):
+def server(thread_pool,
+           handlers=None,
+           options=None,
+           maximum_concurrent_rpcs=None):
     """Creates a Server with which RPCs can be serviced.
 
   Args:
@@ -1286,13 +1289,17 @@ def server(thread_pool, handlers=None, options=None):
       returned Server is started.
     options: A sequence of string-value pairs according to which to configure
       the created server.
+    maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
+      will service before returning status RESOURCE_EXHAUSTED, or None to
+      indicate no limit.
 
   Returns:
     A Server with which RPCs can be serviced.
   """
-    from grpc import _server
+    from grpc import _server  # pylint: disable=cyclic-import
     return _server.Server(thread_pool, () if handlers is None else handlers, ()
-                          if options is None else options)
+                          if options is None else options,
+                          maximum_concurrent_rpcs)
 
 
 ###################################  __all__  #################################

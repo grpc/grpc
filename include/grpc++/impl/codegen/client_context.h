@@ -281,6 +281,17 @@ class ClientContext {
   /// \param algorithm The compression algorithm used for the client call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
+  /// Flag whether the initial metadata should be \a corked
+  ///
+  /// If \a corked is true, then the initial metadata will be colasced with the
+  /// write of first message in the stream.
+  ///
+  /// \param corked The flag indicating whether the initial metadata is to be
+  /// corked or not.
+  void set_initial_metadata_corked(bool corked) {
+    initial_metadata_corked_ = corked;
+  }
+
   /// Return the peer uri in a string.
   ///
   /// \warning This value is never authenticated or subject to any security
@@ -357,7 +368,8 @@ class ClientContext {
            (cacheable_ ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST : 0) |
            (wait_for_ready_explicitly_set_
                 ? GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
-                : 0);
+                : 0) |
+           (initial_metadata_corked_ ? GRPC_INITIAL_METADATA_CORKED : 0);
   }
 
   grpc::string authority() { return authority_; }
@@ -384,6 +396,7 @@ class ClientContext {
   PropagationOptions propagation_options_;
 
   grpc_compression_algorithm compression_algorithm_;
+  bool initial_metadata_corked_;
 };
 
 }  // namespace grpc

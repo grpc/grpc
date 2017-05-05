@@ -55,7 +55,9 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address *resolved_addr,
   GPR_ASSERT(resolved_addr != resolved_addr4_out);
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   struct sockaddr_in *addr4_out =
-      (struct sockaddr_in *)resolved_addr4_out->addr;
+      resolved_addr4_out == NULL
+          ? NULL
+          : (struct sockaddr_in *)resolved_addr4_out->addr;
   if (addr->sa_family == AF_INET6) {
     const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *)addr;
     if (memcmp(addr6->sin6_addr.s6_addr, kV4MappedPrefix,
@@ -162,6 +164,7 @@ int grpc_sockaddr_to_string(char **out,
   char ntop_buf[INET6_ADDRSTRLEN];
   const void *ip = NULL;
   int port;
+  uint32_t sin6_scope_id = 0;
   int ret;
 
   *out = NULL;
@@ -177,10 +180,19 @@ int grpc_sockaddr_to_string(char **out,
     const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *)addr;
     ip = &addr6->sin6_addr;
     port = ntohs(addr6->sin6_port);
+    sin6_scope_id = addr6->sin6_scope_id;
   }
   if (ip != NULL &&
       grpc_inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) != NULL) {
-    ret = gpr_join_host_port(out, ntop_buf, port);
+    if (sin6_scope_id != 0) {
+      char *host_with_scope;
+      /* Enclose sin6_scope_id with the format defined in RFC 6784 section 2. */
+      gpr_asprintf(&host_with_scope, "%s%%25%" PRIu32, ntop_buf, sin6_scope_id);
+      ret = gpr_join_host_port(out, host_with_scope, port);
+      gpr_free(host_with_scope);
+    } else {
+      ret = gpr_join_host_port(out, ntop_buf, port);
+    }
   } else {
     ret = gpr_asprintf(out, "(sockaddr family=%d)", addr->sa_family);
   }

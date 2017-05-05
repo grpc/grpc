@@ -35,7 +35,6 @@
 #define GRPC_LOAD_REPORTING_H
 
 #include <grpc/impl/codegen/port_platform.h>
-#include <grpc/slice.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,11 +49,12 @@ extern "C" {
  * gRPC LB system. */
 #define GRPC_LB_TOKEN_MD_KEY "lb-token"
 
-/** A sequence of values for load reporting purposes */
-typedef struct grpc_load_reporting_cost_context {
-  grpc_slice *values;
-  size_t values_count;
-} grpc_load_reporting_cost_context;
+/** Metadata key for gRPC LB cost reporting.
+ *
+ * The value corresponding to this key is an opaque binary blob reported by the
+ * backend as part of its trailing metadata containing cost information for the
+ * call. */
+#define GRPC_LB_COST_MD_KEY "lb-cost-bin"
 
 #ifdef __cplusplus
 }

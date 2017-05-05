@@ -133,7 +133,7 @@ static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
   gpr_free(se);
   /* Start to shutdown listen fd. */
   grpc_fd_shutdown(exec_ctx, sv->em_fd,
-                   GRPC_ERROR_CREATE("session_shutdown_cb"));
+                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("session_shutdown_cb"));
 }
 
 /* Called when data become readable in a session. */

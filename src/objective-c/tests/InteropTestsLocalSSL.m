@@ -32,10 +32,18 @@
  */
 
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
 #import "InteropTests.h"
+// The server address is derived from preprocessor macro, which is
+// in turn derived from environment variable of the same name.
+#define NSStringize_helper(x) #x
+#define NSStringize(x) @NSStringize_helper(x)
+static NSString * const kLocalSSLHost = NSStringize(HOST_PORT_LOCALSSL);
 
-static NSString * const kLocalSSLHost = @"localhost:5051";
+// The Protocol Buffers encoding overhead of local interop server. Acquired
+// by experiment. Adjust this when server's proto file changes.
+static int32_t kLocalInteropServerOverhead = 10;
 
 /** Tests in InteropTests.m, sending the RPCs to a local SSL server. */
 @interface InteropTestsLocalSSL : InteropTests
@@ -48,7 +56,7 @@ static NSString * const kLocalSSLHost = @"localhost:5051";
 }
 
 - (int32_t)encodingOverhead {
-  return 10; // bytes
+  return kLocalInteropServerOverhead; // bytes
 }
 
 - (void)setUp {

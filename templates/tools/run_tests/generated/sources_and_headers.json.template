@@ -9,7 +9,7 @@
     for f in src:
       name, ext = os.path.splitext(f)
       if ext == '.proto':
-        out.extend(fmt % name for fmt in ['%s.grpc.pb.h', '%s.pb.h'])
+        out.extend(fmt % name for fmt in ['%s.grpc.pb.h', '%s.pb.h', '%s_mock.grpc.pb.h'])
     return out
 
   def all_targets(targets, libs, filegroups):

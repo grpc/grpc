@@ -160,7 +160,7 @@ unsigned int parse_h2_length(const char *field) {
   int port = grpc_pick_unused_port_or_die();
   char *addr;
   gpr_join_host_port(&addr, "127.0.0.1", port);
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
   grpc_channel *client =
       grpc_cronet_secure_channel_create(cronetEngine, addr, NULL, NULL);
@@ -186,6 +186,18 @@ unsigned int parse_h2_length(const char *field) {
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
+
+  int sl = socket(AF_INET, SOCK_STREAM, 0);
+  GPR_ASSERT(sl >= 0);
+
+  // Make an TCP endpoint to accept the connection
+  struct sockaddr_in s_addr;
+  memset(&s_addr, 0, sizeof(s_addr));
+  s_addr.sin_family = AF_INET;
+  s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  s_addr.sin_port = htons(port);
+  GPR_ASSERT(0 == bind(sl, (struct sockaddr *)&s_addr, sizeof(s_addr)));
+  GPR_ASSERT(0 == listen(sl, 5));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -226,17 +238,6 @@ unsigned int parse_h2_length(const char *field) {
 
   dispatch_async(
       dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        int sl = socket(AF_INET, SOCK_STREAM, 0);
-        GPR_ASSERT(sl >= 0);
-
-        // Make and TCP endpoint to accept the connection
-        struct sockaddr_in s_addr;
-        memset(&s_addr, 0, sizeof(s_addr));
-        s_addr.sin_family = AF_INET;
-        s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        s_addr.sin_port = htons(port);
-        GPR_ASSERT(0 == bind(sl, (struct sockaddr *)&s_addr, sizeof(s_addr)));
-        GPR_ASSERT(0 == listen(sl, 5));
         int s = accept(sl, NULL, NULL);
         GPR_ASSERT(s >= 0);
 
@@ -257,7 +258,7 @@ unsigned int parse_h2_length(const char *field) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
 
@@ -294,7 +295,7 @@ unsigned int parse_h2_length(const char *field) {
   int port = grpc_pick_unused_port_or_die();
   char *addr;
   gpr_join_host_port(&addr, "127.0.0.1", port);
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
   grpc_channel *client =
       grpc_cronet_secure_channel_create(cronetEngine, addr, args, NULL);
@@ -324,17 +325,18 @@ unsigned int parse_h2_length(const char *field) {
   __weak XCTestExpectation *expectation =
       [self expectationWithDescription:@"Coalescing"];
 
+  int sl = socket(AF_INET, SOCK_STREAM, 0);
+  GPR_ASSERT(sl >= 0);
+  struct sockaddr_in s_addr;
+  memset(&s_addr, 0, sizeof(s_addr));
+  s_addr.sin_family = AF_INET;
+  s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  s_addr.sin_port = htons(port);
+  GPR_ASSERT(0 == bind(sl, (struct sockaddr *)&s_addr, sizeof(s_addr)));
+  GPR_ASSERT(0 == listen(sl, 5));
+
   dispatch_async(
       dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        int sl = socket(AF_INET, SOCK_STREAM, 0);
-        GPR_ASSERT(sl >= 0);
-        struct sockaddr_in s_addr;
-        memset(&s_addr, 0, sizeof(s_addr));
-        s_addr.sin_family = AF_INET;
-        s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        s_addr.sin_port = htons(port);
-        GPR_ASSERT(0 == bind(sl, (struct sockaddr *)&s_addr, sizeof(s_addr)));
-        GPR_ASSERT(0 == listen(sl, 5));
         int s = accept(sl, NULL, NULL);
         GPR_ASSERT(s >= 0);
         struct timeval tv;
@@ -389,9 +391,6 @@ unsigned int parse_h2_length(const char *field) {
         [expectation fulfill];
       });
 
-  // Guarantees that server is listening to the port before client connects.
-  sleep(1);
-
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -438,7 +437,7 @@ unsigned int parse_h2_length(const char *field) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
 

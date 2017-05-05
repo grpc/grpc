@@ -39,25 +39,33 @@
 typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
 typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
+/* Test feature flags. */
 #define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
 #define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
 #define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING 8
 #define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL 16
 #define FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER 32
+#define FEATURE_MASK_DOES_NOT_SUPPORT_RESOURCE_QUOTA_SERVER 64
+#define FEATURE_MASK_DOES_NOT_SUPPORT_NETWORK_STATUS_CHANGE 128
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
 struct grpc_end2end_test_fixture {
   grpc_completion_queue *cq;
+  grpc_completion_queue *shutdown_cq;
   grpc_server *server;
   grpc_channel *client;
   void *fixture_data;
 };
 
 struct grpc_end2end_test_config {
+  /* A descriptive name for this test fixture. */
   const char *name;
+
+  /* Which features are supported by this fixture. See feature flags above. */
   uint32_t feature_mask;
+
   grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
                                               grpc_channel_args *server_args);
   void (*init_client)(grpc_end2end_test_fixture *f,

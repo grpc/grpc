@@ -36,8 +36,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/ext/client_channel/resolver.h"
-#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -48,28 +48,32 @@ static gpr_mu g_mu;
 static bool g_fail_resolution = true;
 static grpc_combiner *g_combiner;
 
-static grpc_error *my_resolve_address(const char *name, const char *addr,
-                                      grpc_resolved_addresses **addrs) {
+static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
+                               const char *default_port,
+                               grpc_pollset_set *interested_parties,
+                               grpc_closure *on_done,
+                               grpc_resolved_addresses **addrs) {
   gpr_mu_lock(&g_mu);
-  GPR_ASSERT(0 == strcmp("test", name));
+  GPR_ASSERT(0 == strcmp("test", addr));
+  grpc_error *error = GRPC_ERROR_NONE;
   if (g_fail_resolution) {
     g_fail_resolution = false;
     gpr_mu_unlock(&g_mu);
-    return GRPC_ERROR_CREATE("Forced Failure");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
   } else {
     gpr_mu_unlock(&g_mu);
     *addrs = gpr_malloc(sizeof(**addrs));
     (*addrs)->naddrs = 1;
     (*addrs)->addrs = gpr_malloc(sizeof(*(*addrs)->addrs));
     (*addrs)->addrs[0].len = 123;
-    return GRPC_ERROR_NONE;
   }
+  grpc_closure_sched(exec_ctx, on_done, error);
 }
 
 static grpc_resolver *create_resolver(grpc_exec_ctx *exec_ctx,
                                       const char *name) {
   grpc_resolver_factory *factory = grpc_resolver_factory_lookup("dns");
-  grpc_uri *uri = grpc_uri_parse(name, 0);
+  grpc_uri *uri = grpc_uri_parse(exec_ctx, name, 0);
   GPR_ASSERT(uri);
   grpc_resolver_args args;
   memset(&args, 0, sizeof(args));
@@ -135,7 +139,7 @@ int main(int argc, char **argv) {
   grpc_init();
   gpr_mu_init(&g_mu);
   g_combiner = grpc_combiner_create(NULL);
-  grpc_blocking_resolve_address = my_resolve_address;
+  grpc_resolve_address = my_resolve_address;
   grpc_channel_args *result = (grpc_channel_args *)1;
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

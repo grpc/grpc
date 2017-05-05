@@ -37,13 +37,12 @@
 #include <memory>
 #include <vector>
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 #include "grpc/grpc.h"
 #include "grpc/support/log.h"
 
 #include "channel.h"
-
 
 namespace grpc {
 namespace node {
@@ -57,6 +56,8 @@ v8::Local<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
 
 bool CreateMetadataArray(v8::Local<v8::Object> metadata,
                          grpc_metadata_array *array);
+
+void DestroyMetadataArray(grpc_metadata_array *array);
 
 /* Wrapper class for grpc_call structs. */
 class Call : public Nan::ObjectWrap {
@@ -75,6 +76,8 @@ class Call : public Nan::ObjectWrap {
   // Prevent copying
   Call(const Call &);
   Call &operator=(const Call &);
+
+  void DestroyCall();
 
   static NAN_METHOD(New);
   static NAN_METHOD(StartBatch);
@@ -102,6 +105,7 @@ class Op {
   virtual ~Op();
   v8::Local<v8::Value> GetOpType() const;
   virtual bool IsFinalOp() = 0;
+  virtual void OnComplete(bool success) = 0;
 
  protected:
   virtual std::string GetTypeString() const = 0;
@@ -109,20 +113,19 @@ class Op {
 
 typedef std::vector<unique_ptr<Op>> OpVec;
 struct tag {
-  tag(Nan::Callback *callback, OpVec *ops, Call *call);
+  tag(Nan::Callback *callback, OpVec *ops, Call *call,
+      v8::Local<v8::Value> call_value);
   ~tag();
   Nan::Callback *callback;
   OpVec *ops;
   Call *call;
+  Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>>
+      call_persist;
 };
-
-v8::Local<v8::Value> GetTagNodeValue(void *tag);
-
-Nan::Callback *GetTagCallback(void *tag);
 
 void DestroyTag(void *tag);
 
-void CompleteTag(void *tag);
+void CompleteTag(void *tag, const char *error_message);
 
 }  // namespace node
 }  // namespace grpc

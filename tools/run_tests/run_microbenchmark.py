@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -37,6 +37,19 @@ import argparse
 
 import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
+
+_AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
+                              'bm_fullstack_streaming_ping_pong',
+                              'bm_fullstack_streaming_pump',
+                              'bm_closure',
+                              'bm_cq',
+                              'bm_call_create',
+                              'bm_error',
+                              'bm_chttp2_hpack',
+                              'bm_chttp2_transport',
+                              'bm_pollset',
+                              'bm_metadata',
+                              'bm_fullstack_trickle']
 
 flamegraph_dir = os.path.join(os.path.expanduser('~'), 'FlameGraph')
 
@@ -178,13 +191,15 @@ def run_summary(bm_name, cfg, base_json_name):
 
 def collect_summary(bm_name, args):
   heading('Summary: %s [no counters]' % bm_name)
-  text(run_summary(bm_name, 'opt', 'out'))
+  text(run_summary(bm_name, 'opt', bm_name))
   heading('Summary: %s [with counters]' % bm_name)
-  text(run_summary(bm_name, 'counters', 'out'))
+  text(run_summary(bm_name, 'counters', bm_name))
   if args.bigquery_upload:
-    with open('out.csv', 'w') as f:
-      f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.counters.json', 'out.opt.json']))
-    subprocess.check_call(['bq', 'load', 'microbenchmarks.microbenchmarks', 'out.csv'])
+    with open('%s.csv' % bm_name, 'w') as f:
+      f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py',
+                                       '%s.counters.json' % bm_name,
+                                       '%s.opt.json' % bm_name]))
+    subprocess.check_call(['bq', 'load', 'microbenchmarks.microbenchmarks', '%s.csv' % bm_name])
 
 collectors = {
   'latency': collect_latency,
@@ -199,20 +214,11 @@ argp.add_argument('-c', '--collect',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  default=['bm_fullstack',
-                           'bm_closure',
-                           'bm_cq',
-                           'bm_call_create',
-                           'bm_error',
-                           'bm_chttp2_hpack',
-                           'bm_metadata'],
+                  choices=_AVAILABLE_BENCHMARK_TESTS,
+                  default=_AVAILABLE_BENCHMARK_TESTS,
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
-argp.add_argument('--diff_perf',
-                  default=None,
-                  type=str,
-                  help='Diff microbenchmarks against this git revision')
 argp.add_argument('--bigquery_upload',
                   default=False,
                   action='store_const',
@@ -224,30 +230,13 @@ argp.add_argument('--summary_time',
                   help='Minimum time to run benchmarks for the summary collection')
 args = argp.parse_args()
 
-for bm_name in args.benchmarks:
+try:
   for collect in args.collect:
-    collectors[collect](bm_name, args)
-if args.diff_perf:
-  for bm_name in args.benchmarks:
-    run_summary(bm_name, 'opt', '%s.new' % bm_name)
-  where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
-  subprocess.check_call(['git', 'checkout', args.diff_perf])
-  comparables = []
-  subprocess.check_call(['make', 'clean'])
-  try:
     for bm_name in args.benchmarks:
-      try:
-        run_summary(bm_name, 'opt', '%s.old' % bm_name)
-        comparables.append(bm_name)
-      except subprocess.CalledProcessError, e:
-        pass
-  finally:
-    subprocess.check_call(['git', 'checkout', where_am_i])
-  for bm_name in comparables:
-    subprocess.check_call(['third_party/benchmark/tools/compare_bench.py',
-                          '%s.new.opt.json' % bm_name,
-                          '%s.old.opt.json' % bm_name])
-
-index_html += "</body>\n</html>\n"
-with open('reports/index.html', 'w') as f:
-  f.write(index_html)
+      collectors[collect](bm_name, args)
+finally:
+  if not os.path.exists('reports'):
+    os.makedirs('reports')
+  index_html += "</body>\n</html>\n"
+  with open('reports/index.html', 'w') as f:
+    f.write(index_html)

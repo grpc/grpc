@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 # Copyright 2016, Google Inc.
 # All rights reserved.
@@ -29,6 +29,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
+
 import os
 import sys
 
@@ -42,6 +44,13 @@ BANNED_EXCEPT = {
     'grpc_slice_buffer_reset_and_unref(': ['src/core/lib/slice/slice_buffer.c'],
     'grpc_slice_ref(': ['src/core/lib/slice/slice.c'],
     'grpc_slice_unref(': ['src/core/lib/slice/slice.c'],
+    'grpc_error_create(': ['src/core/lib/iomgr/error.c'],
+    'grpc_error_ref(': ['src/core/lib/iomgr/error.c'],
+    'grpc_error_unref(': ['src/core/lib/iomgr/error.c'],
+    'grpc_os_error(': ['src/core/lib/iomgr/error.c'],
+    'grpc_wsa_error(': ['src/core/lib/iomgr/error.c'],
+    'grpc_log_if_error(': ['src/core/lib/iomgr/error.c'],
+    'grpc_slice_malloc(': ['src/core/lib/slice/slice.c'],
 }
 
 errors = 0
@@ -54,7 +63,7 @@ for root, dirs, files in os.walk('src/core'):
     for banned, exceptions in BANNED_EXCEPT.items():
       if path in exceptions: continue
       if banned in text:
-        print 'Illegal use of "%s" in %s' % (banned, path)
+        print('Illegal use of "%s" in %s' % (banned, path))
         errors += 1
 
 assert errors == 0
