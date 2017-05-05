@@ -403,7 +403,7 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   pollset->seen_inactive = true;
 }
 
-static void pollset_destroy(grpc_pollset *pollset) {
+static void pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   gpr_mu_lock(&pollset->mu);
   if (!pollset->seen_inactive) {
     pollset_neighbourhood *neighbourhood = pollset->neighbourhood;

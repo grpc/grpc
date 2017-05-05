@@ -86,7 +86,7 @@ static void init_test_pollsets(test_pollset *pollsets, const int num_pollsets) {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(p);
+  grpc_pollset_destroy(exec_ctx, p);
 }
 
 static void cleanup_test_pollsets(grpc_exec_ctx *exec_ctx,

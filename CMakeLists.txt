@@ -347,6 +347,7 @@ add_custom_target(plugins
 
 add_custom_target(tools_c
   DEPENDS
+  check_epollexclusive
   gen_hpack_tables
   gen_legal_metadata_characters
   gen_percent_encoding_tables
@@ -939,6 +940,7 @@ add_library(grpc
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
@@ -949,6 +951,7 @@ add_library(grpc
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -1269,6 +1272,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
@@ -1279,6 +1283,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -1582,6 +1587,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
@@ -1592,6 +1598,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -1840,6 +1847,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
@@ -1850,6 +1858,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -2263,6 +2272,7 @@ add_library(grpc++
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
@@ -2273,6 +2283,7 @@ add_library(grpc++
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -2590,6 +2601,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
@@ -2600,6 +2612,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -3361,6 +3374,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
@@ -3371,6 +3385,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -5084,6 +5099,42 @@ target_link_libraries(channel_create_test
 )
 
 endif (gRPC_BUILD_TESTS)
+
+add_executable(check_epollexclusive
+  test/build/check_epollexclusive.c
+)
+
+
+target_include_directories(check_epollexclusive
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(check_epollexclusive
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
+)
+
+
+if (gRPC_INSTALL)
+  install(TARGETS check_epollexclusive EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
+
 if (gRPC_BUILD_TESTS)
 
 add_executable(chttp2_hpack_encoder_test

@@ -235,6 +235,21 @@
   {
     "deps": [
       "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "check_epollexclusive", 
+    "src": [
+      "test/build/check_epollexclusive.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
@@ -7751,6 +7766,7 @@
       "src/core/lib/iomgr/error.h", 
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
+      "src/core/lib/iomgr/ev_epollex_linux.h", 
       "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
@@ -7760,6 +7776,7 @@
       "src/core/lib/iomgr/iomgr.h", 
       "src/core/lib/iomgr/iomgr_internal.h", 
       "src/core/lib/iomgr/iomgr_posix.h", 
+      "src/core/lib/iomgr/is_epollexclusive_available.h", 
       "src/core/lib/iomgr/load_file.h", 
       "src/core/lib/iomgr/lockfree_event.h", 
       "src/core/lib/iomgr/network_status_tracker.h", 
@@ -7781,6 +7798,7 @@
       "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_posix.h", 
       "src/core/lib/iomgr/socket_windows.h", 
+      "src/core/lib/iomgr/sys_epoll_wrapper.h", 
       "src/core/lib/iomgr/tcp_client.h", 
       "src/core/lib/iomgr/tcp_client_posix.h", 
       "src/core/lib/iomgr/tcp_posix.h", 
@@ -7895,6 +7913,8 @@
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.c", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
+      "src/core/lib/iomgr/ev_epollex_linux.c", 
+      "src/core/lib/iomgr/ev_epollex_linux.h", 
       "src/core/lib/iomgr/ev_epollsig_linux.c", 
       "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.c", 
@@ -7914,6 +7934,8 @@
       "src/core/lib/iomgr/iomgr_posix.h", 
       "src/core/lib/iomgr/iomgr_uv.c", 
       "src/core/lib/iomgr/iomgr_windows.c", 
+      "src/core/lib/iomgr/is_epollexclusive_available.c", 
+      "src/core/lib/iomgr/is_epollexclusive_available.h", 
       "src/core/lib/iomgr/load_file.c", 
       "src/core/lib/iomgr/load_file.h", 
       "src/core/lib/iomgr/lockfree_event.c", 
@@ -7956,6 +7978,7 @@
       "src/core/lib/iomgr/socket_utils_windows.c", 
       "src/core/lib/iomgr/socket_windows.c", 
       "src/core/lib/iomgr/socket_windows.h", 
+      "src/core/lib/iomgr/sys_epoll_wrapper.h", 
       "src/core/lib/iomgr/tcp_client.h", 
       "src/core/lib/iomgr/tcp_client_posix.c", 
       "src/core/lib/iomgr/tcp_client_posix.h", 

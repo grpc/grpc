@@ -72,7 +72,7 @@ typedef struct {
                       gpr_timespec deadline);
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                    grpc_closure *closure);
-  void (*destroy)(grpc_pollset *pollset);
+  void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset);
 } cq_poller_vtable;
 
 typedef struct non_polling_worker {
@@ -98,7 +98,8 @@ static void non_polling_poller_init(grpc_pollset *pollset, gpr_mu **mu) {
   *mu = &npp->mu;
 }
 
-static void non_polling_poller_destroy(grpc_pollset *pollset) {
+static void non_polling_poller_destroy(grpc_exec_ctx *exec_ctx,
+                                       grpc_pollset *pollset) {
   non_polling_poller *npp = (non_polling_poller *)pollset;
   gpr_mu_destroy(&npp->mu);
 }
@@ -323,20 +324,21 @@ void grpc_cq_internal_ref(grpc_completion_queue *cc) {
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *arg,
                                      grpc_error *error) {
   grpc_completion_queue *cc = arg;
-  GRPC_CQ_INTERNAL_UNREF(cc, "pollset_destroy");
+  GRPC_CQ_INTERNAL_UNREF(exec_ctx, cc, "pollset_destroy");
 }
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
-void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason,
-                            const char *file, int line) {
+void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
+                            const char *reason, const char *file, int line) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p unref %d -> %d %s", cc,
           (int)cc->owning_refs.count, (int)cc->owning_refs.count - 1, reason);
 #else
-void grpc_cq_internal_unref(grpc_completion_queue *cc) {
+void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx,
+                            grpc_completion_queue *cc) {
 #endif
   if (gpr_unref(&cc->owning_refs)) {
     GPR_ASSERT(cc->completed_head.next == (uintptr_t)&cc->completed_head);
-    cc->poller_vtable->destroy(POLLSET_FROM_CQ(cc));
+    cc->poller_vtable->destroy(exec_ctx, POLLSET_FROM_CQ(cc));
 #ifndef NDEBUG
     gpr_free(cc->outstanding_tags);
 #endif
@@ -599,7 +601,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
     is_finished_arg.first_loop = false;
   }
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
-  GRPC_CQ_INTERNAL_UNREF(cc, "next");
+  GRPC_CQ_INTERNAL_UNREF(&exec_ctx, cc, "next");
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(is_finished_arg.stolen_completion == NULL);
 
@@ -782,7 +784,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   }
 done:
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
-  GRPC_CQ_INTERNAL_UNREF(cc, "pluck");
+  GRPC_CQ_INTERNAL_UNREF(&exec_ctx, cc, "pluck");
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(is_finished_arg.stolen_completion == NULL);
 
@@ -819,7 +821,9 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
   GRPC_API_TRACE("grpc_completion_queue_destroy(cc=%p)", 1, (cc));
   GPR_TIMER_BEGIN("grpc_completion_queue_destroy", 0);
   grpc_completion_queue_shutdown(cc);
-  GRPC_CQ_INTERNAL_UNREF(cc, "destroy");
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GRPC_CQ_INTERNAL_UNREF(&exec_ctx, cc, "destroy");
+  grpc_exec_ctx_finish(&exec_ctx);
   GPR_TIMER_END("grpc_completion_queue_destroy", 0);
 }
 

@@ -521,7 +521,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
     }
   }
   if (c->cq) {
-    GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
+    GRPC_CQ_INTERNAL_UNREF(exec_ctx, c->cq, "bind");
   }
 
   get_final_status(call, set_status_value_directly, &c->final_info.final_status,

@@ -72,7 +72,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['epoll1', 'epollsig', 'poll', 'poll-cv']
+  'linux': ['epollex', 'epoll1', 'epollsig', 'poll', 'poll-cv']
 }
 
 
@@ -1427,6 +1427,14 @@ class BuildAndRunError(object):
   POST_TEST = object()
 
 
+def _has_epollexclusive():
+  try:
+    subprocess.check_call('bins/%s/check_epollexclusive' % args.config)
+    return True
+  except subprocess.CalledProcessError, e:
+    return False
+
+
 # returns a list of things that failed (or an empty list on success)
 def _build_and_run(
     check_cancelled, newline_on_success, xml_report=None, build_only=False):
@@ -1443,6 +1451,10 @@ def _build_and_run(
       report_utils.render_junit_xml_report(resultset, xml_report,
                                            suite_name=args.report_suite_name)
     return []
+
+  if not args.travis and not _has_epollexclusive() and 'epollex' in _POLLING_STRATEGIES[platform_string()]:
+    print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
+    _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])
