@@ -126,6 +126,7 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
                                       GRPC_SLICE_LENGTH(elem->value), false);
       add_assoc_zval(array, str_key, inner_array);
     }
+    efree(str_key);
   }
   return array;
 }
@@ -256,8 +257,6 @@ PHP_METHOD(Call, startBatch) {
   object_init(result);
   php_grpc_ulong index;
   zval *recv_status;
-  PHP_GRPC_MAKE_STD_ZVAL(recv_status);
-  object_init(recv_status);
   zval *value;
   zval *inner_value;
   zval *message_value;
@@ -475,6 +474,8 @@ PHP_METHOD(Call, startBatch) {
       }
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
+      PHP_GRPC_MAKE_STD_ZVAL(recv_status);
+      object_init(recv_status);
 #if PHP_MAJOR_VERSION < 7
       array = grpc_parse_metadata_array(&recv_trailing_metadata TSRMLS_CC);
       add_property_zval(recv_status, "metadata", array);
