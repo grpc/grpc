@@ -469,6 +469,8 @@ class SingleBalancerTest : public GrpclbEnd2endTest {
 TEST_F(SingleBalancerTest, Vanilla) {
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts()), 0);
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
   // Start servers and send 100 RPCs per server.
   const auto& statuses_and_responses = SendRpc(kMessage_, 100 * num_backends_);
 

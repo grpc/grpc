@@ -64,19 +64,24 @@ def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
   root = ET.Element('testsuites')
   testsuite = ET.SubElement(root, 'testsuite', id='1', package=suite_package,
                             name=suite_name)
+  failure_count  = 0
+  error_count = 0
   for shortname, results in six.iteritems(resultset):
     for result in results:
       xml_test = ET.SubElement(testsuite, 'testcase', name=shortname)
       if result.elapsed_time:
         xml_test.set('time', str(result.elapsed_time))
-      ET.SubElement(xml_test, 'system-out').text = _filter_msg(result.message,
-                                                               'XML')
+      filtered_msg =  _filter_msg(result.message, 'XML')
       if result.state == 'FAILED':
-        ET.SubElement(xml_test, 'failure', message='Failure')
+        ET.SubElement(xml_test, 'failure', message='Failure').text = filtered_msg
+        failure_count += 1
       elif result.state == 'TIMEOUT':
-        ET.SubElement(xml_test, 'error', message='Timeout')
+        ET.SubElement(xml_test, 'error', message='Timeout').text = filtered_msg
+        error_count += 1
       elif result.state == 'SKIPPED':
         ET.SubElement(xml_test, 'skipped', message='Skipped')
+  testsuite.set('failures', str(failure_count))
+  testsuite.set('errors', str(error_count))
   # ensure the report directory exists
   report_dir = os.path.dirname(os.path.abspath(xml_report))
   if not os.path.exists(report_dir):

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,45 +31,65 @@
  *
  */
 
-#ifndef GRPC_UV
-
-#include "server.h"
-
-#include <nan.h>
+#include <grpc/grpc.h>
 #include <node.h>
-#include "grpc/grpc.h"
-#include "grpc/support/time.h"
+#include <uv.h>
+#include <v8.h>
+
+#include "call.h"
+#include "completion_queue.h"
 
 namespace grpc {
 namespace node {
 
-Server::Server(grpc_server *server) : wrapped_server(server) {
-  grpc_completion_queue_attributes attrs = {
-      GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_NON_LISTENING};
-  shutdown_queue = grpc_completion_queue_create(
-      grpc_completion_queue_factory_lookup(&attrs), &attrs, NULL);
-  grpc_server_register_completion_queue(server, shutdown_queue, NULL);
+using v8::Local;
+using v8::Object;
+using v8::Value;
+
+grpc_completion_queue *queue;
+uv_prepare_t prepare;
+int pending_batches;
+
+void drain_completion_queue(uv_prepare_t *handle) {
+  Nan::HandleScope scope;
+  grpc_event event;
+  (void)handle;
+  do {
+    event = grpc_completion_queue_next(queue, gpr_inf_past(GPR_CLOCK_MONOTONIC),
+                                       NULL);
+
+    if (event.type == GRPC_OP_COMPLETE) {
+      const char *error_message;
+      if (event.success) {
+        error_message = NULL;
+      } else {
+        error_message = "The async function encountered an error";
+      }
+      CompleteTag(event.tag, error_message);
+      grpc::node::DestroyTag(event.tag);
+      pending_batches--;
+      if (pending_batches == 0) {
+        uv_prepare_stop(&prepare);
+      }
+    }
+  } while (event.type != GRPC_QUEUE_TIMEOUT);
 }
 
-Server::~Server() {
-  this->ShutdownServer();
-  grpc_completion_queue_shutdown(this->shutdown_queue);
-  grpc_completion_queue_destroy(this->shutdown_queue);
-}
+grpc_completion_queue *GetCompletionQueue() { return queue; }
 
-void Server::ShutdownServer() {
-  if (this->wrapped_server != NULL) {
-    grpc_server_shutdown_and_notify(this->wrapped_server, this->shutdown_queue,
-                                    NULL);
-    grpc_server_cancel_all_calls(this->wrapped_server);
-    grpc_completion_queue_pluck(this->shutdown_queue, NULL,
-                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-    grpc_server_destroy(this->wrapped_server);
-    this->wrapped_server = NULL;
+void CompletionQueueNext() {
+  if (pending_batches == 0) {
+    GPR_ASSERT(!uv_is_active((uv_handle_t *)&prepare));
+    uv_prepare_start(&prepare, drain_completion_queue);
   }
+  pending_batches++;
 }
 
-}  // namespace grpc
-}  // namespace node
+void CompletionQueueInit(Local<Object> exports) {
+  queue = grpc_completion_queue_create_for_next(NULL);
+  uv_prepare_init(uv_default_loop(), &prepare);
+  pending_batches = 0;
+}
 
-#endif /* GRPC_UV */
+}  // namespace node
+}  // namespace grpc

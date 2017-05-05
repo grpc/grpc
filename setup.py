@@ -144,6 +144,8 @@ CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 CYTHON_HELPER_C_FILES = ()
 
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
+if "win32" in sys.platform and "64bit" in platform.architecture()[0]:
+  CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE +
@@ -163,7 +165,9 @@ DEFINE_MACROS = (
 if "win32" in sys.platform:
   DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1), ('CARES_STATICLIB', 1),)
   if '64bit' in platform.architecture()[0]:
-    DEFINE_MACROS += (('MS_WIN64', 1),)
+    # TODO(zyc): Re-enble c-ares on x64 windows after fixing the
+    # ares_library_init compilation issue
+    DEFINE_MACROS += (('MS_WIN64', 1), ('GRPC_ARES', 0),)
   elif sys.version_info >= (3, 5):
     # For some reason, this is needed to get access to inet_pton/inet_ntop
     # on msvc, but only for 32 bits
