@@ -257,7 +257,6 @@ static void verify_matches(expectation *e, grpc_event *ev) {
   }
 }
 
-
 void cq_verify(cq_verifier *v) { cq_verify_custom(v, 10); }
 
 void cq_verify_custom(cq_verifier *v, int custom_timeout) {
