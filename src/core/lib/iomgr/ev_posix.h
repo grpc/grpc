@@ -41,8 +41,9 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/workqueue.h"
+#include "src/core/lib/debug/trace.h"
 
-extern int grpc_polling_trace; /* Disabled by default */
+extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
 
 typedef struct grpc_fd grpc_fd;
 

@@ -51,7 +51,7 @@
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
-int grpc_polling_trace = 0; /* Disabled by default */
+grpc_tracer_flag grpc_polling_trace = GRPC_TRACER_INITIALIZER(false); /* Disabled by default */
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */

@@ -63,12 +63,8 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
 
-/* TODO: sreek: Right now, this wakes up all pollers. In future we should make
- * sure to wake up one polling thread (which can wake up other threads if
- * needed) */
 static grpc_wakeup_fd global_wakeup_fd;
 static int g_epfd;
-static gpr_atm g_timer_kick;
 
 /*******************************************************************************
  * Fd Declarations
@@ -512,9 +508,6 @@ static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   for (int i = 0; i < r; i++) {
     void *data_ptr = events[i].data.ptr;
     if (data_ptr == &global_wakeup_fd) {
-      if (gpr_atm_no_barrier_cas(&g_timer_kick, 1, 0)) {
-        grpc_timer_consume_kick();
-      }
       gpr_mu_lock(&g_wq_mu);
       grpc_closure_list_move(&g_wq_items, &exec_ctx->closure_list);
       gpr_mu_unlock(&g_wq_mu);
@@ -799,11 +792,6 @@ static grpc_error *pollset_kick(grpc_pollset *pollset,
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {}
 
-static grpc_error *kick_poller(void) {
-  gpr_atm_no_barrier_store(&g_timer_kick, 1);
-  return grpc_wakeup_fd_wakeup(&global_wakeup_fd);
-}
-
 /*******************************************************************************
  * Workqueue Definitions
  */
@@ -950,8 +938,6 @@ static const grpc_event_engine_vtable vtable = {
     .pollset_set_del_pollset_set = pollset_set_del_pollset_set,
     .pollset_set_add_fd = pollset_set_add_fd,
     .pollset_set_del_fd = pollset_set_del_fd,
-
-    .kick_poller = kick_poller,
 
     .workqueue_ref = workqueue_ref,
     .workqueue_unref = workqueue_unref,

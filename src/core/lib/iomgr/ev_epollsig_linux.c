@@ -65,9 +65,8 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
-/* TODO: sreek - Move this to init.c and initialize this like other tracers. */
 #define GRPC_POLLING_TRACE(fmt, ...)       \
-  if (grpc_polling_trace) {                \
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {                \
     gpr_log(GPR_INFO, (fmt), __VA_ARGS__); \
   }
 
