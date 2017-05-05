@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_TIMER_MANAGER_H
-#define GRPC_CORE_IOMGR_TIMER_MANAGER_H
+#ifndef GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H
+#define GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H
 
 #include <stdbool.h>
 
@@ -49,4 +49,4 @@ void grpc_timer_manager_set_threading(bool enabled);
  * disabled */
 void grpc_timer_manager_tick(void);
 
-#endif
+#endif /* GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H */
