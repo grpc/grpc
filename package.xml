@@ -246,6 +246,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/udp_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.h" role="src" />
@@ -460,6 +461,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_manager.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/udp_server.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.c" role="src" />

@@ -1167,6 +1167,8 @@ src/core/lib/iomgr/timer_generic.c \
 src/core/lib/iomgr/timer_generic.h \
 src/core/lib/iomgr/timer_heap.c \
 src/core/lib/iomgr/timer_heap.h \
+src/core/lib/iomgr/timer_manager.c \
+src/core/lib/iomgr/timer_manager.h \
 src/core/lib/iomgr/timer_uv.c \
 src/core/lib/iomgr/timer_uv.h \
 src/core/lib/iomgr/udp_server.c \

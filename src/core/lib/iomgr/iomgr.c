@@ -47,6 +47,7 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 
@@ -65,6 +66,10 @@ void grpc_iomgr_init(void) {
   g_root_object.name = "root";
   grpc_network_status_init();
   grpc_iomgr_platform_init();
+}
+
+void grpc_iomgr_start(void) {
+  grpc_timer_manager_init();
 }
 
 static size_t count_objects(void) {
@@ -88,6 +93,7 @@ void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx) {
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
 
+  grpc_timer_manager_shutdown();
   grpc_iomgr_platform_flush();
 
   gpr_mu_lock(&g_mu);

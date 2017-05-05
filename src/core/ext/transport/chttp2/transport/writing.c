@@ -74,7 +74,8 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   }
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
     /* ping already in-flight: wait */
-    if (grpc_http_trace || grpc_bdp_estimator_trace) {
+    if (GRPC_TRACER_ON(grpc_http_trace) ||
+        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_DEBUG, "Ping delayed [%p]: already pinging", t->peer_string);
     }
     return;
@@ -82,7 +83,8 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   if (t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
     /* need to send something of substance before sending a ping again */
-    if (grpc_http_trace || grpc_bdp_estimator_trace) {
+    if (GRPC_TRACER_ON(grpc_http_trace) ||
+        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_DEBUG, "Ping delayed [%p]: too many recent pings: %d/%d",
               t->peer_string, t->ping_state.pings_before_data_required,
               t->ping_policy.max_pings_without_data);
@@ -96,7 +98,8 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
           (int)t->ping_policy.min_time_between_pings.tv_nsec);*/
   if (gpr_time_cmp(elapsed, t->ping_policy.min_time_between_pings) < 0) {
     /* not enough elapsed time between successive pings */
-    if (grpc_http_trace || grpc_bdp_estimator_trace) {
+    if (GRPC_TRACER_ON(grpc_http_trace) ||
+        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_DEBUG,
               "Ping delayed [%p]: not enough time elapsed since last ping",
               t->peer_string);

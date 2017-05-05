@@ -76,11 +76,6 @@ static int grpc_polling_trace = 0; /* Disabled by default */
 static int grpc_wakeup_signal = -1;
 static bool is_grpc_wakeup_signal_initialized = false;
 
-/* TODO: sreek: Right now, this wakes up all pollers. In future we should make
- * sure to wake up one polling thread (which can wake up other threads if
- * needed) */
-static grpc_wakeup_fd global_wakeup_fd;
-
 /* Implements the function defined in grpc_posix.h. This function might be
  * called before even calling grpc_init() to set either a different signal to
  * use. If signum == -1, then the use of signals is disabled */
@@ -454,8 +449,8 @@ static void polling_island_add_wakeup_fd_locked(polling_island *pi,
     gpr_asprintf(&err_msg,
                  "epoll_ctl (epoll_fd: %d) add wakeup fd: %d failed with "
                  "error: %d (%s)",
-                 pi->epoll_fd, GRPC_WAKEUP_FD_GET_READ_FD(&global_wakeup_fd),
-                 errno, strerror(errno));
+                 pi->epoll_fd, GRPC_WAKEUP_FD_GET_READ_FD(wakeup_fd), errno,
+                 strerror(errno));
     append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
     gpr_free(err_msg);
   }
@@ -558,7 +553,6 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
     goto done;
   }
 
-  polling_island_add_wakeup_fd_locked(pi, &global_wakeup_fd, error);
   polling_island_add_wakeup_fd_locked(pi, &pi->workqueue_wakeup_fd, error);
 
   if (initial_fd != NULL) {
@@ -1116,11 +1110,10 @@ static grpc_error *pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_pollset);
   gpr_tls_init(&g_current_thread_worker);
   poller_kick_init();
-  return grpc_wakeup_fd_init(&global_wakeup_fd);
+  return GRPC_ERROR_NONE;
 }
 
 static void pollset_global_shutdown(void) {
-  grpc_wakeup_fd_destroy(&global_wakeup_fd);
   gpr_tls_destroy(&g_current_thread_pollset);
   gpr_tls_destroy(&g_current_thread_worker);
 }
@@ -1224,10 +1217,6 @@ static grpc_error *pollset_kick(grpc_pollset *p,
   GPR_TIMER_END("pollset_kick", 0);
   GRPC_LOG_IF_ERROR("pollset_kick", GRPC_ERROR_REF(error));
   return error;
-}
-
-static grpc_error *kick_poller(void) {
-  return grpc_wakeup_fd_wakeup(&global_wakeup_fd);
 }
 
 static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
@@ -1453,11 +1442,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
 
     for (int i = 0; i < ep_rv; ++i) {
       void *data_ptr = ep_ev[i].data.ptr;
-      if (data_ptr == &global_wakeup_fd) {
-        grpc_timer_consume_kick();
-        append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
-                     err_desc);
-      } else if (data_ptr == &pi->workqueue_wakeup_fd) {
+      if (data_ptr == &pi->workqueue_wakeup_fd) {
         append_error(error,
                      grpc_wakeup_fd_consume_wakeup(&pi->workqueue_wakeup_fd),
                      err_desc);
@@ -1896,8 +1881,6 @@ static const grpc_event_engine_vtable vtable = {
     .pollset_set_del_pollset_set = pollset_set_del_pollset_set,
     .pollset_set_add_fd = pollset_set_add_fd,
     .pollset_set_del_fd = pollset_set_del_fd,
-
-    .kick_poller = kick_poller,
 
     .workqueue_ref = workqueue_ref,
     .workqueue_unref = workqueue_unref,
