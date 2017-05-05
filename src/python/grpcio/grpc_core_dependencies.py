@@ -204,6 +204,7 @@ CORE_SOURCE_FILES = [
   'src/core/ext/transport/chttp2/transport/huffsyms.c',
   'src/core/ext/transport/chttp2/transport/incoming_metadata.c',
   'src/core/ext/transport/chttp2/transport/parsing.c',
+  'src/core/ext/transport/chttp2/transport/stream_compression.c',
   'src/core/ext/transport/chttp2/transport/stream_lists.c',
   'src/core/ext/transport/chttp2/transport/stream_map.c',
   'src/core/ext/transport/chttp2/transport/varint.c',

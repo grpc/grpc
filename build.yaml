@@ -738,6 +738,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/stream_compression.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   src:
@@ -758,6 +759,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/huffsyms.c
   - src/core/ext/transport/chttp2/transport/incoming_metadata.c
   - src/core/ext/transport/chttp2/transport/parsing.c
+  - src/core/ext/transport/chttp2/transport/stream_compression.c
   - src/core/ext/transport/chttp2/transport/stream_lists.c
   - src/core/ext/transport/chttp2/transport/stream_map.c
   - src/core/ext/transport/chttp2/transport/varint.c
@@ -2982,6 +2984,16 @@ targets:
   language: c
   src:
   - test/core/transport/status_conversion_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: stream_compression_test
+  build: test
+  language: c
+  src:
+  - test/core/compression/stream_compression_test.c
   deps:
   - grpc_test_util
   - grpc

@@ -2158,6 +2158,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "stream_compression_test", 
+    "src": [
+      "test/core/compression/stream_compression_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "stream_owned_slice_test", 
     "src": [
       "test/core/transport/stream_owned_slice_test.c"
@@ -8547,6 +8564,7 @@
       "src/core/ext/transport/chttp2/transport/huffsyms.h", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
       "src/core/ext/transport/chttp2/transport/internal.h", 
+      "src/core/ext/transport/chttp2/transport/stream_compression.h", 
       "src/core/ext/transport/chttp2/transport/stream_map.h", 
       "src/core/ext/transport/chttp2/transport/varint.h"
     ], 
@@ -8588,6 +8606,8 @@
       "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
       "src/core/ext/transport/chttp2/transport/internal.h", 
       "src/core/ext/transport/chttp2/transport/parsing.c", 
+      "src/core/ext/transport/chttp2/transport/stream_compression.c", 
+      "src/core/ext/transport/chttp2/transport/stream_compression.h", 
       "src/core/ext/transport/chttp2/transport/stream_lists.c", 
       "src/core/ext/transport/chttp2/transport/stream_map.c", 
       "src/core/ext/transport/chttp2/transport/stream_map.h", 
