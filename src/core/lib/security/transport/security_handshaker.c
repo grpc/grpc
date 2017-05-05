@@ -233,13 +233,14 @@ static grpc_error *on_handshake_next_done_locked(
   // Send data to peer.
   grpc_slice to_send = grpc_slice_from_copied_buffer(
       (const char *)bytes_to_send, bytes_to_send_size);
-  grpc_slice_buffer_reset_and_unref(&h->outgoing);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &h->outgoing);
   grpc_slice_buffer_add(&h->outgoing, to_send);
   grpc_endpoint_write(exec_ctx, h->args->endpoint, &h->outgoing,
                       &h->on_handshake_data_sent_to_peer);
 
   // If handshake has completed, check peer and so on.
   if (handshaker_result != NULL) {
+    GPR_ASSERT(h->handshaker_result == NULL);
     h->handshaker_result = handshaker_result;
     error = check_peer_locked(exec_ctx, h);
   }
@@ -301,7 +302,7 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
     security_handshaker_unref(exec_ctx, h);
     return;
   }
-  // Copy all slides received.
+  // Copy all slices received.
   size_t i;
   size_t bytes_received_size = 0;
   for (i = 0; i < h->args->read_buffer->count; i++) {
