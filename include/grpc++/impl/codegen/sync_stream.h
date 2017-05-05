@@ -50,16 +50,28 @@ class ClientStreamingInterface {
  public:
   virtual ~ClientStreamingInterface() {}
 
-  /// Wait until the stream finishes, and return the final status. When the
-  /// client side declares it has no more message to send, either implicitly or
-  /// by calling \a WritesDone(), it needs to make sure there is no more message
-  /// to be received from the server, either implicitly or by getting a false
-  /// from a \a Read().
+  /// Block waiting until the stream finishes and a final status of the call is
+  /// available.
+  ///
+  /// It is appropriate to call this method when both:
+  ///   * the calling code (client-side) has no more message to send (this can be declared implicitly
+  ///     by calling this method, or explicitly through an earlier call to \a
+  ///     WritesDone.
+  ///   * there are no more messages to be received from the server (which can
+  ///     be known implicitly, or explicitly from an earlier call to \a Read that
+  ///     returned "false"
   ///
   /// This function will return either:
   /// - when all incoming messages have been read and the server has returned
   ///   status.
-  /// - OR when the server has returned a non-OK status.
+  /// - when the server has returned a non-OK status.
+  /// - OR when the call failed for some reason and the library generated a
+  ///   status.
+  ///
+  /// Return values:
+  ///   - \a Status contains the status code, message and details for the call
+  ///   - the \a ClientContext associated with this call is updated with
+  ///     possible trailing metadata sent from the server.
   virtual Status Finish() = 0;
 };
 
@@ -68,7 +80,12 @@ class ServerStreamingInterface {
  public:
   virtual ~ServerStreamingInterface() {}
 
-  /// Blocking send initial metadata to client.
+  /// Block to send initial metadata to client.
+  /// This call is optional, but if it is used, it cannot be used concurrently
+  /// with or after the \a Finish method.
+  ///
+  /// The initial metadata that will be sent to the client will be
+  /// taken from the \a ServerContext associated with the call.
   virtual void SendInitialMetadata() = 0;
 };
 
@@ -78,10 +95,10 @@ class ReaderInterface {
  public:
   virtual ~ReaderInterface() {}
 
-  /// Upper bound on the next message size available for reading on this stream
+  /// Get an upper bound on the next message size available for reading on this stream.
   virtual bool NextMessageSize(uint32_t* sz) = 0;
 
-  /// Blocking read a message and parse to \a msg. Returns \a true on success.
+  /// Block to read a message and parse to \a msg. Returns \a true on success.
   /// This is thread-safe with respect to \a Write or \WritesDone methods on
   /// the same stream. It should not be called concurrently with another \a
   /// Read on the same stream as the order of delivery will not be defined.
@@ -100,7 +117,7 @@ class WriterInterface {
  public:
   virtual ~WriterInterface() {}
 
-  /// Blocking write \a msg to the stream with WriteOptions \a options.
+  /// Block to write \a msg to the stream with WriteOptions \a options.
   /// This is thread-safe with respect to \a Read
   ///
   /// \param msg The message to be written to the stream.
@@ -109,7 +126,7 @@ class WriterInterface {
   /// \return \a true on success, \a false when the stream has been closed.
   virtual bool Write(const W& msg, WriteOptions options) = 0;
 
-  /// Blocking write \a msg to the stream with default write options.
+  /// Block to write \a msg to the stream with default write options.
   /// This is thread-safe with respect to \a Read
   ///
   /// \param msg The message to be written to the stream.
@@ -141,17 +158,21 @@ template <class R>
 class ClientReaderInterface : public ClientStreamingInterface,
                               public ReaderInterface<R> {
  public:
-  /// Blocking wait for initial metadata from server. The received metadata
+  /// Block to wait for initial metadata from server. The received metadata
   /// can only be accessed after this call returns. Should only be called before
   /// the first read. Calling this method is optional, and if it is not called
   /// the metadata will be available in ClientContext after the first read.
   virtual void WaitForInitialMetadata() = 0;
 };
 
+/// Synchronous (blocking) client-side API for doing server-streaming RPCs, where the
+/// stream of messages coming from the server has messages of type \a R.
 template <class R>
 class ClientReader final : public ClientReaderInterface<R> {
  public:
-  /// Blocking create a stream and write the first request out.
+  /// Block to create a stream and write the initial metadata and \a request out.
+  /// Note that \a context will be used to fill in custom initial metadata
+  /// used to send to the server when starting the call.
   template <class W>
   ClientReader(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, const W& request)
@@ -172,6 +193,13 @@ class ClientReader final : public ClientReaderInterface<R> {
     cq_.Pluck(&ops);
   }
 
+  /// See the \a ClientStreamingInterface.WaitForInitialMetadata method for
+  /// semantics.
+  ///
+  //  Side effect:
+  ///   Once complete, the initial metadata read from
+  ///   the server will be accessable through the \a ClientContext used to
+  ///   construct this object.
   void WaitForInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
@@ -181,11 +209,17 @@ class ClientReader final : public ClientReaderInterface<R> {
     cq_.Pluck(&ops);  /// status ignored
   }
 
+  /// See the \a ReaderInterface.NextMessageSize for semantics.
   bool NextMessageSize(uint32_t* sz) override {
     *sz = call_.max_receive_message_size();
     return true;
   }
 
+  /// See the \a ReaderInterface.Read method for semantics.
+  /// Side effect:
+  ///   this also receives initial metadata from the server, if not
+  ///   already received (if initial metadata is received, it can be then accessed
+  ///   through the \a ClientContext associated with this call).
   bool Read(R* msg) override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
     if (!context_->initial_metadata_received_) {
@@ -196,6 +230,11 @@ class ClientReader final : public ClientReaderInterface<R> {
     return cq_.Pluck(&ops) && ops.got_message;
   }
 
+  /// See the \a ClientStreamingInterface.Finish method for semantics.
+  ///
+  /// Side effect:
+  ///   - the \a ClientContext associated with this call is updated with
+  ///     possible metadata received from the server.
   Status Finish() override {
     CallOpSet<CallOpClientRecvStatus> ops;
     Status status;
@@ -211,23 +250,30 @@ class ClientReader final : public ClientReaderInterface<R> {
   Call call_;
 };
 
-/// Client-side interface for streaming writes of message of type \a W.
+/// Client-side interface for streaming writes of message type \a W.
 template <class W>
 class ClientWriterInterface : public ClientStreamingInterface,
                               public WriterInterface<W> {
  public:
-  /// Half close writing from the client.
-  /// Block until currently-pending writes are completed.
+  /// Half close writing from the client. (signal that the stream of messages
+  /// coming from the clinet is complete).
+  /// Blocks until currently-pending writes are completed.
   /// Thread safe with respect to \a Read operations only
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
 };
 
+/// Synchronous (blocking) client-side API for doing client-streaming RPCs,
+/// where the outgoing message stream coming from the client has messages of type \a W.
 template <class W>
 class ClientWriter : public ClientWriterInterface<W> {
  public:
-  /// Blocking create a stream.
+  /// Block to create a stream (i.e. send request headers and other initial metadata to the server).
+  /// Note that \a context will be used to fill in custom initial metadata.
+  /// \a response will be filled in with the single expected response
+  /// message from the server upon a successful call to the \a Finish
+  /// method of this instance.
   template <class R>
   ClientWriter(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, R* response)
@@ -248,6 +294,13 @@ class ClientWriter : public ClientWriterInterface<W> {
     }
   }
 
+  /// See the \a ClientStreamingInterface.WaitForInitialMetadata method for
+  /// semantics.
+  ///
+  //  Side effect:
+  ///   Once complete, the initial metadata read from
+  ///   the server will be accessable through the \a ClientContext used to
+  ///   construct this object.
   void WaitForInitialMetadata() {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
@@ -257,6 +310,12 @@ class ClientWriter : public ClientWriterInterface<W> {
     cq_.Pluck(&ops);  // status ignored
   }
 
+  /// See the WriterInterface.Write(const W& msg, WriteOptions options) method
+  /// for semantics.
+  ///
+  /// Side effect:
+  ///   Also sends initial metadata if not already sent (using the \a ClientContext
+  ///   associated with this call).
   using WriterInterface<W>::Write;
   bool Write(const W& msg, WriteOptions options) override {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
@@ -280,6 +339,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     return cq_.Pluck(&ops);
   }
 
+  /// See the \a ClientWriterInterface.WritesDone method for semantics.
   bool WritesDone() override {
     CallOpSet<CallOpClientSendClose> ops;
     ops.ClientSendClose();
@@ -287,7 +347,11 @@ class ClientWriter : public ClientWriterInterface<W> {
     return cq_.Pluck(&ops);
   }
 
-  /// Read the final response and wait for the final status.
+  /// See the ClientStreamingInterface.Finish method for semantics.
+  /// Side effects:
+  ///   - Also receives initial metadata if not already received.
+  ///   - Attempts to fill in the \a response parameter passed to the constructor
+  ///     of this instance with the response message from the server.
   Status Finish() override {
     Status status;
     if (!context_->initial_metadata_received_) {
@@ -308,29 +372,39 @@ class ClientWriter : public ClientWriterInterface<W> {
   Call call_;
 };
 
-/// Client-side interface for bi-directional streaming.
+/// Client-side interface for bi-directional streaming with
+/// client-to-server stream messages of type \a W and
+/// server-to-client stream messages of type \a R.
 template <class W, class R>
 class ClientReaderWriterInterface : public ClientStreamingInterface,
                                     public WriterInterface<W>,
                                     public ReaderInterface<R> {
  public:
-  /// Blocking wait for initial metadata from server. The received metadata
+  /// Block to wait for initial metadata from server. The received metadata
   /// can only be accessed after this call returns. Should only be called before
   /// the first read. Calling this method is optional, and if it is not called
   /// the metadata will be available in ClientContext after the first read.
   virtual void WaitForInitialMetadata() = 0;
 
-  /// Block until currently-pending writes are completed.
+  /// Half close writing from the client. (signal that the stream of messages
+  /// coming from the clinet is complete).
+  /// Blocks until currently-pending writes are completed.
   /// Thread-safe with respect to \a Read
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
 };
 
+/// Synchronous (blocking) client-side API for bi-directional streaming RPCs, where the
+/// outgoing message stream coming from the client has messages of type \a W,
+/// and the incoming messages stream coming from the server has messages of type
+/// \a R.
 template <class W, class R>
 class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
  public:
-  /// Blocking create a stream.
+  /// Block to create a stream and write the initial metadata and \a request out.
+  /// Note that \a context will be used to fill in custom initial metadata
+  /// used to send to the server when starting the call.
   ClientReaderWriter(ChannelInterface* channel, const RpcMethod& method,
                      ClientContext* context)
       : context_(context),
@@ -347,6 +421,13 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     }
   }
 
+  /// Block waiting to read initial metadata from the server.
+  /// This call is optional, but if it is used, it cannot be used concurrently
+  /// with or after the \a Finish method.
+  ///
+  /// Once complete, the initial metadata read from
+  /// the server will be accessable through the \a ClientContext used to
+  /// construct this object.
   void WaitForInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
@@ -361,6 +442,10 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     return true;
   }
 
+  /// See the \a ReaderInterface.Read method for semantics.
+  /// Side effect:
+  ///   Also receives initial metadata if not already received (updates the \a
+  ///   ClientContext associated with this call in that case).
   bool Read(R* msg) override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
     if (!context_->initial_metadata_received_) {
@@ -371,6 +456,11 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     return cq_.Pluck(&ops) && ops.got_message;
   }
 
+  /// See the \a WriterInterface.Write method for semantics.
+  ///
+  /// Side effect:
+  ///   Also sends initial metadata if not already sent (using the
+  ///   \a ClientContext associated with this call to fill in values).
   using WriterInterface<W>::Write;
   bool Write(const W& msg, WriteOptions options) override {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
@@ -394,6 +484,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     return cq_.Pluck(&ops);
   }
 
+  /// See the ClientWriterInterface.WritesDone method for semantics.
   bool WritesDone() override {
     CallOpSet<CallOpClientSendClose> ops;
     ops.ClientSendClose();
@@ -401,6 +492,11 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     return cq_.Pluck(&ops);
   }
 
+  /// See the ClientStreamingInterface.Finish method for semantics.
+  ///
+  /// Side effect:
+  ///   - the \a ClientContext associated with this call is updated with
+  ///     possible trailing metadata sent from the server.
   Status Finish() override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> ops;
     if (!context_->initial_metadata_received_) {
@@ -424,11 +520,18 @@ template <class R>
 class ServerReaderInterface : public ServerStreamingInterface,
                               public ReaderInterface<R> {};
 
+/// Synchronous (blocking) server-side API for doing client-streaming RPCs,
+/// where the incoming message stream coming from the client has messages of
+/// type \a R.
 template <class R>
 class ServerReader final : public ServerReaderInterface<R> {
  public:
   ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
+  /// See the \a ServerStreamingInterface.SendInitialMetadata method
+  /// for semantics.
+  /// Note that initial metadata will be affected by the
+  /// \a ServerContext associated with this call.
   void SendInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
@@ -443,11 +546,13 @@ class ServerReader final : public ServerReaderInterface<R> {
     call_->cq()->Pluck(&ops);
   }
 
+  /// See the \a ReaderInterface.NextMessageSize method.
   bool NextMessageSize(uint32_t* sz) override {
     *sz = call_->max_receive_message_size();
     return true;
   }
 
+  /// See the \a ReaderInterface.Read method for semantics.
   bool Read(R* msg) override {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
@@ -465,11 +570,18 @@ template <class W>
 class ServerWriterInterface : public ServerStreamingInterface,
                               public WriterInterface<W> {};
 
+/// Synchronous (blocking) server-side API for doing for doing a
+/// server-streaming RPCs, where the outgoing message stream coming from the
+/// server has messages of type \a W.
 template <class W>
 class ServerWriter final : public ServerWriterInterface<W> {
  public:
   ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
+  /// See the \a ServerStreamingInterface.SendInitialMetadata method
+  /// for semantics.
+  /// Note that initial metadata will be affected by the
+  /// \a ServerContext associated with this call.
   void SendInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
@@ -484,6 +596,11 @@ class ServerWriter final : public ServerWriterInterface<W> {
     call_->cq()->Pluck(&ops);
   }
 
+  /// See the \a WriterInterface.Write method for semantics.
+  ///
+  /// Side effect:
+  ///   Also sends initial metadata if not already sent (using the
+  ///   \a ClientContext associated with this call to fill in values).
   using WriterInterface<W>::Write;
   bool Write(const W& msg, WriteOptions options) override {
     if (options.is_last_message()) {
@@ -576,20 +693,32 @@ class ServerReaderWriterBody final {
 };
 }  // namespace internal
 
-/// class to represent the user API for a bidirectional streaming call
+/// Synchronous (blocking) server-side API for a bidirectional
+/// streaming call, where the incoming message stream coming from the client has messages of
+/// type \a R, and the outgoing message streaming coming from the server has messages of type \a W.
 template <class W, class R>
 class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
  public:
   ServerReaderWriter(Call* call, ServerContext* ctx) : body_(call, ctx) {}
 
+  /// See the \a ServerStreamingInterface.SendInitialMetadata method
+  /// for semantics.
+  /// Note that initial metadata will be affected by the
+  /// \a ServerContext associated with this call.
   void SendInitialMetadata() override { body_.SendInitialMetadata(); }
 
+  /// See the \a ReaderInterface.NextMessageSize method for semantics
   bool NextMessageSize(uint32_t* sz) override {
     return body_.NextMessageSize(sz);
   }
 
+  /// See the \a ReaderInterface.Read method for semantics
   bool Read(R* msg) override { return body_.Read(msg); }
 
+  /// See the \a WriterInterface.Write(const W& msg, WriteOptions options) method for semantics.
+  /// Side effect:
+  ///   Also sends initial metadata if not already sent (using the \a
+  ///   ServerContext associated with this call).
   using WriterInterface<W>::Write;
   bool Write(const W& msg, WriteOptions options) override {
     return body_.Write(msg, options);
@@ -615,12 +744,27 @@ class ServerUnaryStreamer final
   ServerUnaryStreamer(Call* call, ServerContext* ctx)
       : body_(call, ctx), read_done_(false), write_done_(false) {}
 
+  /// Block to send initial metadata to client.
+  /// Implicit input parameter:
+  ///    - the \a ServerContext associated with this call will be used for
+  ///      sending initial metadata.
   void SendInitialMetadata() override { body_.SendInitialMetadata(); }
 
+  /// Get an upper bound on the request message size from the client.
   bool NextMessageSize(uint32_t* sz) override {
     return body_.NextMessageSize(sz);
   }
 
+  /// Read a message of type \a R into \a msg. Completion will be notified by \a
+  /// tag on the associated completion queue.
+  /// This is thread-safe with respect to \a Write or \a WritesDone methods. It
+  /// should not be called concurrently with other streaming APIs
+  /// on the same stream. It is not meaningful to call it concurrently
+  /// with another \a Read on the same stream since reads on the same stream
+  /// are delivered in order.
+  ///
+  /// \param[out] msg Where to eventually store the read message.
+  /// \param[in] tag The tag identifying the operation.
   bool Read(RequestType* request) override {
     if (read_done_) {
       return false;
@@ -629,6 +773,13 @@ class ServerUnaryStreamer final
     return body_.Read(request);
   }
 
+  /// Block to write \a msg to the stream with WriteOptions \a options.
+  /// This is thread-safe with respect to \a Read
+  ///
+  /// \param msg The message to be written to the stream.
+  /// \param options The WriteOptions affecting the write operation.
+  ///
+  /// \return \a true on success, \a false when the stream has been closed.
   using WriterInterface<ResponseType>::Write;
   bool Write(const ResponseType& response, WriteOptions options) override {
     if (write_done_ || !read_done_) {
@@ -656,12 +807,27 @@ class ServerSplitStreamer final
   ServerSplitStreamer(Call* call, ServerContext* ctx)
       : body_(call, ctx), read_done_(false) {}
 
+  /// Block to send initial metadata to client.
+  /// Implicit input parameter:
+  ///    - the \a ServerContext associated with this call will be used for
+  ///      sending initial metadata.
   void SendInitialMetadata() override { body_.SendInitialMetadata(); }
 
+  /// Get an upper bound on the request message size from the client.
   bool NextMessageSize(uint32_t* sz) override {
     return body_.NextMessageSize(sz);
   }
 
+  /// Read a message of type \a R into \a msg. Completion will be notified by \a
+  /// tag on the associated completion queue.
+  /// This is thread-safe with respect to \a Write or \a WritesDone methods. It
+  /// should not be called concurrently with other streaming APIs
+  /// on the same stream. It is not meaningful to call it concurrently
+  /// with another \a Read on the same stream since reads on the same stream
+  /// are delivered in order.
+  ///
+  /// \param[out] msg Where to eventually store the read message.
+  /// \param[in] tag The tag identifying the operation.
   bool Read(RequestType* request) override {
     if (read_done_) {
       return false;
@@ -670,6 +836,13 @@ class ServerSplitStreamer final
     return body_.Read(request);
   }
 
+  /// Block to write \a msg to the stream with WriteOptions \a options.
+  /// This is thread-safe with respect to \a Read
+  ///
+  /// \param msg The message to be written to the stream.
+  /// \param options The WriteOptions affecting the write operation.
+  ///
+  /// \return \a true on success, \a false when the stream has been closed.
   using WriterInterface<ResponseType>::Write;
   bool Write(const ResponseType& response, WriteOptions options) override {
     return read_done_ && body_.Write(response, options);

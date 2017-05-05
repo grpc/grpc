@@ -43,6 +43,10 @@ namespace grpc {
 class ServerInitializer;
 class ChannelArguments;
 
+/// A builder class for the creation and startup of \a grpc::Server instances.
+/// This is interface is meant for internal usage only. Implementations of this
+/// interface should add themselves to a \a ServerBuilder instance through the
+/// \a InternalAddPluginFactory method.
 class ServerBuilderPlugin {
  public:
   virtual ~ServerBuilderPlugin() {}

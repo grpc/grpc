@@ -151,7 +151,20 @@ namespace testing {
 class InteropClientContextInspector;
 }  // namespace testing
 
-/// Gives access to client side RPC configuration.
+/// A ClientContext allows the person implementing a service client to:
+///
+/// - Add custom metadata key-value pairs that will propagated to the server
+/// side.
+/// - Control call settings such as compression and authentication.
+/// - Initial and trailing metadata coming from the server.
+/// - Get performance metrics (ie, census).
+///
+/// Context settings are only relevant to the call they are invoked with, that
+/// is to say, they aren't sticky. Some of these settings, such as the
+/// compression options, can be made persistant at channel construction time
+/// (see \a grpc::CreateCustomChannel).
+///
+/// \warning ClientContext instances should \em not be reused across rpcs.
 class ClientContext {
  public:
   ClientContext();
@@ -223,13 +236,24 @@ class ClientContext {
     deadline_ = deadline_tp.raw_time();
   }
 
-  /// EXPERIMENTAL: Set this request to be idempotent
+  /// EXPERIMENTAL: Indicate that this request is idempotent.
+  /// By default, RPCs are assumed to <i>not</i> be idempotent.
+  ///
+  /// If true, the gRPC library assumes that it's safe to initiate
+  /// this RPC multiple times.
   void set_idempotent(bool idempotent) { idempotent_ = idempotent; }
 
   /// EXPERIMENTAL: Set this request to be cacheable
+  /// If set, grpc is free the GET verb for sending the request,
+  /// with the possibility of receiving a cached respone.
   void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
 
   /// EXPERIMENTAL: Trigger wait-for-ready or not on this request
+  /// See grpc/doc/wait-for-ready.md.
+  /// If set, if an RPC made when a channel's connectivity state is
+  /// TRANSIENT_FAILURE or CONNECTING, the call will not "fail fast",
+  /// and the channel will wait until the channel is READY before making the
+  /// call.
   void set_wait_for_ready(bool wait_for_ready) {
     wait_for_ready_ = wait_for_ready;
     wait_for_ready_explicitly_set_ = true;

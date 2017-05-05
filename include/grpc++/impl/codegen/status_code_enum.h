@@ -141,7 +141,6 @@ enum StatusCode {
   /// anything. So in general it is unsafe to retry on this status code
   /// if the call is non-idempotent.
   ///
-  ///
   /// See litmus test above for deciding between FAILED_PRECONDITION, ABORTED,
   /// and UNAVAILABLE.
   UNAVAILABLE = 14,
