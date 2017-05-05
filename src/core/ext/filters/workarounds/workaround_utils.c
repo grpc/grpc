@@ -34,11 +34,16 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+typedef struct {
+  bool enabled;
+  user_agent_parser ua_parser;
+} workaround_context;
+
+static workaround_context workarounds[GRPC_MAX_WORKAROUND_ID];
+
 static void destroy_user_agent_md(void *user_agent_md) {
   gpr_free(user_agent_md);
 }
-
-static user_agent_parser user_agent_parsers[GRPC_MAX_WORKAROUND_ID];
 
 grpc_user_agent_md *grpc_parse_user_agent(grpc_mdelem md) {
   grpc_user_agent_md *user_agent_md =
@@ -50,8 +55,8 @@ grpc_user_agent_md *grpc_parse_user_agent(grpc_mdelem md) {
   }
   user_agent_md = gpr_malloc(sizeof(grpc_user_agent_md));
   for (int i = 0; i < GRPC_MAX_WORKAROUND_ID; i++) {
-    if (user_agent_parsers[i]) {
-      user_agent_md->workaround_active[i] = user_agent_parsers[i](md);
+    if (workarounds[i].enabled && workarounds[i].ua_parser) {
+      user_agent_md->workaround_active[i] = workarounds[i].ua_parser(md);
     }
   }
   grpc_mdelem_set_user_data(md, destroy_user_agent_md, (void *)user_agent_md);
@@ -61,5 +66,10 @@ grpc_user_agent_md *grpc_parse_user_agent(grpc_mdelem md) {
 
 void grpc_register_workaround(uint32_t id, user_agent_parser parser) {
   GPR_ASSERT(id < GRPC_MAX_WORKAROUND_ID);
-  user_agent_parsers[id] = parser;
+  workarounds[id].ua_parser = parser;
+}
+
+void grpc_enable_workaround(uint32_t id) {
+  GPR_ASSERT(id < GRPC_MAX_WORKAROUND_ID);
+  workarounds[id].enabled = true;
 }

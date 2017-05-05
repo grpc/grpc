@@ -60,15 +60,10 @@ typedef struct channel_data {
 // Find the user agent metadata element in the batch
 static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
                                   grpc_mdelem* md) {
-  grpc_linked_mdelem* t = batch->list.head;
-  while (t != NULL) {
-    *md = t->md;
-    if (grpc_slice_eq(GRPC_MDKEY(*md), GRPC_MDSTR_USER_AGENT)) {
-      return true;
-    }
-    t = t->next;
+  if (batch->idx.named.user_agent != NULL) {
+    *md = batch->idx.named.user_agent->md;
+    return true;
   }
-
   return false;
 }
 
@@ -221,8 +216,7 @@ static bool register_workaround_cronet_compression(
   if (a->value.integer == 0) {
     return true;
   }
-  grpc_register_workaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION,
-                           parse_user_agent);
+  grpc_enable_workaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION);
   return grpc_channel_stack_builder_prepend_filter(
       builder, &grpc_workaround_cronet_compression_filter, NULL, NULL);
 }
@@ -231,6 +225,8 @@ void grpc_workaround_cronet_compression_filter_init(void) {
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, GRPC_WORKAROUND_PRIORITY_HIGH,
       register_workaround_cronet_compression, NULL);
+  grpc_register_workaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION,
+                           parse_user_agent);
 }
 
 void grpc_workaround_cronet_compression_filter_shutdown(void) {}
