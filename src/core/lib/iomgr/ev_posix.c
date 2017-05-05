@@ -48,6 +48,7 @@
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
+#include "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
@@ -74,6 +75,7 @@ static const event_engine_factory g_factories[] = {
     {"epollex", grpc_init_epollex_linux},
     {"epollsig", grpc_init_epollsig_linux},
     {"epoll1", grpc_init_epoll1_linux},
+    {"epoll-threadpool", grpc_init_epoll_thread_pool_linux},
     {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
 };
