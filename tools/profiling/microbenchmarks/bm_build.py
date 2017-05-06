@@ -45,24 +45,24 @@ def _args():
   argp.add_argument('-n', '--name', type=str, help='Unique name of this build')
   return argp.parse_args()
 
-def _make_cmd(cfg, jobs, benchmarks):
+def _make_cmd(cfg, benchmarks, jobs):
   return ['make'] + benchmarks + [
       'CONFIG=%s' % cfg, '-j', '%d' % jobs]
 
-def build(name, jobs, benchmarks):
+def build(name, benchmarks, jobs):
   shutil.rmtree('bm_diff_%s' % name, ignore_errors=True)
   subprocess.check_call(['git', 'submodule', 'update'])
   try:
-    subprocess.check_call(_make_cmd('opt', jobs, benchmarks))
-    subprocess.check_call(_make_cmd('counters', jobs, benchmarks))
+    subprocess.check_call(_make_cmd('opt', benchmarks, jobs))
+    subprocess.check_call(_make_cmd('counters', benchmarks, jobs))
   except subprocess.CalledProcessError, e:
     subprocess.check_call(['make', 'clean'])
-    subprocess.check_call(_make_cmd('opt', jobs, benchmarks))
-    subprocess.check_call(_make_cmd('counters', jobs, benchmarks))
+    subprocess.check_call(_make_cmd('opt', benchmarks, jobs))
+    subprocess.check_call(_make_cmd('counters', benchmarks, jobs))
   os.rename('bins', 'bm_diff_%s' % name, )
 
 if __name__ == '__main__':
   args = _args()
-  build(args.name, args.jobs, args.benchmarks)
+  build(args.name, args.benchmarks, args.jobs)
 
 

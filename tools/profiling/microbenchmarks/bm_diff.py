@@ -41,7 +41,7 @@ import collections
 
 verbose = False
 
-def median(ary):
+def _median(ary):
   ary = sorted(ary)
   n = len(ary)
   if n%2 == 0:
@@ -68,7 +68,7 @@ def _args():
   assert args.old
   return args
 
-def maybe_print(str):
+def _maybe_print(str):
   if verbose: print str
 
 class Benchmark:
@@ -85,14 +85,15 @@ class Benchmark:
       if f in data:
         self.samples[new][f].append(float(data[f]))
 
-  def process(self, track):
+  def process(self, track, new_name, old_name):
     for f in sorted(track):
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
-      mdn_diff = abs(median(new) - median(old))
-      maybe_print('%s: new=%r old=%r mdn_diff=%r' % (f, new, old, mdn_diff))
-      s = speedup.speedup(new, old)
+      mdn_diff = abs(_median(new) - _median(old))
+      _maybe_print('%s: %s=%r %s=%r mdn_diff=%r' % 
+          (f, new_name, new, old_name, old, mdn_diff))
+      s = bm_speedup.speedup(new, old)
       if abs(s) > 3 and mdn_diff > 0.5:
         self.final[f] = '%+d%%' % s
     return self.final.keys()
@@ -103,21 +104,21 @@ class Benchmark:
   def row(self, flds):
     return [self.final[f] if f in self.final else '' for f in flds]
 
-def read_json(filename):
+def _read_json(filename):
   try:
     with open(filename) as f: return json.loads(f.read())
   except ValueError, e:
     return None
 
-def finalize(bms, loops, track):
+def diff(bms, loops, track, old, new):
   benchmarks = collections.defaultdict(Benchmark)
 
   for bm in bms:
     for loop in range(0, loops):
-      js_new_ctr = read_json('%s.counters.new.%d.json' % (bm, loop))
-      js_new_opt = read_json('%s.opt.new.%d.json' % (bm, loop))
-      js_old_ctr = read_json('%s.counters.old.%d.json' % (bm, loop))
-      js_old_opt = read_json('%s.opt.old.%d.json' % (bm, loop))
+      js_new_ctr = _read_json('%s.counters.%s.%d.json' % (bm, new, loop))
+      js_new_opt = _read_json('%s.opt.%s.%d.json' % (bm, new, loop))
+      js_old_ctr = _read_json('%s.counters.%s.%d.json' % (bm, old, loop))
+      js_old_opt = _read_json('%s.opt.%s.%d.json' % (bm, old, loop))
 
       if js_new_ctr:
         for row in bm_json.expand_json(js_new_ctr, js_new_opt):
@@ -132,8 +133,8 @@ def finalize(bms, loops, track):
 
   really_interesting = set()
   for name, bm in benchmarks.items():
-    maybe_print(name)
-    really_interesting.update(bm.process(track))
+    _maybe_print(name)
+    really_interesting.update(bm.process(track, new, old))
   fields = [f for f in track if f in really_interesting]
 
   headers = ['Benchmark'] + fields
@@ -148,6 +149,6 @@ def finalize(bms, loops, track):
 
 if __name__ == '__main__':
   args = _args()
-  print finalize(args.benchmarks, args.loops, args.track)
+  print diff(args.benchmarks, args.loops, args.track, args.old, args.new)
 
 

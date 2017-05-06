@@ -28,50 +28,73 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-### Python utility to run opt and counters benchmarks and save json output """
+""" Runs the entire bm_*.py pipeline, and possible comments on the PR """
 
 import bm_constants
+import bm_build
+import bm_run
+import bm_diff
 
-import argparse
-import multiprocessing
-import random
-import itertools
 import sys
 import os
+import argparse
+import multiprocessing
+import subprocess
 
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
-import jobset
+import comment_on_pr
 
 def _args():
-  argp = argparse.ArgumentParser(description='Runs microbenchmarks')
+  argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
+  argp.add_argument('-t', '--track',
+                    choices=sorted(bm_constants._INTERESTING),
+                    nargs='+',
+                    default=sorted(bm_constants._INTERESTING),
+                    help='Which metrics to track')
   argp.add_argument('-b', '--benchmarks', nargs='+', choices=bm_constants._AVAILABLE_BENCHMARK_TESTS, default=bm_constants._AVAILABLE_BENCHMARK_TESTS)
-  argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
-  argp.add_argument('-n', '--name', type=str, help='Unique name of this build')
+  argp.add_argument('-d', '--diff_base', type=str)
   argp.add_argument('-r', '--repetitions', type=int, default=1)
   argp.add_argument('-l', '--loops', type=int, default=20)
-  return argp.parse_args()
+  argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
+  args = argp.parse_args()
+  assert args.diff_base
+  return args
 
-def _collect_bm_data(bm, cfg, name, reps, idx, loops):
-  cmd = ['bm_diff_%s/%s/%s' % (name, cfg, bm),
-         '--benchmark_out=%s.%s.%s.%d.json' % (bm, cfg, name, idx),
-         '--benchmark_out_format=json',
-         '--benchmark_repetitions=%d' % (reps)
-         ]
-  return jobset.JobSpec(cmd, shortname='%s %s %s %d/%d' % (bm, cfg, name, idx+1, loops),
-                             verbose_success=True, timeout_seconds=None)
 
-def run(name, benchmarks, jobs, loops, reps):
-  jobs_list = []
-  for loop in range(0, loops):
-    jobs_list.extend(x for x in itertools.chain(
-      (_collect_bm_data(bm, 'opt', name, reps, loop, loops) for bm in benchmarks),
-      (_collect_bm_data(bm, 'counters', name, reps, loop, loops) for bm in benchmarks),
-    ))
-  random.shuffle(jobs_list, random.SystemRandom().random)
+def eintr_be_gone(fn):
+  """Run fn until it doesn't stop because of EINTR"""
+  def inner(*args):
+    while True:
+      try:
+        return fn(*args)
+      except IOError, e:
+        if e.errno != errno.EINTR:
+          raise
+  return inner
 
-  jobset.run(jobs_list, maxjobs=jobs)
+def main(args):
+
+  bm_build.build('new', args.benchmarks, args.jobs)
+
+  where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+  subprocess.check_call(['git', 'checkout', args.diff_base])
+  try:
+    bm_build.build('old', args.benchmarks, args.jobs)
+  finally:
+    subprocess.check_call(['git', 'checkout', where_am_i])
+    subprocess.check_call(['git', 'submodule', 'update'])
+
+  bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.repetitions)
+  bm_run.run('old', args.benchmarks, args.jobs, args.loops, args.repetitions)
+
+  diff = bm_diff.diff(args.benchmarks, args.loops, args.track, 'old', 'new')
+  if diff:
+    text = 'Performance differences noted:\n' + diff
+  else:
+    text = 'No significant performance differences'
+  print text
+  comment_on_pr.comment_on_pr('```\n%s\n```' % text)
 
 if __name__ == '__main__':
   args = _args()
-  assert args.name
-  run(args.name, args.benchmarks, args.jobs, args.loops, args.repetitions)
+  main(args)
