@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -30,8 +30,6 @@
 
 """Manage TCP ports for unit tests; started by run_tests.py"""
 
-from __future__ import print_function
-
 import argparse
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import hashlib
@@ -42,16 +40,17 @@ import time
 import random
 from SocketServer import ThreadingMixIn
 import threading
+import platform
 
 
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 19
+_MY_VERSION = 20
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
-  print(_MY_VERSION)
+  print _MY_VERSION
   sys.exit(0)
 
 
@@ -67,13 +66,16 @@ if args.logfile is not None:
   sys.stderr = open(args.logfile, 'w')
   sys.stdout = sys.stderr
 
-print('port server running on port %d' % args.port)
+print 'port server running on port %d' % args.port
 
 pool = []
 in_use = {}
 mu = threading.Lock()
 
 def can_connect(port):
+  # this test is only really useful on unices where SO_REUSE_PORT is available
+  # so on Windows, where this test is expensive, skip it
+  if platform.system() == 'Windows': return False
   s = socket.socket()
   try:
     s.connect(('localhost', port))
@@ -137,7 +139,7 @@ keep_running = True
 
 
 class Handler(BaseHTTPRequestHandler):
-  
+
   def setup(self):
     # If the client is unreachable for 5 seconds, close the connection
     self.timeout = 5
@@ -195,6 +197,4 @@ class Handler(BaseHTTPRequestHandler):
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
   """Handle requests in a separate thread"""
 
-
 ThreadedHTTPServer(('', args.port), Handler).serve_forever()
-
