@@ -19,7 +19,7 @@
 	url = https://github.com/google/benchmark
 [submodule "third_party/boringssl-with-bazel"]
 	path = third_party/boringssl-with-bazel
-	url = https://boringssl.googlesource.com/boringssl
+	url = https://github.com/tjuliuyou/boringssl-with-bazel.git
 [submodule "third_party/cares/cares"]
 	path = third_party/cares/cares
 	url = https://github.com/c-ares/c-ares.git
