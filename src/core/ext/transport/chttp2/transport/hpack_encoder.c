@@ -623,7 +623,8 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
 
 void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_hpack_compressor *c,
-                               grpc_metadata_batch *metadata,
+                               grpc_metadata_batch *initial_metadata,
+                               grpc_metadata_batch *trailing_metadata,
                                const grpc_encode_header_options *options,
                                grpc_slice_buffer *outbuf) {
   framer_state st;
@@ -648,14 +649,21 @@ void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
   if (c->advertise_table_size_change != 0) {
     emit_advertise_table_size_change(c, &st);
   }
-  grpc_metadata_batch_assert_ok(metadata);
-  for (l = metadata->list.head; l; l = l->next) {
-    hpack_enc(exec_ctx, c, l->md, &st);
+  if (initial_metadata != NULL) {
+    grpc_metadata_batch_assert_ok(initial_metadata);
+    for (l = initial_metadata->list.head; l != NULL; l = l->next) {
+      hpack_enc(exec_ctx, c, l->md, &st);
+    }
+    deadline = initial_metadata->deadline;
+    if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) != 0) {
+      deadline_enc(exec_ctx, c, deadline, &st);
+    }
   }
-  deadline = metadata->deadline;
-  if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) != 0) {
-    deadline_enc(exec_ctx, c, deadline, &st);
+  if (trailing_metadata != NULL) {
+    grpc_metadata_batch_assert_ok(trailing_metadata);
+    for (l = trailing_metadata->list.head; l != NULL; l = l->next) {
+      hpack_enc(exec_ctx, c, l->md, &st);
+    }
   }
-
   finish_frame(&st, 1, options->is_eof);
 }

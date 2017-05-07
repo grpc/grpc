@@ -171,6 +171,42 @@ uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
               0));
 }
 
+static void write_header_frame(grpc_exec_ctx *exec_ctx,
+                               grpc_chttp2_transport *t, grpc_chttp2_stream *s,
+                               bool send_initial_metadata,
+                               bool send_trailing_metadata) {
+  GPR_ASSERT(send_initial_metadata || send_trailing_metadata);
+  if (!send_initial_metadata &&
+      grpc_metadata_batch_is_empty(s->send_trailing_metadata)) {
+    grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, 0, true,
+                            &s->stats.outgoing, &t->outbuf);
+  } else {
+    grpc_encode_header_options hopt = {
+        .stream_id = s->id,
+        .is_eof = send_trailing_metadata,
+        .use_true_binary_metadata =
+            t->settings[GRPC_PEER_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
+            0,
+        .max_frame_size = t->settings[GRPC_PEER_SETTINGS]
+                                     [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+        .stats = &s->stats.outgoing};
+    grpc_chttp2_encode_header(
+        exec_ctx, &t->hpack_compressor,
+        send_initial_metadata ? s->send_initial_metadata : NULL,
+        send_trailing_metadata ? s->send_trailing_metadata : NULL, &hopt,
+        &t->outbuf);
+  }
+  if (send_initial_metadata) {
+    s->send_initial_metadata = NULL;
+    s->sent_initial_metadata = true;
+  }
+  if (send_trailing_metadata) {
+    s->send_trailing_metadata = NULL;
+    s->sent_trailing_metadata = true;
+  }
+}
+
 bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
@@ -217,22 +253,15 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
         t->is_client ? "CLIENT" : "SERVER", s->id, sent_initial_metadata,
         s->send_initial_metadata != NULL, s->announce_window));
 
-    /* send initial metadata if it's available */
-    if (!sent_initial_metadata && s->send_initial_metadata) {
-      grpc_encode_header_options hopt = {
-          .stream_id = s->id,
-          .is_eof = false,
-          .use_true_binary_metadata =
-              t->settings
-                  [GRPC_PEER_SETTINGS]
-                  [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] != 0,
-          .max_frame_size = t->settings[GRPC_PEER_SETTINGS]
-                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-          .stats = &s->stats.outgoing};
-      grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor,
-                                s->send_initial_metadata, &hopt, &t->outbuf);
-      s->send_initial_metadata = NULL;
-      s->sent_initial_metadata = true;
+    // If the stream wants to send initial metadata and trailing
+    // metadata without any payload messages, then we will send both at
+    // the same time below.  Otherwise, send initial metadata here.
+    if (!sent_initial_metadata && s->send_initial_metadata != NULL &&
+        (s->send_trailing_metadata == NULL ||
+         s->fetching_send_message != NULL ||
+         s->flow_controlled_buffer.length != 0)) {
+      write_header_frame(exec_ctx, t, s, true /* send_initial_metadata */,
+                         false /* send_trailing_metadata */);
       sent_initial_metadata = true;
       now_writing = true;
       t->ping_state.pings_before_data_required =
@@ -258,7 +287,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
       }
       GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, announce_window, announce);
     }
-    if (sent_initial_metadata) {
+    if (sent_initial_metadata || s->send_initial_metadata != NULL) {
       /* send any body bytes, if allowed by flow control */
       if (s->flow_controlled_buffer.length > 0) {
         uint32_t stream_outgoing_window = (uint32_t)GPR_MAX(
@@ -319,28 +348,10 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
       if (s->send_trailing_metadata != NULL &&
           s->fetching_send_message == NULL &&
           s->flow_controlled_buffer.length == 0) {
-        if (grpc_metadata_batch_is_empty(s->send_trailing_metadata)) {
-          grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, 0, true,
-                                  &s->stats.outgoing, &t->outbuf);
-        } else {
-          grpc_encode_header_options hopt = {
-              .stream_id = s->id,
-              .is_eof = true,
-              .use_true_binary_metadata =
-                  t->settings
-                      [GRPC_PEER_SETTINGS]
-                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
-                  0,
-              .max_frame_size =
-                  t->settings[GRPC_PEER_SETTINGS]
-                             [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-              .stats = &s->stats.outgoing};
-          grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor,
-                                    s->send_trailing_metadata, &hopt,
-                                    &t->outbuf);
-        }
-        s->send_trailing_metadata = NULL;
-        s->sent_trailing_metadata = true;
+        const bool send_initial_metadata_also =
+            !sent_initial_metadata && s->send_initial_metadata != NULL;
+        write_header_frame(exec_ctx, t, s, send_initial_metadata_also,
+                           true /* send_trailing_metadata */);
         if (!t->is_client && !s->read_closed) {
           grpc_slice_buffer_add(
               &t->outbuf, grpc_chttp2_rst_stream_create(

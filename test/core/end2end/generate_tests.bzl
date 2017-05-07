@@ -125,6 +125,7 @@ END2END_TESTS = {
     'request_with_flags': test_options(proxyable=False),
     'request_with_payload': test_options(),
     'server_finishes_request': test_options(),
+    'server_sends_trailers_only': test_options(),
     'shutdown_finishes_calls': test_options(),
     'shutdown_finishes_tags': test_options(),
     'simple_cacheable_request': test_options(),

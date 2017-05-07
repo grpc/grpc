@@ -100,7 +100,8 @@ typedef struct {
 
 void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_hpack_compressor *c,
-                               grpc_metadata_batch *metadata,
+                               grpc_metadata_batch *initial_metadata,
+                               grpc_metadata_batch *trailing_metadata,
                                const grpc_encode_header_options *options,
                                grpc_slice_buffer *outbuf);
 

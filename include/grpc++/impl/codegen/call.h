@@ -518,7 +518,8 @@ class CallOpClientRecvStatus {
   CallOpClientRecvStatus() : recv_status_(nullptr) {}
 
   void ClientRecvStatus(ClientContext* context, Status* status) {
-    metadata_map_ = &context->trailing_metadata_;
+    initial_metadata_map_ = &context->recv_initial_metadata_;
+    trailing_metadata_map_ = &context->trailing_metadata_;
     recv_status_ = status;
     error_message_ = g_core_codegen_interface->grpc_empty_slice();
   }
@@ -528,7 +529,8 @@ class CallOpClientRecvStatus {
     if (recv_status_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
+    op->data.recv_status_on_client.trailing_metadata =
+        trailing_metadata_map_->arr();
     op->data.recv_status_on_client.status = &status_code_;
     op->data.recv_status_on_client.status_details = &error_message_;
     op->flags = 0;
@@ -537,12 +539,23 @@ class CallOpClientRecvStatus {
 
   void FinishOp(bool* status) {
     if (recv_status_ == nullptr) return;
-    metadata_map_->FillMap();
+    trailing_metadata_map_->FillMap();
+    // In the case where we receive a Trailers-Only response, the
+    // metadata will be returned as initial metadata instead of trailing
+    // metadata, so we need to check both.
     grpc::string binary_error_details;
-    auto iter = metadata_map_->map()->find(kBinaryErrorDetailsKey);
-    if (iter != metadata_map_->map()->end()) {
+    auto iter = trailing_metadata_map_->map()->find(kBinaryErrorDetailsKey);
+    if (iter != trailing_metadata_map_->map()->end()) {
       binary_error_details =
           grpc::string(iter->second.begin(), iter->second.length());
+      trailing_metadata_map_->map()->erase(iter);
+    } else {
+      iter = initial_metadata_map_->map()->find(kBinaryErrorDetailsKey);
+      if (iter != initial_metadata_map_->map()->end()) {
+        binary_error_details =
+            grpc::string(iter->second.begin(), iter->second.length());
+        initial_metadata_map_->map()->erase(iter);
+      }
     }
     *recv_status_ = Status(static_cast<StatusCode>(status_code_),
                            grpc::string(GRPC_SLICE_START_PTR(error_message_),
@@ -553,7 +566,8 @@ class CallOpClientRecvStatus {
   }
 
  private:
-  MetadataMap* metadata_map_;
+  MetadataMap* initial_metadata_map_;
+  MetadataMap* trailing_metadata_map_;
   Status* recv_status_;
   grpc_status_code status_code_;
   grpc_slice error_message_;
