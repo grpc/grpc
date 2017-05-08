@@ -49,7 +49,7 @@ class AuthMetadataProcessor {
 
   virtual ~AuthMetadataProcessor() {}
 
-  /// If this method returns true, the Process function will be scheduled in
+  /// If this method returns true, the \a Process function will be scheduled in
   /// a different thread from the one processing the call.
   virtual bool IsBlocking() const { return true; }
 
