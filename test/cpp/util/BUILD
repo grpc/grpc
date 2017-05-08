@@ -118,3 +118,17 @@ grpc_cc_library(
         "protobuf_clib",
     ],
 )
+
+grpc_cc_library(
+    name = "metrics_server_lib",
+    srcs = [
+        "metrics_server.cc",
+    ],
+    hdrs = [
+        "metrics_server.h",
+    ],
+    deps = [
+        "//src/proto/grpc/testing:metrics_proto",
+        "//:grpc++",
+    ],
+)
