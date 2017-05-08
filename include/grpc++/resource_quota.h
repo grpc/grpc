@@ -53,10 +53,10 @@ class ResourceQuota final : private GrpcLibraryCodegen {
   ResourceQuota();
   ~ResourceQuota();
 
-  /// Resize this ResourceQuota to a new size. If new_size is smaller than the
-  /// current size of the pool, memory usage will be monotonically decreased
-  /// until it falls under new_size. No time bound is given for this to occur
-  /// however.
+  /// Resize this \a ResourceQuota to a new size. If \a new_size is smaller
+  /// than the current size of the pool, memory usage will be monotonically
+  /// decreased until it falls under \a new_size.
+  /// No time bound is given for this to occur however.
   ResourceQuota& Resize(size_t new_size);
 
   grpc_resource_quota* c_resource_quota() const { return impl_; }
