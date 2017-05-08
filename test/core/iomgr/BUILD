@@ -33,6 +33,8 @@ licenses(["notice"])  # 3-clause BSD
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
+package(default_visibility = ["//visibility:public"]) # Useful for third party devs to test their io manager implementation.
+
 grpc_cc_library(
     name = "endpoint_tests",
     srcs = ["endpoint_tests.c"],
