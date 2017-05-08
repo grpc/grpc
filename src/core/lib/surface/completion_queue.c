@@ -310,7 +310,7 @@ grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue *cc) {
   return cc->completion_type;
 }
 
-gpr_atm grpc_get_cq_poll_num(grpc_completion_queue *cc) {
+int grpc_get_cq_poll_num(grpc_completion_queue *cc) {
   int cur_num_polls;
   gpr_mu_lock(cc->mu);
   cur_num_polls = cc->num_polls;
