@@ -6401,6 +6401,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -7682,6 +7683,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -8915,6 +8917,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -10068,6 +10071,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -11276,6 +11280,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -12460,6 +12465,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -14846,6 +14852,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -16156,6 +16163,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -17457,6 +17465,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -18687,6 +18696,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -19767,6 +19777,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -23240,6 +23251,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -24521,6 +24533,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -25722,6 +25735,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -26855,6 +26869,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -28111,6 +28126,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -29368,6 +29384,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -30502,6 +30519,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -31686,6 +31704,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -32850,6 +32869,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -35187,6 +35207,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -36473,6 +36494,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -37649,6 +37671,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -38704,6 +38727,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 
@@ -42074,6 +42098,7 @@
     "exclude_configs": [
       "asan", 
       "dbg", 
+      "ubsan", 
       "msan", 
       "tsan"
     ], 

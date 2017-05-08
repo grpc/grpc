@@ -120,7 +120,7 @@ END2END_TESTS = {
                                                 cpu_cost=LOWCPU),
     'high_initial_seqno': default_test_options._replace(cpu_cost=LOWCPU),
     'idempotent_request': default_test_options,
-    'invoke_large_request': default_test_options._replace(large_writes=True, traceable=False, timeout_seconds=4800, exclude_configs=['dbg', 'msan', 'tsan', 'asan']),
+    'invoke_large_request': default_test_options._replace(large_writes=True, traceable=False, timeout_seconds=4800, exclude_configs=['dbg', 'msan', 'tsan', 'asan', 'ubsan']),
     'keepalive_timeout': default_test_options._replace(proxyable=False,
                                                        cpu_cost=LOWCPU),
     'large_metadata': default_test_options,
