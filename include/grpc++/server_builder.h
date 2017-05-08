@@ -171,7 +171,7 @@ class ServerBuilder {
   /// server_->Shutdown();
   /// cq_->Shutdown();  // Always *after* the associated server's Shutdown()!
   ///
-  /// \param is_frequently_polled This is an optional parameter to inform GRPC
+  /// \param is_frequently_polled This is an optional parameter to inform gRPC
   /// library about whether this completion queue would be frequently polled
   /// (i.e by calling Next() or AsyncNext()). The default value is 'true' and is
   /// the recommended setting. Setting this to 'false' (i.e not polling the
