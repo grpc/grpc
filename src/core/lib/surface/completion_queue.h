@@ -100,7 +100,7 @@ bool grpc_cq_can_listen(grpc_completion_queue *cc);
 
 grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue *cc);
 
-gpr_atm grpc_get_cq_poll_num(grpc_completion_queue *cc);
+int grpc_get_cq_poll_num(grpc_completion_queue *cc);
 
 grpc_completion_queue *grpc_completion_queue_create_internal(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type);
