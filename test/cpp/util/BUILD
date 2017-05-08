@@ -111,5 +111,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "gflags",
+        "protobuf",
+        "protobuf_clib",
     ],
 )
