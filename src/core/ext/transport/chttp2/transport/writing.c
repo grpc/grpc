@@ -163,19 +163,22 @@ static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
   return true;
 }
 
+/* How many bytes of incoming flow control would we like to advertise */
 uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
-  return (uint32_t)GPR_MAX(
+  return (uint32_t)GPR_MIN(
       (int64_t)((1u << 31) - 1),
       t->stream_total_over_incoming_window +
-          (int64_t)GPR_MAX(
-              t->settings[GRPC_SENT_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
-                  t->stream_total_under_incoming_window,
-              0));
+          t->settings[GRPC_SENT_SETTINGS]
+                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
 }
 
-bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
-                             grpc_chttp2_transport *t) {
+/* How many bytes would we like to put on the wire during a single syscall */
+static uint32_t target_write_size(grpc_chttp2_transport *t) {
+  return 1024 * 1024;
+}
+
+grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
@@ -209,9 +212,20 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     }
   }
 
+  bool partial_write = false;
+
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
-  while (grpc_chttp2_list_pop_writable_stream(t, &s)) {
+  while (true) {
+    if (t->outbuf.length > target_write_size(t)) {
+      partial_write = true;
+      break;
+    }
+
+    if (!grpc_chttp2_list_pop_writable_stream(t, &s)) {
+      break;
+    }
+
     bool sent_initial_metadata = s->sent_initial_metadata;
     bool now_writing = false;
 
@@ -398,7 +412,9 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 
-  return t->outbuf.count > 0;
+  return t->outbuf.count > 0 ? (partial_write ? GRPC_CHTTP2_PARTIAL_WRITE
+                                              : GRPC_CHTTP2_FULL_WRITE)
+                             : GRPC_CHTTP2_NOTHING_TO_WRITE;
 }
 
 void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
