@@ -85,6 +85,9 @@ grpc_cc_library(
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:gpr_test_util",
     ],
+    external_deps = [
+        "protobuf",
+    ],
 )
 
 grpc_cc_library(
