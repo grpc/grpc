@@ -49,7 +49,7 @@ class ChannelArgumentsTest;
 class ResourceQuota;
 
 /// Options for channel creation. The user can use generic setters to pass
-/// key value pairs down to c channel creation code. For grpc related options,
+/// key value pairs down to C channel creation code. For gRPC related options,
 /// concrete setters are provided.
 class ChannelArguments {
  public:
@@ -82,13 +82,13 @@ class ChannelArguments {
   /// Set the socket mutator for the channel.
   void SetSocketMutator(grpc_socket_mutator* mutator);
 
-  /// The given string will be sent at the front of the user agent string.
+  /// Set the string to prepend to the user agent.
   void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
 
-  /// The given buffer pool will be attached to the constructed channel
+  /// Set the buffer pool to be attached to the constructed channel.
   void SetResourceQuota(const ResourceQuota& resource_quota);
 
-  /// Sets the max receive and send message sizes.
+  /// Set the max receive and send message sizes.
   void SetMaxReceiveMessageSize(int size);
   void SetMaxSendMessageSize(int size);
 
@@ -115,8 +115,8 @@ class ChannelArguments {
   /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);
 
-  /// Return (by value) a c grpc_channel_args structure which points to
-  /// arguments owned by this ChannelArguments instance
+  /// Return (by value) a C \a grpc_channel_args structure which points to
+  /// arguments owned by this \a ChannelArguments instance
   grpc_channel_args c_channel_args() const {
     grpc_channel_args out;
     out.num_args = args_.size();
