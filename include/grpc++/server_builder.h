@@ -174,7 +174,7 @@ class ServerBuilder {
   /// \param is_frequently_polled This is an optional parameter to inform gRPC
   /// library about whether this completion queue would be frequently polled
   /// (i.e by calling Next() or AsyncNext()). The default value is 'true' and is
-  /// the recommended setting. Setting this to 'false' (i.e not polling the
+  /// the recommended setting. Setting this to 'false' (i.e. not polling the
   /// completion queue frequently) will have a significantly negative
   /// performance impact and hence should not be used in production use cases.
   std::unique_ptr<ServerCompletionQueue> AddCompletionQueue(
