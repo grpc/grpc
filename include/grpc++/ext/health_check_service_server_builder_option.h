@@ -44,7 +44,7 @@ namespace grpc {
 
 class HealthCheckServiceServerBuilderOption : public ServerBuilderOption {
  public:
-  /// The ownership of hc will be taken and transferred to the grpc server.
+  /// The ownership of \a hc will be taken and transferred to the grpc server.
   /// To explicitly disable default service, pass in a nullptr.
   explicit HealthCheckServiceServerBuilderOption(
       std::unique_ptr<HealthCheckServiceInterface> hc);
