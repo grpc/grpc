@@ -79,6 +79,7 @@
     "binding.gyp"
   ],
   "main": "src/node/index.js",
+  "typings": "src/node/index.d.ts",
   "license": "BSD-3-Clause",
   "jshintConfig": {
     "bitwise": true,
