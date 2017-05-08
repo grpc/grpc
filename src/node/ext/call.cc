@@ -42,7 +42,6 @@
 #include "call_credentials.h"
 #include "channel.h"
 #include "completion_queue.h"
-#include "completion_queue_async_worker.h"
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 #include "grpc/support/alloc.h"
