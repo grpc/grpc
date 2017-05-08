@@ -85,7 +85,7 @@ class ServerBuilder {
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned
-  /// by BuildAndStart().
+  /// by \a BuildAndStart().
   /// Only matches requests with :authority \a host
   ServerBuilder& RegisterService(const grpc::string& host, Service* service);
 
@@ -173,10 +173,11 @@ class ServerBuilder {
   ///
   /// \param is_frequently_polled This is an optional parameter to inform gRPC
   /// library about whether this completion queue would be frequently polled
-  /// (i.e by calling Next() or AsyncNext()). The default value is 'true' and is
-  /// the recommended setting. Setting this to 'false' (i.e. not polling the
-  /// completion queue frequently) will have a significantly negative
-  /// performance impact and hence should not be used in production use cases.
+  /// (i.e. by calling \a Next() or \a AsyncNext()). The default value is
+  /// 'true' and is the recommended setting. Setting this to 'false' (i.e.
+  /// not polling the completion queue frequently) will have a significantly
+  /// negative performance impact and hence should not be used in production
+  /// use cases.
   std::unique_ptr<ServerCompletionQueue> AddCompletionQueue(
       bool is_frequently_polled = true);
 
@@ -208,18 +209,18 @@ class ServerBuilder {
           max_pollers(2),
           cq_timeout_msec(10000) {}
 
-    // Number of server completion queues to create to listen to incoming RPCs.
+    /// Number of server completion queues to create to listen to incoming RPCs.
     int num_cqs;
 
-    // Minimum number of threads per completion queue that should be listening
-    // to incoming RPCs.
+    /// Minimum number of threads per completion queue that should be listening
+    /// to incoming RPCs.
     int min_pollers;
 
-    // Maximum number of threads per completion queue that can be listening to
-    // incoming RPCs.
+    /// Maximum number of threads per completion queue that can be listening to
+    /// incoming RPCs.
     int max_pollers;
 
-    // The timeout for server completion queue's AsyncNext call.
+    /// The timeout for server completion queue's AsyncNext call.
     int cq_timeout_msec;
   };
 
@@ -240,7 +241,7 @@ class ServerBuilder {
 
   SyncServerSettings sync_server_settings_;
 
-  // List of completion queues added via AddCompletionQueue() method
+  /// List of completion queues added via \a AddCompletionQueue method.
   std::vector<ServerCompletionQueue*> cqs_;
 
   std::shared_ptr<ServerCredentials> creds_;
