@@ -201,13 +201,14 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
 
   const int max_receive_message_size_;
 
-  /// The following completion queues are ONLY used in case of Sync API i.e if
-  /// the server has any services with sync methods. The server uses these
-  /// completion queues to poll for new RPCs
+  /// The following completion queues are ONLY used in case of Sync API
+  /// i.e. if the server has any services with sync methods. The server uses
+  /// these completion queues to poll for new RPCs
   std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
       sync_server_cqs_;
 
-  /// List of ThreadManager instances (one for each cq in the sync_server_cqs)
+  /// List of \a ThreadManager instances (one for each cq in
+  /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
   // Sever status
