@@ -175,7 +175,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   ///
   /// \return bound port number on success, 0 on failure.
   ///
-  /// \warning It's an error to call this method on an already started server.
+  /// \warning It is an error to call this method on an already started server.
   int AddListeningPort(const grpc::string& addr,
                        ServerCredentials* creds) override;
 
