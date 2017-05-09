@@ -605,6 +605,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
+        "src/core/lib/iomgr/ev_epollsig_linux.h",
         "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/sys_epoll_wrapper.h",
