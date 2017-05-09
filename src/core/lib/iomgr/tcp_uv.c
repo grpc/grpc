@@ -52,7 +52,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
-int grpc_tcp_trace = 0;
+grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false);
 
 typedef struct {
   grpc_endpoint base;
