@@ -1328,7 +1328,7 @@ const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(
 #include "src/core/lib/iomgr/ev_posix.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable *grpc_init_epoll_linux(
+const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(
     bool requested_explicitly) {
   return NULL;
 }
