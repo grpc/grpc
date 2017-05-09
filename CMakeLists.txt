@@ -849,6 +849,7 @@ foreach(_hdr
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
   include/grpc/support/useful.h
+  include/grpc/support/workaround_list.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h

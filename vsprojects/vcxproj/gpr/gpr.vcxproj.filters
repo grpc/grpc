@@ -219,6 +219,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\useful.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\workaround_list.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>

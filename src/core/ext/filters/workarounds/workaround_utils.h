@@ -32,14 +32,12 @@
 #ifndef GRPC_CORE_EXT_FILTERS_WORKAROUNDS_WORKAROUND_UTILS_H
 #define GRPC_CORE_EXT_FILTERS_WORKAROUNDS_WORKAROUND_UTILS_H
 
+#include <grpc/support/workaround_list.h>
+
 #include "src/core/lib/transport/metadata.h"
 
 #define GRPC_WORKAROUND_PRIORITY_HIGH 10001
-
-typedef enum {
-  GRPC_WORKAROUND_ID_CRONET_COMPRESSION = 0,
-  GRPC_MAX_WORKAROUND_ID,
-} grpc_workaround_list;
+#define GRPC_WORKAROUND_PROIRITY_LOW 9999
 
 typedef struct grpc_workaround_user_agent_md {
   bool workaround_active[GRPC_MAX_WORKAROUND_ID];
