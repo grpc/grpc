@@ -30,9 +30,14 @@
 
 """ Computes the diff between two bm runs and outputs significant results """
 
-import bm_json
 import bm_constants
 import bm_speedup
+
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+import bm_json
 
 import json
 import tabulate
