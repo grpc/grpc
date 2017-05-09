@@ -158,7 +158,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
     sub = grpc_slice_sub_no_ref(tcp->read_slice, 0, (size_t)nread);
     grpc_slice_buffer_add(tcp->read_slices, sub);
     error = GRPC_ERROR_NONE;
-    if (grpc_tcp_trace) {
+    if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       size_t i;
       const char *str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "read: error=%s", str);
@@ -199,7 +199,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                            grpc_slice_from_static_string(uv_strerror(status)));
     grpc_closure_sched(exec_ctx, cb, error);
   }
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "Initiating read on %p: error=%s", tcp, str);
   }
@@ -217,7 +217,7 @@ static void write_callback(uv_write_t *req, int status) {
   } else {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Write failed");
   }
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "write complete on %p: error=%s", tcp, str);
   }
@@ -238,7 +238,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_slice *slice;
   uv_write_t *write_req;
 
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     size_t j;
 
     for (j = 0; j < write_slices->count; j++) {
@@ -346,7 +346,7 @@ grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle,
                                char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
 
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "Creating TCP endpoint %p", tcp);
   }
 
