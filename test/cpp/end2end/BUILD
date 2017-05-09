@@ -31,6 +31,8 @@ licenses(["notice"])  # 3-clause BSD
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
+package(default_visibility=["//visibility:public"]) # Allows external users to implement end2end tests.
+
 grpc_cc_library(
     name = "test_service_impl",
     srcs = ["test_service_impl.cc"],
@@ -102,9 +104,10 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "end2end_test",
+grpc_cc_library(
+    name = "end2end_test_lib",
     srcs = ["end2end_test.cc"],
+    testonly = True,
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -119,6 +122,13 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "end2end_test",
+    deps = [
+        ":end2end_test_lib"
     ],
 )
 
