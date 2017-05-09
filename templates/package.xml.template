@@ -12,7 +12,7 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2017-05-02</date>
+   <date>2017-05-05</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
@@ -24,7 +24,7 @@
    </stability>
    <license>BSD</license>
    <notes>
-  - gRPC Core 1.3 uptake
+  - Fixed some memory leaks #9559, #10996
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
@@ -42,6 +42,7 @@
       % endfor
       % endif
       % endfor
+      <file name="LICENSE" role="doc" />
     </dir>
    </contents>
    <dependencies>

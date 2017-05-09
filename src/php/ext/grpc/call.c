@@ -125,7 +125,12 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
       php_grpc_add_next_index_stringl(inner_array, str_val,
                                       GRPC_SLICE_LENGTH(elem->value), false);
       add_assoc_zval(array, str_key, inner_array);
+      PHP_GRPC_FREE_STD_ZVAL(inner_array);
     }
+    efree(str_key);
+#if PHP_MAJOR_VERSION >= 7
+    efree(str_val);
+#endif
   }
   return array;
 }
@@ -256,8 +261,6 @@ PHP_METHOD(Call, startBatch) {
   object_init(result);
   php_grpc_ulong index;
   zval *recv_status;
-  PHP_GRPC_MAKE_STD_ZVAL(recv_status);
-  object_init(recv_status);
   zval *value;
   zval *inner_value;
   zval *message_value;
@@ -439,7 +442,7 @@ PHP_METHOD(Call, startBatch) {
   grpc_completion_queue_pluck(completion_queue, call->wrapped,
                               gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 #if PHP_MAJOR_VERSION >= 7
-  zval recv_md;
+  zval *recv_md;
 #endif
   for (int i = 0; i < op_num; i++) {
     switch(ops[i].op) {
@@ -460,8 +463,10 @@ PHP_METHOD(Call, startBatch) {
       array = grpc_parse_metadata_array(&recv_metadata TSRMLS_CC);
       add_property_zval(result, "metadata", array);
 #else
-      recv_md = *grpc_parse_metadata_array(&recv_metadata);
-      add_property_zval(result, "metadata", &recv_md);
+      recv_md = grpc_parse_metadata_array(&recv_metadata);
+      add_property_zval(result, "metadata", recv_md);
+      zval_ptr_dtor(recv_md);
+      PHP_GRPC_FREE_STD_ZVAL(recv_md);
 #endif
       PHP_GRPC_DELREF(array);
       break;
@@ -475,12 +480,16 @@ PHP_METHOD(Call, startBatch) {
       }
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
+      PHP_GRPC_MAKE_STD_ZVAL(recv_status);
+      object_init(recv_status);
 #if PHP_MAJOR_VERSION < 7
       array = grpc_parse_metadata_array(&recv_trailing_metadata TSRMLS_CC);
       add_property_zval(recv_status, "metadata", array);
 #else
-      recv_md = *grpc_parse_metadata_array(&recv_trailing_metadata);
-      add_property_zval(recv_status, "metadata", &recv_md);
+      recv_md = grpc_parse_metadata_array(&recv_trailing_metadata);
+      add_property_zval(recv_status, "metadata", recv_md);
+      zval_ptr_dtor(recv_md);
+      PHP_GRPC_FREE_STD_ZVAL(recv_md);
 #endif
       PHP_GRPC_DELREF(array);
       add_property_long(recv_status, "code", status);
@@ -489,6 +498,9 @@ PHP_METHOD(Call, startBatch) {
                                    true);
       gpr_free(status_details_text);
       add_property_zval(result, "status", recv_status);
+#if PHP_MAJOR_VERSION >= 7
+      zval_ptr_dtor(recv_status);
+#endif
       PHP_GRPC_DELREF(recv_status);
       PHP_GRPC_FREE_STD_ZVAL(recv_status);
       break;
