@@ -34,6 +34,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
 #define GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
 
+#include <grpc/support/time.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -52,6 +53,8 @@ typedef struct grpc_bdp_estimator {
   grpc_bdp_estimator_ping_state ping_state;
   int64_t accumulator;
   int64_t estimate;
+  gpr_timespec ping_start_time;
+  double bw_est;
   const char *name;
 } grpc_bdp_estimator;
 

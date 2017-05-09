@@ -552,9 +552,14 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_transport *t,
                                 bool covered_by_poller, const char *reason);
 
-/** Someone is unlocking the transport mutex: check to see if writes
-    are required, and frame them if so */
-bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
+typedef enum {
+  GRPC_CHTTP2_NOTHING_TO_WRITE,
+  GRPC_CHTTP2_PARTIAL_WRITE,
+  GRPC_CHTTP2_FULL_WRITE,
+} grpc_chttp2_begin_write_result;
+
+grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
 void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            grpc_error *error);
 
