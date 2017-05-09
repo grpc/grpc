@@ -1167,7 +1167,8 @@ static void add_fd_to_eps(grpc_fd *fd) {
   EPS_ADD_REF(eps, "fd");
   fd->eps = eps;
 
-  GRPC_POLLING_TRACE("add_fd_to_eps (fd: %d, eps idx = %ld)", fd->fd, idx);
+  GRPC_POLLING_TRACE("add_fd_to_eps (fd: %d, eps idx = %" PRIdPTR ")", fd->fd,
+                     idx);
   gpr_mu_unlock(&fd->mu);
 
   GRPC_LOG_IF_ERROR("add_fd_to_eps", error);
