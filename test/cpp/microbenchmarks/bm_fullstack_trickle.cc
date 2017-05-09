@@ -53,7 +53,7 @@ DEFINE_int32(
     "Number of megabytes to pump before collecting flow control stats");
 DEFINE_int32(
     warmup_iterations, 100,
-    "Number of megabytes to pump before collecting flow control stats");
+    "Number of iterations to run before collecting flow control stats");
 DEFINE_int32(warmup_max_time_seconds, 10,
              "Maximum number of seconds to run warmup loop");
 
@@ -366,7 +366,7 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
                       fixture->cq(), tag(1));
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
-  while (state.KeepRunning()) {
+  auto inner_loop = [&](bool in_warmup) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     recv_response.Clear();
     ClientContext cli_ctx;
@@ -394,6 +394,21 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
     senv = new (senv) ServerEnv();
     service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
                         fixture->cq(), fixture->cq(), tag(slot));
+  };
+  gpr_timespec warmup_start = gpr_now(GPR_CLOCK_MONOTONIC);
+  for (int i = 0;
+       i < GPR_MAX(FLAGS_warmup_iterations, FLAGS_warmup_megabytes * 1024 *
+                                                1024 / (14 + state.range(0)));
+       i++) {
+    inner_loop(true);
+    if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), warmup_start),
+                     gpr_time_from_seconds(FLAGS_warmup_max_time_seconds,
+                                           GPR_TIMESPAN)) > 0) {
+      break;
+    }
+  }
+  while (state.KeepRunning()) {
+    inner_loop(false);
   }
   fixture->Finish(state);
   fixture.reset();
