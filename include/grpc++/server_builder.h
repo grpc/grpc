@@ -184,6 +184,11 @@ class ServerBuilder {
   static void InternalAddPluginFactory(
       std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)());
 
+  /// Enable a server workaround. Do not use unless you know what the workaround
+  /// does. For explanation and detailed descriptions of workarounds, see
+  /// docs/workarounds.md.
+  ServerBuilder& EnableWorkaround(uint32_t id);
+
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
 
@@ -226,6 +231,7 @@ class ServerBuilder {
   std::vector<std::unique_ptr<ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
+  std::vector<const char *> enabled_workarounds_;
 
   SyncServerSettings sync_server_settings_;
 

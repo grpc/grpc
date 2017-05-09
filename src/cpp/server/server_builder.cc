@@ -39,6 +39,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
+#include <grpc/support/workaround_list.h>
 
 #include "src/cpp/server/thread_pool_interface.h"
 
@@ -196,6 +197,10 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 
   if (max_send_message_size_ >= 0) {
     args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
+  }
+
+  for (auto workaround : enabled_workarounds_) {
+    args.SetInt(workaround, 1);
   }
 
   args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
@@ -356,6 +361,16 @@ void ServerBuilder::InternalAddPluginFactory(
     std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)()) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   (*g_plugin_factory_list).push_back(CreatePlugin);
+}
+
+void ServerBuilder::EnableWorkaround(uint32_t id) {
+  switch (id) {
+    case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
+      enabled_workarounds_.push_back(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION);
+      break;
+    default:
+      gpr_log(GPR_ERROR, "Workaround %u is not exist or obsolete.", id);
+  }
 }
 
 }  // namespace grpc
