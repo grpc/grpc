@@ -66,7 +66,8 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         Returns False under all other circumstances, for example:
         1. computation has begun and could not be canceled.
         2. computation has finished
-        3. computation is scheduled for execution and it is impossible to determine its state without blocking.
+        3. computation is scheduled for execution and it is impossible to
+           determine its state without blocking.
     """
         raise NotImplementedError()
 
@@ -123,8 +124,8 @@ class Future(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       timeout: The length of time in seconds to wait for the computation to
-        finish or be cancelled. If None, the call will block until the computations's
-        termination.
+        finish or be cancelled. If None, the call will block until the
+        computations's termination.
 
     Returns:
       The return value of the computation.
@@ -146,8 +147,8 @@ class Future(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       timeout: The length of time in seconds to wait for the computation to
-        terminate or be cancelled. If None, the call will block until the computations's
-        termination.
+        terminate or be cancelled. If None, the call will block until the
+        computations's termination.
 
     Returns:
         The exception raised by the computation, or None if the computation did
@@ -363,9 +364,9 @@ class ChannelCredentials(object):
     """An encapsulation of the data required to create a secure Channel.
 
   This class has no supported interface - it exists to define the type of its
-  instances and its instances exist to be passed to other functions. For example,
-  ssl_channel_credentials returns an instance, and secure_channel consumes an
-  instance of this class.
+  instances and its instances exist to be passed to other functions. For
+  example, ssl_channel_credentials returns an instance, and secure_channel
+  consumes an instance of this class.
   """
 
     def __init__(self, credentials):
@@ -373,7 +374,8 @@ class ChannelCredentials(object):
 
 
 class CallCredentials(object):
-    """An encapsulation of the data required to assert an identity over a channel.
+    """An encapsulation of the data required to assert an identity over a
+       channel.
 
   A CallCredentials may be composed with ChannelCredentials to always assert
   identity for every call over that Channel.
@@ -399,7 +401,8 @@ class AuthMetadataPluginCallback(six.with_metaclass(abc.ABCMeta)):
     """Callback object received by a metadata plugin."""
 
     def __call__(self, metadata, error):
-        """Inform the gRPC runtime of the metadata to construct a CallCredentials.
+        """Inform the gRPC runtime of the metadata to construct a
+           CallCredentials.
 
     Args:
       metadata: The :term:`metadata` used to construct the CallCredentials.
@@ -879,8 +882,8 @@ class GenericRpcHandler(six.with_metaclass(abc.ABCMeta)):
       handler_call_details: A HandlerCallDetails describing the RPC.
 
     Returns:
-      An RpcMethodHandler with which the RPC may be serviced if the implementation
-      chooses to service this RPC, or None otherwise.
+      An RpcMethodHandler with which the RPC may be serviced if the
+      implementation chooses to service this RPC, or None otherwise.
     """
         raise NotImplementedError()
 
