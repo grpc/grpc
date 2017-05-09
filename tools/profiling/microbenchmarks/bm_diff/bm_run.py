@@ -44,12 +44,16 @@ import jobset
 
 def _args():
   argp = argparse.ArgumentParser(description='Runs microbenchmarks')
-  argp.add_argument('-b', '--benchmarks', nargs='+', choices=bm_constants._AVAILABLE_BENCHMARK_TESTS, default=bm_constants._AVAILABLE_BENCHMARK_TESTS)
-  argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
-  argp.add_argument('-n', '--name', type=str, help='Unique name of this build')
-  argp.add_argument('-r', '--repetitions', type=int, default=1)
-  argp.add_argument('-l', '--loops', type=int, default=20)
-  return argp.parse_args()
+  argp.add_argument('-b', '--benchmarks', nargs='+', choices=bm_constants._AVAILABLE_BENCHMARK_TESTS, default=bm_constants._AVAILABLE_BENCHMARK_TESTS, help='Benchmarks to run')
+  argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count(), help='Number of CPUs to use')
+  argp.add_argument('-n', '--name', type=str, help='Unique name of the build to run. Needs to match the handle passed to bm_build.py')
+  argp.add_argument('-r', '--repetitions', type=int, default=1, help='Number of repetitions to pass to the benchmarks')
+  argp.add_argument('-l', '--loops', type=int, default=20, help='Number of times to loops the benchmarks. More loops cuts down on noise')
+  args = argp.parse_args()
+  assert args.name
+  if args.loops < 3:
+    print "WARNING: This run will likely be noisy. Increase loops."
+  return args
 
 def _collect_bm_data(bm, cfg, name, reps, idx, loops):
   cmd = ['bm_diff_%s/%s/%s' % (name, cfg, bm),
@@ -73,5 +77,4 @@ def run(name, benchmarks, jobs, loops, reps):
 
 if __name__ == '__main__':
   args = _args()
-  assert args.name
   run(args.name, args.benchmarks, args.jobs, args.loops, args.repetitions)

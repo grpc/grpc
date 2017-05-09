@@ -40,10 +40,12 @@ import shutil
 
 def _args():
   argp = argparse.ArgumentParser(description='Builds microbenchmarks')
-  argp.add_argument('-b', '--benchmarks', nargs='+', choices=bm_constants._AVAILABLE_BENCHMARK_TESTS, default=bm_constants._AVAILABLE_BENCHMARK_TESTS)
-  argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
-  argp.add_argument('-n', '--name', type=str, help='Unique name of this build')
-  return argp.parse_args()
+  argp.add_argument('-b', '--benchmarks', nargs='+', choices=bm_constants._AVAILABLE_BENCHMARK_TESTS, default=bm_constants._AVAILABLE_BENCHMARK_TESTS, help='Which benchmarks to build')
+  argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count(), help='How many CPUs to dedicate to this task')
+  argp.add_argument('-n', '--name', type=str, help='Unique name of this build. To be used as a handle to pass to the other bm* scripts')
+  args = argp.parse_args()
+  assert args.name
+  return args
 
 def _make_cmd(cfg, benchmarks, jobs):
   return ['make'] + benchmarks + [

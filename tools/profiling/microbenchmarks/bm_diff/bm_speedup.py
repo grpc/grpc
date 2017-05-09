@@ -44,7 +44,6 @@ def cmp(a, b):
 def speedup(new, old):
   if (len(set(new))) == 1 and new == old: return 0
   s0, p0 = cmp(new, old)
-  print s0, p0
   if math.isnan(p0): return 0
   if s0 == 0: return 0
   if p0 > _THRESHOLD: return 0
@@ -52,7 +51,6 @@ def speedup(new, old):
     pct = 1
     while pct < 101:
       sp, pp = cmp(new, scale(old, 1 - pct/100.0))
-      print sp, pp
       if sp > 0: break
       if pp > _THRESHOLD: break
       pct += 1
@@ -61,7 +59,6 @@ def speedup(new, old):
     pct = 1
     while pct < 100000:
       sp, pp = cmp(new, scale(old, 1 + pct/100.0))
-      print sp, pp
       if sp < 0: break
       if pp > _THRESHOLD: break
       pct += 1

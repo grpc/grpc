@@ -61,8 +61,8 @@ def _args():
                     nargs='+',
                     default=sorted(bm_constants._INTERESTING),
                     help='Which metrics to track')
-  argp.add_argument('-b', '--benchmarks', nargs='+', choices=bm_constants._AVAILABLE_BENCHMARK_TESTS, default=bm_constants._AVAILABLE_BENCHMARK_TESTS)
-  argp.add_argument('-l', '--loops', type=int, default=20)
+  argp.add_argument('-b', '--benchmarks', nargs='+', choices=bm_constants._AVAILABLE_BENCHMARK_TESTS, default=bm_constants._AVAILABLE_BENCHMARK_TESTS, help='Which benchmarks to run')
+  argp.add_argument('-l', '--loops', type=int, default=20, help='Number of times to loops the benchmarks. Must match what was passed to bm_run.py')
   argp.add_argument('-n', '--new', type=str, help='New benchmark name')
   argp.add_argument('-o', '--old', type=str, help='Old benchmark name')
   argp.add_argument('-v', '--verbose', type=bool, help='print details of before/after')

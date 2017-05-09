@@ -51,13 +51,16 @@ def _args():
                     nargs='+',
                     default=sorted(bm_constants._INTERESTING),
                     help='Which metrics to track')
-  argp.add_argument('-b', '--benchmarks', nargs='+', choices=bm_constants._AVAILABLE_BENCHMARK_TESTS, default=bm_constants._AVAILABLE_BENCHMARK_TESTS)
-  argp.add_argument('-d', '--diff_base', type=str)
-  argp.add_argument('-r', '--repetitions', type=int, default=1)
-  argp.add_argument('-l', '--loops', type=int, default=20)
-  argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
+  argp.add_argument('-b', '--benchmarks', nargs='+', choices=bm_constants._AVAILABLE_BENCHMARK_TESTS, default=bm_constants._AVAILABLE_BENCHMARK_TESTS, help='Which benchmarks to run')
+  argp.add_argument('-d', '--diff_base', type=str, help='Commit or branch to compare the current one to')
+  argp.add_argument('-o', '--old', type=str, help='Name of baseline run to compare to. Ususally just called "old"')
+  argp.add_argument('-r', '--repetitions', type=int, default=1, help='Number of repetitions to pass to the benchmarks')
+  argp.add_argument('-l', '--loops', type=int, default=20, help='Number of times to loops the benchmarks. More loops cuts down on noise')
+  argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count(), help='Number of CPUs to use')
   args = argp.parse_args()
-  assert args.diff_base
+  assert args.diff_base or args.old, "One of diff_base or old must be set!"
+  if args.loops < 3:
+    print "WARNING: This run will likely be noisy. Increase loops."
   return args
 
 
@@ -76,18 +79,21 @@ def main(args):
 
   bm_build.build('new', args.benchmarks, args.jobs)
 
-  where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
-  subprocess.check_call(['git', 'checkout', args.diff_base])
-  try:
-    bm_build.build('old', args.benchmarks, args.jobs)
-  finally:
-    subprocess.check_call(['git', 'checkout', where_am_i])
-    subprocess.check_call(['git', 'submodule', 'update'])
+  old = args.old
+  if args.diff_base:
+    old = 'old'
+    where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+    subprocess.check_call(['git', 'checkout', args.diff_base])
+    try:
+      bm_build.build('old', args.benchmarks, args.jobs)
+    finally:
+      subprocess.check_call(['git', 'checkout', where_am_i])
+      subprocess.check_call(['git', 'submodule', 'update'])
 
   bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.repetitions)
-  bm_run.run('old', args.benchmarks, args.jobs, args.loops, args.repetitions)
+  bm_run.run(old, args.benchmarks, args.jobs, args.loops, args.repetitions)
 
-  diff = bm_diff.diff(args.benchmarks, args.loops, args.track, 'old', 'new')
+  diff = bm_diff.diff(args.benchmarks, args.loops, args.track, old, 'new')
   if diff:
     text = 'Performance differences noted:\n' + diff
   else:
