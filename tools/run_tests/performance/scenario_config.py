@@ -53,6 +53,7 @@ HISTOGRAM_PARAMS = {
 # actual target will be slightly higher)
 OUTSTANDING_REQUESTS={
     'async': 6400,
+    'async-1core': 800,
     'sync': 1000
 }
 
@@ -265,7 +266,7 @@ class CXXLanguage:
           rpc_type='STREAMING',
           client_type='ASYNC_CLIENT',
           server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async', use_generic_payload=True,
+          unconstrained_client='async-1core', use_generic_payload=True,
           async_server_threads=1,
           secure=secure)
 
@@ -752,7 +753,7 @@ class JavaLanguage:
       yield _ping_pong_scenario(
           'java_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async', use_generic_payload=True,
+          unconstrained_client='async-1core', use_generic_payload=True,
           async_server_threads=1,
           secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
 
