@@ -899,7 +899,7 @@ exports.makeClientConstructor = function(methods, serviceName,
  * @return {Channel} The channel
  */
 exports.getClientChannel = function(client) {
-  return Client.prototype.getChannel.apply(client);
+  return Client.prototype.getChannel.call(client);
 };
 
 /**
@@ -915,7 +915,7 @@ exports.getClientChannel = function(client) {
  *     to connect.
  */
 exports.waitForClientReady = function(client, deadline, callback) {
-  Client.prototype.waitForReady.apply(client, deadline, callback);
+  Client.prototype.waitForReady.call(client, deadline, callback);
 };
 
 /**
