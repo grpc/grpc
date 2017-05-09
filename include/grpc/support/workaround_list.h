@@ -31,6 +31,10 @@
  *
  */
 
+/* The list of IDs of server workarounds currently maintained by gRPC. For
+ * explanation and detailed descriptions of workarounds, see
+ * /docs/workarounds.md
+ */
 typedef enum {
   GRPC_WORKAROUND_ID_CRONET_COMPRESSION = 0,
   GRPC_MAX_WORKAROUND_ID
