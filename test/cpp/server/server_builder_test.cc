@@ -40,6 +40,8 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 
+#include <grpc/support/workaround_list.h>
+
 namespace grpc {
 namespace {
 
@@ -85,6 +87,15 @@ TEST(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
                 .AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0)
                 .BuildAndStart(),
             nullptr);
+}
+
+TEST(ServerBuilderTest, CreateServerOnePortWithCronetCompressionWorkaround) {
+  ServerBuilder()
+      .RegisterService(&g_service)
+      .AddListeningPort(g_port, InsecureServerCredentials())
+      .EnableWorkaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION)
+      .BuildAndStart()
+      ->Shutdown();
 }
 
 }  // namespace
