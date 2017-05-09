@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,26 +26,26 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Builds Ruby interop server and client in a base image.
-set -e
 
-mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc /var/local/git/grpc
-# clone gRPC submodules, use data from locally cloned submodules where possible
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
-${name}')
+FROM golang:1.8
 
-# Copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
+# Using login shell removes Go from path, so we add it.
+RUN ln -s /usr/local/go/bin/go /usr/local/bin
 
-cd /var/local/git/grpc
-rvm --default use ruby-2.1
+#====================
+# Python dependencies
 
-# Build Ruby interop client and server
-(cd src/ruby && gem update bundler && bundle && rake compile)
+# Install dependencies
 
-# Build c++ metrics client to query the metrics from ruby stress client
-make metrics_client -j
+RUN apt-get update && apt-get install -y \
+    python-all-dev \
+    python3-all-dev \
+    python-pip
 
+# Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
+
+# Define the default command.
+CMD ["bash"]
