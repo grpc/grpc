@@ -208,7 +208,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
 
-  for compiler in ['gcc4.8', 'gcc5.3',
+  for compiler in ['gcc4.8', 'gcc5.3', 'gcc_musl',
                    'clang3.5', 'clang3.6', 'clang3.7']:
     test_jobs += _generate_jobs(languages=['c++'],
                                 configs=['dbg'],
@@ -263,6 +263,15 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               platforms=['linux'],
                               arch='default',
                               compiler='python3.4',
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+
+  test_jobs += _generate_jobs(languages=['python'],
+                              configs=['dbg'],
+                              platforms=['linux'],
+                              arch='default',
+                              compiler='python_alpine',
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)

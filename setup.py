@@ -237,7 +237,7 @@ INSTALL_REQUIRES = (
     'six>=1.5.2',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
-    'protobuf>=3.2.0',
+    'protobuf>=3.3.0',
 )
 
 if not PY3:
