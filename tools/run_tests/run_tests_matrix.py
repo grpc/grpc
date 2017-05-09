@@ -396,6 +396,11 @@ if __name__ == "__main__":
                     const=True,
                     help='Put reports into subdirectories to improve presentation of '
                     'results by Internal CI.')
+  argp.add_argument('--bq_result_table',
+                    default='',
+                    type=str,
+                    nargs='?',
+                    help='Upload test results to a specified BQ table.')
   args = argp.parse_args()
 
   if args.internal_ci:
@@ -412,6 +417,10 @@ if __name__ == "__main__":
     extra_args.append('--quiet_success')
   if args.max_time > 0:
     extra_args.extend(('--max_time', '%d' % args.max_time))
+  if args.bq_result_table:
+    extra_args.append('--bq_result_table')
+    extra_args.append('%s' % args.bq_result_table)
+    extra_args.append('--measure_cpu_costs')
 
   all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
              _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)
