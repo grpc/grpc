@@ -202,6 +202,7 @@ class CSharpExtArtifact:
                  'EMBED_OPENSSL': 'true',
                  'EMBED_ZLIB': 'true',
                  'CFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE',
+                 'CXXFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE',
                  'LDFLAGS': ''}
       if self.platform == 'linux':
         return create_docker_jobspec(self.name,
@@ -211,6 +212,7 @@ class CSharpExtArtifact:
       else:
         archflag = _ARCH_FLAG_MAP[self.arch]
         environ['CFLAGS'] += ' %s %s' % (archflag, _MACOS_COMPAT_FLAG)
+        environ['CXXFLAGS'] += ' %s %s' % (archflag, _MACOS_COMPAT_FLAG)
         environ['LDFLAGS'] += ' %s' % archflag
         return create_jobspec(self.name,
                               ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
