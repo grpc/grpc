@@ -2152,7 +2152,8 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     gpr_log(GPR_DEBUG, "%s: update initial window size to %d", t->peer_string,
             (int)bdp);
   }
-  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, (uint32_t)bdp);
+  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+               (uint32_t)bdp);
 }
 
 static void update_frame(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -2171,7 +2172,8 @@ static void update_frame(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     gpr_log(GPR_DEBUG, "%s: update max_frame size to %d", t->peer_string,
             (int)frame_size);
   }
-  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, (uint32_t)frame_size);
+  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+               (uint32_t)frame_size);
 }
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
