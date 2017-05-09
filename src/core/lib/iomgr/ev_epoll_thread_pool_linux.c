@@ -1183,7 +1183,8 @@ static void add_fd_to_eps(grpc_fd *fd) {
   EPS_ADD_REF(eps, "fd");
   fd->eps = eps;
 
-  GRPC_POLLING_TRACE("add_fd_to_eps (fd: %d, eps idx = %ld)", fd->fd, idx);
+  GRPC_POLLING_TRACE("add_fd_to_eps (fd: %d, eps idx = %" PRIdPTR ")", fd->fd,
+                     idx);
   gpr_mu_unlock(&fd->mu);
 
   GRPC_LOG_IF_ERROR("add_fd_to_eps", error);
@@ -1340,6 +1341,8 @@ const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(void) {
 #include "src/core/lib/iomgr/ev_posix.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable *grpc_init_epoll_linux(void) { return NULL; }
+const grpc_event_engine_vtable *grpc_init_epoll_thread_pool_linux(void) {
+  return NULL;
+}
 #endif /* defined(GRPC_POSIX_SOCKET) */
 #endif /* !defined(GRPC_LINUX_EPOLL) */

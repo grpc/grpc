@@ -2989,6 +2989,9 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
+    "excluded_poll_engines": [
+      "epoll-threadpool"
+    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 

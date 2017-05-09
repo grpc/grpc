@@ -3481,6 +3481,8 @@ targets:
   args:
   - --benchmark_min_time=0
   defaults: benchmark
+  excluded_poll_engines:
+  - epoll-threadpool
   platforms:
   - mac
   - linux
