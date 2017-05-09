@@ -31,7 +31,7 @@ licenses(["notice"])  # 3-clause BSD
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library")
 
-package(default_visibility = ["//test:__subpackages__"])
+package(default_visibility = ["//visiblity:public"])
 
 grpc_cc_library(
     name = "test_config",
