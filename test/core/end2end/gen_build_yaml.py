@@ -152,6 +152,7 @@ END2END_TESTS = {
     'simple_request': default_test_options,
     'streaming_error_response': default_test_options._replace(cpu_cost=LOWCPU),
     'trailing_metadata': default_test_options,
+    'workaround_cronet_compression': default_test_options,
     'write_buffering': default_test_options._replace(cpu_cost=LOWCPU),
     'write_buffering_at_end': default_test_options._replace(cpu_cost=LOWCPU),
 }

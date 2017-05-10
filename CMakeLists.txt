@@ -4542,6 +4542,7 @@ add_library(end2end_tests
   test/core/end2end/tests/simple_request.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
+  test/core/end2end/tests/workaround_cronet_compression.c
   test/core/end2end/tests/write_buffering.c
   test/core/end2end/tests/write_buffering_at_end.c
 )
@@ -4639,6 +4640,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/simple_request.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
+  test/core/end2end/tests/workaround_cronet_compression.c
   test/core/end2end/tests/write_buffering.c
   test/core/end2end/tests/write_buffering_at_end.c
 )
