@@ -2,7 +2,7 @@
 
 tl;dr: [Example code](https://github.com/grpc/grpc/blob/master/test/cpp/end2end/mock_test.cc).
 
-To unit-test client-side logic via the synchronous API, gRPC provides a mocked Stub that can be programmed upon and easily incorporated in the test code. 
+To unit-test client-side logic via the synchronous API, gRPC provides a mocked Stub based on googletest(googlemock) that can be programmed upon and easily incorporated in the test code. 
 
 For instance, consider an EchoService like this:
 
@@ -14,7 +14,7 @@ service EchoTestService {
 }
 ```
 
-The code generate would look something like this:
+The code generated would look something like this:
 
 ```c++
 class EchoTestService final {
@@ -75,7 +75,7 @@ grpc_proto_library(
 ```
 
 
-By adding such a flag now a header file `echo_mock.h` containing the mocked stub will also be generated. 
+By adding such a flag now a header file `echo_mock.grpc.pb.h` containing the mocked stub will also be generated. 
 
 This header file can then be included in test files along with a gmock dependency.
 
