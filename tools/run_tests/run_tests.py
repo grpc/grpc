@@ -390,10 +390,6 @@ class CLanguage(object):
 
     if compiler == 'gcc4.9' or compiler == 'default':
       return ('jessie', [])
-    elif compiler == 'gcc4.4':
-      return ('wheezy', self._gcc_make_options(version_suffix='-4.4'))
-    elif compiler == 'gcc4.6':
-      return ('wheezy', self._gcc_make_options(version_suffix='-4.6'))
     elif compiler == 'gcc4.8':
       return ('jessie', self._gcc_make_options(version_suffix='-4.8'))
     elif compiler == 'gcc5.3':
