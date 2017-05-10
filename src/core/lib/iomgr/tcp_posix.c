@@ -81,6 +81,8 @@ typedef struct {
   grpc_fd *em_fd;
   int fd;
   bool finished_edge;
+  bool read_covered_by_poller;
+  bool write_covered_by_poller;
   msg_iovlen_type iov_size; /* Number of slices to allocate per read attempt */
   double target_length;
   double bytes_read_this_round;
@@ -113,6 +115,17 @@ typedef struct {
   grpc_resource_user *resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
 } grpc_tcp;
+
+static void call_notify_function_and_maybe_arrange_poller(
+    grpc_exec_ctx *exec_ctx, grpc_fd *fd, bool covered_by_poller,
+    grpc_closure *closure,
+    void (*notify_func)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                        grpc_closure *closure)) {
+  notify_func(exec_ctx, fd, closure);
+  if (!covered_by_poller) {
+    abort();
+  }
+}
 
 static void add_to_estimate(grpc_tcp *tcp, size_t bytes) {
   tcp->bytes_read_this_round += (double)bytes;
@@ -276,7 +289,9 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
     if (errno == EAGAIN) {
       finish_estimate(tcp);
       /* We've consumed the edge, request a new one */
-      grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
+      call_notify_function_and_maybe_arrange_poller(
+          exec_ctx, tcp->em_fd, tcp->read_covered_by_poller, &tcp->read_closure,
+          grpc_fd_notify_on_read);
     } else {
       grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                                  tcp->incoming_buffer);
@@ -351,17 +366,21 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 }
 
 static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                     grpc_slice_buffer *incoming_buffer, grpc_closure *cb) {
+                     grpc_slice_buffer *incoming_buffer, bool covered_by_poller,
+                     grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
+  tcp->read_covered_by_poller = covered_by_poller;
   tcp->incoming_buffer = incoming_buffer;
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
   if (tcp->finished_edge) {
     tcp->finished_edge = false;
-    grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
+    call_notify_function_and_maybe_arrange_poller(
+        exec_ctx, tcp->em_fd, tcp->read_covered_by_poller, &tcp->read_closure,
+        grpc_fd_notify_on_read);
   } else {
     grpc_closure_sched(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE);
   }
@@ -471,7 +490,9 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     if (grpc_tcp_trace) {
       gpr_log(GPR_DEBUG, "write: delayed");
     }
-    grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
+    call_notify_function_and_maybe_arrange_poller(
+        exec_ctx, tcp->em_fd, tcp->write_covered_by_poller, &tcp->write_closure,
+        grpc_fd_notify_on_write);
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
@@ -486,7 +507,8 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 }
 
 static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                      grpc_slice_buffer *buf, grpc_closure *cb) {
+                      grpc_slice_buffer *buf, bool covered_by_poller,
+                      grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_error *error = GRPC_ERROR_NONE;
 
@@ -517,6 +539,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   tcp->outgoing_buffer = buf;
   tcp->outgoing_slice_idx = 0;
   tcp->outgoing_byte_idx = 0;
+  tcp->write_covered_by_poller = covered_by_poller;
 
   if (!tcp_flush(tcp, &error)) {
     TCP_REF(tcp, "write");
@@ -524,7 +547,9 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     if (grpc_tcp_trace) {
       gpr_log(GPR_DEBUG, "write: delayed");
     }
-    grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
+    call_notify_function_and_maybe_arrange_poller(
+        exec_ctx, tcp->em_fd, tcp->write_covered_by_poller, &tcp->write_closure,
+        grpc_fd_notify_on_write);
   } else {
     if (grpc_tcp_trace) {
       const char *str = grpc_error_string(error);

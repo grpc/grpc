@@ -139,7 +139,7 @@ static void append_error(internal_request *req, grpc_error *error) {
 }
 
 static void do_read(grpc_exec_ctx *exec_ctx, internal_request *req) {
-  grpc_endpoint_read(exec_ctx, req->ep, &req->incoming, &req->on_read);
+  grpc_endpoint_read(exec_ctx, req->ep, &req->incoming, true, &req->on_read);
 }
 
 static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
@@ -184,7 +184,8 @@ static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void start_write(grpc_exec_ctx *exec_ctx, internal_request *req) {
   grpc_slice_ref_internal(req->request_text);
   grpc_slice_buffer_add(&req->outgoing, req->request_text);
-  grpc_endpoint_write(exec_ctx, req->ep, &req->outgoing, &req->done_write);
+  grpc_endpoint_write(exec_ctx, req->ep, &req->outgoing, true,
+                      &req->done_write);
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,

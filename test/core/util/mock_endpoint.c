@@ -56,7 +56,8 @@ typedef struct grpc_mock_endpoint {
 } grpc_mock_endpoint;
 
 static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                    grpc_slice_buffer *slices, grpc_closure *cb) {
+                    grpc_slice_buffer *slices, bool covered_by_poller,
+                    grpc_closure *cb) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
@@ -70,7 +71,8 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 }
 
 static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                     grpc_slice_buffer *slices, grpc_closure *cb) {
+                     grpc_slice_buffer *slices, bool covered_by_poller,
+                     grpc_closure *cb) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);

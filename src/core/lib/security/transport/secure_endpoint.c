@@ -231,7 +231,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
 }
 
 static void endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
-                          grpc_slice_buffer *slices, grpc_closure *cb) {
+                          grpc_slice_buffer *slices, bool covered_by_poller,
+                          grpc_closure *cb) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   ep->read_cb = cb;
   ep->read_buffer = slices;
@@ -246,7 +247,7 @@ static void endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   }
 
   grpc_endpoint_read(exec_ctx, ep->wrapped_ep, &ep->source_buffer,
-                     &ep->on_read);
+                     covered_by_poller, &ep->on_read);
 }
 
 static void flush_write_staging_buffer(secure_endpoint *ep, uint8_t **cur,
@@ -258,7 +259,8 @@ static void flush_write_staging_buffer(secure_endpoint *ep, uint8_t **cur,
 }
 
 static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
-                           grpc_slice_buffer *slices, grpc_closure *cb) {
+                           grpc_slice_buffer *slices, bool covered_by_poller,
+                           grpc_closure *cb) {
   GPR_TIMER_BEGIN("secure_endpoint.endpoint_write", 0);
 
   unsigned i;
@@ -340,7 +342,8 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
     return;
   }
 
-  grpc_endpoint_write(exec_ctx, ep->wrapped_ep, &ep->output_buffer, cb);
+  grpc_endpoint_write(exec_ctx, ep->wrapped_ep, &ep->output_buffer,
+                      covered_by_poller, cb);
   GPR_TIMER_END("secure_endpoint.endpoint_write", 0);
 }
 

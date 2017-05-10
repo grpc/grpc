@@ -143,7 +143,7 @@ static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
     GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL));
     gpr_mu_unlock(g_mu);
   } else if (error == GRPC_ERROR_NONE) {
-    grpc_endpoint_read(exec_ctx, state->read_ep, &state->incoming,
+    grpc_endpoint_read(exec_ctx, state->read_ep, &state->incoming, true,
                        &state->done_read);
   }
 }
@@ -165,7 +165,7 @@ static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
                                &state->current_write_data);
       grpc_slice_buffer_reset_and_unref(&state->outgoing);
       grpc_slice_buffer_addn(&state->outgoing, slices, nslices);
-      grpc_endpoint_write(exec_ctx, state->write_ep, &state->outgoing,
+      grpc_endpoint_write(exec_ctx, state->write_ep, &state->outgoing, true,
                           &state->done_write);
       gpr_free(slices);
       return;
@@ -228,7 +228,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   read_and_write_test_write_handler(&exec_ctx, &state, GRPC_ERROR_NONE);
   grpc_exec_ctx_flush(&exec_ctx);
 
-  grpc_endpoint_read(&exec_ctx, state.read_ep, &state.incoming,
+  grpc_endpoint_read(&exec_ctx, state.read_ep, &state.incoming, true,
                      &state.done_read);
 
   if (shutdown) {
@@ -296,19 +296,19 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_add_to_pollset(&exec_ctx, f.client_ep, g_pollset);
-  grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer,
+  grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer, true,
                      grpc_closure_create(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 0);
   grpc_endpoint_shutdown(&exec_ctx, f.client_ep,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   wait_for_fail_count(&exec_ctx, &fail_count, 1);
-  grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer,
+  grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer, true,
                      grpc_closure_create(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 2);
   grpc_slice_buffer_add(&slice_buffer, grpc_slice_from_copied_string("a"));
-  grpc_endpoint_write(&exec_ctx, f.client_ep, &slice_buffer,
+  grpc_endpoint_write(&exec_ctx, f.client_ep, &slice_buffer, true,
                       grpc_closure_create(inc_on_failure, &fail_count,
                                           grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 3);

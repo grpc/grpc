@@ -170,7 +170,7 @@ static void on_client_write_done(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_slice_buffer_move_into(&conn->client_deferred_write_buffer,
                                 &conn->client_write_buffer);
     grpc_endpoint_write(exec_ctx, conn->client_endpoint,
-                        &conn->client_write_buffer,
+                        &conn->client_write_buffer, true,
                         &conn->on_client_write_done);
   } else {
     // No more writes.  Unref the connection.
@@ -195,7 +195,7 @@ static void on_server_write_done(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_slice_buffer_move_into(&conn->server_deferred_write_buffer,
                                 &conn->server_write_buffer);
     grpc_endpoint_write(exec_ctx, conn->server_endpoint,
-                        &conn->server_write_buffer,
+                        &conn->server_write_buffer, true,
                         &conn->on_server_write_done);
   } else {
     // No more writes.  Unref the connection.
@@ -227,12 +227,12 @@ static void on_client_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                 &conn->server_write_buffer);
     proxy_connection_ref(conn, "client_read");
     grpc_endpoint_write(exec_ctx, conn->server_endpoint,
-                        &conn->server_write_buffer,
+                        &conn->server_write_buffer, true,
                         &conn->on_server_write_done);
   }
   // Read more data.
   grpc_endpoint_read(exec_ctx, conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_client_read_done);
+                     true, &conn->on_client_read_done);
 }
 
 // Callback for reading data from the backend server, which will be
@@ -259,12 +259,12 @@ static void on_server_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                 &conn->client_write_buffer);
     proxy_connection_ref(conn, "server_read");
     grpc_endpoint_write(exec_ctx, conn->client_endpoint,
-                        &conn->client_write_buffer,
+                        &conn->client_write_buffer, true,
                         &conn->on_client_write_done);
   }
   // Read more data.
   grpc_endpoint_read(exec_ctx, conn->server_endpoint, &conn->server_read_buffer,
-                     &conn->on_server_read_done);
+                     true, &conn->on_server_read_done);
 }
 
 // Callback to write the HTTP response for the CONNECT request.
@@ -285,9 +285,9 @@ static void on_write_response_done(grpc_exec_ctx* exec_ctx, void* arg,
   proxy_connection_ref(conn, "server_read");
   proxy_connection_unref(exec_ctx, conn, "write_response");
   grpc_endpoint_read(exec_ctx, conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_client_read_done);
+                     true, &conn->on_client_read_done);
   grpc_endpoint_read(exec_ctx, conn->server_endpoint, &conn->server_read_buffer,
-                     &conn->on_server_read_done);
+                     true, &conn->on_server_read_done);
 }
 
 // Callback to connect to the backend server specified by the HTTP
@@ -312,7 +312,7 @@ static void on_server_connect_done(grpc_exec_ctx* exec_ctx, void* arg,
       grpc_slice_from_copied_string("HTTP/1.0 200 connected\r\n\r\n");
   grpc_slice_buffer_add(&conn->client_write_buffer, slice);
   grpc_endpoint_write(exec_ctx, conn->client_endpoint,
-                      &conn->client_write_buffer,
+                      &conn->client_write_buffer, true,
                       &conn->on_write_response_done);
 }
 
@@ -349,7 +349,8 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   // If we're not done reading the request, read more data.
   if (conn->http_parser.state != GRPC_HTTP_BODY) {
     grpc_endpoint_read(exec_ctx, conn->client_endpoint,
-                       &conn->client_read_buffer, &conn->on_read_request_done);
+                       &conn->client_read_buffer, true,
+                       &conn->on_read_request_done);
     return;
   }
   // Make sure we got a CONNECT request.
@@ -422,7 +423,7 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_http_parser_init(&conn->http_parser, GRPC_HTTP_REQUEST,
                         &conn->http_request);
   grpc_endpoint_read(exec_ctx, conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_read_request_done);
+                     true, &conn->on_read_request_done);
 }
 
 //

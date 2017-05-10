@@ -909,7 +909,7 @@ static void write_action(grpc_exec_ctx *exec_ctx, void *gt, grpc_error *error) {
   grpc_chttp2_transport *t = gt;
   GPR_TIMER_BEGIN("write_action", 0);
   grpc_endpoint_write(
-      exec_ctx, t->ep, &t->outbuf,
+      exec_ctx, t->ep, &t->outbuf, true,
       grpc_closure_init(&t->write_action_end_locked, write_action_end_locked, t,
                         grpc_combiner_scheduler(t->combiner, false)));
   GPR_TIMER_END("write_action", 0);
@@ -2267,7 +2267,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &t->read_buffer);
 
   if (keep_reading) {
-    grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer,
+    grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer, true,
                        &t->read_action_locked);
 
     if (t->enable_bdp_probe) {

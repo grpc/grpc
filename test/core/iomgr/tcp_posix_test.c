@@ -164,7 +164,8 @@ static void read_cb(grpc_exec_ctx *exec_ctx, void *user_data,
   if (state->read_bytes >= state->target_read_bytes) {
     gpr_mu_unlock(g_mu);
   } else {
-    grpc_endpoint_read(exec_ctx, state->ep, &state->incoming, &state->read_cb);
+    grpc_endpoint_read(exec_ctx, state->ep, &state->incoming, true,
+                       &state->read_cb);
     gpr_mu_unlock(g_mu);
   }
 }
@@ -200,7 +201,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   grpc_slice_buffer_init(&state.incoming);
   grpc_closure_init(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
-  grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
+  grpc_endpoint_read(&exec_ctx, ep, &state.incoming, true, &state.read_cb);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -252,7 +253,7 @@ static void large_read_test(size_t slice_size) {
   grpc_slice_buffer_init(&state.incoming);
   grpc_closure_init(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
-  grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
+  grpc_endpoint_read(&exec_ctx, ep, &state.incoming, true, &state.read_cb);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -393,7 +394,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   grpc_closure_init(&write_done_closure, write_done, &state,
                     grpc_schedule_on_exec_ctx);
 
-  grpc_endpoint_write(&exec_ctx, ep, &outgoing, &write_done_closure);
+  grpc_endpoint_write(&exec_ctx, ep, &outgoing, true, &write_done_closure);
   drain_socket_blocking(sv[0], num_bytes, num_bytes);
   gpr_mu_lock(g_mu);
   for (;;) {
@@ -463,7 +464,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   grpc_slice_buffer_init(&state.incoming);
   grpc_closure_init(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
-  grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
+  grpc_endpoint_read(&exec_ctx, ep, &state.incoming, true, &state.read_cb);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {

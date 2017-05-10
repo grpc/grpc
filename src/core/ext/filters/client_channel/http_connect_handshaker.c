@@ -151,7 +151,7 @@ static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
     // Otherwise, read the response.
     // The read callback inherits our ref to the handshaker.
     grpc_endpoint_read(exec_ctx, handshaker->args->endpoint,
-                       handshaker->args->read_buffer,
+                       handshaker->args->read_buffer, true,
                        &handshaker->response_read_closure);
     gpr_mu_unlock(&handshaker->mu);
   }
@@ -215,7 +215,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                                handshaker->args->read_buffer);
     grpc_endpoint_read(exec_ctx, handshaker->args->endpoint,
-                       handshaker->args->read_buffer,
+                       handshaker->args->read_buffer, true,
                        &handshaker->response_read_closure);
     gpr_mu_unlock(&handshaker->mu);
     return;
@@ -338,7 +338,7 @@ static void http_connect_handshaker_do_handshake(
   gpr_free(header_strings);
   // Take a new ref to be held by the write callback.
   gpr_ref(&handshaker->refcount);
-  grpc_endpoint_write(exec_ctx, args->endpoint, &handshaker->write_buffer,
+  grpc_endpoint_write(exec_ctx, args->endpoint, &handshaker->write_buffer, true,
                       &handshaker->request_done_closure);
   gpr_mu_unlock(&handshaker->mu);
 }

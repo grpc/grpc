@@ -162,7 +162,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
 
   grpc_slice_buffer_init(&incoming);
   grpc_closure_init(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(&exec_ctx, f.client_ep, &incoming, &done_closure);
+  grpc_endpoint_read(&exec_ctx, f.client_ep, &incoming, true, &done_closure);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(n == 1);
   GPR_ASSERT(incoming.count == 1);

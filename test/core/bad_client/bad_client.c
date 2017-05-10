@@ -153,7 +153,8 @@ void grpc_run_bad_client_test(
                     grpc_schedule_on_exec_ctx);
 
   /* Write data */
-  grpc_endpoint_write(&exec_ctx, sfd.client, &outgoing, &done_write_closure);
+  grpc_endpoint_write(&exec_ctx, sfd.client, &outgoing, true,
+                      &done_write_closure);
   grpc_exec_ctx_finish(&exec_ctx);
 
   /* Await completion */
@@ -181,7 +182,7 @@ void grpc_run_bad_client_test(
       grpc_closure read_done_closure;
       grpc_closure_init(&read_done_closure, read_done, &args,
                         grpc_schedule_on_exec_ctx);
-      grpc_endpoint_read(&exec_ctx, sfd.client, &args.incoming,
+      grpc_endpoint_read(&exec_ctx, sfd.client, &args.incoming, true,
                          &read_done_closure);
       grpc_exec_ctx_finish(&exec_ctx);
       GPR_ASSERT(

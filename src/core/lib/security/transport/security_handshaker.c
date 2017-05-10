@@ -224,7 +224,7 @@ static grpc_error *send_handshake_bytes_to_peer_locked(grpc_exec_ctx *exec_ctx,
       grpc_slice_from_copied_buffer((const char *)h->handshake_buffer, offset);
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &h->outgoing);
   grpc_slice_buffer_add(&h->outgoing, to_send);
-  grpc_endpoint_write(exec_ctx, h->args->endpoint, &h->outgoing,
+  grpc_endpoint_write(exec_ctx, h->args->endpoint, &h->outgoing, true,
                       &h->on_handshake_data_sent_to_peer);
   return GRPC_ERROR_NONE;
 }
@@ -256,7 +256,7 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
     /* We may need more data. */
     if (result == TSI_INCOMPLETE_DATA) {
       grpc_endpoint_read(exec_ctx, h->args->endpoint, h->args->read_buffer,
-                         &h->on_handshake_data_received_from_peer);
+                         true, &h->on_handshake_data_received_from_peer);
       goto done;
     } else {
       error = send_handshake_bytes_to_peer_locked(exec_ctx, h);
@@ -323,7 +323,7 @@ static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx, void *arg,
   }
   /* We may be done. */
   if (tsi_handshaker_is_in_progress(h->handshaker)) {
-    grpc_endpoint_read(exec_ctx, h->args->endpoint, h->args->read_buffer,
+    grpc_endpoint_read(exec_ctx, h->args->endpoint, h->args->read_buffer, true,
                        &h->on_handshake_data_received_from_peer);
   } else {
     error = check_peer_locked(exec_ctx, h);

@@ -120,7 +120,8 @@ static void handle_write(grpc_exec_ctx *exec_ctx) {
 
   grpc_slice_buffer_reset_and_unref(&state.outgoing_buffer);
   grpc_slice_buffer_add(&state.outgoing_buffer, slice);
-  grpc_endpoint_write(exec_ctx, state.tcp, &state.outgoing_buffer, &on_write);
+  grpc_endpoint_write(exec_ctx, state.tcp, &state.outgoing_buffer, true,
+                      &on_write);
 }
 
 static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -142,7 +143,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD) {
     handle_write(exec_ctx);
   } else {
-    grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,
+    grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer, true,
                        &on_read);
   }
 }
@@ -159,7 +160,8 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   state.tcp = tcp;
   state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(exec_ctx, tcp, server->pollset);
-  grpc_endpoint_read(exec_ctx, tcp, &state.temp_incoming_buffer, &on_read);
+  grpc_endpoint_read(exec_ctx, tcp, &state.temp_incoming_buffer, true,
+                     &on_read);
 }
 
 static gpr_timespec n_sec_deadline(int seconds) {

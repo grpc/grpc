@@ -71,7 +71,8 @@ struct passthru_endpoint {
 };
 
 static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                    grpc_slice_buffer *slices, grpc_closure *cb) {
+                    grpc_slice_buffer *slices, bool covered_by_poller,
+                    grpc_closure *cb) {
   half *m = (half *)ep;
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
@@ -93,7 +94,8 @@ static half *other_half(half *h) {
 }
 
 static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                     grpc_slice_buffer *slices, grpc_closure *cb) {
+                     grpc_slice_buffer *slices, bool covered_by_poller,
+                     grpc_closure *cb) {
   half *m = other_half((half *)ep);
   gpr_mu_lock(&m->parent->mu);
   grpc_error *error = GRPC_ERROR_NONE;
