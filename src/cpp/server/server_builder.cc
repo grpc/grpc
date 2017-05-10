@@ -199,10 +199,6 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
   }
 
-  for (auto workaround : enabled_workarounds_) {
-    args.SetInt(workaround, 1);
-  }
-
   args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
               enabled_compression_algorithms_bitset_);
   if (maybe_default_compression_level_.is_set) {
@@ -366,13 +362,11 @@ void ServerBuilder::InternalAddPluginFactory(
 ServerBuilder& ServerBuilder::EnableWorkaround(uint32_t id) {
   switch (id) {
     case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
-      enabled_workarounds_.push_back(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION);
-      break;
+      return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION, 1);
     default:
-      gpr_log(GPR_ERROR, "Workaround %u is not exist or obsolete.", id);
+      gpr_log(GPR_ERROR, "Workaround %u does not exist or obsolete.", id);
+      return *this;
   }
-
-  return *this;
 }
 
 }  // namespace grpc

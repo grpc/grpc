@@ -231,7 +231,6 @@ class ServerBuilder {
   std::vector<std::unique_ptr<ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
-  std::vector<const char *> enabled_workarounds_;
 
   SyncServerSettings sync_server_settings_;
 
