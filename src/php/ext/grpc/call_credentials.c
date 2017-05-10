@@ -173,7 +173,6 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   php_grpc_add_property_string(arg, "service_url", context.service_url, true);
   php_grpc_add_property_string(arg, "method_name", context.method_name, true);
   zval *retval;
-  PHP_GRPC_MAKE_STD_ZVAL(retval);
 #if PHP_MAJOR_VERSION < 7
   zval **params[1];
   params[0] = &arg;
@@ -185,21 +184,38 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 #endif
   state->fci->param_count = 1;
 
+  PHP_GRPC_DELREF(arg);
+
   /* call the user callback function */
   zend_call_function(state->fci, state->fci_cache TSRMLS_CC);
 
   grpc_status_code code = GRPC_STATUS_OK;
   grpc_metadata_array metadata;
+  bool cleanup = true;
 
   if (Z_TYPE_P(retval) != IS_ARRAY) {
+    cleanup = false;
     code = GRPC_STATUS_INVALID_ARGUMENT;
   } else if (!create_metadata_array(retval, &metadata)) {
-    grpc_metadata_array_destroy(&metadata);
     code = GRPC_STATUS_INVALID_ARGUMENT;
+  }
+
+  if (retval != NULL) {
+#if PHP_MAJOR_VERSION < 7
+    zval_ptr_dtor(&retval);
+#else
+    zval_ptr_dtor(retval);
+#endif
   }
 
   /* Pass control back to core */
   cb(user_data, metadata.metadata, metadata.count, code, NULL);
+  if (cleanup) {
+    for (int i = 0; i < metadata.count; i++) {
+      grpc_slice_unref(metadata.metadata[i].value);
+    }
+    grpc_metadata_array_destroy(&metadata);
+  }
 }
 
 /* Cleanup function for plugin creds API */
