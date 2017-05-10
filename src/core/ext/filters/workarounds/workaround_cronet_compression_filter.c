@@ -208,12 +208,7 @@ static bool register_workaround_cronet_compression(
   if (a == NULL) {
     return true;
   }
-  if (a->type != GRPC_ARG_INTEGER) {
-    gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
-            GRPC_ARG_WORKAROUND_CRONET_COMPRESSION);
-    return true;
-  }
-  if (a->value.integer == 0) {
+  if (grpc_channel_arg_get_bool(a, false) == false) {
     return true;
   }
   grpc_enable_workaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION);
