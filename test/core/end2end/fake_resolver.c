@@ -136,7 +136,7 @@ struct grpc_fake_resolver_response_generator {
 grpc_fake_resolver_response_generator*
 grpc_fake_resolver_response_generator_create() {
   grpc_fake_resolver_response_generator* generator =
-      gpr_zalloc(sizeof(*generator));
+      (grpc_fake_resolver_response_generator*)gpr_zalloc(sizeof(*generator));
   gpr_ref_init(&generator->refcount, 1);
   return generator;
 }
@@ -157,7 +157,8 @@ void grpc_fake_resolver_response_generator_unref(
 
 static void set_response_cb(grpc_exec_ctx* exec_ctx, void* arg,
                             grpc_error* error) {
-  grpc_fake_resolver_response_generator* generator = arg;
+  grpc_fake_resolver_response_generator* generator =
+      (grpc_fake_resolver_response_generator*)arg;
   fake_resolver* r = generator->resolver;
   if (r->next_results != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->next_results);
@@ -180,11 +181,13 @@ void grpc_fake_resolver_response_generator_set_response(
 }
 
 static void* response_generator_arg_copy(void* p) {
-  return grpc_fake_resolver_response_generator_ref(p);
+  return grpc_fake_resolver_response_generator_ref(
+      (grpc_fake_resolver_response_generator*)p);
 }
 
 static void response_generator_arg_destroy(grpc_exec_ctx* exec_ctx, void* p) {
-  grpc_fake_resolver_response_generator_unref(p);
+  grpc_fake_resolver_response_generator_unref(
+      (grpc_fake_resolver_response_generator*)p);
 }
 
 static int response_generator_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
@@ -208,7 +211,7 @@ grpc_fake_resolver_get_response_generator(const grpc_channel_args* args) {
   const grpc_arg* arg =
       grpc_channel_args_find(args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) return NULL;
-  return arg->value.pointer.p;
+  return (grpc_fake_resolver_response_generator*)arg->value.pointer.p;
 }
 
 //
@@ -222,7 +225,7 @@ static void fake_resolver_factory_unref(grpc_resolver_factory* factory) {}
 static grpc_resolver* fake_resolver_create(grpc_exec_ctx* exec_ctx,
                                            grpc_resolver_factory* factory,
                                            grpc_resolver_args* args) {
-  fake_resolver* r = gpr_zalloc(sizeof(*r));
+  fake_resolver* r = (fake_resolver*)gpr_zalloc(sizeof(*r));
   r->channel_args = grpc_channel_args_copy(args->args);
   grpc_resolver_init(&r->base, &fake_resolver_vtable, args->combiner);
   grpc_fake_resolver_response_generator* response_generator =
