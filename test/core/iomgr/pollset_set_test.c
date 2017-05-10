@@ -448,6 +448,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
+  grpc_iomgr_start();
 
   if (poll_strategy != NULL &&
       (strcmp(poll_strategy, "epoll") == 0 ||
