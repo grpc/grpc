@@ -176,6 +176,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_executor_init();
   grpc_iomgr_init();
+  grpc_iomgr_start();
   test_unix_socket();
   test_unix_socket_path_name_too_long();
   {

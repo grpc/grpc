@@ -265,6 +265,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_executor_init();
   grpc_iomgr_init();
+  grpc_iomgr_start();
   test_localhost();
   test_default_port();
   test_non_numeric_default_port();
