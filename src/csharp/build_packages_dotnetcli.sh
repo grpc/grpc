@@ -70,7 +70,7 @@ dotnet pack --configuration Release --include-symbols --include-source Grpc.Auth
 dotnet pack --configuration Release --include-symbols --include-source Grpc.HealthCheck --output ../../../artifacts
 dotnet pack --configuration Release --include-symbols --include-source Grpc.Reflection --output ../../../artifacts
 
-nuget pack Grpc.nuspec -Version "1.3.1" -OutputDirectory ../../artifacts
-nuget pack Grpc.Tools.nuspec -Version "1.3.1" -OutputDirectory ../../artifacts
+nuget pack Grpc.nuspec -Version "1.3.2-pre1" -OutputDirectory ../../artifacts
+nuget pack Grpc.Tools.nuspec -Version "1.3.2-pre1" -OutputDirectory ../../artifacts
 
 (cd ../../artifacts && zip csharp_nugets_dotnetcli.zip *.nupkg)
