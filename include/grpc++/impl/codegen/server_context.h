@@ -93,17 +93,17 @@ class ServerContextTestSpouse;
 
 /// A ServerContext allows the person implementing a service handler to:
 ///
-/// - Add custom initial and trailing metadata key-value pairs that will propagated
-///   to the client side.
+/// - Add custom initial and trailing metadata key-value pairs that will
+///   propagated to the client side.
 /// - Control call settings such as compression and authentication.
 /// - Access metadata coming from the client.
 /// - Get performance metrics (ie, census).
 ///
-/// Context settings are only relevant to the call handler they are supplied to, that
-/// is to say, they aren't sticky across multiple calls. Some of these settings,
-/// such as the compression options, can be made persistant at server construction time
-/// by specifying the approriate \a ChannelArguments parameter to the see \a grpc::Server
-/// constructor.
+/// Context settings are only relevant to the call handler they are supplied to,
+/// that is to say, they aren't sticky across multiple calls. Some of these
+/// settings, such as the compression options, can be made persistant at server
+/// construction time by specifying the approriate \a ChannelArguments parameter
+/// to the see \a grpc::Server constructor.
 ///
 /// \warning ServerContext instances should \em not be reused across rpcs.
 class ServerContext {
@@ -119,32 +119,32 @@ class ServerContext {
   /// Return a \a gpr_timespec representation of the server call's deadline.
   gpr_timespec raw_deadline() const { return deadline_; }
 
-  /// Add the (\a meta_key, \a meta_value) pair to the initial metadata associated with
-  /// a server call. These are made available at the client side by the \a
-  /// grpc::ClientContext::GetServerInitialMetadata() method.
+  /// Add the (\a meta_key, \a meta_value) pair to the initial metadata
+  /// associated with a server call. These are made available at the client side
+  /// by the \a grpc::ClientContext::GetServerInitialMetadata() method.
   ///
   /// \warning This method should only be called before sending initial metadata
   /// to the client (which can happen explicitly, or implicitly when sending a
   /// a response message or status to the client).
   ///
-  /// \param meta_key The metadata key. If \a meta_value is binary data, it must
-  /// end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary, it must be
-  /// must end in "-bin".
+  /// \param meta_key The metadata key. If \a meta_value is binary data,
+  /// it must end in "-bin".
+  /// \param meta_value The metadata value. If its value is binary,
+  /// it must be must end in "-bin".
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
 
-  /// Add the (\a meta_key, \a meta_value) pair to the initial metadata associated with
-  /// a server call. These are made available at the client side by the \a
-  /// grpc::ClientContext::GetServerTrailingMetadata() method.
+  /// Add the (\a meta_key, \a meta_value) pair to the initial metadata
+  /// associated with a server call. These are made available at the client
+  /// side by the \a grpc::ClientContext::GetServerTrailingMetadata() method.
   ///
-  /// \warning This method should only be called before sending trailing metadata
-  /// to the client (which happens when the call is finished and a status is
-  /// sent to the client).
+  /// \warning This method should only be called before sending trailing
+  /// metadata to the client (which happens when the call is finished and a
+  /// status is sent to the client).
   ///
-  /// \param meta_key The metadata key. If \a meta_value is binary data, it must
-  /// end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary, it must be
-  /// end in "-bin".
+  /// \param meta_key The metadata key. If \a meta_value is binary data,
+  /// it must end in "-bin".
+  /// \param meta_value The metadata value. If its value is binary,
+  /// it must be end in "-bin".
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
   /// IsCancelled is always safe to call when using sync API.
@@ -152,22 +152,23 @@ class ServerContext {
   /// the AsyncNotifyWhenDone tag has been delivered.
   bool IsCancelled() const;
 
-  /// Cancel the Call from the server. This is a best-effort API and depending on
-  /// when it is called, the RPC may still appear successful to the client.
+  /// Cancel the Call from the server. This is a best-effort API and
+  /// depending :on when it is called, the RPC may still appear successful to
+  /// the client.
   /// For example, if TryCancel() is called on a separate thread, it might race
   /// with the server handler which might return success to the client before
   /// TryCancel() was even started by the thread.
   ///
   /// It is the caller's responsibility to prevent such races and ensure that if
-  /// TryCancel() is called, the serverhandler must return Status::CANCELLED. The
-  /// only exception is that if the serverhandler is already returning an error
-  /// status code, it is ok to not return Status::CANCELLED even if TryCancel()
-  /// was called.
+  /// TryCancel() is called, the serverhandler must return Status::CANCELLED.
+  /// The only exception is that if the serverhandler is already returning an
+  /// error status code, it is ok to not return Status::CANCELLED even if
+  /// TryCancel() was called.
   void TryCancel() const;
 
   /// Return a collection of initial metadata key-value pairs sent from the
-  /// client. Note that keys
-  /// may happen more than once (ie, a \a std::multimap is returned).
+  /// client. Note that keys may happen more than
+  /// once (ie, a \a std::multimap is returned).
   ///
   /// It is safe to use this method after initial metadata has been received,
   /// Calls always begin with the client sending initial metadata, so this is
@@ -194,7 +195,7 @@ class ServerContext {
 
   /// Return a bool indicating whether the compression level for this call
   /// has been set (either implicitly or through a previous call to
-  /// \a set_compression_level
+  /// \a set_compression_level.
   bool compression_level_set() const { return compression_level_set_; }
 
   /// Return the compression algorithm to be used by the server call.

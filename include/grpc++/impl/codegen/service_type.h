@@ -54,10 +54,10 @@ class ServerAsyncStreamingInterface {
  public:
   virtual ~ServerAsyncStreamingInterface() {}
 
-  /// Request notification of the sending of initial metadata to the client. Completion
-  /// will be notified by \a tag on the associated completion queue.
-  /// This call is optional, but if it is used, it cannot be used concurrently
-  /// with or after the \a Finish method.
+  /// Request notification of the sending of initial metadata to the client.
+  /// Completion will be notified by \a tag on the associated completion
+  /// queue. This call is optional, but if it is used, it cannot be used
+  /// concurrently with or after the \a Finish method.
   ///
   /// \param[in] tag Tag identifying this request.
   virtual void SendInitialMetadata(void* tag) = 0;
@@ -162,7 +162,7 @@ class Service {
     // From the server's point of view, streamed unary is a special
     // case of BIDI_STREAMING that has 1 read and 1 write, in that order,
     // and split server-side streaming is BIDI_STREAMING with 1 read and
-    // any number of writes, in that order
+    // any number of writes, in that order.
     methods_[index]->SetMethodType(::grpc::RpcMethod::BIDI_STREAMING);
   }
 

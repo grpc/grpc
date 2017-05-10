@@ -174,8 +174,8 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
   /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
   ///
   /// Side effect:
-  ///   The initial metadata that will be sent to the client from this op will be
-  ///   taken from the \a ServerContext associated with the call.
+  ///   The initial metadata that will be sent to the client from this op will
+  ///   be taken from the \a ServerContext associated with the call.
   ///
   /// \param[in] tag Tag identifying this request.
   void SendInitialMetadata(void* tag) override {
@@ -193,12 +193,12 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
 
   /// Indicate that the stream is to be finished and request notification
   /// when the server has sent the appropriate signals to the client to
-  /// end the call.
-  /// Should not be used concurrently with other operations.
+  /// end the call. Should not be used concurrently with other operations.
   ///
   /// \param[in] tag Tag identifying this request.
   /// \param[in] status To be sent to the client as the result of the call.
   /// \param[in] msg Message to be sent to the client.
+  ///
   /// Side effect:
   ///   - also sends initial metadata if not already sent (using the
   ///     \a ServerContext associated with this call).
@@ -234,6 +234,7 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
   /// \param[in] tag Tag identifying this request.
   /// \param[in] status To be sent to the client as the result of the call.
   ///   - Note: \a status must have a non-OK code.
+  ///
   /// Side effect:
   ///   - also sends initial metadata if not already sent (using the
   ///     \a ServerContext associated with this call).

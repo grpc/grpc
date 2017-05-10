@@ -67,8 +67,8 @@ typedef struct grpc_byte_buffer {
   } data;
 } grpc_byte_buffer;
 
-/** Completion Queues enable notification of the completion of asynchronous
-    actions. */
+/** Completion Queues enable notification of the completion of
+ * asynchronous actions. */
 typedef struct grpc_completion_queue grpc_completion_queue;
 
 /** An alarm associated with a completion queue. */
@@ -134,9 +134,9 @@ typedef struct {
     Used to set optional channel-level configuration.
     These configuration options are modelled as key-value pairs as defined
     by grpc_arg; keys are strings to allow easy backwards-compatible extension
-    by arbitrary parties.
-    All evaluation is performed at channel creation time (i.e. the values in
-    this structure need only live through the creation invocation).
+    by arbitrary parties. All evaluation is performed at channel creation
+    time (i.e. the values in this structure need only live through the
+    creation invocation).
 
     See the description of the \ref grpc_arg_keys "available args" for more
     details. */
@@ -162,8 +162,8 @@ typedef struct {
 /** Maximum message length that the channel can receive. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
-/** \deprecated For backward compatibility. Use GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
-    instead. */
+/** \deprecated For backward compatibility.
+ * Use GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH instead. */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
 /** Maximum message length that the channel can send. Int valued, bytes.
     -1 means unlimited. */
@@ -171,8 +171,8 @@ typedef struct {
 /** Maximum time that a channel may have no outstanding rpcs. Int valued,
     milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_IDLE_MS "grpc.max_connection_idle_ms"
-/** Maximum time that a channel may exist. Int valued, milliseconds. INT_MAX
-   means unlimited. */
+/** Maximum time that a channel may exist. Int valued, milliseconds.
+ * INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_MS "grpc.max_connection_age_ms"
 /** Grace period after the chennel reaches its max age. Int valued,
    milliseconds. INT_MAX means unlimited. */
@@ -271,8 +271,10 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
-/** If non-zero, a pointer to a buffer pool (a pointer of type grpc_resource_quota*).
-    (use grpc_resource_quota_arg_vtable() to fetch an appropriate pointer arg vtable) */
+/** If non-zero, a pointer to a buffer pool
+ * (a pointer of type grpc_resource_quota*).
+    (use grpc_resource_quota_arg_vtable() to fetch an
+    appropriate pointer arg vtable) */
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
 /** If non-zero, expand wildcard addresses to a list of local addresses. */
 #define GRPC_ARG_EXPAND_WILDCARD_ADDRS "grpc.expand_wildcard_addrs"
@@ -284,12 +286,12 @@ typedef struct {
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** The grpc_socket_factory instance to create and bind sockets. A pointer. */
 #define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
-/** If non-zero, Cronet transport will coalesce packets to fewer frames when
-    possible. */
+/** If non-zero, Cronet transport will coalesce packets to fewer frames
+ * when possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
   "grpc.use_cronet_packet_coalescing"
-/** Channel arg (integer) setting how large a slice to try and read from the wire
-    each time recvmsg (or equivalent) is called **/
+/** Channel arg (integer) setting how large a slice to try and read from the
+   wire each time recvmsg (or equivalent) is called **/
 #define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
 /** Note this is not a "channel arg" key. This is the default slice size to use
  * when trying to read from the wire if the GRPC_ARG_TCP_READ_CHUNK_SIZE
@@ -331,8 +333,8 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_INVALID_METADATA,
   /** invalid message was passed to this call */
   GRPC_CALL_ERROR_INVALID_MESSAGE,
-  /** completion queue for notification has not been registered with the
-      server */
+  /** completion queue for notification has not been registered
+   * with the server */
   GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE,
   /** this batch of operations leads to more operations than allowed */
   GRPC_CALL_ERROR_BATCH_TOO_BIG,
@@ -379,8 +381,8 @@ typedef enum grpc_call_error {
 
 /** A single metadata element */
 typedef struct grpc_metadata {
-  /** the key, value values are expected to line up with grpc_mdelem: if changing
-     them, update metadata.h at the same time. */
+  /** the key, value values are expected to line up with grpc_mdelem: if
+     changing them, update metadata.h at the same time. */
   grpc_slice key;
   grpc_slice value;
 
@@ -447,15 +449,13 @@ typedef enum {
   GRPC_OP_SEND_MESSAGE,
   /** Send a close from the client: one and only one instance MUST be sent from
       the client, unless the call was cancelled - in which case this can be
-      skipped.
-      This op completes after all bytes for the call (including the close)
-      have passed outgoing flow control. */
+      skipped. This op completes after all bytes for the call
+      (including the close) have passed outgoing flow control. */
   GRPC_OP_SEND_CLOSE_FROM_CLIENT,
   /** Send status from the server: one and only one instance MUST be sent from
       the server unless the call was cancelled - in which case this can be
-      skipped.
-      This op completes after all bytes for the call (including the status)
-      have passed outgoing flow control. */
+      skipped. This op completes after all bytes for the call
+      (including the status) have passed outgoing flow control. */
   GRPC_OP_SEND_STATUS_FROM_SERVER,
   /** Receive initial metadata: one and only one MUST be made on the client,
       must not be made on the server.
@@ -473,10 +473,10 @@ typedef enum {
       This op completes after all activity on the call has completed. */
   GRPC_OP_RECV_STATUS_ON_CLIENT,
   /** Receive close on the server: one and only one must be made on the
-      server.
-      This op completes after the close has been received by the server.
-      This operation always succeeds, meaning ops paired with this operation
-      will also appear to succeed, even though they may not have. */
+      server. This op completes after the close has been received by the
+      server. This operation always succeeds, meaning ops paired with
+      this operation will also appear to succeed, even though they may not
+      have. */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
@@ -537,8 +537,7 @@ typedef struct grpc_op {
           elements stays with the call object (ie key, value members are owned
           by the call object, trailing_metadata->array is owned by the caller).
           After the operation completes, call grpc_metadata_array_destroy on
-         this
-          value, or reuse it in a future op. */
+          this value, or reuse it in a future op. */
       grpc_metadata_array *trailing_metadata;
       grpc_status_code *status;
       grpc_slice *status_details;
