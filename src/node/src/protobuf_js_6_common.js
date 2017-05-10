@@ -144,7 +144,9 @@ exports.loadObject = function loadObject(value, options) {
     return client.makeClientConstructor(service_attrs);
   }
 
-  if (value.hasOwnProperty('nested')) {
+  // Types also has 'nested' fields as the property, but the contents are
+  // simply undefined.
+  if (value.hasOwnProperty('nested') && value.nested !== undefined) {
     // It's a namespace or root object
     _.each(value.nested, function(nested, name) {
       result[name] = loadObject(nested, options);
