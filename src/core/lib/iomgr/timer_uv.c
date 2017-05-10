@@ -100,4 +100,6 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
 void grpc_timer_list_init(gpr_timespec now) {}
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {}
 
+void grpc_timer_consume_kick(void) {}
+
 #endif /* GRPC_UV */
