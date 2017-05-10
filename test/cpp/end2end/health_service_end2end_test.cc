@@ -46,7 +46,6 @@
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -54,6 +53,8 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+
+#include <gtest/gtest.h>
 
 using grpc::health::v1::Health;
 using grpc::health::v1::HealthCheckRequest;

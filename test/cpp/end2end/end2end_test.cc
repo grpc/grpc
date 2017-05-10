@@ -48,7 +48,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -58,6 +57,8 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+
+#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
