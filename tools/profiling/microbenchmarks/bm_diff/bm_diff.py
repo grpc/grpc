@@ -27,7 +27,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """ Computes the diff between two bm runs and outputs significant results """
 
 import bm_constants
@@ -46,114 +45,138 @@ import collections
 
 verbose = False
 
+
 def _median(ary):
-  ary = sorted(ary)
-  n = len(ary)
-  if n%2 == 0:
-    return (ary[n/2] + ary[n/2+1]) / 2.0
-  else:
-    return ary[n/2]
+    ary = sorted(ary)
+    n = len(ary)
+    if n % 2 == 0:
+        return (ary[n / 2] + ary[n / 2 + 1]) / 2.0
+    else:
+        return ary[n / 2]
+
 
 def _args():
-  argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
-  argp.add_argument('-t', '--track',
-                    choices=sorted(bm_constants._INTERESTING),
-                    nargs='+',
-                    default=sorted(bm_constants._INTERESTING),
-                    help='Which metrics to track')
-  argp.add_argument('-b', '--benchmarks', nargs='+', choices=bm_constants._AVAILABLE_BENCHMARK_TESTS, default=bm_constants._AVAILABLE_BENCHMARK_TESTS, help='Which benchmarks to run')
-  argp.add_argument('-l', '--loops', type=int, default=20, help='Number of times to loops the benchmarks. Must match what was passed to bm_run.py')
-  argp.add_argument('-n', '--new', type=str, help='New benchmark name')
-  argp.add_argument('-o', '--old', type=str, help='Old benchmark name')
-  argp.add_argument('-v', '--verbose', type=bool, help='print details of before/after')
-  args = argp.parse_args()
-  global verbose
-  if args.verbose: verbose = True
-  assert args.new
-  assert args.old
-  return args
+    argp = argparse.ArgumentParser(
+        description='Perform diff on microbenchmarks')
+    argp.add_argument(
+        '-t',
+        '--track',
+        choices=sorted(bm_constants._INTERESTING),
+        nargs='+',
+        default=sorted(bm_constants._INTERESTING),
+        help='Which metrics to track')
+    argp.add_argument(
+        '-b',
+        '--benchmarks',
+        nargs='+',
+        choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+        default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+        help='Which benchmarks to run')
+    argp.add_argument(
+        '-l',
+        '--loops',
+        type=int,
+        default=20,
+        help='Number of times to loops the benchmarks. Must match what was passed to bm_run.py'
+    )
+    argp.add_argument('-n', '--new', type=str, help='New benchmark name')
+    argp.add_argument('-o', '--old', type=str, help='Old benchmark name')
+    argp.add_argument(
+        '-v', '--verbose', type=bool, help='print details of before/after')
+    args = argp.parse_args()
+    global verbose
+    if args.verbose: verbose = True
+    assert args.new
+    assert args.old
+    return args
+
 
 def _maybe_print(str):
-  if verbose: print str
+    if verbose: print str
+
 
 class Benchmark:
 
-  def __init__(self):
-    self.samples = {
-      True: collections.defaultdict(list),
-      False: collections.defaultdict(list)
-    }
-    self.final = {}
+    def __init__(self):
+        self.samples = {
+            True: collections.defaultdict(list),
+            False: collections.defaultdict(list)
+        }
+        self.final = {}
 
-  def add_sample(self, track, data, new):
-    for f in track:
-      if f in data:
-        self.samples[new][f].append(float(data[f]))
+    def add_sample(self, track, data, new):
+        for f in track:
+            if f in data:
+                self.samples[new][f].append(float(data[f]))
 
-  def process(self, track, new_name, old_name):
-    for f in sorted(track):
-      new = self.samples[True][f]
-      old = self.samples[False][f]
-      if not new or not old: continue
-      mdn_diff = abs(_median(new) - _median(old))
-      _maybe_print('%s: %s=%r %s=%r mdn_diff=%r' % 
-          (f, new_name, new, old_name, old, mdn_diff))
-      s = bm_speedup.speedup(new, old)
-      if abs(s) > 3 and mdn_diff > 0.5:
-        self.final[f] = '%+d%%' % s
-    return self.final.keys()
+    def process(self, track, new_name, old_name):
+        for f in sorted(track):
+            new = self.samples[True][f]
+            old = self.samples[False][f]
+            if not new or not old: continue
+            mdn_diff = abs(_median(new) - _median(old))
+            _maybe_print('%s: %s=%r %s=%r mdn_diff=%r' %
+                         (f, new_name, new, old_name, old, mdn_diff))
+            s = bm_speedup.speedup(new, old)
+            if abs(s) > 3 and mdn_diff > 0.5:
+                self.final[f] = '%+d%%' % s
+        return self.final.keys()
 
-  def skip(self):
-    return not self.final
+    def skip(self):
+        return not self.final
 
-  def row(self, flds):
-    return [self.final[f] if f in self.final else '' for f in flds]
+    def row(self, flds):
+        return [self.final[f] if f in self.final else '' for f in flds]
+
 
 def _read_json(filename):
-  try:
-    with open(filename) as f: return json.loads(f.read())
-  except ValueError, e:
-    return None
+    try:
+        with open(filename) as f:
+            return json.loads(f.read())
+    except ValueError, e:
+        return None
+
 
 def diff(bms, loops, track, old, new):
-  benchmarks = collections.defaultdict(Benchmark)
+    benchmarks = collections.defaultdict(Benchmark)
 
-  for bm in bms:
-    for loop in range(0, loops):
-      js_new_ctr = _read_json('%s.counters.%s.%d.json' % (bm, new, loop))
-      js_new_opt = _read_json('%s.opt.%s.%d.json' % (bm, new, loop))
-      js_old_ctr = _read_json('%s.counters.%s.%d.json' % (bm, old, loop))
-      js_old_opt = _read_json('%s.opt.%s.%d.json' % (bm, old, loop))
+    for bm in bms:
+        for loop in range(0, loops):
+            js_new_ctr = _read_json('%s.counters.%s.%d.json' % (bm, new, loop))
+            js_new_opt = _read_json('%s.opt.%s.%d.json' % (bm, new, loop))
+            js_old_ctr = _read_json('%s.counters.%s.%d.json' % (bm, old, loop))
+            js_old_opt = _read_json('%s.opt.%s.%d.json' % (bm, old, loop))
 
-      if js_new_ctr:
-        for row in bm_json.expand_json(js_new_ctr, js_new_opt):
-          name = row['cpp_name']
-          if name.endswith('_mean') or name.endswith('_stddev'): continue
-          benchmarks[name].add_sample(track, row, True)
-      if js_old_ctr:
-        for row in bm_json.expand_json(js_old_ctr, js_old_opt):
-          name = row['cpp_name']
-          if name.endswith('_mean') or name.endswith('_stddev'): continue
-          benchmarks[name].add_sample(track, row, False)
+            if js_new_ctr:
+                for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+                    name = row['cpp_name']
+                    if name.endswith('_mean') or name.endswith('_stddev'):
+                        continue
+                    benchmarks[name].add_sample(track, row, True)
+            if js_old_ctr:
+                for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+                    name = row['cpp_name']
+                    if name.endswith('_mean') or name.endswith('_stddev'):
+                        continue
+                    benchmarks[name].add_sample(track, row, False)
 
-  really_interesting = set()
-  for name, bm in benchmarks.items():
-    _maybe_print(name)
-    really_interesting.update(bm.process(track, new, old))
-  fields = [f for f in track if f in really_interesting]
+    really_interesting = set()
+    for name, bm in benchmarks.items():
+        _maybe_print(name)
+        really_interesting.update(bm.process(track, new, old))
+    fields = [f for f in track if f in really_interesting]
 
-  headers = ['Benchmark'] + fields
-  rows = []
-  for name in sorted(benchmarks.keys()):
-    if benchmarks[name].skip(): continue
-    rows.append([name] + benchmarks[name].row(fields))
-  if rows:
-    return tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
-  else:
-    return None
+    headers = ['Benchmark'] + fields
+    rows = []
+    for name in sorted(benchmarks.keys()):
+        if benchmarks[name].skip(): continue
+        rows.append([name] + benchmarks[name].row(fields))
+    if rows:
+        return tabulate.tabulate(rows, headers=headers, floatfmt='+.2f')
+    else:
+        return None
+
 
 if __name__ == '__main__':
-  args = _args()
-  print diff(args.benchmarks, args.loops, args.track, args.old, args.new)
-
-
+    args = _args()
+    print diff(args.benchmarks, args.loops, args.track, args.old, args.new)
