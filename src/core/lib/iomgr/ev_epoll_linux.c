@@ -418,7 +418,7 @@ static void polling_island_add_fds_locked(polling_island *pi, grpc_fd **fds,
             &err_msg,
             "epoll_ctl (epoll_fd: %d) add fd: %d failed with error: %d (%s)",
             pi->epoll_fd, fds[i]->fd, errno, strerror(errno));
-        append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
+        append_error(error, GRPC_OS_ERROR(errno, err_desc), err_msg);
         gpr_free(err_msg);
       }
 
@@ -456,7 +456,7 @@ static void polling_island_add_wakeup_fd_locked(polling_island *pi,
                  "error: %d (%s)",
                  pi->epoll_fd, GRPC_WAKEUP_FD_GET_READ_FD(&global_wakeup_fd),
                  errno, strerror(errno));
-    append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
+    append_error(error, GRPC_OS_ERROR(errno, err_desc), err_msg);
     gpr_free(err_msg);
   }
 }
@@ -477,7 +477,7 @@ static void polling_island_remove_all_fds_locked(polling_island *pi,
                    "epoll_ctl (epoll_fd: %d) delete fds[%zu]: %d failed with "
                    "error: %d (%s)",
                    pi->epoll_fd, i, pi->fds[i]->fd, errno, strerror(errno));
-      append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
+      append_error(error, GRPC_OS_ERROR(errno, err_desc), err_msg);
       gpr_free(err_msg);
     }
 
@@ -507,7 +507,7 @@ static void polling_island_remove_fd_locked(polling_island *pi, grpc_fd *fd,
           &err_msg,
           "epoll_ctl (epoll_fd: %d) del fd: %d failed with error: %d (%s)",
           pi->epoll_fd, fd->fd, errno, strerror(errno));
-      append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
+      append_error(error, GRPC_OS_ERROR(errno, err_desc), err_msg);
       gpr_free(err_msg);
     }
   }
@@ -1435,7 +1435,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
         gpr_asprintf(&err_msg,
                      "epoll_wait() epoll fd: %d failed with error: %d (%s)",
                      epoll_fd, errno, strerror(errno));
-        append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
+        append_error(error, GRPC_OS_ERROR(errno, err_desc), err_msg);
       } else {
         /* We were interrupted. Save an interation by doing a zero timeout
            epoll_wait to see if there are any other events of interest */
