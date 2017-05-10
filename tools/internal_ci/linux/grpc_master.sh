@@ -43,8 +43,5 @@ docker --version || true
 # Need to increase open files limit for c tests
 ulimit -n 32768
 
-git submodule update --init
-
-# download docker images from dockerhub
-export DOCKERHUB_ORGANIZATION=grpctesting
+tools/internal_ci/helper_scripts/pre_build_linux.sh
 tools/run_tests/run_tests_matrix.py -f basictests linux --inner_jobs 16 -j 1 --internal_ci

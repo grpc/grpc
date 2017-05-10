@@ -30,8 +30,11 @@
 
 set -ex
 
-# change to grpc repo root
-cd $(dirname $0)/../../../..
+# Enable IPv6 in Docker
+sudo sed -i s/DOCKER_OPTS=/DOCKER_OPTS=\"--ipv6\"/g /etc/init.d/docker
+sudo /etc/init.d/docker restart
 
-tools/internal_ci/helper_scripts/pre_build_linux.sh
-tools/run_tests/run_tests_matrix.py -f c++ asan --inner_jobs 16 -j 1 --internal_ci
+# Download Docker images from DockerHub
+export DOCKERHUB_ORGANIZATION=grpctesting
+
+git submodule update --init
