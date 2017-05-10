@@ -4205,7 +4205,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4229,7 +4230,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4253,7 +4255,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4277,7 +4280,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4303,7 +4307,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4327,7 +4332,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4351,7 +4357,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4378,7 +4385,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4405,7 +4413,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4432,7 +4441,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4459,7 +4469,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4486,7 +4497,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4513,7 +4525,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4540,7 +4553,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4567,7 +4581,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4594,7 +4609,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4621,7 +4637,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4648,7 +4665,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4675,7 +4693,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4702,7 +4721,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4729,7 +4749,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4756,7 +4777,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4783,7 +4805,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4810,7 +4833,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4837,7 +4861,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4864,7 +4889,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4891,7 +4917,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4917,7 +4944,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4941,7 +4969,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4965,7 +4994,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -4991,7 +5021,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5015,7 +5046,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5039,7 +5071,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5063,7 +5096,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5087,7 +5121,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5111,7 +5146,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5135,7 +5171,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5159,7 +5196,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5185,7 +5223,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5211,7 +5250,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5235,7 +5275,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5261,7 +5302,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5285,7 +5327,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5309,7 +5352,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5335,7 +5379,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5359,7 +5404,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5383,7 +5429,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5409,7 +5456,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5433,7 +5481,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5457,7 +5506,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5481,7 +5531,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5505,7 +5556,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5531,7 +5583,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5555,7 +5608,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5579,7 +5633,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5603,7 +5658,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5629,7 +5685,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5653,7 +5710,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5677,7 +5735,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5701,7 +5760,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5725,7 +5785,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5749,7 +5810,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5773,7 +5835,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5797,7 +5860,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 
@@ -5821,7 +5885,8 @@
     "cpu_cost": 1.0, 
     "defaults": "boringssl", 
     "exclude_configs": [
-      "asan"
+      "asan", 
+      "ubsan"
     ], 
     "flaky": false, 
     "language": "c++", 

@@ -418,7 +418,10 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
 
     GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA("parse", t, s,
                                                         incoming_frame_size);
-    if ((int64_t)s->incoming_window_delta - (int64_t)s->announce_window <= 0) {
+    if ((int64_t)s->incoming_window_delta - (int64_t)s->announce_window <=
+        -(int64_t)t->settings[GRPC_SENT_SETTINGS]
+                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
+            2) {
       grpc_chttp2_become_writable(exec_ctx, t, s,
                                   GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
                                   "window-update-required");
