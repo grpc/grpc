@@ -57,6 +57,8 @@ var common = require('./common');
 
 var Metadata = require('./metadata');
 
+var constants = require('./constants');
+
 var stream = require('stream');
 
 var Readable = stream.Readable;
@@ -75,7 +77,7 @@ var EventEmitter = require('events').EventEmitter;
 function handleError(call, error) {
   var statusMetadata = new Metadata();
   var status = {
-    code: grpc.status.UNKNOWN,
+    code: constants.status.UNKNOWN,
     details: 'Unknown Error'
   };
   if (error.hasOwnProperty('message')) {
@@ -115,7 +117,7 @@ function sendUnaryResponse(call, value, serialize, metadata, flags) {
   var end_batch = {};
   var statusMetadata = new Metadata();
   var status = {
-    code: grpc.status.OK,
+    code: constants.status.OK,
     details: 'OK'
   };
   if (metadata) {
@@ -125,7 +127,7 @@ function sendUnaryResponse(call, value, serialize, metadata, flags) {
   try {
     message = serialize(value);
   } catch (e) {
-    e.code = grpc.status.INTERNAL;
+    e.code = constants.status.INTERNAL;
     handleError(call, e);
     return;
   }
@@ -151,7 +153,7 @@ function sendUnaryResponse(call, value, serialize, metadata, flags) {
 function setUpWritable(stream, serialize) {
   stream.finished = false;
   stream.status = {
-    code : grpc.status.OK,
+    code : constants.status.OK,
     details : 'OK',
     metadata : new Metadata()
   };
@@ -178,7 +180,7 @@ function setUpWritable(stream, serialize) {
    * @param {Error} err The error object
    */
   function setStatus(err) {
-    var code = grpc.status.UNKNOWN;
+    var code = constants.status.UNKNOWN;
     var details = 'Unknown Error';
     var metadata = new Metadata();
     if (err.hasOwnProperty('message')) {
@@ -284,7 +286,7 @@ function _write(chunk, encoding, callback) {
   try {
     message = this.serialize(chunk);
   } catch (e) {
-    e.code = grpc.status.INTERNAL;
+    e.code = constants.status.INTERNAL;
     callback(e);
     return;
   }
@@ -353,7 +355,7 @@ function _read(size) {
     try {
       deserialized = self.deserialize(data);
     } catch (e) {
-      e.code = grpc.status.INTERNAL;
+      e.code = constants.status.INTERNAL;
       self.emit('error', e);
       return;
     }
@@ -489,7 +491,7 @@ function handleUnary(call, handler, metadata) {
     try {
       emitter.request = handler.deserialize(result.read);
     } catch (e) {
-      e.code = grpc.status.INTERNAL;
+      e.code = constants.status.INTERNAL;
       handleError(call, e);
       return;
     }
@@ -530,7 +532,7 @@ function handleServerStreaming(call, handler, metadata) {
     try {
       stream.request = handler.deserialize(result.read);
     } catch (e) {
-      e.code = grpc.status.INTERNAL;
+      e.code = constants.status.INTERNAL;
       stream.emit('error', e);
       return;
     }
@@ -636,7 +638,7 @@ function Server(options) {
         batch[grpc.opType.SEND_INITIAL_METADATA] =
             (new Metadata())._getCoreRepresentation();
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
-          code: grpc.status.UNIMPLEMENTED,
+          code: constants.status.UNIMPLEMENTED,
           details: '',
           metadata: {}
         };
@@ -699,7 +701,7 @@ Server.prototype.register = function(name, handler, serialize, deserialize,
 };
 
 var unimplementedStatusResponse = {
-  code: grpc.status.UNIMPLEMENTED,
+  code: constants.status.UNIMPLEMENTED,
   details: 'The server does not implement this method'
 };
 
@@ -759,8 +761,8 @@ Server.prototype.addService = function(service, implementation) {
          written in the proto file, instead of using JavaScript function
          naming style */
       if (implementation[attrs.originalName] === undefined) {
-        common.log(grpc.logVerbosity.ERROR, 'Method handler ' + name + ' for ' +
-            attrs.path + ' expected but not provided');
+        common.log(constants.logVerbosity.ERROR, 'Method handler ' + name +
+            ' for ' + attrs.path + ' expected but not provided');
         impl = defaultHandler[method_type];
       } else {
         impl = _.bind(implementation[attrs.originalName], implementation);
@@ -790,7 +792,7 @@ Server.prototype.addProtoService = function(service, implementation) {
   var options;
   var protobuf_js_5_common = require('./protobuf_js_5_common');
   var protobuf_js_6_common = require('./protobuf_js_6_common');
-  common.log(grpc.logVerbosity.INFO,
+  common.log(constants.logVerbosity.INFO,
              'Server#addProtoService is deprecated. Use addService instead');
   if (protobuf_js_5_common.isProbablyProtobufJs5(service)) {
     options = _.defaults(service.grpc_options, common.defaultGrpcOptions);

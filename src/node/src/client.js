@@ -58,6 +58,8 @@ var common = require('./common');
 
 var Metadata = require('./metadata');
 
+var constants = require('./constants');
+
 var EventEmitter = require('events').EventEmitter;
 
 var stream = require('stream');
@@ -127,7 +129,8 @@ function _write(chunk, encoding, callback) {
        but passing an object that causes a serialization failure is a misuse
        of the API anyway, so that's OK. The primary purpose here is to give the
        programmer a useful error and to stop the stream properly */
-    this.call.cancelWithStatus(grpc.status.INTERNAL, 'Serialization failure');
+    this.call.cancelWithStatus(constants.status.INTERNAL,
+                               'Serialization failure');
     callback(e);
   }
   if (_.isFinite(encoding)) {
@@ -185,9 +188,9 @@ function ClientReadableStream(call, deserialize) {
 function _readsDone(status) {
   /* jshint validthis: true */
   if (!status) {
-    status = {code: grpc.status.OK, details: 'OK'};
+    status = {code: constants.status.OK, details: 'OK'};
   }
-  if (status.code !== grpc.status.OK) {
+  if (status.code !== constants.status.OK) {
     this.call.cancelWithStatus(status.code, status.details);
   }
   this.finished = true;
@@ -218,12 +221,12 @@ function _emitStatusIfDone() {
   /* jshint validthis: true */
   var status;
   if (this.read_status && this.received_status) {
-    if (this.read_status.code !== grpc.status.OK) {
+    if (this.read_status.code !== constants.status.OK) {
       status = this.read_status;
     } else {
       status = this.received_status;
     }
-    if (status.code === grpc.status.OK) {
+    if (status.code === constants.status.OK) {
       this.push(null);
     } else {
       var error = new Error(status.details);
@@ -262,7 +265,7 @@ function _read(size) {
     try {
       deserialized = self.deserialize(data);
     } catch (e) {
-      self._readsDone({code: grpc.status.INTERNAL,
+      self._readsDone({code: constants.status.INTERNAL,
                        details: 'Failed to parse server response'});
       return;
     }
@@ -510,7 +513,7 @@ Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
     var deserialized;
     emitter.emit('metadata', Metadata._fromCoreRepresentation(
         response.metadata));
-    if (status.code === grpc.status.OK) {
+    if (status.code === constants.status.OK) {
       if (err) {
         // Got a batch error, but OK status. Something went wrong
         args.callback(err);
@@ -522,13 +525,13 @@ Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
           /* Change status to indicate bad server response. This will result
            * in passing an error to the callback */
           status = {
-            code: grpc.status.INTERNAL,
+            code: constants.status.INTERNAL,
             details: 'Failed to parse server response'
           };
         }
       }
     }
-    if (status.code !== grpc.status.OK) {
+    if (status.code !== constants.status.OK) {
       error = new Error(status.details);
       error.code = status.code;
       error.metadata = status.metadata;
@@ -593,7 +596,7 @@ Client.prototype.makeClientStreamRequest = function(method, serialize,
     var status = response.status;
     var error;
     var deserialized;
-    if (status.code === grpc.status.OK) {
+    if (status.code === constants.status.OK) {
       if (err) {
         // Got a batch error, but OK status. Something went wrong
         args.callback(err);
@@ -605,13 +608,13 @@ Client.prototype.makeClientStreamRequest = function(method, serialize,
           /* Change status to indicate bad server response. This will result
            * in passing an error to the callback */
           status = {
-            code: grpc.status.INTERNAL,
+            code: constants.status.INTERNAL,
             details: 'Failed to parse server response'
           };
         }
       }
     }
-    if (status.code !== grpc.status.OK) {
+    if (status.code !== constants.status.OK) {
       error = new Error(response.status.details);
       error.code = status.code;
       error.metadata = status.metadata;
@@ -921,7 +924,7 @@ exports.waitForClientReady = function(client, deadline, callback) {
 /**
  * Map of status code names to status codes
  */
-exports.status = grpc.status;
+exports.status = constants.status;
 
 /**
  * See docs for client.callError
