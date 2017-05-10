@@ -54,9 +54,6 @@ typedef struct call_data {
   bool workaround_active;
 } call_data;
 
-typedef struct channel_data {
-} channel_data;
-
 // Find the user agent metadata element in the batch
 static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
                                   grpc_mdelem* md) {
@@ -192,7 +189,7 @@ const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
     init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
-    sizeof(channel_data),
+    0,
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
