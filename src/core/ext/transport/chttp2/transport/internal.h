@@ -820,7 +820,7 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 /** Add a new ping strike to ping_recv_state.ping_strikes. If
     ping_recv_state.ping_strikes > ping_policy.max_ping_strikes, it sends GOAWAY
     with error code ENHANCE_YOUR_CALM and additional debug data resembling
-    “too_many_pings” followed by immediately closing the connection. */
+    "too_many_pings" followed by immediately closing the connection. */
 void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport *t);
 
