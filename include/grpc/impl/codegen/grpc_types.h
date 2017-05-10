@@ -297,7 +297,7 @@ each time recvmsg (or equivalent) is called */
    If 0 or unset, the balancer calls will have no deadline. */
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
-#define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION "grpc.socket_factory"
+#define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION "grpc.workaround.cronet_compression"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
