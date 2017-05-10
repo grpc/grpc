@@ -132,6 +132,31 @@ grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
   return grpc_channel_args_copy_and_add(a, b->args, b->num_args);
 }
 
+grpc_channel_args *grpc_channel_args_union(const grpc_channel_args *a,
+                                           const grpc_channel_args *b) {
+  const size_t max_out = (a->num_args + b->num_args);
+  grpc_arg *uniques = gpr_malloc(sizeof(*uniques) * max_out);
+  for (size_t i = 0; i < a->num_args; ++i) uniques[i] = a->args[i];
+
+  size_t uniques_idx = a->num_args;
+  for (size_t i = 0; i < b->num_args; ++i) {
+    const char *b_key = b->args[i].key;
+    bool found = false;
+    for (size_t j = 0; j < a->num_args; ++j) {
+      const char *a_key = a->args[j].key;
+      if (strcmp(a_key, b_key) == 0) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) uniques[uniques_idx++] = b->args[i];
+  }
+  grpc_channel_args *result =
+      grpc_channel_args_copy_and_add(NULL, uniques, uniques_idx);
+  gpr_free(uniques);
+  return result;
+}
+
 static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
   int c = GPR_ICMP(a->type, b->type);
   if (c != 0) return c;

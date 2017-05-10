@@ -41,7 +41,7 @@
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.fake_resolver.response_generator"
 
-void grpc_fake_resolver_init();
+void grpc_resolver_fake_init();
 
 // Instances of \a grpc_fake_resolver_response_generator are passed to the
 // fake resolver in a channel argument (see \a

@@ -67,6 +67,10 @@ grpc_channel_args *grpc_channel_args_copy_and_add_and_remove(
 grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
                                            const grpc_channel_args *b);
 
+/** Perform the union of \a a and \a b, prioritizing \a a entries */
+grpc_channel_args *grpc_channel_args_union(const grpc_channel_args *a,
+                                           const grpc_channel_args *b);
+
 /** Destroy arguments created by \a grpc_channel_args_copy */
 void grpc_channel_args_destroy(grpc_exec_ctx *exec_ctx, grpc_channel_args *a);
 

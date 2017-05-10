@@ -50,7 +50,6 @@ static gpr_avl g_subchannel_index;
 static gpr_mu g_mu;
 
 struct grpc_subchannel_key {
-  grpc_connector *connector;
   grpc_subchannel_args args;
 };
 
@@ -73,10 +72,9 @@ static grpc_exec_ctx *current_ctx() {
 }
 
 static grpc_subchannel_key *create_key(
-    grpc_connector *connector, const grpc_subchannel_args *args,
+    const grpc_subchannel_args *args,
     grpc_channel_args *(*copy_channel_args)(const grpc_channel_args *args)) {
   grpc_subchannel_key *k = gpr_malloc(sizeof(*k));
-  k->connector = grpc_connector_ref(connector);
   k->args.filter_count = args->filter_count;
   if (k->args.filter_count > 0) {
     k->args.filters =
@@ -91,19 +89,17 @@ static grpc_subchannel_key *create_key(
 }
 
 grpc_subchannel_key *grpc_subchannel_key_create(
-    grpc_connector *connector, const grpc_subchannel_args *args) {
-  return create_key(connector, args, grpc_channel_args_normalize);
+    const grpc_subchannel_args *args) {
+  return create_key(args, grpc_channel_args_normalize);
 }
 
 static grpc_subchannel_key *subchannel_key_copy(grpc_subchannel_key *k) {
-  return create_key(k->connector, &k->args, grpc_channel_args_copy);
+  return create_key(&k->args, grpc_channel_args_copy);
 }
 
-static int subchannel_key_compare(grpc_subchannel_key *a,
-                                  grpc_subchannel_key *b) {
-  int c = GPR_ICMP(a->connector, b->connector);
-  if (c != 0) return c;
-  c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
+int grpc_subchannel_key_compare(const grpc_subchannel_key *a,
+                                const grpc_subchannel_key *b) {
+  int c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
   if (c != 0) return c;
   if (a->args.filter_count > 0) {
     c = memcmp(a->args.filters, b->args.filters,
@@ -115,7 +111,6 @@ static int subchannel_key_compare(grpc_subchannel_key *a,
 
 void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
                                  grpc_subchannel_key *k) {
-  grpc_connector_unref(exec_ctx, k->connector);
   gpr_free((grpc_channel_args *)k->args.filters);
   grpc_channel_args_destroy(exec_ctx, (grpc_channel_args *)k->args.args);
   gpr_free(k);
@@ -128,7 +123,7 @@ static void sck_avl_destroy(void *p) {
 static void *sck_avl_copy(void *p) { return subchannel_key_copy(p); }
 
 static long sck_avl_compare(void *a, void *b) {
-  return subchannel_key_compare(a, b);
+  return grpc_subchannel_key_compare(a, b);
 }
 
 static void scv_avl_destroy(void *p) {
@@ -163,15 +158,24 @@ grpc_subchannel *grpc_subchannel_index_find(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel_key *key) {
   enter_ctx(exec_ctx);
 
+gpr_log(GPR_DEBUG, "grpc_subchannel_index_find");
+
   // Lock, and take a reference to the subchannel index.
   // We don't need to do the search under a lock as avl's are immutable.
   gpr_mu_lock(&g_mu);
   gpr_avl index = gpr_avl_ref(g_subchannel_index);
   gpr_mu_unlock(&g_mu);
 
+gpr_log(GPR_DEBUG, ".. got index");
+
   grpc_subchannel *c =
       GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(gpr_avl_get(index, key), "index_find");
+  
+gpr_log(GPR_DEBUG, ".. c=%p", c);
+  
   gpr_avl_unref(index);
+
+gpr_log(GPR_DEBUG, "~grpc_subchannel_index_find");
 
   leave_ctx(exec_ctx);
   return c;
@@ -194,8 +198,11 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
     // - Check to see if a subchannel already exists
     c = gpr_avl_get(index, key);
     if (c != NULL) {
+      c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "index_register");
+    }
+    if (c != NULL) {
       // yes -> we're done
-      GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, constructed, "index_register");
+      GRPC_SUBCHANNEL_UNREF(exec_ctx, constructed, "index_register");
     } else {
       // no -> update the avl and compare/swap
       gpr_avl updated =

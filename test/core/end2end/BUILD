@@ -58,19 +58,6 @@ cc_library(
 )
 
 cc_library(
-    name = "fake_resolver",
-    srcs = ["fake_resolver.c"],
-    hdrs = ["fake_resolver.h"],
-    copts = ["-std=c99"],
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-cc_library(
     name = "http_proxy",
     srcs = ["fixtures/http_proxy_fixture.c"],
     hdrs = ["fixtures/http_proxy_fixture.h"],

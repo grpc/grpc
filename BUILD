@@ -969,6 +969,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_fake",
+    srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c"],
+    hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
+    copts = ["-std=c99"],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_secure",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.c",
