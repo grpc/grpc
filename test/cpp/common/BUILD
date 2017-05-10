@@ -36,8 +36,10 @@ grpc_cc_test(
     srcs = ["alarm_cpp_test.cc"],
     deps = [
         "//:grpc++",
-        "//external:gtest",
         "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )
 
