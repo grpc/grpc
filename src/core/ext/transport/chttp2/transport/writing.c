@@ -41,18 +41,9 @@ static void finish_write_cb(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->write_cb_pool = cb;
 }
 
-static void collapse_pings_from_into(grpc_chttp2_transport *t,
-                                     grpc_chttp2_ping_type ping_type,
-                                     grpc_chttp2_ping_queue *pq) {
-  for (size_t i = 0; i < GRPC_CHTTP2_PCL_COUNT; i++) {
-    grpc_closure_list_move(&t->ping_queues[ping_type].lists[i], &pq->lists[i]);
-  }
-}
-
 static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t,
-                                grpc_chttp2_ping_type ping_type) {
-  grpc_chttp2_ping_queue *pq = &t->ping_queues[ping_type];
+                                grpc_chttp2_transport *t) {
+  grpc_chttp2_ping_queue *pq = &t->ping_queue;
   if (grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
     /* no ping needed: wait */
     return;
@@ -99,17 +90,7 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     }
     return;
   }
-  /* coalesce equivalent pings into this one */
-  switch (ping_type) {
-    case GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE:
-      collapse_pings_from_into(t, GRPC_CHTTP2_PING_ON_NEXT_WRITE, pq);
-      break;
-    case GRPC_CHTTP2_PING_ON_NEXT_WRITE:
-      break;
-    case GRPC_CHTTP2_PING_TYPE_COUNT:
-      GPR_UNREACHABLE_CODE(break);
-  }
-  pq->inflight_id = t->ping_ctr * GRPC_CHTTP2_PING_TYPE_COUNT + ping_type;
+  pq->inflight_id = t->ping_ctr;
   t->ping_ctr++;
   GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
   grpc_closure_list_move(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
@@ -167,6 +148,12 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   grpc_chttp2_stream *s;
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
+
+  for (size_t i = 0; i < t->ping_ack_count; i++) {
+    grpc_slice_buffer_add(&t->outbuf,
+                          grpc_chttp2_ping_create(1, t->ping_acks[i]));
+  }
+  t->ping_ack_count = 0;
 
   if (t->dirtied_local_settings && !t->sent_local_settings) {
     grpc_slice_buffer_add(
@@ -369,8 +356,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                           : target_incoming_window / 2;
   if (t->incoming_window <= threshold_to_send_transport_window_update &&
       t->incoming_window != target_incoming_window) {
-    maybe_initiate_ping(exec_ctx, t,
-                        GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE);
     uint32_t announced = (uint32_t)GPR_CLAMP(
         target_incoming_window - t->incoming_window, 0, UINT32_MAX);
     GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("write", t, incoming_window, announced);
@@ -386,13 +371,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
   }
 
-  for (size_t i = 0; i < t->ping_ack_count; i++) {
-    grpc_slice_buffer_add(&t->outbuf,
-                          grpc_chttp2_ping_create(1, t->ping_acks[i]));
-  }
-  t->ping_ack_count = 0;
-
-  maybe_initiate_ping(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE);
+  maybe_initiate_ping(exec_ctx, t);
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 
