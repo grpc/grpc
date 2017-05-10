@@ -183,10 +183,12 @@ class GrpcBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
   Status status_;
 };
 
-// BufferWriter must be a subclass of io::ZeroCopyOutputStream.
 template <class BufferWriter, class T>
 Status GenericSerialize(const grpc::protobuf::Message& msg,
                         grpc_byte_buffer** bp, bool* own_buffer) {
+  static_assert(
+      std::is_base_of<protobuf::io::ZeroCopyOutputStream, BufferWriter>::value,
+      "BufferWriter must be a subclass of io::ZeroCopyOutputStream");
   *own_buffer = true;
   int byte_size = msg.ByteSize();
   if (byte_size <= internal::kGrpcBufferWriterMaxBufferLength) {
@@ -205,10 +207,12 @@ Status GenericSerialize(const grpc::protobuf::Message& msg,
   }
 }
 
-// BufferReader must be a subclass of io::ZeroCopyInputStream.
 template <class BufferReader, class T>
 Status GenericDeserialize(grpc_byte_buffer* buffer,
                           grpc::protobuf::Message* msg) {
+  static_assert(
+      std::is_base_of<protobuf::io::ZeroCopyInputStream, BufferReader>::value,
+      "BufferReader must be a subclass of io::ZeroCopyInputStream");
   if (buffer == nullptr) {
     return Status(StatusCode::INTERNAL, "No payload");
   }
