@@ -77,17 +77,14 @@ static void write_csv(std::ostream* out, A0&& a0, Arg&&... arg) {
 
 class TrickledCHTTP2 : public EndpointPairFixture {
  public:
-  TrickledCHTTP2(Service* service, bool streaming, size_t req_size, size_t resp_size,
-                 size_t kilobits_per_second)
+  TrickledCHTTP2(Service* service, bool streaming, size_t req_size,
+                 size_t resp_size, size_t kilobits_per_second)
       : EndpointPairFixture(service, MakeEndpoints(kilobits_per_second),
                             FixtureConfiguration()) {
     if (FLAGS_log) {
       std::ostringstream fn;
-      fn << "trickle." << (streaming ? "streaming"
-                                    : "unary" )
-                                          << "." << req_size << "." << resp_size
-                                          << "." << kilobits_per_second
-                                          << ".csv";
+      fn << "trickle." << (streaming ? "streaming" : "unary") << "." << req_size
+         << "." << resp_size << "." << kilobits_per_second << ".csv";
       log_.reset(new std::ofstream(fn.str().c_str()));
       write_csv(log_.get(), "t", "iteration", "client_backlog",
                 "server_backlog", "client_t_stall", "client_s_stall",
