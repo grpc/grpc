@@ -220,7 +220,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify_custom(cqv, 300);
+  cq_verify_custom(cqv, 1000);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -247,7 +247,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify_custom(cqv, 300);
+  cq_verify_custom(cqv, 1000);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
