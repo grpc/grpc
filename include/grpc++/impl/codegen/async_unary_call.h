@@ -51,7 +51,29 @@ template <class R>
 class ClientAsyncResponseReaderInterface {
  public:
   virtual ~ClientAsyncResponseReaderInterface() {}
+
+  /// Request notification of the reading of initial metadata. Completion
+  /// will be notified by \a tag on the associated completion queue.
+  /// This call is optional, but if it is used, it cannot be used concurrently
+  /// with or after the \a Finish method.
+  ///
+  /// \param[in] tag Tag identifying this request.
   virtual void ReadInitialMetadata(void* tag) = 0;
+
+  /// Request to receive the server's response \a msg and final \a status for
+  /// the call, and to notify \a tag on this call's completion queue when
+  /// finished.
+  ///
+  /// This function will return when either:
+  /// - when the server's response message and status have been received.
+  /// - when the server has returned a non-OK status (no message expected in
+  ///   this case).
+  /// - when the call failed for some reason and the library generated a
+  ///   non-OK status.
+  ///
+  /// \param[in] tag Tag identifying this request.
+  /// \param[out] status To be updated with the operation status.
+  /// \param[out] msg To be filled in with the server's response message.
   virtual void Finish(R* msg, Status* status, void* tag) = 0;
 };
 
@@ -83,16 +105,9 @@ class ClientAsyncResponseReader final
     assert(size == sizeof(ClientAsyncResponseReader));
   }
 
-  /// Request notification of the reading of initial metadata. Completion
-  /// will be notified by \a tag on the associated completion queue.
-  /// This call is optional, but if it is used, it cannot be used concurrently
-  /// with or after the \a Finish method.
+  /// See \a ClientAsyncResponseReaderInterface::ReadInitialMetadata for
+  /// semantics.
   ///
-  /// Once a completion has been notified, the initial metadata read from
-  /// the server will be accessable through the \a ClientContext used to
-  /// construct this object.
-  ///
-  /// \param[in] tag Tag identifying this request.
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the serve.
@@ -104,20 +119,7 @@ class ClientAsyncResponseReader final
     call_.PerformOps(&meta_buf_);
   }
 
-  /// Request to receive the server's response \a msg and final \a status for
-  /// the call, and to notify \a tag on this call's completion queue when
-  /// finished.
-  ///
-  /// This function will return when either:
-  /// - when the server's response message and status have been received.
-  /// - when the server has returned a non-OK status (no message expected in
-  ///   this case).
-  /// - when the call failed for some reason and the library generated a
-  ///   non-OK status.
-  ///
-  /// \param[in] tag Tag identifying this request.
-  /// \param[out] status To be updated with the operation status.
-  /// \param[out] msg To be filled in with the server's response message.
+  /// See \a ClientAysncResponseReaderInterface::Finish for semantics.
   ///
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
@@ -169,13 +171,11 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
   explicit ServerAsyncResponseWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  /// Request notification of the sending the initial metadata to the client. Completion
-  /// will be notified by \a tag on the associated completion queue.
-  /// This call is optional, but if it is used, it cannot be used concurrently
-  /// with or after the \a Finish method.
+  /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
   ///
-  /// The initial metadata that will be sent to the client from this op will be
-  /// taken from the \a ServerContext associated with the call.
+  /// Side effect:
+  ///   The initial metadata that will be sent to the client from this op will be
+  ///   taken from the \a ServerContext associated with the call.
   ///
   /// \param[in] tag Tag identifying this request.
   void SendInitialMetadata(void* tag) override {

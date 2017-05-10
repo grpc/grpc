@@ -54,12 +54,14 @@ class ClientStreamingInterface {
   /// available.
   ///
   /// It is appropriate to call this method when both:
-  ///   * the calling code (client-side) has no more message to send (this can be declared implicitly
-  ///     by calling this method, or explicitly through an earlier call to \a
-  ///     WritesDone.
+  ///   * the calling code (client-side) has no more message to send (this can be
+  ///     declared implicitly by calling this method, or explicitly through an
+  ///     earlier call to <i>WritesDone</i> method of the class in use, e.g.
+  ///     \a ClientWriterInterface::WritesDone or
+  ///     \a ClientReaderWriterInterface::WritesDone).
   ///   * there are no more messages to be received from the server (which can
-  ///     be known implicitly, or explicitly from an earlier call to \a Read that
-  ///     returned "false"
+  ///     be known implicitly, or explicitly from an earlier call to \a ReaderInterface::Read that
+  ///     returned "false").
   ///
   /// This function will return either:
   /// - when all incoming messages have been read and the server has returned
@@ -118,7 +120,7 @@ class WriterInterface {
   virtual ~WriterInterface() {}
 
   /// Block to write \a msg to the stream with WriteOptions \a options.
-  /// This is thread-safe with respect to \a Read
+  /// This is thread-safe with respect to \a ReaderInterface::Read
   ///
   /// \param msg The message to be written to the stream.
   /// \param options The WriteOptions affecting the write operation.
@@ -127,7 +129,7 @@ class WriterInterface {
   virtual bool Write(const W& msg, WriteOptions options) = 0;
 
   /// Block to write \a msg to the stream with default write options.
-  /// This is thread-safe with respect to \a Read
+  /// This is thread-safe with respect to \a ReaderInterface::Read
   ///
   /// \param msg The message to be written to the stream.
   ///
@@ -209,7 +211,6 @@ class ClientReader final : public ClientReaderInterface<R> {
     cq_.Pluck(&ops);  /// status ignored
   }
 
-  /// See the \a ReaderInterface.NextMessageSize for semantics.
   bool NextMessageSize(uint32_t* sz) override {
     *sz = call_.max_receive_message_size();
     return true;
@@ -258,7 +259,7 @@ class ClientWriterInterface : public ClientStreamingInterface,
   /// Half close writing from the client. (signal that the stream of messages
   /// coming from the clinet is complete).
   /// Blocks until currently-pending writes are completed.
-  /// Thread safe with respect to \a Read operations only
+  /// Thread safe with respect to \a ReaderInterface::Read operations only
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
@@ -339,7 +340,6 @@ class ClientWriter : public ClientWriterInterface<W> {
     return cq_.Pluck(&ops);
   }
 
-  /// See the \a ClientWriterInterface.WritesDone method for semantics.
   bool WritesDone() override {
     CallOpSet<CallOpClientSendClose> ops;
     ops.ClientSendClose();
@@ -389,7 +389,7 @@ class ClientReaderWriterInterface : public ClientStreamingInterface,
   /// Half close writing from the client. (signal that the stream of messages
   /// coming from the clinet is complete).
   /// Blocks until currently-pending writes are completed.
-  /// Thread-safe with respect to \a Read
+  /// Thread-safe with respect to \a ReaderInterface::Read
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
@@ -484,7 +484,6 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     return cq_.Pluck(&ops);
   }
 
-  /// See the ClientWriterInterface.WritesDone method for semantics.
   bool WritesDone() override {
     CallOpSet<CallOpClientSendClose> ops;
     ops.ClientSendClose();
@@ -546,13 +545,11 @@ class ServerReader final : public ServerReaderInterface<R> {
     call_->cq()->Pluck(&ops);
   }
 
-  /// See the \a ReaderInterface.NextMessageSize method.
   bool NextMessageSize(uint32_t* sz) override {
     *sz = call_->max_receive_message_size();
     return true;
   }
 
-  /// See the \a ReaderInterface.Read method for semantics.
   bool Read(R* msg) override {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
@@ -707,12 +704,10 @@ class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
   /// \a ServerContext associated with this call.
   void SendInitialMetadata() override { body_.SendInitialMetadata(); }
 
-  /// See the \a ReaderInterface.NextMessageSize method for semantics
   bool NextMessageSize(uint32_t* sz) override {
     return body_.NextMessageSize(sz);
   }
 
-  /// See the \a ReaderInterface.Read method for semantics
   bool Read(R* msg) override { return body_.Read(msg); }
 
   /// See the \a WriterInterface.Write(const W& msg, WriteOptions options) method for semantics.
@@ -760,7 +755,7 @@ class ServerUnaryStreamer final
   /// This is thread-safe with respect to \a Write or \a WritesDone methods. It
   /// should not be called concurrently with other streaming APIs
   /// on the same stream. It is not meaningful to call it concurrently
-  /// with another \a Read on the same stream since reads on the same stream
+  /// with another \a ReaderInterface::Read on the same stream since reads on the same stream
   /// are delivered in order.
   ///
   /// \param[out] msg Where to eventually store the read message.
@@ -774,7 +769,7 @@ class ServerUnaryStreamer final
   }
 
   /// Block to write \a msg to the stream with WriteOptions \a options.
-  /// This is thread-safe with respect to \a Read
+  /// This is thread-safe with respect to \a ReaderInterface::Read
   ///
   /// \param msg The message to be written to the stream.
   /// \param options The WriteOptions affecting the write operation.
@@ -823,7 +818,7 @@ class ServerSplitStreamer final
   /// This is thread-safe with respect to \a Write or \a WritesDone methods. It
   /// should not be called concurrently with other streaming APIs
   /// on the same stream. It is not meaningful to call it concurrently
-  /// with another \a Read on the same stream since reads on the same stream
+  /// with another \a ReaderInterface::Read on the same stream since reads on the same stream
   /// are delivered in order.
   ///
   /// \param[out] msg Where to eventually store the read message.
@@ -837,7 +832,7 @@ class ServerSplitStreamer final
   }
 
   /// Block to write \a msg to the stream with WriteOptions \a options.
-  /// This is thread-safe with respect to \a Read
+  /// This is thread-safe with respect to \a ReaderInterface::Read
   ///
   /// \param msg The message to be written to the stream.
   /// \param options The WriteOptions affecting the write operation.

@@ -96,7 +96,7 @@ class ServerContextTestSpouse;
 /// - Add custom initial and trailing metadata key-value pairs that will propagated
 ///   to the client side.
 /// - Control call settings such as compression and authentication.
-/// - Access Initial metadata coming from the client.
+/// - Access metadata coming from the client.
 /// - Get performance metrics (ie, census).
 ///
 /// Context settings are only relevant to the call handler they are supplied to, that
@@ -130,8 +130,7 @@ class ServerContext {
   /// \param meta_key The metadata key. If \a meta_value is binary data, it must
   /// end in "-bin".
   /// \param meta_value The metadata value. If its value is binary, it must be
-  /// base64-encoding (see https://tools.ietf.org/html/rfc4648#section-4) and \a
-  /// meta_key must end in "-bin".
+  /// must end in "-bin".
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
 
   /// Add the (\a meta_key, \a meta_value) pair to the initial metadata associated with
@@ -145,8 +144,7 @@ class ServerContext {
   /// \param meta_key The metadata key. If \a meta_value is binary data, it must
   /// end in "-bin".
   /// \param meta_value The metadata value. If its value is binary, it must be
-  /// base64-encoding (see https://tools.ietf.org/html/rfc4648#section-4) and \a
-  /// meta_key must end in "-bin".
+  /// end in "-bin".
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
   /// IsCancelled is always safe to call when using sync API.

@@ -154,7 +154,7 @@ class InteropClientContextInspector;
 /// A ClientContext allows the person implementing a service client to:
 ///
 /// - Add custom metadata key-value pairs that will propagated to the server
-/// side.
+///   side.
 /// - Control call settings such as compression and authentication.
 /// - Initial and trailing metadata coming from the server.
 /// - Get performance metrics (ie, census).
@@ -193,8 +193,7 @@ class ClientContext {
   /// \param meta_key The metadata key. If \a meta_value is binary data, it must
   /// end in "-bin".
   /// \param meta_value The metadata value. If its value is binary, it must be
-  /// base64-encoding (see https://tools.ietf.org/html/rfc4648#section-4) and \a
-  /// meta_key must end in "-bin".
+  /// end in "-bin".
   void AddMetadata(const grpc::string& meta_key,
                    const grpc::string& meta_value);
 
@@ -243,13 +242,13 @@ class ClientContext {
   /// this RPC multiple times.
   void set_idempotent(bool idempotent) { idempotent_ = idempotent; }
 
-  /// EXPERIMENTAL: Set this request to be cacheable
-  /// If set, grpc is free the GET verb for sending the request,
+  /// EXPERIMENTAL: Set this request to be cacheable.
+  /// If set, grpc is free to use the HTTP GET verb for sending the request,
   /// with the possibility of receiving a cached respone.
   void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
 
-  /// EXPERIMENTAL: Trigger wait-for-ready or not on this request
-  /// See grpc/doc/wait-for-ready.md.
+  /// EXPERIMENTAL: Trigger wait-for-ready or not on this request.
+  /// See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md.
   /// If set, if an RPC made when a channel's connectivity state is
   /// TRANSIENT_FAILURE or CONNECTING, the call will not "fail fast",
   /// and the channel will wait until the channel is READY before making the

@@ -162,8 +162,7 @@ typedef struct {
 /** Maximum message length that the channel can receive. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
-/** \deprecated For backward compatibility. Use
-   GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+/** \deprecated For backward compatibility. Use GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
     instead. */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
 /** Maximum message length that the channel can send. Int valued, bytes.
@@ -272,10 +271,8 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
-/** If non-zero, a pointer to a buffer pool (a pointer of type
-   grpc_resource_quota*).
-    (use grpc_resource_quota_arg_vtable() to fetch an appropriate pointer arg
-   vtable) */
+/** If non-zero, a pointer to a buffer pool (a pointer of type grpc_resource_quota*).
+    (use grpc_resource_quota_arg_vtable() to fetch an appropriate pointer arg vtable) */
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
 /** If non-zero, expand wildcard addresses to a list of local addresses. */
 #define GRPC_ARG_EXPAND_WILDCARD_ADDRS "grpc.expand_wildcard_addrs"
@@ -288,12 +285,11 @@ typedef struct {
 /** The grpc_socket_factory instance to create and bind sockets. A pointer. */
 #define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
 /** If non-zero, Cronet transport will coalesce packets to fewer frames when
- * possible. */
+    possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
   "grpc.use_cronet_packet_coalescing"
-/** Channel arg (integer) setting how large a slice to try and read from the
-wire
-each time recvmsg (or equivalent) is called **/
+/** Channel arg (integer) setting how large a slice to try and read from the wire
+    each time recvmsg (or equivalent) is called **/
 #define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
 /** Note this is not a "channel arg" key. This is the default slice size to use
  * when trying to read from the wire if the GRPC_ARG_TCP_READ_CHUNK_SIZE
@@ -383,8 +379,7 @@ typedef enum grpc_call_error {
 
 /** A single metadata element */
 typedef struct grpc_metadata {
-  /** the key, value values are expected to line up with grpc_mdelem: if
-     changing
+  /** the key, value values are expected to line up with grpc_mdelem: if changing
      them, update metadata.h at the same time. */
   grpc_slice key;
   grpc_slice value;

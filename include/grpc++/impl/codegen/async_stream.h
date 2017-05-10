@@ -53,7 +53,7 @@ class ClientAsyncStreamingInterface {
   /// Request notification of the reading of the initial metadata. Completion
   /// will be notified by \a tag on the associated completion queue.
   /// This call is optional, but if it is used, it cannot be used concurrently
-  /// with or after the \a Read method.
+  /// with or after the \a AsyncReaderInterface::Read method.
   ///
   /// \param[in] tag Tag identifying this request.
   virtual void ReadInitialMetadata(void* tag) = 0;
@@ -64,12 +64,14 @@ class ClientAsyncStreamingInterface {
   ///
   /// It is appropriate to call this method when both:
   ///   * the client side has no more message to send (this can be declared implicitly
-  ///     by calling this method, or explicitly through an earlier call to \a
-  ///     WritesDone.
-  ///   * there are no more messages to be received from the server (which can
-  ///     be known implicitly by the calling code, or known explicitly from an
-  ///     earlier call to \a Read that yielded a failed result
-  ///     (e.g. cq->Next(&read_tag, &ok) filled in 'ok' with 'false'.
+  ///     by calling this method, or explicitly through an earlier call to
+  ///     the <i>WritesDone</i> method of the class in use, e.g.
+  ///     \a ClientAsyncWriterInterface::WritesDone or
+  ///     \a ClientAsyncReaderWriterInterface::WritesDone).
+  ///   * there are no more messages to be received from the server (this can
+  ///     be known implicitly by the calling code, or explicitly from an
+  ///     earlier call to \a AsyncReaderInterface::Read that yielded a failed result
+  ///     , e.g. cq->Next(&read_tag, &ok) filled in 'ok' with 'false').
   ///
   /// This function will return when either:
   /// - all incoming messages have been read and the server has returned
@@ -97,7 +99,7 @@ class AsyncReaderInterface {
   /// This is thread-safe with respect to \a Write or \a WritesDone methods. It
   /// should not be called concurrently with other streaming APIs
   /// on the same stream. It is not meaningful to call it concurrently
-  /// with another \a Read on the same stream since reads on the same stream
+  /// with another \a AsyncReaderInterface::Read on the same stream since reads on the same stream
   /// are delivered in order.
   ///
   /// \param[out] msg Where to eventually store the read message.
@@ -119,7 +121,7 @@ class AsyncWriterInterface {
   /// Only one write may be outstanding at any given time. This means that
   /// after calling Write, one must wait to receive \a tag from the completion
   /// queue BEFORE calling Write again.
-  /// This is thread-safe with respect to \a Read
+  /// This is thread-safe with respect to \a AsyncReaderInterface::Read
   ///
   /// \param[in] msg The message to be written.
   /// \param[in] tag The tag identifying the operation.
@@ -132,7 +134,7 @@ class AsyncWriterInterface {
   /// after calling Write, one must wait to receive \a tag from the completion
   /// queue BEFORE calling Write again.
   /// WriteOptions \a options is used to set the write options of this message.
-  /// This is thread-safe with respect to \a Read
+  /// This is thread-safe with respect to \a AsyncReaderInterface::Read
   ///
   /// \param[in] msg The message to be written.
   /// \param[in] options The WriteOptions to be used to write this message.
@@ -205,7 +207,6 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
     call_.PerformOps(&meta_ops_);
   }
 
-  /// See the \a AsyncReaderInterface.Read method for semantics of this method.
   void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
@@ -258,13 +259,13 @@ class ClientAsyncWriterInterface : public ClientAsyncStreamingInterface,
                                    public AsyncWriterInterface<W> {
  public:
   /// Signal the client is done with the writes (half-close the client stream).
-  /// Thread-safe with respect to \a Read
+  /// Thread-safe with respect to \a AsyncReaderInterface::Read
   ///
   /// \param[in] tag The tag identifying the operation.
   virtual void WritesDone(void* tag) = 0;
 };
 
-/// Async API to on the client side for doing client-streaming RPCs,
+/// Async API on the client side for doing client-streaming RPCs,
 /// where the outgoing message stream going to the server contains messages of type \a W.
 template <class W>
 class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
@@ -309,8 +310,6 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  /// See the \a AsyncWriterInterface.Write(const W& msg, void* tag)
-  /// method for semantics of this method.
   void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
@@ -318,9 +317,6 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&write_ops_);
   }
 
-  /// See the
-  /// \a AsyncWriterInterface.Write(const W& msg, WriteOptions options, void* tag)
-  /// method for semantics of this method.
   void Write(const W& msg, WriteOptions options, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {
@@ -332,8 +328,6 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&write_ops_);
   }
 
-  /// See the \a ClientAsyncWriterInterface.WritesDone method for semantics of
-  /// this method.
   void WritesDone(void* tag) override {
     write_ops_.set_output_tag(tag);
     write_ops_.ClientSendClose();
@@ -387,14 +381,14 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
 
 /// Async client-side interface for bi-directional streaming,
 /// where the client-to-server message stream has messages of type \a W,
-/// abnd the server-to-client message stream has messages of type \a R.
+/// and the server-to-client message stream has messages of type \a R.
 template <class W, class R>
 class ClientAsyncReaderWriterInterface : public ClientAsyncStreamingInterface,
                                          public AsyncWriterInterface<W>,
                                          public AsyncReaderInterface<R> {
  public:
   /// Signal the client is done with the writes (half-close the client stream).
-  /// Thread-safe with respect to \a Read
+  /// Thread-safe with respect to \a AsyncReaderInterface::Read
   ///
   /// \param[in] tag The tag identifying the operation.
   virtual void WritesDone(void* tag) = 0;
@@ -443,8 +437,6 @@ class ClientAsyncReaderWriter final
     call_.PerformOps(&meta_ops_);
   }
 
-  /// See \a AsyncReaderInterface.Read method for semantics
-  /// of this method.
   void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
@@ -454,8 +446,6 @@ class ClientAsyncReaderWriter final
     call_.PerformOps(&read_ops_);
   }
 
-  /// See \a AsyncWriterInterface.Write(const W& msg, void* tag) method for
-  /// semantics of this method.
   void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
@@ -463,8 +453,6 @@ class ClientAsyncReaderWriter final
     call_.PerformOps(&write_ops_);
   }
 
-  /// See \a AsyncWriterInterface.Write(const W& msg, WriteOptions options, void* tag)
-  /// method for semantics of this method.
   void Write(const W& msg, WriteOptions options, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {
@@ -476,8 +464,6 @@ class ClientAsyncReaderWriter final
     call_.PerformOps(&write_ops_);
   }
 
-  /// See \a ClientAsyncReaderWriterInterface.WritesDone method for semantics
-  /// of this method.
   void WritesDone(void* tag) override {
     write_ops_.set_output_tag(tag);
     write_ops_.ClientSendClose();
@@ -534,12 +520,12 @@ class ServerAsyncReaderInterface : public ServerAsyncStreamingInterface,
   ///
   /// It is appropriate to call this method when:
   ///   * all messages from the client have been received (either known
-  ///     implictly, or explicitly because a previous \a Read operation
+  ///     implictly, or explicitly because a previous \a AsyncReaderInterface::Read operation
   ///     with a non-ok result (e.g., cq->Next(&read_tag, &ok) filled in 'ok'
   ///     with 'false'.
   ///
   /// This operation will end when the server has finished sending out initial metadata
-  /// (if not sent already), repsonse message, and status, or if some failure
+  /// (if not sent already), response message, and status, or if some failure
   /// occurred when trying to do so.
   ///
   /// \param[in] tag Tag identifying this request.
@@ -555,11 +541,10 @@ class ServerAsyncReaderInterface : public ServerAsyncStreamingInterface,
   /// This call is meant to end the call with some error, and can be called at
   /// any point that the server would like to "fail" the call (though note
   /// this shouldn't be called concurrently with any other "sending" call, like
-  /// \a Write.
+  /// \a AsyncWriterInterface::Write).
   ///
   /// This operation will end when the server has finished sending out initial metadata
-  /// (if not sent already), and status, or if some failure
-  /// occurred when trying to do so.
+  /// (if not sent already), and status, or if some failure occurred when trying to do so.
   ///
   /// \param[in] tag Tag identifying this request.
   /// \param[in] status To be sent to the client as the result of this call.
@@ -576,16 +561,11 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   explicit ServerAsyncReader(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  /// Request notification of the sending of initial metadata to the client. Completion
-  /// will be notified by \a tag on the associated completion queue.
-  /// This call is optional, but if it is used, it cannot be used concurrently
-  /// with or after the \a Finish method.
+  /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
   ///
   /// Implicit input parameter:
   ///   - The initial metadata that will be sent to the client from this op will be
   ///     taken from the \a ServerContext associated with the call.
-  ///
-  /// \param[in] tag Tag identifying this request.
   void SendInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
@@ -599,7 +579,6 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
     call_.PerformOps(&meta_ops_);
   }
 
-  /// See the \a AsyncReaderInterface.Read method for semantics.
   void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     read_ops_.RecvMessage(msg);
@@ -678,13 +657,13 @@ class ServerAsyncWriterInterface : public ServerAsyncStreamingInterface,
   ///
   /// It is appropriate to call this method when either:
   ///   * all messages from the client have been received (either known
-  ///     implictly, or explicitly because a previous \a Read operation
+  ///     implictly, or explicitly because a previous \a AsyncReaderInterface::Read operation
   ///     with a non-ok result (e.g., cq->Next(&read_tag, &ok) filled in 'ok'
   ///     with 'false'.
   ///   * it is desired to end the call early with some non-OK status code.
   ///
   /// This operation will end when the server has finished sending out initial metadata
-  /// (if not sent already), repsonse message, and status, or if some failure
+  /// (if not sent already), response message, and status, or if some failure
   /// occurred when trying to do so.
   ///
   /// \param[in] tag Tag identifying this request.
@@ -714,10 +693,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
   explicit ServerAsyncWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  /// Request notification of the sending the initial metadata to the client. Completion
-  /// will be notified by \a tag on the associated completion queue.
-  /// This call is optional, but if it is used, it cannot be used concurrently
-  /// with or after the \a Finish method.
+  /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
   ///
   /// Implicit input parameter:
   ///   - The initial metadata that will be sent to the client from this op will be
@@ -737,7 +713,6 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  /// See the \a AsyncWriterInterface.Write(const W &msg, void *tag) method for semantics.
   void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
@@ -746,7 +721,6 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     call_.PerformOps(&write_ops_);
   }
 
-  /// See the \a AsyncWriterInterface.Write(const W &msg, WriteOptions options, void *tag) method for semantics.
   void Write(const W& msg, WriteOptions options, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {
@@ -827,13 +801,13 @@ class ServerAsyncReaderWriterInterface : public ServerAsyncStreamingInterface,
   ///
   /// It is appropriate to call this method when either:
   ///   * all messages from the client have been received (either known
-  ///     implictly, or explicitly because a previous \a Read operation
+  ///     implictly, or explicitly because a previous \a AsyncReaderInterface::Read operation
   ///     with a non-ok result (e.g., cq->Next(&read_tag, &ok) filled in 'ok'
   ///     with 'false'.
   ///   * it is desired to end the call early with some non-OK status code.
   ///
   /// This operation will end when the server has finished sending out initial metadata
-  /// (if not sent already), repsonse message, and status, or if some failure
+  /// (if not sent already), response message, and status, or if some failure
   /// occurred when trying to do so.
   ///
   /// \param[in] tag Tag identifying this request.
@@ -865,10 +839,7 @@ class ServerAsyncReaderWriter final
   explicit ServerAsyncReaderWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  /// Request notification of the sending the initial metadata to the client. Completion
-  /// will be notified by \a tag on the associated completion queue.
-  /// This call is optional, but if it is used, it cannot be used concurrently
-  /// with or after the \a Finish method.
+  /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
   ///
   /// Implicit input parameter:
   ///   - The initial metadata that will be sent to the client from this op will be
@@ -888,14 +859,12 @@ class ServerAsyncReaderWriter final
     call_.PerformOps(&meta_ops_);
   }
 
-  /// See the \a AsyncReaderInterface.Read method for semantics.
   void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     read_ops_.RecvMessage(msg);
     call_.PerformOps(&read_ops_);
   }
 
-  /// See the \a AsyncWriterInterface.Write(const W& msg, void* tag) method for semantics.
   void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
@@ -904,7 +873,6 @@ class ServerAsyncReaderWriter final
     call_.PerformOps(&write_ops_);
   }
 
-  /// See the \a AsyncWriterInterface.Write(const W& msg, WriteOptions options, void* tag) method for semantics.
   void Write(const W& msg, WriteOptions options, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {

@@ -54,6 +54,12 @@ class ServerAsyncStreamingInterface {
  public:
   virtual ~ServerAsyncStreamingInterface() {}
 
+  /// Request notification of the sending of initial metadata to the client. Completion
+  /// will be notified by \a tag on the associated completion queue.
+  /// This call is optional, but if it is used, it cannot be used concurrently
+  /// with or after the \a Finish method.
+  ///
+  /// \param[in] tag Tag identifying this request.
   virtual void SendInitialMetadata(void* tag) = 0;
 
  private:

@@ -166,8 +166,7 @@ GPRAPI int grpc_slice_rchr(grpc_slice s, char c);
 GPRAPI int grpc_slice_chr(grpc_slice s, char c);
 
 /** return the index of the first occurance of \a needle in \a haystack, or -1
- * if
- * it's not found */
+   if it's not found */
 GPRAPI int grpc_slice_slice(grpc_slice haystack, grpc_slice needle);
 
 GPRAPI uint32_t grpc_slice_hash(grpc_slice s);
