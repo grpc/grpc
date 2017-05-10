@@ -211,7 +211,6 @@ static bool register_workaround_cronet_compression(
   if (grpc_channel_arg_get_bool(a, false) == false) {
     return true;
   }
-  grpc_enable_workaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION);
   return grpc_channel_stack_builder_prepend_filter(
       builder, &grpc_workaround_cronet_compression_filter, NULL, NULL);
 }
