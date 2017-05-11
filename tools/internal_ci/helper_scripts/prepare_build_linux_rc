@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -28,14 +28,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Source this rc script to prepare the environment for linux builds
 
-export LANG=en_US.UTF-8
+# Need to increase open files limit for c tests
+ulimit -n 32768
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../../..
+# Download Docker images from DockerHub
+export DOCKERHUB_ORGANIZATION=grpctesting
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-
-tools/run_tests/run_interop_tests.py -l java --use_docker --http2_server_interop $@
-
+git submodule update --init
