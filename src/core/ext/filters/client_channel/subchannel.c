@@ -266,7 +266,9 @@ grpc_subchannel *grpc_subchannel_ref_from_weak_ref(
 
 static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connected_subchannel *con;
+  gpr_log(GPR_INFO, "SUBCHANNEL %p DISCONNECTING", (void*)c);
   grpc_subchannel_index_unregister(exec_ctx, c->key, c);
+  gpr_log(GPR_INFO, "SUBCHANNEL %p DISCONNECTED", (void*)c);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
@@ -284,6 +286,7 @@ static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
 void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
+  // add a weak ref and subtract a strong ref (atomically)
   old_refs = ref_mutate(c, (gpr_atm)1 - (gpr_atm)(1 << INTERNAL_REF_BITS),
                         1 REF_MUTATE_PURPOSE("STRONG_UNREF"));
   if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
@@ -489,7 +492,7 @@ static void maybe_start_connecting_locked(grpc_exec_ctx *exec_ctx,
   }
 
   c->connecting = true;
-  GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
+  GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");  // XXX
 
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   if (!c->backoff_begun) {
@@ -661,7 +664,6 @@ static bool publish_transport_locked(grpc_exec_ctx *exec_ctx,
     gpr_free(sw_subchannel);
     grpc_channel_stack_destroy(exec_ctx, stk);
     gpr_free(con);
-    GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
     return false;
   }
 
@@ -699,7 +701,7 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
       publish_transport_locked(exec_ctx, c)) {
     /* do nothing, transport was published */
   } else if (c->disconnected) {
-    GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
+    GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");  // XXX
   } else {
     grpc_connectivity_state_set(
         exec_ctx, &c->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,

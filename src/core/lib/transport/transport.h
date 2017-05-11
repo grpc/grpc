@@ -57,7 +57,7 @@ typedef struct grpc_transport grpc_transport;
    for a stream. */
 typedef struct grpc_stream grpc_stream;
 
-#define GRPC_STREAM_REFCOUNT_DEBUG
+//#define GRPC_STREAM_REFCOUNT_DEBUG
 
 typedef struct grpc_stream_refcount {
   gpr_refcount refs;
