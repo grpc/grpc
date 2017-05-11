@@ -41,9 +41,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/connector.h"
-#include "src/core/ext/client_channel/http_connect_handshaker.h"
-#include "src/core/ext/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"

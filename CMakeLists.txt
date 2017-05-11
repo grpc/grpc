@@ -5,9 +5,6 @@
 # This file can be regenerated from the template by running
 # tools/buildgen/generate_projects.sh
 #
-# Additionally, this is currently very experimental, and unsupported.
-# Further work will happen on that file.
-#
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -42,7 +39,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.3.0-dev")
+set(PACKAGE_VERSION   "1.4.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -170,6 +167,7 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
   if(NOT PROTOBUF_ROOT_DIR)
     set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
   endif()
+  set(PROTOBUF_WELLKNOWN_IMPORT_DIR ${PROTOBUF_ROOT_DIR}/src)
   if(EXISTS "${PROTOBUF_ROOT_DIR}/cmake/CMakeLists.txt")
     set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
     add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
@@ -202,6 +200,7 @@ elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
     find_package(Protobuf MODULE)
     set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
   endif()
+  set(PROTOBUF_WELLKNOWN_IMPORT_DIR /usr/local/include)
 endif()
 
 if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
@@ -270,8 +269,10 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-if(UNIX)
-  set(_gRPC_ALLTARGETS_LIBRARIES dl rt m pthread)
+if(_gRPC_PLATFORM_MAC)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
+elseif(UNIX)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} rt m pthread)
 endif()
 
 if(WIN32 AND MSVC)
@@ -304,31 +305,32 @@ function(protobuf_generate_grpc_cpp)
     return()
   endif()
 
-  set(_protobuf_include_path -I .)
+  set(_protobuf_include_path -I . -I ${PROTOBUF_WELLKNOWN_IMPORT_DIR})
   foreach(FIL ${ARGN})
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
     get_filename_component(FIL_WE ${FIL} NAME_WE)
-    file(RELATIVE_PATH REL_FIL ${CMAKE_SOURCE_DIR} ${ABS_FIL})
+    file(RELATIVE_PATH REL_FIL ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL})
     get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
     set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
 
     add_custom_command(
       OUTPUT "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"
+             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"
       COMMAND ${_gRPC_PROTOBUF_PROTOC}
-      ARGS --grpc_out=${_gRPC_PROTO_GENS_DIR}
+      ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
            --cpp_out=${_gRPC_PROTO_GENS_DIR}
            --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
            ${_protobuf_include_path}
            ${REL_FIL}
       DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       COMMENT "Running gRPC C++ protocol buffer compiler on ${FIL}"
       VERBATIM)
 
-      set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)
+      set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"  "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)
   endforeach()
 endfunction()
 
@@ -345,6 +347,7 @@ add_custom_target(plugins
 
 add_custom_target(tools_c
   DEPENDS
+  check_epollexclusive
   gen_hpack_tables
   gen_legal_metadata_characters
   gen_percent_encoding_tables
@@ -390,8 +393,9 @@ endif()
 add_dependencies(buildtests_c endpoint_pair_test)
 add_dependencies(buildtests_c error_test)
 if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c ev_epoll_linux_test)
+add_dependencies(buildtests_c ev_epollsig_linux_test)
 endif()
+add_dependencies(buildtests_c fake_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c fd_conservation_posix_test)
 endif()
@@ -472,6 +476,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c memory_profile_test)
 endif()
 add_dependencies(buildtests_c message_compress_test)
+add_dependencies(buildtests_c minimal_stack_is_minimal_test)
 add_dependencies(buildtests_c mlog_test)
 add_dependencies(buildtests_c multiple_server_queues_test)
 add_dependencies(buildtests_c murmur_hash_test)
@@ -492,6 +497,7 @@ add_dependencies(buildtests_c sequential_connectivity_test)
 add_dependencies(buildtests_c server_chttp2_test)
 add_dependencies(buildtests_c server_test)
 add_dependencies(buildtests_c slice_buffer_test)
+add_dependencies(buildtests_c slice_hash_table_test)
 add_dependencies(buildtests_c slice_string_helpers_test)
 add_dependencies(buildtests_c slice_test)
 add_dependencies(buildtests_c sockaddr_resolver_test)
@@ -626,6 +632,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_cq)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_cq_multiple_threads)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_error)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -661,12 +670,14 @@ add_dependencies(buildtests_cxx cxx_slice_test)
 add_dependencies(buildtests_cxx cxx_string_ref_test)
 add_dependencies(buildtests_cxx cxx_time_test)
 add_dependencies(buildtests_cxx end2end_test)
+add_dependencies(buildtests_cxx error_details_test)
 add_dependencies(buildtests_cxx filter_end2end_test)
 add_dependencies(buildtests_cxx generic_end2end_test)
 add_dependencies(buildtests_cxx golden_file_test)
 add_dependencies(buildtests_cxx grpc_cli)
 add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
+add_dependencies(buildtests_cxx grpclb_end2end_test)
 add_dependencies(buildtests_cxx grpclb_test)
 add_dependencies(buildtests_cxx health_service_end2end_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -685,6 +696,7 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx json_run_localhost)
 endif()
+add_dependencies(buildtests_cxx memory_test)
 add_dependencies(buildtests_cxx metrics_client)
 add_dependencies(buildtests_cxx mock_test)
 add_dependencies(buildtests_cxx noop-benchmark)
@@ -910,19 +922,12 @@ add_library(grpc
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
-  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -933,7 +938,11 @@ add_library(grpc
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -943,7 +952,9 @@ add_library(grpc
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -978,6 +989,7 @@ add_library(grpc
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1014,7 +1026,7 @@ add_library(grpc
   src/core/lib/surface/completion_queue.c
   src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
-  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.c
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
@@ -1032,6 +1044,7 @@ add_library(grpc
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
   src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
   src/core/ext/transport/chttp2/transport/bin_decoder.c
   src/core/ext/transport/chttp2/transport/bin_encoder.c
@@ -1046,6 +1059,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -1054,6 +1068,10 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
+  src/core/ext/filters/http/client/http_client_filter.c
+  src/core/ext/filters/http/http_filters_plugin.c
+  src/core/ext/filters/http/message_compress/message_compress_filter.c
+  src/core/ext/filters/http/server/http_server_filter.c
   src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/context/security_context.c
   src/core/lib/security/credentials/composite/composite_credentials.c
@@ -1081,49 +1099,53 @@ add_library(grpc
   src/core/tsi/fake_transport_security.c
   src/core/tsi/ssl_transport_security.c
   src/core/tsi/transport_security.c
+  src/core/tsi/transport_security_adapter.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
-  src/core/ext/client_channel/channel_connectivity.c
-  src/core/ext/client_channel/client_channel.c
-  src/core/ext/client_channel/client_channel_factory.c
-  src/core/ext/client_channel/client_channel_plugin.c
-  src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/http_connect_handshaker.c
-  src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/lb_policy.c
-  src/core/ext/client_channel/lb_policy_factory.c
-  src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/parse_address.c
-  src/core/ext/client_channel/proxy_mapper.c
-  src/core/ext/client_channel/proxy_mapper_registry.c
-  src/core/ext/client_channel/resolver.c
-  src/core/ext/client_channel/resolver_factory.c
-  src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/retry_throttle.c
-  src/core/ext/client_channel/subchannel.c
-  src/core/ext/client_channel/subchannel_index.c
-  src/core/ext/client_channel/uri_parser.c
+  src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/client_channel.c
+  src/core/ext/filters/client_channel/client_channel_factory.c
+  src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connector.c
+  src/core/ext/filters/client_channel/http_connect_handshaker.c
+  src/core/ext/filters/client_channel/http_proxy.c
+  src/core/ext/filters/client_channel/lb_policy.c
+  src/core/ext/filters/client_channel/lb_policy_factory.c
+  src/core/ext/filters/client_channel/lb_policy_registry.c
+  src/core/ext/filters/client_channel/parse_address.c
+  src/core/ext/filters/client_channel/proxy_mapper.c
+  src/core/ext/filters/client_channel/proxy_mapper_registry.c
+  src/core/ext/filters/client_channel/resolver.c
+  src/core/ext/filters/client_channel/resolver_factory.c
+  src/core/ext/filters/client_channel/resolver_registry.c
+  src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/subchannel.c
+  src/core/ext/filters/client_channel/subchannel_index.c
+  src/core/ext/filters/client_channel/uri_parser.c
+  src/core/ext/filters/deadline/deadline_filter.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
-  src/core/ext/lb_policy/grpclb/grpclb.c
-  src/core/ext/lb_policy/grpclb/grpclb_channel_secure.c
-  src/core/ext/lb_policy/grpclb/load_balancer_api.c
-  src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/core/ext/lb_policy/pick_first/pick_first.c
-  src/core/ext/lb_policy/round_robin/round_robin.c
-  src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
-  src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
-  src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
-  src/core/ext/resolver/dns/native/dns_resolver.c
-  src/core/ext/resolver/sockaddr/sockaddr_resolver.c
-  src/core/ext/load_reporting/load_reporting.c
-  src/core/ext/load_reporting/load_reporting_filter.c
+  src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
+  src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
+  src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
+  src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
+  src/core/ext/filters/load_reporting/load_reporting.c
+  src/core/ext/filters/load_reporting/load_reporting_filter.c
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
@@ -1138,6 +1160,8 @@ add_library(grpc
   src/core/ext/census/resource.c
   src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
+  src/core/ext/filters/max_age/max_age_filter.c
+  src/core/ext/filters/message_size/message_size_filter.c
   src/core/plugin_registry/grpc_plugin_registry.c
 )
 
@@ -1232,19 +1256,12 @@ add_library(grpc_cronet
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
-  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1255,7 +1272,11 @@ add_library(grpc_cronet
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -1265,7 +1286,9 @@ add_library(grpc_cronet
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -1300,6 +1323,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1336,7 +1360,7 @@ add_library(grpc_cronet
   src/core/lib/surface/completion_queue.c
   src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
-  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.c
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
@@ -1354,6 +1378,7 @@ add_library(grpc_cronet
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
   src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
   src/core/ext/transport/cronet/transport/cronet_api_dummy.c
   src/core/ext/transport/cronet/transport/cronet_transport.c
@@ -1371,6 +1396,7 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -1379,26 +1405,31 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
-  src/core/ext/client_channel/channel_connectivity.c
-  src/core/ext/client_channel/client_channel.c
-  src/core/ext/client_channel/client_channel_factory.c
-  src/core/ext/client_channel/client_channel_plugin.c
-  src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/http_connect_handshaker.c
-  src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/lb_policy.c
-  src/core/ext/client_channel/lb_policy_factory.c
-  src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/parse_address.c
-  src/core/ext/client_channel/proxy_mapper.c
-  src/core/ext/client_channel/proxy_mapper_registry.c
-  src/core/ext/client_channel/resolver.c
-  src/core/ext/client_channel/resolver_factory.c
-  src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/retry_throttle.c
-  src/core/ext/client_channel/subchannel.c
-  src/core/ext/client_channel/subchannel_index.c
-  src/core/ext/client_channel/uri_parser.c
+  src/core/ext/filters/http/client/http_client_filter.c
+  src/core/ext/filters/http/http_filters_plugin.c
+  src/core/ext/filters/http/message_compress/message_compress_filter.c
+  src/core/ext/filters/http/server/http_server_filter.c
+  src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/client_channel.c
+  src/core/ext/filters/client_channel/client_channel_factory.c
+  src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connector.c
+  src/core/ext/filters/client_channel/http_connect_handshaker.c
+  src/core/ext/filters/client_channel/http_proxy.c
+  src/core/ext/filters/client_channel/lb_policy.c
+  src/core/ext/filters/client_channel/lb_policy_factory.c
+  src/core/ext/filters/client_channel/lb_policy_registry.c
+  src/core/ext/filters/client_channel/parse_address.c
+  src/core/ext/filters/client_channel/proxy_mapper.c
+  src/core/ext/filters/client_channel/proxy_mapper_registry.c
+  src/core/ext/filters/client_channel/resolver.c
+  src/core/ext/filters/client_channel/resolver_factory.c
+  src/core/ext/filters/client_channel/resolver_registry.c
+  src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/subchannel.c
+  src/core/ext/filters/client_channel/subchannel_index.c
+  src/core/ext/filters/client_channel/uri_parser.c
+  src/core/ext/filters/deadline/deadline_filter.c
   src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/context/security_context.c
   src/core/lib/security/credentials/composite/composite_credentials.c
@@ -1426,9 +1457,10 @@ add_library(grpc_cronet
   src/core/tsi/fake_transport_security.c
   src/core/tsi/ssl_transport_security.c
   src/core/tsi/transport_security.c
+  src/core/tsi/transport_security_adapter.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
-  src/core/ext/load_reporting/load_reporting.c
-  src/core/ext/load_reporting/load_reporting_filter.c
+  src/core/ext/filters/load_reporting/load_reporting.c
+  src/core/ext/filters/load_reporting/load_reporting_filter.c
   src/core/plugin_registry/grpc_cronet_plugin_registry.c
 )
 
@@ -1541,19 +1573,12 @@ add_library(grpc_test_util
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
-  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1564,7 +1589,11 @@ add_library(grpc_test_util
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -1574,7 +1603,9 @@ add_library(grpc_test_util
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -1609,6 +1640,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1645,7 +1677,7 @@ add_library(grpc_test_util
   src/core/lib/surface/completion_queue.c
   src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
-  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.c
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
@@ -1663,6 +1695,7 @@ add_library(grpc_test_util
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
 )
 
 if(WIN32 AND MSVC)
@@ -1802,19 +1835,12 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
-  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1825,7 +1851,11 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -1835,7 +1865,9 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -1870,6 +1902,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1906,7 +1939,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/completion_queue.c
   src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
-  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.c
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
@@ -1924,6 +1957,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/transport/bin_decoder.c
@@ -1939,6 +1973,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -1947,46 +1982,53 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
+  src/core/ext/filters/http/client/http_client_filter.c
+  src/core/ext/filters/http/http_filters_plugin.c
+  src/core/ext/filters/http/message_compress/message_compress_filter.c
+  src/core/ext/filters/http/server/http_server_filter.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
-  src/core/ext/client_channel/channel_connectivity.c
-  src/core/ext/client_channel/client_channel.c
-  src/core/ext/client_channel/client_channel_factory.c
-  src/core/ext/client_channel/client_channel_plugin.c
-  src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/http_connect_handshaker.c
-  src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/lb_policy.c
-  src/core/ext/client_channel/lb_policy_factory.c
-  src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/parse_address.c
-  src/core/ext/client_channel/proxy_mapper.c
-  src/core/ext/client_channel/proxy_mapper_registry.c
-  src/core/ext/client_channel/resolver.c
-  src/core/ext/client_channel/resolver_factory.c
-  src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/retry_throttle.c
-  src/core/ext/client_channel/subchannel.c
-  src/core/ext/client_channel/subchannel_index.c
-  src/core/ext/client_channel/uri_parser.c
-  src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
-  src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
-  src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
-  src/core/ext/resolver/dns/native/dns_resolver.c
-  src/core/ext/resolver/sockaddr/sockaddr_resolver.c
-  src/core/ext/load_reporting/load_reporting.c
-  src/core/ext/load_reporting/load_reporting_filter.c
-  src/core/ext/lb_policy/grpclb/grpclb.c
-  src/core/ext/lb_policy/grpclb/grpclb_channel.c
-  src/core/ext/lb_policy/grpclb/load_balancer_api.c
-  src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/client_channel.c
+  src/core/ext/filters/client_channel/client_channel_factory.c
+  src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connector.c
+  src/core/ext/filters/client_channel/http_connect_handshaker.c
+  src/core/ext/filters/client_channel/http_proxy.c
+  src/core/ext/filters/client_channel/lb_policy.c
+  src/core/ext/filters/client_channel/lb_policy_factory.c
+  src/core/ext/filters/client_channel/lb_policy_registry.c
+  src/core/ext/filters/client_channel/parse_address.c
+  src/core/ext/filters/client_channel/proxy_mapper.c
+  src/core/ext/filters/client_channel/proxy_mapper_registry.c
+  src/core/ext/filters/client_channel/resolver.c
+  src/core/ext/filters/client_channel/resolver_factory.c
+  src/core/ext/filters/client_channel/resolver_registry.c
+  src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/subchannel.c
+  src/core/ext/filters/client_channel/subchannel_index.c
+  src/core/ext/filters/client_channel/uri_parser.c
+  src/core/ext/filters/deadline/deadline_filter.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
+  src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
+  src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
+  src/core/ext/filters/load_reporting/load_reporting.c
+  src/core/ext/filters/load_reporting/load_reporting_filter.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/core/ext/lb_policy/pick_first/pick_first.c
-  src/core/ext/lb_policy/round_robin/round_robin.c
+  src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
+  src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
@@ -2001,6 +2043,8 @@ add_library(grpc_unsecure
   src/core/ext/census/resource.c
   src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
+  src/core/ext/filters/max_age/max_age_filter.c
+  src/core/ext/filters/message_size/message_size_filter.c
   src/core/plugin_registry/grpc_unsecure_plugin_registry.c
 )
 
@@ -2218,18 +2262,12 @@ add_library(grpc++
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2240,7 +2278,11 @@ add_library(grpc++
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -2250,7 +2292,9 @@ add_library(grpc++
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -2285,6 +2329,7 @@ add_library(grpc++
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -2321,7 +2366,7 @@ add_library(grpc++
   src/core/lib/surface/completion_queue.c
   src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
-  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.c
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
@@ -2339,6 +2384,7 @@ add_library(grpc++
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -2453,7 +2499,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -2548,19 +2593,12 @@ add_library(grpc++_cronet
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/max_age_filter.c
-  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2571,7 +2609,11 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -2581,7 +2623,9 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -2616,6 +2660,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -2652,7 +2697,7 @@ add_library(grpc++_cronet
   src/core/lib/surface/completion_queue.c
   src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
-  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.c
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
@@ -2670,6 +2715,7 @@ add_library(grpc++_cronet
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -2690,6 +2736,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/hpack_encoder.c
   src/core/ext/transport/chttp2/transport/hpack_parser.c
   src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
@@ -2698,26 +2745,31 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
-  src/core/ext/client_channel/channel_connectivity.c
-  src/core/ext/client_channel/client_channel.c
-  src/core/ext/client_channel/client_channel_factory.c
-  src/core/ext/client_channel/client_channel_plugin.c
-  src/core/ext/client_channel/connector.c
-  src/core/ext/client_channel/http_connect_handshaker.c
-  src/core/ext/client_channel/http_proxy.c
-  src/core/ext/client_channel/lb_policy.c
-  src/core/ext/client_channel/lb_policy_factory.c
-  src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/parse_address.c
-  src/core/ext/client_channel/proxy_mapper.c
-  src/core/ext/client_channel/proxy_mapper_registry.c
-  src/core/ext/client_channel/resolver.c
-  src/core/ext/client_channel/resolver_factory.c
-  src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/retry_throttle.c
-  src/core/ext/client_channel/subchannel.c
-  src/core/ext/client_channel/subchannel_index.c
-  src/core/ext/client_channel/uri_parser.c
+  src/core/ext/filters/http/client/http_client_filter.c
+  src/core/ext/filters/http/http_filters_plugin.c
+  src/core/ext/filters/http/message_compress/message_compress_filter.c
+  src/core/ext/filters/http/server/http_server_filter.c
+  src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/client_channel.c
+  src/core/ext/filters/client_channel/client_channel_factory.c
+  src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connector.c
+  src/core/ext/filters/client_channel/http_connect_handshaker.c
+  src/core/ext/filters/client_channel/http_proxy.c
+  src/core/ext/filters/client_channel/lb_policy.c
+  src/core/ext/filters/client_channel/lb_policy_factory.c
+  src/core/ext/filters/client_channel/lb_policy_registry.c
+  src/core/ext/filters/client_channel/parse_address.c
+  src/core/ext/filters/client_channel/proxy_mapper.c
+  src/core/ext/filters/client_channel/proxy_mapper_registry.c
+  src/core/ext/filters/client_channel/resolver.c
+  src/core/ext/filters/client_channel/resolver_factory.c
+  src/core/ext/filters/client_channel/resolver_registry.c
+  src/core/ext/filters/client_channel/retry_throttle.c
+  src/core/ext/filters/client_channel/subchannel.c
+  src/core/ext/filters/client_channel/subchannel_index.c
+  src/core/ext/filters/client_channel/uri_parser.c
+  src/core/ext/filters/deadline/deadline_filter.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
@@ -2845,7 +2897,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -2897,6 +2948,72 @@ if (gRPC_INSTALL)
   )
 endif()
 
+
+add_library(grpc++_error_details
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.h
+  src/cpp/util/error_details.cc
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_error_details PROPERTIES COMPILE_PDB_NAME "grpc++_error_details"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_error_details.pdb
+      DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/status/status.proto
+)
+
+target_include_directories(grpc++_error_details
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc++_error_details
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+)
+
+foreach(_hdr
+  include/grpc++/support/error_details.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+
+if (gRPC_INSTALL)
+  install(TARGETS grpc++_error_details EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
+
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc++_proto_reflection_desc_db
@@ -2935,8 +3052,10 @@ target_include_directories(grpc++_proto_reflection_desc_db
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3054,8 +3173,10 @@ target_include_directories(grpc++_test_config
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3081,6 +3202,7 @@ add_library(grpc++_test_util
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_mock.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -3131,8 +3253,10 @@ target_include_directories(grpc++_test_util
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3169,7 +3293,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -3195,8 +3318,6 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_windows.h
   include/grpc++/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
-  include/grpc++/impl/codegen/thrift_serializer.h
-  include/grpc++/impl/codegen/thrift_utils.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3247,18 +3368,12 @@ add_library(grpc++_unsecure
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/compress_filter.c
   src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/deadline_filter.c
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
-  src/core/lib/channel/http_client_filter.c
-  src/core/lib/channel/http_server_filter.c
-  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -3269,7 +3384,11 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -3279,7 +3398,9 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_uv.c
@@ -3314,6 +3435,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -3350,7 +3472,7 @@ add_library(grpc++_unsecure
   src/core/lib/surface/completion_queue.c
   src/core/lib/surface/completion_queue_factory.c
   src/core/lib/surface/event_string.c
-  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.c
   src/core/lib/surface/server.c
   src/core/lib/surface/validate_metadata.c
@@ -3368,6 +3490,7 @@ add_library(grpc++_unsecure
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -3481,7 +3604,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -3563,8 +3685,10 @@ target_include_directories(grpc_benchmark
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3622,8 +3746,10 @@ target_include_directories(grpc_cli_libs
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3761,8 +3887,10 @@ target_include_directories(http2_client_main
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3816,8 +3944,10 @@ target_include_directories(interop_client_helper
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3886,8 +4016,10 @@ target_include_directories(interop_client_main
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3937,8 +4069,10 @@ target_include_directories(interop_server_helper
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -4006,8 +4140,10 @@ target_include_directories(interop_server_lib
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -4057,8 +4193,10 @@ target_include_directories(interop_server_main
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -4145,8 +4283,10 @@ target_include_directories(qps
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -4389,6 +4529,7 @@ add_library(end2end_tests
   test/core/end2end/end2end_test_utils.c
   test/core/end2end/tests/authority_not_supported.c
   test/core/end2end/tests/bad_hostname.c
+  test/core/end2end/tests/bad_ping.c
   test/core/end2end/tests/binary_metadata.c
   test/core/end2end/tests/call_creds.c
   test/core/end2end/tests/cancel_after_accept.c
@@ -4486,6 +4627,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/end2end_test_utils.c
   test/core/end2end/tests/authority_not_supported.c
   test/core/end2end/tests/bad_hostname.c
+  test/core/end2end/tests/bad_ping.c
   test/core/end2end/tests/binary_metadata.c
   test/core/end2end/tests/cancel_after_accept.c
   test/core/end2end/tests/cancel_after_client_done.c
@@ -4971,6 +5113,42 @@ target_link_libraries(channel_create_test
 )
 
 endif (gRPC_BUILD_TESTS)
+
+add_executable(check_epollexclusive
+  test/build/check_epollexclusive.c
+)
+
+
+target_include_directories(check_epollexclusive
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(check_epollexclusive
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
+)
+
+
+if (gRPC_INSTALL)
+  install(TARGETS check_epollexclusive EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
+
 if (gRPC_BUILD_TESTS)
 
 add_executable(chttp2_hpack_encoder_test
@@ -5348,12 +5526,12 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
-add_executable(ev_epoll_linux_test
-  test/core/iomgr/ev_epoll_linux_test.c
+add_executable(ev_epollsig_linux_test
+  test/core/iomgr/ev_epollsig_linux_test.c
 )
 
 
-target_include_directories(ev_epoll_linux_test
+target_include_directories(ev_epollsig_linux_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
@@ -5368,7 +5546,7 @@ target_include_directories(ev_epoll_linux_test
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
-target_link_libraries(ev_epoll_linux_test
+target_link_libraries(ev_epollsig_linux_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -5377,6 +5555,37 @@ target_link_libraries(ev_epoll_linux_test
 )
 
 endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(fake_resolver_test
+  test/core/client_channel/resolvers/fake_resolver_test.c
+)
+
+
+target_include_directories(fake_resolver_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(fake_resolver_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -7379,6 +7588,37 @@ target_link_libraries(message_compress_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(minimal_stack_is_minimal_test
+  test/core/channel/minimal_stack_is_minimal_test.c
+)
+
+
+target_include_directories(minimal_stack_is_minimal_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(minimal_stack_is_minimal_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(mlog_test
   test/core/census/mlog_test.c
 )
@@ -7867,6 +8107,37 @@ target_include_directories(slice_buffer_test
 )
 
 target_link_libraries(slice_buffer_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(slice_hash_table_test
+  test/core/slice/slice_hash_table_test.c
+)
+
+
+target_include_directories(slice_hash_table_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(slice_hash_table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -8606,7 +8877,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(alarm_cpp_test
   test/cpp/common/alarm_cpp_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -8623,8 +8895,10 @@ target_include_directories(alarm_cpp_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8645,7 +8919,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(async_end2end_test
   test/cpp/end2end/async_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -8662,8 +8937,10 @@ target_include_directories(async_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8684,7 +8961,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(auth_property_iterator_test
   test/cpp/common/auth_property_iterator_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -8701,8 +8979,10 @@ target_include_directories(auth_property_iterator_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8724,7 +9004,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_arena
   test/cpp/microbenchmarks/bm_arena.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -8741,8 +9022,10 @@ target_include_directories(bm_arena
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8767,7 +9050,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_call_create
   test/cpp/microbenchmarks/bm_call_create.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -8784,8 +9068,10 @@ target_include_directories(bm_call_create
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8810,7 +9096,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_chttp2_hpack
   test/cpp/microbenchmarks/bm_chttp2_hpack.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -8827,8 +9114,10 @@ target_include_directories(bm_chttp2_hpack
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8853,7 +9142,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_chttp2_transport
   test/cpp/microbenchmarks/bm_chttp2_transport.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -8870,8 +9160,10 @@ target_include_directories(bm_chttp2_transport
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8896,7 +9188,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_closure
   test/cpp/microbenchmarks/bm_closure.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -8913,8 +9206,10 @@ target_include_directories(bm_closure
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8939,7 +9234,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_cq
   test/cpp/microbenchmarks/bm_cq.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -8956,8 +9252,10 @@ target_include_directories(bm_cq
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -8980,9 +9278,56 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
+add_executable(bm_cq_multiple_threads
+  test/cpp/microbenchmarks/bm_cq_multiple_threads.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(bm_cq_multiple_threads
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_cq_multiple_threads
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  benchmark
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
 add_executable(bm_error
   test/cpp/microbenchmarks/bm_error.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -8999,8 +9344,10 @@ target_include_directories(bm_error
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9025,7 +9372,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_fullstack_streaming_ping_pong
   test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9042,8 +9390,10 @@ target_include_directories(bm_fullstack_streaming_ping_pong
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9068,7 +9418,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_fullstack_streaming_pump
   test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9085,8 +9436,10 @@ target_include_directories(bm_fullstack_streaming_pump
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9111,7 +9464,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_fullstack_trickle
   test/cpp/microbenchmarks/bm_fullstack_trickle.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9128,8 +9482,10 @@ target_include_directories(bm_fullstack_trickle
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9154,7 +9510,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_fullstack_unary_ping_pong
   test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9171,8 +9528,10 @@ target_include_directories(bm_fullstack_unary_ping_pong
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9197,7 +9556,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_metadata
   test/cpp/microbenchmarks/bm_metadata.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9214,8 +9574,10 @@ target_include_directories(bm_metadata
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9240,7 +9602,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bm_pollset
   test/cpp/microbenchmarks/bm_pollset.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9257,8 +9620,10 @@ target_include_directories(bm_pollset
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9282,7 +9647,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(channel_arguments_test
   test/cpp/common/channel_arguments_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9299,8 +9665,10 @@ target_include_directories(channel_arguments_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9318,7 +9686,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(channel_filter_test
   test/cpp/common/channel_filter_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9335,8 +9704,10 @@ target_include_directories(channel_filter_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9354,7 +9725,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(cli_call_test
   test/cpp/util/cli_call_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9371,8 +9743,10 @@ target_include_directories(cli_call_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9395,7 +9769,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(client_crash_test
   test/cpp/end2end/client_crash_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9412,8 +9787,10 @@ target_include_directories(client_crash_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9435,7 +9812,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(client_crash_test_server
   test/cpp/end2end/client_crash_test_server.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9452,8 +9830,10 @@ target_include_directories(client_crash_test_server
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9494,7 +9874,8 @@ add_executable(codegen_test_full
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
   test/cpp/codegen/codegen_test_full.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -9526,8 +9907,10 @@ target_include_directories(codegen_test_full
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9566,7 +9949,8 @@ add_executable(codegen_test_minimal
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
   test/cpp/codegen/codegen_test_minimal.cc
   src/cpp/codegen/codegen_init.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -9598,14 +9982,18 @@ target_include_directories(codegen_test_minimal
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(codegen_test_minimal
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9614,7 +10002,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(credentials_test
   test/cpp/client/credentials_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9631,8 +10020,10 @@ target_include_directories(credentials_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9650,7 +10041,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(cxx_byte_buffer_test
   test/cpp/util/byte_buffer_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9667,8 +10059,10 @@ target_include_directories(cxx_byte_buffer_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9688,7 +10082,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(cxx_slice_test
   test/cpp/util/slice_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9705,8 +10100,10 @@ target_include_directories(cxx_slice_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9726,7 +10123,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(cxx_string_ref_test
   test/cpp/util/string_ref_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9743,8 +10141,10 @@ target_include_directories(cxx_string_ref_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9760,7 +10160,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(cxx_time_test
   test/cpp/util/time_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9777,8 +10178,10 @@ target_include_directories(cxx_time_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9798,7 +10201,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(end2end_test
   test/cpp/end2end/end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9815,8 +10219,10 @@ target_include_directories(end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9835,9 +10241,55 @@ target_link_libraries(end2end_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(error_details_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  test/cpp/util/error_details_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo_messages.proto
+)
+
+target_include_directories(error_details_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(error_details_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_error_details
+  grpc++
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(filter_end2end_test
   test/cpp/end2end/filter_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9854,8 +10306,10 @@ target_include_directories(filter_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9876,7 +10330,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(generic_end2end_test
   test/cpp/end2end/generic_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9893,8 +10348,10 @@ target_include_directories(generic_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9919,7 +10376,8 @@ add_executable(golden_file_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.h
   test/cpp/codegen/golden_file_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -9939,8 +10397,10 @@ target_include_directories(golden_file_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -9958,7 +10418,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_cli
   test/cpp/util/grpc_cli.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -9975,8 +10436,10 @@ target_include_directories(grpc_cli
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10271,7 +10734,8 @@ add_executable(grpc_tool_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
   test/cpp/util/grpc_tool_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -10294,8 +10758,10 @@ target_include_directories(grpc_tool_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10323,7 +10789,8 @@ add_executable(grpclb_api_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
   test/cpp/grpclb/grpclb_api_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -10343,8 +10810,10 @@ target_include_directories(grpclb_api_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10361,13 +10830,63 @@ target_link_libraries(grpclb_api_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(grpclb_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
+  test/cpp/end2end/grpclb_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v1/load_balancer.proto
+)
+
+target_include_directories(grpclb_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpclb_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(grpclb_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
   test/cpp/grpclb/grpclb_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -10387,8 +10906,10 @@ target_include_directories(grpclb_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10409,7 +10930,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(health_service_end2end_test
   test/cpp/end2end/health_service_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10426,8 +10948,10 @@ target_include_directories(health_service_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10448,7 +10972,8 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(http2_client
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10465,8 +10990,10 @@ target_include_directories(http2_client
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10488,7 +11015,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(hybrid_end2end_test
   test/cpp/end2end/hybrid_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10505,8 +11033,10 @@ target_include_directories(hybrid_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10527,7 +11057,8 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(interop_client
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10544,8 +11075,10 @@ target_include_directories(interop_client
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10570,7 +11103,8 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(interop_server
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10587,8 +11121,10 @@ target_include_directories(interop_server
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10615,7 +11151,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(interop_test
   test/cpp/interop/interop_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10632,8 +11169,10 @@ target_include_directories(interop_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10655,7 +11194,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(json_run_localhost
   test/cpp/qps/json_run_localhost.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10672,8 +11212,10 @@ target_include_directories(json_run_localhost
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10694,13 +11236,55 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(memory_test
+  test/core/support/memory_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(memory_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(memory_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(metrics_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.h
   test/cpp/interop/metrics_client.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -10720,8 +11304,10 @@ target_include_directories(metrics_client
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10740,7 +11326,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(mock_test
   test/cpp/end2end/mock_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10757,8 +11344,10 @@ target_include_directories(mock_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10779,7 +11368,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(noop-benchmark
   test/cpp/microbenchmarks/noop-benchmark.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10796,8 +11386,10 @@ target_include_directories(noop-benchmark
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10813,7 +11405,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(proto_server_reflection_test
   test/cpp/end2end/proto_server_reflection_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10830,8 +11423,10 @@ target_include_directories(proto_server_reflection_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10854,7 +11449,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(proto_utils_test
   test/cpp/codegen/proto_utils_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10871,8 +11467,10 @@ target_include_directories(proto_utils_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10890,7 +11488,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(qps_interarrival_test
   test/cpp/qps/qps_interarrival_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10907,8 +11506,10 @@ target_include_directories(qps_interarrival_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10931,7 +11532,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(qps_json_driver
   test/cpp/qps/qps_json_driver.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10948,8 +11550,10 @@ target_include_directories(qps_json_driver
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10973,7 +11577,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(qps_openloop_test
   test/cpp/qps/qps_openloop_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -10990,8 +11595,10 @@ target_include_directories(qps_openloop_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11015,7 +11622,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(qps_worker
   test/cpp/qps/worker.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11032,8 +11640,10 @@ target_include_directories(qps_worker
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11068,7 +11678,8 @@ add_executable(reconnect_interop_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
   test/cpp/interop/reconnect_interop_client.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -11094,8 +11705,10 @@ target_include_directories(reconnect_interop_client
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11129,7 +11742,8 @@ add_executable(reconnect_interop_server
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
   test/cpp/interop/reconnect_interop_server.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -11155,8 +11769,10 @@ target_include_directories(reconnect_interop_server
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11180,7 +11796,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(round_robin_end2end_test
   test/cpp/end2end/round_robin_end2end_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11197,8 +11814,10 @@ target_include_directories(round_robin_end2end_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11219,7 +11838,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(secure_auth_context_test
   test/cpp/common/secure_auth_context_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11236,8 +11856,10 @@ target_include_directories(secure_auth_context_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11259,7 +11881,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(secure_sync_unary_ping_pong_test
   test/cpp/qps/secure_sync_unary_ping_pong_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11276,8 +11899,10 @@ target_include_directories(secure_sync_unary_ping_pong_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11300,7 +11925,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(server_builder_plugin_test
   test/cpp/end2end/server_builder_plugin_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11317,8 +11943,10 @@ target_include_directories(server_builder_plugin_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11347,7 +11975,8 @@ add_executable(server_builder_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
   test/cpp/server/server_builder_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -11370,8 +11999,10 @@ target_include_directories(server_builder_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11392,7 +12023,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(server_context_test_spouse_test
   test/cpp/test/server_context_test_spouse_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11409,8 +12041,10 @@ target_include_directories(server_context_test_spouse_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11431,7 +12065,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(server_crash_test
   test/cpp/end2end/server_crash_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11448,8 +12083,10 @@ target_include_directories(server_crash_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11471,7 +12108,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(server_crash_test_client
   test/cpp/end2end/server_crash_test_client.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11488,8 +12126,10 @@ target_include_directories(server_crash_test_client
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11510,7 +12150,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(shutdown_test
   test/cpp/end2end/shutdown_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11527,8 +12168,10 @@ target_include_directories(shutdown_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11549,7 +12192,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(status_test
   test/cpp/util/status_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11566,8 +12210,10 @@ target_include_directories(status_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11588,7 +12234,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(streaming_throughput_test
   test/cpp/end2end/streaming_throughput_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11605,8 +12252,10 @@ target_include_directories(streaming_throughput_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11647,7 +12296,8 @@ add_executable(stress_test
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
   test/cpp/util/metrics_server.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
@@ -11676,8 +12326,10 @@ target_include_directories(stress_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11699,7 +12351,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(thread_manager_test
   test/cpp/thread_manager/thread_manager_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11716,8 +12369,10 @@ target_include_directories(thread_manager_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11736,7 +12391,8 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(thread_stress_test
   test/cpp/end2end/thread_stress_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11753,8 +12409,10 @@ target_include_directories(thread_stress_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11776,7 +12434,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(writes_per_rpc_test
   test/cpp/performance/writes_per_rpc_test.cc
-  third_party/googletest/src/gtest-all.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -11793,8 +12452,10 @@ target_include_directories(writes_per_rpc_test
   PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/include
-  PRIVATE third_party/googletest
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 

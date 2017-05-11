@@ -67,12 +67,17 @@ unsigned gpr_cpu_num_cores(void) {
 }
 
 unsigned gpr_cpu_current_cpu(void) {
+#ifdef GPR_MUSL_LIBC_COMPAT
+  // sched_getcpu() is undefined on musl
+  return 0;
+#else
   int cpu = sched_getcpu();
   if (cpu < 0) {
     gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
     return 0;
   }
   return (unsigned)cpu;
+#endif
 }
 
 #endif /* GPR_CPU_LINUX */

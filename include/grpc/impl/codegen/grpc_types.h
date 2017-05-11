@@ -34,6 +34,8 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -41,7 +43,6 @@
 #include <grpc/impl/codegen/status.h>
 
 #include <stddef.h>
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -152,6 +153,9 @@ typedef struct {
 #define GRPC_ARG_ENABLE_CENSUS "grpc.census"
 /** If non-zero, enable load reporting. */
 #define GRPC_ARG_ENABLE_LOAD_REPORTING "grpc.loadreporting"
+/** Request that optional features default to off (regardless of what they
+    usually default to) - to enable tight control over what gets enabled */
+#define GRPC_ARG_MINIMAL_STACK "grpc.minimal_stack"
 /** Maximum number of concurrent incoming streams to allow on a http2
     connection. Int valued. */
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
@@ -172,6 +176,12 @@ typedef struct {
 /** Grace period after the chennel reaches its max age. Int valued,
    milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
+/** Enable/disable support for per-message compression. Defaults to 1, unless
+    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
+#define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"
+/** Enable/disable support for deadline checking. Defaults to 1, unless
+    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
+#define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
 /** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
@@ -196,21 +206,36 @@ typedef struct {
 /** Minimum time (in milliseconds) between successive ping frames being sent */
 #define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
   "grpc.http2.min_time_between_pings_ms"
+/* Channel arg to override the http2 :scheme header */
+#define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can we send before needing to send a data frame or header
     frame?
     (0 indicates that an infinite number of pings can be sent without sending
      a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
+/** How many misbehaving pings the server can bear before sending goaway and
+    closing the transport?
+    (0 indicates that the server can bear an infinite number of misbehaving
+     pings) */
+#define GRPC_ARG_HTTP2_MAX_PING_STRIKES "grpc.http2.max_ping_strikes"
+/** Minimum allowed time between two pings without sending any data frame. Int
+    valued, seconds */
+#define GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS \
+  "grpc.http2.min_ping_interval_without_data_ms"
 /** How much data are we willing to queue up per stream if
     GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
-/** After a duration of this time the client pings the server to see if the
-    transport is still alive. Int valued, seconds. */
-#define GRPC_ARG_CLIENT_KEEPALIVE_TIME_S "grpc.client_keepalive_time"
-/** After waiting for a duration of this time, if the client does not receive
-    the ping ack, it will close the transport. Int valued, seconds. */
-#define GRPC_ARG_CLIENT_KEEPALIVE_TIMEOUT_S "grpc.client_keepalive_timeout"
+/** Should we allow receipt of true-binary data on http2 connections?
+    Defaults to on (1) */
+#define GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY "grpc.http2.true_binary"
+/** After a duration of this time the client/server pings its peer to see if the
+    transport is still alive. Int valued, milliseconds. */
+#define GRPC_ARG_KEEPALIVE_TIME_MS "grpc.keepalive_time_ms"
+/** After waiting for a duration of this time, if the keepalive ping sender does
+    not receive the ping ack, it will close the transport. Int valued,
+    milliseconds. */
+#define GRPC_ARG_KEEPALIVE_TIMEOUT_MS "grpc.keepalive_timeout_ms"
 /** Is it permissible to send keepalive pings without any outstanding streams.
     Int valued, 0(false)/1(true). */
 #define GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS \
@@ -224,6 +249,8 @@ typedef struct {
 /** Secondary user agent: goes at the end of the user-agent metadata
     sent on each request. A string. */
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
+/** The minimum time between subsequent connection attempts, in ms */
+#define GRPC_ARG_MIN_RECONNECT_BACKOFF_MS "grpc.min_reconnect_backoff_ms"
 /** The maximum time between subsequent connection attempts, in ms */
 #define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
 /** The time between the first and second connection attempts, in ms */
@@ -258,6 +285,17 @@ typedef struct {
  * possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
   "grpc.use_cronet_packet_coalescing"
+/* Channel arg (integer) setting how large a slice to try and read from the wire
+each time recvmsg (or equivalent) is called */
+#define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
+#define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
+#define GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE \
+  "grpc.experimental.tcp_min_read_chunk_size"
+#define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
+  "grpc.experimental.tcp_max_read_chunk_size"
+/* Timeout in milliseconds to use for calls to the grpclb load balancer.
+   If 0 or unset, the balancer calls will have no deadline. */
+#define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_timeout_ms"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -369,8 +407,11 @@ typedef enum grpc_completion_type {
 typedef struct grpc_event {
   /** The type of the completion. */
   grpc_completion_type type;
-  /** non-zero if the operation was successful, 0 upon failure.
-      Only GRPC_OP_COMPLETE can succeed or fail. */
+  /** If the grpc_completion_type is GRPC_OP_COMPLETE, this field indicates
+      whether the operation was successful or not; 0 in case of failure and
+      non-zero in case of success.
+      If grpc_completion_type is GRPC_QUEUE_SHUTDOWN or GRPC_QUEUE_TIMEOUT, this
+      field is guaranteed to be 0 */
   int success;
   /** The tag passed to grpc_call_start_batch etc to start this operation.
       Only GRPC_OP_COMPLETE has a tag. */
@@ -518,6 +559,55 @@ typedef struct {
 } grpc_channel_info;
 
 typedef struct grpc_resource_quota grpc_resource_quota;
+
+/** Completion queues internally MAY maintain a set of file descriptors in a
+    structure called 'pollset'. This enum specifies if a completion queue has an
+    associated pollset and any restrictions on the type of file descriptors that
+    can be present in the pollset.
+
+    I/O progress can only be made when grpc_completion_queue_next() or
+    grpc_completion_queue_pluck() are called on the completion queue (unless the
+    grpc_cq_polling_type is GRPC_CQ_NON_POLLING) and hence it is very important
+    to actively call these APIs */
+typedef enum {
+  /** The completion queue will have an associated pollset and there is no
+      restriction on the type of file descriptors the pollset may contain */
+  GRPC_CQ_DEFAULT_POLLING,
+
+  /** Similar to GRPC_CQ_DEFAULT_POLLING except that the completion queues will
+      not contain any 'listening file descriptors' (i.e file descriptors used to
+      listen to incoming channels) */
+  GRPC_CQ_NON_LISTENING,
+
+  /** The completion queue will not have an associated pollset. Note that
+      grpc_completion_queue_next() or grpc_completion_queue_pluck() MUST still
+      be called to pop events from the completion queue; it is not required to
+      call them actively to make I/O progress */
+  GRPC_CQ_NON_POLLING
+} grpc_cq_polling_type;
+
+/** Specifies the type of APIs to use to pop events from the completion queue */
+typedef enum {
+  /** Events are popped out by calling grpc_completion_queue_next() API ONLY */
+  GRPC_CQ_NEXT = 1,
+
+  /** Events are popped out by calling grpc_completion_queue_pluck() API ONLY*/
+  GRPC_CQ_PLUCK
+} grpc_cq_completion_type;
+
+#define GRPC_CQ_CURRENT_VERSION 1
+typedef struct grpc_completion_queue_attributes {
+  /* The version number of this structure. More fields might be added to this
+     structure in future. */
+  int version; /* Set to GRPC_CQ_CURRENT_VERSION */
+
+  grpc_cq_completion_type cq_completion_type;
+
+  grpc_cq_polling_type cq_polling_type;
+} grpc_completion_queue_attributes;
+
+/** The completion queue factory structure is opaque to the callers of grpc */
+typedef struct grpc_completion_queue_factory grpc_completion_queue_factory;
 
 #ifdef __cplusplus
 }

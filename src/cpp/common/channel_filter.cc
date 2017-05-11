@@ -69,9 +69,9 @@ void ChannelData::GetInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
 
 // CallData
 
-void CallData::StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
-                                      grpc_call_element *elem,
-                                      TransportStreamOp *op) {
+void CallData::StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
+                                           grpc_call_element *elem,
+                                           TransportStreamOpBatch *op) {
   grpc_call_next_op(exec_ctx, elem, op->op());
 }
 

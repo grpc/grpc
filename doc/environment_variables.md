@@ -55,6 +55,7 @@ some configuration as environment variables that can be set.
   - queue_timeout
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
+  - timer - timers (alarms) in the grpc internals
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
 

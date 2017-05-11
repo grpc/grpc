@@ -49,11 +49,11 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
     size_t slice_size) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_test_fixture f;
-  grpc_resource_quota *resource_quota =
-      grpc_resource_quota_create("endpoint_pair_test");
-  grpc_endpoint_pair p =
-      grpc_iomgr_create_endpoint_pair("test", resource_quota, slice_size);
-  grpc_resource_quota_unref(resource_quota);
+  grpc_arg a[] = {{.key = GRPC_ARG_TCP_READ_CHUNK_SIZE,
+                   .type = GRPC_ARG_INTEGER,
+                   .value.integer = (int)slice_size}};
+  grpc_channel_args args = {.num_args = GPR_ARRAY_SIZE(a), .args = a};
+  grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair("test", &args);
 
   f.client_ep = p.client;
   f.server_ep = p.server;
@@ -70,7 +70,7 @@ static grpc_endpoint_test_config configs[] = {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(p);
+  grpc_pollset_destroy(exec_ctx, p);
 }
 
 int main(int argc, char **argv) {

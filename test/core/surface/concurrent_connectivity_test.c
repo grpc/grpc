@@ -66,7 +66,7 @@ static int detag(void *p) { return (int)(uintptr_t)p; }
 
 void create_loop_destroy(void *addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
-    grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+    grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
     grpc_channel *chan = grpc_insecure_channel_create((char *)addr, NULL, NULL);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
@@ -162,7 +162,7 @@ void bad_server_thread(void *vargs) {
 
 static void done_pollset_shutdown(grpc_exec_ctx *exec_ctx, void *pollset,
                                   grpc_error *error) {
-  grpc_pollset_destroy(pollset);
+  grpc_pollset_destroy(exec_ctx, pollset);
   gpr_free(pollset);
 }
 
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
   gpr_asprintf(&args.addr, "localhost:%d", port);
   args.server = grpc_server_create(NULL, NULL);
   grpc_server_add_insecure_http2_port(args.server, args.addr);
-  args.cq = grpc_completion_queue_create(NULL);
+  args.cq = grpc_completion_queue_create_for_next(NULL);
   grpc_server_register_completion_queue(args.server, args.cq, NULL);
   grpc_server_start(args.server);
   gpr_thd_new(&server, server_thread, &args, &options);

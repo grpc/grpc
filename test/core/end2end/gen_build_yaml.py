@@ -39,9 +39,9 @@ import hashlib
 
 FixtureOptions = collections.namedtuple(
     'FixtureOptions',
-    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing exclude_configs exclude_iomgrs large_writes')
+    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing exclude_configs exclude_iomgrs large_writes enables_compression')
 default_unsecure_fixture_options = FixtureOptions(
-    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], [], True)
+    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], [], True, False)
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'], exclude_iomgrs=['uv'])
@@ -51,8 +51,7 @@ fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
-    'h2_compress': default_unsecure_fixture_options,
-
+    'h2_compress': default_unsecure_fixture_options._replace(enables_compression=True),
     'h2_census': default_unsecure_fixture_options,
     'h2_load_reporting': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
@@ -83,8 +82,8 @@ END2END_FIXTURES = {
 
 TestOptions = collections.namedtuple(
     'TestOptions',
-    'needs_fullstack needs_dns proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky')
-default_test_options = TestOptions(False, False, True, False, True, 1.0, [], False, False)
+    'needs_fullstack needs_dns proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allow_compression')
+default_test_options = TestOptions(False, False, True, False, True, 1.0, [], False, False, True)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 LOWCPU = 0.1
@@ -93,12 +92,14 @@ LOWCPU = 0.1
 END2END_TESTS = {
     'authority_not_supported': default_test_options,
     'bad_hostname': default_test_options,
-    'binary_metadata': default_test_options,
+    'bad_ping': connectivity_test_options._replace(proxyable=False),
+    'binary_metadata': default_test_options._replace(cpu_cost=LOWCPU),
     'resource_quota_server': default_test_options._replace(large_writes=True,
-                                                           proxyable=False),
+                                                           proxyable=False,
+                                                           allow_compression=False),
     'call_creds': default_test_options._replace(secure=True),
     'cancel_after_accept': default_test_options._replace(cpu_cost=LOWCPU),
-    'cancel_after_client_done': default_test_options,
+    'cancel_after_client_done': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_after_invoke': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_before_invoke': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_in_a_vacuum': default_test_options._replace(cpu_cost=LOWCPU),
@@ -109,46 +110,49 @@ END2END_TESTS = {
     'default_host': default_test_options._replace(needs_fullstack=True,
                                                   needs_dns=True),
     'disappearing_server': connectivity_test_options._replace(flaky=True),
-    'empty_batch': default_test_options,
-    'filter_causes_close': default_test_options,
+    'empty_batch': default_test_options._replace(cpu_cost=LOWCPU),
+    'filter_causes_close': default_test_options._replace(cpu_cost=LOWCPU),
     'filter_call_init_fails': default_test_options,
-    'filter_latency': default_test_options,
+    'filter_latency': default_test_options._replace(cpu_cost=LOWCPU),
     'graceful_server_shutdown': default_test_options._replace(cpu_cost=LOWCPU),
     'hpack_size': default_test_options._replace(proxyable=False,
-                                                traceable=False),
-    'high_initial_seqno': default_test_options,
+                                                traceable=False,
+                                                cpu_cost=LOWCPU),
+    'high_initial_seqno': default_test_options._replace(cpu_cost=LOWCPU),
     'idempotent_request': default_test_options,
     'invoke_large_request': default_test_options,
-    'keepalive_timeout': default_test_options._replace(proxyable=False),
+    'keepalive_timeout': default_test_options._replace(proxyable=False,
+                                                       cpu_cost=LOWCPU),
     'large_metadata': default_test_options,
-    'max_concurrent_streams': default_test_options._replace(proxyable=False),
-    'max_connection_age': default_test_options,
+    'max_concurrent_streams': default_test_options._replace(
+        proxyable=False, cpu_cost=LOWCPU),
+    'max_connection_age': default_test_options._replace(cpu_cost=LOWCPU),
     'max_connection_idle': connectivity_test_options._replace(
-        proxyable=False, exclude_iomgrs=['uv']),
-    'max_message_length': default_test_options,
+        proxyable=False, exclude_iomgrs=['uv'], cpu_cost=LOWCPU),
+    'max_message_length': default_test_options._replace(cpu_cost=LOWCPU),
     'negative_deadline': default_test_options,
-    'network_status_change': default_test_options,
+    'network_status_change': default_test_options._replace(cpu_cost=LOWCPU),
     'no_logging': default_test_options._replace(traceable=False),
     'no_op': default_test_options,
     'payload': default_test_options,
     'load_reporting_hook': default_test_options,
-    'ping_pong_streaming': default_test_options,
-    'ping': connectivity_test_options._replace(proxyable=False),
+    'ping_pong_streaming': default_test_options._replace(cpu_cost=LOWCPU),
+    'ping': connectivity_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
     'registered_call': default_test_options,
     'request_with_flags': default_test_options._replace(
         proxyable=False, cpu_cost=LOWCPU),
-    'request_with_payload': default_test_options,
-    'server_finishes_request': default_test_options,
-    'shutdown_finishes_calls': default_test_options,
-    'shutdown_finishes_tags': default_test_options,
-    'simple_cacheable_request': default_test_options,
+    'request_with_payload': default_test_options._replace(cpu_cost=LOWCPU),
+    'server_finishes_request': default_test_options._replace(cpu_cost=LOWCPU),
+    'shutdown_finishes_calls': default_test_options._replace(cpu_cost=LOWCPU),
+    'shutdown_finishes_tags': default_test_options._replace(cpu_cost=LOWCPU),
+    'simple_cacheable_request': default_test_options._replace(cpu_cost=LOWCPU),
     'simple_delayed_request': connectivity_test_options,
     'simple_metadata': default_test_options,
     'simple_request': default_test_options,
-    'streaming_error_response': default_test_options,
+    'streaming_error_response': default_test_options._replace(cpu_cost=LOWCPU),
     'trailing_metadata': default_test_options,
-    'write_buffering': default_test_options,
-    'write_buffering_at_end': default_test_options,
+    'write_buffering': default_test_options._replace(cpu_cost=LOWCPU),
+    'write_buffering_at_end': default_test_options._replace(cpu_cost=LOWCPU),
 }
 
 
@@ -167,6 +171,9 @@ def compatible(f, t):
       return False
   if END2END_TESTS[t].large_writes:
     if not END2END_FIXTURES[f].large_writes:
+      return False
+  if not END2END_TESTS[t].allow_compression:
+    if END2END_FIXTURES[f].enables_compression:
       return False
   return True
 

@@ -40,8 +40,6 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
-
 /* A grpc_pollset is a set of file descriptors that a higher level item is
    interested in. For example:
     - a server will typically keep a pollset containing all connected channels,
@@ -59,7 +57,7 @@ void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu);
  * pollset's mutex must be held */
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure);
-void grpc_pollset_destroy(grpc_pollset *pollset);
+void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset);
 
 /* Do some work on a pollset.
    May involve invoking asynchronous callbacks, or actually polling file
@@ -75,6 +73,10 @@ void grpc_pollset_destroy(grpc_pollset *pollset);
    and it is guaranteed that it will not be released by grpc_pollset_work
    AFTER worker has been destroyed.
 
+   It's legal for worker to be NULL: in that case, this specific thread can not
+   be directly woken with a kick, but maybe be indirectly (with a kick against
+   the pollset as a whole).
+
    Tries not to block past deadline.
    May call grpc_closure_list_run on grpc_closure_list, without holding the
    pollset
@@ -84,8 +86,7 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               gpr_timespec deadline) GRPC_MUST_USE_RESULT;
 
 /* Break one polling thread out of polling work for this pollset.
-   If specific_worker is GRPC_POLLSET_KICK_BROADCAST, kick ALL the workers.
-   Otherwise, if specific_worker is non-NULL, then kick that worker. */
+   If specific_worker is non-NULL, then kick that worker. */
 grpc_error *grpc_pollset_kick(grpc_pollset *pollset,
                               grpc_pollset_worker *specific_worker)
     GRPC_MUST_USE_RESULT;

@@ -62,6 +62,11 @@ bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
   return true;
 }
 
+bool grpc_exec_ctx_has_work(grpc_exec_ctx *exec_ctx) {
+  return exec_ctx->active_combiner != NULL ||
+         !grpc_closure_list_empty(exec_ctx->closure_list);
+}
+
 bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   bool did_something = 0;
   GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
@@ -73,6 +78,9 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
         grpc_closure *next = c->next_data.next;
         grpc_error *error = c->error_data.error;
         did_something = true;
+#ifndef NDEBUG
+        c->scheduled = false;
+#endif
         c->cb(exec_ctx, c->cb_arg, error);
         GRPC_ERROR_UNREF(error);
         c = next;
@@ -93,6 +101,9 @@ void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
 
 static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                          grpc_error *error) {
+#ifndef NDEBUG
+  closure->scheduled = false;
+#endif
   closure->cb(exec_ctx, closure->cb_arg, error);
   GRPC_ERROR_UNREF(error);
 }

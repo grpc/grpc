@@ -160,6 +160,9 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\test\mock_stream.h" />
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\mock_test.cc">
     </ClCompile>
   </ItemGroup>

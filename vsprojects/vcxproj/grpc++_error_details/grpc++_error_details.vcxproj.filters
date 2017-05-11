@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\status\status.proto">
+      <Filter>src\proto\grpc\status</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\error_details.cc">
+      <Filter>src\cpp\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\error_details.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{013272b5-4742-ba38-7cb6-25ff3484ac1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++">
+      <UniqueIdentifier>{f589296d-1ee4-913f-0345-7d8bf51f657b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\support">
+      <UniqueIdentifier>{3455fa30-ad44-8790-9dc2-ff4ac7dd9e6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{cf07aafe-1d45-af88-81fb-0bbd5afd247f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp">
+      <UniqueIdentifier>{00726556-da02-06d8-bb32-902f55133c6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\util">
+      <UniqueIdentifier>{fd90d13e-cc1f-e8cc-56ee-650231b08f56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{ec6be373-4683-335e-03d9-dc636e34d7ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{8200edf2-9498-6cd9-d8f3-81ad881ca82c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\status">
+      <UniqueIdentifier>{79c5c1ea-19a8-bf5a-5e0a-3de6ad3a0465}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

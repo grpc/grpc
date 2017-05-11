@@ -114,8 +114,8 @@ class CXXLanguage:
 class CSharpLanguage:
 
   def __init__(self):
-    self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug'
-    self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug'
+    self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/net45'
+    self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/net45'
     self.safename = str(self)
 
   def client_cmd(self, args):
@@ -371,6 +371,39 @@ class PHP7Language:
   def __str__(self):
     return 'php7'
 
+class ObjcLanguage:
+
+  def __init__(self):
+    self.client_cwd = 'src/objective-c/tests'
+    self.safename = str(self)
+
+  def client_cmd(self, args):
+    # from args, extract the server port and craft xcodebuild command out of it
+    for arg in args:
+      port = re.search('--server_port=(\d+)', arg)
+      if port:
+        portnum = port.group(1)
+        cmdline = 'pod install && xcodebuild -workspace Tests.xcworkspace -scheme InteropTestsLocalSSL -destination name="iPhone 6" HOST_PORT_LOCALSSL=localhost:%s test'%portnum
+        return [cmdline]
+
+  def cloud_to_prod_env(self):
+    return {}
+
+  def global_env(self):
+    return {}
+
+  def unimplemented_test_cases(self):
+    # ObjC test runs all cases with the same command. It ignores the testcase
+    # cmdline argument. Here we return all but one test cases as unimplemented,
+    # and depend upon ObjC test's behavior that it runs all cases even when
+    # we tell it to run just one.
+    return _TEST_CASES[1:] + _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+
+  def unimplemented_test_cases_server(self):
+    return _SKIP_COMPRESSION
+
+  def __str__(self):
+    return 'objc'
 
 class RubyLanguage:
 
@@ -401,7 +434,6 @@ class RubyLanguage:
 
   def __str__(self):
     return 'ruby'
-
 
 class PythonLanguage:
 
@@ -460,6 +492,7 @@ _LANGUAGES = {
     'node' : NodeLanguage(),
     'php' :  PHPLanguage(),
     'php7' :  PHP7Language(),
+    'objc' : ObjcLanguage(),
     'ruby' : RubyLanguage(),
     'python' : PythonLanguage(),
 }
@@ -667,7 +700,8 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
     cwd = language.client_cwd
 
   environ = language.global_env()
-  if docker_image:
+  if docker_image and language.safename != 'objc':
+    # we can't run client in docker for objc.
     container_name = dockerjob.random_name('interop_client_%s' % language.safename)
     cmdline = docker_run_cmdline(cmdline,
                                  image=docker_image,
@@ -820,7 +854,7 @@ argp.add_argument('-l', '--language',
                   choices=['all'] + sorted(_LANGUAGES),
                   nargs='+',
                   default=['all'],
-                  help='Clients to run.')
+                  help='Clients to run. Objc client can be only run on OSX.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('--cloud_to_prod',
                   default=False,
@@ -851,6 +885,10 @@ argp.add_argument('--override_server',
                   help='Use servername=HOST:PORT to explicitly specify a server. E.g. csharp=localhost:50000',
                   default=[])
 argp.add_argument('-t', '--travis',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('-v', '--verbose',
                   default=False,
                   action='store_const',
                   const=True)
@@ -913,9 +951,13 @@ if not args.use_docker and servers:
   print('Running interop servers is only supported with --use_docker option enabled.')
   sys.exit(1)
 
+
+# we want to include everything but objc in 'all'
+# because objc won't run on non-mac platforms
+all_but_objc = set(six.iterkeys(_LANGUAGES)) - set(['objc'])
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                    six.iterkeys(_LANGUAGES) if x == 'all' else [x]
+                    all_but_objc if x == 'all' else [x]
                     for x in args.language))
 
 languages_http2_clients_for_http2_server_interop = set()
@@ -942,12 +984,18 @@ if args.use_docker:
 
   build_jobs = []
   for l in languages_to_build:
+    if str(l) == 'objc':
+      # we don't need to build a docker image for objc
+      continue
     job = build_interop_image_jobspec(l)
     docker_images[str(l)] = job.tag
     build_jobs.append(job)
 
   if build_jobs:
     jobset.message('START', 'Building interop docker images.', do_newline=True)
+    if args.verbose:
+      print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
+
     num_failures, _ = jobset.run(
         build_jobs, newline_on_success=True, maxjobs=args.jobs)
     if num_failures == 0:
@@ -1122,6 +1170,9 @@ try:
 
   if args.manual_run:
     print('All tests will skipped --manual_run option is active.')
+
+  if args.verbose:
+    print('Jobs to run: \n%s\n' % '\n'.join(str(job) for job in jobs))
 
   num_failures, resultset = jobset.run(jobs, newline_on_success=True,
                                        maxjobs=args.jobs,

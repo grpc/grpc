@@ -131,7 +131,7 @@ static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  grpc_call_destroy(s);
+  grpc_call_unref(s);
   cq_verifier_destroy(cqv);
 }
 
@@ -177,7 +177,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   grpc_slice_unref(meta.value);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  grpc_call_destroy(s);
+  grpc_call_unref(s);
   cq_verifier_destroy(cqv);
 }
 

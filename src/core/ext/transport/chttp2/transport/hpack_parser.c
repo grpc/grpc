@@ -38,11 +38,6 @@
 #include <stddef.h>
 #include <string.h>
 
-/* This is here for grpc_is_binary_header
- * TODO(murgatroid99): Remove this
- */
-#include <grpc/grpc.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -55,13 +50,9 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-/* TODO(ctiller): remove before submission */
-#include "src/core/lib/slice/slice_string_helpers.h"
-
-extern int grpc_http_trace;
-
 typedef enum {
   NOT_BINARY,
+  BINARY_BEGIN,
   B64_BYTE0,
   B64_BYTE1,
   B64_BYTE2,
@@ -673,7 +664,7 @@ static const uint8_t inverse_base64[256] = {
 /* emission helpers */
 static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
                           grpc_mdelem md, int add_to_table) {
-  if (grpc_http_trace && !GRPC_MDELEM_IS_INTERNED(md)) {
+  if (GRPC_TRACER_ON(grpc_http_trace) && !GRPC_MDELEM_IS_INTERNED(md)) {
     char *k = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char *v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
     gpr_log(
@@ -1059,7 +1050,7 @@ static grpc_error *parse_lithdr_nvridx_v(grpc_exec_ctx *exec_ctx,
 static grpc_error *finish_max_tbl_size(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_hpack_parser *p,
                                        const uint8_t *cur, const uint8_t *end) {
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
   }
   grpc_error *err =
@@ -1325,6 +1316,19 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
     case NOT_BINARY:
       append_bytes(str, cur, (size_t)(end - cur));
       return GRPC_ERROR_NONE;
+    case BINARY_BEGIN:
+      if (cur == end) {
+        p->binary = BINARY_BEGIN;
+        return GRPC_ERROR_NONE;
+      }
+      if (*cur == 0) {
+        /* 'true-binary' case */
+        ++cur;
+        p->binary = NOT_BINARY;
+        append_bytes(str, cur, (size_t)(end - cur));
+        return GRPC_ERROR_NONE;
+      }
+    /* fallthrough */
     b64_byte0:
     case B64_BYTE0:
       if (cur == end) {
@@ -1408,6 +1412,8 @@ static grpc_error *finish_str(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_hpack_parser_string *str = p->parsing.str;
   switch ((binary_state)p->binary) {
     case NOT_BINARY:
+      break;
+    case BINARY_BEGIN:
       break;
     case B64_BYTE0:
       break;
@@ -1571,7 +1577,7 @@ static grpc_error *parse_value_string(grpc_exec_ctx *exec_ctx,
                                       const uint8_t *cur, const uint8_t *end,
                                       bool is_binary) {
   return begin_parse_string(exec_ctx, p, cur, end,
-                            is_binary ? B64_BYTE0 : NOT_BINARY, &p->value);
+                            is_binary ? BINARY_BEGIN : NOT_BINARY, &p->value);
 }
 
 static grpc_error *parse_value_string_with_indexed_key(

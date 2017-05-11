@@ -63,6 +63,10 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
+# Google Cloud platform API libraries
+RUN apt-get update && apt-get install -y python-pip && apt-get clean
+RUN pip install --upgrade google-api-python-client
+
 #================
 # C# dependencies
 
@@ -71,7 +75,6 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14
 RUN echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list
 RUN echo "deb http://download.mono-project.com/repo/debian wheezy-apache24-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
 RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libjpeg62-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
-RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
 
 # Install dependencies
 RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \

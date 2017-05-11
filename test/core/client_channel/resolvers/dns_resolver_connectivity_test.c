@@ -36,8 +36,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/ext/client_channel/resolver.h"
-#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"

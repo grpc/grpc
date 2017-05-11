@@ -59,6 +59,7 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -90,7 +91,6 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
 
   grpc_tcp_server *s = gpr_zalloc(sizeof(grpc_tcp_server));
   s->so_reuseport = has_so_reuseport;
-  s->resource_quota = grpc_resource_quota_create(NULL);
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
@@ -98,27 +98,14 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
         s->so_reuseport =
             has_so_reuseport && (args->args[i].value.integer != 0);
       } else {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
                                                     " must be an integer");
-      }
-    } else if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
-        s->resource_quota =
-            grpc_resource_quota_ref_internal(args->args[i].value.pointer.p);
-      } else {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            GRPC_ARG_RESOURCE_QUOTA " must be a pointer to a buffer pool");
       }
     } else if (0 == strcmp(GRPC_ARG_EXPAND_WILDCARD_ADDRS, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
         s->expand_wildcard_addrs = (args->args[i].value.integer != 0);
       } else {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
@@ -138,6 +125,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
   s->head = NULL;
   s->tail = NULL;
   s->nports = 0;
+  s->channel_args = grpc_channel_args_copy(args);
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
   return GRPC_ERROR_NONE;
@@ -158,8 +146,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     s->head = sp->next;
     gpr_free(sp);
   }
-
-  grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
+  grpc_channel_args_destroy(exec_ctx, s->channel_args);
 
   gpr_free(s);
 }
@@ -270,7 +257,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
     addr_str = grpc_sockaddr_to_uri(&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
-    if (grpc_tcp_trace) {
+    if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 
@@ -286,8 +273,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
 
     sp->server->on_accept_cb(
         exec_ctx, sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, sp->server->resource_quota,
-                        GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
+        grpc_tcp_create(exec_ctx, fdobj, sp->server->channel_args, addr_str),
         read_notifier_pollset, acceptor);
 
     gpr_free(name);

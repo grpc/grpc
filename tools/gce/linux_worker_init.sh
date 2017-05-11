@@ -59,19 +59,31 @@ sudo usermod -aG docker jenkins
 
 # Use "overlay" storage driver for docker
 # see https://github.com/grpc/grpc/issues/4988
-echo 'DOCKER_OPTS="${DOCKER_OPTS} --storage-driver=overlay"' | sudo tee --append /etc/default/docker
+printf "{\n\t\"storage-driver\": \"overlay\"\n}" | sudo tee /etc/docker/daemon.json
+
+# Install pip and Google API library to enable using GCP services
+sudo apt-get install -y python-pip
+sudo pip install google-api-python-client
 
 # Install RVM
 # TODO(jtattermusch): why is RVM needed?
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 curl -sSL https://get.rvm.io | bash -s stable --ruby
 
+# Upgrade Linux kernel to 4.9
+wget \
+  kernel.ubuntu.com/~kernel-ppa/mainline/v4.9.20/linux-headers-4.9.20-040920_4.9.20-040920.201703310531_all.deb \
+  kernel.ubuntu.com/~kernel-ppa/mainline/v4.9.20/linux-headers-4.9.20-040920-generic_4.9.20-040920.201703310531_amd64.deb \
+  kernel.ubuntu.com/~kernel-ppa/mainline/v4.9.20/linux-image-4.9.20-040920-generic_4.9.20-040920.201703310531_amd64.deb
+sudo dpkg -i linux-headers-4.9*.deb linux-image-4.9*.deb
+rm linux-*
+
 # Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
 # This needs to happen as the last step to prevent Jenkins master from connecting
 # to a machine that hasn't been properly setup yet.
 cat jenkins_master.pub | sudo tee --append ~jenkins/.ssh/authorized_keys
 
-# Restart for docker to pickup the config changes.
+# Restart for docker to pick up the config changes.
 echo 'Successfully initialized the linux worker, going for reboot in 10 seconds'
 sleep 10
 

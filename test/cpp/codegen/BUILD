@@ -70,7 +70,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "golden_file_test",
     srcs = ["golden_file_test.cc"],
-    args = ["--generated_file_path=$(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.h"],
+    args = ["--generated_file_path=$(GENDIR)/src/proto/grpc/testing/"],
     data = [
         ":compiler_test_golden",
         "//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen",

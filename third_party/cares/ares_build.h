@@ -251,4 +251,14 @@
   typedef CARES_TYPEOF_ARES_SOCKLEN_T ares_socklen_t;
 #endif
 
+/* Undefine UNICODE, as c-ares does not use the ANSI version of functions */
+/* explicitly. */
+#ifdef UNICODE
+#  undef UNICODE
+#endif
+
+#ifdef _UNICODE
+#  undef _UNICODE
+#endif
+
 #endif /* __CARES_BUILD_H */

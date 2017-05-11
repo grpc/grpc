@@ -303,20 +303,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\httpcli.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\parser.h" />
@@ -326,7 +319,11 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error_internal.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll1_linux.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_limited_pollers_linux.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_thread_pool_linux.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollex_linux.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollsig_linux.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.h" />
@@ -335,7 +332,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset.h" />
@@ -355,6 +354,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sys_epoll_wrapper.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.h" />
@@ -366,6 +366,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_manager.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\udp_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.h" />
@@ -411,6 +412,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.h" />
@@ -424,12 +426,16 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_encoder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_parser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_table.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\http2_settings.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\huffsyms.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\incoming_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\context\security_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\composite\composite_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials.h" />
@@ -453,39 +459,43 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_factory.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper_registry.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\retry_throttle.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel_index.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_connect_handshaker.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_proxy.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\parse_address.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\retry_throttle.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel_index.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb_channel.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\client_load_reporting_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_channel.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_client_stats.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\load_balancer_api.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\base_resources.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_interface.h" />
@@ -502,6 +512,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_status.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\tracing.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
@@ -512,11 +524,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
     </ClCompile>
@@ -524,19 +532,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\format_request.c">
     </ClCompile>
@@ -558,7 +556,15 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\error.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll1_linux.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_limited_pollers_linux.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_thread_pool_linux.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollex_linux.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollsig_linux.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
     </ClCompile>
@@ -578,7 +584,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_windows.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.c">
     </ClCompile>
@@ -647,6 +657,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_generic.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_manager.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.c">
     </ClCompile>
@@ -720,7 +732,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
     </ClCompile>
@@ -756,6 +768,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport_op_string.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\secure\server_secure_chttp2.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.c">
@@ -784,6 +798,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_table.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\http2_settings.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\huffsyms.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\incoming_metadata.c">
@@ -799,6 +815,14 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\writing.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\http_filters_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli_security_connector.c">
     </ClCompile>
@@ -854,49 +878,53 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\secure\secure_channel_create.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\channel_connectivity.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\channel_connectivity.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_factory.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel_factory.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel_plugin.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel_plugin.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\connector.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\connector.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_connect_handshaker.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_connect_handshaker.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\http_proxy.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_proxy.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_factory.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_registry.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\parse_address.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\proxy_mapper_registry.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper_registry.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_factory.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_registry.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_registry.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\retry_throttle.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\retry_throttle.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\subchannel_index.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel_index.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.c">
     </ClCompile>
@@ -908,13 +936,17 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create_posix.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\client_load_reporting_filter.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb_channel_secure.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_channel_secure.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_client_stats.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\load_balancer_api.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
     </ClCompile>
@@ -922,23 +954,23 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\pick_first\pick_first.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\round_robin\round_robin.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver_ares.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\dns_resolver_ares.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\native\dns_resolver.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\native\dns_resolver.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\sockaddr\sockaddr_resolver.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\base_resources.c">
     </ClCompile>
@@ -967,6 +999,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\trace_context.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\tracing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
     </ClCompile>

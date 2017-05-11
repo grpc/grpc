@@ -38,8 +38,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/client_channel.h"
-#include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -101,7 +101,7 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
                                            void *reserved) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE(
-      "grpc_insecure_channel_create(target=%p, args=%p, reserved=%p)", 3,
+      "grpc_insecure_channel_create(target=%s, args=%p, reserved=%p)", 3,
       (target, args, reserved));
   GPR_ASSERT(reserved == NULL);
   // Add channel arg containing the client channel factory.

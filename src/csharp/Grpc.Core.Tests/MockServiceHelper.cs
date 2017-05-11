@@ -141,7 +141,8 @@ namespace Grpc.Core.Tests
         {
             if (server == null)
             {
-                server = new Server
+                // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
+                server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
                 {
                     Services = { serviceDefinition },
                     Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }

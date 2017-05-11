@@ -2,7 +2,7 @@
 
 ## Format
 
-The log format is described in [this proto file](src/proto/grpc/binary_log/v1alpha/log.proto). It is intended that multiple parts of the call will be logged in separate files, and then correlated by analysis tools using the rpc\_id.
+The log format is described in [this proto file](/src/proto/grpc/binary_log/v1alpha/log.proto). It is intended that multiple parts of the call will be logged in separate files, and then correlated by analysis tools using the rpc\_id.
 
 ## API
 

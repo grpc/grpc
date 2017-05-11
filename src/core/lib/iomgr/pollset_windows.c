@@ -43,6 +43,8 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 
+#define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
+
 gpr_mu grpc_polling_mu;
 static grpc_pollset_worker *g_active_poller;
 static grpc_pollset_worker g_global_root_worker;
@@ -114,13 +116,13 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
 }
 
-void grpc_pollset_destroy(grpc_pollset *pollset) {}
+void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {}
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker_hdl,
                               gpr_timespec now, gpr_timespec deadline) {
   grpc_pollset_worker worker;
-  *worker_hdl = &worker;
+  if (worker_hdl) *worker_hdl = &worker;
 
   int added_worker = 0;
   worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].next =
@@ -185,7 +187,7 @@ done:
     remove_worker(&worker, GRPC_POLLSET_WORKER_LINK_POLLSET);
   }
   gpr_cv_destroy(&worker.cv);
-  *worker_hdl = NULL;
+  if (worker_hdl) *worker_hdl = NULL;
   return GRPC_ERROR_NONE;
 }
 
@@ -226,7 +228,5 @@ grpc_error *grpc_pollset_kick(grpc_pollset *p,
   }
   return GRPC_ERROR_NONE;
 }
-
-void grpc_kick_poller(void) { grpc_iocp_kick(); }
 
 #endif /* GRPC_WINSOCK_SOCKET */

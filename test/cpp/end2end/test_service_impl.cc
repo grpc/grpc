@@ -92,6 +92,11 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
     gpr_log(GPR_ERROR, "The request should not reach application handler.");
     GPR_ASSERT(0);
   }
+  if (request->has_param() && request->param().has_expected_error()) {
+    const auto& error = request->param().expected_error();
+    return Status(static_cast<StatusCode>(error.code()), error.error_message(),
+                  error.binary_error_details());
+  }
   int server_try_cancel = GetIntValueFromMetadata(
       kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
   if (server_try_cancel > DO_NOT_CANCEL) {

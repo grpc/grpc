@@ -34,8 +34,8 @@
 #ifndef NET_GRPC_NODE_SERVER_H_
 #define NET_GRPC_NODE_SERVER_H_
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 #include "grpc/grpc.h"
 
 namespace grpc {
@@ -52,6 +52,8 @@ class Server : public Nan::ObjectWrap {
   /* Tests whether the given value was constructed by this class's
      JavaScript constructor */
   static bool HasInstance(v8::Local<v8::Value> val);
+
+  void DestroyWrappedServer();
 
  private:
   explicit Server(grpc_server *server);

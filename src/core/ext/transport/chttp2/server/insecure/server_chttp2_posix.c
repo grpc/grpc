@@ -57,12 +57,9 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
   char *name;
   gpr_asprintf(&name, "fd:%d", fd);
 
-  grpc_resource_quota *resource_quota = grpc_resource_quota_from_channel_args(
-      grpc_server_get_channel_args(server));
   grpc_endpoint *server_endpoint =
-      grpc_tcp_create(grpc_fd_create(fd, name), resource_quota,
-                      GRPC_TCP_DEFAULT_READ_SLICE_SIZE, name);
-  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
+      grpc_tcp_create(&exec_ctx, grpc_fd_create(fd, name),
+                      grpc_server_get_channel_args(server), name);
 
   gpr_free(name);
 

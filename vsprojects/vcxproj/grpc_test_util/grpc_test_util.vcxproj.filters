@@ -70,13 +70,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
@@ -88,26 +82,11 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
-      <Filter>src\core\lib\channel</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
       <Filter>src\core\lib\compression</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
       <Filter>src\core\lib\compression</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
-      <Filter>src\core\lib\debug</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\format_request.c">
       <Filter>src\core\lib\http</Filter>
@@ -139,7 +118,19 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\error.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll1_linux.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_limited_pollers_linux.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_thread_pool_linux.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollex_linux.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollsig_linux.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
@@ -169,7 +160,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_windows.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.c">
@@ -272,6 +269,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_manager.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.c">
@@ -382,7 +382,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.cc">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
@@ -435,6 +435,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport_op_string.c">
       <Filter>src\core\lib\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
+      <Filter>src\core\lib\debug</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -587,16 +590,10 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h">
@@ -608,26 +605,11 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\max_age_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h">
-      <Filter>src\core\lib\channel</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h">
       <Filter>src\core\lib\compression</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.h">
       <Filter>src\core\lib\compression</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h">
-      <Filter>src\core\lib\debug</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h">
       <Filter>src\core\lib\http</Filter>
@@ -656,7 +638,19 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error_internal.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll1_linux.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_limited_pollers_linux.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_thread_pool_linux.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollex_linux.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollsig_linux.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h">
@@ -683,7 +677,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.h">
@@ -743,6 +743,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sys_epoll_wrapper.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -774,6 +777,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_manager.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.h">
@@ -910,6 +916,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h">
       <Filter>src\core\lib\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h">
+      <Filter>src\core\lib\debug</Filter>
     </ClInclude>
   </ItemGroup>
 

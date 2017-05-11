@@ -87,6 +87,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "ev_epollsig_linux_test",
+    srcs = ["ev_epollsig_linux_test.c"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util"
+        "//test/core/util:grpc_test_util",
+    ],
+    language = "C",
+)
+
+grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.c"],
     language = "C",

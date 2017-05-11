@@ -31,6 +31,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <string.h>
 
 /* Provide a wrapped memcpy for targets that need to be backwards
@@ -40,7 +42,7 @@
  */
 
 #ifdef __linux__
-#ifdef __x86_64__
+#if defined(__x86_64__) && !defined(GPR_MUSL_LIBC_COMPAT)
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
 void *__wrap_memcpy(void *destination, const void *source, size_t num) {
   return memcpy(destination, source, num);

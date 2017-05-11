@@ -52,6 +52,9 @@ enum ServerType {
 enum RpcType {
   UNARY = 0;
   STREAMING = 1;
+  STREAMING_FROM_CLIENT = 2;
+  STREAMING_FROM_SERVER = 3;
+  STREAMING_BOTH_WAYS = 4;
 }
 
 // Parameters of poisson process distribution, which is a good representation
@@ -113,6 +116,9 @@ message ClientConfig {
   string other_client_api = 15;
 
   repeated ChannelArg channel_args = 16;
+
+  // Number of messages on a stream before it gets finished/restarted
+  int32 messages_per_stream = 18;
 }
 
 message ClientStatus { ClientStats stats = 1; }

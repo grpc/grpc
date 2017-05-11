@@ -159,6 +159,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_hostname.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_ping.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\binary_metadata.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_after_accept.c">

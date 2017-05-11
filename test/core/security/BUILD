@@ -52,6 +52,7 @@ grpc_cc_library(
     hdrs = ["oauth2_utils.h"],
     language = "C",
     deps = ["//:grpc"],
+    visibility = ["//test/cpp:__subpackages__"],
 )
 
 grpc_cc_test(

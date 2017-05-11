@@ -44,6 +44,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
@@ -661,7 +662,7 @@ static void read_metadata(input_stream *inp, size_t *count,
 }
 
 static call_state *destroy_call(call_state *call) {
-  grpc_call_destroy(call->call);
+  grpc_call_unref(call->call);
   call->call = NULL;
   return maybe_delete_call_state(call);
 }
@@ -722,6 +723,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;
   grpc_init();
+  grpc_timer_manager_set_threading(false);
   grpc_resolve_address = my_resolve_address;
 
   GPR_ASSERT(g_channel == NULL);
@@ -735,7 +737,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   g_active_call = new_call(NULL, ROOT);
   g_resource_quota = grpc_resource_quota_create("api_fuzzer");
 
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
 
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
          pending_channel_watches > 0 || pending_pings > 0 ||
@@ -768,6 +770,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
     }
+
+    grpc_timer_manager_tick();
 
     switch (next_byte(&inp)) {
       // terminate on bad bytes
@@ -932,6 +936,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         }
         uint32_t propagation_mask = read_uint32(&inp);
         grpc_slice method = read_string_like_slice(&inp);
+        if (GRPC_SLICE_LENGTH(method) == 0) {
+          ok = false;
+        }
         grpc_slice host = read_string_like_slice(&inp);
         gpr_timespec deadline =
             gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -967,7 +974,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           break;
         }
         grpc_op *ops = gpr_malloc(sizeof(grpc_op) * num_ops);
-        memset(ops, 0, sizeof(grpc_op) * num_ops);
+        if (num_ops > 0) memset(ops, 0, sizeof(grpc_op) * num_ops);
         bool ok = true;
         size_t i;
         grpc_op *op;

@@ -83,8 +83,12 @@ static void test(const char *name, size_t init_size, const size_t *allocs,
   static const size_t allocs_##name[] = {__VA_ARGS__}; \
   test(#name, init_size, allocs_##name, GPR_ARRAY_SIZE(allocs_##name))
 
-#define CONCURRENT_TEST_ITERATIONS 100000
 #define CONCURRENT_TEST_THREADS 100
+
+size_t concurrent_test_iterations() {
+  if (sizeof(void *) < 8) return 1000;
+  return 100000;
+}
 
 typedef struct {
   gpr_event ev_start;
@@ -94,7 +98,7 @@ typedef struct {
 static void concurrent_test_body(void *arg) {
   concurrent_test_args *a = arg;
   gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
-  for (size_t i = 0; i < CONCURRENT_TEST_ITERATIONS; i++) {
+  for (size_t i = 0; i < concurrent_test_iterations(); i++) {
     *(char *)gpr_arena_alloc(a->arena, 1) = (char)i;
   }
 }

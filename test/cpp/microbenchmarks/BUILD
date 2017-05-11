@@ -70,6 +70,12 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "bm_cq_multiple_threads",
+    srcs = ["bm_cq_multiple_threads.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_test(
     name = "bm_error",
     srcs = ["bm_error.cc"],
     deps = [":helpers"],
@@ -90,7 +96,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_fullstack_trickle",
     srcs = ["bm_fullstack_trickle.cc"],
-    deps = [":helpers"],
+    deps = [":helpers"]
+    external_deps = [
+        "gflags",
+    ]
 )
 
 grpc_cc_test(

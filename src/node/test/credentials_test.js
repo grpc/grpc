@@ -228,7 +228,7 @@ describe('client credentials', function() {
   before(function() {
     var proto = grpc.load(__dirname + '/test_service.proto');
     server = new grpc.Server();
-    server.addProtoService(proto.TestService.service, {
+    server.addService(proto.TestService.service, {
       unary: function(call, cb) {
         call.sendMetadata(call.metadata);
         cb(null, {});

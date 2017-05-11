@@ -112,9 +112,9 @@ typedef struct {
 typedef struct {
   /* Called to eg. send/receive data on a call.
      See grpc_call_next_op on how to call the next element in the stack */
-  void (*start_transport_stream_op)(grpc_exec_ctx *exec_ctx,
-                                    grpc_call_element *elem,
-                                    grpc_transport_stream_op *op);
+  void (*start_transport_stream_op_batch)(grpc_exec_ctx *exec_ctx,
+                                          grpc_call_element *elem,
+                                          grpc_transport_stream_op_batch *op);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
@@ -281,7 +281,7 @@ void grpc_call_stack_ignore_set_pollset_or_pollset_set(
     grpc_polling_entity *pollent);
 /* Call the next operation in a call stack */
 void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                       grpc_transport_stream_op *op);
+                       grpc_transport_stream_op_batch *op);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
 void grpc_channel_next_op(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
@@ -300,16 +300,17 @@ grpc_channel_stack *grpc_channel_stack_from_top_element(
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem, grpc_transport_stream_op *op);
+                      grpc_call_element *elem,
+                      grpc_transport_stream_op_batch *op);
 
 void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *cur_elem,
                                     grpc_error *error);
 
-extern int grpc_trace_channel;
+extern grpc_tracer_flag grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
-  if (grpc_trace_channel) grpc_call_log_op(sev, elem, op)
+  if (GRPC_TRACER_ON(grpc_trace_channel)) grpc_call_log_op(sev, elem, op)
 
 #ifdef __cplusplus
 }

@@ -53,6 +53,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/proto/grpc/health/v1:health_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -220,6 +221,28 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpclb_end2end_test",
+    srcs = ["grpclb_end2end_test.cc"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/lb/v1:load_balancer_proto",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/end2end:fake_resolver",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",

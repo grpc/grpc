@@ -63,6 +63,10 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
+# Google Cloud platform API libraries
+RUN apt-get update && apt-get install -y python-pip && apt-get clean
+RUN pip install --upgrade google-api-python-client
+
 #====================
 # Python dependencies
 
@@ -86,7 +90,6 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14
 RUN echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list
 RUN echo "deb http://download.mono-project.com/repo/debian wheezy-apache24-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
 RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libjpeg62-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
-RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
 
 # Install dependencies
 RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
@@ -96,6 +99,24 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
     && apt-get clean
 
 RUN nuget update -self
+
+# Install dotnet SDK based on https://www.microsoft.com/net/core#debian
+RUN apt-get update && apt-get install -y curl libunwind8 gettext
+# dotnet-dev-1.0.0-preview2-003131
+RUN curl -sSL -o dotnet100.tar.gz https://go.microsoft.com/fwlink/?LinkID=827530
+RUN mkdir -p /opt/dotnet && tar zxf dotnet100.tar.gz -C /opt/dotnet
+# dotnet-dev-1.0.1
+RUN curl -sSL -o dotnet101.tar.gz https://go.microsoft.com/fwlink/?LinkID=843453
+RUN mkdir -p /opt/dotnet && tar zxf dotnet101.tar.gz -C /opt/dotnet
+RUN ln -s /opt/dotnet/dotnet /usr/local/bin
+
+# Trigger the population of the local package cache
+ENV NUGET_XMLDOC_MODE skip
+RUN mkdir warmup \
+    && cd warmup \
+    && dotnet new \
+    && cd .. \
+    && rm -rf warmup
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc

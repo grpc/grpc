@@ -45,16 +45,18 @@
 
 static void *tag(intptr_t t) { return (void *)t; }
 
-static gpr_timespec n_seconds_time(int n) {
+static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static gpr_timespec five_seconds_from_now(void) {
+  return n_seconds_from_now(5);
+}
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -77,6 +79,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+
+  /* Note: shutdown_cq was unused in this test */
+  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void do_request_and_shutdown_server(grpc_end2end_test_config config,
@@ -84,7 +89,6 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config config,
                                            cq_verifier *cqv) {
   grpc_call *c;
   grpc_call *s;
-  gpr_timespec deadline = five_seconds_time();
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -96,6 +100,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config config,
   grpc_slice details;
   int was_cancelled = 2;
 
+  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
       f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
       grpc_slice_from_static_string("/foo"),
@@ -186,8 +191,8 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config config,
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 }
 
 static void disappearing_server_test(grpc_end2end_test_config config) {

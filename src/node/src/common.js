@@ -42,76 +42,9 @@
 var _ = require('lodash');
 
 /**
- * Get a function that deserializes a specific type of protobuf.
- * @param {function()} cls The constructor of the message type to deserialize
- * @param {bool=} binaryAsBase64 Deserialize bytes fields as base64 strings
- *     instead of Buffers. Defaults to false
- * @param {bool=} longsAsStrings Deserialize long values as strings instead of
- *     objects. Defaults to true
- * @return {function(Buffer):cls} The deserialization function
- */
-exports.deserializeCls = function deserializeCls(cls, binaryAsBase64,
-                                                 longsAsStrings) {
-  if (binaryAsBase64 === undefined || binaryAsBase64 === null) {
-    binaryAsBase64 = false;
-  }
-  if (longsAsStrings === undefined || longsAsStrings === null) {
-    longsAsStrings = true;
-  }
-  /**
-   * Deserialize a buffer to a message object
-   * @param {Buffer} arg_buf The buffer to deserialize
-   * @return {cls} The resulting object
-   */
-  return function deserialize(arg_buf) {
-    // Convert to a native object with binary fields as Buffers (first argument)
-    // and longs as strings (second argument)
-    return cls.decode(arg_buf).toRaw(binaryAsBase64, longsAsStrings);
-  };
-};
-
-var deserializeCls = exports.deserializeCls;
-
-/**
- * Get a function that serializes objects to a buffer by protobuf class.
- * @param {function()} Cls The constructor of the message type to serialize
- * @return {function(Cls):Buffer} The serialization function
- */
-exports.serializeCls = function serializeCls(Cls) {
-  /**
-   * Serialize an object to a Buffer
-   * @param {Object} arg The object to serialize
-   * @return {Buffer} The serialized object
-   */
-  return function serialize(arg) {
-    return new Buffer(new Cls(arg).encode().toBuffer());
-  };
-};
-
-var serializeCls = exports.serializeCls;
-
-/**
- * Get the fully qualified (dotted) name of a ProtoBuf.Reflect value.
- * @param {ProtoBuf.Reflect.Namespace} value The value to get the name of
- * @return {string} The fully qualified name of the value
- */
-exports.fullyQualifiedName = function fullyQualifiedName(value) {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  var name = value.name;
-  var parent_name = fullyQualifiedName(value.parent);
-  if (parent_name !== '') {
-    name = parent_name + '.' + name;
-  }
-  return name;
-};
-
-var fullyQualifiedName = exports.fullyQualifiedName;
-
-/**
  * Wrap a function to pass null-like values through without calling it. If no
- * function is given, just uses the identity;
+ * function is given, just uses the identity.
+ * @private
  * @param {?function} func The function to wrap
  * @return {function} The wrapped function
  */
@@ -125,44 +58,6 @@ exports.wrapIgnoreNull = function wrapIgnoreNull(func) {
     }
     return func(arg);
   };
-};
-
-/**
- * Return a map from method names to method attributes for the service.
- * @param {ProtoBuf.Reflect.Service} service The service to get attributes for
- * @param {Object=} options Options to apply to these attributes
- * @return {Object} The attributes map
- */
-exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
-                                                                   options) {
-  var prefix = '/' + fullyQualifiedName(service) + '/';
-  var binaryAsBase64, longsAsStrings;
-  if (options) {
-    binaryAsBase64 = options.binaryAsBase64;
-    longsAsStrings = options.longsAsStrings;
-  }
-  /* This slightly awkward construction is used to make sure we only use
-     lodash@3.10.1-compatible functions. A previous version used
-     _.fromPairs, which would be cleaner, but was introduced in lodash
-     version 4 */
-  return _.zipObject(_.map(service.children, function(method) {
-    return _.camelCase(method.name);
-  }), _.map(service.children, function(method) {
-    return {
-      originalName: method.name,
-      path: prefix + method.name,
-      requestStream: method.requestStream,
-      responseStream: method.responseStream,
-      requestType: method.resolvedRequestType,
-      responseType: method.resolvedResponseType,
-      requestSerialize: serializeCls(method.resolvedRequestType.build()),
-      requestDeserialize: deserializeCls(method.resolvedRequestType.build(),
-                                         binaryAsBase64, longsAsStrings),
-      responseSerialize: serializeCls(method.resolvedResponseType.build()),
-      responseDeserialize: deserializeCls(method.resolvedResponseType.build(),
-                                          binaryAsBase64, longsAsStrings)
-    };
-  }));
 };
 
 /**
@@ -185,3 +80,78 @@ exports.log = function log(severity, message) {
     exports.logger.error(message);
   }
 };
+
+/**
+ * Default options for loading proto files into gRPC
+ */
+exports.defaultGrpcOptions = {
+  convertFieldsToCamelCase: false,
+  binaryAsBase64: false,
+  longsAsStrings: true,
+  enumsAsStrings: true,
+  deprecatedArgumentOrder: false
+};
+
+// JSDoc definitions that are used in multiple other modules
+
+/**
+ * The EventEmitter class in the event standard module
+ * @external EventEmitter
+ * @see https://nodejs.org/api/events.html#events_class_eventemitter
+ */
+
+/**
+ * The Readable class in the stream standard module
+ * @external Readable
+ * @see https://nodejs.org/api/stream.html#stream_readable_streams
+ */
+
+/**
+ * The Writable class in the stream standard module
+ * @external Writable
+ * @see https://nodejs.org/api/stream.html#stream_writable_streams
+ */
+
+/**
+ * The Duplex class in the stream standard module
+ * @external Duplex
+ * @see https://nodejs.org/api/stream.html#stream_class_stream_duplex
+ */
+
+/**
+ * A serialization function
+ * @callback module:src/common~serialize
+ * @param {*} value The value to serialize
+ * @return {Buffer} The value serialized as a byte sequence
+ */
+
+/**
+ * A deserialization function
+ * @callback module:src/common~deserialize
+ * @param {Buffer} data The byte sequence to deserialize
+ * @return {*} The data deserialized as a value
+ */
+
+/**
+ * An object that completely defines a service method signature.
+ * @typedef {Object} module:src/common~MethodDefinition
+ * @property {string} path The method's URL path
+ * @property {boolean} requestStream Indicates whether the method accepts
+ *     a stream of requests
+ * @property {boolean} responseStream Indicates whether the method returns
+ *     a stream of responses
+ * @property {module:src/common~serialize} requestSerialize Serialization
+ *     function for request values
+ * @property {module:src/common~serialize} responseSerialize Serialization
+ *     function for response values
+ * @property {module:src/common~deserialize} requestDeserialize Deserialization
+ *     function for request data
+ * @property {module:src/common~deserialize} responseDeserialize Deserialization
+ *     function for repsonse data
+ */
+
+/**
+ * An object that completely defines a service.
+ * @typedef {Object.<string, module:src/common~MethodDefinition>}
+ *     module:src/common~ServiceDefinition
+ */

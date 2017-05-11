@@ -66,3 +66,16 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "fake_resolver_test",
+    srcs = ["fake_resolver_test.c"],
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:fake_resolver",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)

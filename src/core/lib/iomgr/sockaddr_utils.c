@@ -55,7 +55,9 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address *resolved_addr,
   GPR_ASSERT(resolved_addr != resolved_addr4_out);
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   struct sockaddr_in *addr4_out =
-      (struct sockaddr_in *)resolved_addr4_out->addr;
+      resolved_addr4_out == NULL
+          ? NULL
+          : (struct sockaddr_in *)resolved_addr4_out->addr;
   if (addr->sa_family == AF_INET6) {
     const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *)addr;
     if (memcmp(addr6->sin6_addr.s6_addr, kV4MappedPrefix,

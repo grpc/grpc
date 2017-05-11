@@ -61,25 +61,28 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_time(int n) {
+static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static gpr_timespec five_seconds_from_now(void) {
+  return n_seconds_from_now(5);
+}
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(
-      grpc_completion_queue_pluck(f->cq, tag(1000), five_seconds_time(), NULL)
-          .type == GRPC_OP_COMPLETE);
+
+  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
+                                         five_seconds_from_now(), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -97,6 +100,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 /* Client sends a request, server replies with a payload, then waits for the
@@ -108,13 +112,12 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
       grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
 
   grpc_arg keepalive_args[] = {{.type = GRPC_ARG_INTEGER,
-                                .key = GRPC_ARG_CLIENT_KEEPALIVE_TIME_S,
-                                .value.integer = 2},
+                                .key = GRPC_ARG_KEEPALIVE_TIME_MS,
+                                .value.integer = 1500},
                                {.type = GRPC_ARG_INTEGER,
-                                .key = GRPC_ARG_CLIENT_KEEPALIVE_TIMEOUT_S,
+                                .key = GRPC_ARG_KEEPALIVE_TIMEOUT_MS,
                                 .value.integer = 0},
                                {.type = GRPC_ARG_INTEGER,
                                 .key = GRPC_ARG_HTTP2_BDP_PROBE,
@@ -140,6 +143,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   /* Disable ping ack to trigger the keepalive timeout */
   grpc_set_disable_ping_ack(true);
 
+  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
@@ -186,8 +190,6 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
-
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
@@ -221,8 +223,8 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 

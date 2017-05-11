@@ -64,7 +64,7 @@ typedef struct {
      pollset_set so that work can progress when this call wants work to progress
   */
   grpc_polling_entity *pollent;
-  grpc_transport_stream_op op;
+  grpc_transport_stream_op_batch op;
   uint8_t security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   grpc_auth_metadata_context auth_md_context;
@@ -108,7 +108,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
                                     const char *error_details) {
   grpc_call_element *elem = (grpc_call_element *)user_data;
   call_data *calld = elem->call_data;
-  grpc_transport_stream_op *op = &calld->op;
+  grpc_transport_stream_op_batch *op = &calld->op;
   grpc_metadata_batch *mdb;
   size_t i;
   reset_auth_metadata_context(&calld->auth_md_context);
@@ -122,8 +122,8 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED);
   } else {
     GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
-    GPR_ASSERT(op->send_initial_metadata != NULL);
-    mdb = op->send_initial_metadata;
+    GPR_ASSERT(op->send_initial_metadata);
+    mdb = op->payload->send_initial_metadata.send_initial_metadata;
     for (i = 0; i < num_md; i++) {
       add_error(&error,
                 grpc_metadata_batch_add_tail(
@@ -136,7 +136,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   if (error == GRPC_ERROR_NONE) {
     grpc_call_next_op(exec_ctx, elem, op);
   } else {
-    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
   }
 }
 
@@ -172,11 +172,13 @@ void build_auth_metadata_context(grpc_security_connector *sc,
 
 static void send_security_metadata(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
-                                   grpc_transport_stream_op *op) {
+                                   grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_client_security_context *ctx =
-      (grpc_client_security_context *)op->context[GRPC_CONTEXT_SECURITY].value;
+      (grpc_client_security_context *)op->payload
+          ->context[GRPC_CONTEXT_SECURITY]
+          .value;
   grpc_call_credentials *channel_call_creds =
       chand->security_connector->request_metadata_creds;
   int call_creds_has_md = (ctx != NULL) && (ctx->creds != NULL);
@@ -191,7 +193,7 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
     calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
                                                           ctx->creds, NULL);
     if (calld->creds == NULL) {
-      grpc_transport_stream_op_finish_with_failure(
+      grpc_transport_stream_op_batch_finish_with_failure(
           exec_ctx, op,
           grpc_error_set_int(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -242,7 +244,7 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
    that is being sent or received. */
 static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *elem,
-                                    grpc_transport_stream_op *op) {
+                                    grpc_transport_stream_op_batch *op) {
   GPR_TIMER_BEGIN("auth_start_transport_op", 0);
 
   /* grab pointers to our data from the call element */
@@ -251,23 +253,25 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
   grpc_linked_mdelem *l;
   grpc_client_security_context *sec_ctx = NULL;
 
-  if (calld->security_context_set == 0 && op->cancel_error == GRPC_ERROR_NONE) {
+  if (!op->cancel_stream && calld->security_context_set == 0) {
     calld->security_context_set = 1;
-    GPR_ASSERT(op->context);
-    if (op->context[GRPC_CONTEXT_SECURITY].value == NULL) {
-      op->context[GRPC_CONTEXT_SECURITY].value =
+    GPR_ASSERT(op->payload->context != NULL);
+    if (op->payload->context[GRPC_CONTEXT_SECURITY].value == NULL) {
+      op->payload->context[GRPC_CONTEXT_SECURITY].value =
           grpc_client_security_context_create();
-      op->context[GRPC_CONTEXT_SECURITY].destroy =
+      op->payload->context[GRPC_CONTEXT_SECURITY].destroy =
           grpc_client_security_context_destroy;
     }
-    sec_ctx = op->context[GRPC_CONTEXT_SECURITY].value;
+    sec_ctx = op->payload->context[GRPC_CONTEXT_SECURITY].value;
     GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
     sec_ctx->auth_context =
         GRPC_AUTH_CONTEXT_REF(chand->auth_context, "client_auth_filter");
   }
 
-  if (op->send_initial_metadata != NULL) {
-    for (l = op->send_initial_metadata->list.head; l != NULL; l = l->next) {
+  if (op->send_initial_metadata) {
+    for (l = op->payload->send_initial_metadata.send_initial_metadata->list
+                 .head;
+         l != NULL; l = l->next) {
       grpc_mdelem md = l->md;
       /* Pointer comparison is OK for md_elems created from the same context.
        */
@@ -339,8 +343,16 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element_args *args) {
   grpc_security_connector *sc =
       grpc_security_connector_find_in_args(args->channel_args);
+  if (sc == NULL) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Security connector missing from client auth filter args");
+  }
   grpc_auth_context *auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
+  if (auth_context == NULL) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Auth context missing from client auth filter args");
+  }
 
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
@@ -349,8 +361,6 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
      handle the case that there's no 'next' filter to call on the up or down
      path */
   GPR_ASSERT(!args->is_last);
-  GPR_ASSERT(sc != NULL);
-  GPR_ASSERT(auth_context != NULL);
 
   /* initialize members */
   chand->security_connector =

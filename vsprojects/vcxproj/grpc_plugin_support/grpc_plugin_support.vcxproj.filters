@@ -65,7 +65,16 @@
     <ClInclude Include="$(SolutionDir)\..\src\compiler\php_generator_helpers.h">
       <Filter>src\compiler</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\protobuf_plugin.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\python_private_generator.h">
       <Filter>src\compiler</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator.h">
@@ -78,6 +87,9 @@
       <Filter>src\compiler</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_string-inl.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\schema_interface.h">
       <Filter>src\compiler</Filter>
     </ClInclude>
   </ItemGroup>

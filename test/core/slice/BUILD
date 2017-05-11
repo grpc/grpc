@@ -58,7 +58,14 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "slice_buffer_test",
+    name = "slice_test",
+    srcs = ["slice_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    language = "C",
+)
+
+grpc_cc_test(
+    name = "slice_string_helpers_test",
     srcs = ["slice_string_helpers_test.c"],
     language = "C",
     deps = [
@@ -67,6 +74,20 @@ grpc_cc_test(
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
+)
+
+grpc_cc_test(
+    name = "slice_buffer_test",
+    srcs = ["slice_buffer_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    language = "C",
+)
+
+grpc_cc_test(
+    name = "slice_hash_table_test",
+    srcs = ["slice_hash_table_test.c"],
+    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    language = "C",
 )
 
 grpc_cc_test(
