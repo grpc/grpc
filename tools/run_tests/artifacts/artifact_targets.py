@@ -68,7 +68,8 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
 
 def create_jobspec(name, cmdline, environ={}, shell=False,
                    flake_retries=0, timeout_retries=0, timeout_seconds=30*60,
-                   use_workspace=False):
+                   use_workspace=False,
+                   cpu_cost=1.0):
   """Creates jobspec."""
   environ = environ.copy()
   if use_workspace:
@@ -86,7 +87,8 @@ def create_jobspec(name, cmdline, environ={}, shell=False,
           timeout_seconds=timeout_seconds,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries,
-          shell=shell)
+          shell=shell,
+          cpu_cost=cpu_cost)
   return jobspec
 
 
@@ -246,10 +248,15 @@ class NodeExtArtifact:
 
   def build_jobspec(self):
     if self.platform == 'windows':
+      # Simultaneous builds of node on the same windows machine are flaky.
+      # Set x86 build as exclusive to make sure there is only one node build
+      # at a time. See https://github.com/grpc/grpc/issues/8293
+      cpu_cost = 1e6 if self.arch != 'x64' else 1.0
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_node.bat',
                              self.gyp_arch],
-                            use_workspace=True)
+                            use_workspace=True,
+                            cpu_cost=cpu_cost)
     else:
       if self.platform == 'linux':
         return create_docker_jobspec(
