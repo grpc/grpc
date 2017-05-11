@@ -125,6 +125,7 @@ grpc::string GetHeaderPrologue(grpc_generator::File *file,
     printer->Print(vars, "#define GRPC_$filename_identifier$__INCLUDED\n");
     printer->Print(vars, "\n");
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
+    printer->Print(vars, file->additional_headers().c_str());
     printer->Print(vars, "\n");
   }
   return output;
@@ -1046,7 +1047,6 @@ grpc::string GetSourcePrologue(grpc_generator::File *file,
 
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
     printer->Print(vars, "#include \"$filename_base$$service_header_ext$\"\n");
-    printer->Print(vars, file->additional_headers().c_str());
     printer->Print(vars, "\n");
   }
   return output;
