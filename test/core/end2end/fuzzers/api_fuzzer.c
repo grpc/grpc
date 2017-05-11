@@ -44,6 +44,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
@@ -722,6 +723,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;
   grpc_init();
+  grpc_timer_manager_set_threading(false);
   grpc_resolve_address = my_resolve_address;
 
   GPR_ASSERT(g_channel == NULL);
@@ -768,6 +770,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
     }
+
+    grpc_timer_manager_tick();
 
     switch (next_byte(&inp)) {
       // terminate on bad bytes

@@ -43,18 +43,15 @@
 #include "grpc/support/time.h"
 
 // TODO(murgatroid99): Remove this when the endpoint API becomes public
-#ifdef GRPC_UV
 extern "C" {
 #include "src/core/lib/iomgr/pollset_uv.h"
 }
-#endif
 
 #include "call.h"
 #include "call_credentials.h"
 #include "channel.h"
 #include "channel_credentials.h"
 #include "completion_queue.h"
-#include "completion_queue_async_worker.h"
 #include "server.h"
 #include "server_credentials.h"
 #include "slice.h"
@@ -432,9 +429,7 @@ void init(Local<Object> exports) {
   InitWriteFlags(exports);
   InitLogConstants(exports);
 
-#ifdef GRPC_UV
   grpc_pollset_work_run_loop = 0;
-#endif
 
   grpc::node::Call::Init(exports);
   grpc::node::CallCredentials::Init(exports);

@@ -162,7 +162,7 @@ void bad_server_thread(void *vargs) {
 
 static void done_pollset_shutdown(grpc_exec_ctx *exec_ctx, void *pollset,
                                   grpc_error *error) {
-  grpc_pollset_destroy(pollset);
+  grpc_pollset_destroy(exec_ctx, pollset);
   gpr_free(pollset);
 }
 

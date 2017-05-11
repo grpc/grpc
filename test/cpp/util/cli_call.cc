@@ -91,7 +91,7 @@ void CliCall::Write(const grpc::string& request) {
   void* got_tag;
   bool ok;
 
-  grpc_slice s = grpc_slice_from_copied_string(request.c_str());
+  gpr_slice s = gpr_slice_from_copied_buffer(request.data(), request.size());
   grpc::Slice req_slice(s, grpc::Slice::STEAL_REF);
   grpc::ByteBuffer send_buffer(&req_slice, 1);
   call_->Write(send_buffer, tag(2));

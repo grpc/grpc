@@ -36,13 +36,14 @@
 
 #include <stdbool.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int tsi_tracing_enabled;
+extern grpc_tracer_flag tsi_tracing_enabled;
 
 /* Base for tsi_frame_protector implementations.
    See transport_security_interface.h for documentation. */

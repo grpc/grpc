@@ -41,7 +41,6 @@
 #include "channel.h"
 #include "channel_credentials.h"
 #include "completion_queue.h"
-#include "completion_queue_async_worker.h"
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 #include "timeval.h"

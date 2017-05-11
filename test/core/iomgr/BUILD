@@ -55,8 +55,8 @@ cc_test(
 )
 
 cc_test(
-    name = "ev_epoll_linux_test",
-    srcs = ["ev_epoll_linux_test.c"],
+    name = "ev_epollsig_linux_test",
+    srcs = ["ev_epollsig_linux_test.c"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     copts = ['-std=c99']
 )

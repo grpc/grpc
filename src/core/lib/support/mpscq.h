@@ -67,6 +67,8 @@ bool gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n);
 // the queue is empty!!)
 // Thread compatible - can only be called from one thread at a time
 gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q);
+// Pop a node; sets *empty to true if the queue is empty, or false if it is not
+gpr_mpscq_node *gpr_mpscq_pop_and_check_end(gpr_mpscq *q, bool *empty);
 
 // An mpscq with a spinlock: it's safe to pop from multiple threads, but doing
 // only one thread will succeed concurrently

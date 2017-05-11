@@ -217,6 +217,20 @@ cdef extern from "grpc/grpc.h":
     GRPC_CALL_ERROR_INVALID_FLAGS
     GRPC_CALL_ERROR_INVALID_METADATA
 
+  ctypedef enum grpc_cq_completion_type:
+    GRPC_CQ_NEXT
+    GRPC_CQ_PLUCK
+
+  ctypedef enum grpc_cq_polling_type:
+    GRPC_CQ_DEFAULT_POLLING
+    GRPC_CQ_NON_LISTENING
+    GRPC_CQ_NON_POLLING
+
+  ctypedef struct grpc_completion_queue_attributes:
+    int version
+    grpc_cq_completion_type cq_completion_type
+    grpc_cq_polling_type cq_polling_type
+
   ctypedef enum grpc_connectivity_state:
     GRPC_CHANNEL_IDLE
     GRPC_CHANNEL_CONNECTING
@@ -309,6 +323,14 @@ cdef extern from "grpc/grpc.h":
   void grpc_init() nogil
   void grpc_shutdown() nogil
 
+  ctypedef struct grpc_completion_queue_factory:
+    pass
+
+  grpc_completion_queue_factory *grpc_completion_queue_factory_lookup(
+      const grpc_completion_queue_attributes* attributes) nogil
+  grpc_completion_queue *grpc_completion_queue_create(
+    const grpc_completion_queue_factory* factory,
+    const grpc_completion_queue_attributes* attr, void* reserved) nogil
   grpc_completion_queue *grpc_completion_queue_create_for_next(void *reserved) nogil
 
   grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
@@ -464,6 +486,35 @@ cdef extern from "grpc/grpc_security.h":
   grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
       grpc_metadata_credentials_plugin plugin, void *reserved) nogil
 
+  ctypedef struct grpc_auth_property_iterator:
+    pass
+
+  ctypedef struct grpc_auth_property:
+    char *name
+    char *value
+    size_t value_length
+
+  grpc_auth_property *grpc_auth_property_iterator_next(
+      grpc_auth_property_iterator *it)
+
+  grpc_auth_property_iterator grpc_auth_context_property_iterator(
+      const grpc_auth_context *ctx)
+ 
+  grpc_auth_property_iterator grpc_auth_context_peer_identity(
+      const grpc_auth_context *ctx)
+
+  char *grpc_auth_context_peer_identity_property_name(
+      const grpc_auth_context *ctx)
+
+  grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
+      const grpc_auth_context *ctx, const char *name)
+
+  grpc_auth_context_peer_is_authenticated(
+      const grpc_auth_context *ctx)
+
+  grpc_auth_context *grpc_call_auth_context(grpc_call *call)
+
+  void grpc_auth_context_release(grpc_auth_context *context)
 
 cdef extern from "grpc/compression.h":
 
