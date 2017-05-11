@@ -80,12 +80,42 @@ static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
 
 grpc_grpclb_request *grpc_grpclb_request_create(const char *lb_service_name) {
   grpc_grpclb_request *req = gpr_malloc(sizeof(grpc_grpclb_request));
-
-  req->has_client_stats = 0; /* TODO(dgq): add support for stats once defined */
-  req->has_initial_request = 1;
-  req->initial_request.has_name = 1;
+  req->has_client_stats = false;
+  req->has_initial_request = true;
+  req->initial_request.has_name = true;
   strncpy(req->initial_request.name, lb_service_name,
           GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH);
+  return req;
+}
+
+static void populate_timestamp(gpr_timespec timestamp,
+                               struct _grpc_lb_v1_Timestamp *timestamp_pb) {
+  timestamp_pb->has_seconds = true;
+  timestamp_pb->seconds = timestamp.tv_sec;
+  timestamp_pb->has_nanos = true;
+  timestamp_pb->nanos = timestamp.tv_nsec;
+}
+
+grpc_grpclb_request *grpc_grpclb_load_report_request_create(
+    grpc_grpclb_client_stats *client_stats) {
+  grpc_grpclb_request *req = gpr_zalloc(sizeof(grpc_grpclb_request));
+  req->has_client_stats = true;
+  req->client_stats.has_timestamp = true;
+  populate_timestamp(gpr_now(GPR_CLOCK_REALTIME), &req->client_stats.timestamp);
+  req->client_stats.has_num_calls_started = true;
+  req->client_stats.has_num_calls_finished = true;
+  req->client_stats.has_num_calls_finished_with_drop_for_rate_limiting = true;
+  req->client_stats.has_num_calls_finished_with_drop_for_load_balancing = true;
+  req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
+  req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
+  req->client_stats.has_num_calls_finished_known_received = true;
+  grpc_grpclb_client_stats_get(
+      client_stats, &req->client_stats.num_calls_started,
+      &req->client_stats.num_calls_finished,
+      &req->client_stats.num_calls_finished_with_drop_for_rate_limiting,
+      &req->client_stats.num_calls_finished_with_drop_for_load_balancing,
+      &req->client_stats.num_calls_finished_with_client_failed_to_send,
+      &req->client_stats.num_calls_finished_known_received);
   return req;
 }
 
@@ -98,7 +128,7 @@ grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request) {
   pb_encode(&sizestream, grpc_lb_v1_LoadBalanceRequest_fields, request);
   encoded_length = sizestream.bytes_written;
 
-  slice = grpc_slice_malloc(encoded_length);
+  slice = GRPC_SLICE_MALLOC(encoded_length);
   outputstream =
       pb_ostream_from_buffer(GRPC_SLICE_START_PTR(slice), encoded_length);
   GPR_ASSERT(pb_encode(&outputstream, grpc_lb_v1_LoadBalanceRequest_fields,
@@ -122,6 +152,9 @@ grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
     return NULL;
   }
+
+  if (!res.has_initial_response) return NULL;
+
   grpc_grpclb_initial_response *initial_res =
       gpr_malloc(sizeof(grpc_grpclb_initial_response));
   memcpy(initial_res, &res.initial_response,
@@ -241,6 +274,15 @@ int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
   }
 
   return 0;
+}
+
+gpr_timespec grpc_grpclb_duration_to_timespec(
+    grpc_grpclb_duration *duration_pb) {
+  gpr_timespec duration;
+  duration.tv_sec = duration_pb->has_seconds ? duration_pb->seconds : 0;
+  duration.tv_nsec = duration_pb->has_nanos ? duration_pb->nanos : 0;
+  duration.clock_type = GPR_TIMESPAN;
+  return duration;
 }
 
 void grpc_grpclb_initial_response_destroy(

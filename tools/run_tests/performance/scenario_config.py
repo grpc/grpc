@@ -53,6 +53,7 @@ HISTOGRAM_PARAMS = {
 # actual target will be slightly higher)
 OUTSTANDING_REQUESTS={
     'async': 6400,
+    'async-1core': 800,
     'sync': 1000
 }
 
@@ -287,7 +288,7 @@ class CXXLanguage:
           rpc_type='STREAMING',
           client_type='ASYNC_CLIENT',
           server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async', use_generic_payload=True,
+          unconstrained_client='async-1core', use_generic_payload=True,
           async_server_threads=1,
           minimal_stack=not secure,
           secure=secure)
@@ -337,7 +338,7 @@ class CXXLanguage:
         minimal_stack=not secure,
         categories=smoketest_categories + [SCALABLE])
 
-      for rpc_type in ['unary', 'streaming']:
+      for rpc_type in ['unary', 'streaming', 'streaming_from_client', 'streaming_from_server']:
         for synchronicity in ['sync', 'async']:
           yield _ping_pong_scenario(
               'cpp_protobuf_%s_%s_ping_pong_%s' % (synchronicity, rpc_type, secstr),
@@ -443,6 +444,21 @@ class CSharpLanguage:
         categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
+        'csharp_generic_async_streaming_ping_pong_insecure_1MB', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        req_size=1024*1024, resp_size=1024*1024,
+        use_generic_payload=True,
+        secure=False,
+        categories=[SMOKETEST, SCALABLE])
+
+    yield _ping_pong_scenario(
+        'csharp_generic_async_streaming_qps_unconstrained_insecure', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        unconstrained_client='async', use_generic_payload=True,
+        secure=False,
+        categories=[SMOKETEST, SCALABLE])
+
+    yield _ping_pong_scenario(
         'csharp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
 
@@ -501,7 +517,6 @@ class CSharpLanguage:
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         req_size=1024*1024, resp_size=1024*1024,
         categories=[SMOKETEST, SCALABLE])
-
 
   def __str__(self):
     return 'csharp'
@@ -771,7 +786,7 @@ class JavaLanguage:
       yield _ping_pong_scenario(
           'java_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async', use_generic_payload=True,
+          unconstrained_client='async-1core', use_generic_payload=True,
           async_server_threads=1,
           secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
 

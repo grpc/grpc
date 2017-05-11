@@ -34,6 +34,8 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -41,7 +43,6 @@
 #include <grpc/impl/codegen/status.h>
 
 #include <stddef.h>
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -292,6 +293,9 @@ each time recvmsg (or equivalent) is called */
   "grpc.experimental.tcp_min_read_chunk_size"
 #define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_max_read_chunk_size"
+/* Timeout in milliseconds to use for calls to the grpclb load balancer.
+   If 0 or unset, the balancer calls will have no deadline. */
+#define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_timeout_ms"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

@@ -69,7 +69,7 @@ static grpc_slice_refcount terminal_slice_refcount = {NULL, NULL};
 static const grpc_slice terminal_slice = {&terminal_slice_refcount,
                                           .data.refcounted = {0, 0}};
 
-extern int grpc_http_trace;
+extern grpc_tracer_flag grpc_http_trace;
 
 typedef struct {
   int is_first_frame;
@@ -123,7 +123,7 @@ static void finish_frame(framer_state *st, int is_header_boundary,
    output before beginning */
 static void begin_frame(framer_state *st) {
   st->header_idx =
-      grpc_slice_buffer_add_indexed(st->output, grpc_slice_malloc(9));
+      grpc_slice_buffer_add_indexed(st->output, GRPC_SLICE_MALLOC(9));
   st->output_length_at_start_of_frame = st->output->length;
 }
 
@@ -425,7 +425,7 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
         "Reserved header (colon-prefixed) happening after regular ones.");
   }
 
-  if (grpc_http_trace && !GRPC_MDELEM_IS_INTERNED(elem)) {
+  if (GRPC_TRACER_ON(grpc_http_trace) && !GRPC_MDELEM_IS_INTERNED(elem)) {
     char *k = grpc_slice_to_c_string(GRPC_MDKEY(elem));
     char *v = grpc_slice_to_c_string(GRPC_MDVALUE(elem));
     gpr_log(
@@ -616,7 +616,7 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
     }
   }
   c->advertise_table_size_change = 1;
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     gpr_log(GPR_DEBUG, "set max table size from encoder to %d", max_table_size);
   }
 }

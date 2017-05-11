@@ -13,7 +13,7 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 4.0.0-dev
-  g_stands_for: gentle
+  g_stands_for: gregarious
   version: 1.4.0-dev
 filegroups:
 - name: census
@@ -86,9 +86,13 @@ filegroups:
   headers:
   - src/core/lib/profiling/timers.h
   - src/core/lib/support/arena.h
+  - src/core/lib/support/atomic.h
+  - src/core/lib/support/atomic_with_atm.h
+  - src/core/lib/support/atomic_with_std.h
   - src/core/lib/support/backoff.h
   - src/core/lib/support/block_annotate.h
   - src/core/lib/support/env.h
+  - src/core/lib/support/memory.h
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/spinlock.h
@@ -183,7 +187,6 @@ filegroups:
   - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/message_compress.h
-  - src/core/lib/debug/trace.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -193,7 +196,11 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/error_internal.h
-  - src/core/lib/iomgr/ev_epoll_linux.h
+  - src/core/lib/iomgr/ev_epoll1_linux.h
+  - src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h
+  - src/core/lib/iomgr/ev_epoll_thread_pool_linux.h
+  - src/core/lib/iomgr/ev_epollex_linux.h
+  - src/core/lib/iomgr/ev_epollsig_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -202,6 +209,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
+  - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/network_status_tracker.h
@@ -223,6 +231,7 @@ filegroups:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/sys_epoll_wrapper.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -234,6 +243,7 @@ filegroups:
   - src/core/lib/iomgr/timer.h
   - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
+  - src/core/lib/iomgr/timer_manager.h
   - src/core/lib/iomgr/timer_uv.h
   - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
@@ -289,7 +299,6 @@ filegroups:
   - src/core/lib/channel/handshaker_registry.c
   - src/core/lib/compression/compression.c
   - src/core/lib/compression/message_compress.c
-  - src/core/lib/debug/trace.c
   - src/core/lib/http/format_request.c
   - src/core/lib/http/httpcli.c
   - src/core/lib/http/parser.c
@@ -300,7 +309,11 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair_uv.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
-  - src/core/lib/iomgr/ev_epoll_linux.c
+  - src/core/lib/iomgr/ev_epoll1_linux.c
+  - src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  - src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  - src/core/lib/iomgr/ev_epollex_linux.c
+  - src/core/lib/iomgr/ev_epollsig_linux.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
   - src/core/lib/iomgr/exec_ctx.c
@@ -310,6 +323,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr_posix.c
   - src/core/lib/iomgr/iomgr_uv.c
   - src/core/lib/iomgr/iomgr_windows.c
+  - src/core/lib/iomgr/is_epollexclusive_available.c
   - src/core/lib/iomgr/load_file.c
   - src/core/lib/iomgr/lockfree_event.c
   - src/core/lib/iomgr/network_status_tracker.c
@@ -346,6 +360,7 @@ filegroups:
   - src/core/lib/iomgr/time_averaged_stats.c
   - src/core/lib/iomgr/timer_generic.c
   - src/core/lib/iomgr/timer_heap.c
+  - src/core/lib/iomgr/timer_manager.c
   - src/core/lib/iomgr/timer_uv.c
   - src/core/lib/iomgr/udp_server.c
   - src/core/lib/iomgr/unix_sockets_posix.c
@@ -382,7 +397,7 @@ filegroups:
   - src/core/lib/surface/completion_queue.c
   - src/core/lib/surface/completion_queue_factory.c
   - src/core/lib/surface/event_string.c
-  - src/core/lib/surface/lame_client.c
+  - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.c
   - src/core/lib/surface/server.c
   - src/core/lib/surface/validate_metadata.c
@@ -404,6 +419,7 @@ filegroups:
   - gpr
   uses:
   - grpc_codegen
+  - grpc_trace
 - name: grpc_client_channel
   headers:
   - src/core/ext/filters/client_channel/client_channel.h
@@ -484,13 +500,17 @@ filegroups:
   - grpc_base
 - name: grpc_lb_policy_grpclb
   headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
@@ -500,13 +520,17 @@ filegroups:
   - nanopb
 - name: grpc_lb_policy_grpclb_secure
   headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
@@ -671,6 +695,13 @@ filegroups:
   deps:
   - grpc
   - gpr_test_util
+- name: grpc_trace
+  headers:
+  - src/core/lib/debug/trace.h
+  src:
+  - src/core/lib/debug/trace.c
+  deps:
+  - gpr
 - name: grpc_transport_chttp2
   headers:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
@@ -809,14 +840,18 @@ filegroups:
   - src/core/tsi/ssl_transport_security.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_adapter.h
   - src/core/tsi/transport_security_interface.h
   src:
   - src/core/tsi/fake_transport_security.c
   - src/core/tsi/ssl_transport_security.c
   - src/core/tsi/transport_security.c
+  - src/core/tsi/transport_security_adapter.c
   deps:
   - gpr
   secure: true
+  uses:
+  - grpc_trace
 - name: grpc++_base
   language: c++
   public_headers:
@@ -973,13 +1008,6 @@ filegroups:
   - include/grpc++/test/server_context_test_spouse.h
   deps:
   - grpc++
-- name: thrift_util
-  language: c++
-  public_headers:
-  - include/grpc++/impl/codegen/thrift_serializer.h
-  - include/grpc++/impl/codegen/thrift_utils.h
-  uses:
-  - grpc++_codegen_base
 libs:
 - name: gpr
   build: all
@@ -1277,7 +1305,6 @@ libs:
   - grpc++_codegen_base_src
   - grpc++_codegen_proto
   - grpc++_config_proto
-  - thrift_util
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -1656,6 +1683,14 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: check_epollexclusive
+  build: tool
+  language: c
+  src:
+  - test/build/check_epollexclusive.c
+  deps:
+  - grpc
+  - gpr
 - name: chttp2_hpack_encoder_test
   build: test
   language: c
@@ -1808,12 +1843,12 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: ev_epoll_linux_test
+- name: ev_epollsig_linux_test
   cpu_cost: 3
   build: test
   language: c
   src:
-  - test/core/iomgr/ev_epoll_linux_test.c
+  - test/core/iomgr/ev_epollsig_linux_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3806,6 +3841,20 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+- name: grpclb_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/end2end/grpclb_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpclb_test
   gtest: false
   build: test
@@ -3935,6 +3984,20 @@ targets:
   - mac
   - linux
   - posix
+- name: memory_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/memory_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: metrics_client
   build: test
   run: false
@@ -4364,7 +4427,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
@@ -4376,7 +4439,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
@@ -4387,7 +4450,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address
       -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
@@ -4406,6 +4469,7 @@ configs:
     DEFINES: NDEBUG
   dbg:
     CPPFLAGS: -O0
+    CXXFLAGS: -fno-exceptions
     DEFINES: _DEBUG DEBUG
   gcov:
     CC: gcc
@@ -4435,7 +4499,7 @@ configs:
       -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: NDEBUG
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
@@ -4446,6 +4510,7 @@ configs:
     LDFLAGS: -rdynamic
   opt:
     CPPFLAGS: -O2
+    CXXFLAGS: -fno-exceptions
     DEFINES: NDEBUG
   stapprof:
     CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
@@ -4456,7 +4521,7 @@ configs:
       -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: GRPC_TSAN
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
@@ -4468,7 +4533,7 @@ configs:
       -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
     DEFINES: NDEBUG GRPC_UBSAN
-    LD: clang
+    LD: clang++
     LDFLAGS: -fsanitize=undefined,unsigned-integer-overflow
     LDXX: clang++
     compile_the_world: true
@@ -4476,10 +4541,11 @@ configs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt
 defaults:
   ares:
-    CFLAGS: -Wno-sign-conversion -Wno-invalid-source-encoding
+    CFLAGS: -Wno-sign-conversion $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
     CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
       $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden
-      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
+      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst
+      MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
@@ -4525,13 +4591,10 @@ node_modules:
   - src/node/ext/call_credentials.cc
   - src/node/ext/channel.cc
   - src/node/ext/channel_credentials.cc
-  - src/node/ext/completion_queue_threadpool.cc
-  - src/node/ext/completion_queue_uv.cc
+  - src/node/ext/completion_queue.cc
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
-  - src/node/ext/server_generic.cc
-  - src/node/ext/server_uv.cc
   - src/node/ext/slice.cc
   - src/node/ext/timeval.cc
 openssl_fallback:

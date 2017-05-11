@@ -89,8 +89,8 @@ static bool g_default_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
-int grpc_http_trace = 0;
-int grpc_flowctl_trace = 0;
+grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_flowctl_trace = GRPC_TRACER_INITIALIZER(false);
 
 static const grpc_transport_vtable vtable;
 
@@ -884,14 +884,23 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
   GPR_TIMER_BEGIN("write_action_begin_locked", 0);
   grpc_chttp2_transport *t = gt;
   GPR_ASSERT(t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE);
-  if (!t->closed && grpc_chttp2_begin_write(exec_ctx, t)) {
-    set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING,
-                    "begin writing");
-    grpc_closure_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE);
-  } else {
-    set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_IDLE,
-                    "begin writing nothing");
-    GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
+  switch (t->closed ? GRPC_CHTTP2_NOTHING_TO_WRITE
+                    : grpc_chttp2_begin_write(exec_ctx, t)) {
+    case GRPC_CHTTP2_NOTHING_TO_WRITE:
+      set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_IDLE,
+                      "begin writing nothing");
+      GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
+      break;
+    case GRPC_CHTTP2_PARTIAL_WRITE:
+      set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
+                      "begin writing partial");
+      grpc_closure_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE);
+      break;
+    case GRPC_CHTTP2_FULL_WRITE:
+      set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING,
+                      "begin writing");
+      grpc_closure_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE);
+      break;
   }
   GPR_TIMER_END("write_action_begin_locked", 0);
 }
@@ -988,7 +997,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
   t->seen_goaway = 1;
 
   /* When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
-   * data equal to “too_many_pings”, it should log the occurrence at a log level
+   * data equal to "too_many_pings", it should log the occurrence at a log level
    * that is enabled by default and double the configured KEEPALIVE_TIME used
    * for new connections on that channel. */
   if (t->is_client && goaway_error == GRPC_HTTP2_ENHANCE_YOUR_CALM &&
@@ -1095,7 +1104,7 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
     return;
   }
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     const char *errstr = grpc_error_string(error);
     gpr_log(GPR_DEBUG,
             "complete_closure_step: %p refs=%d flags=0x%04x desc=%s err=%s",
@@ -1240,7 +1249,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   grpc_transport_stream_op_batch_payload *op_payload = op->payload;
   grpc_chttp2_transport *t = s->t;
 
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     char *str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_DEBUG, "perform_stream_op_locked: %s; on_complete = %p", str,
             op->on_complete);
@@ -1483,9 +1492,9 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
 
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     char *str = grpc_transport_stream_op_batch_string(op);
-    gpr_log(GPR_DEBUG, "perform_stream_op[s=%p/%d]: %s", s, s->id, str);
+    gpr_log(GPR_DEBUG, "perform_stream_op[s=%p]: %s", s, str);
     gpr_free(str);
   }
 
@@ -1969,7 +1978,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
      the time we got around to sending this, so instead we ignore HPACK
      compression and just write the uncompressed bytes onto the wire. */
   if (!s->sent_initial_metadata) {
-    http_status_hdr = grpc_slice_malloc(13);
+    http_status_hdr = GRPC_SLICE_MALLOC(13);
     p = GRPC_SLICE_START_PTR(http_status_hdr);
     *p++ = 0x00;
     *p++ = 7;
@@ -1987,7 +1996,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     GPR_ASSERT(p == GRPC_SLICE_END_PTR(http_status_hdr));
     len += (uint32_t)GRPC_SLICE_LENGTH(http_status_hdr);
 
-    content_type_hdr = grpc_slice_malloc(31);
+    content_type_hdr = GRPC_SLICE_MALLOC(31);
     p = GRPC_SLICE_START_PTR(content_type_hdr);
     *p++ = 0x00;
     *p++ = 12;
@@ -2024,7 +2033,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     len += (uint32_t)GRPC_SLICE_LENGTH(content_type_hdr);
   }
 
-  status_hdr = grpc_slice_malloc(15 + (grpc_status >= 10));
+  status_hdr = GRPC_SLICE_MALLOC(15 + (grpc_status >= 10));
   p = GRPC_SLICE_START_PTR(status_hdr);
   *p++ = 0x00; /* literal header, not indexed */
   *p++ = 11;   /* len(grpc-status) */
@@ -2053,7 +2062,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   size_t msg_len = GRPC_SLICE_LENGTH(slice);
   GPR_ASSERT(msg_len <= UINT32_MAX);
   uint32_t msg_len_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)msg_len, 1);
-  message_pfx = grpc_slice_malloc(14 + msg_len_len);
+  message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_len);
   p = GRPC_SLICE_START_PTR(message_pfx);
   *p++ = 0x00; /* literal header, not indexed */
   *p++ = 12;   /* len(grpc-message) */
@@ -2075,7 +2084,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   len += (uint32_t)GRPC_SLICE_LENGTH(message_pfx);
   len += (uint32_t)msg_len;
 
-  hdr = grpc_slice_malloc(9);
+  hdr = GRPC_SLICE_MALLOC(9);
   p = GRPC_SLICE_START_PTR(hdr);
   *p++ = (uint8_t)(len >> 16);
   *p++ = (uint8_t)(len >> 8);
@@ -2130,27 +2139,29 @@ static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                        double bdp_dbl) {
-  uint32_t bdp;
-  if (bdp_dbl <= 0) {
-    bdp = 0;
-  } else if (bdp_dbl > UINT32_MAX) {
-    bdp = UINT32_MAX;
+  int32_t bdp;
+  const int32_t kMinBDP = 128;
+  if (bdp_dbl <= kMinBDP) {
+    bdp = kMinBDP;
+  } else if (bdp_dbl > INT32_MAX) {
+    bdp = INT32_MAX;
   } else {
-    bdp = (uint32_t)(bdp_dbl);
+    bdp = (int32_t)(bdp_dbl);
   }
   int64_t delta =
       (int64_t)bdp -
       (int64_t)t->settings[GRPC_LOCAL_SETTINGS]
                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  if (delta == 0 || (bdp != 0 && delta > -1024 && delta < 1024)) {
+  if (delta == 0 || (delta > -bdp / 10 && delta < bdp / 10)) {
     return;
   }
-  if (grpc_bdp_estimator_trace) {
+  if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
     gpr_log(GPR_DEBUG, "%s: update initial window size to %d", t->peer_string,
             (int)bdp);
   }
-  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, bdp);
-  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, bdp);
+  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+               (uint32_t)bdp);
+  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, (uint32_t)bdp);
 }
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
@@ -2305,7 +2316,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                   grpc_error *error) {
   grpc_chttp2_transport *t = tp;
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     gpr_log(GPR_DEBUG, "%s: Start BDP ping", t->peer_string);
   }
   /* Reset the keepalive ping timer */
@@ -2318,7 +2329,7 @@ static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
 static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                    grpc_error *error) {
   grpc_chttp2_transport *t = tp;
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     gpr_log(GPR_DEBUG, "%s: Complete BDP ping", t->peer_string);
   }
   grpc_bdp_estimator_complete_ping(&t->bdp_estimator);
@@ -2779,7 +2790,7 @@ static void benign_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
     /* Channel with no active streams: send a goaway to try and make it
      * disconnect cleanly */
-    if (grpc_resource_quota_trace) {
+    if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
       gpr_log(GPR_DEBUG, "HTTP2: %s - send goaway to free memory",
               t->peer_string);
     }
@@ -2787,7 +2798,8 @@ static void benign_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
-  } else if (error == GRPC_ERROR_NONE && grpc_resource_quota_trace) {
+  } else if (error == GRPC_ERROR_NONE &&
+             GRPC_TRACER_ON(grpc_resource_quota_trace)) {
     gpr_log(GPR_DEBUG,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",
@@ -2808,7 +2820,7 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
   t->destructive_reclaimer_registered = false;
   if (error == GRPC_ERROR_NONE && n > 0) {
     grpc_chttp2_stream *s = grpc_chttp2_stream_map_rand(&t->stream_map);
-    if (grpc_resource_quota_trace) {
+    if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
       gpr_log(GPR_DEBUG, "HTTP2: %s - abandon stream id %d", t->peer_string,
               s->id);
     }

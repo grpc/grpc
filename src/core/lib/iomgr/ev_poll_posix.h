@@ -36,7 +36,7 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
-const grpc_event_engine_vtable *grpc_init_poll_posix(void);
-const grpc_event_engine_vtable *grpc_init_poll_cv_posix(void);
+const grpc_event_engine_vtable *grpc_init_poll_posix(bool explicit_request);
+const grpc_event_engine_vtable *grpc_init_poll_cv_posix(bool explicit_request);
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H */

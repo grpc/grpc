@@ -71,7 +71,7 @@ grpc_slice grpc_percent_encode_slice(grpc_slice slice,
     return grpc_slice_ref_internal(slice);
   }
   // second pass: actually encode
-  grpc_slice out = grpc_slice_malloc(output_length);
+  grpc_slice out = GRPC_SLICE_MALLOC(output_length);
   uint8_t *q = GRPC_SLICE_START_PTR(out);
   for (p = slice_start; p < slice_end; p++) {
     if (is_unreserved_character(*p, unreserved_bytes)) {
@@ -125,7 +125,7 @@ bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
     return true;
   }
   p = GRPC_SLICE_START_PTR(slice_in);
-  *slice_out = grpc_slice_malloc(out_length);
+  *slice_out = GRPC_SLICE_MALLOC(out_length);
   uint8_t *q = GRPC_SLICE_START_PTR(*slice_out);
   while (p != in_end) {
     if (*p == '%') {
@@ -163,7 +163,7 @@ grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
     return grpc_slice_ref_internal(slice_in);
   }
   p = GRPC_SLICE_START_PTR(slice_in);
-  grpc_slice out = grpc_slice_malloc(out_length);
+  grpc_slice out = GRPC_SLICE_MALLOC(out_length);
   uint8_t *q = GRPC_SLICE_START_PTR(out);
   while (p != in_end) {
     if (*p == '%') {

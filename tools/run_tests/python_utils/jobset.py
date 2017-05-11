@@ -208,6 +208,11 @@ class JobSpec(object):
   def __repr__(self):
     return 'JobSpec(shortname=%s, cmdline=%s)' % (self.shortname, self.cmdline)
 
+  def __str__(self):
+    return '%s: %s %s' % (self.shortname,
+                          ' '.join('%s=%s' % kv for kv in self.environ.items()),
+                          ' '.join(self.cmdline))
+
 
 class JobResult(object):
   def __init__(self):
@@ -217,7 +222,8 @@ class JobResult(object):
     self.num_failures = 0
     self.retries = 0
     self.message = ''
-
+    self.cpu_estimated = 1
+    self.cpu_measured = 0
 
 class Job(object):
   """Manages one job."""
@@ -307,7 +313,9 @@ class Job(object):
           sys = float(m.group(3))
           if real > 0.5:
             cores = (user + sys) / real
-            measurement = '; cpu_cost=%.01f; estimated=%.01f' % (cores, self._spec.cpu_cost)
+            self.result.cpu_measured = float('%.01f' % cores)
+            self.result.cpu_estimated = float('%.01f' % self._spec.cpu_cost)
+            measurement = '; cpu_cost=%.01f; estimated=%.01f' % (self.result.cpu_measured, self.result.cpu_estimated)
         if not self._quiet_success:
           message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
               self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),

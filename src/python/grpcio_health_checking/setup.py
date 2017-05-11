@@ -29,7 +29,6 @@
 """Setup module for the GRPC Python package's optional health checking."""
 
 import os
-import sys
 
 import setuptools
 
@@ -47,7 +46,7 @@ PACKAGE_DIRECTORIES = {
 SETUP_REQUIRES = (
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),)
 
-INSTALL_REQUIRES = ('protobuf>=3.2.0',
+INSTALL_REQUIRES = ('protobuf>=3.3.0',
                     'grpcio>={version}'.format(version=grpc_version.VERSION),)
 
 COMMAND_CLASS = {

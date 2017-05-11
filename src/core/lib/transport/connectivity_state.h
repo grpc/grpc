@@ -35,6 +35,7 @@
 #define GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H
 
 #include <grpc/grpc.h>
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 typedef struct grpc_connectivity_state_watcher {
@@ -57,7 +58,7 @@ typedef struct {
   char *name;
 } grpc_connectivity_state_tracker;
 
-extern int grpc_connectivity_state_trace;
+extern grpc_tracer_flag grpc_connectivity_state_trace;
 
 /** enum --> string conversion */
 const char *grpc_connectivity_state_name(grpc_connectivity_state state);

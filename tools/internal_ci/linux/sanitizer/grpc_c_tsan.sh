@@ -33,8 +33,6 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../../..
 
-git submodule update --init
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# download docker images from dockerhub
-export DOCKERHUB_ORGANIZATION=grpctesting
-tools/run_tests/run_tests_matrix.py -f c tsan
+tools/run_tests/run_tests_matrix.py -f c tsan --inner_jobs 16 -j 1 --internal_ci

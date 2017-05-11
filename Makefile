@@ -92,6 +92,7 @@ CC_opt = $(DEFAULT_CC)
 CXX_opt = $(DEFAULT_CXX)
 LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
+CXXFLAGS_opt = -fno-exceptions
 CPPFLAGS_opt = -O2
 DEFINES_opt = NDEBUG
 
@@ -99,7 +100,7 @@ VALID_CONFIG_asan-trace-cmp = 1
 REQUIRE_CUSTOM_LIBRARIES_asan-trace-cmp = 1
 CC_asan-trace-cmp = clang
 CXX_asan-trace-cmp = clang++
-LD_asan-trace-cmp = clang
+LD_asan-trace-cmp = clang++
 LDXX_asan-trace-cmp = clang++
 CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-trace-cmp = -fsanitize=address
@@ -109,6 +110,7 @@ CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)
 LD_dbg = $(DEFAULT_CC)
 LDXX_dbg = $(DEFAULT_CXX)
+CXXFLAGS_dbg = -fno-exceptions
 CPPFLAGS_dbg = -O0
 DEFINES_dbg = _DEBUG DEBUG
 
@@ -116,7 +118,7 @@ VALID_CONFIG_asan = 1
 REQUIRE_CUSTOM_LIBRARIES_asan = 1
 CC_asan = clang
 CXX_asan = clang++
-LD_asan = clang
+LD_asan = clang++
 LDXX_asan = clang++
 CPPFLAGS_asan = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan = -fsanitize=address
@@ -125,7 +127,7 @@ VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
 CC_msan = clang
 CXX_msan = clang++
-LD_msan = clang
+LD_msan = clang++
 LDXX_msan = clang++
 CPPFLAGS_msan = -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
@@ -152,7 +154,7 @@ VALID_CONFIG_asan-noleaks = 1
 REQUIRE_CUSTOM_LIBRARIES_asan-noleaks = 1
 CC_asan-noleaks = clang
 CXX_asan-noleaks = clang++
-LD_asan-noleaks = clang
+LD_asan-noleaks = clang++
 LDXX_asan-noleaks = clang++
 CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-noleaks = -fsanitize=address
@@ -170,7 +172,7 @@ VALID_CONFIG_ubsan = 1
 REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
 CC_ubsan = clang
 CXX_ubsan = clang++
-LD_ubsan = clang
+LD_ubsan = clang++
 LDXX_ubsan = clang++
 CPPFLAGS_ubsan = -O0 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
 LDFLAGS_ubsan = -fsanitize=undefined,unsigned-integer-overflow
@@ -180,7 +182,7 @@ VALID_CONFIG_tsan = 1
 REQUIRE_CUSTOM_LIBRARIES_tsan = 1
 CC_tsan = clang
 CXX_tsan = clang++
-LD_tsan = clang
+LD_tsan = clang++
 LDXX_tsan = clang++
 CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_tsan = -fsanitize=thread
@@ -306,10 +308,6 @@ else
 TMPOUT = `mktemp /tmp/test-out-XXXXXX`
 endif
 
-# Detect if we can use C++11
-CXX11_CHECK_CMD = $(CXX) -std=c++11 -o $(TMPOUT) -c test/build/c++11.cc
-HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
-
 CHECK_SHADOW_WORKS_CMD = $(CC) -std=c99 -Werror -Wshadow -o $(TMPOUT) -c test/build/shadow.c
 HAS_WORKING_SHADOW = $(shell $(CHECK_SHADOW_WORKS_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_WORKING_SHADOW),true)
@@ -340,11 +338,7 @@ HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
 
 CFLAGS += -std=c99 -Wsign-conversion -Wconversion $(W_SHADOW) $(W_EXTRA_SEMI)
-ifeq ($(HAS_CXX11),true)
 CXXFLAGS += -std=c++11
-else
-CXXFLAGS += -std=c++0x
-endif
 CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
 LDFLAGS += -g
 
@@ -976,6 +970,7 @@ census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
 census_resource_test: $(BINDIR)/$(CONFIG)/census_resource_test
 census_trace_context_test: $(BINDIR)/$(CONFIG)/census_trace_context_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
+check_epollexclusive: $(BINDIR)/$(CONFIG)/check_epollexclusive
 chttp2_hpack_encoder_test: $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test
 chttp2_stream_map_test: $(BINDIR)/$(CONFIG)/chttp2_stream_map_test
 chttp2_varint_test: $(BINDIR)/$(CONFIG)/chttp2_varint_test
@@ -989,7 +984,7 @@ dns_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_test
 dualstack_socket_test: $(BINDIR)/$(CONFIG)/dualstack_socket_test
 endpoint_pair_test: $(BINDIR)/$(CONFIG)/endpoint_pair_test
 error_test: $(BINDIR)/$(CONFIG)/error_test
-ev_epoll_linux_test: $(BINDIR)/$(CONFIG)/ev_epoll_linux_test
+ev_epollsig_linux_test: $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test
 fake_resolver_test: $(BINDIR)/$(CONFIG)/fake_resolver_test
 fd_conservation_posix_test: $(BINDIR)/$(CONFIG)/fd_conservation_posix_test
 fd_posix_test: $(BINDIR)/$(CONFIG)/fd_posix_test
@@ -1152,6 +1147,7 @@ grpc_python_plugin: $(BINDIR)/$(CONFIG)/grpc_python_plugin
 grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 grpc_tool_test: $(BINDIR)/$(CONFIG)/grpc_tool_test
 grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
+grpclb_end2end_test: $(BINDIR)/$(CONFIG)/grpclb_end2end_test
 grpclb_test: $(BINDIR)/$(CONFIG)/grpclb_test
 health_service_end2end_test: $(BINDIR)/$(CONFIG)/health_service_end2end_test
 http2_client: $(BINDIR)/$(CONFIG)/http2_client
@@ -1160,6 +1156,7 @@ interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
 json_run_localhost: $(BINDIR)/$(CONFIG)/json_run_localhost
+memory_test: $(BINDIR)/$(CONFIG)/memory_test
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
 noop-benchmark: $(BINDIR)/$(CONFIG)/noop-benchmark
@@ -1376,7 +1373,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/dualstack_socket_test \
   $(BINDIR)/$(CONFIG)/endpoint_pair_test \
   $(BINDIR)/$(CONFIG)/error_test \
-  $(BINDIR)/$(CONFIG)/ev_epoll_linux_test \
+  $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test \
   $(BINDIR)/$(CONFIG)/fake_resolver_test \
   $(BINDIR)/$(CONFIG)/fd_conservation_posix_test \
   $(BINDIR)/$(CONFIG)/fd_posix_test \
@@ -1575,6 +1572,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
+  $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
   $(BINDIR)/$(CONFIG)/grpclb_test \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
@@ -1583,6 +1581,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
+  $(BINDIR)/$(CONFIG)/memory_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
@@ -1695,6 +1694,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
+  $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
   $(BINDIR)/$(CONFIG)/grpclb_test \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
@@ -1703,6 +1703,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
+  $(BINDIR)/$(CONFIG)/memory_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
@@ -1788,8 +1789,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/endpoint_pair_test || ( echo test endpoint_pair_test failed ; exit 1 )
 	$(E) "[RUN]     Testing error_test"
 	$(Q) $(BINDIR)/$(CONFIG)/error_test || ( echo test error_test failed ; exit 1 )
-	$(E) "[RUN]     Testing ev_epoll_linux_test"
-	$(Q) $(BINDIR)/$(CONFIG)/ev_epoll_linux_test || ( echo test ev_epoll_linux_test failed ; exit 1 )
+	$(E) "[RUN]     Testing ev_epollsig_linux_test"
+	$(Q) $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test || ( echo test ev_epollsig_linux_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fake_resolver_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fake_resolver_test || ( echo test fake_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_conservation_posix_test"
@@ -2076,12 +2077,16 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_tool_test || ( echo test grpc_tool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_api_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpclb_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpclb_end2end_test || ( echo test grpclb_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_test || ( echo test grpclb_test failed ; exit 1 )
 	$(E) "[RUN]     Testing health_service_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/health_service_end2end_test || ( echo test health_service_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
+	$(E) "[RUN]     Testing memory_test"
+	$(Q) $(BINDIR)/$(CONFIG)/memory_test || ( echo test memory_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
 	$(Q) $(BINDIR)/$(CONFIG)/mock_test || ( echo test mock_test failed ; exit 1 )
 	$(E) "[RUN]     Testing noop-benchmark"
@@ -2133,7 +2138,7 @@ test_python: static_c
 tools: tools_c tools_cxx
 
 
-tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt
+tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/check_epollexclusive $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 
 tools_cxx: privatelibs_cxx
 
@@ -2898,7 +2903,6 @@ LIBGRPC_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -2909,7 +2913,11 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
+    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
+    src/core/lib/iomgr/ev_epollex_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -2919,6 +2927,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
@@ -2955,6 +2964,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -2991,7 +3001,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -3009,6 +3019,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \
@@ -3063,6 +3074,7 @@ LIBGRPC_SRC = \
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
+    src/core/tsi/transport_security_adapter.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/filters/client_channel/channel_connectivity.c \
@@ -3091,8 +3103,10 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -3221,7 +3235,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -3232,7 +3245,11 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
+    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
+    src/core/lib/iomgr/ev_epollex_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -3242,6 +3259,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
@@ -3278,6 +3296,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -3314,7 +3333,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -3332,6 +3351,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
     src/core/ext/transport/cronet/client/secure/cronet_channel_create.c \
     src/core/ext/transport/cronet/transport/cronet_api_dummy.c \
     src/core/ext/transport/cronet/transport/cronet_transport.c \
@@ -3410,6 +3430,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
+    src/core/tsi/transport_security_adapter.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/filters/load_reporting/load_reporting.c \
     src/core/ext/filters/load_reporting/load_reporting_filter.c \
@@ -3530,7 +3551,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -3541,7 +3561,11 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
+    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
+    src/core/lib/iomgr/ev_epollex_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -3551,6 +3575,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
@@ -3587,6 +3612,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -3623,7 +3649,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -3641,6 +3667,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -3758,7 +3785,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -3769,7 +3795,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
+    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
+    src/core/lib/iomgr/ev_epollex_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -3779,6 +3809,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
@@ -3815,6 +3846,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -3851,7 +3883,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -3869,6 +3901,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.c \
@@ -3929,8 +3962,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/filters/load_reporting/load_reporting.c \
     src/core/ext/filters/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -4154,7 +4189,6 @@ LIBGRPC++_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -4165,7 +4199,11 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
+    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
+    src/core/lib/iomgr/ev_epollex_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -4175,6 +4213,7 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
@@ -4211,6 +4250,7 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -4247,7 +4287,7 @@ LIBGRPC++_SRC = \
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -4265,6 +4305,7 @@ LIBGRPC++_SRC = \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -4487,7 +4528,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -4498,7 +4538,11 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
+    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
+    src/core/lib/iomgr/ev_epollex_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -4508,6 +4552,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
@@ -4544,6 +4589,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -4580,7 +4626,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -4598,6 +4644,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -5148,8 +5195,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/config_protobuf.h \
-    include/grpc++/impl/codegen/thrift_serializer.h \
-    include/grpc++/impl/codegen/thrift_utils.h \
 
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
 
@@ -5248,7 +5293,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -5259,7 +5303,11 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
+    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
+    src/core/lib/iomgr/ev_epollex_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -5269,6 +5317,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
@@ -5305,6 +5354,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -5341,7 +5391,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -5359,6 +5409,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -8263,8 +8314,8 @@ PUBLIC_HEADERS_C += \
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
-$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
-$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion -Wno-invalid-source-encoding
+$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
+$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
 
 $(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS) 
 	$(E) "[AR]      Creating $@"
@@ -8984,6 +9035,38 @@ endif
 endif
 
 
+CHECK_EPOLLEXCLUSIVE_SRC = \
+    test/build/check_epollexclusive.c \
+
+CHECK_EPOLLEXCLUSIVE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHECK_EPOLLEXCLUSIVE_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/check_epollexclusive: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/check_epollexclusive: $(CHECK_EPOLLEXCLUSIVE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHECK_EPOLLEXCLUSIVE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/check_epollexclusive
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/build/check_epollexclusive.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_check_epollexclusive: $(CHECK_EPOLLEXCLUSIVE_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHECK_EPOLLEXCLUSIVE_OBJS:.o=.dep)
+endif
+endif
+
+
 CHTTP2_HPACK_ENCODER_TEST_SRC = \
     test/core/transport/chttp2/hpack_encoder_test.c \
 
@@ -9400,34 +9483,34 @@ endif
 endif
 
 
-EV_EPOLL_LINUX_TEST_SRC = \
-    test/core/iomgr/ev_epoll_linux_test.c \
+EV_EPOLLSIG_LINUX_TEST_SRC = \
+    test/core/iomgr/ev_epollsig_linux_test.c \
 
-EV_EPOLL_LINUX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EV_EPOLL_LINUX_TEST_SRC))))
+EV_EPOLLSIG_LINUX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EV_EPOLLSIG_LINUX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/ev_epoll_linux_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/ev_epollsig_linux_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/ev_epoll_linux_test: $(EV_EPOLL_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/ev_epollsig_linux_test: $(EV_EPOLLSIG_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(EV_EPOLL_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ev_epoll_linux_test
+	$(Q) $(LD) $(LDFLAGS) $(EV_EPOLLSIG_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/iomgr/ev_epoll_linux_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/ev_epollsig_linux_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_ev_epoll_linux_test: $(EV_EPOLL_LINUX_TEST_OBJS:.o=.dep)
+deps_ev_epollsig_linux_test: $(EV_EPOLLSIG_LINUX_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(EV_EPOLL_LINUX_TEST_OBJS:.o=.dep)
+-include $(EV_EPOLLSIG_LINUX_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -15085,6 +15168,53 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
+GRPCLB_END2END_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
+    test/cpp/end2end/grpclb_end2end_test.cc \
+
+GRPCLB_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPCLB_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpclb_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/grpclb_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpclb_end2end_test: $(PROTOBUF_DEP) $(GRPCLB_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPCLB_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpclb_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v1/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/grpclb_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpclb_end2end_test: $(GRPCLB_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPCLB_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/grpclb_end2end_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
+
+
 GRPCLB_TEST_SRC = \
     $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
     test/cpp/grpclb/grpclb_test.cc \
@@ -15393,6 +15523,49 @@ deps_json_run_localhost: $(JSON_RUN_LOCALHOST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(JSON_RUN_LOCALHOST_OBJS:.o=.dep)
+endif
+endif
+
+
+MEMORY_TEST_SRC = \
+    test/core/support/memory_test.cc \
+
+MEMORY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MEMORY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/memory_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/memory_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/memory_test: $(PROTOBUF_DEP) $(MEMORY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(MEMORY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/memory_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/memory_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_memory_test: $(MEMORY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(MEMORY_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -19540,6 +19713,7 @@ src/core/plugin_registry/grpc_plugin_registry.c: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security.c: $(OPENSSL_DEP)
+src/core/tsi/transport_security_adapter.c: $(OPENSSL_DEP)
 src/cpp/client/cronet_credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)

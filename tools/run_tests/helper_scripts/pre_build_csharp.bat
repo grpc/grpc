@@ -42,8 +42,12 @@ mkdir build
 cd build
 mkdir %ARCHITECTURE%
 cd %ARCHITECTURE%
+
 @rem TODO(jtattermusch): Stop hardcoding path to yasm once Jenkins workers can locate yasm correctly
-cmake -G "Visual Studio 14 2015" -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON -DCMAKE_ASM_NASM_COMPILER="C:/Program Files (x86)/yasm/yasm.exe" ../../.. || goto :error
+@rem If yasm is not on the path, use hardcoded path instead.
+yasm --version || set USE_HARDCODED_YASM_PATH_MAYBE=-DCMAKE_ASM_NASM_COMPILER="C:/Program Files (x86)/yasm/yasm.exe"
+
+cmake -G "Visual Studio 14 2015" -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON %USE_HARDCODED_YASM_PATH_MAYBE% ../../.. || goto :error
 
 cd ..\..\..\src\csharp
 
