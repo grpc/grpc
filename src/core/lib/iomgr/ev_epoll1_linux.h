@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,14 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
+#ifndef GRPC_CORE_LIB_IOMGR_EV_EPOLL1_LINUX_H
+#define GRPC_CORE_LIB_IOMGR_EV_EPOLL1_LINUX_H
 
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/port.h"
 
-const grpc_event_engine_vtable *grpc_init_poll_posix(bool explicit_request);
-const grpc_event_engine_vtable *grpc_init_poll_cv_posix(bool explicit_request);
+// a polling engine that utilizes a singleton epoll set and turnstile polling
 
-#endif /* GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H */
+const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request);
+
+#endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLL1_LINUX_H */

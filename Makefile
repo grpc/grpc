@@ -991,7 +991,7 @@ dns_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_test
 dualstack_socket_test: $(BINDIR)/$(CONFIG)/dualstack_socket_test
 endpoint_pair_test: $(BINDIR)/$(CONFIG)/endpoint_pair_test
 error_test: $(BINDIR)/$(CONFIG)/error_test
-ev_epoll_linux_test: $(BINDIR)/$(CONFIG)/ev_epoll_linux_test
+ev_epollsig_linux_test: $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test
 fake_resolver_test: $(BINDIR)/$(CONFIG)/fake_resolver_test
 fd_conservation_posix_test: $(BINDIR)/$(CONFIG)/fd_conservation_posix_test
 fd_posix_test: $(BINDIR)/$(CONFIG)/fd_posix_test
@@ -1380,7 +1380,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/dualstack_socket_test \
   $(BINDIR)/$(CONFIG)/endpoint_pair_test \
   $(BINDIR)/$(CONFIG)/error_test \
-  $(BINDIR)/$(CONFIG)/ev_epoll_linux_test \
+  $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test \
   $(BINDIR)/$(CONFIG)/fake_resolver_test \
   $(BINDIR)/$(CONFIG)/fd_conservation_posix_test \
   $(BINDIR)/$(CONFIG)/fd_posix_test \
@@ -1796,8 +1796,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/endpoint_pair_test || ( echo test endpoint_pair_test failed ; exit 1 )
 	$(E) "[RUN]     Testing error_test"
 	$(Q) $(BINDIR)/$(CONFIG)/error_test || ( echo test error_test failed ; exit 1 )
-	$(E) "[RUN]     Testing ev_epoll_linux_test"
-	$(Q) $(BINDIR)/$(CONFIG)/ev_epoll_linux_test || ( echo test ev_epoll_linux_test failed ; exit 1 )
+	$(E) "[RUN]     Testing ev_epollsig_linux_test"
+	$(Q) $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test || ( echo test ev_epollsig_linux_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fake_resolver_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fake_resolver_test || ( echo test fake_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_conservation_posix_test"
@@ -2921,7 +2921,8 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -3247,7 +3248,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -3557,7 +3559,8 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -3785,7 +3788,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -4183,7 +4187,8 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -4516,7 +4521,8 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -5275,7 +5281,8 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -9416,34 +9423,34 @@ endif
 endif
 
 
-EV_EPOLL_LINUX_TEST_SRC = \
-    test/core/iomgr/ev_epoll_linux_test.c \
+EV_EPOLLSIG_LINUX_TEST_SRC = \
+    test/core/iomgr/ev_epollsig_linux_test.c \
 
-EV_EPOLL_LINUX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EV_EPOLL_LINUX_TEST_SRC))))
+EV_EPOLLSIG_LINUX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EV_EPOLLSIG_LINUX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/ev_epoll_linux_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/ev_epollsig_linux_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/ev_epoll_linux_test: $(EV_EPOLL_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/ev_epollsig_linux_test: $(EV_EPOLLSIG_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(EV_EPOLL_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ev_epoll_linux_test
+	$(Q) $(LD) $(LDFLAGS) $(EV_EPOLLSIG_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/iomgr/ev_epoll_linux_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/ev_epollsig_linux_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_ev_epoll_linux_test: $(EV_EPOLL_LINUX_TEST_OBJS:.o=.dep)
+deps_ev_epollsig_linux_test: $(EV_EPOLLSIG_LINUX_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(EV_EPOLL_LINUX_TEST_OBJS:.o=.dep)
+-include $(EV_EPOLLSIG_LINUX_TEST_OBJS:.o=.dep)
 endif
 endif
 

@@ -197,7 +197,8 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/error_internal.h
-  - src/core/lib/iomgr/ev_epoll_linux.h
+  - src/core/lib/iomgr/ev_epoll1_linux.h
+  - src/core/lib/iomgr/ev_epollsig_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -304,7 +305,8 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair_uv.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
-  - src/core/lib/iomgr/ev_epoll_linux.c
+  - src/core/lib/iomgr/ev_epoll1_linux.c
+  - src/core/lib/iomgr/ev_epollsig_linux.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
   - src/core/lib/iomgr/exec_ctx.c
@@ -1814,12 +1816,12 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: ev_epoll_linux_test
+- name: ev_epollsig_linux_test
   cpu_cost: 3
   build: test
   language: c
   src:
-  - test/core/iomgr/ev_epoll_linux_test.c
+  - test/core/iomgr/ev_epollsig_linux_test.c
   deps:
   - grpc_test_util
   - grpc

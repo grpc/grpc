@@ -31,13 +31,13 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_EV_EPOLL_LINUX_H
-#define GRPC_CORE_LIB_IOMGR_EV_EPOLL_LINUX_H
+#ifndef GRPC_CORE_LIB_IOMGR_EV_EPOLLSIG_LINUX_H
+#define GRPC_CORE_LIB_IOMGR_EV_EPOLLSIG_LINUX_H
 
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
-const grpc_event_engine_vtable *grpc_init_epoll_linux(void);
+const grpc_event_engine_vtable *grpc_init_epollsig_linux(bool explicit_request);
 
 #ifdef GRPC_LINUX_EPOLL
 void *grpc_fd_get_polling_island(grpc_fd *fd);
@@ -45,4 +45,4 @@ void *grpc_pollset_get_polling_island(grpc_pollset *ps);
 bool grpc_are_polling_islands_equal(void *p, void *q);
 #endif /* defined(GRPC_LINUX_EPOLL) */
 
-#endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLL_LINUX_H */
+#endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLLSIG_LINUX_H */

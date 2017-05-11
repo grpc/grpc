@@ -44,7 +44,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/iomgr/ev_epoll1_linux.h"
+#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
@@ -57,7 +58,8 @@ grpc_wakeup_fd grpc_global_wakeup_fd;
 static const grpc_event_engine_vtable *g_event_engine;
 static const char *g_poll_strategy_name = NULL;
 
-typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(void);
+typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(
+    bool explicit_request);
 
 typedef struct {
   const char *name;
@@ -65,7 +67,8 @@ typedef struct {
 } event_engine_factory;
 
 static const event_engine_factory g_factories[] = {
-    {"epoll", grpc_init_epoll_linux},
+    {"epollsig", grpc_init_epollsig_linux},
+    {"epoll1", grpc_init_epoll1_linux},
     {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
 };
@@ -102,7 +105,8 @@ static bool is(const char *want, const char *have) {
 static void try_engine(const char *engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
     if (is(engine, g_factories[i].name)) {
-      if ((g_event_engine = g_factories[i].factory())) {
+      if ((g_event_engine = g_factories[i].factory(
+               0 == strcmp(engine, g_factories[i].name)))) {
         g_poll_strategy_name = g_factories[i].name;
         gpr_log(GPR_DEBUG, "Using polling engine: %s", g_factories[i].name);
         return;

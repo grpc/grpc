@@ -392,7 +392,7 @@ endif()
 add_dependencies(buildtests_c endpoint_pair_test)
 add_dependencies(buildtests_c error_test)
 if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c ev_epoll_linux_test)
+add_dependencies(buildtests_c ev_epollsig_linux_test)
 endif()
 add_dependencies(buildtests_c fake_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -938,7 +938,8 @@ add_library(grpc
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -1266,7 +1267,8 @@ add_library(grpc_cronet
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -1577,7 +1579,8 @@ add_library(grpc_test_util
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -1833,7 +1836,8 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -2254,7 +2258,8 @@ add_library(grpc++
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -2579,7 +2584,8 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -3348,7 +3354,8 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -5447,12 +5454,12 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
-add_executable(ev_epoll_linux_test
-  test/core/iomgr/ev_epoll_linux_test.c
+add_executable(ev_epollsig_linux_test
+  test/core/iomgr/ev_epollsig_linux_test.c
 )
 
 
-target_include_directories(ev_epoll_linux_test
+target_include_directories(ev_epollsig_linux_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
@@ -5467,7 +5474,7 @@ target_include_directories(ev_epoll_linux_test
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
-target_link_libraries(ev_epoll_linux_test
+target_link_libraries(ev_epollsig_linux_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
