@@ -189,7 +189,7 @@
 #ifdef __GLIBC__
 #define GPR_POSIX_CRASH_HANDLER 1
 #else /* musl libc */
-#define GRPC_MSG_IOVLEN_TYPE int
+#define GPR_MUSL_LIBC_COMPAT 1
 #endif
 #elif defined(__APPLE__)
 #include <Availability.h>

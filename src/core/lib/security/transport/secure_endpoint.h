@@ -39,7 +39,7 @@
 
 struct tsi_frame_protector;
 
-extern int grpc_trace_secure_endpoint;
+extern grpc_tracer_flag grpc_trace_secure_endpoint;
 
 /* Takes ownership of protector and to_wrap, and refs leftover_slices. */
 grpc_endpoint *grpc_secure_endpoint_create(
