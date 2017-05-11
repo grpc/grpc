@@ -36,7 +36,7 @@
 void TrackCounters::Finish(benchmark::State &state) {
   std::ostringstream out;
   AddToLabel(out, state);
-  auto label = out.str();
+  std::string label = out.str();
   if (label.length() && label[0] == ' ') {
     label = label.substr(1);
   }
