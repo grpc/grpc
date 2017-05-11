@@ -1457,7 +1457,7 @@ def _build_and_run(
                                            suite_name=args.report_suite_name)
     return []
 
-  if not args.travis and not _has_epollexclusive() and 'epollex' in _POLLING_STRATEGIES[platform_string()]:
+  if 'epollex' in _POLLING_STRATEGIES[platform_string()] and not args.travis and not _has_epollexclusive():
     print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
     _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
