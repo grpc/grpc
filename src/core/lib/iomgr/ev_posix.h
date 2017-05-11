@@ -36,11 +36,14 @@
 
 #include <poll.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/workqueue.h"
+
+extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
 
 typedef struct grpc_fd grpc_fd;
 
@@ -64,7 +67,7 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_init)(grpc_pollset *pollset, gpr_mu **mu);
   void (*pollset_shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure);
-  void (*pollset_destroy)(grpc_pollset *pollset);
+  void (*pollset_destroy)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset);
   grpc_error *(*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker, gpr_timespec now,
                               gpr_timespec deadline);
@@ -92,8 +95,6 @@ typedef struct grpc_event_engine_vtable {
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
   void (*pollset_set_del_fd)(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
-
-  grpc_error *(*kick_poller)(void);
 
   void (*shutdown_engine)(void);
 

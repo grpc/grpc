@@ -35,6 +35,7 @@
 #define GRPC_CORE_LIB_SUPPORT_MPSCQ_H
 
 #include <grpc/support/atm.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 // Multiple-producer single-consumer lock free queue, based upon the
@@ -61,5 +62,8 @@ void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n);
 // Pop a node (returns NULL if no node is ready - which doesn't indicate that
 // the queue is empty!!)
 gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q);
+
+// Pop a node; sets *empty to true if the queue is empty, or false if it is not
+gpr_mpscq_node *gpr_mpscq_pop_and_check_end(gpr_mpscq *q, bool *empty);
 
 #endif /* GRPC_CORE_LIB_SUPPORT_MPSCQ_H */

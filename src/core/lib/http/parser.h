@@ -36,6 +36,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 
 /* Maximum length of a header string of the form 'Key: Value\r\n' */
@@ -121,6 +122,6 @@ grpc_error *grpc_http_parser_eof(grpc_http_parser *parser);
 void grpc_http_request_destroy(grpc_http_request *request);
 void grpc_http_response_destroy(grpc_http_response *response);
 
-extern int grpc_http1_trace;
+extern grpc_tracer_flag grpc_http1_trace;
 
 #endif /* GRPC_CORE_LIB_HTTP_PARSER_H */

@@ -90,11 +90,15 @@ class CoreCodegen final : public CoreCodegenInterface {
 
   grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                 size_t nslices) override;
-
+  grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
+                                           void (*destroy)(void*),
+                                           void* user_data) override;
   grpc_slice grpc_empty_slice() override;
   grpc_slice grpc_slice_malloc(size_t length) override;
   void grpc_slice_unref(grpc_slice slice) override;
+  grpc_slice grpc_slice_ref(grpc_slice slice) override;
   grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) override;
+  grpc_slice grpc_slice_split_head(grpc_slice* s, size_t split) override;
   void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice slice) override;
   void grpc_slice_buffer_pop(grpc_slice_buffer* sb) override;
   grpc_slice grpc_slice_from_static_buffer(const void* buffer,
