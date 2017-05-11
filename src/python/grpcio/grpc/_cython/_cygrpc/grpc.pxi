@@ -386,8 +386,38 @@ cdef extern from "grpc/grpc.h":
   void grpc_server_cancel_all_calls(grpc_server *server) nogil
   void grpc_server_destroy(grpc_server *server) nogil
 
+cdef extern from "src/core/lib/security/context/security_context.h":
+  ctypedef struct gpr_refcount:
+    pass
+
+  ctypedef struct grpc_auth_property_array:
+    grpc_auth_property *array
+    size_t count
+    size_t capacity
+  
+  ctypedef struct grpc_auth_context:
+    grpc_auth_context *chained
+    grpc_auth_property_array properties
+    gpr_refcount refcount
+    const char *peer_identity_property_name
+    grpc_pollset *pollset
 
 cdef extern from "grpc/grpc_security.h":
+
+  ctypedef struct grpc_auth_property:
+    char *name
+    char *value
+    size_t value_length
+
+  ctypedef struct grpc_auth_property_iterator:
+    const grpc_auth_context *ctx
+    size_t index
+    const char *name
+
+  const grpc_auth_property *grpc_auth_property_iterator_next(
+    grpc_auth_property_iterator *it) nogil
+ 
+  int grpc_auth_context_peer_is_authenticated(const grpc_auth_context *ctx)
 
   ctypedef enum grpc_ssl_roots_override_result:
     GRPC_SSL_ROOTS_OVERRIDE_OK
@@ -461,11 +491,10 @@ cdef extern from "grpc/grpc_security.h":
 
   grpc_call_error grpc_call_set_credentials(grpc_call *call,
                                             grpc_call_credentials *creds) nogil
-
-  ctypedef struct grpc_auth_context:
-    # We don't care about the internals (and in fact don't know them)
+  ctypedef struct grpc_pollset:
     pass
 
+    
   ctypedef struct grpc_auth_metadata_context:
     const char *service_url
     const char *method_name
@@ -486,6 +515,7 @@ cdef extern from "grpc/grpc_security.h":
   grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
       grpc_metadata_credentials_plugin plugin, void *reserved) nogil
 
+  grpc_auth_context* grpc_call_auth_context(grpc_call* call) nogil;
 
 cdef extern from "grpc/compression.h":
 
@@ -522,3 +552,4 @@ cdef extern from "grpc/compression.h":
   int grpc_compression_options_is_algorithm_enabled(
       const grpc_compression_options *opts,
       grpc_compression_algorithm algorithm) nogil
+

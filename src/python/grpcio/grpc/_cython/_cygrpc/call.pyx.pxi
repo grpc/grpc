@@ -114,3 +114,48 @@ cdef class Call:
   def is_valid(self):
     return self.c_call != NULL
 
+  def auth_context(self):
+    w_auth_context = CallAuthContext()
+    with nogil:
+      w_auth_context.c_auth_context = grpc_call_auth_context(self.c_call)
+    return w_auth_context
+
+cdef class CallAuthContext:
+
+  def __cinit__(self):
+    self.c_auth_context = NULL
+
+  def is_authenticated(self):
+    if self.c_auth_context is not NULL:
+      return grpc_auth_context_peer_is_authenticated(self.c_auth_context) != 0
+    return False
+
+  def peer_identity_name(self):
+    if self.c_auth_context is not NULL:
+      return self.c_auth_context.peer_identity_property_name
+    else:
+      return None
+
+  def properties(self):
+    """Yields all properties in (name,value) tuples."""
+    cdef grpc_auth_property_iterator it = [ self.c_auth_context, 0, NULL]
+    cdef grpc_auth_property *prop
+    while True:
+      with nogil:
+        prop = grpc_auth_property_iterator_next(&it)
+      if prop is NULL:
+        break;
+      yield (prop.name, prop.value[:prop.value_length])
+
+  def properties_dict(self):
+    """Returns dictionary with a list of values for each property name."""
+    props_dicts = {}
+    for name, value in self.properties():
+      if name not in props_dicts:
+        props_dicts[name] = []
+      props_dicts[name].append(value)
+    return props_dicts
+
+  def find_property_values(self, name):
+    """Returns a list of all values for a given property name."""
+    return [x[1] for x in self.properties() if x[0] == name]

@@ -285,6 +285,9 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.details = _common.encode(details)
 
+    def auth_context(self):
+        with self._state.condition:
+            return self._rpc_event.operation_call.auth_context()
 
 class _RequestIterator(object):
 
