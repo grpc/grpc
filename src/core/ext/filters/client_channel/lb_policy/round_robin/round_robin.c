@@ -75,7 +75,7 @@
 
 typedef struct round_robin_lb_policy round_robin_lb_policy;
 
-int grpc_lb_round_robin_trace = 0;
+grpc_tracer_flag grpc_lb_round_robin_trace = GRPC_TRACER_INITIALIZER(false);
 
 /** List of entities waiting for a pick.
  *
@@ -201,7 +201,7 @@ static void advance_last_picked_locked(round_robin_lb_policy *p) {
     GPR_ASSERT(p->ready_list_last_pick == &p->ready_list);
   }
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG,
             "[Readylist, RR: %p] Advanced last pick. Now at node %p (SC %p, "
             "CSC %p)",
@@ -231,7 +231,7 @@ static ready_list *add_connected_sc_locked(round_robin_lb_policy *p,
     p->ready_list.prev->next = new_elem;
     p->ready_list.prev = new_elem;
   }
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "[Readylist] Adding node %p (Conn. SC %p)",
             (void *)new_elem, (void *)sd->subchannel);
   }
@@ -259,7 +259,7 @@ static void remove_disconnected_sc_locked(round_robin_lb_policy *p,
     node->next->prev = node->prev;
   }
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "[Readylist] Removed node %p (SC %p)", (void *)node,
             (void *)node->subchannel);
   }
@@ -278,7 +278,7 @@ static bool is_ready_list_empty(round_robin_lb_policy *p) {
 static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   ready_list *elem;
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "Destroying Round Robin %p", (void *)pol);
   }
   for (size_t i = 0; i < p->num_subchannels; i++) {
@@ -308,7 +308,7 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "Shutting down Round Robin %p", (void *)pol);
   }
   p->shutdown = true;
@@ -416,7 +416,7 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   pending_pick *pp;
   ready_list *selected;
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "Round Robin %p trying to pick", (void *)pol);
   }
 
@@ -429,7 +429,7 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if (user_data != NULL) {
       *user_data = selected->user_data;
     }
-    if (grpc_lb_round_robin_trace) {
+    if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_DEBUG,
               "[RR pick] target <-- connected subchannel %p (node %p)",
               (void *)*target, (void *)selected);
@@ -532,7 +532,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_ERROR_REF(error);
 
   if (sd->updating) {
-    if (grpc_lb_round_robin_trace) {
+    if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_DEBUG, "Round Robin %p disposing of outdated subchannel %p",
               (void*)p, (void *)sd->subchannel);
     }
@@ -584,7 +584,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         if (pp->user_data != NULL) {
           *pp->user_data = selected->user_data;
         }
-        if (grpc_lb_round_robin_trace) {
+        if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
           gpr_log(GPR_DEBUG,
                   "Round Robin %p, subchannel %p ready. (node %p)",
                   (void*)p, (void *)selected->subchannel, (void *)selected);
@@ -705,7 +705,7 @@ static bool rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     if (!addresses->addresses[i].is_balancer) ++num_addrs;
   }
   if (num_addrs == 0) return false;
-  if (grpc_lb_round_robin_trace) {
+    if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "Round Robin %p received update with %lu addresses", (void*)p, (unsigned long)num_addrs);
   }
 
@@ -782,7 +782,7 @@ static bool rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     if (sc_args[i].ignore) continue;
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args[i].args);
-    if (grpc_lb_round_robin_trace) {
+    if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
       char *address_uri = grpc_sockaddr_to_uri(&addresses->addresses[i].address);
       gpr_log(GPR_DEBUG, "Round Robin %p created subchannel %p for address uri %s",
               (void*)p, (void *)subchannel, address_uri);
@@ -857,7 +857,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "Created Round Robin %p with %lu subchannels",
             (void *)p, (unsigned long)p->num_subchannels);
   }

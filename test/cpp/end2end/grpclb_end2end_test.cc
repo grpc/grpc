@@ -666,14 +666,14 @@ TEST_F(UpdatesTest, UpdateBalancers) {
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
 
-  // EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
-  // EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
+   EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+   EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
 
-  // EXPECT_EQ(1, balancer_servers_[1].service_->request_count());
-  // EXPECT_EQ(1, balancer_servers_[1].service_->response_count());
+   EXPECT_EQ(1, balancer_servers_[1].service_->request_count());
+   EXPECT_EQ(1, balancer_servers_[1].service_->response_count());
 
-  // EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
-  // EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
+   EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
+   EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
@@ -748,14 +748,14 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
 
-  //  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
-  //  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
-  //
-  //  EXPECT_EQ(2, balancer_servers_[1].service_->request_count());
-  //  EXPECT_EQ(2, balancer_servers_[1].service_->response_count());
-  //
-  //  EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
-  //  EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
+    EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+    EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
+  
+    EXPECT_EQ(2, balancer_servers_[1].service_->request_count());
+    EXPECT_EQ(2, balancer_servers_[1].service_->response_count());
+  
+    EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
+    EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
@@ -817,12 +817,12 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 2 ==========");
   SetNextResolution(addresses);
   gpr_log(GPR_INFO, "========= UPDATE 2 DONE ==========");
-//  EXPECT_EQ(0, balancer_servers_[0].service_->request_count());
-//  EXPECT_EQ(0, balancer_servers_[0].service_->response_count());
-//  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
-//  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
-//  EXPECT_EQ(1, balancer_servers_[2].service_->request_count());
-//  EXPECT_EQ(1, balancer_servers_[2].service_->response_count());
+  EXPECT_EQ(0, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(1, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(1, balancer_servers_[2].service_->response_count());
 
   gpr_log(GPR_INFO, "========= BEFORE THIRD BATCH ==========");
   statuses_and_responses = SendRpc(kMessage_, 10 * num_backends_);
@@ -832,14 +832,14 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
 
-//  EXPECT_EQ(0, balancer_servers_[0].service_->request_count());
-//  EXPECT_EQ(0, balancer_servers_[0].service_->response_count());
-//
-//  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
-//  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
-//
-//  EXPECT_EQ(2, balancer_servers_[2].service_->request_count());
-//  EXPECT_EQ(2, balancer_servers_[2].service_->response_count());
+  EXPECT_EQ(0, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[0].service_->response_count());
+
+  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
+
+  EXPECT_EQ(2, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(2, balancer_servers_[2].service_->response_count());
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());

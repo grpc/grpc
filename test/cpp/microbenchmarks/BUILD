@@ -92,7 +92,7 @@ cc_test(
 cc_test(
     name = "bm_fullstack_trickle",
     srcs = ["bm_fullstack_trickle.cc"],
-    deps = [":helpers"],
+    deps = [":helpers", "//external:gflags"],
 )
 
 cc_test(

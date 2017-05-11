@@ -33,7 +33,7 @@ the script also supports orchestrating test runs with client and server running 
 to BigQuery.
 
 ###### Example
-`tools/run_tests/run_peformance_tests.py -l c++ node`
+`tools/run_tests/run_performance_tests.py -l c++ node`
 
 ###### Useful options
 - `--regex` use regex to select particular scenarios to run.

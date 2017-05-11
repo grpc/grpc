@@ -51,6 +51,15 @@ If you plan to build from source and run tests, install the following as well:
  $ brew install gflags
 ```
 
+*Tip*: when building, 
+you *may* want to explicitly set the `LIBTOOL` and `LIBTOOLIZE`
+environment variables when running `make` to ensure the version
+installed by `brew` is being used:
+
+```sh
+ $ LIBTOOL=glibtool LIBTOOLIZE=glibtoolize make
+```
+
 ## Protoc
 
 By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
