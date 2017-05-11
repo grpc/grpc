@@ -169,19 +169,16 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
   result = tsi_handshaker_result_get_unused_bytes(
       h->handshaker_result, &unused_bytes, &unused_bytes_size);
   if (unused_bytes_size > 0) {
-    gpr_slice slice =
+    grpc_slice slice =
         grpc_slice_from_copied_buffer((char *)unused_bytes, unused_bytes_size);
     grpc_slice_buffer_add(&h->left_overs, slice);
   }
   // Create secure endpoint.
   h->args->endpoint = grpc_secure_endpoint_create(
       protector, h->args->endpoint, h->left_overs.slices, h->left_overs.count);
-  h->left_overs.count = 0;
-  h->left_overs.length = 0;
   tsi_handshaker_result_destroy(h->handshaker_result);
   h->handshaker_result = NULL;
-  // Clear out the read buffer before it gets passed to the transport,
-  // since any excess bytes were already copied to h->left_overs.
+  // Clear out the read buffer before it gets passed to the transport.
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, h->args->read_buffer);
   // Add auth context to channel args.
   grpc_arg auth_context_arg = grpc_auth_context_to_arg(h->auth_context);
