@@ -40,7 +40,7 @@ void TrackCounters::Finish(benchmark::State &state) {
   if (label.length() && label[0] == ' ') {
     label = label.substr(1);
   }
-  state.SetLabel(label);
+  state.SetLabel(label.c_str());
 }
 
 void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
