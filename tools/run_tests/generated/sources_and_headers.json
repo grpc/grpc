@@ -5925,7 +5925,6 @@
   }, 
   {
     "deps": [
-      "gpr", 
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
@@ -8914,9 +8913,7 @@
   }, 
   {
     "deps": [
-      "gpr", 
       "grpc++_codegen_base", 
-      "grpc_base", 
       "nanopb"
     ], 
     "headers": [
