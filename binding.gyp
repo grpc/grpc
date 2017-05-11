@@ -675,6 +675,7 @@
         'src/core/lib/iomgr/endpoint_pair_windows.c',
         'src/core/lib/iomgr/error.c',
         'src/core/lib/iomgr/ev_epoll_linux.c',
+        'src/core/lib/iomgr/ev_epoll_thread_pool_linux.c',
         'src/core/lib/iomgr/ev_poll_posix.c',
         'src/core/lib/iomgr/ev_posix.c',
         'src/core/lib/iomgr/exec_ctx.c',

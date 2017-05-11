@@ -449,7 +449,9 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
 
-  if (poll_strategy != NULL && strcmp(poll_strategy, "epoll") == 0) {
+  if (poll_strategy != NULL &&
+      (strcmp(poll_strategy, "epoll") == 0 ||
+       strcmp(poll_strategy, "epoll-threadpool") == 0)) {
     pollset_set_test_basic();
     pollset_set_test_dup_fds();
     pollset_set_test_empty_pollset();
