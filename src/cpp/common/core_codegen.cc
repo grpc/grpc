@@ -134,6 +134,12 @@ grpc_byte_buffer* CoreCodegen::grpc_raw_byte_buffer_create(grpc_slice* slice,
   return ::grpc_raw_byte_buffer_create(slice, nslices);
 }
 
+grpc_slice CoreCodegen::grpc_slice_new_with_user_data(void* p, size_t len,
+                                                      void (*destroy)(void*),
+                                                      void* user_data) {
+  return ::grpc_slice_new_with_user_data(p, len, destroy, user_data);
+}
+
 grpc_slice CoreCodegen::grpc_empty_slice() { return ::grpc_empty_slice(); }
 
 grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {
@@ -144,8 +150,16 @@ void CoreCodegen::grpc_slice_unref(grpc_slice slice) {
   ::grpc_slice_unref(slice);
 }
 
+grpc_slice CoreCodegen::grpc_slice_ref(grpc_slice slice) {
+  return ::grpc_slice_ref(slice);
+}
+
 grpc_slice CoreCodegen::grpc_slice_split_tail(grpc_slice* s, size_t split) {
   return ::grpc_slice_split_tail(s, split);
+}
+
+grpc_slice CoreCodegen::grpc_slice_split_head(grpc_slice* s, size_t split) {
+  return ::grpc_slice_split_head(s, split);
 }
 
 grpc_slice CoreCodegen::grpc_slice_from_static_buffer(const void* buffer,

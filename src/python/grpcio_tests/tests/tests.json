@@ -12,6 +12,7 @@
   "unit._api_test.AllTest",
   "unit._api_test.ChannelConnectivityTest",
   "unit._api_test.ChannelTest",
+  "unit._auth_context_test.AuthContextTest",
   "unit._auth_test.AccessTokenCallCredentialsTest",
   "unit._auth_test.GoogleCallCredentialsTest",
   "unit._channel_args_test.ChannelArgsTest",

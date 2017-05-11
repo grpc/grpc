@@ -218,18 +218,18 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
               parser->incoming_settings[id] != parser->value) {
             t->initial_window_update +=
                 (int64_t)parser->value - parser->incoming_settings[id];
-            if (grpc_http_trace) {
+            if (GRPC_TRACER_ON(grpc_http_trace)) {
               gpr_log(GPR_DEBUG, "adding %d for initial_window change",
                       (int)t->initial_window_update);
             }
           }
           parser->incoming_settings[id] = parser->value;
-          if (grpc_http_trace) {
+          if (GRPC_TRACER_ON(grpc_http_trace)) {
             gpr_log(GPR_DEBUG, "CHTTP2:%s:%s: got setting %s = %d",
                     t->is_client ? "CLI" : "SVR", t->peer_string, sp->name,
                     parser->value);
           }
-        } else if (grpc_http_trace) {
+        } else if (GRPC_TRACER_ON(grpc_http_trace)) {
           gpr_log(GPR_ERROR, "CHTTP2: Ignoring unknown setting %d (value %d)",
                   parser->id, parser->value);
         }

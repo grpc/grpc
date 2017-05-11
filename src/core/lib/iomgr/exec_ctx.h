@@ -93,6 +93,8 @@ struct grpc_exec_ctx {
 
 extern grpc_closure_scheduler *grpc_schedule_on_exec_ctx;
 
+bool grpc_exec_ctx_has_work(grpc_exec_ctx *exec_ctx);
+
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.
  *  Caller must guarantee that no interfering locks are held.
  *  Returns true if work was performed, false otherwise. */

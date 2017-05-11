@@ -116,7 +116,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
   elif 'win32' in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -D_PYTHON_MSVC'
   elif "linux" in sys.platform:
-    EXTRA_ENV_COMPILE_ARGS += ' -std=c++11 -fvisibility=hidden -fno-wrapv'
+    EXTRA_ENV_COMPILE_ARGS += ' -std=c++11 -std=gnu99 -fvisibility=hidden -fno-wrapv'
   elif "darwin" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden -fno-wrapv'
 

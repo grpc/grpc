@@ -36,7 +36,7 @@
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL
 
-#include "src/core/lib/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -63,11 +63,11 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
 
-/* TODO: sreek - Move this to init.c and initialize this like other tracers. */
-static int grpc_polling_trace = 0; /* Disabled by default */
-#define GRPC_POLLING_TRACE(fmt, ...)       \
-  if (grpc_polling_trace) {                \
-    gpr_log(GPR_INFO, (fmt), __VA_ARGS__); \
+#define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
+
+#define GRPC_POLLING_TRACE(fmt, ...)        \
+  if (GRPC_TRACER_ON(grpc_polling_trace)) { \
+    gpr_log(GPR_INFO, (fmt), __VA_ARGS__);  \
   }
 
 /* Uncomment the following to enable extra checks on poll_object operations */
@@ -75,11 +75,6 @@ static int grpc_polling_trace = 0; /* Disabled by default */
 
 static int grpc_wakeup_signal = -1;
 static bool is_grpc_wakeup_signal_initialized = false;
-
-/* TODO: sreek: Right now, this wakes up all pollers. In future we should make
- * sure to wake up one polling thread (which can wake up other threads if
- * needed) */
-static grpc_wakeup_fd global_wakeup_fd;
 
 /* Implements the function defined in grpc_posix.h. This function might be
  * called before even calling grpc_init() to set either a different signal to
@@ -454,8 +449,8 @@ static void polling_island_add_wakeup_fd_locked(polling_island *pi,
     gpr_asprintf(&err_msg,
                  "epoll_ctl (epoll_fd: %d) add wakeup fd: %d failed with "
                  "error: %d (%s)",
-                 pi->epoll_fd, GRPC_WAKEUP_FD_GET_READ_FD(&global_wakeup_fd),
-                 errno, strerror(errno));
+                 pi->epoll_fd, GRPC_WAKEUP_FD_GET_READ_FD(wakeup_fd), errno,
+                 strerror(errno));
     append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
     gpr_free(err_msg);
   }
@@ -558,7 +553,6 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
     goto done;
   }
 
-  polling_island_add_wakeup_fd_locked(pi, &global_wakeup_fd, error);
   polling_island_add_wakeup_fd_locked(pi, &pi->workqueue_wakeup_fd, error);
 
   if (initial_fd != NULL) {
@@ -1116,11 +1110,10 @@ static grpc_error *pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_pollset);
   gpr_tls_init(&g_current_thread_worker);
   poller_kick_init();
-  return grpc_wakeup_fd_init(&global_wakeup_fd);
+  return GRPC_ERROR_NONE;
 }
 
 static void pollset_global_shutdown(void) {
-  grpc_wakeup_fd_destroy(&global_wakeup_fd);
   gpr_tls_destroy(&g_current_thread_pollset);
   gpr_tls_destroy(&g_current_thread_worker);
 }
@@ -1226,10 +1219,6 @@ static grpc_error *pollset_kick(grpc_pollset *p,
   return error;
 }
 
-static grpc_error *kick_poller(void) {
-  return grpc_wakeup_fd_wakeup(&global_wakeup_fd);
-}
-
 static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->po.mu);
   *mu = &pollset->po.mu;
@@ -1332,7 +1321,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 /* pollset_shutdown is guaranteed to be called before pollset_destroy. So other
  * than destroying the mutexes, there is nothing special that needs to be done
  * here */
-static void pollset_destroy(grpc_pollset *pollset) {
+static void pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   GPR_ASSERT(!pollset_has_workers(pollset));
   gpr_mu_destroy(&pollset->po.mu);
 }
@@ -1453,11 +1442,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
 
     for (int i = 0; i < ep_rv; ++i) {
       void *data_ptr = ep_ev[i].data.ptr;
-      if (data_ptr == &global_wakeup_fd) {
-        grpc_timer_consume_kick();
-        append_error(error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
-                     err_desc);
-      } else if (data_ptr == &pi->workqueue_wakeup_fd) {
+      if (data_ptr == &pi->workqueue_wakeup_fd) {
         append_error(error,
                      grpc_wakeup_fd_consume_wakeup(&pi->workqueue_wakeup_fd),
                      err_desc);
@@ -1897,8 +1882,6 @@ static const grpc_event_engine_vtable vtable = {
     .pollset_set_add_fd = pollset_set_add_fd,
     .pollset_set_del_fd = pollset_set_del_fd,
 
-    .kick_poller = kick_poller,
-
     .workqueue_ref = workqueue_ref,
     .workqueue_unref = workqueue_unref,
     .workqueue_scheduler = workqueue_scheduler,
@@ -1921,7 +1904,8 @@ static bool is_epoll_available() {
   return true;
 }
 
-const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
+const grpc_event_engine_vtable *grpc_init_epollsig_linux(
+    bool explicit_request) {
   /* If use of signals is disabled, we cannot use epoll engine*/
   if (is_grpc_wakeup_signal_initialized && grpc_wakeup_signal < 0) {
     return NULL;
@@ -1936,7 +1920,13 @@ const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
   }
 
   if (!is_grpc_wakeup_signal_initialized) {
-    grpc_use_signal(SIGRTMIN + 6);
+    /* TODO(ctiller): when other epoll engines are ready, remove the true || to
+     * force this to be explitly chosen if needed */
+    if (true || explicit_request) {
+      grpc_use_signal(SIGRTMIN + 6);
+    } else {
+      return NULL;
+    }
   }
 
   fd_global_init();
@@ -1958,7 +1948,10 @@ const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
 #include "src/core/lib/iomgr/ev_posix.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable *grpc_init_epoll_linux(void) { return NULL; }
+const grpc_event_engine_vtable *grpc_init_epollsig_linux(
+    bool explicit_request) {
+  return NULL;
+}
 #endif /* defined(GRPC_POSIX_SOCKET) */
 
 void grpc_use_signal(int signum) {}

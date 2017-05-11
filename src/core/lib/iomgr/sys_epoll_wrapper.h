@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2017, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,13 @@
  *
  */
 
-/* This is just a compilation test, to see if we have C++11. */
+#ifndef GRPC_CORE_LIB_IOMGR_SYS_EPOLL_WRAPPER_H
+#define GRPC_CORE_LIB_IOMGR_SYS_EPOLL_WRAPPER_H
 
-#include <stdlib.h>
-#include <zlib.h>
+#include <sys/epoll.h>
 
-class Base {
- public:
-  virtual void foo() = 0;
-};
+#ifndef EPOLLEXCLUSIVE
+#define EPOLLEXCLUSIVE (1 << 28)
+#endif
 
-class Foo final : public Base {
- public:
-  void foo() override {}
-};
-
-int main() {
-  Foo().foo();
-  return 0;
-}
+#endif /* GRPC_CORE_LIB_IOMGR_SYS_EPOLL_WRAPPER_H */

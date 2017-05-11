@@ -54,21 +54,31 @@ void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n) {
 }
 
 gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q) {
+  bool empty;
+  return gpr_mpscq_pop_and_check_end(q, &empty);
+}
+
+gpr_mpscq_node *gpr_mpscq_pop_and_check_end(gpr_mpscq *q, bool *empty) {
   gpr_mpscq_node *tail = q->tail;
   gpr_mpscq_node *next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
   if (tail == &q->stub) {
     // indicates the list is actually (ephemerally) empty
-    if (next == NULL) return NULL;
+    if (next == NULL) {
+      *empty = true;
+      return NULL;
+    }
     q->tail = next;
     tail = next;
     next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
   }
   if (next != NULL) {
+    *empty = false;
     q->tail = next;
     return tail;
   }
   gpr_mpscq_node *head = (gpr_mpscq_node *)gpr_atm_acq_load(&q->head);
   if (tail != head) {
+    *empty = false;
     // indicates a retry is in order: we're still adding
     return NULL;
   }
@@ -79,5 +89,6 @@ gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q) {
     return tail;
   }
   // indicates a retry is in order: we're still adding
+  *empty = false;
   return NULL;
 }
