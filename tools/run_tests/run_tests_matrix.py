@@ -169,7 +169,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
 
   # sanitizers
   test_jobs += _generate_jobs(languages=['c'],
-                              configs=['msan', 'asan', 'tsan'],
+                              configs=['msan', 'asan', 'tsan', 'ubsan'],
                               platforms=['linux'],
                               labels=['sanitizers'],
                               extra_args=extra_args,
@@ -208,7 +208,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
 
-  for compiler in ['gcc4.8', 'gcc5.3',
+  for compiler in ['gcc4.8', 'gcc5.3', 'gcc_musl',
                    'clang3.5', 'clang3.6', 'clang3.7']:
     test_jobs += _generate_jobs(languages=['c++'],
                                 configs=['dbg'],
@@ -267,6 +267,15 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
+  test_jobs += _generate_jobs(languages=['python'],
+                              configs=['dbg'],
+                              platforms=['linux'],
+                              arch='default',
+                              compiler='python_alpine',
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+
   test_jobs += _generate_jobs(languages=['csharp'],
                               configs=['dbg'],
                               platforms=['linux'],
@@ -289,15 +298,6 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               platforms=['linux'],
                               arch='default',
                               compiler='electron1.6',
-                              iomgr_platform='uv',
-                              labels=['portability'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
-
-  test_jobs += _generate_jobs(languages=['node'],
-                              configs=['dbg'],
-                              platforms=['linux'],
-                              iomgr_platform='uv',
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
@@ -396,6 +396,11 @@ if __name__ == "__main__":
                     const=True,
                     help='Put reports into subdirectories to improve presentation of '
                     'results by Internal CI.')
+  argp.add_argument('--bq_result_table',
+                    default='',
+                    type=str,
+                    nargs='?',
+                    help='Upload test results to a specified BQ table.')
   args = argp.parse_args()
 
   if args.internal_ci:
@@ -412,6 +417,10 @@ if __name__ == "__main__":
     extra_args.append('--quiet_success')
   if args.max_time > 0:
     extra_args.extend(('--max_time', '%d' % args.max_time))
+  if args.bq_result_table:
+    extra_args.append('--bq_result_table')
+    extra_args.append('%s' % args.bq_result_table)
+    extra_args.append('--measure_cpu_costs')
 
   all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
              _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)

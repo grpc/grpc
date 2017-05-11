@@ -41,10 +41,10 @@ clang --version || true
 docker --version || true
 
 # Need to increase open files limit for c tests
-ulimit -n 2000
+ulimit -n 32768
 
 git submodule update --init
 
 # download docker images from dockerhub
 export DOCKERHUB_ORGANIZATION=grpctesting
-tools/run_tests/run_tests_matrix.py -f basictests linux --internal_ci
+tools/run_tests/run_tests_matrix.py -f basictests linux --inner_jobs 16 -j 1 --internal_ci

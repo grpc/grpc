@@ -62,8 +62,6 @@ typedef struct grpc_lb_policy_pick_args {
   uint32_t initial_metadata_flags;
   /** Storage for LB token in \a initial_metadata, or NULL if not used */
   grpc_linked_mdelem *lb_token_mdelem_storage;
-  /** Deadline for the call to the LB server */
-  gpr_timespec deadline;
 } grpc_lb_policy_pick_args;
 
 struct grpc_lb_policy_vtable {

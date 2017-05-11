@@ -41,15 +41,16 @@
   {
     'variables': {
       'runtime%': 'node',
-      # UV integration in C core is enabled by default. It can be disabled
-      # by setting this argument to anything else.
-      'grpc_uv%': 'true',
       # Some Node installations use the system installation of OpenSSL, and on
       # some systems, the system OpenSSL still does not have ALPN support. This
       # will let users recompile gRPC to work without ALPN.
       'grpc_alpn%': 'true',
       # Indicates that the library should be built with gcov.
-      'grpc_gcov%': 'false'
+      'grpc_gcov%': 'false',
+      # Indicates that the library should be built with compatibility for musl
+      # libc, so that it can run on Alpine Linux. This is only necessary if not
+      # building on Alpine Linux
+      'grpc_alpine%': 'false'
     },
     'target_defaults': {
       'configurations': {
@@ -83,17 +84,11 @@
         'include'
       ],
       'defines': [
-        'GPR_BACKWARDS_COMPATIBILITY_MODE'
+        'GPR_BACKWARDS_COMPATIBILITY_MODE',
+        'GRPC_ARES=0',
+        'GRPC_UV'
       ],
       'conditions': [
-        ['grpc_uv=="true"', {
-          'defines': [
-            'GRPC_ARES=0',
-            # Disabling this while bugs are ironed out. Uncomment this to
-            # re-enable libuv integration in C core.
-            'GRPC_UV'
-          ]
-        }],
         ['grpc_gcov=="true"', {
           % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines'), ('LDFLAGS', 'ldflags')]:
           %  if configs['gcov'].get(arg, None) is not None:
@@ -104,6 +99,11 @@
           ],
           %  endif
           % endfor
+        }],
+        ['grpc_alpine=="true"', {
+          'defines': [
+            'GPR_MUSL_LIBC_COMPAT'
+          ]
         }],
         ['OS!="win" and runtime=="electron"', {
           "defines": [
@@ -233,6 +233,10 @@
               }
             ]
           },
+        ]
+      }],
+      ['OS == "win"', {
+        'targets': [
           # Only want to compile zlib under Windows
           % for module in node_modules:
           % for lib in libs:
@@ -264,13 +268,6 @@
       }]
     ],
     'targets': [
-  <%
-      for lib in libs:
-        if 'grpc' in lib.transitive_deps or lib.name == 'grpc':
-          lib.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
-      for module in node_modules:
-        module.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
-  %>
       % for module in node_modules:
       % for lib in libs:
       % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):

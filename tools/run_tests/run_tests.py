@@ -60,7 +60,10 @@ import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 import python_utils.watch_dirs as watch_dirs
 import python_utils.start_port_server as start_port_server
-
+try:
+  from python_utils.upload_test_results import upload_results_to_bq
+except (ImportError):
+  pass # It's ok to not import because this is only necessary to upload results to BQ.
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
@@ -430,10 +433,6 @@ class NodeLanguage(object):
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
                                          'node7', 'electron1.3', 'electron1.6'])
-    if args.iomgr_platform == "uv":
-      self.use_uv = True
-    else:
-      self.use_uv = False
     if self.args.compiler == 'default':
       self.runtime = 'node'
       self.node_version = '7'
@@ -481,7 +480,6 @@ class NodeLanguage(object):
       else:
         config_flag = '--release'
       return [['tools\\run_tests\\helper_scripts\\build_node.bat',
-               '--grpc_uv={}'.format('true' if self.use_uv else 'false'),
                config_flag]]
     else:
       build_script = 'build_node'
@@ -490,8 +488,7 @@ class NodeLanguage(object):
         # building for electron requires a patch version
         self.node_version += '.0'
       return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
-               self.node_version,
-               '--grpc_uv={}'.format('true' if self.use_uv else 'false')]]
+               self.node_version]]
 
   def post_tests_steps(self):
     return []
@@ -1191,7 +1188,7 @@ argp.add_argument('--build_only',
                   default=False,
                   action='store_const',
                   const=True,
-                  help='Perform all the build steps but dont run any tests.')
+                  help='Perform all the build steps but don\'t run any tests.')
 argp.add_argument('--measure_cpu_costs', default=False, action='store_const', const=True,
                   help='Measure the cpu costs of tests')
 argp.add_argument('--update_submodules', default=[], nargs='*',
@@ -1206,11 +1203,16 @@ argp.add_argument('--quiet_success',
                   default=False,
                   action='store_const',
                   const=True,
-                  help='Dont print anything when a test passes. Passing tests also will not be reported in XML report. ' +
+                  help='Don\'t print anything when a test passes. Passing tests also will not be reported in XML report. ' +
                        'Useful when running many iterations of each test (argument -n).')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
-                  help='Dont try to iterate over many polling strategies when they exist')
+                  help='Don\'t try to iterate over many polling strategies when they exist')
 argp.add_argument('--max_time', default=-1, type=int, help='Maximum test runtime in seconds')
+argp.add_argument('--bq_result_table',
+                  default='',
+                  type=str,
+                  nargs='?',
+                  help='Upload test results to a specified BQ table.')
 args = argp.parse_args()
 
 if args.force_default_poller:
@@ -1509,6 +1511,8 @@ def _build_and_run(
   finally:
     for antagonist in antagonists:
       antagonist.kill()
+    if args.bq_result_table and resultset:
+      upload_results_to_bq(resultset, args.bq_result_table, args, platform_string())
     if xml_report and resultset:
       report_utils.render_junit_xml_report(resultset, xml_report,
                                            suite_name=args.report_suite_name)
