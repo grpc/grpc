@@ -37,15 +37,16 @@
 /* Internal API for completion queues */
 
 #include <grpc/grpc.h>
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/pollset.h"
 
 /* These trace flags default to 1. The corresponding lines are only traced
    if grpc_api_trace is also truthy */
-extern int grpc_cq_pluck_trace;
-extern int grpc_cq_event_timeout_trace;
-extern int grpc_trace_operation_failures;
+extern grpc_tracer_flag grpc_cq_pluck_trace;
+extern grpc_tracer_flag grpc_cq_event_timeout_trace;
+extern grpc_tracer_flag grpc_trace_operation_failures;
 #ifndef NDEBUG
-extern int grpc_trace_pending_tags;
+extern grpc_tracer_flag grpc_trace_pending_tags;
 #endif
 
 typedef struct grpc_cq_completion {
@@ -67,17 +68,17 @@ typedef struct grpc_cq_completion {
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
                           const char *file, int line);
-void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason,
-                            const char *file, int line);
+void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
+                            const char *reason, const char *file, int line);
 #define GRPC_CQ_INTERNAL_REF(cc, reason) \
   grpc_cq_internal_ref(cc, reason, __FILE__, __LINE__)
-#define GRPC_CQ_INTERNAL_UNREF(cc, reason) \
-  grpc_cq_internal_unref(cc, reason, __FILE__, __LINE__)
+#define GRPC_CQ_INTERNAL_UNREF(ec, cc, reason) \
+  grpc_cq_internal_unref(ec, cc, reason, __FILE__, __LINE__)
 #else
 void grpc_cq_internal_ref(grpc_completion_queue *cc);
-void grpc_cq_internal_unref(grpc_completion_queue *cc);
+void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc);
 #define GRPC_CQ_INTERNAL_REF(cc, reason) grpc_cq_internal_ref(cc)
-#define GRPC_CQ_INTERNAL_UNREF(cc, reason) grpc_cq_internal_unref(cc)
+#define GRPC_CQ_INTERNAL_UNREF(ec, cc, reason) grpc_cq_internal_unref(ec, cc)
 #endif
 
 /* Flag that an operation is beginning: the completion channel will not finish

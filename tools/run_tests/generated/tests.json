@@ -572,7 +572,7 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "ev_epoll_linux_test", 
+    "name": "ev_epollsig_linux_test", 
     "platforms": [
       "linux"
     ]
