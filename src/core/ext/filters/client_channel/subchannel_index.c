@@ -192,13 +192,11 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
     // - Check to see if a subchannel already exists
     c = gpr_avl_get(index, key);
     if (c != NULL) {
-      // XXX
       c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "index_register");
     }
     if (c != NULL) {
       // yes -> we're done
       need_to_unref_constructed = true;
-//      GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, constructed, "index_register");
     } else {
       // no -> update the avl and compare/swap
       gpr_avl updated =
