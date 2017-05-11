@@ -63,4 +63,3 @@ void grpc_register_workaround(uint32_t id, user_agent_parser parser) {
   GPR_ASSERT(id < GRPC_MAX_WORKAROUND_ID);
   ua_parser[id] = parser;
 }
-

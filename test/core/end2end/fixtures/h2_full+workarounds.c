@@ -52,7 +52,8 @@
 #include "test/core/util/test_config.h"
 
 static const size_t workarounds_num = GRPC_MAX_WORKAROUND_ID;
-static char *workarounds_enabled[GRPC_MAX_WORKAROUND_ID] = {GRPC_ARG_WORKAROUND_CRONET_COMPRESSION};
+static char *workarounds_enabled[GRPC_MAX_WORKAROUND_ID] = {
+    GRPC_ARG_WORKAROUND_CRONET_COMPRESSION};
 
 typedef struct fullstack_fixture_data {
   char *localaddr;
