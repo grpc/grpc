@@ -254,8 +254,8 @@ TEST(WritesPerRpcTest, UnaryPingPong) {
   EXPECT_LT(UnaryPingPong(0, 0), 2.05);
   EXPECT_LT(UnaryPingPong(1, 0), 2.05);
   EXPECT_LT(UnaryPingPong(0, 1), 2.05);
-  EXPECT_LT(UnaryPingPong(4096, 0), 2.2);
-  EXPECT_LT(UnaryPingPong(0, 4096), 2.2);
+  EXPECT_LT(UnaryPingPong(4096, 0), 2.5);
+  EXPECT_LT(UnaryPingPong(0, 4096), 2.5);
 }
 
 }  // namespace testing

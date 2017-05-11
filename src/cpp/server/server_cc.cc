@@ -521,7 +521,7 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
     if (sync_server_cqs_->empty()) {
-      gpr_log(GPR_ERROR,
+      gpr_log(GPR_INFO,
               "Default health check service disabled at async-only server.");
     } else {
       auto* default_hc_service = new DefaultHealthCheckService;

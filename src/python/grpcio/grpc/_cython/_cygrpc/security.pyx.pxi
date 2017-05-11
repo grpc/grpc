@@ -44,3 +44,61 @@ cdef grpc_ssl_roots_override_result ssl_roots_override_callback(
     pem_root_certs[0][len(temporary_pem_root_certs)] = '\0'
 
   return GRPC_SSL_ROOTS_OVERRIDE_OK
+
+
+def peer_identities(Call call):
+  cdef grpc_auth_context* auth_context
+  cdef grpc_auth_property_iterator properties
+  cdef grpc_auth_property* property
+
+  auth_context = grpc_call_auth_context(call.c_call)
+  if auth_context == NULL:
+    return None
+  properties = grpc_auth_context_peer_identity(auth_context)
+  identities = []
+  while True:
+    property = grpc_auth_property_iterator_next(&properties)
+    if property == NULL:
+      break
+    if property.value != NULL:
+      identities.append(<bytes>(property.value))
+  grpc_auth_context_release(auth_context)
+  return identities if identities else None
+
+def peer_identity_key(Call call):
+  cdef grpc_auth_context* auth_context
+  cdef char* c_key
+  auth_context = grpc_call_auth_context(call.c_call)
+  if auth_context == NULL:
+    return None
+  c_key = grpc_auth_context_peer_identity_property_name(auth_context)
+  if c_key == NULL:
+    key = None
+  else:
+    key = <bytes> grpc_auth_context_peer_identity_property_name(auth_context)
+  grpc_auth_context_release(auth_context)
+  return key
+
+def auth_context(Call call):
+  cdef grpc_auth_context* auth_context
+  cdef grpc_auth_property_iterator properties
+  cdef grpc_auth_property* property
+
+  auth_context = grpc_call_auth_context(call.c_call)
+  if auth_context == NULL:
+    return {}
+  properties = grpc_auth_context_property_iterator(auth_context)
+  py_auth_context = {}
+  while True:
+    property = grpc_auth_property_iterator_next(&properties)
+    if property == NULL:
+      break
+    if property.name != NULL and property.value != NULL:
+      key = <bytes> property.name
+      if key in py_auth_context:
+        py_auth_context[key].append(<bytes>(property.value))
+      else:
+        py_auth_context[key] = [<bytes> property.value]
+  grpc_auth_context_release(auth_context)
+  return py_auth_context
+  

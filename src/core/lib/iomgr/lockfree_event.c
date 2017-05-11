@@ -35,6 +35,10 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
+
+extern grpc_tracer_flag grpc_polling_trace;
+
 /* 'state' holds the to call when the fd is readable or writable respectively.
    It can contain one of the following values:
      CLOSURE_READY     : The fd has an I/O event of interest but there is no
@@ -93,6 +97,10 @@ void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
                          grpc_closure *closure) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
+    if (GRPC_TRACER_ON(grpc_polling_trace)) {
+      gpr_log(GPR_DEBUG, "lfev_notify_on: %p curr=%p closure=%p", state,
+              (void *)curr, closure);
+    }
     switch (curr) {
       case CLOSURE_NOT_READY: {
         /* CLOSURE_NOT_READY -> <closure>.
@@ -155,6 +163,10 @@ bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
+    if (GRPC_TRACER_ON(grpc_polling_trace)) {
+      gpr_log(GPR_DEBUG, "lfev_set_shutdown: %p curr=%p err=%s", state,
+              (void *)curr, grpc_error_string(shutdown_err));
+    }
     switch (curr) {
       case CLOSURE_READY:
       case CLOSURE_NOT_READY:
@@ -199,6 +211,10 @@ bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
 void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
+
+    if (GRPC_TRACER_ON(grpc_polling_trace)) {
+      gpr_log(GPR_DEBUG, "lfev_set_ready: %p curr=%p", state, (void *)curr);
+    }
 
     switch (curr) {
       case CLOSURE_READY: {

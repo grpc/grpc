@@ -43,7 +43,8 @@ var _ = require('lodash');
 
 /**
  * Wrap a function to pass null-like values through without calling it. If no
- * function is given, just uses the identity;
+ * function is given, just uses the identity.
+ * @private
  * @param {?function} func The function to wrap
  * @return {function} The wrapped function
  */
@@ -90,3 +91,67 @@ exports.defaultGrpcOptions = {
   enumsAsStrings: true,
   deprecatedArgumentOrder: false
 };
+
+// JSDoc definitions that are used in multiple other modules
+
+/**
+ * The EventEmitter class in the event standard module
+ * @external EventEmitter
+ * @see https://nodejs.org/api/events.html#events_class_eventemitter
+ */
+
+/**
+ * The Readable class in the stream standard module
+ * @external Readable
+ * @see https://nodejs.org/api/stream.html#stream_readable_streams
+ */
+
+/**
+ * The Writable class in the stream standard module
+ * @external Writable
+ * @see https://nodejs.org/api/stream.html#stream_writable_streams
+ */
+
+/**
+ * The Duplex class in the stream standard module
+ * @external Duplex
+ * @see https://nodejs.org/api/stream.html#stream_class_stream_duplex
+ */
+
+/**
+ * A serialization function
+ * @callback module:src/common~serialize
+ * @param {*} value The value to serialize
+ * @return {Buffer} The value serialized as a byte sequence
+ */
+
+/**
+ * A deserialization function
+ * @callback module:src/common~deserialize
+ * @param {Buffer} data The byte sequence to deserialize
+ * @return {*} The data deserialized as a value
+ */
+
+/**
+ * An object that completely defines a service method signature.
+ * @typedef {Object} module:src/common~MethodDefinition
+ * @property {string} path The method's URL path
+ * @property {boolean} requestStream Indicates whether the method accepts
+ *     a stream of requests
+ * @property {boolean} responseStream Indicates whether the method returns
+ *     a stream of responses
+ * @property {module:src/common~serialize} requestSerialize Serialization
+ *     function for request values
+ * @property {module:src/common~serialize} responseSerialize Serialization
+ *     function for response values
+ * @property {module:src/common~deserialize} requestDeserialize Deserialization
+ *     function for request data
+ * @property {module:src/common~deserialize} responseDeserialize Deserialization
+ *     function for repsonse data
+ */
+
+/**
+ * An object that completely defines a service.
+ * @typedef {Object.<string, module:src/common~MethodDefinition>}
+ *     module:src/common~ServiceDefinition
+ */

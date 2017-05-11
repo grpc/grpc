@@ -34,6 +34,8 @@
 #ifndef GRPCXX_IMPL_CODEGEN_CONFIG_PROTOBUF_H
 #define GRPCXX_IMPL_CODEGEN_CONFIG_PROTOBUF_H
 
+#define GRPC_OPEN_SOURCE_PROTO
+
 #ifndef GRPC_CUSTOM_PROTOBUF_INT64
 #include <google/protobuf/stubs/common.h>
 #define GRPC_CUSTOM_PROTOBUF_INT64 ::google::protobuf::int64

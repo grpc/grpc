@@ -50,6 +50,10 @@ TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
   EXPECT_EQ(static_cast<CallCredentials*>(nullptr), bad1.get());
 }
 
+TEST_F(CredentialsTest, DefaultCredentials) {
+  auto creds = GoogleDefaultCredentials();
+}
+
 }  // namespace testing
 }  // namespace grpc
 

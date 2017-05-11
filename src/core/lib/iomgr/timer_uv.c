@@ -38,9 +38,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/timer.h"
 
 #include <uv.h>
+
+grpc_tracer_flag grpc_timer_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_timer_check_trace = GRPC_TRACER_INITIALIZER(false);
 
 static void timer_close_callback(uv_handle_t *handle) { gpr_free(handle); }
 
@@ -99,5 +103,7 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
 
 void grpc_timer_list_init(gpr_timespec now) {}
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {}
+
+void grpc_timer_consume_kick(void) {}
 
 #endif /* GRPC_UV */
