@@ -31,6 +31,10 @@
  *
  */
 
+/**
+ * @module
+ */
+
 'use strict';
 
 var path = require('path');
@@ -256,5 +260,10 @@ exports.getClientChannel = client.getClientChannel;
 exports.waitForClientReady = client.waitForClientReady;
 
 exports.closeClient = function closeClient(client_obj) {
-  client.getClientChannel(client_obj).close();
+  client.Client.prototype.close.apply(client_obj);
 };
+
+/**
+ * @see module:src/client.Client
+ */
+exports.Client = client.Client;

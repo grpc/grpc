@@ -116,7 +116,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
   elif 'win32' in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -D_PYTHON_MSVC'
   elif "linux" in sys.platform:
-    EXTRA_ENV_COMPILE_ARGS += ' -std=c++11 -fvisibility=hidden -fno-wrapv'
+    EXTRA_ENV_COMPILE_ARGS += ' -std=c++11 -std=gnu99 -fvisibility=hidden -fno-wrapv'
   elif "darwin" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden -fno-wrapv'
 
@@ -237,7 +237,7 @@ INSTALL_REQUIRES = (
     'six>=1.5.2',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
-    'protobuf>=3.2.0',
+    'protobuf>=3.3.0',
 )
 
 if not PY3:
