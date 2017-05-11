@@ -246,39 +246,27 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     void* got_tag;
     bool ok;
 
-    switch (cli_cqs_[thread_idx]->AsyncNext(
-        &got_tag, &ok,
-        std::chrono::system_clock::now() + std::chrono::milliseconds(10))) {
-      case CompletionQueue::GOT_EVENT: {
-        // Got a regular event, so process it
-        ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
-        // Proceed while holding a lock to make sure that
-        // this thread isn't supposed to shut down
-        std::lock_guard<std::mutex> l(shutdown_state_[thread_idx]->mutex);
-        if (shutdown_state_[thread_idx]->shutdown) {
-          delete ctx;
-          return true;
-        } else if (!ctx->RunNextState(ok, entry)) {
-          // The RPC and callback are done, so clone the ctx
-          // and kickstart the new one
-          ctx->StartNewClone(cli_cqs_[thread_idx].get());
-          // delete the old version
-          delete ctx;
-        }
+    if (cli_cqs_[thread_idx]->Next(&got_tag, &ok)) {
+      // Got a regular event, so process it
+      ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
+      // Proceed while holding a lock to make sure that
+      // this thread isn't supposed to shut down
+      std::lock_guard<std::mutex> l(shutdown_state_[thread_idx]->mutex);
+      if (shutdown_state_[thread_idx]->shutdown) {
+        delete ctx;
         return true;
+      } else if (!ctx->RunNextState(ok, entry)) {
+        // The RPC and callback are done, so clone the ctx
+        // and kickstart the new one
+        ctx->StartNewClone(cli_cqs_[thread_idx].get());
+        // delete the old version
+        delete ctx;
       }
-      case CompletionQueue::TIMEOUT: {
-        std::lock_guard<std::mutex> l(shutdown_state_[thread_idx]->mutex);
-        if (shutdown_state_[thread_idx]->shutdown) {
-          return true;
-        }
-        return true;
-      }
-      case CompletionQueue::SHUTDOWN:  // queue is shutting down, so we must be
-                                       // done
-        return true;
+      return true;
+    } else {
+      // queue is shutting down, so we must be  done
+      return true;
     }
-    GPR_UNREACHABLE_CODE(return true);
   }
 
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;

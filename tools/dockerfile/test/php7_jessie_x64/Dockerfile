@@ -75,6 +75,10 @@ RUN cd /var/local/git/php-src \
   && make \
   && make install
 
+# Google Cloud platform API libraries
+RUN apt-get update && apt-get install -y python-pip && apt-get clean
+RUN pip install --upgrade google-api-python-client
+
 #====================
 # Python dependencies
 

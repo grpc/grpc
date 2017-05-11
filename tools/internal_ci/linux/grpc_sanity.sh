@@ -33,8 +33,6 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-git submodule update --init
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# download base docker image from dockerhub
-export DOCKERHUB_ORGANIZATION=grpctesting
 tools/run_tests/run_tests.py -l sanity -c opt -t -x sponge_log.xml --use_docker --report_suite_name sanity_linux_opt
