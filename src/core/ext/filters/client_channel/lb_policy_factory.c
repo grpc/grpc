@@ -76,10 +76,20 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
   GPR_ASSERT(index < addresses->num_addresses);
   if (user_data != NULL) GPR_ASSERT(addresses->user_data_vtable != NULL);
   grpc_lb_address* target = &addresses->addresses[index];
+  target->drop = false;
   memcpy(target->address.addr, address, address_len);
   target->address.len = address_len;
   target->is_balancer = is_balancer;
   target->balancer_name = gpr_strdup(balancer_name);
+  target->user_data = user_data;
+}
+
+void grpc_lb_addresses_set_drop_address(grpc_lb_addresses* addresses,
+                                        size_t index, void* user_data) {
+  GPR_ASSERT(index < addresses->num_addresses);
+  if (user_data != NULL) GPR_ASSERT(addresses->user_data_vtable != NULL);
+  grpc_lb_address* target = &addresses->addresses[index];
+  target->drop = true;
   target->user_data = user_data;
 }
 

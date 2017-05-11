@@ -139,6 +139,55 @@
 
 int grpc_lb_glb_trace = 0;
 
+/* vtable for user data in grpc_lb_addresses. */
+
+typedef struct {
+  gpr_refcount refs;
+  grpc_mdelem lb_token;
+  bool drop_for_rate_limiting;
+  bool drop_for_load_balancing;
+} lb_address_data;
+
+// Takes ownership of the ref to \a lb_token.
+static lb_address_data *lb_address_data_create(grpc_mdelem lb_token,
+                                               bool drop_for_rate_limiting,
+                                               bool drop_for_load_balancing) {
+  lb_address_data *address_data = gpr_zalloc(sizeof(*address_data));
+  gpr_ref_init(&address_data->refs, 1);
+  address_data->lb_token = lb_token;
+  address_data->drop_for_rate_limiting = drop_for_rate_limiting;
+  address_data->drop_for_load_balancing = drop_for_load_balancing;
+  return address_data;
+}
+
+static lb_address_data *lb_address_data_ref(lb_address_data *address_data) {
+  if (address_data != NULL) gpr_ref(&address_data->refs);
+  return address_data;
+}
+
+static void lb_address_data_unref(grpc_exec_ctx *exec_ctx,
+                                  lb_address_data *address_data) {
+  if (address_data != NULL && gpr_unref(&address_data->refs)) {
+    GRPC_MDELEM_UNREF(exec_ctx, address_data->lb_token);
+    gpr_free(address_data);
+  }
+}
+
+static void *lb_address_data_copy(void *value) {
+  return lb_address_data_ref(value);
+}
+
+static void lb_address_data_destroy(grpc_exec_ctx *exec_ctx, void *value) {
+  lb_address_data_unref(exec_ctx, value);
+}
+
+static int lb_address_data_cmp(void *value1, void *value2) {
+  return GPR_ICMP(value1, value2);
+}
+
+static const grpc_lb_user_data_vtable lb_address_data_vtable = {
+    lb_address_data_copy, lb_address_data_destroy, lb_address_data_cmp};
+
 /* add lb_token of selected subchannel (address) to the call's initial
  * metadata */
 static grpc_error *initial_metadata_add_lb_token(
@@ -177,8 +226,8 @@ typedef struct wrapped_rr_closure_arg {
    * reference, which must be either passed on via context or unreffed. */
   grpc_grpclb_client_stats *client_stats;
 
-  /* the LB token associated with the pick */
-  grpc_mdelem lb_token;
+  /* the user_data associated with the pick */
+  lb_address_data *address_data;
 
   /* storage for the lb token initial metadata mdelem */
   grpc_linked_mdelem *lb_token_mdelem_storage;
@@ -201,14 +250,30 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_closure_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error));
 
   if (wc_arg->rr_policy != NULL) {
+    GPR_ASSERT(wc_arg->client_stats != NULL);
     /* if *target is NULL, no pick has been made by the RR policy (eg, all
      * addresses failed to connect). There won't be any user_data/token
      * available */
-    if (*wc_arg->target != NULL) {
-      if (!GRPC_MDISNULL(wc_arg->lb_token)) {
-        initial_metadata_add_lb_token(exec_ctx, wc_arg->initial_metadata,
-                                      wc_arg->lb_token_mdelem_storage,
-                                      GRPC_MDELEM_REF(wc_arg->lb_token));
+    if (*wc_arg->target == NULL) {
+      if (error == GRPC_ERROR_NONE) {
+        // Update client load reporting stats to indicate the number of
+        // dropped calls.  Note that we have to do this here instead of in
+        // the client_load_reporting filter, because we do not create a
+        // subchannel call (and therefore no client_load_reporting filter)
+        // for dropped calls.
+        grpc_grpclb_client_stats_add_call_started(wc_arg->client_stats);
+        grpc_grpclb_client_stats_add_call_finished(
+            wc_arg->address_data->drop_for_rate_limiting,
+            wc_arg->address_data->drop_for_load_balancing,
+            false /* failed_to_send */, false /* known_received */,
+            wc_arg->client_stats);
+      }
+      grpc_grpclb_client_stats_unref(wc_arg->client_stats);
+    } else {
+      if (wc_arg->address_data != NULL) {
+        initial_metadata_add_lb_token(
+            exec_ctx, wc_arg->initial_metadata, wc_arg->lb_token_mdelem_storage,
+            GRPC_MDELEM_REF(wc_arg->address_data->lb_token));
       } else {
         gpr_log(GPR_ERROR,
                 "No LB token for connected subchannel pick %p (from RR "
@@ -217,11 +282,8 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
         abort();
       }
       // Pass on client stats via context. Passes ownership of the reference.
-      GPR_ASSERT(wc_arg->client_stats != NULL);
       wc_arg->context[GRPC_GRPCLB_CLIENT_STATS].value = wc_arg->client_stats;
       wc_arg->context[GRPC_GRPCLB_CLIENT_STATS].destroy = destroy_client_stats;
-    } else {
-      grpc_grpclb_client_stats_unref(wc_arg->client_stats);
     }
     if (grpc_lb_glb_trace) {
       gpr_log(GPR_INFO, "Unreffing RR %p", (void *)wc_arg->rr_policy);
@@ -402,6 +464,9 @@ struct rr_connectivity_data {
 
 static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
                             bool log) {
+  if (server->drop_for_rate_limiting || server->drop_for_load_balancing) {
+    return true;
+  }
   const grpc_grpclb_ip_address *ip = &server->ip_address;
   if (server->port >> 16 != 0) {
     if (log) {
@@ -411,7 +476,6 @@ static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
     }
     return false;
   }
-
   if (ip->size != 4 && ip->size != 16) {
     if (log) {
       gpr_log(GPR_ERROR,
@@ -423,25 +487,6 @@ static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
   }
   return true;
 }
-
-/* vtable for LB tokens in grpc_lb_addresses. */
-static void *lb_token_copy(void *token) {
-  return token == NULL
-             ? NULL
-             : (void *)GRPC_MDELEM_REF((grpc_mdelem){(uintptr_t)token}).payload;
-}
-static void lb_token_destroy(grpc_exec_ctx *exec_ctx, void *token) {
-  if (token != NULL) {
-    GRPC_MDELEM_UNREF(exec_ctx, (grpc_mdelem){(uintptr_t)token});
-  }
-}
-static int lb_token_cmp(void *token1, void *token2) {
-  if (token1 > token2) return 1;
-  if (token1 < token2) return -1;
-  return 0;
-}
-static const grpc_lb_user_data_vtable lb_token_vtable = {
-    lb_token_copy, lb_token_destroy, lb_token_cmp};
 
 static void parse_server(const grpc_grpclb_server *server,
                          grpc_resolved_address *addr) {
@@ -477,7 +522,7 @@ static grpc_lb_addresses *process_serverlist_locked(
   if (num_valid == 0) return NULL;
 
   grpc_lb_addresses *lb_addresses =
-      grpc_lb_addresses_create(num_valid, &lb_token_vtable);
+      grpc_lb_addresses_create(num_valid, &lb_address_data_vtable);
 
   /* second pass: actually populate the addresses and LB tokens (aka user data
    * to the outside world) to be read by the RR policy during its creation.
@@ -490,35 +535,45 @@ static grpc_lb_addresses *process_serverlist_locked(
     const grpc_grpclb_server *server = serverlist->servers[sl_idx];
     if (!is_server_valid(serverlist->servers[sl_idx], sl_idx, false)) continue;
 
+    const bool drop_address =
+        server->drop_for_rate_limiting || server->drop_for_load_balancing;
+
     /* address processing */
     grpc_resolved_address addr;
-    parse_server(server, &addr);
+    if (!drop_address) parse_server(server, &addr);
 
-    /* lb token processing */
-    void *user_data;
-    if (server->has_load_balance_token) {
-      const size_t lb_token_max_length =
-          GPR_ARRAY_SIZE(server->load_balance_token);
-      const size_t lb_token_length =
-          strnlen(server->load_balance_token, lb_token_max_length);
-      grpc_slice lb_token_mdstr = grpc_slice_from_copied_buffer(
-          server->load_balance_token, lb_token_length);
-      user_data = (void *)grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_LB_TOKEN,
-                                                  lb_token_mdstr)
-                      .payload;
-    } else {
-      char *uri = grpc_sockaddr_to_uri(&addr);
-      gpr_log(GPR_INFO,
-              "Missing LB token for backend address '%s'. The empty token will "
-              "be used instead",
-              uri);
-      gpr_free(uri);
-      user_data = (void *)GRPC_MDELEM_LB_TOKEN_EMPTY.payload;
+    /* construct user_data */
+    grpc_mdelem lb_token = GRPC_MDELEM_LB_TOKEN_EMPTY;
+    if (!drop_address) {
+      if (server->has_load_balance_token) {
+        const size_t lb_token_max_length =
+            GPR_ARRAY_SIZE(server->load_balance_token);
+        const size_t lb_token_length =
+            strnlen(server->load_balance_token, lb_token_max_length);
+        grpc_slice lb_token_mdstr = grpc_slice_from_copied_buffer(
+            server->load_balance_token, lb_token_length);
+        lb_token = grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_LB_TOKEN,
+                                           lb_token_mdstr);
+      } else {
+        char *uri = grpc_sockaddr_to_uri(&addr);
+        gpr_log(GPR_INFO,
+                "Missing LB token for backend address '%s'. The empty token "
+                "will be used instead",
+                uri);
+        gpr_free(uri);
+      }
     }
+    void *user_data =
+        lb_address_data_create(lb_token, server->drop_for_rate_limiting,
+                               server->drop_for_load_balancing);
 
-    grpc_lb_addresses_set_address(lb_addresses, addr_idx, &addr.addr, addr.len,
-                                  false /* is_balancer */,
-                                  NULL /* balancer_name */, user_data);
+    if (drop_address) {
+      grpc_lb_addresses_set_drop_address(lb_addresses, addr_idx, user_data);
+    } else {
+      grpc_lb_addresses_set_address(lb_addresses, addr_idx, &addr.addr,
+                                    addr.len, false /* is_balancer */,
+                                    NULL /* balancer_name */, user_data);
+    }
     ++addr_idx;
   }
   GPR_ASSERT(addr_idx == num_valid);
@@ -596,7 +651,7 @@ static bool pick_from_internal_rr_locked(
   GPR_ASSERT(rr_policy != NULL);
   const bool pick_done = grpc_lb_policy_pick_locked(
       exec_ctx, rr_policy, pick_args, target, wc_arg->context,
-      (void **)&wc_arg->lb_token, &wc_arg->wrapper_closure);
+      (void **)&wc_arg->address_data, &wc_arg->wrapper_closure);
   if (pick_done) {
     /* synchronous grpc_lb_policy_pick call. Unref the RR policy. */
     if (grpc_lb_glb_trace) {
@@ -604,17 +659,30 @@ static bool pick_from_internal_rr_locked(
               (intptr_t)wc_arg->rr_policy);
     }
     GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->rr_policy, "glb_pick_sync");
-
-    /* add the load reporting initial metadata */
-    initial_metadata_add_lb_token(exec_ctx, pick_args->initial_metadata,
-                                  pick_args->lb_token_mdelem_storage,
-                                  GRPC_MDELEM_REF(wc_arg->lb_token));
-
-    // Pass on client stats via context. Passes ownership of the reference.
-    GPR_ASSERT(wc_arg->client_stats != NULL);
-    wc_arg->context[GRPC_GRPCLB_CLIENT_STATS].value = wc_arg->client_stats;
-    wc_arg->context[GRPC_GRPCLB_CLIENT_STATS].destroy = destroy_client_stats;
-
+    if (*target == NULL) {
+      // Update client load reporting stats to indicate the number of
+      // dropped calls.  Note that we have to do this here instead of in
+      // the client_load_reporting filter, because we do not create a
+      // subchannel call (and therefore no client_load_reporting filter)
+      // for dropped calls.
+      grpc_grpclb_client_stats_add_call_started(wc_arg->client_stats);
+      grpc_grpclb_client_stats_add_call_finished(
+          wc_arg->address_data->drop_for_rate_limiting,
+          wc_arg->address_data->drop_for_load_balancing,
+          false /* failed_to_send */, false /* known_received */,
+          wc_arg->client_stats);
+      grpc_grpclb_client_stats_unref(wc_arg->client_stats);
+    } else {
+      /* add the load reporting initial metadata */
+      initial_metadata_add_lb_token(
+          exec_ctx, pick_args->initial_metadata,
+          pick_args->lb_token_mdelem_storage,
+          GRPC_MDELEM_REF(wc_arg->address_data->lb_token));
+      // Pass on client stats via context. Passes ownership of the reference.
+      GPR_ASSERT(wc_arg->client_stats != NULL);
+      wc_arg->context[GRPC_GRPCLB_CLIENT_STATS].value = wc_arg->client_stats;
+      wc_arg->context[GRPC_GRPCLB_CLIENT_STATS].destroy = destroy_client_stats;
+    }
     gpr_free(wc_arg->free_when_done);
   }
   /* else, the pending pick will be registered and taken care of by the
