@@ -57,6 +57,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -76,14 +77,15 @@ typedef size_t msg_iovlen_type;
 
 grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false);
 
+typedef enum { READ = 0, WRITE } read_or_write;
+
 typedef struct {
   grpc_endpoint base;
   grpc_fd *em_fd;
   int fd;
   bool finished_edge;
-  bool read_covered_by_poller;
-  bool write_covered_by_poller;
-  msg_iovlen_type iov_size; /* Number of slices to allocate per read attempt */
+  bool covered_by_poller[2]; /* read, write */
+  msg_iovlen_type iov_size;  /* Number of slices to allocate per read attempt */
   double target_length;
   double bytes_read_this_round;
   gpr_refcount refcount;
@@ -107,8 +109,7 @@ typedef struct {
   grpc_closure *release_fd_cb;
   int *release_fd;
 
-  grpc_closure read_closure;
-  grpc_closure write_closure;
+  grpc_closure done_closures[2];
 
   char *peer_string;
 
@@ -116,15 +117,111 @@ typedef struct {
   grpc_resource_user_slice_allocator slice_allocator;
 } grpc_tcp;
 
-static void call_notify_function_and_maybe_arrange_poller(
-    grpc_exec_ctx *exec_ctx, grpc_fd *fd, bool covered_by_poller,
-    grpc_closure *closure,
-    void (*notify_func)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
-                        grpc_closure *closure)) {
-  notify_func(exec_ctx, fd, closure);
-  if (!covered_by_poller) {
-    abort();
+typedef struct backup_poller {
+  gpr_mu *pollset_mu;
+  grpc_closure run_poller;
+} backup_poller;
+
+#define BACKUP_POLLER_POLLSET(b) ((grpc_pollset *)((b) + 1))
+
+static gpr_atm g_uncovered_notifications_pending;
+static gpr_atm g_backup_poller; /* backup_poller* */
+
+static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
+                            grpc_error *error);
+static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
+                             grpc_error *error);
+static void tcp_drop_uncovered_then_handle_read(grpc_exec_ctx *exec_ctx,
+                                                void *arg /* grpc_tcp */,
+                                                grpc_error *error);
+static void tcp_drop_uncovered_then_handle_write(grpc_exec_ctx *exec_ctx,
+                                                 void *arg /* grpc_tcp */,
+                                                 grpc_error *error);
+
+static void (*notify_on_func[])(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                                grpc_closure *closure) = {
+    grpc_fd_notify_on_read, grpc_fd_notify_on_write};
+
+static grpc_iomgr_cb_func notify_cb[] = {tcp_handle_read, tcp_handle_write};
+static grpc_iomgr_cb_func drop_uncovered_poller_count_and_notify_cb[] = {
+    tcp_drop_uncovered_then_handle_read, tcp_drop_uncovered_then_handle_write};
+
+static void done_poller(grpc_exec_ctx *exec_ctx, void *bp,
+                        grpc_error *error_ignored) {
+  backup_poller *p = bp;
+  grpc_pollset_destroy(exec_ctx, BACKUP_POLLER_POLLSET(p));
+  gpr_free(p);
+}
+
+static void run_poller(grpc_exec_ctx *exec_ctx, void *bp,
+                       grpc_error *error_ignored) {
+  backup_poller *p = bp;
+  gpr_mu_lock(p->pollset_mu);
+  GRPC_LOG_IF_ERROR("backup_poller:pollset_work",
+                    grpc_pollset_work(exec_ctx, BACKUP_POLLER_POLLSET(p), NULL,
+                                      gpr_now(GPR_CLOCK_MONOTONIC),
+                                      gpr_inf_future(GPR_CLOCK_MONOTONIC)));
+  gpr_mu_unlock(p->pollset_mu);
+  if (gpr_atm_no_barrier_load(&g_backup_poller) == (gpr_atm)p) {
+    grpc_closure_sched(exec_ctx, &p->run_poller, GRPC_ERROR_NONE);
+  } else {
+    grpc_pollset_shutdown(exec_ctx, BACKUP_POLLER_POLLSET(p),
+                          grpc_closure_init(&p->run_poller, done_poller, p,
+                                            grpc_schedule_on_exec_ctx));
   }
+}
+
+static void cover_self(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
+                       read_or_write which) {
+  backup_poller *p;
+  if (gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, 1)) {
+    p = gpr_malloc(sizeof(*p) + grpc_pollset_size());
+    grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
+    grpc_closure_init(&p->run_poller, run_poller, p, grpc_executor_scheduler);
+    gpr_atm_no_barrier_store(&g_backup_poller, (gpr_atm)p);
+    grpc_closure_sched(exec_ctx, &p->run_poller, GRPC_ERROR_NONE);
+  } else {
+    p = (backup_poller *)gpr_atm_no_barrier_load(&g_backup_poller);
+    GPR_ASSERT(p != NULL);
+  }
+  grpc_pollset_add_fd(exec_ctx, BACKUP_POLLER_POLLSET(p), tcp->em_fd);
+}
+
+static void notify_on(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
+                      read_or_write which) {
+  if (!tcp->covered_by_poller[which]) {
+    cover_self(exec_ctx, tcp, which);
+    grpc_closure_init(&tcp->done_closures[which],
+                      drop_uncovered_poller_count_and_notify_cb[which], tcp,
+                      grpc_schedule_on_exec_ctx);
+  } else {
+    grpc_closure_init(&tcp->done_closures[which], notify_cb[which], tcp,
+                      grpc_schedule_on_exec_ctx);
+  }
+  notify_on_func[which](exec_ctx, tcp->em_fd, &tcp->done_closures[which]);
+}
+
+static void drop_uncovered(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
+                           read_or_write which) {
+  backup_poller *p = (backup_poller *)gpr_atm_no_barrier_load(&g_backup_poller);
+  if (gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, -1) ==
+      1) {
+    gpr_atm_no_barrier_cas(&g_backup_poller, (gpr_atm)p, 0);
+    GRPC_LOG_IF_ERROR("backup_poller:pollset_kick",
+                      grpc_pollset_kick(BACKUP_POLLER_POLLSET(p), NULL));
+  }
+}
+
+static void tcp_drop_uncovered_then_handle_read(grpc_exec_ctx *exec_ctx,
+                                                void *arg, grpc_error *error) {
+  drop_uncovered(exec_ctx, arg, READ);
+  tcp_handle_read(exec_ctx, arg, error);
+}
+
+static void tcp_drop_uncovered_then_handle_write(grpc_exec_ctx *exec_ctx,
+                                                 void *arg, grpc_error *error) {
+  drop_uncovered(exec_ctx, arg, WRITE);
+  tcp_handle_write(exec_ctx, arg, error);
 }
 
 static void add_to_estimate(grpc_tcp *tcp, size_t bytes) {
@@ -289,9 +386,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
     if (errno == EAGAIN) {
       finish_estimate(tcp);
       /* We've consumed the edge, request a new one */
-      call_notify_function_and_maybe_arrange_poller(
-          exec_ctx, tcp->em_fd, tcp->read_covered_by_poller, &tcp->read_closure,
-          grpc_fd_notify_on_read);
+      notify_on(exec_ctx, tcp, READ);
     } else {
       grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                                  tcp->incoming_buffer);
@@ -371,18 +466,16 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_tcp *tcp = (grpc_tcp *)ep;
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
-  tcp->read_covered_by_poller = covered_by_poller;
+  tcp->covered_by_poller[READ] = covered_by_poller;
   tcp->incoming_buffer = incoming_buffer;
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
   if (tcp->finished_edge) {
     tcp->finished_edge = false;
-    call_notify_function_and_maybe_arrange_poller(
-        exec_ctx, tcp->em_fd, tcp->read_covered_by_poller, &tcp->read_closure,
-        grpc_fd_notify_on_read);
+    notify_on(exec_ctx, tcp, READ);
   } else {
-    grpc_closure_sched(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE);
+    grpc_closure_sched(exec_ctx, &tcp->done_closures[READ], GRPC_ERROR_NONE);
   }
 }
 
@@ -490,9 +583,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "write: delayed");
     }
-    call_notify_function_and_maybe_arrange_poller(
-        exec_ctx, tcp->em_fd, tcp->write_covered_by_poller, &tcp->write_closure,
-        grpc_fd_notify_on_write);
+    notify_on(exec_ctx, tcp, WRITE);
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
@@ -539,7 +630,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   tcp->outgoing_buffer = buf;
   tcp->outgoing_slice_idx = 0;
   tcp->outgoing_byte_idx = 0;
-  tcp->write_covered_by_poller = covered_by_poller;
+  tcp->covered_by_poller[WRITE] = covered_by_poller;
 
   if (!tcp_flush(tcp, &error)) {
     TCP_REF(tcp, "write");
@@ -547,9 +638,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "write: delayed");
     }
-    call_notify_function_and_maybe_arrange_poller(
-        exec_ctx, tcp->em_fd, tcp->write_covered_by_poller, &tcp->write_closure,
-        grpc_fd_notify_on_write);
+    notify_on(exec_ctx, tcp, WRITE);
   } else {
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       const char *str = grpc_error_string(error);
@@ -667,10 +756,6 @@ grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *em_fd,
   gpr_ref_init(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
-  grpc_closure_init(&tcp->read_closure, tcp_handle_read, tcp,
-                    grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&tcp->write_closure, tcp_handle_write, tcp,
-                    grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   grpc_resource_user_slice_allocator_init(
