@@ -187,7 +187,6 @@ filegroups:
   - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/message_compress.h
-  - src/core/lib/debug/trace.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -197,7 +196,11 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/error_internal.h
-  - src/core/lib/iomgr/ev_epoll_linux.h
+  - src/core/lib/iomgr/ev_epoll1_linux.h
+  - src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h
+  - src/core/lib/iomgr/ev_epoll_thread_pool_linux.h
+  - src/core/lib/iomgr/ev_epollex_linux.h
+  - src/core/lib/iomgr/ev_epollsig_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -206,6 +209,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
+  - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/network_status_tracker.h
@@ -227,6 +231,7 @@ filegroups:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/sys_epoll_wrapper.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
@@ -238,6 +243,7 @@ filegroups:
   - src/core/lib/iomgr/timer.h
   - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
+  - src/core/lib/iomgr/timer_manager.h
   - src/core/lib/iomgr/timer_uv.h
   - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
@@ -293,7 +299,6 @@ filegroups:
   - src/core/lib/channel/handshaker_registry.c
   - src/core/lib/compression/compression.c
   - src/core/lib/compression/message_compress.c
-  - src/core/lib/debug/trace.c
   - src/core/lib/http/format_request.c
   - src/core/lib/http/httpcli.c
   - src/core/lib/http/parser.c
@@ -304,7 +309,11 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair_uv.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
-  - src/core/lib/iomgr/ev_epoll_linux.c
+  - src/core/lib/iomgr/ev_epoll1_linux.c
+  - src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  - src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  - src/core/lib/iomgr/ev_epollex_linux.c
+  - src/core/lib/iomgr/ev_epollsig_linux.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
   - src/core/lib/iomgr/exec_ctx.c
@@ -314,6 +323,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr_posix.c
   - src/core/lib/iomgr/iomgr_uv.c
   - src/core/lib/iomgr/iomgr_windows.c
+  - src/core/lib/iomgr/is_epollexclusive_available.c
   - src/core/lib/iomgr/load_file.c
   - src/core/lib/iomgr/lockfree_event.c
   - src/core/lib/iomgr/network_status_tracker.c
@@ -350,6 +360,7 @@ filegroups:
   - src/core/lib/iomgr/time_averaged_stats.c
   - src/core/lib/iomgr/timer_generic.c
   - src/core/lib/iomgr/timer_heap.c
+  - src/core/lib/iomgr/timer_manager.c
   - src/core/lib/iomgr/timer_uv.c
   - src/core/lib/iomgr/udp_server.c
   - src/core/lib/iomgr/unix_sockets_posix.c
@@ -408,6 +419,7 @@ filegroups:
   - gpr
   uses:
   - grpc_codegen
+  - grpc_trace
 - name: grpc_client_channel
   headers:
   - src/core/ext/filters/client_channel/client_channel.h
@@ -683,6 +695,13 @@ filegroups:
   deps:
   - grpc
   - gpr_test_util
+- name: grpc_trace
+  headers:
+  - src/core/lib/debug/trace.h
+  src:
+  - src/core/lib/debug/trace.c
+  deps:
+  - gpr
 - name: grpc_transport_chttp2
   headers:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
@@ -831,6 +850,8 @@ filegroups:
   deps:
   - gpr
   secure: true
+  uses:
+  - grpc_trace
 - name: grpc++_base
   language: c++
   public_headers:
@@ -1662,6 +1683,14 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: check_epollexclusive
+  build: tool
+  language: c
+  src:
+  - test/build/check_epollexclusive.c
+  deps:
+  - grpc
+  - gpr
 - name: chttp2_hpack_encoder_test
   build: test
   language: c
@@ -1814,12 +1843,12 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: ev_epoll_linux_test
+- name: ev_epollsig_linux_test
   cpu_cost: 3
   build: test
   language: c
   src:
-  - test/core/iomgr/ev_epoll_linux_test.c
+  - test/core/iomgr/ev_epollsig_linux_test.c
   deps:
   - grpc_test_util
   - grpc

@@ -44,9 +44,17 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/ev_epoll1_linux.h"
+#include "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h"
+#include "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h"
+#include "src/core/lib/iomgr/ev_epollex_linux.h"
+#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
+
+grpc_tracer_flag grpc_polling_trace =
+    GRPC_TRACER_INITIALIZER(false); /* Disabled by default */
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
@@ -57,7 +65,8 @@ grpc_wakeup_fd grpc_global_wakeup_fd;
 static const grpc_event_engine_vtable *g_event_engine;
 static const char *g_poll_strategy_name = NULL;
 
-typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(void);
+typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(
+    bool explicit_request);
 
 typedef struct {
   const char *name;
@@ -65,7 +74,11 @@ typedef struct {
 } event_engine_factory;
 
 static const event_engine_factory g_factories[] = {
-    {"epoll", grpc_init_epoll_linux},
+    {"epollex", grpc_init_epollex_linux},
+    {"epollsig", grpc_init_epollsig_linux},
+    {"epoll1", grpc_init_epoll1_linux},
+    {"epoll-threadpool", grpc_init_epoll_thread_pool_linux},
+    {"epoll-limited", grpc_init_epoll_limited_pollers_linux},
     {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
 };
@@ -102,7 +115,8 @@ static bool is(const char *want, const char *have) {
 static void try_engine(const char *engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
     if (is(engine, g_factories[i].name)) {
-      if ((g_event_engine = g_factories[i].factory())) {
+      if ((g_event_engine = g_factories[i].factory(
+               0 == strcmp(engine, g_factories[i].name)))) {
         g_poll_strategy_name = g_factories[i].name;
         gpr_log(GPR_DEBUG, "Using polling engine: %s", g_factories[i].name);
         return;
@@ -121,6 +135,8 @@ void grpc_set_event_engine_test_only(
 const char *grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
+  grpc_register_tracer("polling", &grpc_polling_trace);
+
   char *s = gpr_getenv("GRPC_POLL_STRATEGY");
   if (s == NULL) {
     s = gpr_strdup("all");
@@ -197,8 +213,8 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   g_event_engine->pollset_shutdown(exec_ctx, pollset, closure);
 }
 
-void grpc_pollset_destroy(grpc_pollset *pollset) {
-  g_event_engine->pollset_destroy(pollset);
+void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
+  g_event_engine->pollset_destroy(exec_ctx, pollset);
 }
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -259,8 +275,6 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd) {
   g_event_engine->pollset_set_del_fd(exec_ctx, pollset_set, fd);
 }
-
-grpc_error *grpc_kick_poller(void) { return g_event_engine->kick_poller(); }
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,

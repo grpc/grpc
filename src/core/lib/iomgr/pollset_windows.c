@@ -43,6 +43,8 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 
+#define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
+
 gpr_mu grpc_polling_mu;
 static grpc_pollset_worker *g_active_poller;
 static grpc_pollset_worker g_global_root_worker;
@@ -114,7 +116,7 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
 }
 
-void grpc_pollset_destroy(grpc_pollset *pollset) {}
+void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {}
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker_hdl,
@@ -226,7 +228,5 @@ grpc_error *grpc_pollset_kick(grpc_pollset *p,
   }
   return GRPC_ERROR_NONE;
 }
-
-void grpc_kick_poller(void) { grpc_iocp_kick(); }
 
 #endif /* GRPC_WINSOCK_SOCKET */

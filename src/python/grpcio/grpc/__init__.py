@@ -777,6 +777,42 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def peer_identities(self):
+        """Gets one or more peer identity(s).
+
+      Equivalent to
+      servicer_context.auth_context().get(
+          servicer_context.peer_identity_key())
+
+    Returns:
+      An iterable of the identities, or None if the call is not authenticated.
+      Each identity is returned as a raw bytes type.
+     """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def peer_identity_key(self):
+        """The auth property used to identify the peer.
+
+    For example, "x509_common_name" or "x509_subject_alternative_name" are
+    used to identify an SSL peer.
+
+    Returns:
+      The auth property (string) that indicates the
+      peer identity, or None if the call is not authenticated.
+    """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def auth_context(self):
+        """Gets the auth context for the call.
+
+      Returns:
+        A map of strings to an iterable of bytes for each auth property.
+      """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def send_initial_metadata(self, initial_metadata):
         """Sends the initial metadata value to the client.
 
