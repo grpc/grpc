@@ -1433,8 +1433,11 @@ class BuildAndRunError(object):
 
 
 def _has_epollexclusive():
+  binary = 'bins/%s/check_epollexclusive' % args.config
+  if not os.path.exists(binary):
+    return False
   try:
-    subprocess.check_call('bins/%s/check_epollexclusive' % args.config)
+    subprocess.check_call(binary)
     return True
   except subprocess.CalledProcessError, e:
     return False
