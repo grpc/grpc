@@ -71,7 +71,7 @@ struct gpr_cmdline {
 static int normal_state(gpr_cmdline *cl, char *arg);
 
 gpr_cmdline *gpr_cmdline_create(const char *description) {
-  gpr_cmdline *cl = gpr_zalloc(sizeof(gpr_cmdline));
+  gpr_cmdline *cl = (gpr_cmdline *)gpr_zalloc(sizeof(gpr_cmdline));
 
   cl->description = description;
   cl->state = normal_state;
@@ -100,7 +100,7 @@ static void add_arg(gpr_cmdline *cl, const char *name, const char *help,
     GPR_ASSERT(0 != strcmp(a->name, name));
   }
 
-  a = gpr_zalloc(sizeof(arg));
+  a = (arg *)gpr_zalloc(sizeof(arg));
   a->name = name;
   a->help = help;
   a->type = type;
@@ -302,7 +302,7 @@ static int normal_state(gpr_cmdline *cl, char *str) {
     eq = strchr(str, '=');
     if (eq != NULL) {
       /* copy the string into a temp buffer and extract the name */
-      tmp = arg_name = gpr_malloc((size_t)(eq - str + 1));
+      tmp = arg_name = (char *)gpr_malloc((size_t)(eq - str + 1));
       memcpy(arg_name, str, (size_t)(eq - str));
       arg_name[eq - str] = 0;
     } else {
