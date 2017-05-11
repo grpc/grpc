@@ -33,5 +33,6 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-tools/internal_ci/helper_scripts/pre_build_linux.sh
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
 tools/run_tests/run_tests_matrix.py -f portability linux --internal_ci --build_only

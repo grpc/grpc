@@ -28,11 +28,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Source this rc script to prepare the environment for linux builds
 
-# Enable IPv6 in Docker
-sudo sed -i s/DOCKER_OPTS=/DOCKER_OPTS=\"--ipv6\"/g /etc/init.d/docker
-sudo /etc/init.d/docker restart
+# Need to increase open files limit for c tests
+ulimit -n 32768
 
 # Download Docker images from DockerHub
 export DOCKERHUB_ORGANIZATION=grpctesting

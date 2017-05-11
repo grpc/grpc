@@ -33,15 +33,6 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-# TODO(jtattermusch): get rid of the system inspection eventually
-nproc || true
-lsb_release -dc || true
-gcc --version || true
-clang --version || true
-docker --version || true
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# Need to increase open files limit for c tests
-ulimit -n 32768
-
-tools/internal_ci/helper_scripts/pre_build_linux.sh
 tools/run_tests/run_tests_matrix.py -f basictests linux --inner_jobs 16 -j 1 --internal_ci
