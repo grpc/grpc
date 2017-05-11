@@ -46,6 +46,7 @@ int main(int argc, char **argv) {
 
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
+  grpc_iomgr_start();
 
   /* set max # of file descriptors to a low value, and
      verify we can create and destroy many more than this number

@@ -489,7 +489,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(void) {
 static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* arg,
                             grpc_error* error) {
   grpc_pollset* pollset = (grpc_pollset*)arg;
-  grpc_pollset_destroy(pollset);
+  grpc_pollset_destroy(exec_ctx, pollset);
   gpr_free(pollset);
 }
 

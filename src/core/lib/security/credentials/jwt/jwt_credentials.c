@@ -171,7 +171,7 @@ static char *redact_private_key(const char *json_key) {
 
 grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
     const char *json_key, gpr_timespec token_lifetime, void *reserved) {
-  if (grpc_api_trace) {
+  if (GRPC_TRACER_ON(grpc_api_trace)) {
     char *clean_json = redact_private_key(json_key);
     gpr_log(GPR_INFO,
             "grpc_service_account_jwt_access_credentials_create("
