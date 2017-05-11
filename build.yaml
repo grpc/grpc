@@ -944,7 +944,6 @@ filegroups:
   - src/cpp/util/time_cc.cc
   uses:
   - grpc++_codegen_base
-  - grpc_base
   - nanopb
 - name: grpc++_codegen_base
   language: c++
