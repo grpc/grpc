@@ -997,7 +997,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
   t->seen_goaway = 1;
 
   /* When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
-   * data equal to “too_many_pings”, it should log the occurrence at a log level
+   * data equal to "too_many_pings", it should log the occurrence at a log level
    * that is enabled by default and double the configured KEEPALIVE_TIME used
    * for new connections on that channel. */
   if (t->is_client && goaway_error == GRPC_HTTP2_ENHANCE_YOUR_CALM &&

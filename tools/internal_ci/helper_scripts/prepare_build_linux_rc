@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,8 +28,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Source this rc script to prepare the environment for linux builds
 
-cd /var/local/git/grpc
-cp /openssl-1.0.2f.tar.gz third_party
-./tools/openssl/use_openssl.sh
+# Need to increase open files limit for c tests
+ulimit -n 32768
+
+# Download Docker images from DockerHub
+export DOCKERHUB_ORGANIZATION=grpctesting
+
+git submodule update --init
