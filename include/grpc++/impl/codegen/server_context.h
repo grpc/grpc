@@ -127,10 +127,10 @@ class ServerContext {
   /// to the client (which can happen explicitly, or implicitly when sending a
   /// a response message or status to the client).
   ///
-  /// \param meta_key The metadata key. If \a meta_value is binary data,
-  /// it must end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary,
-  /// it must be must end in "-bin".
+  /// \param meta_key The metadata key. If \a meta_value is binary data, it must
+  /// end in "-bin".
+  /// \param meta_value The metadata value. If its value is binary, the key name
+  /// must end in "-bin".
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
 
   /// Add the (\a meta_key, \a meta_value) pair to the initial metadata
@@ -143,8 +143,8 @@ class ServerContext {
   ///
   /// \param meta_key The metadata key. If \a meta_value is binary data,
   /// it must end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary,
-  /// it must be end in "-bin".
+  /// \param meta_value The metadata value. If its value is binary, the key name
+  /// must end in "-bin".
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
   /// IsCancelled is always safe to call when using sync API.
@@ -153,7 +153,7 @@ class ServerContext {
   bool IsCancelled() const;
 
   /// Cancel the Call from the server. This is a best-effort API and
-  /// depending :on when it is called, the RPC may still appear successful to
+  /// depending on when it is called, the RPC may still appear successful to
   /// the client.
   /// For example, if TryCancel() is called on a separate thread, it might race
   /// with the server handler which might return success to the client before

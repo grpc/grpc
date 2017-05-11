@@ -222,8 +222,7 @@ class ClientReader final : public ClientReaderInterface<R> {
   /// Side effect:
   ///   This also receives initial metadata from the server, if not
   ///   already received (if initial metadata is received, it can be then
-  ///   accessed
-  ///   through the \a ClientContext associated with this call).
+  ///   accessed through the \a ClientContext associated with this call).
   bool Read(R* msg) override {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
     if (!context_->initial_metadata_received_) {

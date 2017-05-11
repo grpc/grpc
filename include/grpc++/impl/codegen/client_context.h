@@ -192,8 +192,8 @@ class ClientContext {
   ///
   /// \param meta_key The metadata key. If \a meta_value is binary data, it must
   /// end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary, it must be
-  /// end in "-bin".
+  /// \param meta_value The metadata value. If its value is binary, the key name
+  /// must end in "-bin".
   void AddMetadata(const grpc::string& meta_key,
                    const grpc::string& meta_value);
 
@@ -249,7 +249,7 @@ class ClientContext {
 
   /// EXPERIMENTAL: Trigger wait-for-ready or not on this request.
   /// See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md.
-  /// If set, if an RPC made when a channel's connectivity state is
+  /// If set, if an RPC is made when a channel's connectivity state is
   /// TRANSIENT_FAILURE or CONNECTING, the call will not "fail fast",
   /// and the channel will wait until the channel is READY before making the
   /// call.

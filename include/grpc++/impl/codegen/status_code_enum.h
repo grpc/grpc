@@ -136,7 +136,7 @@ enum StatusCode {
   /// The service is currently unavailable. This is a most likely a transient
   /// condition and may be corrected by retrying with a backoff.
   ///
-  /// \warning: Although data MIGHT not have been transmitted when this
+  /// \warning Although data MIGHT not have been transmitted when this
   /// status occurs, there is NOT A GUARANTEE that the server has not seen
   /// anything. So in general it is unsafe to retry on this status code
   /// if the call is non-idempotent.

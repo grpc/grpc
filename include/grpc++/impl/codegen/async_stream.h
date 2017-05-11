@@ -70,9 +70,8 @@ class ClientAsyncStreamingInterface {
   ///     \a ClientAsyncReaderWriterInterface::WritesDone).
   ///   * there are no more messages to be received from the server (this can
   ///     be known implicitly by the calling code, or explicitly from an
-  ///     earlier call to \a AsyncReaderInterface::Read that
-  ///     yielded a failed result
-  ///     , e.g. cq->Next(&read_tag, &ok) filled in 'ok' with 'false').
+  ///     earlier call to \a AsyncReaderInterface::Read that yielded a failed
+  ///     result, e.g. cq->Next(&read_tag, &ok) filled in 'ok' with 'false').
   ///
   /// This function will return when either:
   /// - all incoming messages have been read and the server has returned
@@ -814,9 +813,8 @@ class ServerAsyncReaderWriterInterface : public ServerAsyncStreamingInterface,
   ///   * it is desired to end the call early with some non-OK status code.
   ///
   /// This operation will end when the server has finished sending out initial
-  /// metadata
-  /// (if not sent already), response message, and status, or if some failure
-  /// occurred when trying to do so.
+  /// metadata (if not sent already), response message, and status, or if some
+  /// failure occurred when trying to do so.
   ///
   /// \param[in] tag Tag identifying this request.
   /// \param[in] status To be sent to the client as the result of this call.

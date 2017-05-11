@@ -198,9 +198,8 @@ typedef struct {
 #define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
   "grpc.http2.hpack_table_size.encoder"
 /** How big a frame are we willing to receive via HTTP2.
-    Min 16384, max 16777215.
-    Larger values give lower CPU usage for large messages, but more head of line
-    blocking for small messages. */
+    Min 16384, max 16777215. Larger values give lower CPU usage for large
+    messages, but more head of line blocking for small messages. */
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
 /** Should BDP probing be performed? */
 #define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
@@ -210,15 +209,13 @@ typedef struct {
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can we send before needing to send a data frame or header
-    frame?
-    (0 indicates that an infinite number of pings can be sent without sending
-     a data frame or header frame) */
+    frame? (0 indicates that an infinite number of pings can be sent without
+    sending a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
 /** How many misbehaving pings the server can bear before sending goaway and
-    closing the transport?
-    (0 indicates that the server can bear an infinite number of misbehaving
-     pings) */
+    closing the transport? (0 indicates that the server can bear an infinite
+    number of misbehaving pings) */
 #define GRPC_ARG_HTTP2_MAX_PING_STRIKES "grpc.http2.max_ping_strikes"
 /** Minimum allowed time between two pings without sending any data frame. Int
     valued, seconds */
@@ -260,21 +257,19 @@ typedef struct {
 /** This *should* be used for testing only.
     The caller of the secure_channel_create functions may override the target
     name used for SSL host name checking using this channel argument which is of
-    type \a GRPC_ARG_STRING.
-    If this argument is not specified, the name used for SSL host name checking
-    will be the target parameter (assuming that the secure channel is an SSL
-    channel). If this parameter is specified and the underlying is not an SSL
-    channel, it will just be ignored. */
+    type \a GRPC_ARG_STRING. If this argument is not specified, the name used
+    for SSL host name checking will be the target parameter (assuming that the
+    secure channel is an SSL channel). If this parameter is specified and the
+    underlying is not an SSL channel, it will just be ignored. */
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
 /** Maximum metadata size, in bytes. Note this limit applies to the max sum of
     all metadata key-value entries in a batch of headers. */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
-/** If non-zero, a pointer to a buffer pool
- * (a pointer of type grpc_resource_quota*).
-    (use grpc_resource_quota_arg_vtable() to fetch an
-    appropriate pointer arg vtable) */
+/** If non-zero, a pointer to a buffer pool (a pointer of type
+ * grpc_resource_quota*). (use grpc_resource_quota_arg_vtable() to fetch an
+ * appropriate pointer arg vtable) */
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
 /** If non-zero, expand wildcard addresses to a list of local addresses. */
 #define GRPC_ARG_EXPAND_WILDCARD_ADDRS "grpc.expand_wildcard_addrs"
