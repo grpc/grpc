@@ -212,12 +212,14 @@ static void client_validator(grpc_slice_buffer *incoming) {
 }
 
 int main(int argc, char **argv) {
+  int i;
+
   grpc_test_init(argc, argv);
 
   // Test sending more metadata than the server will accept.
   gpr_strvec headers;
   gpr_strvec_init(&headers);
-  for (int i = 0; i < NUM_HEADERS; ++i) {
+  for (i = 0; i < NUM_HEADERS; ++i) {
     char *str;
     gpr_asprintf(&str, "%s%02d%s",
                  PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,
