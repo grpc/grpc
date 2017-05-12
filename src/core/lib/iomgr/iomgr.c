@@ -44,6 +44,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -61,6 +62,7 @@ void grpc_iomgr_init(void) {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_exec_ctx_global_init();
+  grpc_executor_init();
   grpc_timer_list_init(gpr_now(GPR_CLOCK_MONOTONIC));
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = "root";
@@ -142,6 +144,8 @@ void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx) {
   gpr_mu_unlock(&g_mu);
 
   grpc_timer_list_shutdown(exec_ctx);
+  grpc_exec_ctx_flush(exec_ctx);
+  grpc_executor_shutdown(exec_ctx);
   grpc_exec_ctx_flush(exec_ctx);
 
   /* ensure all threads have left g_mu */

@@ -90,8 +90,7 @@ static size_t run_closures(grpc_exec_ctx *exec_ctx, grpc_closure_list list) {
     grpc_closure *next = c->next_data.next;
     grpc_error *error = c->error_data.error;
 #ifndef NDEBUG
-    GPR_ASSERT(!c->scheduled);
-    c->scheduled = true;
+    c->scheduled = false;
 #endif
     c->cb(exec_ctx, c->cb_arg, error);
     GRPC_ERROR_UNREF(error);
@@ -111,6 +110,7 @@ void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx) {
   for (gpr_atm i = 0; i < g_cur_threads; i++) {
     gpr_thd_join(g_thread_state[i].id);
   }
+  gpr_atm_no_barrier_store(&g_cur_threads, 0);
   for (size_t i = 0; i < g_max_threads; i++) {
     gpr_mu_destroy(&g_thread_state[i].mu);
     gpr_cv_destroy(&g_thread_state[i].cv);
@@ -147,8 +147,12 @@ static void executor_thread(void *arg) {
 
 static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_error *error) {
-  thread_state *ts = (thread_state *)gpr_tls_get(&g_this_thread_state);
   size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
+  if (cur_thread_count == 0) {
+    grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
+    return;
+  }
+  thread_state *ts = (thread_state *)gpr_tls_get(&g_this_thread_state);
   if (ts == NULL) {
     ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
   }
