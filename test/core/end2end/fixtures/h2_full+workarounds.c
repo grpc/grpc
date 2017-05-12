@@ -51,8 +51,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static const size_t workarounds_num = GRPC_MAX_WORKAROUND_ID;
-static char *workarounds_enabled[GRPC_MAX_WORKAROUND_ID] = {
+static char *workarounds_arg[GRPC_MAX_WORKAROUND_ID] = {
     GRPC_ARG_WORKAROUND_CRONET_COMPRESSION};
 
 typedef struct fullstack_fixture_data {
@@ -86,14 +85,14 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *server_args) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   fullstack_fixture_data *ffd = f->fixture_data;
-  grpc_arg args[workarounds_num];
-  for (uint32_t i = 0; i < workarounds_num; i++) {
-    args[i].key = workarounds_enabled[i];
+  grpc_arg args[GRPC_MAX_WORKAROUND_ID];
+  for (uint32_t i = 0; i < GRPC_MAX_WORKAROUND_ID; i++) {
+    args[i].key = workarounds_arg[i];
     args[i].type = GRPC_ARG_INTEGER;
     args[i].value.integer = 1;
   }
   grpc_channel_args *server_args_new =
-      grpc_channel_args_copy_and_add(server_args, args, workarounds_num);
+      grpc_channel_args_copy_and_add(server_args, args, GRPC_MAX_WORKAROUND_ID);
   if (f->server) {
     grpc_server_destroy(f->server);
   }
