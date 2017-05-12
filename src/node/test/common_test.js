@@ -201,7 +201,11 @@ describe('Proto message enum serialize and deserialize', function() {
     assert.deepEqual(numberDeserialized, {enum_value: 2});
   });
 });
-describe('loadObject', function() {
+// This should be tested only with protobuf.js 6.x
+var describe6 =
+    protobuf_js_6_common.isProbablyProtobufJs6(messages_proto) ?
+        describe : describe.skip;
+describe6('loadObject', function() {
   var loaded = protobuf_js_6_common.loadObject(messages_proto);
   it('should return the loaded object for non-namespaces', function() {
     assert(loaded.LongValues instanceof ProtoBuf.Type);
