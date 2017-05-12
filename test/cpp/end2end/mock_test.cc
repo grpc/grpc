@@ -59,7 +59,6 @@
 #include <iostream>
 
 using namespace std;
->>>>>>> 45b89fb11ca3cd524787aeba7a1270f744a1256c
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using grpc::testing::EchoTestService;
