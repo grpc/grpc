@@ -733,12 +733,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.c">
       <Filter>src\core\ext\filters\message_size</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_cronet_compression_filter.c">
-      <Filter>src\core\ext\filters\workarounds</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_utils.c">
-      <Filter>src\core\ext\filters\workarounds</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
       <Filter>src\core\plugin_registry</Filter>
     </ClCompile>
@@ -1481,12 +1475,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.h">
       <Filter>src\core\ext\filters\message_size</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_cronet_compression_filter.h">
-      <Filter>src\core\ext\filters\workarounds</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_utils.h">
-      <Filter>src\core\ext\filters\workarounds</Filter>
-    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -1585,9 +1573,6 @@
     </Filter>
     <Filter Include="src\core\ext\filters\message_size">
       <UniqueIdentifier>{5ca3f38c-539f-3c4f-b68c-38b31ba339ba}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\filters\workarounds">
-      <UniqueIdentifier>{2ec64619-e2c4-da0f-c10e-e03f5a151300}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\transport">
       <UniqueIdentifier>{e3abfd0a-064e-0f2f-c8e8-7c5a7e98142a}</UniqueIdentifier>
