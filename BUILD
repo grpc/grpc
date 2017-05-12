@@ -979,9 +979,6 @@ grpc_cc_library(
     external_deps = [
         "cares",
     ],
-    external_deps = [
-        "cares",
-    ],
     language = "c",
     deps = [
         "grpc_base",
