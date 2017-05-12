@@ -29,16 +29,38 @@
 
 package(default_visibility = ["//visibility:public"])
 
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+
+grpc_proto_library(
+    name = "auth_sample",
+    srcs = ["protos/auth_sample.proto"],
+)
+
+grpc_proto_library(
+    name = "hellostreamingworld",
+    srcs = ["protos/hellostreamingworld.proto"],
+)
+
+grpc_proto_library(
+    name = "helloworld",
+    srcs = ["protos/helloworld.proto"],
+)
+
+grpc_proto_library(
+    name = "route_guide",
+    srcs = ["protos/route_guide.proto"],
+)
+
 cc_binary(
     name = "greeter_client",
-    srcs = ["greeter_client.cc"],
+    srcs = ["cpp/helloworld/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = ["//examples/protos:helloworld"],
+    deps = [":helloworld"],
 )
 
 cc_binary(
     name = "greeter_server",
-    srcs = ["greeter_server.cc"],
+    srcs = ["cpp/helloworld/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = ["//examples/protos:helloworld"],
+    deps = [":helloworld"],
 )
