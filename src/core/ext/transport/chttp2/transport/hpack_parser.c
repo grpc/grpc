@@ -50,8 +50,6 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-extern int grpc_http_trace;
-
 typedef enum {
   NOT_BINARY,
   BINARY_BEGIN,
@@ -666,7 +664,7 @@ static const uint8_t inverse_base64[256] = {
 /* emission helpers */
 static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
                           grpc_mdelem md, int add_to_table) {
-  if (grpc_http_trace && !GRPC_MDELEM_IS_INTERNED(md)) {
+  if (GRPC_TRACER_ON(grpc_http_trace) && !GRPC_MDELEM_IS_INTERNED(md)) {
     char *k = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char *v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
     gpr_log(
@@ -1052,7 +1050,7 @@ static grpc_error *parse_lithdr_nvridx_v(grpc_exec_ctx *exec_ctx,
 static grpc_error *finish_max_tbl_size(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_hpack_parser *p,
                                        const uint8_t *cur, const uint8_t *end) {
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
   }
   grpc_error *err =

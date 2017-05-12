@@ -49,6 +49,4 @@ typedef bool (*user_agent_parser)(grpc_mdelem);
 
 void grpc_register_workaround(uint32_t id, user_agent_parser parser);
 
-void grpc_enable_workaround(uint32_t id);
-
 #endif

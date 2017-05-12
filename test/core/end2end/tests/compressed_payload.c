@@ -289,8 +289,7 @@ static void request_with_payload_template(
     grpc_compression_algorithm expected_algorithm_from_client,
     grpc_compression_algorithm expected_algorithm_from_server,
     grpc_metadata *client_init_metadata, bool set_server_level,
-    grpc_compression_level server_compression_level,
-    char *user_agent_override) {
+    grpc_compression_level server_compression_level) {
   grpc_call *c;
   grpc_call *s;
   grpc_slice request_payload_slice;
@@ -329,18 +328,6 @@ static void request_with_payload_template(
       NULL, default_client_channel_compression_algorithm);
   server_args = grpc_channel_args_set_compression_algorithm(
       NULL, default_server_channel_compression_algorithm);
-
-  if (user_agent_override) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args *client_args_old = client_args;
-    grpc_arg arg;
-    arg.key = GRPC_ARG_PRIMARY_USER_AGENT_STRING;
-    arg.type = GRPC_ARG_STRING;
-    arg.value.string = user_agent_override;
-    client_args = grpc_channel_args_copy_and_add(client_args_old, &arg, 1);
-    grpc_channel_args_destroy(&exec_ctx, client_args_old);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
 
   f = begin_test(config, test_name, client_args, server_args);
   cqv = cq_verifier_create(f.cq);
@@ -554,7 +541,7 @@ static void test_invoke_request_with_exceptionally_uncompressed_payload(
       config, "test_invoke_request_with_exceptionally_uncompressed_payload",
       GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, NULL, false,
-      /* ignored */ GRPC_COMPRESS_LEVEL_NONE, NULL);
+      /* ignored */ GRPC_COMPRESS_LEVEL_NONE);
 }
 
 static void test_invoke_request_with_uncompressed_payload(
@@ -562,8 +549,7 @@ static void test_invoke_request_with_uncompressed_payload(
   request_with_payload_template(
       config, "test_invoke_request_with_uncompressed_payload", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
-      GRPC_COMPRESS_NONE, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
-      NULL);
+      GRPC_COMPRESS_NONE, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE);
 }
 
 static void test_invoke_request_with_compressed_payload(
@@ -571,8 +557,7 @@ static void test_invoke_request_with_compressed_payload(
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
       GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
-      GRPC_COMPRESS_GZIP, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
-      NULL);
+      GRPC_COMPRESS_GZIP, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE);
 }
 
 static void test_invoke_request_with_server_level(
@@ -580,7 +565,7 @@ static void test_invoke_request_with_server_level(
   request_with_payload_template(
       config, "test_invoke_request_with_server_level", 0, GRPC_COMPRESS_NONE,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE /* ignored */,
-      NULL, true, GRPC_COMPRESS_LEVEL_HIGH, NULL);
+      NULL, true, GRPC_COMPRESS_LEVEL_HIGH);
 }
 
 static void test_invoke_request_with_compressed_payload_md_override(
@@ -604,21 +589,21 @@ static void test_invoke_request_with_compressed_payload_md_override(
       config, "test_invoke_request_with_compressed_payload_md_override_1", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, &gzip_compression_override, false,
-      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, NULL);
+      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE);
 
   /* Channel default DEFLATE, call override to GZIP */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_2", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, &gzip_compression_override, false,
-      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, NULL);
+      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE);
 
   /* Channel default DEFLATE, call override to NONE (aka IDENTITY) */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
       GRPC_COMPRESS_NONE, &identity_compression_override, false,
-      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, NULL);
+      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE);
 }
 
 static void test_invoke_request_with_disabled_algorithm(
@@ -628,34 +613,6 @@ static void test_invoke_request_with_disabled_algorithm(
       GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_STATUS_UNIMPLEMENTED, NULL);
 }
 
-typedef struct workaround_cronet_compression_config {
-  char *user_agent_override;
-  grpc_compression_algorithm expected_algorithm_from_server;
-} workaround_cronet_compression_config;
-
-static workaround_cronet_compression_config workaround_configs[] = {
-    {NULL, GRPC_COMPRESS_GZIP},
-    {"grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; cronet_http; gentle)",
-     GRPC_COMPRESS_NONE},
-    {"grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; chttp2; gentle)",
-     GRPC_COMPRESS_GZIP},
-    {"grpc-objc/1.4.0 grpc-c/3.0.0-dev (ios; cronet_http; gentle)",
-     GRPC_COMPRESS_GZIP}};
-static const size_t workaround_configs_num =
-    sizeof(workaround_configs) / sizeof(*workaround_configs);
-
-static void test_workaround_cronet_compression(
-    grpc_end2end_test_config config) {
-  for (uint32_t i = 0; i < workaround_configs_num; i++) {
-    request_with_payload_template(
-        config, "test_invoke_request_with_compressed_payload", 0,
-        GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
-        workaround_configs[i].expected_algorithm_from_server, NULL, false,
-        /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
-        workaround_configs[i].user_agent_override);
-  }
-}
-
 void compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
@@ -663,9 +620,6 @@ void compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_server_level(config);
   test_invoke_request_with_compressed_payload_md_override(config);
   test_invoke_request_with_disabled_algorithm(config);
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_WORKAROUNDS) {
-    test_workaround_cronet_compression(config);
-  }
 }
 
 void compressed_payload_pre_init(void) {}

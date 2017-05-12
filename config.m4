@@ -97,7 +97,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -108,7 +107,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
+    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
+    src/core/lib/iomgr/ev_epollex_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -118,6 +121,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
@@ -154,6 +158,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -208,6 +213,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \

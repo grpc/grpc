@@ -46,8 +46,6 @@
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
 
-extern int grpc_http_trace;
-
 typedef struct call_data {
   grpc_linked_mdelem status;
   grpc_linked_mdelem content_type;

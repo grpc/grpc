@@ -41,6 +41,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
+#include <grpc/support/workaround_list.h>
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -50,10 +51,8 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-/* List the workarounds to be enabled */
-static char *workarounds_enabled[] = {GRPC_ARG_WORKAROUND_CRONET_COMPRESSION};
-static const size_t workarounds_num =
-    sizeof(workarounds_enabled) / sizeof(*workarounds_enabled);
+static char *workarounds_arg[GRPC_MAX_WORKAROUND_ID] = {
+    GRPC_ARG_WORKAROUND_CRONET_COMPRESSION};
 
 typedef struct fullstack_fixture_data {
   char *localaddr;
@@ -86,14 +85,14 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *server_args) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   fullstack_fixture_data *ffd = f->fixture_data;
-  grpc_arg args[workarounds_num];
-  for (uint32_t i = 0; i < workarounds_num; i++) {
-    args[i].key = workarounds_enabled[i];
+  grpc_arg args[GRPC_MAX_WORKAROUND_ID];
+  for (uint32_t i = 0; i < GRPC_MAX_WORKAROUND_ID; i++) {
+    args[i].key = workarounds_arg[i];
     args[i].type = GRPC_ARG_INTEGER;
     args[i].value.integer = 1;
   }
   grpc_channel_args *server_args_new =
-      grpc_channel_args_copy_and_add(server_args, args, workarounds_num);
+      grpc_channel_args_copy_and_add(server_args, args, GRPC_MAX_WORKAROUND_ID);
   if (f->server) {
     grpc_server_destroy(f->server);
   }

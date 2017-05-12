@@ -35,6 +35,7 @@
 
 var assert = require('assert');
 var grpc = require('../src/grpc_extension');
+var constants = require('../src/constants');
 
 /**
  * Helper function to return an absolute deadline given a relative timeout in
@@ -120,7 +121,8 @@ describe('call', function() {
       var batch = {};
       batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
       call.startBatch(batch, function(err, response) {
-        assert.strictEqual(response.status.code, grpc.status.DEADLINE_EXCEEDED);
+        assert.strictEqual(response.status.code,
+                           constants.status.DEADLINE_EXCEEDED);
         done();
       });
     });

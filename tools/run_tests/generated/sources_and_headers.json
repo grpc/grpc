@@ -235,6 +235,21 @@
   {
     "deps": [
       "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "check_epollexclusive", 
+    "src": [
+      "test/build/check_epollexclusive.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
@@ -463,9 +478,9 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "ev_epoll_linux_test", 
+    "name": "ev_epollsig_linux_test", 
     "src": [
-      "test/core/iomgr/ev_epoll_linux_test.c"
+      "test/core/iomgr/ev_epollsig_linux_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7427,6 +7442,7 @@
       "test/core/end2end/tests/simple_request.c", 
       "test/core/end2end/tests/streaming_error_response.c", 
       "test/core/end2end/tests/trailing_metadata.c", 
+      "test/core/end2end/tests/workaround_cronet_compression.c", 
       "test/core/end2end/tests/write_buffering.c", 
       "test/core/end2end/tests/write_buffering_at_end.c"
     ], 
@@ -7502,6 +7518,7 @@
       "test/core/end2end/tests/simple_request.c", 
       "test/core/end2end/tests/streaming_error_response.c", 
       "test/core/end2end/tests/trailing_metadata.c", 
+      "test/core/end2end/tests/workaround_cronet_compression.c", 
       "test/core/end2end/tests/write_buffering.c", 
       "test/core/end2end/tests/write_buffering_at_end.c"
     ], 
@@ -7759,7 +7776,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_codegen"
+      "grpc_codegen", 
+      "grpc_trace"
     ], 
     "headers": [
       "include/grpc/byte_buffer.h", 
@@ -7782,7 +7800,6 @@
       "src/core/lib/channel/handshaker_registry.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
-      "src/core/lib/debug/trace.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
@@ -7792,7 +7809,11 @@
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/error.h", 
       "src/core/lib/iomgr/error_internal.h", 
-      "src/core/lib/iomgr/ev_epoll_linux.h", 
+      "src/core/lib/iomgr/ev_epoll1_linux.h", 
+      "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h", 
+      "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h", 
+      "src/core/lib/iomgr/ev_epollex_linux.h", 
+      "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
@@ -7801,6 +7822,7 @@
       "src/core/lib/iomgr/iomgr.h", 
       "src/core/lib/iomgr/iomgr_internal.h", 
       "src/core/lib/iomgr/iomgr_posix.h", 
+      "src/core/lib/iomgr/is_epollexclusive_available.h", 
       "src/core/lib/iomgr/load_file.h", 
       "src/core/lib/iomgr/lockfree_event.h", 
       "src/core/lib/iomgr/network_status_tracker.h", 
@@ -7822,6 +7844,7 @@
       "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_posix.h", 
       "src/core/lib/iomgr/socket_windows.h", 
+      "src/core/lib/iomgr/sys_epoll_wrapper.h", 
       "src/core/lib/iomgr/tcp_client.h", 
       "src/core/lib/iomgr/tcp_client_posix.h", 
       "src/core/lib/iomgr/tcp_posix.h", 
@@ -7833,6 +7856,7 @@
       "src/core/lib/iomgr/timer.h", 
       "src/core/lib/iomgr/timer_generic.h", 
       "src/core/lib/iomgr/timer_heap.h", 
+      "src/core/lib/iomgr/timer_manager.h", 
       "src/core/lib/iomgr/timer_uv.h", 
       "src/core/lib/iomgr/udp_server.h", 
       "src/core/lib/iomgr/unix_sockets_posix.h", 
@@ -7912,8 +7936,6 @@
       "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
       "src/core/lib/compression/message_compress.h", 
-      "src/core/lib/debug/trace.c", 
-      "src/core/lib/debug/trace.h", 
       "src/core/lib/http/format_request.c", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.c", 
@@ -7933,8 +7955,16 @@
       "src/core/lib/iomgr/error.c", 
       "src/core/lib/iomgr/error.h", 
       "src/core/lib/iomgr/error_internal.h", 
-      "src/core/lib/iomgr/ev_epoll_linux.c", 
-      "src/core/lib/iomgr/ev_epoll_linux.h", 
+      "src/core/lib/iomgr/ev_epoll1_linux.c", 
+      "src/core/lib/iomgr/ev_epoll1_linux.h", 
+      "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c", 
+      "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h", 
+      "src/core/lib/iomgr/ev_epoll_thread_pool_linux.c", 
+      "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h", 
+      "src/core/lib/iomgr/ev_epollex_linux.c", 
+      "src/core/lib/iomgr/ev_epollex_linux.h", 
+      "src/core/lib/iomgr/ev_epollsig_linux.c", 
+      "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.c", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.c", 
@@ -7952,6 +7982,8 @@
       "src/core/lib/iomgr/iomgr_posix.h", 
       "src/core/lib/iomgr/iomgr_uv.c", 
       "src/core/lib/iomgr/iomgr_windows.c", 
+      "src/core/lib/iomgr/is_epollexclusive_available.c", 
+      "src/core/lib/iomgr/is_epollexclusive_available.h", 
       "src/core/lib/iomgr/load_file.c", 
       "src/core/lib/iomgr/load_file.h", 
       "src/core/lib/iomgr/lockfree_event.c", 
@@ -7994,6 +8026,7 @@
       "src/core/lib/iomgr/socket_utils_windows.c", 
       "src/core/lib/iomgr/socket_windows.c", 
       "src/core/lib/iomgr/socket_windows.h", 
+      "src/core/lib/iomgr/sys_epoll_wrapper.h", 
       "src/core/lib/iomgr/tcp_client.h", 
       "src/core/lib/iomgr/tcp_client_posix.c", 
       "src/core/lib/iomgr/tcp_client_posix.h", 
@@ -8020,6 +8053,8 @@
       "src/core/lib/iomgr/timer_generic.h", 
       "src/core/lib/iomgr/timer_heap.c", 
       "src/core/lib/iomgr/timer_heap.h", 
+      "src/core/lib/iomgr/timer_manager.c", 
+      "src/core/lib/iomgr/timer_manager.h", 
       "src/core/lib/iomgr/timer_uv.c", 
       "src/core/lib/iomgr/timer_uv.h", 
       "src/core/lib/iomgr/udp_server.c", 
@@ -8644,6 +8679,23 @@
   }, 
   {
     "deps": [
+      "gpr"
+    ], 
+    "headers": [
+      "src/core/lib/debug/trace.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_trace", 
+    "src": [
+      "src/core/lib/debug/trace.c", 
+      "src/core/lib/debug/trace.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "grpc_base", 
       "grpc_http_filters", 
@@ -8912,7 +8964,8 @@
   }, 
   {
     "deps": [
-      "gpr"
+      "gpr", 
+      "grpc_trace"
     ], 
     "headers": [
       "src/core/tsi/fake_transport_security.h", 

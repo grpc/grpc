@@ -54,8 +54,7 @@ class GrpcBufferWriterPeer;
 
 const int kGrpcBufferWriterMaxBufferLength = 1024 * 1024;
 
-class GrpcBufferWriter final
-    : public ::grpc::protobuf::io::ZeroCopyOutputStream {
+class GrpcBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
  public:
   explicit GrpcBufferWriter(grpc_byte_buffer** bp, int block_size)
       : block_size_(block_size), byte_count_(0), have_backup_(false) {
@@ -103,6 +102,8 @@ class GrpcBufferWriter final
 
   grpc::protobuf::int64 ByteCount() const override { return byte_count_; }
 
+  grpc_slice_buffer* SliceBuffer() { return slice_buffer_; }
+
  private:
   friend class GrpcBufferWriterPeer;
   const int block_size_;
@@ -113,8 +114,7 @@ class GrpcBufferWriter final
   grpc_slice slice_;
 };
 
-class GrpcBufferReader final
-    : public ::grpc::protobuf::io::ZeroCopyInputStream {
+class GrpcBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
  public:
   explicit GrpcBufferReader(grpc_byte_buffer* buffer)
       : byte_count_(0), backup_count_(0), status_() {
@@ -175,64 +175,91 @@ class GrpcBufferReader final
     return byte_count_ - backup_count_;
   }
 
- private:
+ protected:
   int64_t byte_count_;
   int64_t backup_count_;
   grpc_byte_buffer_reader reader_;
   grpc_slice slice_;
   Status status_;
 };
+
+template <class BufferWriter, class T>
+Status GenericSerialize(const grpc::protobuf::Message& msg,
+                        grpc_byte_buffer** bp, bool* own_buffer) {
+  static_assert(
+      std::is_base_of<protobuf::io::ZeroCopyOutputStream, BufferWriter>::value,
+      "BufferWriter must be a subclass of io::ZeroCopyOutputStream");
+  *own_buffer = true;
+  int byte_size = msg.ByteSize();
+  if (byte_size <= internal::kGrpcBufferWriterMaxBufferLength) {
+    grpc_slice slice = g_core_codegen_interface->grpc_slice_malloc(byte_size);
+    GPR_CODEGEN_ASSERT(
+        GRPC_SLICE_END_PTR(slice) ==
+        msg.SerializeWithCachedSizesToArray(GRPC_SLICE_START_PTR(slice)));
+    *bp = g_core_codegen_interface->grpc_raw_byte_buffer_create(&slice, 1);
+    g_core_codegen_interface->grpc_slice_unref(slice);
+    return g_core_codegen_interface->ok();
+  } else {
+    BufferWriter writer(bp, internal::kGrpcBufferWriterMaxBufferLength);
+    return msg.SerializeToZeroCopyStream(&writer)
+               ? g_core_codegen_interface->ok()
+               : Status(StatusCode::INTERNAL, "Failed to serialize message");
+  }
+}
+
+template <class BufferReader, class T>
+Status GenericDeserialize(grpc_byte_buffer* buffer,
+                          grpc::protobuf::Message* msg) {
+  static_assert(
+      std::is_base_of<protobuf::io::ZeroCopyInputStream, BufferReader>::value,
+      "BufferReader must be a subclass of io::ZeroCopyInputStream");
+  if (buffer == nullptr) {
+    return Status(StatusCode::INTERNAL, "No payload");
+  }
+  Status result = g_core_codegen_interface->ok();
+  {
+    BufferReader reader(buffer);
+    if (!reader.status().ok()) {
+      return reader.status();
+    }
+    ::grpc::protobuf::io::CodedInputStream decoder(&reader);
+    decoder.SetTotalBytesLimit(INT_MAX, INT_MAX);
+    if (!msg->ParseFromCodedStream(&decoder)) {
+      result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());
+    }
+    if (!decoder.ConsumedEntireMessage()) {
+      result = Status(StatusCode::INTERNAL, "Did not read entire message");
+    }
+  }
+  g_core_codegen_interface->grpc_byte_buffer_destroy(buffer);
+  return result;
+}
+
 }  // namespace internal
 
+// this is needed so the following class does not conflict with protobuf
+// serializers that utilize internal-only tools.
+#ifdef GRPC_OPEN_SOURCE_PROTO
+// This class provides a protobuf serializer. It translates between protobuf
+// objects and grpc_byte_buffers. More information about SerializationTraits can
+// be found in include/grpc++/impl/codegen/serialization_traits.h.
 template <class T>
 class SerializationTraits<T, typename std::enable_if<std::is_base_of<
                                  grpc::protobuf::Message, T>::value>::type> {
  public:
   static Status Serialize(const grpc::protobuf::Message& msg,
                           grpc_byte_buffer** bp, bool* own_buffer) {
-    *own_buffer = true;
-    int byte_size = msg.ByteSize();
-    if (byte_size <= internal::kGrpcBufferWriterMaxBufferLength) {
-      grpc_slice slice = g_core_codegen_interface->grpc_slice_malloc(byte_size);
-      GPR_CODEGEN_ASSERT(
-          GRPC_SLICE_END_PTR(slice) ==
-          msg.SerializeWithCachedSizesToArray(GRPC_SLICE_START_PTR(slice)));
-      *bp = g_core_codegen_interface->grpc_raw_byte_buffer_create(&slice, 1);
-      g_core_codegen_interface->grpc_slice_unref(slice);
-      return g_core_codegen_interface->ok();
-    } else {
-      internal::GrpcBufferWriter writer(
-          bp, internal::kGrpcBufferWriterMaxBufferLength);
-      return msg.SerializeToZeroCopyStream(&writer)
-                 ? g_core_codegen_interface->ok()
-                 : Status(StatusCode::INTERNAL, "Failed to serialize message");
-    }
+    return internal::GenericSerialize<internal::GrpcBufferWriter, T>(
+        msg, bp, own_buffer);
   }
 
   static Status Deserialize(grpc_byte_buffer* buffer,
                             grpc::protobuf::Message* msg) {
-    if (buffer == nullptr) {
-      return Status(StatusCode::INTERNAL, "No payload");
-    }
-    Status result = g_core_codegen_interface->ok();
-    {
-      internal::GrpcBufferReader reader(buffer);
-      if (!reader.status().ok()) {
-        return reader.status();
-      }
-      ::grpc::protobuf::io::CodedInputStream decoder(&reader);
-      decoder.SetTotalBytesLimit(INT_MAX, INT_MAX);
-      if (!msg->ParseFromCodedStream(&decoder)) {
-        result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());
-      }
-      if (!decoder.ConsumedEntireMessage()) {
-        result = Status(StatusCode::INTERNAL, "Did not read entire message");
-      }
-    }
-    g_core_codegen_interface->grpc_byte_buffer_destroy(buffer);
-    return result;
+    return internal::GenericDeserialize<internal::GrpcBufferReader, T>(buffer,
+                                                                       msg);
   }
 };
+#endif
 
 }  // namespace grpc
 
