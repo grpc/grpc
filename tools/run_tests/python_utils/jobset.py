@@ -255,7 +255,7 @@ class Job(object):
     self._start = time.time()
     cmdline = self._spec.cmdline
     if measure_cpu_costs:
-      cmdline = ['time', '--portability'] + cmdline
+      cmdline = ['time', '-p'] + cmdline
     try_start = lambda: subprocess.Popen(args=cmdline,
                                          stderr=subprocess.STDOUT,
                                          stdout=self._tempfile,
@@ -307,7 +307,7 @@ class Job(object):
         self._state = _SUCCESS
         measurement = ''
         if measure_cpu_costs:
-          m = re.search(r'real ([0-9.]+)\nuser ([0-9.]+)\nsys ([0-9.]+)', stdout())
+          m = re.search(r'real\s+([0-9.]+)\nuser\s+([0-9.]+)\nsys\s+([0-9.]+)', stdout())
           real = float(m.group(1))
           user = float(m.group(2))
           sys = float(m.group(3))
