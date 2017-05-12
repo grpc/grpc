@@ -124,6 +124,9 @@ static void executor_thread(void *arg) {
   thread_state *ts = arg;
   gpr_tls_set(&g_this_thread_state, (intptr_t)ts);
 
+  grpc_exec_ctx exec_ctx =
+      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
+
   size_t subtract_depth = 0;
   for (;;) {
     gpr_mu_lock(&ts->mu);
@@ -139,10 +142,10 @@ static void executor_thread(void *arg) {
     ts->elems = (grpc_closure_list)GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
 
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     subtract_depth = run_closures(&exec_ctx, exec);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_exec_ctx_flush(&exec_ctx);
   }
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
@@ -157,6 +160,9 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
     ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
   }
   gpr_mu_lock(&ts->mu);
+  if (grpc_closure_list_empty(ts->elems)) {
+    gpr_cv_signal(&ts->cv);
+  }
   grpc_closure_list_append(&ts->elems, closure, error);
   ts->depth++;
   bool try_new_thread =
