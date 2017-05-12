@@ -45,5 +45,53 @@ else()
   add_definitions(-D_GNU_SOURCE=1)
 endif()
 
-file(GLOB lib_sources ../../third_party/cares/cares/*.c)
-add_library(cares ${lib_sources})
+add_library(cares 
+  ../../third_party/cares/cares/ares__close_sockets.c
+  ../../third_party/cares/cares/ares__get_hostent.c
+  ../../third_party/cares/cares/ares__read_line.c
+  ../../third_party/cares/cares/ares__timeval.c
+  ../../third_party/cares/cares/ares_cancel.c
+  ../../third_party/cares/cares/ares_data.c
+  ../../third_party/cares/cares/ares_destroy.c
+  ../../third_party/cares/cares/ares_expand_name.c
+  ../../third_party/cares/cares/ares_expand_string.c
+  ../../third_party/cares/cares/ares_fds.c
+  ../../third_party/cares/cares/ares_free_hostent.c
+  ../../third_party/cares/cares/ares_free_string.c
+  ../../third_party/cares/cares/ares_getenv.c
+  ../../third_party/cares/cares/ares_gethostbyaddr.c
+  ../../third_party/cares/cares/ares_gethostbyname.c
+  ../../third_party/cares/cares/ares_getnameinfo.c
+  ../../third_party/cares/cares/ares_getsock.c
+  ../../third_party/cares/cares/ares_init.c
+  ../../third_party/cares/cares/ares_library_init.c
+  ../../third_party/cares/cares/ares_llist.c
+  ../../third_party/cares/cares/ares_mkquery.c
+  ../../third_party/cares/cares/ares_create_query.c
+  ../../third_party/cares/cares/ares_nowarn.c
+  ../../third_party/cares/cares/ares_options.c
+  ../../third_party/cares/cares/ares_parse_a_reply.c
+  ../../third_party/cares/cares/ares_parse_aaaa_reply.c
+  ../../third_party/cares/cares/ares_parse_mx_reply.c
+  ../../third_party/cares/cares/ares_parse_naptr_reply.c
+  ../../third_party/cares/cares/ares_parse_ns_reply.c
+  ../../third_party/cares/cares/ares_parse_ptr_reply.c
+  ../../third_party/cares/cares/ares_parse_soa_reply.c
+  ../../third_party/cares/cares/ares_parse_srv_reply.c
+  ../../third_party/cares/cares/ares_parse_txt_reply.c
+  ../../third_party/cares/cares/ares_platform.c
+  ../../third_party/cares/cares/ares_process.c
+  ../../third_party/cares/cares/ares_query.c
+  ../../third_party/cares/cares/ares_search.c
+  ../../third_party/cares/cares/ares_send.c
+  ../../third_party/cares/cares/ares_strcasecmp.c
+  ../../third_party/cares/cares/ares_strdup.c
+  ../../third_party/cares/cares/ares_strerror.c
+  ../../third_party/cares/cares/ares_timeout.c
+  ../../third_party/cares/cares/ares_version.c
+  ../../third_party/cares/cares/ares_writev.c
+  ../../third_party/cares/cares/bitncmp.c
+  ../../third_party/cares/cares/inet_net_pton.c
+  ../../third_party/cares/cares/inet_ntop.c
+  ../../third_party/cares/cares/windows_port.c
+)
