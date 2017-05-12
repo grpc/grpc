@@ -19,14 +19,29 @@ made some significant changes and want to see some data. From your branch, run
 
 `tools/profiling/microbenchmarks/bm_diff/bm_main.py -b bm_error -l 5 -d master`
 
-This will build the `bm_error` binary on your branch and master. It will then
-run these benchmarks 5 times each. Lastly it will compute the statistically
-significant performance differences between the two branches. This should show
-the nice performance wins your changes have made.
+This will build the `bm_error` binary on your branch, and then it will checkout 
+master and build it there too. It will then run these benchmarks 5 times each. 
+Lastly it will compute the statistically significant performance differences 
+between the two branches. This should show the nice performance wins your 
+changes have made.
 
 If you have already invoked bm_main with `-d master`, you should instead use 
-`-o old` for subsequent runs. This allows the script to skip re-building and 
-re-running the unchanged master branch.
+`-o` for subsequent runs. This allows the script to skip re-building and 
+re-running the unchanged master branch. For example:
+
+`tools/profiling/microbenchmarks/bm_diff/bm_main.py -b bm_error -l 5 -o`
+
+This will only build and run `bm_error` on your branch. It will then compare
+the output to the saved runs from master.
+
+## Advanced Workflow
+
+If you have a deeper knowledge of these scripts, you can use them to do more
+fine tuned benchmark comparisons. For example, you could build, run, and save
+the benchmark output from two different base branches. Then you could diff both
+of these baselines against you working branch to see how the different metrics
+change. The rest of this doc goes over the details of what each of the
+individual modules accomplishes.
 
 ## bm_build.py
 
@@ -55,7 +70,7 @@ For example, if you were to run:
 
 `tools/profiling/microbenchmarks/bm_diff/bm_run.py -b bm_error -b baseline -l 5`
 
-Then an example output file would be `bm_error.opt.baseline.1.json`
+Then an example output file would be `bm_error.opt.baseline.0.json`
 
 ## bm_diff.py
 

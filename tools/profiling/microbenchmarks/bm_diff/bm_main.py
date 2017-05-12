@@ -71,6 +71,7 @@ def _args():
     argp.add_argument(
         '-o',
         '--old',
+        default='old',
         type=str,
         help='Name of baseline run to compare to. Ususally just called "old"')
     argp.add_argument(
