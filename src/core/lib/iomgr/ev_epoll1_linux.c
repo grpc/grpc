@@ -58,7 +58,6 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
 
@@ -130,7 +129,9 @@ struct grpc_pollset {
  * Pollset-set Declarations
  */
 
-struct grpc_pollset_set {};
+struct grpc_pollset_set {
+  char unused;
+};
 
 /*******************************************************************************
  * Common helpers
@@ -283,10 +284,6 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
 }
 
-static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) {
-  return (grpc_workqueue *)0xb0b51ed;
-}
-
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
   grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
@@ -313,8 +310,6 @@ GPR_TLS_DECL(g_current_thread_worker);
 static gpr_atm g_active_poller;
 static pollset_neighbourhood *g_neighbourhoods;
 static size_t g_num_neighbourhoods;
-static gpr_mu g_wq_mu;
-static grpc_closure_list g_wq_items;
 
 /* Return true if first in list */
 static bool worker_insert(grpc_pollset *pollset, grpc_pollset_worker *worker) {
@@ -363,8 +358,6 @@ static grpc_error *pollset_global_init(void) {
   gpr_atm_no_barrier_store(&g_active_poller, 0);
   global_wakeup_fd.read_fd = -1;
   grpc_error *err = grpc_wakeup_fd_init(&global_wakeup_fd);
-  gpr_mu_init(&g_wq_mu);
-  g_wq_items = (grpc_closure_list)GRPC_CLOSURE_LIST_INIT;
   if (err != GRPC_ERROR_NONE) return err;
   struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLET),
                            .data.ptr = &global_wakeup_fd};
@@ -383,7 +376,6 @@ static grpc_error *pollset_global_init(void) {
 static void pollset_global_shutdown(void) {
   gpr_tls_destroy(&g_current_thread_pollset);
   gpr_tls_destroy(&g_current_thread_worker);
-  gpr_mu_destroy(&g_wq_mu);
   if (global_wakeup_fd.read_fd != -1) grpc_wakeup_fd_destroy(&global_wakeup_fd);
   for (size_t i = 0; i < g_num_neighbourhoods; i++) {
     gpr_mu_destroy(&g_neighbourhoods[i].mu);
@@ -507,9 +499,6 @@ static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   for (int i = 0; i < r; i++) {
     void *data_ptr = events[i].data.ptr;
     if (data_ptr == &global_wakeup_fd) {
-      gpr_mu_lock(&g_wq_mu);
-      grpc_closure_list_move(&g_wq_items, &exec_ctx->closure_list);
-      gpr_mu_unlock(&g_wq_mu);
       append_error(&error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                    err_desc);
     } else {
@@ -792,84 +781,6 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {}
 
 /*******************************************************************************
- * Workqueue Definitions
- */
-
-#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
-                                     const char *file, int line,
-                                     const char *reason) {
-  return workqueue;
-}
-
-static void workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            const char *file, int line, const char *reason) {}
-#else
-static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue) {
-  return workqueue;
-}
-
-static void workqueue_unref(grpc_exec_ctx *exec_ctx,
-                            grpc_workqueue *workqueue) {}
-#endif
-
-static void wq_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                     grpc_error *error) {
-  // find a neighbourhood to wakeup
-  bool scheduled = false;
-  size_t initial_neighbourhood = choose_neighbourhood();
-  for (size_t i = 0; !scheduled && i < g_num_neighbourhoods; i++) {
-    pollset_neighbourhood *neighbourhood =
-        &g_neighbourhoods[(initial_neighbourhood + i) % g_num_neighbourhoods];
-    if (gpr_mu_trylock(&neighbourhood->mu)) {
-      if (neighbourhood->active_root != NULL) {
-        grpc_pollset *inspect = neighbourhood->active_root;
-        do {
-          if (gpr_mu_trylock(&inspect->mu)) {
-            if (inspect->root_worker != NULL) {
-              grpc_pollset_worker *inspect_worker = inspect->root_worker;
-              do {
-                if (inspect_worker->kick_state == UNKICKED) {
-                  inspect_worker->kick_state = KICKED;
-                  grpc_closure_list_append(
-                      &inspect_worker->schedule_on_end_work, closure, error);
-                  if (inspect_worker->initialized_cv) {
-                    gpr_cv_signal(&inspect_worker->cv);
-                  }
-                  scheduled = true;
-                }
-                inspect_worker = inspect_worker->next;
-              } while (!scheduled && inspect_worker != inspect->root_worker);
-            }
-            gpr_mu_unlock(&inspect->mu);
-          }
-          inspect = inspect->next;
-        } while (!scheduled && inspect != neighbourhood->active_root);
-      }
-      gpr_mu_unlock(&neighbourhood->mu);
-    }
-  }
-  if (!scheduled) {
-    gpr_mu_lock(&g_wq_mu);
-    grpc_closure_list_append(&g_wq_items, closure, error);
-    gpr_mu_unlock(&g_wq_mu);
-    GRPC_LOG_IF_ERROR("workqueue_scheduler",
-                      grpc_wakeup_fd_wakeup(&global_wakeup_fd));
-  }
-}
-
-static const grpc_closure_scheduler_vtable
-    singleton_workqueue_scheduler_vtable = {wq_sched, wq_sched,
-                                            "epoll1_workqueue"};
-
-static grpc_closure_scheduler singleton_workqueue_scheduler = {
-    &singleton_workqueue_scheduler_vtable};
-
-static grpc_closure_scheduler *workqueue_scheduler(grpc_workqueue *workqueue) {
-  return &singleton_workqueue_scheduler;
-}
-
-/*******************************************************************************
  * Pollset-set Definitions
  */
 
@@ -920,7 +831,6 @@ static const grpc_event_engine_vtable vtable = {
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
     .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
-    .fd_get_workqueue = fd_get_workqueue,
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,
@@ -937,10 +847,6 @@ static const grpc_event_engine_vtable vtable = {
     .pollset_set_del_pollset_set = pollset_set_del_pollset_set,
     .pollset_set_add_fd = pollset_set_add_fd,
     .pollset_set_del_fd = pollset_set_del_fd,
-
-    .workqueue_ref = workqueue_ref,
-    .workqueue_unref = workqueue_unref,
-    .workqueue_scheduler = workqueue_scheduler,
 
     .shutdown_engine = shutdown_engine,
 };

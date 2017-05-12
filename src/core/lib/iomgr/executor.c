@@ -148,9 +148,9 @@ static void executor_thread(void *arg) {
 static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_error *error) {
   thread_state *ts = (thread_state *)gpr_tls_get(&g_this_thread_state);
-  gpr_atm cur_thread_count = gpr_atm_no_barrier_load(&g_cur_threads);
+  size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
   if (ts == NULL) {
-    ts = &g_thread_state[rand() % cur_thread_count];
+    ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
   }
   gpr_mu_lock(&ts->mu);
   grpc_closure_list_append(&ts->elems, closure, error);
@@ -159,7 +159,7 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
       ts->depth > MAX_DEPTH && cur_thread_count < g_max_threads;
   gpr_mu_unlock(&ts->mu);
   if (try_new_thread && gpr_spinlock_trylock(&g_adding_thread_lock)) {
-    cur_thread_count = gpr_atm_no_barrier_load(&g_cur_threads);
+    cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
     if (cur_thread_count < g_max_threads) {
       gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
 
