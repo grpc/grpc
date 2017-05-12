@@ -46,6 +46,7 @@ load(
     "grpc_cc_library",
     "grpc_proto_plugin",
     "grpc_cc_libraries",
+    "grpc_generate_one_off_targets",
 )
 
 # This should be updated along with build.yaml
