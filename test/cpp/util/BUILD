@@ -29,7 +29,7 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_binary")
 
 package(default_visibility = ["//visibility:public"])
 
