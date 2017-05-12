@@ -112,6 +112,7 @@ def _ping_pong_scenario(name, rpc_type,
                         categories=DEFAULT_CATEGORIES,
                         channels=None,
                         outstanding=None,
+                        num_clients=None,
                         resource_quota_size=None,
                         messages_per_stream=None,
                         excluded_poll_engines=[]):
@@ -158,7 +159,7 @@ def _ping_pong_scenario(name, rpc_type,
     wide = channels if channels is not None else WIDE
     deep = int(math.ceil(1.0 * outstanding_calls / wide))
 
-    scenario['num_clients'] = 0  # use as many client as available.
+    scenario['num_clients'] = num_clients if num_clients is not None else 0  # use as many clients as available.
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
     scenario['client_config']['client_channels'] = wide
     scenario['client_config']['async_client_threads'] = 0
@@ -196,6 +197,24 @@ class CXXLanguage:
 
   def scenarios(self):
     # TODO(ctiller): add 70% load latency test
+    yield _ping_pong_scenario(
+      'cpp_protobuf_async_unary_1channel_100rpcs_1MB', rpc_type='UNARY',
+      client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+      req_size=1024*1024, resp_size=1024*1024,
+      unconstrained_client='async', outstanding=100, channels=1,
+      num_clients=1,
+      secure=False,
+      categories=[SMOKETEST] + [SCALABLE])
+
+    yield _ping_pong_scenario(
+      'cpp_protobuf_async_streaming_from_client_1channel_1MB', rpc_type='STREAMING_FROM_CLIENT',
+      client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+      req_size=1024*1024, resp_size=1024*1024,
+      unconstrained_client='async', outstanding=1, channels=1,
+      num_clients=1,
+      secure=False,
+      categories=[SMOKETEST] + [SCALABLE])
+
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
       smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]

@@ -686,6 +686,7 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
         StringFromCopiedSlice(call_details_.method);
     static_cast<GenericServerContext*>(context_)->host_ =
         StringFromCopiedSlice(call_details_.host);
+    context_->deadline_ = call_details_.deadline;
   }
   grpc_slice_unref(call_details_.method);
   grpc_slice_unref(call_details_.host);
