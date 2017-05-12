@@ -85,98 +85,6 @@ logger_state grpc_logger_state;
 
 static char *pem_root_certs = NULL;
 
-void InitStatusConstants(Local<Object> exports) {
-  Nan::HandleScope scope;
-  Local<Object> status = Nan::New<Object>();
-  Nan::Set(exports, Nan::New("status").ToLocalChecked(), status);
-  Local<Value> OK(Nan::New<Uint32, uint32_t>(GRPC_STATUS_OK));
-  Nan::Set(status, Nan::New("OK").ToLocalChecked(), OK);
-  Local<Value> CANCELLED(Nan::New<Uint32, uint32_t>(GRPC_STATUS_CANCELLED));
-  Nan::Set(status, Nan::New("CANCELLED").ToLocalChecked(), CANCELLED);
-  Local<Value> UNKNOWN(Nan::New<Uint32, uint32_t>(GRPC_STATUS_UNKNOWN));
-  Nan::Set(status, Nan::New("UNKNOWN").ToLocalChecked(), UNKNOWN);
-  Local<Value> INVALID_ARGUMENT(
-      Nan::New<Uint32, uint32_t>(GRPC_STATUS_INVALID_ARGUMENT));
-  Nan::Set(status, Nan::New("INVALID_ARGUMENT").ToLocalChecked(),
-           INVALID_ARGUMENT);
-  Local<Value> DEADLINE_EXCEEDED(
-      Nan::New<Uint32, uint32_t>(GRPC_STATUS_DEADLINE_EXCEEDED));
-  Nan::Set(status, Nan::New("DEADLINE_EXCEEDED").ToLocalChecked(),
-           DEADLINE_EXCEEDED);
-  Local<Value> NOT_FOUND(Nan::New<Uint32, uint32_t>(GRPC_STATUS_NOT_FOUND));
-  Nan::Set(status, Nan::New("NOT_FOUND").ToLocalChecked(), NOT_FOUND);
-  Local<Value> ALREADY_EXISTS(
-      Nan::New<Uint32, uint32_t>(GRPC_STATUS_ALREADY_EXISTS));
-  Nan::Set(status, Nan::New("ALREADY_EXISTS").ToLocalChecked(), ALREADY_EXISTS);
-  Local<Value> PERMISSION_DENIED(
-      Nan::New<Uint32, uint32_t>(GRPC_STATUS_PERMISSION_DENIED));
-  Nan::Set(status, Nan::New("PERMISSION_DENIED").ToLocalChecked(),
-           PERMISSION_DENIED);
-  Local<Value> UNAUTHENTICATED(
-      Nan::New<Uint32, uint32_t>(GRPC_STATUS_UNAUTHENTICATED));
-  Nan::Set(status, Nan::New("UNAUTHENTICATED").ToLocalChecked(),
-           UNAUTHENTICATED);
-  Local<Value> RESOURCE_EXHAUSTED(
-      Nan::New<Uint32, uint32_t>(GRPC_STATUS_RESOURCE_EXHAUSTED));
-  Nan::Set(status, Nan::New("RESOURCE_EXHAUSTED").ToLocalChecked(),
-           RESOURCE_EXHAUSTED);
-  Local<Value> FAILED_PRECONDITION(
-      Nan::New<Uint32, uint32_t>(GRPC_STATUS_FAILED_PRECONDITION));
-  Nan::Set(status, Nan::New("FAILED_PRECONDITION").ToLocalChecked(),
-           FAILED_PRECONDITION);
-  Local<Value> ABORTED(Nan::New<Uint32, uint32_t>(GRPC_STATUS_ABORTED));
-  Nan::Set(status, Nan::New("ABORTED").ToLocalChecked(), ABORTED);
-  Local<Value> OUT_OF_RANGE(
-      Nan::New<Uint32, uint32_t>(GRPC_STATUS_OUT_OF_RANGE));
-  Nan::Set(status, Nan::New("OUT_OF_RANGE").ToLocalChecked(), OUT_OF_RANGE);
-  Local<Value> UNIMPLEMENTED(
-      Nan::New<Uint32, uint32_t>(GRPC_STATUS_UNIMPLEMENTED));
-  Nan::Set(status, Nan::New("UNIMPLEMENTED").ToLocalChecked(), UNIMPLEMENTED);
-  Local<Value> INTERNAL(Nan::New<Uint32, uint32_t>(GRPC_STATUS_INTERNAL));
-  Nan::Set(status, Nan::New("INTERNAL").ToLocalChecked(), INTERNAL);
-  Local<Value> UNAVAILABLE(Nan::New<Uint32, uint32_t>(GRPC_STATUS_UNAVAILABLE));
-  Nan::Set(status, Nan::New("UNAVAILABLE").ToLocalChecked(), UNAVAILABLE);
-  Local<Value> DATA_LOSS(Nan::New<Uint32, uint32_t>(GRPC_STATUS_DATA_LOSS));
-  Nan::Set(status, Nan::New("DATA_LOSS").ToLocalChecked(), DATA_LOSS);
-}
-
-void InitCallErrorConstants(Local<Object> exports) {
-  Nan::HandleScope scope;
-  Local<Object> call_error = Nan::New<Object>();
-  Nan::Set(exports, Nan::New("callError").ToLocalChecked(), call_error);
-  Local<Value> OK(Nan::New<Uint32, uint32_t>(GRPC_CALL_OK));
-  Nan::Set(call_error, Nan::New("OK").ToLocalChecked(), OK);
-  Local<Value> CALL_ERROR(Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR));
-  Nan::Set(call_error, Nan::New("ERROR").ToLocalChecked(), CALL_ERROR);
-  Local<Value> NOT_ON_SERVER(
-      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_ON_SERVER));
-  Nan::Set(call_error, Nan::New("NOT_ON_SERVER").ToLocalChecked(),
-           NOT_ON_SERVER);
-  Local<Value> NOT_ON_CLIENT(
-      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_ON_CLIENT));
-  Nan::Set(call_error, Nan::New("NOT_ON_CLIENT").ToLocalChecked(),
-           NOT_ON_CLIENT);
-  Local<Value> ALREADY_INVOKED(
-      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_ALREADY_INVOKED));
-  Nan::Set(call_error, Nan::New("ALREADY_INVOKED").ToLocalChecked(),
-           ALREADY_INVOKED);
-  Local<Value> NOT_INVOKED(
-      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_INVOKED));
-  Nan::Set(call_error, Nan::New("NOT_INVOKED").ToLocalChecked(), NOT_INVOKED);
-  Local<Value> ALREADY_FINISHED(
-      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_ALREADY_FINISHED));
-  Nan::Set(call_error, Nan::New("ALREADY_FINISHED").ToLocalChecked(),
-           ALREADY_FINISHED);
-  Local<Value> TOO_MANY_OPERATIONS(
-      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS));
-  Nan::Set(call_error, Nan::New("TOO_MANY_OPERATIONS").ToLocalChecked(),
-           TOO_MANY_OPERATIONS);
-  Local<Value> INVALID_FLAGS(
-      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_INVALID_FLAGS));
-  Nan::Set(call_error, Nan::New("INVALID_FLAGS").ToLocalChecked(),
-           INVALID_FLAGS);
-}
-
 void InitOpTypeConstants(Local<Object> exports) {
   Nan::HandleScope scope;
   Local<Object> op_type = Nan::New<Object>();
@@ -211,27 +119,6 @@ void InitOpTypeConstants(Local<Object> exports) {
            RECV_CLOSE_ON_SERVER);
 }
 
-void InitPropagateConstants(Local<Object> exports) {
-  Nan::HandleScope scope;
-  Local<Object> propagate = Nan::New<Object>();
-  Nan::Set(exports, Nan::New("propagate").ToLocalChecked(), propagate);
-  Local<Value> DEADLINE(Nan::New<Uint32, uint32_t>(GRPC_PROPAGATE_DEADLINE));
-  Nan::Set(propagate, Nan::New("DEADLINE").ToLocalChecked(), DEADLINE);
-  Local<Value> CENSUS_STATS_CONTEXT(
-      Nan::New<Uint32, uint32_t>(GRPC_PROPAGATE_CENSUS_STATS_CONTEXT));
-  Nan::Set(propagate, Nan::New("CENSUS_STATS_CONTEXT").ToLocalChecked(),
-           CENSUS_STATS_CONTEXT);
-  Local<Value> CENSUS_TRACING_CONTEXT(
-      Nan::New<Uint32, uint32_t>(GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT));
-  Nan::Set(propagate, Nan::New("CENSUS_TRACING_CONTEXT").ToLocalChecked(),
-           CENSUS_TRACING_CONTEXT);
-  Local<Value> CANCELLATION(
-      Nan::New<Uint32, uint32_t>(GRPC_PROPAGATE_CANCELLATION));
-  Nan::Set(propagate, Nan::New("CANCELLATION").ToLocalChecked(), CANCELLATION);
-  Local<Value> DEFAULTS(Nan::New<Uint32, uint32_t>(GRPC_PROPAGATE_DEFAULTS));
-  Nan::Set(propagate, Nan::New("DEFAULTS").ToLocalChecked(), DEFAULTS);
-}
-
 void InitConnectivityStateConstants(Local<Object> exports) {
   Nan::HandleScope scope;
   Local<Object> channel_state = Nan::New<Object>();
@@ -250,28 +137,6 @@ void InitConnectivityStateConstants(Local<Object> exports) {
   Local<Value> FATAL_FAILURE(Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_SHUTDOWN));
   Nan::Set(channel_state, Nan::New("FATAL_FAILURE").ToLocalChecked(),
            FATAL_FAILURE);
-}
-
-void InitWriteFlags(Local<Object> exports) {
-  Nan::HandleScope scope;
-  Local<Object> write_flags = Nan::New<Object>();
-  Nan::Set(exports, Nan::New("writeFlags").ToLocalChecked(), write_flags);
-  Local<Value> BUFFER_HINT(Nan::New<Uint32, uint32_t>(GRPC_WRITE_BUFFER_HINT));
-  Nan::Set(write_flags, Nan::New("BUFFER_HINT").ToLocalChecked(), BUFFER_HINT);
-  Local<Value> NO_COMPRESS(Nan::New<Uint32, uint32_t>(GRPC_WRITE_NO_COMPRESS));
-  Nan::Set(write_flags, Nan::New("NO_COMPRESS").ToLocalChecked(), NO_COMPRESS);
-}
-
-void InitLogConstants(Local<Object> exports) {
-  Nan::HandleScope scope;
-  Local<Object> log_verbosity = Nan::New<Object>();
-  Nan::Set(exports, Nan::New("logVerbosity").ToLocalChecked(), log_verbosity);
-  Local<Value> LOG_DEBUG(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_DEBUG));
-  Nan::Set(log_verbosity, Nan::New("DEBUG").ToLocalChecked(), LOG_DEBUG);
-  Local<Value> LOG_INFO(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_INFO));
-  Nan::Set(log_verbosity, Nan::New("INFO").ToLocalChecked(), LOG_INFO);
-  Local<Value> LOG_ERROR(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_ERROR));
-  Nan::Set(log_verbosity, Nan::New("ERROR").ToLocalChecked(), LOG_ERROR);
 }
 
 NAN_METHOD(MetadataKeyIsLegal) {
@@ -421,13 +286,8 @@ void init(Local<Object> exports) {
   grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
   init_logger();
 
-  InitStatusConstants(exports);
-  InitCallErrorConstants(exports);
   InitOpTypeConstants(exports);
-  InitPropagateConstants(exports);
   InitConnectivityStateConstants(exports);
-  InitWriteFlags(exports);
-  InitLogConstants(exports);
 
   grpc_pollset_work_run_loop = 0;
 

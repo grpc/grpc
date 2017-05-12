@@ -31,6 +31,7 @@
 import collections
 import enum
 import logging
+import six
 import threading
 import time
 
@@ -254,6 +255,20 @@ class _Context(grpc.ServicerContext):
 
     def peer(self):
         return _common.decode(self._rpc_event.operation_call.peer())
+
+    def peer_identities(self):
+        return cygrpc.peer_identities(self._rpc_event.operation_call)
+
+    def peer_identity_key(self):
+        id_key = cygrpc.peer_identity_key(self._rpc_event.operation_call)
+        return id_key if id_key is None else _common.decode(id_key)
+
+    def auth_context(self):
+        return {
+            _common.decode(key): value
+            for key, value in six.iteritems(
+                cygrpc.auth_context(self._rpc_event.operation_call))
+        }
 
     def send_initial_metadata(self, initial_metadata):
         with self._state.condition:

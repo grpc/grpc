@@ -75,7 +75,8 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['epoll', 'poll', 'poll-cv']
+  'linux': ['epollsig', 'poll', 'poll-cv']
+# TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
 }
 
 
@@ -339,7 +340,8 @@ class CLanguage(object):
     if self.platform == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
-    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
+    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target,
+            'check_epollexclusive']
 
   def make_options(self):
     return self._make_options;
@@ -1431,6 +1433,14 @@ class BuildAndRunError(object):
   POST_TEST = object()
 
 
+def _has_epollexclusive():
+  try:
+    subprocess.check_call('bins/%s/check_epollexclusive' % args.config)
+    return True
+  except subprocess.CalledProcessError, e:
+    return False
+
+
 # returns a list of things that failed (or an empty list on success)
 def _build_and_run(
     check_cancelled, newline_on_success, xml_report=None, build_only=False):
@@ -1447,6 +1457,10 @@ def _build_and_run(
       report_utils.render_junit_xml_report(resultset, xml_report,
                                            suite_name=args.report_suite_name)
     return []
+
+  if not args.travis and not _has_epollexclusive() and 'epollex' in _POLLING_STRATEGIES[platform_string()]:
+    print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
+    _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])

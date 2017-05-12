@@ -37,6 +37,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "src/core/lib/debug/trace.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -73,8 +75,7 @@ const char *tsi_result_to_string(tsi_result result);
 
 /* --- tsi tracing --- */
 
-/* Set this early to avoid races */
-extern int tsi_tracing_enabled;
+extern grpc_tracer_flag tsi_tracing_enabled;
 
 /* --- tsi_frame_protector object ---
 

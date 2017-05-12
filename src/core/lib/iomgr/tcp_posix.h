@@ -44,10 +44,11 @@
    otherwise specified.
 */
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
-extern int grpc_tcp_trace;
+extern grpc_tracer_flag grpc_tcp_trace;
 
 /* Create a tcp endpoint given a file desciptor and a read slice size.
    Takes ownership of fd. */

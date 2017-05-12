@@ -147,6 +147,11 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = NULL;
   op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
@@ -158,11 +163,6 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -200,7 +200,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
 void cancel_after_invoke(grpc_end2end_test_config config) {
   unsigned i, j;
 
-  for (j = 2; j < 6; j++) {
+  for (j = 3; j < 6; j++) {
     for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
       test_cancel_after_invoke(config, cancellation_modes[i], j);
     }

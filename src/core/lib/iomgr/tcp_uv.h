@@ -44,11 +44,12 @@
    otherwise specified.
 */
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
 
 #include <uv.h>
 
-extern int grpc_tcp_trace;
+extern grpc_tracer_flag grpc_tcp_trace;
 
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 

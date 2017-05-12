@@ -58,9 +58,8 @@ typedef struct freereq {
 static void destroy_pops_and_shutdown(grpc_exec_ctx *exec_ctx, void *p,
                                       grpc_error *error) {
   grpc_pollset *pollset = grpc_polling_entity_pollset(p);
-  grpc_pollset_destroy(pollset);
+  grpc_pollset_destroy(exec_ctx, pollset);
   gpr_free(pollset);
-  grpc_shutdown();
 }
 
 static void freed_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
@@ -122,12 +121,13 @@ void grpc_free_port_using_server(int port) {
   gpr_mu_unlock(pr.mu);
 
   grpc_httpcli_context_destroy(&exec_ctx, &context);
-  grpc_exec_ctx_finish(&exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(path);
   grpc_http_response_destroy(&rsp);
+
+  grpc_shutdown();
 }
 
 typedef struct portreq {
@@ -239,7 +239,6 @@ int grpc_pick_port_using_server(void) {
       grpc_closure_create(got_port_from_server, &pr, grpc_schedule_on_exec_ctx),
       &pr.response);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
-  grpc_exec_ctx_finish(&exec_ctx);
   gpr_mu_lock(pr.mu);
   while (pr.port == -1) {
     grpc_pollset_worker *worker = NULL;
@@ -258,6 +257,7 @@ int grpc_pick_port_using_server(void) {
   grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_shutdown();
 
   return pr.port;
 }
