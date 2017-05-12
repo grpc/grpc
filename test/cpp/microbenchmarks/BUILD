@@ -96,10 +96,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_fullstack_trickle",
     srcs = ["bm_fullstack_trickle.cc"],
-    deps = [":helpers"]
+    deps = [":helpers"],
     external_deps = [
         "gflags",
-    ]
+    ],
 )
 
 grpc_cc_test(
