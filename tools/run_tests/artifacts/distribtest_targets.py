@@ -63,8 +63,14 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
 
 
 def create_jobspec(name, cmdline, environ=None, shell=False,
-                   flake_retries=0, timeout_retries=0):
+                   flake_retries=0, timeout_retries=0,
+                   use_workspace=False):
   """Creates jobspec."""
+  environ = environ.copy()
+  if use_workspace:
+    environ['WORKSPACE_NAME'] = 'workspace_%s' % name
+    cmdline = ['bash',
+               'tools/run_tests/artifacts/run_in_workspace.sh'] + cmdline
   jobspec = jobset.JobSpec(
           cmdline=cmdline,
           environ=environ,
@@ -80,7 +86,7 @@ class CSharpDistribTest(object):
   """Tests C# NuGet package"""
 
   def __init__(self, platform, arch, docker_suffix=None, use_dotnet_cli=False):
-    self.name = 'csharp_nuget_%s_%s' % (platform, arch)
+    self.name = 'csharp_distribtest_%s_%s' % (platform, arch)
     self.platform = platform
     self.arch = arch
     self.docker_suffix = docker_suffix
@@ -110,16 +116,18 @@ class CSharpDistribTest(object):
     elif self.platform == 'macos':
       return create_jobspec(self.name,
           ['test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix],
-          environ={'EXTERNAL_GIT_ROOT': '../../..'})
+          environ={'EXTERNAL_GIT_ROOT': '../../../..'},
+          use_workspace=True)
     elif self.platform == 'windows':
       if self.arch == 'x64':
         environ={'MSBUILD_EXTRA_ARGS': '/p:Platform=x64',
                  'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\x64\\Debug'}
       else:
-        environ={'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\\Debug'}
+        environ={'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\Debug'}
       return create_jobspec(self.name,
           ['test\\distrib\\csharp\\run_distrib_test%s.bat' % self.script_suffix],
-          environ=environ)
+          environ=environ,
+          use_workspace=True)
     else:
       raise Exception("Not supported yet.")
 
@@ -161,7 +169,8 @@ class NodeDistribTest(object):
       return create_jobspec(self.name,
                             ['test/distrib/node/run_distrib_test.sh',
                              str(self.node_version)],
-                            environ={'EXTERNAL_GIT_ROOT': '../../..'})
+                            environ={'EXTERNAL_GIT_ROOT': '../../../..'},
+                            use_workspace=True)
     else:
       raise Exception("Not supported yet.")
 
@@ -249,7 +258,8 @@ class PHPDistribTest(object):
     elif self.platform == 'macos':
       return create_jobspec(self.name,
           ['test/distrib/php/run_distrib_test.sh'],
-          environ={'EXTERNAL_GIT_ROOT': '../../..'})
+          environ={'EXTERNAL_GIT_ROOT': '../../../..'},
+          use_workspace=True)
     else:
       raise Exception("Not supported yet.")
 
