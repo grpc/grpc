@@ -100,7 +100,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     linkopts = ["-pthread"],
   )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False):
   copts = []
   if language.upper() == "C":
     copts = ["-std=c99"]
@@ -110,6 +110,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     args = args,
     data = data,
     testonly = testonly,
+    linkshared = linkshared,
     deps = deps + ["//external:" + dep for dep in external_deps],
     copts = copts,
     linkopts = ["-pthread"],
