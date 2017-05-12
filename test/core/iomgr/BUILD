@@ -75,18 +75,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "ev_epoll_linux_test",
-    srcs = ["ev_epoll_linux_test.c"],
-    language = "C",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "ev_epollsig_linux_test",
     srcs = ["ev_epollsig_linux_test.c"],
     deps = [
