@@ -464,7 +464,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_base",
+    name = "grpc_base_c",
     srcs = [
         "src/core/lib/channel/channel_args.c",
         "src/core/lib/channel/channel_stack.c",
@@ -573,7 +573,6 @@ grpc_cc_library(
         "src/core/lib/surface/completion_queue.c",
         "src/core/lib/surface/completion_queue_factory.c",
         "src/core/lib/surface/event_string.c",
-        "src/core/lib/surface/lame_client.cc",
         "src/core/lib/surface/metadata_array.c",
         "src/core/lib/surface/server.c",
         "src/core/lib/surface/validate_metadata.c",
@@ -727,6 +726,17 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_trace",
     ],
+)
+
+grpc_cc_library(
+    name = "grpc_base",
+    language = "c++",
+    srcs = [
+        "src/core/lib/surface/lame_client.cc",
+    ],
+    deps = [
+        "grpc_base_c",
+    ]
 )
 
 grpc_cc_library(

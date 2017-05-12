@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,39 +31,16 @@
  *
  */
 
-#include "test/cpp/microbenchmarks/helpers.h"
+#ifndef GRPC_SUPPORT_WORKAROUND_LIST_H
+#define GRPC_SUPPORT_WORKAROUND_LIST_H
 
-void TrackCounters::Finish(benchmark::State &state) {
-  std::ostringstream out;
-  AddToLabel(out, state);
-  std::string label = out.str();
-  if (label.length() && label[0] == ' ') {
-    label = label.substr(1);
-  }
-  state.SetLabel(label.c_str());
-}
+/* The list of IDs of server workarounds currently maintained by gRPC. For
+ * explanation and detailed descriptions of workarounds, see
+ * /docs/workarounds.md
+ */
+typedef enum {
+  GRPC_WORKAROUND_ID_CRONET_COMPRESSION = 0,
+  GRPC_MAX_WORKAROUND_ID
+} grpc_workaround_list;
 
-void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
-#ifdef GPR_LOW_LEVEL_COUNTERS
-  grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
-  out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
-                                     mu_locks_at_start_) /
-                            (double)state.iterations())
-      << " atm_cas/iter:"
-      << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_cas) -
-                   atm_cas_at_start_) /
-          (double)state.iterations())
-      << " atm_add/iter:"
-      << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_add) -
-                   atm_add_at_start_) /
-          (double)state.iterations())
-      << " nows/iter:"
-      << ((double)(gpr_atm_no_barrier_load(&gpr_now_call_count) -
-                   now_calls_at_start_) /
-          (double)state.iterations())
-      << " allocs/iter:"
-      << ((double)(counters_at_end.total_allocs_absolute -
-                   counters_at_start_.total_allocs_absolute) /
-          (double)state.iterations());
 #endif
-}
