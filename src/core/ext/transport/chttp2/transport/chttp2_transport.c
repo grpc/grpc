@@ -909,7 +909,7 @@ static void write_action(grpc_exec_ctx *exec_ctx, void *gt, grpc_error *error) {
   grpc_chttp2_transport *t = gt;
   GPR_TIMER_BEGIN("write_action", 0);
   grpc_endpoint_write(
-      exec_ctx, t->ep, &t->outbuf, true,
+      exec_ctx, t->ep, &t->outbuf, t->write_is_covered,
       grpc_closure_init(&t->write_action_end_locked, write_action_end_locked, t,
                         grpc_combiner_scheduler(t->combiner, false)));
   GPR_TIMER_END("write_action", 0);
@@ -1192,8 +1192,12 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
         cb->call_at_byte = notify_offset;
         cb->closure = s->fetching_send_message_finished;
         s->fetching_send_message_finished = NULL;
-        cb->next = s->on_write_finished_cbs;
-        s->on_write_finished_cbs = cb;
+        grpc_chttp2_write_cb **list =
+            s->fetching_send_message->flags & GRPC_WRITE_THROUGH
+                ? &s->on_write_finished_cbs
+                : &s->on_flow_controlled_cbs;
+        cb->next = *list;
+        *list = cb;
       }
       s->fetching_send_message = NULL;
       return; /* early out */
@@ -1873,6 +1877,21 @@ static grpc_error *removal_error(grpc_error *extra_error, grpc_chttp2_stream *s,
   return error;
 }
 
+static void flush_write_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                             grpc_chttp2_stream *s, grpc_chttp2_write_cb **list,
+                             grpc_error *error) {
+  while (*list) {
+    grpc_chttp2_write_cb *cb = *list;
+    *list = cb->next;
+    grpc_chttp2_complete_closure_step(exec_ctx, t, s, &cb->closure,
+                                      GRPC_ERROR_REF(error),
+                                      "on_write_finished_cb");
+    cb->next = t->write_cb_pool;
+    t->write_cb_pool = cb;
+  }
+  GRPC_ERROR_UNREF(error);
+}
+
 void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      grpc_chttp2_stream *s, grpc_error *error) {
@@ -1892,16 +1911,9 @@ void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->fetching_send_message_finished, GRPC_ERROR_REF(error),
       "fetching_send_message_finished");
-  while (s->on_write_finished_cbs) {
-    grpc_chttp2_write_cb *cb = s->on_write_finished_cbs;
-    s->on_write_finished_cbs = cb->next;
-    grpc_chttp2_complete_closure_step(exec_ctx, t, s, &cb->closure,
-                                      GRPC_ERROR_REF(error),
-                                      "on_write_finished_cb");
-    cb->next = t->write_cb_pool;
-    t->write_cb_pool = cb;
-  }
-  GRPC_ERROR_UNREF(error);
+  flush_write_list(exec_ctx, t, s, &s->on_write_finished_cbs,
+                   GRPC_ERROR_REF(error));
+  flush_write_list(exec_ctx, t, s, &s->on_flow_controlled_cbs, error);
 }
 
 void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,

@@ -138,10 +138,11 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
 
 static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                         grpc_chttp2_stream *s, int64_t send_bytes,
-                        grpc_chttp2_write_cb **list, grpc_error *error) {
+                        grpc_chttp2_write_cb **list, int64_t *ctr,
+                        grpc_error *error) {
   grpc_chttp2_write_cb *cb = *list;
   *list = NULL;
-  s->flow_controlled_bytes_written += send_bytes;
+  *ctr += send_bytes;
   while (cb) {
     grpc_chttp2_write_cb *next = cb->next;
     if (cb->call_at_byte <= s->flow_controlled_bytes_written) {
@@ -228,6 +229,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
     bool sent_initial_metadata = s->sent_initial_metadata;
     bool now_writing = false;
+    t->write_is_covered = false;
 
     GRPC_CHTTP2_IF_TRACING(gpr_log(
         GPR_DEBUG, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t,
@@ -259,6 +261,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             gpr_inf_past(GPR_CLOCK_MONOTONIC);
         t->ping_recv_state.ping_strikes = 0;
       }
+      t->write_is_covered = true;
     }
     /* send any window updates */
     if (s->announce_window > 0) {
@@ -320,10 +323,15 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             }
           }
           s->sending_bytes += send_bytes;
+          update_list(exec_ctx, t, s, send_bytes, &s->on_flow_controlled_cbs,
+                      &s->flow_controlled_bytes_flowed, GRPC_ERROR_NONE);
           now_writing = true;
           if (s->flow_controlled_buffer.length > 0) {
             GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:fork");
             grpc_chttp2_list_add_writable_stream(t, s);
+          }
+          if (s->on_write_finished_cbs != NULL) {
+            t->write_is_covered = true;
           }
         } else if (t->outgoing_window == 0) {
           grpc_chttp2_list_add_stalled_by_transport(t, s);
@@ -364,6 +372,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                               s->id, GRPC_HTTP2_NO_ERROR, &s->stats.outgoing));
         }
         now_writing = true;
+        t->write_is_covered = true;
       }
     }
 
@@ -430,7 +439,8 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     }
     if (s->sending_bytes != 0) {
       update_list(exec_ctx, t, s, (int64_t)s->sending_bytes,
-                  &s->on_write_finished_cbs, GRPC_ERROR_REF(error));
+                  &s->on_write_finished_cbs, &s->flow_controlled_bytes_written,
+                  GRPC_ERROR_REF(error));
       s->sending_bytes = 0;
     }
     if (s->sent_trailing_metadata) {

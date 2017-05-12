@@ -421,6 +421,10 @@ struct grpc_chttp2_transport {
   bool keepalive_permit_without_calls;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
+
+  /** is the next write covered by a poller? set in grpc_chttp2_begin_write,
+      read in write_action */
+  bool write_is_covered;
 };
 
 typedef enum {
@@ -458,6 +462,7 @@ struct grpc_chttp2_stream {
   grpc_slice fetching_slice;
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
+  int64_t flow_controlled_bytes_flowed;
   bool complete_fetch_covered_by_poller;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
@@ -531,6 +536,7 @@ struct grpc_chttp2_stream {
   uint32_t announce_window;
   grpc_slice_buffer flow_controlled_buffer;
 
+  grpc_chttp2_write_cb *on_flow_controlled_cbs;
   grpc_chttp2_write_cb *on_write_finished_cbs;
   grpc_chttp2_write_cb *finish_after_write;
   size_t sending_bytes;
