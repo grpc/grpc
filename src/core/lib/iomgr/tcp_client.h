@@ -50,6 +50,6 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
                              grpc_pollset_set *interested_parties,
                              const grpc_channel_args *channel_args,
                              const grpc_resolved_address *addr,
-                             gpr_timespec deadline);
+                             grpc_millis deadline);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H */

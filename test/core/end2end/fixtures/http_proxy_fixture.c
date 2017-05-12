@@ -377,8 +377,8 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   GPR_ASSERT(resolved_addresses->naddrs >= 1);
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
-  const gpr_timespec deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(10, GPR_TIMESPAN));
+  const grpc_millis deadline =
+      grpc_exec_ctx_now(exec_ctx) + 10 * GPR_MS_PER_SEC;
   grpc_tcp_client_connect(exec_ctx, &conn->on_server_connect_done,
                           &conn->server_endpoint, conn->pollset_set, NULL,
                           &resolved_addresses->addrs[0], deadline);
@@ -434,14 +434,12 @@ static void thread_main(void* arg) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   do {
     gpr_ref(&proxy->users);
-    const gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    const gpr_timespec deadline =
-        gpr_time_add(now, gpr_time_from_seconds(1, GPR_TIMESPAN));
     grpc_pollset_worker* worker = NULL;
     gpr_mu_lock(proxy->mu);
     GRPC_LOG_IF_ERROR(
         "grpc_pollset_work",
-        grpc_pollset_work(&exec_ctx, proxy->pollset, &worker, now, deadline));
+        grpc_pollset_work(&exec_ctx, proxy->pollset, &worker,
+                          grpc_exec_ctx_now(&exec_ctx) + GPR_MS_PER_SEC));
     gpr_mu_unlock(proxy->mu);
     grpc_exec_ctx_flush(&exec_ctx);
   } while (!gpr_unref(&proxy->users));

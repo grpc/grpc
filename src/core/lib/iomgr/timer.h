@@ -56,8 +56,7 @@ typedef struct grpc_timer grpc_timer;
    application callback is also responsible for maintaining information about
    when to free up any user-level state. */
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
-                     gpr_timespec deadline, grpc_closure *closure,
-                     gpr_timespec now);
+                     grpc_millis deadline, grpc_closure *closure);
 
 /* Note that there is no timer destroy function. This is because the
    timer is a one-time occurrence with a guarantee that the callback will
@@ -96,9 +95,8 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer);
    *next is never guaranteed to be updated on any given execution; however,
    with high probability at least one thread in the system will see an update
    at any time slice. */
-bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
-                      gpr_timespec *next);
-void grpc_timer_list_init(gpr_timespec now);
+bool grpc_timer_check(grpc_exec_ctx *exec_ctx, grpc_millis *next);
+void grpc_timer_list_init(grpc_exec_ctx *exec_ctx);
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx);
 
 /* Consume a kick issued by grpc_kick_poller */

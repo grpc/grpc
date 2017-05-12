@@ -218,9 +218,9 @@ void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
 }
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                              grpc_pollset_worker **worker, gpr_timespec now,
-                              gpr_timespec deadline) {
-  return g_event_engine->pollset_work(exec_ctx, pollset, worker, now, deadline);
+                              grpc_pollset_worker **worker,
+                              grpc_millis deadline) {
+  return g_event_engine->pollset_work(exec_ctx, pollset, worker, deadline);
 }
 
 grpc_error *grpc_pollset_kick(grpc_pollset *pollset,

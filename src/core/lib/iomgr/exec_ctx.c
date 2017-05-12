@@ -113,8 +113,41 @@ static void exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
 }
 
-void grpc_exec_ctx_global_init(void) {}
+static gpr_timespec g_start_time;
+
+void grpc_exec_ctx_global_init(void) {
+  g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+}
+
 void grpc_exec_ctx_global_shutdown(void) {}
+
+static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
+  ts = gpr_time_sub(ts, g_start_time);
+  double x =
+      GPR_MS_PER_SEC * (double)ts.tv_sec + (double)ts.tv_nsec / GPR_NS_PER_MS;
+  if (x < 0) return 0;
+  if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
+  return (gpr_atm)x;
+}
+
+grpc_millis grpc_exec_ctx_now(grpc_exec_ctx *exec_ctx) {
+  if (!exec_ctx->now_is_valid) {
+    exec_ctx->now = timespec_to_atm_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
+    exec_ctx->now_is_valid = true;
+  }
+  return exec_ctx->now;
+}
+
+void grpc_exec_ctx_invalidate_now(grpc_exec_ctx *exec_ctx) {
+  exec_ctx->now_is_valid = false;
+}
+
+gpr_timespec grpc_millis_to_timespec(grpc_exec_ctx *exec_ctx,
+                                     grpc_millis millis,
+                                     gpr_clock_type clock_type) {
+  return gpr_time_add(gpr_convert_clock_type(g_start_time, clock_type),
+                      gpr_time_from_millis(millis, GPR_TIMESPAN));
+}
 
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
     exec_ctx_run, exec_ctx_sched, "exec_ctx"};

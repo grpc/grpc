@@ -107,8 +107,7 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
             "pollset_work",
             grpc_pollset_work(&exec_ctx,
                               grpc_polling_entity_pollset(&request.pops),
-                              &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                              gpr_inf_future(GPR_CLOCK_MONOTONIC)))) {
+                              &worker, GRPC_MILLIS_INF_FUTURE))) {
       request.is_done = 1;
     }
   }

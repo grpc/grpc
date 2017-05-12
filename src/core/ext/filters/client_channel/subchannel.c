@@ -131,7 +131,7 @@ struct grpc_subchannel {
   external_state_watcher root_external_state_watcher;
 
   /** next connect attempt time */
-  gpr_timespec next_attempt;
+  grpc_millis next_attempt;
   /** backoff state */
   gpr_backoff backoff_state;
   /** do we have an active alarm? */
@@ -486,7 +486,6 @@ static void maybe_start_connecting_locked(grpc_exec_ctx *exec_ctx,
   c->connecting = true;
   GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
 
-  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   if (!c->backoff_begun) {
     c->backoff_begun = true;
     c->next_attempt = gpr_backoff_begin(&c->backoff_state, now);

@@ -246,7 +246,7 @@ static void on_timeout(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
     grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
-    gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
+    grpc_millis deadline, grpc_tcp_server_acceptor* acceptor,
     grpc_iomgr_cb_func on_handshake_done, void* user_data) {
   gpr_mu_lock(&mgr->mu);
   GPR_ASSERT(mgr->index == 0);
@@ -268,9 +268,7 @@ void grpc_handshake_manager_do_handshake(
   gpr_ref(&mgr->refs);
   grpc_closure_init(&mgr->on_timeout, on_timeout, mgr,
                     grpc_schedule_on_exec_ctx);
-  grpc_timer_init(exec_ctx, &mgr->deadline_timer,
-                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  &mgr->on_timeout, gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(exec_ctx, &mgr->deadline_timer, deadline, &mgr->on_timeout);
   // Start first handshaker, which also owns a ref.
   gpr_ref(&mgr->refs);
   bool done = call_next_handshaker_locked(exec_ctx, mgr, GRPC_ERROR_NONE);

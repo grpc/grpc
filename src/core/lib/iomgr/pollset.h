@@ -82,8 +82,8 @@ void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset);
    pollset
    lock */
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                              grpc_pollset_worker **worker, gpr_timespec now,
-                              gpr_timespec deadline) GRPC_MUST_USE_RESULT;
+                              grpc_pollset_worker **worker,
+                              grpc_millis deadline) GRPC_MUST_USE_RESULT;
 
 /* Break one polling thread out of polling work for this pollset.
    If specific_worker is non-NULL, then kick that worker. */

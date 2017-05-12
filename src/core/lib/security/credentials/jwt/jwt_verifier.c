@@ -395,7 +395,7 @@ void verifier_cb_ctx_destroy(grpc_exec_ctx *exec_ctx, verifier_cb_ctx *ctx) {
 gpr_timespec grpc_jwt_verifier_clock_skew = {60, 0, GPR_TIMESPAN};
 
 /* Max delay defaults to one minute. */
-gpr_timespec grpc_jwt_verifier_max_delay = {60, 0, GPR_TIMESPAN};
+grpc_millis grpc_jwt_verifier_max_delay = 60 * GPR_MS_PER_SEC;
 
 typedef struct {
   char *email_domain;
@@ -682,7 +682,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
       grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
       exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
+      grpc_exec_ctx_now(exec_ctx) + grpc_jwt_verifier_max_delay,
       grpc_closure_create(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
   grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
@@ -808,10 +808,10 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
      extreme memory pressure. */
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("jwt_verifier");
-  grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
-      http_cb, &ctx->responses[rsp_idx]);
+  grpc_httpcli_get(exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent,
+                   resource_quota, &req,
+                   grpc_exec_ctx_now(exec_ctx) + grpc_jwt_verifier_max_delay,
+                   http_cb, &ctx->responses[rsp_idx]);
   grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   gpr_free(req.host);
   gpr_free(req.http.path);

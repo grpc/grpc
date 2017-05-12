@@ -86,11 +86,9 @@ struct shared_mutables {
 static struct shared_mutables g_shared_mutables = {
     .checker_mu = GPR_SPINLOCK_STATIC_INITIALIZER, .initialized = false,
 };
-static gpr_clock_type g_clock_type;
 static shard_type g_shards[NUM_SHARDS];
 /* Protected by g_shared_mutables.mu */
 static shard_type *g_shard_queue[NUM_SHARDS];
-static gpr_timespec g_start_time;
 
 GPR_TLS_DECL(g_last_seen_min_timer);
 
@@ -104,51 +102,18 @@ static gpr_atm saturating_add(gpr_atm a, gpr_atm b) {
 static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_atm now,
                                    gpr_atm *next, grpc_error *error);
 
-static gpr_timespec dbl_to_ts(double d) {
-  gpr_timespec ts;
-  ts.tv_sec = (int64_t)d;
-  ts.tv_nsec = (int32_t)(1e9 * (d - (double)ts.tv_sec));
-  ts.clock_type = GPR_TIMESPAN;
-  return ts;
-}
-
-static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time);
-  double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
-             (double)ts.tv_nsec / GPR_NS_PER_MS +
-             (double)(GPR_NS_PER_SEC - 1) / (double)GPR_NS_PER_SEC;
-  if (x < 0) return 0;
-  if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
-  return (gpr_atm)x;
-}
-
-static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time);
-  double x =
-      GPR_MS_PER_SEC * (double)ts.tv_sec + (double)ts.tv_nsec / GPR_NS_PER_MS;
-  if (x < 0) return 0;
-  if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
-  return (gpr_atm)x;
-}
-
-static gpr_timespec atm_to_timespec(gpr_atm x) {
-  return gpr_time_add(g_start_time, dbl_to_ts((double)x / 1000.0));
-}
-
 static gpr_atm compute_min_deadline(shard_type *shard) {
   return grpc_timer_heap_is_empty(&shard->heap)
              ? saturating_add(shard->queue_deadline_cap, 1)
              : grpc_timer_heap_top(&shard->heap)->deadline;
 }
 
-void grpc_timer_list_init(gpr_timespec now) {
+void grpc_timer_list_init(grpc_exec_ctx *exec_ctx) {
   uint32_t i;
 
   g_shared_mutables.initialized = true;
   gpr_mu_init(&g_shared_mutables.mu);
-  g_clock_type = now.clock_type;
-  g_start_time = now;
-  g_shared_mutables.min_timer = timespec_to_atm_round_down(now);
+  g_shared_mutables.min_timer = grpc_exec_ctx_now(exec_ctx);
   gpr_tls_init(&g_last_seen_min_timer);
   gpr_tls_set(&g_last_seen_min_timer, 0);
   grpc_register_tracer("timer", &grpc_timer_trace);
@@ -181,10 +146,6 @@ void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
   gpr_mu_destroy(&g_shared_mutables.mu);
   gpr_tls_destroy(&g_last_seen_min_timer);
   g_shared_mutables.initialized = false;
-}
-
-static double ts_to_dbl(gpr_timespec ts) {
-  return (double)ts.tv_sec + 1e-9 * ts.tv_nsec;
 }
 
 /* returns true if the first element in the list */
@@ -225,20 +186,15 @@ static void note_deadline_change(shard_type *shard) {
 }
 
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
-                     gpr_timespec deadline, grpc_closure *closure,
-                     gpr_timespec now) {
+                     grpc_millis deadline, grpc_closure *closure) {
   int is_first_timer = 0;
   shard_type *shard = &g_shards[GPR_HASH_POINTER(timer, NUM_SHARDS)];
-  GPR_ASSERT(deadline.clock_type == g_clock_type);
-  GPR_ASSERT(now.clock_type == g_clock_type);
   timer->closure = closure;
-  gpr_atm deadline_atm = timer->deadline = timespec_to_atm_round_up(deadline);
 
   if (GRPC_TRACER_ON(grpc_timer_trace)) {
-    gpr_log(GPR_DEBUG, "TIMER %p: SET %" PRId64 ".%09d [%" PRIdPTR
-                       "] now %" PRId64 ".%09d [%" PRIdPTR "] call %p[%p]",
-            timer, deadline.tv_sec, deadline.tv_nsec, deadline_atm, now.tv_sec,
-            now.tv_nsec, timespec_to_atm_round_down(now), closure, closure->cb);
+    gpr_log(GPR_DEBUG,
+            "TIMER %p: SET %" PRIdPTR " now %" PRIdPTR " call %p[%p]", timer,
+            deadline, grpc_exec_ctx_now(exec_ctx), closure, closure->cb);
   }
 
   if (!g_shared_mutables.initialized) {
@@ -251,7 +207,8 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
   gpr_mu_lock(&shard->mu);
   timer->pending = true;
-  if (gpr_time_cmp(deadline, now) <= 0) {
+  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  if (deadline <= now) {
     timer->pending = false;
     grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_NONE);
     gpr_mu_unlock(&shard->mu);
@@ -259,9 +216,8 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
     return;
   }
 
-  grpc_time_averaged_stats_add_sample(&shard->stats,
-                                      ts_to_dbl(gpr_time_sub(deadline, now)));
-  if (deadline_atm < shard->queue_deadline_cap) {
+  grpc_time_averaged_stats_add_sample(&shard->stats, (deadline - now) / 1000.0);
+  if (deadline < shard->queue_deadline_cap) {
     is_first_timer = grpc_timer_heap_add(&shard->heap, timer);
   } else {
     timer->heap_index = INVALID_HEAP_INDEX;
@@ -292,12 +248,12 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
       gpr_log(GPR_DEBUG, "  .. old shard min_deadline=%" PRIdPTR,
               shard->min_deadline);
     }
-    if (deadline_atm < shard->min_deadline) {
+    if (deadline < shard->min_deadline) {
       gpr_atm old_min_deadline = g_shard_queue[0]->min_deadline;
-      shard->min_deadline = deadline_atm;
+      shard->min_deadline = deadline;
       note_deadline_change(shard);
-      if (shard->shard_queue_index == 0 && deadline_atm < old_min_deadline) {
-        gpr_atm_no_barrier_store(&g_shared_mutables.min_timer, deadline_atm);
+      if (shard->shard_queue_index == 0 && deadline < old_min_deadline) {
+        gpr_atm_no_barrier_store(&g_shared_mutables.min_timer, deadline);
         grpc_kick_poller();
       }
     }
@@ -494,30 +450,27 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_atm now,
   return (int)n;
 }
 
-bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
-                      gpr_timespec *next) {
+bool grpc_timer_check(grpc_exec_ctx *exec_ctx, grpc_millis *next) {
   // prelude
-  GPR_ASSERT(now.clock_type == g_clock_type);
-  gpr_atm now_atm = timespec_to_atm_round_down(now);
+  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
 
   /* fetch from a thread-local first: this avoids contention on a globally
      mutable cacheline in the common case */
-  gpr_atm min_timer = gpr_tls_get(&g_last_seen_min_timer);
-  if (now_atm < min_timer) {
+  grpc_millis min_timer = gpr_tls_get(&g_last_seen_min_timer);
+  if (now < min_timer) {
     if (next != NULL) {
-      *next =
-          atm_to_timespec(GPR_MIN(timespec_to_atm_round_up(*next), min_timer));
+      *next = GPR_MIN(*next, min_timer);
     }
     if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
       gpr_log(GPR_DEBUG,
-              "TIMER CHECK SKIP: now_atm=%" PRIdPTR " min_timer=%" PRIdPTR,
-              now_atm, min_timer);
+              "TIMER CHECK SKIP: now=%" PRIdPTR " min_timer=%" PRIdPTR, now,
+              min_timer);
     }
     return 0;
   }
 
   grpc_error *shutdown_error =
-      gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0
+      now != GRPC_MILLIS_INF_FUTURE
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system");
 
@@ -527,34 +480,23 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
     if (next == NULL) {
       next_str = gpr_strdup("NULL");
     } else {
-      gpr_asprintf(&next_str, "%" PRId64 ".%09d [%" PRIdPTR "]", next->tv_sec,
-                   next->tv_nsec, timespec_to_atm_round_down(*next));
+      gpr_asprintf(&next_str, "%" PRIdPTR, *next);
     }
-    gpr_log(GPR_DEBUG, "TIMER CHECK BEGIN: now=%" PRId64 ".%09d [%" PRIdPTR
-                       "] next=%s tls_min=%" PRIdPTR " glob_min=%" PRIdPTR,
-            now.tv_sec, now.tv_nsec, now_atm, next_str,
-            gpr_tls_get(&g_last_seen_min_timer),
+    gpr_log(GPR_DEBUG, "TIMER CHECK BEGIN: now=%" PRIdPTR
+                       " next=%s tls_min=%" PRIdPTR " glob_min=%" PRIdPTR,
+            now, next_str, gpr_tls_get(&g_last_seen_min_timer),
             gpr_atm_no_barrier_load(&g_shared_mutables.min_timer));
     gpr_free(next_str);
   }
   // actual code
-  bool r;
-  gpr_atm next_atm;
-  if (next == NULL) {
-    r = run_some_expired_timers(exec_ctx, now_atm, NULL, shutdown_error);
-  } else {
-    next_atm = timespec_to_atm_round_down(*next);
-    r = run_some_expired_timers(exec_ctx, now_atm, &next_atm, shutdown_error);
-    *next = atm_to_timespec(next_atm);
-  }
+  bool r = run_some_expired_timers(exec_ctx, now, next, shutdown_error);
   // tracing
   if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
     char *next_str;
     if (next == NULL) {
       next_str = gpr_strdup("NULL");
     } else {
-      gpr_asprintf(&next_str, "%" PRId64 ".%09d [%" PRIdPTR "]", next->tv_sec,
-                   next->tv_nsec, next_atm);
+      gpr_asprintf(&next_str, "%" PRIdPTR, *next);
     }
     gpr_log(GPR_DEBUG, "TIMER CHECK END: %d timers triggered; next=%s", r,
             next_str);

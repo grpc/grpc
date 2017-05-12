@@ -96,7 +96,7 @@ typedef struct {
 
 /* Globals to control the verifier. Not thread-safe. */
 extern gpr_timespec grpc_jwt_verifier_clock_skew;
-extern gpr_timespec grpc_jwt_verifier_max_delay;
+extern grpc_millis grpc_jwt_verifier_max_delay;
 
 /* The verifier can be created with some custom mappings to help with key
    discovery in the case where the issuer is an email address.

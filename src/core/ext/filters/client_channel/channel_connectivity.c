@@ -210,8 +210,7 @@ void grpc_channel_watch_connectivity_state(
   w->channel = channel;
 
   grpc_timer_init(&exec_ctx, &w->alarm,
-                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  &w->on_timeout, gpr_now(GPR_CLOCK_MONOTONIC));
+                  grpc_timespec_to_millis(&exec_ctx, deadline), &w->on_timeout);
 
   if (client_channel_elem->filter == &grpc_client_channel_filter) {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");

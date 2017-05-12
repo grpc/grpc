@@ -58,7 +58,7 @@ typedef struct {
   grpc_endpoint *ep;
   char *host;
   char *ssl_host_override;
-  gpr_timespec deadline;
+  grpc_millis deadline;
   int have_read_byte;
   const grpc_httpcli_handshaker *handshaker;
   grpc_closure *on_done;
@@ -79,7 +79,7 @@ static grpc_httpcli_post_override g_post_override = NULL;
 
 static void plaintext_handshake(grpc_exec_ctx *exec_ctx, void *arg,
                                 grpc_endpoint *endpoint, const char *host,
-                                gpr_timespec deadline,
+                                grpc_millis deadline,
                                 void (*on_done)(grpc_exec_ctx *exec_ctx,
                                                 void *arg,
                                                 grpc_endpoint *endpoint)) {
@@ -256,7 +256,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
                                    grpc_polling_entity *pollent,
                                    grpc_resource_quota *resource_quota,
                                    const grpc_httpcli_request *request,
-                                   gpr_timespec deadline, grpc_closure *on_done,
+                                   grpc_millis deadline, grpc_closure *on_done,
                                    grpc_httpcli_response *response,
                                    const char *name, grpc_slice request_text) {
   internal_request *req = gpr_malloc(sizeof(internal_request));
@@ -293,9 +293,8 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
 void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                       grpc_polling_entity *pollent,
                       grpc_resource_quota *resource_quota,
-                      const grpc_httpcli_request *request,
-                      gpr_timespec deadline, grpc_closure *on_done,
-                      grpc_httpcli_response *response) {
+                      const grpc_httpcli_request *request, grpc_millis deadline,
+                      grpc_closure *on_done, grpc_httpcli_response *response) {
   char *name;
   if (g_get_override &&
       g_get_override(exec_ctx, request, deadline, on_done, response)) {
@@ -313,7 +312,7 @@ void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                        grpc_resource_quota *resource_quota,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
-                       gpr_timespec deadline, grpc_closure *on_done,
+                       grpc_millis deadline, grpc_closure *on_done,
                        grpc_httpcli_response *response) {
   char *name;
   if (g_post_override &&

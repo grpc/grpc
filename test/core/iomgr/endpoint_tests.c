@@ -187,10 +187,11 @@ static void read_and_write_test(grpc_endpoint_test_config config,
                                 size_t num_bytes, size_t write_size,
                                 size_t slice_size, bool shutdown) {
   struct read_and_write_test_state state;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_endpoint_test_fixture f =
       begin_test(config, "read_and_write_test", slice_size);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_millis deadline =
+      grpc_timespec_to_millis(&exec_ctx, grpc_timeout_seconds_to_deadline(20));
   gpr_log(GPR_DEBUG, "num_bytes=%" PRIuPTR " write_size=%" PRIuPTR
                      " slice_size=%" PRIuPTR " shutdown=%d",
           num_bytes, write_size, slice_size, shutdown);
@@ -246,11 +247,10 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   gpr_mu_lock(g_mu);
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker *worker = NULL;
-    GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
+    GPR_ASSERT(grpc_exec_ctx_now(&exec_ctx) < deadline);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker, deadline)));
   }
   gpr_mu_unlock(g_mu);
   grpc_exec_ctx_flush(&exec_ctx);
@@ -273,13 +273,11 @@ static void wait_for_fail_count(grpc_exec_ctx *exec_ctx, int *fail_count,
   grpc_exec_ctx_flush(exec_ctx);
   for (int i = 0; i < 5 && *fail_count < want_fail_count; i++) {
     grpc_pollset_worker *worker = NULL;
-    gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-    gpr_timespec deadline =
-        gpr_time_add(now, gpr_time_from_seconds(1, GPR_TIMESPAN));
     gpr_mu_lock(g_mu);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(exec_ctx, g_pollset, &worker, now, deadline)));
+        grpc_pollset_work(exec_ctx, g_pollset, &worker,
+                          grpc_exec_ctx_now(exec_ctx) + GPR_MS_PER_SEC)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(exec_ctx);
   }

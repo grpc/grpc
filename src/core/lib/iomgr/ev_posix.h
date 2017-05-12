@@ -69,8 +69,8 @@ typedef struct grpc_event_engine_vtable {
                            grpc_closure *closure);
   void (*pollset_destroy)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset);
   grpc_error *(*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                              grpc_pollset_worker **worker, gpr_timespec now,
-                              gpr_timespec deadline);
+                              grpc_pollset_worker **worker,
+                              grpc_millis deadline);
   grpc_error *(*pollset_kick)(grpc_pollset *pollset,
                               grpc_pollset_worker *specific_worker);
   void (*pollset_add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,

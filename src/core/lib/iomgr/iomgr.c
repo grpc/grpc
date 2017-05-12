@@ -61,7 +61,9 @@ void grpc_iomgr_init(void) {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_exec_ctx_global_init();
-  grpc_timer_list_init(gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_timer_list_init(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = "root";
   grpc_network_status_init();
@@ -107,7 +109,9 @@ void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx) {
       }
       last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
     }
-    if (grpc_timer_check(exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL)) {
+    exec_ctx->now_is_valid = true;
+    exec_ctx->now = GRPC_MILLIS_INF_FUTURE;
+    if (grpc_timer_check(exec_ctx, NULL)) {
       gpr_mu_unlock(&g_mu);
       grpc_exec_ctx_flush(exec_ctx);
       grpc_iomgr_platform_flush();

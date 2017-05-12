@@ -68,8 +68,8 @@ grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
   grpc_closure_init(&alarm->on_alarm, alarm_cb, alarm,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&exec_ctx, &alarm->alarm,
-                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  &alarm->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));
+                  grpc_timespec_to_millis(&exec_ctx, deadline),
+                  &alarm->on_alarm);
   grpc_exec_ctx_finish(&exec_ctx);
   return alarm;
 }

@@ -146,8 +146,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        connection_state->handshake_mgr);
   // TODO(roth): We should really get this timeout value from channel
   // args instead of hard-coding it.
-  const gpr_timespec deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(120, GPR_TIMESPAN));
+  const grpc_millis deadline =
+      grpc_exec_ctx_now(exec_ctx) + 120 * GPR_MS_PER_SEC;
   grpc_handshake_manager_do_handshake(exec_ctx, connection_state->handshake_mgr,
                                       tcp, state->args, deadline, acceptor,
                                       on_handshake_done, connection_state);

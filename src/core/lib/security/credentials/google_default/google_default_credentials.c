@@ -110,7 +110,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
 
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
-  gpr_timespec max_detection_delay = gpr_time_from_seconds(1, GPR_TIMESPAN);
+  grpc_millis max_detection_delay = GPR_MS_PER_SEC;
 
   grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &g_polling_mu);
@@ -129,7 +129,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
       grpc_resource_quota_create("google_default_credentials");
   grpc_httpcli_get(
       exec_ctx, &context, &detector.pollent, resource_quota, &request,
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
+      grpc_exec_ctx_now(exec_ctx) + max_detection_delay,
       grpc_closure_create(on_compute_engine_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response);
@@ -146,8 +146,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
             "pollset_work",
             grpc_pollset_work(exec_ctx,
                               grpc_polling_entity_pollset(&detector.pollent),
-                              &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                              gpr_inf_future(GPR_CLOCK_MONOTONIC)))) {
+                              &worker, GRPC_MILLIS_INF_FUTURE))) {
       detector.is_done = 1;
       detector.success = 0;
     }

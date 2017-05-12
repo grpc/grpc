@@ -95,21 +95,21 @@ typedef struct {
 } grpc_chttp2_ping_queue;
 
 typedef struct {
-  gpr_timespec min_time_between_pings;
+  grpc_millis min_time_between_pings;
   int max_pings_without_data;
   int max_ping_strikes;
-  gpr_timespec min_ping_interval_without_data;
+  grpc_millis min_ping_interval_without_data;
 } grpc_chttp2_repeated_ping_policy;
 
 typedef struct {
-  gpr_timespec last_ping_sent_time;
+  grpc_millis last_ping_sent_time;
   int pings_before_data_required;
   grpc_timer delayed_ping_timer;
   bool is_delayed_ping_timer_set;
 } grpc_chttp2_repeated_ping_state;
 
 typedef struct {
-  gpr_timespec last_ping_recv_time;
+  grpc_millis last_ping_recv_time;
   int ping_strikes;
 } grpc_chttp2_server_ping_recv_state;
 
@@ -414,9 +414,9 @@ struct grpc_chttp2_transport {
   /** watchdog to kill the transport when waiting for the keepalive ping */
   grpc_timer keepalive_watchdog_timer;
   /** time duration in between pings */
-  gpr_timespec keepalive_time;
+  grpc_millis keepalive_time;
   /** grace period for a ping to complete before watchdog kicks in */
-  gpr_timespec keepalive_timeout;
+  grpc_millis keepalive_timeout;
   /** if keepalive pings are allowed when there's no outstanding streams */
   bool keepalive_permit_without_calls;
   /** keep-alive state machine state */
