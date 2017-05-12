@@ -86,7 +86,7 @@ class CSharpDistribTest(object):
   """Tests C# NuGet package"""
 
   def __init__(self, platform, arch, docker_suffix=None, use_dotnet_cli=False):
-    self.name = 'csharp_distribtest_%s_%s' % (platform, arch)
+    self.name = 'csharp_%s_%s' % (platform, arch)
     self.platform = platform
     self.arch = arch
     self.docker_suffix = docker_suffix
