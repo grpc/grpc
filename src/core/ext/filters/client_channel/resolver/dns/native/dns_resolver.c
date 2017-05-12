@@ -194,7 +194,7 @@ static void dns_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
     grpc_closure_init(&r->on_retry, dns_on_retry_timer_locked, r,
-                      grpc_combiner_scheduler(r->base.combiner, false));
+                      grpc_combiner_scheduler(r->base.combiner));
     grpc_timer_init(exec_ctx, &r->retry_timer, next_try, &r->on_retry, now);
   }
   if (r->resolved_result != NULL) {
@@ -216,7 +216,7 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   grpc_resolve_address(
       exec_ctx, r->name_to_resolve, r->default_port, r->interested_parties,
       grpc_closure_create(dns_on_resolved_locked, r,
-                          grpc_combiner_scheduler(r->base.combiner, false)),
+                          grpc_combiner_scheduler(r->base.combiner)),
       &r->addresses);
 }
 

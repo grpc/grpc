@@ -280,10 +280,10 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
                    GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   grpc_closure_init(&r->dns_ares_on_retry_timer_locked,
                     dns_ares_on_retry_timer_locked, r,
-                    grpc_combiner_scheduler(r->base.combiner, false));
+                    grpc_combiner_scheduler(r->base.combiner));
   grpc_closure_init(&r->dns_ares_on_resolved_locked,
                     dns_ares_on_resolved_locked, r,
-                    grpc_combiner_scheduler(r->base.combiner, false));
+                    grpc_combiner_scheduler(r->base.combiner));
   return &r->base;
 }
 

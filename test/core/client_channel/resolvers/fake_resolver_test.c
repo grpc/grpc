@@ -88,7 +88,7 @@ void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 static void test_fake_resolver() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_combiner *combiner = grpc_combiner_create(NULL);
+  grpc_combiner *combiner = grpc_combiner_create();
   // Create resolver.
   grpc_fake_resolver_response_generator *response_generator =
       grpc_fake_resolver_response_generator_create();
@@ -116,7 +116,7 @@ static void test_fake_resolver() {
   memset(&on_res_arg, 0, sizeof(on_res_arg));
   on_res_arg.expected_resolver_result = results;
   grpc_closure *on_resolution = grpc_closure_create(
-      on_resolution_cb, &on_res_arg, grpc_combiner_scheduler(combiner, false));
+      on_resolution_cb, &on_res_arg, grpc_combiner_scheduler(combiner));
 
   // Set resolver results and trigger first resolution. on_resolution_cb
   // performs the checks.
@@ -151,7 +151,7 @@ static void test_fake_resolver() {
   memset(&on_res_arg_update, 0, sizeof(on_res_arg_update));
   on_res_arg_update.expected_resolver_result = results_update;
   on_resolution = grpc_closure_create(on_resolution_cb, &on_res_arg_update,
-                                      grpc_combiner_scheduler(combiner, false));
+                                      grpc_combiner_scheduler(combiner));
 
   // Set updated resolver results and trigger a second resolution.
   grpc_fake_resolver_response_generator_set_response(

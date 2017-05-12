@@ -284,7 +284,7 @@ static void watch_lb_policy_locked(grpc_exec_ctx *exec_ctx, channel_data *chand,
 
   w->chand = chand;
   grpc_closure_init(&w->on_changed, on_lb_policy_state_changed_locked, w,
-                    grpc_combiner_scheduler(chand->combiner, false));
+                    grpc_combiner_scheduler(chand->combiner));
   w->state = current_state;
   w->lb_policy = lb_policy;
   grpc_lb_policy_notify_on_state_change_locked(exec_ctx, lb_policy, &w->state,
@@ -628,7 +628,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   grpc_closure_sched(
       exec_ctx,
       grpc_closure_init(&op->handler_private.closure, start_transport_op_locked,
-                        op, grpc_combiner_scheduler(chand->combiner, false)),
+                        op, grpc_combiner_scheduler(chand->combiner)),
       GRPC_ERROR_NONE);
 }
 
@@ -659,12 +659,12 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(args->is_last);
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   // Initialize data members.
-  chand->combiner = grpc_combiner_create(NULL);
+  chand->combiner = grpc_combiner_create();
   gpr_mu_init(&chand->info_mu);
   chand->owning_stack = args->channel_stack;
   grpc_closure_init(&chand->on_resolver_result_changed,
                     on_resolver_result_changed_locked, chand,
-                    grpc_combiner_scheduler(chand->combiner, false));
+                    grpc_combiner_scheduler(chand->combiner));
   chand->interested_parties = grpc_pollset_set_create();
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_channel");
@@ -723,9 +723,8 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   if (chand->resolver != NULL) {
     grpc_closure_sched(
-        exec_ctx,
-        grpc_closure_create(shutdown_resolver_locked, chand->resolver,
-                            grpc_combiner_scheduler(chand->combiner, false)),
+        exec_ctx, grpc_closure_create(shutdown_resolver_locked, chand->resolver,
+                                      grpc_combiner_scheduler(chand->combiner)),
         GRPC_ERROR_NONE);
   }
   if (chand->client_channel_factory != NULL) {
@@ -1099,7 +1098,7 @@ static bool pick_subchannel_locked(
     cpa->on_ready = on_ready;
     cpa->elem = elem;
     grpc_closure_init(&cpa->closure, continue_picking_locked, cpa,
-                      grpc_combiner_scheduler(chand->combiner, true));
+                      grpc_combiner_scheduler(chand->combiner));
     grpc_closure_list_append(&chand->waiting_for_config_closures, &cpa->closure,
                              GRPC_ERROR_NONE);
   } else {
@@ -1167,7 +1166,7 @@ static void start_transport_stream_op_batch_locked_inner(
       op->send_initial_metadata) {
     calld->pick_pending = true;
     grpc_closure_init(&calld->next_step, subchannel_ready_locked, elem,
-                      grpc_combiner_scheduler(chand->combiner, true));
+                      grpc_combiner_scheduler(chand->combiner));
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_subchannel");
     /* If a subchannel is not available immediately, the polling entity from
        call_data should be provided to channel_data's interested_parties, so
@@ -1296,10 +1295,9 @@ static void cc_start_transport_stream_op_batch(
   GRPC_CALL_STACK_REF(calld->owning_call, "start_transport_stream_op_batch");
   op->handler_private.extra_arg = elem;
   grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_init(&op->handler_private.closure,
-                        start_transport_stream_op_batch_locked, op,
-                        grpc_combiner_scheduler(chand->combiner, false)),
+      exec_ctx, grpc_closure_init(&op->handler_private.closure,
+                                  start_transport_stream_op_batch_locked, op,
+                                  grpc_combiner_scheduler(chand->combiner)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("cc_start_transport_stream_op_batch", 0);
 }
@@ -1411,9 +1409,8 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "try_to_connect");
     grpc_closure_sched(
-        exec_ctx,
-        grpc_closure_create(try_to_connect_locked, chand,
-                            grpc_combiner_scheduler(chand->combiner, false)),
+        exec_ctx, grpc_closure_create(try_to_connect_locked, chand,
+                                      grpc_combiner_scheduler(chand->combiner)),
         GRPC_ERROR_NONE);
   }
   return out;
@@ -1463,6 +1460,6 @@ void grpc_client_channel_watch_connectivity_state(
   grpc_closure_sched(
       exec_ctx,
       grpc_closure_init(&w->my_closure, watch_connectivity_state_locked, w,
-                        grpc_combiner_scheduler(chand->combiner, true)),
+                        grpc_combiner_scheduler(chand->combiner)),
       GRPC_ERROR_NONE);
 }

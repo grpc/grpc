@@ -2974,8 +2974,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_uv.c \
-    src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
@@ -3306,8 +3304,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_uv.c \
-    src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
@@ -3622,8 +3618,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_uv.c \
-    src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
@@ -3856,8 +3850,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_uv.c \
-    src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
@@ -4260,8 +4252,6 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_uv.c \
-    src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
@@ -4599,8 +4589,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_uv.c \
-    src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
@@ -5364,8 +5352,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_uv.c \
-    src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \

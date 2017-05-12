@@ -250,9 +250,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_cv.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/iomgr/workqueue.h
-  - src/core/lib/iomgr/workqueue_uv.h
-  - src/core/lib/iomgr/workqueue_windows.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_common.h
   - src/core/lib/json/json_reader.h
@@ -370,8 +367,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_nospecial.c
   - src/core/lib/iomgr/wakeup_fd_pipe.c
   - src/core/lib/iomgr/wakeup_fd_posix.c
-  - src/core/lib/iomgr/workqueue_uv.c
-  - src/core/lib/iomgr/workqueue_windows.c
   - src/core/lib/json/json.c
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c

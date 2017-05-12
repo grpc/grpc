@@ -1468,7 +1468,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   grpc_transport_stream_op_batch *stream_op = &bctl->op;
   grpc_transport_stream_op_batch_payload *stream_op_payload =
       &call->stream_op_payload;
-  stream_op->covered_by_poller = true;
 
   /* rewrite batch ops into a transport op */
   for (i = 0; i < nops; i++) {
@@ -1657,10 +1656,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        /* IF this is a server, then GRPC_OP_RECV_INITIAL_METADATA *must* come
-           from server.c. In that case, it's coming from accept_stream, and in
-           that case we're not necessarily covered by a poller. */
-        stream_op->covered_by_poller = call->is_client;
         call->received_initial_metadata = true;
         call->buffered_metadata[0] =
             op->data.recv_initial_metadata.recv_initial_metadata;

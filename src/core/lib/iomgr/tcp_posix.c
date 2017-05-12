@@ -558,26 +558,15 @@ static int tcp_get_fd(grpc_endpoint *ep) {
   return tcp->fd;
 }
 
-static grpc_workqueue *tcp_get_workqueue(grpc_endpoint *ep) {
-  grpc_tcp *tcp = (grpc_tcp *)ep;
-  return grpc_fd_get_workqueue(tcp->em_fd);
-}
-
 static grpc_resource_user *tcp_get_resource_user(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   return tcp->resource_user;
 }
 
-static const grpc_endpoint_vtable vtable = {tcp_read,
-                                            tcp_write,
-                                            tcp_get_workqueue,
-                                            tcp_add_to_pollset,
-                                            tcp_add_to_pollset_set,
-                                            tcp_shutdown,
-                                            tcp_destroy,
-                                            tcp_get_resource_user,
-                                            tcp_get_peer,
-                                            tcp_get_fd};
+static const grpc_endpoint_vtable vtable = {
+    tcp_read,     tcp_write,   tcp_add_to_pollset,    tcp_add_to_pollset_set,
+    tcp_shutdown, tcp_destroy, tcp_get_resource_user, tcp_get_peer,
+    tcp_get_fd};
 
 #define MAX_CHUNK_SIZE 32 * 1024 * 1024
 

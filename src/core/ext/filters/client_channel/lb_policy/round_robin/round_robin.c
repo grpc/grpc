@@ -747,7 +747,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
       ++subchannel_idx;
       grpc_closure_init(&sd->connectivity_changed_closure,
                         rr_connectivity_changed_locked, sd,
-                        grpc_combiner_scheduler(args->combiner, false));
+                        grpc_combiner_scheduler(args->combiner));
     }
   }
   if (subchannel_idx == 0) {

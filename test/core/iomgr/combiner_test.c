@@ -44,7 +44,7 @@
 static void test_no_op(void) {
   gpr_log(GPR_DEBUG, "test_no_op");
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GRPC_COMBINER_UNREF(&exec_ctx, grpc_combiner_create(NULL), "test_no_op");
+  GRPC_COMBINER_UNREF(&exec_ctx, grpc_combiner_create(), "test_no_op");
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -56,12 +56,12 @@ static void set_bool_to_true(grpc_exec_ctx *exec_ctx, void *value,
 static void test_execute_one(void) {
   gpr_log(GPR_DEBUG, "test_execute_one");
 
-  grpc_combiner *lock = grpc_combiner_create(NULL);
+  grpc_combiner *lock = grpc_combiner_create();
   bool done = false;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure_sched(&exec_ctx,
                      grpc_closure_create(set_bool_to_true, &done,
-                                         grpc_combiner_scheduler(lock, false)),
+                                         grpc_combiner_scheduler(lock)),
                      GRPC_ERROR_NONE);
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(done);
@@ -95,10 +95,10 @@ static void execute_many_loop(void *a) {
       ex_args *c = gpr_malloc(sizeof(*c));
       c->ctr = &args->ctr;
       c->value = n++;
-      grpc_closure_sched(
-          &exec_ctx, grpc_closure_create(check_one, c, grpc_combiner_scheduler(
-                                                           args->lock, false)),
-          GRPC_ERROR_NONE);
+      grpc_closure_sched(&exec_ctx,
+                         grpc_closure_create(
+                             check_one, c, grpc_combiner_scheduler(args->lock)),
+                         GRPC_ERROR_NONE);
       grpc_exec_ctx_flush(&exec_ctx);
     }
     // sleep for a little bit, to test a combiner draining and another thread
@@ -111,7 +111,7 @@ static void execute_many_loop(void *a) {
 static void test_execute_many(void) {
   gpr_log(GPR_DEBUG, "test_execute_many");
 
-  grpc_combiner *lock = grpc_combiner_create(NULL);
+  grpc_combiner *lock = grpc_combiner_create();
   gpr_thd_id thds[100];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
@@ -136,21 +136,21 @@ static void in_finally(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 static void add_finally(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  grpc_closure_sched(exec_ctx, grpc_closure_create(
-                                   in_finally, NULL,
-                                   grpc_combiner_finally_scheduler(arg, false)),
+  grpc_closure_sched(exec_ctx,
+                     grpc_closure_create(in_finally, NULL,
+                                         grpc_combiner_finally_scheduler(arg)),
                      GRPC_ERROR_NONE);
 }
 
 static void test_execute_finally(void) {
   gpr_log(GPR_DEBUG, "test_execute_finally");
 
-  grpc_combiner *lock = grpc_combiner_create(NULL);
+  grpc_combiner *lock = grpc_combiner_create();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_closure_sched(&exec_ctx,
-                     grpc_closure_create(add_finally, lock,
-                                         grpc_combiner_scheduler(lock, false)),
-                     GRPC_ERROR_NONE);
+  grpc_closure_sched(
+      &exec_ctx,
+      grpc_closure_create(add_finally, lock, grpc_combiner_scheduler(lock)),
+      GRPC_ERROR_NONE);
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(got_in_finally);
   GRPC_COMBINER_UNREF(&exec_ctx, lock, "test_execute_finally");
