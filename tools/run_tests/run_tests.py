@@ -340,7 +340,8 @@ class CLanguage(object):
     if self.platform == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
-    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
+    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target,
+            'check_epollexclusive']
 
   def make_options(self):
     return self._make_options;
