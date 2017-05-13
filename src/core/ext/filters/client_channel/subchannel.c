@@ -209,7 +209,6 @@ void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
 static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   grpc_subchannel *c = arg;
-  gpr_log(GPR_INFO, "XXX subchannel_destroy %p", (void*)c);
   gpr_free((void *)c->filters);
   grpc_channel_args_destroy(exec_ctx, c->args);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
@@ -266,9 +265,7 @@ grpc_subchannel *grpc_subchannel_ref_from_weak_ref(
 
 static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connected_subchannel *con;
-  gpr_log(GPR_INFO, "SUBCHANNEL %p DISCONNECTING", (void*)c);
   grpc_subchannel_index_unregister(exec_ctx, c->key, c);
-  gpr_log(GPR_INFO, "SUBCHANNEL %p DISCONNECTED", (void*)c);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
@@ -300,9 +297,7 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
   old_refs = ref_mutate(c, -(gpr_atm)1, 1 REF_MUTATE_PURPOSE("WEAK_UNREF"));
-  gpr_log(GPR_INFO, "SUBCHANNEL %p WEAK UNREF %zu", (void*)c, old_refs-1);
   if (old_refs == 1) {
-    gpr_log(GPR_INFO, "SUBCHANNEL %p WEAK UNREF TO ZERO", (void*)c);
     grpc_closure_sched(exec_ctx, grpc_closure_create(subchannel_destroy, c,
                                                      grpc_schedule_on_exec_ctx),
                        GRPC_ERROR_NONE);
@@ -315,13 +310,11 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_key *key = grpc_subchannel_key_create(args);
   grpc_subchannel *c = grpc_subchannel_index_find(exec_ctx, key);
   if (c) {
-    gpr_log(GPR_DEBUG, "Found existing subchannel %p", c);
     grpc_subchannel_key_destroy(exec_ctx, key);
     return c;
   }
 
   c = gpr_zalloc(sizeof(*c));
-  gpr_log(GPR_DEBUG, "Create new subchannel %p", c);
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
@@ -539,8 +532,10 @@ void grpc_subchannel_notify_on_state_change(
     grpc_closure_init(&w->closure, on_external_state_watcher_done, w,
                       grpc_schedule_on_exec_ctx);
     if (interested_parties != NULL) {
+      gpr_log(GPR_INFO, "YYY SUBCHANNEL'S BEFORE grpc_pollset_set_add_pollset_set PSS %p", c->pollset_set);
       grpc_pollset_set_add_pollset_set(exec_ctx, c->pollset_set,
                                        interested_parties);
+      gpr_log(GPR_INFO, "YYY SUBCHANNEL'S AFTER grpc_pollset_set_add_pollset_set PSS %p", c->pollset_set);
     }
     GRPC_SUBCHANNEL_WEAK_REF(c, "external_state_watcher");
     gpr_mu_lock(&c->mu);

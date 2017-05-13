@@ -255,6 +255,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_subchannel *selected_subchannel;
   pending_pick *pp;
 
+  gpr_log(GPR_INFO, "FOOOOOOOOOOOOOOOOOO %p pf_connectivity_changed_locked", p);
   bool restart = false;
   if (p->updating_selected && error == GRPC_ERROR_CANCELLED) {
     /* Captured the unsubscription for p->selected */
@@ -263,6 +264,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                     "pf_update_connectivity");
     p->updating_selected = false;
     restart = true;
+    gpr_log(GPR_INFO, "XXXXXXXXXXXXX UPDATING SELECTED XXXXXXXXXXXXXXXXXXXX");
   }
   if (p->updating_subchannels && error == GRPC_ERROR_CANCELLED) {
     /* Captured the unsubscription for the checking subchannel */
@@ -276,6 +278,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     p->num_subchannels = 0;
     p->updating_subchannels = false;
     restart = true;
+    gpr_log(GPR_INFO, "XXXXXXXXXXXXX UPDATING SUBCHANNELS XXXXXXXXXXXXXXXXXXXX");
   }
   if (restart) {
     p->selected = NULL;
@@ -293,12 +296,18 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
       /* If we were picking, continue to do so over the new subchannels,
        * starting from the 0th index. */
       p->checking_subchannel = 0;
-      p->checking_connectivity = GRPC_CHANNEL_IDLE;
+      grpc_error *err;
+      p->checking_connectivity = grpc_subchannel_check_connectivity(
+          p->subchannels[p->checking_subchannel], &err);
+      GPR_ASSERT(err == GRPC_ERROR_NONE);
+      GPR_ASSERT(p->checking_connectivity == GRPC_CHANNEL_IDLE);
       /* reuses the weak ref from start_picking */
+    gpr_log(GPR_INFO, "XXXXXXXXXXXXX BEFORE SUBSCRIBED. Interested parties: %p", p->base.interested_parties);
       grpc_subchannel_notify_on_state_change(
           exec_ctx, p->subchannels[p->checking_subchannel],
           p->base.interested_parties, &p->checking_connectivity,
           &p->connectivity_changed);
+    gpr_log(GPR_INFO, "XXXXXXXXXXXXX SUBSCRIBED. Interested parties: %p", p->base.interested_parties);
     }
     return;
   }
@@ -337,7 +346,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
             "picked_first");
 
         gpr_log(GPR_INFO, "PF %p READY selected %p", (void *)p,
-                (void *)p->selected);
+                (void *)selected_subchannel);
         if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
           gpr_log(GPR_INFO, "Selected subchannel %p", (void *)p->selected);
         }
@@ -512,8 +521,12 @@ static bool pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   for (size_t i = 0; i < sc_args_count; i++) {
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args[i]);
-    gpr_log(GPR_INFO, "PF %p CREATED SUBCHANNEL %zu %p", (void *)p, i,
-            (void *)subchannel);
+    //if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
+      char *address_uri = grpc_sockaddr_to_uri(&addresses->addresses[i].address);
+      gpr_log(GPR_INFO, "Pick First %p created subchannel %p for address uri %s",
+              (void*)p, (void *)subchannel, address_uri);
+      gpr_free(address_uri);
+   // }
     grpc_channel_args_destroy(exec_ctx, (grpc_channel_args *)sc_args[i].args);
     if (subchannel != NULL) new_subchannels[num_new_subchannels++] = subchannel;
   }
@@ -590,7 +603,7 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
     gpr_free(p);
     return NULL;
   }
-  grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner);
+  grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner, args->interested_parties);
   grpc_closure_init(&p->connectivity_changed, pf_connectivity_changed_locked, p,
                     grpc_combiner_scheduler(args->combiner, false));
   return &p->base;

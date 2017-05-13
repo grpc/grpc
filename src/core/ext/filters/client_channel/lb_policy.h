@@ -73,6 +73,7 @@ typedef struct grpc_lb_policy_args {
   grpc_client_channel_factory *client_channel_factory;
   grpc_channel_args *args;
   grpc_combiner *combiner;
+  grpc_pollset_set *interested_parties;
 } grpc_lb_policy_args;
 
 typedef void (*grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel,
@@ -81,7 +82,7 @@ typedef void (*grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel,
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable *vtable;
   gpr_atm ref_pair;
-  /* owned pointer to interested parties in load balancing decisions */
+  /* non-owned pointer to interested parties in load balancing decisions */
   grpc_pollset_set *interested_parties;
   /* combiner under which lb_policy actions take place */
   grpc_combiner *combiner;
@@ -183,7 +184,8 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 /** called by concrete implementations to initialize the base struct */
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable,
-                         grpc_combiner *combiner);
+                         grpc_combiner *combiner,
+                         grpc_pollset_set *interested_parties);
 
 /** Finds an appropriate subchannel for a call, based on \a pick_args.
 

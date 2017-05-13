@@ -610,11 +610,12 @@ static bool pick_from_internal_rr_locked(
   return pick_done;
 }
 
-static grpc_lb_policy_args *lb_policy_args_create(grpc_exec_ctx *exec_ctx,
+static grpc_lb_policy_args *rr_policy_args_create(grpc_exec_ctx *exec_ctx,
                                                   glb_lb_policy *glb_policy) {
   grpc_lb_policy_args *args = gpr_zalloc(sizeof(*args));
   args->client_channel_factory = glb_policy->cc_factory;
   args->combiner = glb_policy->base.combiner;
+  args->interested_parties = glb_policy->base.interested_parties;
   grpc_lb_addresses *addresses =
       process_serverlist_locked(exec_ctx, glb_policy->serverlist);
   // Replace the LB addresses in the channel args that we pass down to
@@ -654,9 +655,9 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
   /* Add the gRPC LB's interested_parties pollset_set to that of the newly
    * created RR policy. This will make the RR policy progress upon activity on
    * gRPC LB, which in turn is tied to the application's call */
-  grpc_pollset_set_add_pollset_set(exec_ctx,
-                                   glb_policy->rr_policy->interested_parties,
-                                   glb_policy->base.interested_parties);
+  //grpc_pollset_set_add_pollset_set(exec_ctx,
+  //                                 glb_policy->rr_policy->interested_parties,
+  //                                 glb_policy->base.interested_parties);
 
   /* Allocate the data for the tracking of the new RR policy's connectivity.
    * It'll be deallocated in glb_rr_connectivity_changed() */
@@ -714,7 +715,7 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
 
   if (glb_policy->shutting_down) return;
 
-  grpc_lb_policy_args *args = lb_policy_args_create(exec_ctx, glb_policy);
+  grpc_lb_policy_args *args = rr_policy_args_create(exec_ctx, glb_policy);
   if (glb_policy->rr_policy != NULL) {
   if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_DEBUG, "Updating Round Robin policy (%p)",
@@ -844,6 +845,17 @@ static grpc_channel_args *build_lb_channel_args(
   return result;
 }
 
+
+void *fuuu_copy(void *p) {
+  return p;
+}
+void fuuu_destroy(grpc_exec_ctx *exec_ctx, void *p) {
+  return;
+}
+int fuuu_cmp(void *p, void *q) {
+  return GPR_ICMP(p, q);
+}
+
 static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
                                                       void *arg,
                                                       grpc_error *error);
@@ -908,6 +920,18 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   grpc_slice_hash_table *targets_info = NULL;
   grpc_channel_args *lb_channel_args = build_lb_channel_args(
       exec_ctx, addresses, glb_policy->response_generator, args->args);
+
+  static const grpc_arg_pointer_vtable fuuu_pointer_vtable = {
+    fuuu_copy, fuuu_destroy, fuuu_cmp};
+
+  grpc_arg fuuu;
+  fuuu.key = "INTERESTED_PARTIES";
+  fuuu.value.pointer.p = args->interested_parties;
+  fuuu.value.pointer.vtable = &fuuu_pointer_vtable;
+  fuuu.type = GRPC_ARG_POINTER;
+
+  lb_channel_args = grpc_channel_args_copy_and_add(lb_channel_args, &fuuu, 1);
+
   char *uri_str;
   gpr_asprintf(&uri_str, "fake:///%s", glb_policy->server_name);
   glb_policy->lb_channel = grpc_lb_policy_grpclb_create_lb_channel(
@@ -928,7 +952,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
                     grpc_combiner_scheduler(args->combiner, false));
-  grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable, args->combiner);
+  grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable, args->combiner, args->interested_parties);
   grpc_connectivity_state_init(&glb_policy->state_tracker, GRPC_CHANNEL_IDLE,
                                "grpclb");
   return &glb_policy->base;
@@ -1353,10 +1377,10 @@ static void query_for_backends_locked(grpc_exec_ctx *exec_ctx,
 
   lb_call_init_locked(exec_ctx, glb_policy);
 
-  if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+  //if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "Query for backends (grpclb: %p, lb_call: %p)",
             (void *)glb_policy, (void *)glb_policy->lb_call);
-  }
+  //}
   GPR_ASSERT(glb_policy->lb_call != NULL);
 
   grpc_call_error call_error;
@@ -1575,7 +1599,7 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
                                                 void *arg, grpc_error *error) {
   glb_lb_policy *glb_policy = arg;
   GPR_ASSERT(glb_policy->lb_call != NULL);
-  if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+  //if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
     char *status_details =
         grpc_slice_to_c_string(glb_policy->lb_call_status_details);
     gpr_log(GPR_INFO,
@@ -1584,7 +1608,7 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
             glb_policy->lb_call_status, status_details,
             (void *)glb_policy->lb_call, (void *)error);
     gpr_free(status_details);
-  }
+ // }
   /* We need to perform cleanups no matter what. */
   lb_call_destroy_locked(exec_ctx, glb_policy);
   if (glb_policy->started_picking && glb_policy->updating) {
@@ -1629,7 +1653,7 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
                                                       grpc_error *error) {
   glb_lb_policy *glb_policy = arg;
   gpr_log(
-      GPR_DEBUG,
+      GPR_INFO,
       "GLB %p glb_lb_channel_on_connectivity_changed_cb state: %d, error: %s",
       (void *)glb_policy, glb_policy->lb_channel_connectivity,
       grpc_error_string(error));

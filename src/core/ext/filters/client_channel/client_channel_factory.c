@@ -45,6 +45,8 @@ void grpc_client_channel_factory_unref(grpc_exec_ctx* exec_ctx,
 grpc_subchannel* grpc_client_channel_factory_create_subchannel(
     grpc_exec_ctx* exec_ctx, grpc_client_channel_factory* factory,
     const grpc_subchannel_args* args) {
+
+ gpr_log(GPR_DEBUG, "FUUUUUUUUUU using sc factory %p", (void *)factory);
   return factory->vtable->create_subchannel(exec_ctx, factory, args);
 }
 

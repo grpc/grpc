@@ -204,6 +204,8 @@ typedef struct client_channel_channel_data {
   /** interested parties (owned) */
   grpc_pollset_set *interested_parties;
 
+  grpc_pollset_set *uberchannel_interested_parties;
+
   /* the following properties are guarded by a mutex since API's require them
      to be instantaneously available */
   gpr_mu info_mu;
@@ -434,6 +436,9 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     lb_policy_args.args = chand->resolver_result;
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
     lb_policy_args.combiner = chand->combiner;
+    lb_policy_args.interested_parties = chand->uberchannel_interested_parties;
+    gpr_log(GPR_INFO, "CHANNEL %s INTERESTED PARTIES: %p", lb_policy_name,
+            lb_policy_args.interested_parties);
 
     const bool lb_policy_type_changed =
         (chand->info_lb_policy_name == NULL) ||
@@ -491,10 +496,10 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     chand->resolver_result = NULL;
   }
 
-  if (!lb_policy_updated && lb_policy != NULL) {
-    grpc_pollset_set_add_pollset_set(exec_ctx, lb_policy->interested_parties,
-                                     chand->interested_parties);
-  }
+  // if (lb_policy != NULL) {
+  //  grpc_pollset_set_add_pollset_set(exec_ctx, lb_policy->interested_parties,
+  //                                   chand->interested_parties);
+  //}
 
   gpr_mu_lock(&chand->info_mu);
   if (lb_policy_name != NULL) {
@@ -515,7 +520,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   chand->method_params_table = method_params_table;
-  if (!lb_policy_updated && lb_policy != NULL) {
+  if (lb_policy != NULL) {
     grpc_closure_list_sched(exec_ctx, &chand->waiting_for_config_closures);
   } else if (chand->resolver == NULL /* disconnected */) {
     grpc_closure_list_fail_all(&chand->waiting_for_config_closures,
@@ -523,8 +528,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
                                    "Channel disconnected", &error, 1));
     grpc_closure_list_sched(exec_ctx, &chand->waiting_for_config_closures);
   }
-  if (!lb_policy_updated && lb_policy != NULL &&
-      chand->exit_idle_when_lb_policy_arrives) {
+  if (lb_policy != NULL && chand->exit_idle_when_lb_policy_arrives) {
     GRPC_LB_POLICY_REF(lb_policy, "exit_idle");
     exit_idle = true;
     chand->exit_idle_when_lb_policy_arrives = false;
@@ -555,14 +559,15 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         "resolver_gone");
   }
 
-  if (!lb_policy_updated && lb_policy != NULL && exit_idle) {
+  if (lb_policy != NULL && exit_idle) {
     grpc_lb_policy_exit_idle_locked(exec_ctx, lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "exit_idle");
   }
 
   if (old_lb_policy != NULL) {
-    grpc_pollset_set_del_pollset_set(
-        exec_ctx, old_lb_policy->interested_parties, chand->interested_parties);
+    // grpc_pollset_set_del_pollset_set(
+    //    exec_ctx, old_lb_policy->interested_parties,
+    //    chand->interested_parties);
     GRPC_LB_POLICY_UNREF(exec_ctx, old_lb_policy, "channel");
     old_lb_policy = NULL;
   }
@@ -615,9 +620,9 @@ static void start_transport_op_locked(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_closure_list_sched(exec_ctx, &chand->waiting_for_config_closures);
       }
       if (chand->lb_policy != NULL) {
-        grpc_pollset_set_del_pollset_set(exec_ctx,
-                                         chand->lb_policy->interested_parties,
-                                         chand->interested_parties);
+        // grpc_pollset_set_del_pollset_set(exec_ctx,
+        //                                 chand->lb_policy->interested_parties,
+        //                                 chand->interested_parties);
         GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
         chand->lb_policy = NULL;
       }
@@ -683,6 +688,14 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
                     on_resolver_result_changed_locked, chand,
                     grpc_combiner_scheduler(chand->combiner, false));
   chand->interested_parties = grpc_pollset_set_create();
+  const grpc_arg *interested_parties_arg =
+      grpc_channel_args_find(args->channel_args, "INTERESTED_PARTIES");
+  if (interested_parties_arg != NULL) {
+     chand->uberchannel_interested_parties = interested_parties_arg->value.pointer.p;
+  } else {
+    chand->uberchannel_interested_parties = chand->interested_parties;
+  }
+
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_channel");
   // Record client channel factory.
@@ -749,9 +762,9 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
     grpc_client_channel_factory_unref(exec_ctx, chand->client_channel_factory);
   }
   if (chand->lb_policy != NULL) {
-    grpc_pollset_set_del_pollset_set(exec_ctx,
-                                     chand->lb_policy->interested_parties,
-                                     chand->interested_parties);
+    // grpc_pollset_set_del_pollset_set(exec_ctx,
+    //                                 chand->lb_policy->interested_parties,
+    //                                 chand->interested_parties);
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
   }
   gpr_free(chand->info_lb_policy_name);
@@ -992,8 +1005,8 @@ typedef struct {
 } continue_picking_args;
 
 /** Return true if subchannel is available immediately (in which case on_ready
-    should not be called), or false otherwise (in which case on_ready should be
-    called when the subchannel is available). */
+    should not be called), or false otherwise (in which case on_ready should
+   be called when the subchannel is available). */
 static bool pick_subchannel_locked(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_metadata_batch *initial_metadata, uint32_t initial_metadata_flags,
@@ -1281,8 +1294,8 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
    the streaming case.
 
    We use double-checked locking to initially see if initialization has been
-   performed. If it has not, we acquire the combiner and perform initialization.
-   If it has, we proceed on the fast path. */
+   performed. If it has not, we acquire the combiner and perform
+   initialization. If it has, we proceed on the fast path. */
 static void cc_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {

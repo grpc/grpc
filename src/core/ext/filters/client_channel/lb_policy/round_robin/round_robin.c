@@ -854,7 +854,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   p->ready_list.prev = NULL;
   p->ready_list.next = NULL;
   p->ready_list_last_pick = &p->ready_list;
-  grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
+  grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner, args->interested_parties);
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {

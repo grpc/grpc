@@ -38,10 +38,11 @@
 
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable,
-                         grpc_combiner *combiner) {
+                         grpc_combiner *combiner,
+                         grpc_pollset_set *interested_parties) {
   policy->vtable = vtable;
   gpr_atm_no_barrier_store(&policy->ref_pair, 1 << WEAK_REF_BITS);
-  policy->interested_parties = grpc_pollset_set_create();
+  policy->interested_parties = interested_parties;
   policy->combiner = GRPC_COMBINER_REF(combiner, "lb_policy");
 }
 
@@ -109,7 +110,7 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx,
   gpr_atm old_val =
       ref_mutate(policy, -(gpr_atm)1, 1 REF_MUTATE_PASS_ARGS("WEAK_UNREF"));
   if (old_val == 1) {
-    grpc_pollset_set_destroy(exec_ctx, policy->interested_parties);
+    //grpc_pollset_set_destroy(exec_ctx, policy->interested_parties);
     grpc_combiner *combiner = policy->combiner;
     policy->vtable->destroy(exec_ctx, policy);
     GRPC_COMBINER_UNREF(exec_ctx, combiner, "lb_policy");
