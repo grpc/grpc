@@ -24,7 +24,7 @@ option java_outer_classname = "CensusProto";
 // Nomenclature notes:
 //   * Capitalized names below (like View) are protos.
 //   * Protos which describe types are named with a Descriptor suffix (e.g.
-//     MesurementDescriptor).
+//     MeasurementDescriptor).
 //
 // Census lets you define the type and description of the data being measured
 // (e.g. the latency of an RPC or the number of CPU cycles spent on an
