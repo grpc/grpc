@@ -88,132 +88,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/tmpfile_windows.c \
     src/core/lib/support/wrap_memcpy.c \
     src/core/lib/surface/init.c \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/handshaker.c \
-    src/core/lib/channel/handshaker_factory.c \
-    src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/compression/compression.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/combiner.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_uv.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
-    src/core/lib/iomgr/ev_epollex_linux.c \
-    src/core/lib/iomgr/ev_epollsig_linux.c \
-    src/core/lib/iomgr/ev_poll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_uv.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/is_epollexclusive_available.c \
-    src/core/lib/iomgr/load_file.c \
-    src/core/lib/iomgr/lockfree_event.c \
-    src/core/lib/iomgr/network_status_tracker.c \
-    src/core/lib/iomgr/polling_entity.c \
-    src/core/lib/iomgr/pollset_set_uv.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_uv.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_uv.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/resource_quota.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_factory_posix.c \
-    src/core/lib/iomgr/socket_mutator.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_utils_uv.c \
-    src/core/lib/iomgr/socket_utils_windows.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_uv.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
-    src/core/lib/iomgr/tcp_server_uv.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_uv.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer_generic.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/timer_manager.c \
-    src/core/lib/iomgr/timer_uv.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_cv.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_uv.c \
-    src/core/lib/iomgr/workqueue_windows.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/slice/b64.c \
-    src/core/lib/slice/percent_encoding.c \
-    src/core/lib/slice/slice.c \
-    src/core/lib/slice/slice_buffer.c \
-    src/core/lib/slice/slice_hash_table.c \
-    src/core/lib/slice/slice_intern.c \
-    src/core/lib/slice/slice_string_helpers.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/completion_queue_factory.c \
-    src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/bdp_estimator.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/error_utils.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/pid_controller.c \
-    src/core/lib/transport/service_config.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/status_conversion.c \
-    src/core/lib/transport/timeout_encoding.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
-    src/core/lib/debug/trace.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \
@@ -269,6 +143,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
+    src/core/lib/debug/trace.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/filters/client_channel/channel_connectivity.c \
@@ -719,12 +594,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
@@ -738,10 +609,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto)

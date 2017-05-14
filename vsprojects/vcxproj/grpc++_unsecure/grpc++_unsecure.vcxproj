@@ -454,6 +454,9 @@
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_unsecure\grpc_unsecure.vcxproj">
       <Project>{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_base\grpc_base.vcxproj">
+      <Project>{ACE841F3-8098-4113-9A28-02BDF61F0968}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
