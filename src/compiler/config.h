@@ -98,8 +98,8 @@ typedef GRPC_CUSTOM_STRINGOUTPUTSTREAM StringOutputStream;
 
 namespace grpc_cpp_generator {
 
-static const char * const kCppGeneratorMessageHeaderExt = ".pb.h";
-static const char * const kCppGeneratorServiceHeaderExt = ".grpc.pb.h";
+static const char* const kCppGeneratorMessageHeaderExt = ".pb.h";
+static const char* const kCppGeneratorServiceHeaderExt = ".grpc.pb.h";
 
 }  // namespace grpc_cpp_generator
 
