@@ -71,7 +71,7 @@ static void test_bad_ping(grpc_end2end_test_config config) {
                           .value.integer = 0},
                          {.type = GRPC_ARG_INTEGER,
                           .key = GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
-                          .value.integer = 20},
+                          .value.integer = 0},
                          {.type = GRPC_ARG_INTEGER,
                           .key = GRPC_ARG_HTTP2_BDP_PROBE,
                           .value.integer = 0}};
