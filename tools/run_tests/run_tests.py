@@ -60,7 +60,10 @@ import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 import python_utils.watch_dirs as watch_dirs
 import python_utils.start_port_server as start_port_server
-
+try:
+  from python_utils.upload_test_results import upload_results_to_bq
+except (ImportError):
+  pass # It's ok to not import because this is only necessary to upload results to BQ.
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
@@ -72,7 +75,8 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['epoll', 'poll', 'poll-cv']
+  'linux': ['epollsig', 'poll', 'poll-cv']
+# TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
 }
 
 
@@ -336,7 +340,8 @@ class CLanguage(object):
     if self.platform == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
-    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
+    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target,
+            'check_epollexclusive']
 
   def make_options(self):
     return self._make_options;
@@ -387,10 +392,6 @@ class CLanguage(object):
 
     if compiler == 'gcc4.9' or compiler == 'default':
       return ('jessie', [])
-    elif compiler == 'gcc4.4':
-      return ('wheezy', self._gcc_make_options(version_suffix='-4.4'))
-    elif compiler == 'gcc4.6':
-      return ('wheezy', self._gcc_make_options(version_suffix='-4.6'))
     elif compiler == 'gcc4.8':
       return ('jessie', self._gcc_make_options(version_suffix='-4.8'))
     elif compiler == 'gcc5.3':
@@ -1185,7 +1186,7 @@ argp.add_argument('--build_only',
                   default=False,
                   action='store_const',
                   const=True,
-                  help='Perform all the build steps but dont run any tests.')
+                  help='Perform all the build steps but don\'t run any tests.')
 argp.add_argument('--measure_cpu_costs', default=False, action='store_const', const=True,
                   help='Measure the cpu costs of tests')
 argp.add_argument('--update_submodules', default=[], nargs='*',
@@ -1200,11 +1201,16 @@ argp.add_argument('--quiet_success',
                   default=False,
                   action='store_const',
                   const=True,
-                  help='Dont print anything when a test passes. Passing tests also will not be reported in XML report. ' +
+                  help='Don\'t print anything when a test passes. Passing tests also will not be reported in XML report. ' +
                        'Useful when running many iterations of each test (argument -n).')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
-                  help='Dont try to iterate over many polling strategies when they exist')
+                  help='Don\'t try to iterate over many polling strategies when they exist')
 argp.add_argument('--max_time', default=-1, type=int, help='Maximum test runtime in seconds')
+argp.add_argument('--bq_result_table',
+                  default='',
+                  type=str,
+                  nargs='?',
+                  help='Upload test results to a specified BQ table.')
 args = argp.parse_args()
 
 if args.force_default_poller:
@@ -1427,6 +1433,14 @@ class BuildAndRunError(object):
   POST_TEST = object()
 
 
+def _has_epollexclusive():
+  try:
+    subprocess.check_call('bins/%s/check_epollexclusive' % args.config)
+    return True
+  except subprocess.CalledProcessError, e:
+    return False
+
+
 # returns a list of things that failed (or an empty list on success)
 def _build_and_run(
     check_cancelled, newline_on_success, xml_report=None, build_only=False):
@@ -1443,6 +1457,10 @@ def _build_and_run(
       report_utils.render_junit_xml_report(resultset, xml_report,
                                            suite_name=args.report_suite_name)
     return []
+
+  if not args.travis and not _has_epollexclusive() and 'epollex' in _POLLING_STRATEGIES[platform_string()]:
+    print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
+    _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])
@@ -1503,6 +1521,8 @@ def _build_and_run(
   finally:
     for antagonist in antagonists:
       antagonist.kill()
+    if args.bq_result_table and resultset:
+      upload_results_to_bq(resultset, args.bq_result_table, args, platform_string())
     if xml_report and resultset:
       report_utils.render_junit_xml_report(resultset, xml_report,
                                            suite_name=args.report_suite_name)

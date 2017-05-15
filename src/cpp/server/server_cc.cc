@@ -521,7 +521,7 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
     if (sync_server_cqs_->empty()) {
-      gpr_log(GPR_ERROR,
+      gpr_log(GPR_INFO,
               "Default health check service disabled at async-only server.");
     } else {
       auto* default_hc_service = new DefaultHealthCheckService;
@@ -686,6 +686,7 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
         StringFromCopiedSlice(call_details_.method);
     static_cast<GenericServerContext*>(context_)->host_ =
         StringFromCopiedSlice(call_details_.host);
+    context_->deadline_ = call_details_.deadline;
   }
   grpc_slice_unref(call_details_.method);
   grpc_slice_unref(call_details_.host);

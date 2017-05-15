@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,9 @@
 
 set -ex
 
-cd /var/local/git/grpc
-cp /openssl-1.0.2f.tar.gz third_party
-./tools/openssl/use_openssl.sh
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+tools/run_tests/task_runner.py -f artifact linux

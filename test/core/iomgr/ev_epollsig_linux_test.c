@@ -34,7 +34,7 @@
 
 /* This test only relevant on linux systems where epoll() is available */
 #ifdef GRPC_LINUX_EPOLL
-#include "src/core/lib/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
 #include <errno.h>
@@ -113,7 +113,7 @@ static void test_pollset_init(test_pollset *pollsets, int num_pollsets) {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(p);
+  grpc_pollset_destroy(exec_ctx, p);
 }
 
 static void test_pollset_cleanup(grpc_exec_ctx *exec_ctx,
@@ -403,15 +403,16 @@ int main(int argc, char **argv) {
   const char *poll_strategy = NULL;
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
+  grpc_iomgr_start();
 
   poll_strategy = grpc_get_poll_strategy_name();
-  if (poll_strategy != NULL && strcmp(poll_strategy, "epoll") == 0) {
+  if (poll_strategy != NULL && strcmp(poll_strategy, "epollsig") == 0) {
     test_add_fd_to_pollset();
     test_pollset_queue_merge_items();
     test_threading();
   } else {
     gpr_log(GPR_INFO,
-            "Skipping the test. The test is only relevant for 'epoll' "
+            "Skipping the test. The test is only relevant for 'epollsig' "
             "strategy. and the current strategy is: '%s'",
             poll_strategy);
   }

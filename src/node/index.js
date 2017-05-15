@@ -31,6 +31,10 @@
  *
  */
 
+/**
+ * @module
+ */
+
 'use strict';
 
 var path = require('path');
@@ -54,6 +58,8 @@ var grpc = require('./src/grpc_extension');
 
 var protobuf_js_5_common = require('./src/protobuf_js_5_common');
 var protobuf_js_6_common = require('./src/protobuf_js_6_common');
+
+var constants = require('./src/constants.js');
 
 grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
 
@@ -208,27 +214,27 @@ exports.Metadata = Metadata;
 /**
  * Status name to code number mapping
  */
-exports.status = grpc.status;
+exports.status = constants.status;
 
 /**
  * Propagate flag name to number mapping
  */
-exports.propagate = grpc.propagate;
+exports.propagate = constants.propagate;
 
 /**
  * Call error name to code number mapping
  */
-exports.callError = grpc.callError;
+exports.callError = constants.callError;
 
 /**
  * Write flag name to code number mapping
  */
-exports.writeFlags = grpc.writeFlags;
+exports.writeFlags = constants.writeFlags;
 
 /**
  * Log verbosity setting name to code number mapping
  */
-exports.logVerbosity = grpc.logVerbosity;
+exports.logVerbosity = constants.logVerbosity;
 
 /**
  * Credentials factories
@@ -256,5 +262,10 @@ exports.getClientChannel = client.getClientChannel;
 exports.waitForClientReady = client.waitForClientReady;
 
 exports.closeClient = function closeClient(client_obj) {
-  client.getClientChannel(client_obj).close();
+  client.Client.prototype.close.apply(client_obj);
 };
+
+/**
+ * @see module:src/client.Client
+ */
+exports.Client = client.Client;

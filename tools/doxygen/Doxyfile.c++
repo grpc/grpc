@@ -792,6 +792,7 @@ doc/service_config.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
+doc/unit_testing.md \
 doc/wait-for-ready.md \
 include/grpc++/alarm.h \
 include/grpc++/channel.h \

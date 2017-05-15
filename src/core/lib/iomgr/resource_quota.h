@@ -36,6 +36,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 /** \file Tracks resource usage against a pool.
@@ -75,7 +76,7 @@
     maintain lists of users (which users arrange to leave before they are
     destroyed) */
 
-extern int grpc_resource_quota_trace;
+extern grpc_tracer_flag grpc_resource_quota_trace;
 
 grpc_resource_quota *grpc_resource_quota_ref_internal(
     grpc_resource_quota *resource_quota);

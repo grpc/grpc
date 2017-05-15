@@ -38,8 +38,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-extern int grpc_compression_trace;
-
 /** Compression filter for outgoing data.
  *
  * See <grpc/compression.h> for the available compression settings.

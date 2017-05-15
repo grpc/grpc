@@ -27,7 +27,7 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-mkdir artifacts
+mkdir -p %ARTIFACTS_OUT%
 
 setlocal
 cd third_party/protobuf/cmake
@@ -39,8 +39,8 @@ endlocal
 
 call vsprojects/build_plugins.bat || goto :error
 
-xcopy /Y third_party\protobuf\cmake\build\solution\Release\protoc.exe artifacts\ || goto :error
-xcopy /Y vsprojects\Release\*_plugin.exe artifacts\ || xcopy /Y vsprojects\x64\Release\*_plugin.exe artifacts\ || goto :error
+xcopy /Y third_party\protobuf\cmake\build\solution\Release\protoc.exe %ARTIFACTS_OUT%\ || goto :error
+xcopy /Y vsprojects\Release\*_plugin.exe %ARTIFACTS_OUT%\ || xcopy /Y vsprojects\x64\Release\*_plugin.exe %ARTIFACTS_OUT%\ || goto :error
 
 goto :EOF
 

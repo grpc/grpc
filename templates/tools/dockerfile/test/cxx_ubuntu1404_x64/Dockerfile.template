@@ -32,6 +32,7 @@
   FROM ubuntu:14.04
   
   <%include file="../../apt_get_basic.include"/>
+  <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../python_deps.include"/>
   <%include file="../../cxx_deps.include"/>
   <%include file="../../run_tests_addons_nocache.include"/>

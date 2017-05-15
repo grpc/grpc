@@ -5,7 +5,7 @@
   "version": "1.4.0",
   "require": {
     "php": ">=5.5.0",
-    "google/protobuf": "^v3.1.0"
+    "google/protobuf": "^v3.3.0"
   },
   "require-dev": {
     "google/auth": "v0.9"

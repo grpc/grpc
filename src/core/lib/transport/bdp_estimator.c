@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-int grpc_bdp_estimator_trace = 0;
+grpc_tracer_flag grpc_bdp_estimator_trace = GRPC_TRACER_INITIALIZER(false);
 
 void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name) {
   estimator->estimate = 65536;
@@ -68,7 +68,7 @@ bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
 }
 
 void grpc_bdp_estimator_schedule_ping(grpc_bdp_estimator *estimator) {
-  if (grpc_bdp_estimator_trace) {
+  if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
     gpr_log(GPR_DEBUG, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64,
             estimator->name, estimator->accumulator, estimator->estimate);
   }
@@ -78,7 +78,7 @@ void grpc_bdp_estimator_schedule_ping(grpc_bdp_estimator *estimator) {
 }
 
 void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator) {
-  if (grpc_bdp_estimator_trace) {
+  if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
     gpr_log(GPR_DEBUG, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64,
             estimator->name, estimator->accumulator, estimator->estimate);
   }
@@ -93,7 +93,7 @@ void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), estimator->ping_start_time);
   double dt = (double)dt_ts.tv_sec + 1e-9 * (double)dt_ts.tv_nsec;
   double bw = dt > 0 ? ((double)estimator->accumulator / dt) : 0;
-  if (grpc_bdp_estimator_trace) {
+  if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
     gpr_log(GPR_DEBUG, "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
                        " dt=%lf bw=%lfMbs bw_est=%lfMbs",
             estimator->name, estimator->accumulator, estimator->estimate, dt,
@@ -105,7 +105,7 @@ void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
     estimator->estimate =
         GPR_MAX(estimator->accumulator, estimator->estimate * 2);
     estimator->bw_est = bw;
-    if (grpc_bdp_estimator_trace) {
+    if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_DEBUG, "bdp[%s]: estimate increased to %" PRId64,
               estimator->name, estimator->estimate);
     }
