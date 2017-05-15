@@ -112,10 +112,10 @@ typedef struct {
 } grpc_chttp2_ping_queue;
 
 typedef struct {
-  gpr_timespec min_time_between_pings;
   int max_pings_without_data;
   int max_ping_strikes;
-  gpr_timespec min_ping_interval_without_data;
+  gpr_timespec min_sent_ping_interval_without_data;
+  gpr_timespec min_recv_ping_interval_without_data;
 } grpc_chttp2_repeated_ping_policy;
 
 typedef struct {
