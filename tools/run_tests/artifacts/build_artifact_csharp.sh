@@ -34,5 +34,5 @@ cd $(dirname $0)/../../..
 
 make grpc_csharp_ext
 
-mkdir -p artifacts
-cp libs/opt/libgrpc_csharp_ext.so artifacts || cp libs/opt/libgrpc_csharp_ext.dylib artifacts
+mkdir -p "${ARTIFACTS_OUT}"
+cp libs/opt/libgrpc_csharp_ext.so "${ARTIFACTS_OUT}" || cp libs/opt/libgrpc_csharp_ext.dylib "${ARTIFACTS_OUT}"

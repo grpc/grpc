@@ -37,8 +37,8 @@ cd cmake\build\%ARCHITECTURE%
 cmake --build . --target grpc_csharp_ext --config Release
 cd ..\..\..
 
-mkdir artifacts
-copy /Y cmake\build\Win32\Release\grpc_csharp_ext.dll artifacts || copy /Y cmake\build\x64\Release\grpc_csharp_ext.dll artifacts || goto :error
+mkdir -p %ARTIFACTS_OUT%
+copy /Y cmake\build\Win32\Release\grpc_csharp_ext.dll %ARTIFACTS_OUT% || copy /Y cmake\build\x64\Release\grpc_csharp_ext.dll %ARTIFACTS_OUT% || goto :error
 
 goto :EOF
 
