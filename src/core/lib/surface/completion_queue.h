@@ -50,6 +50,8 @@ extern grpc_tracer_flag grpc_trace_pending_tags;
 #endif
 
 typedef struct grpc_cq_completion {
+  gpr_mpscq_node node;
+
   /** user supplied tag */
   void *tag;
   /** done callback - called when this queue element is no longer
