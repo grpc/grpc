@@ -32,6 +32,11 @@
 # the BUILD file for gRPC. It contains the mapping for the template system we
 # use to generate other platform's build system files.
 #
+# Please consider that there should be a high bar for additions and changes to
+# this file.
+# Each rule listed must be re-written for Google's internal build system, and
+# each change must be ported from one to the other.
+#
 
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
@@ -75,12 +80,16 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = None,
   )
 
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++"):
+  copts = []
+  if language.upper() == "C":
+    copts = ["-std=c99"]
   native.cc_test(
     name = name,
     srcs = srcs,
     args = args,
     data = data,
     deps = deps + ["//external:" + dep for dep in external_deps],
+    copts = copts,
     linkopts = ["-pthread"],
   )
 
