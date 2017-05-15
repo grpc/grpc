@@ -164,6 +164,7 @@
   GRXBufferedPipe *pipe = [GRXBufferedPipe pipe];
   [pipe startWithWriteable:writeable];
   [pipe writeValue:anyValue];
+  [pipe writesFinishedWithError:nil];
 
   // Then:
   XCTAssertEqual(handler.timesCalled, 1);
