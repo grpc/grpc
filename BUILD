@@ -706,6 +706,7 @@ grpc_cc_library(
         "include/grpc/slice.h",
         "include/grpc/slice_buffer.h",
         "include/grpc/status.h",
+        "include/grpc/support/workaround_list.h",
     ],
     deps = [
         "gpr_base",
@@ -741,6 +742,8 @@ grpc_cc_library(
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
+        "grpc_workaround_cronet_compression_filter",
+        "grpc_server_backward_compatibility",
     ]
 )
 
@@ -853,6 +856,21 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_workaround_cronet_compression_filter",
+    srcs = [
+        "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_server_backward_compatibility",
     ],
 )
 
@@ -1505,5 +1523,20 @@ grpc_cc_library(
         ":grpc++",
     ],
 )
+
+grpc_cc_library(
+    name = "grpc_server_backward_compatibility",
+    srcs = [
+        "src/core/ext/filters/workarounds/workaround_utils.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/workarounds/workaround_utils.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+    ],
+)
+
 
 grpc_generate_one_off_targets()
