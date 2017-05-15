@@ -225,6 +225,22 @@ class JobResult(object):
     self.cpu_estimated = 1
     self.cpu_measured = 0
 
+
+def eintr_be_gone(fn):
+  """Run fn until it doesn't stop because of EINTR"""
+  while True:
+    try:
+      return fn()
+    except IOError, e:
+      if e.errno != errno.EINTR:
+        raise
+
+
+def read_from_start(f):
+  f.seek(0)
+  return f.read()
+
+
 class Job(object):
   """Manages one job."""
 
@@ -278,8 +294,7 @@ class Job(object):
   def state(self):
     """Poll current state of the job. Prints messages at completion."""
     def stdout(self=self):
-      self._tempfile.seek(0)
-      stdout = self._tempfile.read()
+      stdout = eintr_be_gone(lambda: read_from_start(self._tempfile))
       self.result.message = stdout[-_MAX_RESULT_SIZE:]
       return stdout
     if self._state == _RUNNING and self._process.poll() is not None:
