@@ -294,7 +294,7 @@ class Job(object):
   def state(self):
     """Poll current state of the job. Prints messages at completion."""
     def stdout(self=self):
-      stdout = eintr_be_gone(lambda: read_from_start(self._tempfile))
+      stdout = read_from_start(self._tempfile)
       self.result.message = stdout[-_MAX_RESULT_SIZE:]
       return stdout
     if self._state == _RUNNING and self._process.poll() is not None:
@@ -430,7 +430,7 @@ class Jobset(object):
     while self._running:
       dead = set()
       for job in self._running:
-        st = job.state()
+        st = eintr_be_gone(lambda: job.state())
         if st == _RUNNING: continue
         if st == _FAILURE or st == _KILLED:
           self._failures += 1
