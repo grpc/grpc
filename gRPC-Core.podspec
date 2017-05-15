@@ -145,6 +145,7 @@ Pod::Spec.new do |s|
                       'include/grpc/support/tls_msvc.h',
                       'include/grpc/support/tls_pthread.h',
                       'include/grpc/support/useful.h',
+                      'include/grpc/support/workaround_list.h',
                       'include/grpc/impl/codegen/atm.h',
                       'include/grpc/impl/codegen/atm_gcc_atomic.h',
                       'include/grpc/impl/codegen/atm_gcc_sync.h',
@@ -473,6 +474,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/tracing.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
+                      'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
+                      'src/core/ext/filters/workarounds/workaround_utils.h',
                       'src/core/lib/surface/init.c',
                       'src/core/lib/channel/channel_args.c',
                       'src/core/lib/channel/channel_stack.c',
@@ -717,6 +720,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/tracing.c',
                       'src/core/ext/filters/max_age/max_age_filter.c',
                       'src/core/ext/filters/message_size/message_size_filter.c',
+                      'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c',
+                      'src/core/ext/filters/workarounds/workaround_utils.c',
                       'src/core/plugin_registry/grpc_plugin_registry.c'
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
@@ -950,7 +955,9 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/trace_string.h',
                               'src/core/ext/census/tracing.h',
                               'src/core/ext/filters/max_age/max_age_filter.h',
-                              'src/core/ext/filters/message_size/message_size_filter.h'
+                              'src/core/ext/filters/message_size/message_size_filter.h',
+                              'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
+                              'src/core/ext/filters/workarounds/workaround_utils.h'
   end
 
   s.subspec 'Cronet-Interface' do |ss|
