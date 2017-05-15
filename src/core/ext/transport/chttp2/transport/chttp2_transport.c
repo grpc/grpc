@@ -539,8 +539,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     }
   }
 
-  t->ping_state.pings_before_data_required =
-      t->ping_policy.max_pings_without_data;
+  /* No pings allowed before receiving a header or data frame. */
+  t->ping_state.pings_before_data_required = 0;
   t->ping_state.is_delayed_ping_timer_set = false;
 
   t->ping_recv_state.last_ping_recv_time = gpr_inf_past(GPR_CLOCK_MONOTONIC);

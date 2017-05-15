@@ -42,7 +42,10 @@ static void test_ping(grpc_end2end_test_config config,
                           .value.integer = 0},
                          {.type = GRPC_ARG_INTEGER,
                           .key = GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
-                          .value.integer = 20}};
+                          .value.integer = 0},
+                         {.type = GRPC_ARG_INTEGER,
+                          .key = GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS,
+                          .value.integer = 1}};
   grpc_arg server_a[] = {
       {.type = GRPC_ARG_INTEGER,
        .key = GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS,
