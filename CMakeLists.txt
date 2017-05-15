@@ -49,8 +49,9 @@ project(${PACKAGE_NAME} C CXX)
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 
 set(gRPC_INSTALL_default ON)
-if (MSVC)
-    set(gRPC_INSTALL_default OFF)
+if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  # Disable gRPC_INSTALL by default if building as a submodule
+  set(gRPC_INSTALL_default OFF)
 endif()
 set(gRPC_INSTALL ${gRPC_INSTALL_default} CACHE BOOL
     "Generate installation target: gRPC_ZLIB_PROVIDER, gRPC_CARES_PROVIDER, gRPC_SSL_PROVIDER and gRPC_PROTOBUF_PROVIDER must all be \"package\"")
