@@ -35,7 +35,6 @@
 #define TEST_CPP_MICROBENCHMARKS_COUNTERS_H
 
 #include <sstream>
-#include <string>
 
 extern "C" {
 #include <grpc/support/port_platform.h>
