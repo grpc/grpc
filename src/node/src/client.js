@@ -100,6 +100,12 @@ function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
   var message;
+  var self = this;
+  if (this.writeFailed) {
+    /* Once a write fails, just call the callback immediately to let the caller
+       flush any pending writes. */
+    callback();
+  }
   try {
     message = this.serialize(chunk);
   } catch (e) {
@@ -119,8 +125,10 @@ function _write(chunk, encoding, callback) {
   batch[grpc.opType.SEND_MESSAGE] = message;
   this.call.startBatch(batch, function(err, event) {
     if (err) {
-      // Something has gone wrong. Stop writing by failing to call callback
-      return;
+      /* Assume that the call is complete and that writing failed because a
+         status was received. In that case, set a flag to discard all future
+         writes */
+      self.writeFailed = true;
     }
     callback();
   });
