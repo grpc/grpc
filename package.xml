@@ -78,7 +78,6 @@
     <file baseinstalldir="/" name="include/grpc/support/tls_msvc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/tls_pthread.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/useful.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
@@ -164,6 +163,7 @@
     <file baseinstalldir="/" name="include/grpc/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/compression_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/connectivity_state.h" role="src" />
