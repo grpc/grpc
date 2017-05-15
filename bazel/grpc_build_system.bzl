@@ -53,7 +53,7 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     ]
   )
 
-def grpc_cc_libraries(name_list, additional_src_list = [], additional_dep_list = [], srcs = [], public_hdrs = [], hdrs = [], external_deps = [], deps = [], standalone = False, language="C++"):
+def deprecated_grpc_cc_libraries(name_list, additional_src_list = [], additional_dep_list = [], srcs = [], public_hdrs = [], hdrs = [], external_deps = [], deps = [], standalone = False, language="C++"):
   names = len(name_list)
   asl = additional_src_list + [[]]*(names - len(additional_src_list))
   adl = additional_dep_list + [[]]*(names - len(additional_dep_list))
