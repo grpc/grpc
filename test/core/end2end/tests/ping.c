@@ -37,18 +37,19 @@ static void test_ping(grpc_end2end_test_config config,
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
-  grpc_arg client_a[] = {{.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS,
-                          .value.integer = 0},
-                         {.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
-                          .value.integer = 0},
-                         {.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS,
-                          .value.integer = 1}};
+  grpc_arg client_a[] = {
+      {.type = GRPC_ARG_INTEGER,
+       .key = GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS,
+       .value.integer = 10},
+      {.type = GRPC_ARG_INTEGER,
+       .key = GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
+       .value.integer = 0},
+      {.type = GRPC_ARG_INTEGER,
+       .key = GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS,
+       .value.integer = 1}};
   grpc_arg server_a[] = {
       {.type = GRPC_ARG_INTEGER,
-       .key = GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS,
+       .key = GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS,
        .value.integer = 0},
       {.type = GRPC_ARG_INTEGER,
        .key = GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS,

@@ -452,6 +452,7 @@ error_handler:
     t->parser_data = &s->data_parser;
     t->ping_state.pings_before_data_required =
         t->ping_policy.max_pings_without_data;
+    t->ping_state.last_ping_sent_time = gpr_inf_past(GPR_CLOCK_MONOTONIC);
     return GRPC_ERROR_NONE;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, NULL)) {
     /* handle stream errors by closing the stream */
@@ -629,6 +630,7 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
 
   t->ping_state.pings_before_data_required =
       t->ping_policy.max_pings_without_data;
+  t->ping_state.last_ping_sent_time = gpr_inf_past(GPR_CLOCK_MONOTONIC);
 
   /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);

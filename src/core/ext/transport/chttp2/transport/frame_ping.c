@@ -92,7 +92,7 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
         gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
         gpr_timespec next_allowed_ping =
             gpr_time_add(t->ping_recv_state.last_ping_recv_time,
-                         t->ping_policy.min_ping_interval_without_data);
+                         t->ping_policy.min_recv_ping_interval_without_data);
 
         if (t->keepalive_permit_without_calls == 0 &&
             grpc_chttp2_stream_map_size(&t->stream_map) == 0) {

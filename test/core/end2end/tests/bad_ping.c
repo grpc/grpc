@@ -66,18 +66,19 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void test_bad_ping(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
-  grpc_arg client_a[] = {{.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS,
-                          .value.integer = 0},
-                         {.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
-                          .value.integer = 0},
-                         {.type = GRPC_ARG_INTEGER,
-                          .key = GRPC_ARG_HTTP2_BDP_PROBE,
-                          .value.integer = 0}};
+  grpc_arg client_a[] = {
+      {.type = GRPC_ARG_INTEGER,
+       .key = GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS,
+       .value.integer = 10},
+      {.type = GRPC_ARG_INTEGER,
+       .key = GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
+       .value.integer = 0},
+      {.type = GRPC_ARG_INTEGER,
+       .key = GRPC_ARG_HTTP2_BDP_PROBE,
+       .value.integer = 0}};
   grpc_arg server_a[] = {
       {.type = GRPC_ARG_INTEGER,
-       .key = GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS,
+       .key = GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS,
        .value.integer = 300000 /* 5 minutes */},
       {.type = GRPC_ARG_INTEGER,
        .key = GRPC_ARG_HTTP2_MAX_PING_STRIKES,
