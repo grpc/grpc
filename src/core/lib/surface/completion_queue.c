@@ -837,15 +837,23 @@ static grpc_event cq_next(grpc_completion_queue *cc, gpr_timespec deadline,
       dump_pending_tags(cc);
       break;
     }
+<<<<<<< HEAD
 
     /* The main polling work happens in grpc_pollset_work */
     gpr_mu_lock(cqd->mu);
     cqd->num_polls++;
+=======
+    cc->num_polls++;
+>>>>>>> 21322dec78b4c8db45a4bcd2919b4961b7d31a5c
     grpc_error *err = cc->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cc),
                                               NULL, now, iteration_deadline);
     gpr_mu_unlock(cqd->mu);
 
     if (err != GRPC_ERROR_NONE) {
+<<<<<<< HEAD
+=======
+      gpr_mu_unlock(cc->mu);
+>>>>>>> 21322dec78b4c8db45a4bcd2919b4961b7d31a5c
       const char *msg = grpc_error_string(err);
       gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
 
@@ -1025,15 +1033,25 @@ static grpc_event cq_pluck(grpc_completion_queue *cc, void *tag,
       dump_pending_tags(cc);
       break;
     }
+<<<<<<< HEAD
 
     cqd->num_polls++;
+=======
+    cc->num_polls++;
+>>>>>>> 21322dec78b4c8db45a4bcd2919b4961b7d31a5c
     grpc_error *err = cc->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cc),
                                               &worker, now, deadline);
     if (err != GRPC_ERROR_NONE) {
       del_plucker(cc, tag, &worker);
+<<<<<<< HEAD
       gpr_mu_unlock(cqd->mu);
       const char *msg = grpc_error_string(err);
       gpr_log(GPR_ERROR, "Completion queue pluck failed: %s", msg);
+=======
+      gpr_mu_unlock(cc->mu);
+      const char *msg = grpc_error_string(err);
+      gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
+>>>>>>> 21322dec78b4c8db45a4bcd2919b4961b7d31a5c
 
       GRPC_ERROR_UNREF(err);
       memset(&ret, 0, sizeof(ret));

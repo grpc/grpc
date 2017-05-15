@@ -69,7 +69,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CoreCronetEnd2EndTests \
     -destination name="iPhone 6" \
-    test
+    test | xcpretty
 
 # Temporarily disabled for (possible) flakiness on Jenkins.
 # Fix or reenable after confirmation/disconfirmation that it is the source of
