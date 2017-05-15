@@ -203,6 +203,10 @@ class BalancerServiceImpl : public BalancerService {
       if (shutdown_) break;
       SendResponse(stream, response_and_delay.first, response_and_delay.second);
     }
+    {
+      std::unique_lock<std::mutex> lock(mu_);
+      serverlist_cond_.wait(lock);
+    }
 
     if (client_load_reporting_interval_seconds_ > 0) {
       request.Clear();
@@ -226,7 +230,7 @@ class BalancerServiceImpl : public BalancerService {
       client_stats_.num_calls_finished_known_received +=
           request.client_stats().num_calls_finished_known_received();
       std::lock_guard<std::mutex> lock(mu_);
-      cond_.notify_one();
+      load_report_cond_.notify_one();
     }
 
     return Status::OK;
@@ -255,8 +259,13 @@ class BalancerServiceImpl : public BalancerService {
 
   const ClientStats& WaitForLoadReport() {
     std::unique_lock<std::mutex> lock(mu_);
-    cond_.wait(lock);
+    load_report_cond_.wait(lock);
     return client_stats_;
+  }
+
+  void NotifyDoneWithServerlists() {
+    std::lock_guard<std::mutex> lock(mu_);
+    serverlist_cond_.notify_one();
   }
 
  private:
@@ -274,7 +283,8 @@ class BalancerServiceImpl : public BalancerService {
   const int client_load_reporting_interval_seconds_;
   std::vector<ResponseDelayPair> responses_and_delays_;
   std::mutex mu_;
-  std::condition_variable cond_;
+  std::condition_variable load_report_cond_;
+  std::condition_variable serverlist_cond_;
   ClientStats client_stats_;
   bool shutdown_;
 };
@@ -483,6 +493,7 @@ TEST_F(SingleBalancerTest, Vanilla) {
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(100, backend_servers_[i].service_->request_count());
   }
+  balancers_[0]->NotifyDoneWithServerlists();
   // The balancer got a single request.
   EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
   // and sent a single response.
@@ -524,7 +535,7 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
     EXPECT_TRUE(status_and_response.first.ok());
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
-
+  balancers_[0]->NotifyDoneWithServerlists();
   // The balancer got a single request.
   EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
   // and sent two responses.
@@ -582,7 +593,7 @@ TEST_F(SingleBalancerTest, RepeatedServerlist) {
     EXPECT_TRUE(status_and_response.first.ok());
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
-
+  balancers_[0]->NotifyDoneWithServerlists();
   // The balancer got a single request.
   EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
   // Check LB policy name for the channel.
@@ -609,6 +620,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(100, backend_servers_[i].service_->request_count());
   }
+  balancers_[0]->NotifyDoneWithServerlists();
   // The balancer got a single request.
   EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
   // and sent a single response.
