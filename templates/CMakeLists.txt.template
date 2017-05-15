@@ -618,6 +618,13 @@
   endif()
   </%def>
 
+  if (gRPC_INSTALL)
+    install(EXPORT gRPCTargets
+      DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
+      NAMESPACE gRPC::
+    )
+  endif()
+
   foreach(_config gRPCConfig gRPCConfigVersion)
     configure_file(tools/cmake/<%text>${_config}</%text>.cmake.in
       <%text>${_config}</%text>.cmake @ONLY)
