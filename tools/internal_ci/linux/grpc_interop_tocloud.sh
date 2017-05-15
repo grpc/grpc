@@ -36,5 +36,6 @@ export LANG=en_US.UTF-8
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+source tools/internal_ci/helper_scripts/prepare_build_interop_rc
 
 tools/run_tests/run_interop_tests.py -l all -s all --use_docker --http2_interop -t -j 12 $@

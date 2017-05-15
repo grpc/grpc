@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -30,13 +30,9 @@
 
 set -ex
 
-export LANG=en_US.UTF-8
-
-# Enter the gRPC repo root
-cd $(dirname $0)/../../..
+# change to grpc repo root
+cd $(dirname $0)/../../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-source tools/internal_ci/helper_scripts/prepare_build_interop_rc
 
-tools/run_tests/run_interop_tests.py -l python --use_docker --http2_server_interop
-
+tools/run_tests/run_tests_matrix.py -f c ubsan --inner_jobs 16 -j 1 --internal_ci

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -28,15 +28,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Source this rc script to prepare the environment for interop builds
+# This rc script must be used in the root directory of gRPC
 
 export LANG=en_US.UTF-8
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../../..
+# Download Docker images from DockerHub
+export DOCKERHUB_ORGANIZATION=grpctesting
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-source tools/internal_ci/helper_scripts/prepare_build_interop_rc
+git submodule update --init
 
-tools/run_tests/run_interop_tests.py -l python --use_docker --http2_server_interop
-
+# Set up gRPC-Go and gRPC-Java to test
+git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go
+git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java

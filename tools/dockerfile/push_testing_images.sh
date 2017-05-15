@@ -44,7 +44,7 @@ cd -
 
 DOCKERHUB_ORGANIZATION=grpctesting
 
-for DOCKERFILE_DIR in tools/dockerfile/test/*
+for DOCKERFILE_DIR in tools/dockerfile/test/* tools/dockerfile/interoptest/*
 do
   # Generate image name based on Dockerfile checksum. That works well as long
   # as can count on dockerfiles being written in a way that changing the logical 
