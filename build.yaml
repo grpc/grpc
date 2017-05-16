@@ -599,6 +599,15 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+- name: grpc_resolver_fake
+  headers:
+  - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
+  src:
+  - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c
+  plugin: grpc_resolver_fake
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_resolver_sockaddr
   src:
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
@@ -669,8 +678,8 @@ filegroups:
 - name: grpc_test_util_base
   build: test
   headers:
+  - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - test/core/end2end/cq_verifier.h
-  - test/core/end2end/fake_resolver.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
@@ -685,8 +694,8 @@ filegroups:
   - test/core/util/slice_splitter.h
   - test/core/util/trickle_endpoint.h
   src:
+  - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c
   - test/core/end2end/cq_verifier.c
-  - test/core/end2end/fake_resolver.c
   - test/core/end2end/fixtures/http_proxy_fixture.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
@@ -1064,6 +1073,7 @@ libs:
   - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
+  - grpc_resolver_fake
   - grpc_load_reporting
   - grpc_secure
   - census
@@ -1163,6 +1173,7 @@ libs:
   - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
+  - grpc_resolver_fake
   - grpc_load_reporting
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
@@ -3598,6 +3609,22 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: client_lb_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/client_lb_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  excluded_poll_engines:
+  - poll
+  - poll-cv
 - name: codegen_test_full
   gtest: true
   build: test
@@ -3876,6 +3903,9 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  excluded_poll_engines:
+  - poll
+  - poll-cv
 - name: grpclb_test
   gtest: false
   build: test
@@ -4189,19 +4219,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-- name: round_robin_end2end_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/cpp/end2end/round_robin_end2end_test.cc
-  deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: secure_auth_context_test
   gtest: true
   build: test

@@ -37,10 +37,13 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
+
+grpc_tracer_flag grpc_lb_pick_first_trace = GRPC_TRACER_INITIALIZER(false);
 
 typedef struct pending_pick {
   struct pending_pick *next;
@@ -54,7 +57,9 @@ typedef struct {
   grpc_lb_policy base;
   /** all our subchannels */
   grpc_subchannel **subchannels;
+  grpc_subchannel **new_subchannels;
   size_t num_subchannels;
+  size_t num_new_subchannels;
 
   grpc_closure connectivity_changed;
 
@@ -63,10 +68,17 @@ typedef struct {
   /** the selected channel */
   grpc_connected_subchannel *selected;
 
+  /** the subchannel key for \a selected, or NULL if \a selected not set */
+  const grpc_subchannel_key *selected_key;
+
   /** have we started picking? */
-  int started_picking;
+  bool started_picking;
   /** are we shut down? */
-  int shutdown;
+  bool shutdown;
+  /** are we updating the selected subchannel? */
+  bool updating_selected;
+  /** are we updating the subchannel candidates? */
+  bool updating_subchannels;
   /** which subchannel are we watching? */
   size_t checking_subchannel;
   /** what is the connectivity of that channel? */
@@ -80,23 +92,24 @@ typedef struct {
 
 static void pf_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
-  size_t i;
   GPR_ASSERT(p->pending_picks == NULL);
-  for (i = 0; i < p->num_subchannels; i++) {
-    GRPC_SUBCHANNEL_UNREF(exec_ctx, p->subchannels[i], "pick_first");
+  for (size_t i = 0; i < p->num_subchannels; i++) {
+    GRPC_SUBCHANNEL_UNREF(exec_ctx, p->subchannels[i], "pick_first_destroy");
   }
   if (p->selected != NULL) {
-    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, p->selected, "picked_first");
+    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, p->selected,
+                                    "picked_first_destroy");
   }
   grpc_connectivity_state_destroy(exec_ctx, &p->state_tracker);
   gpr_free(p->subchannels);
+  gpr_free(p->new_subchannels);
   gpr_free(p);
 }
 
 static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
-  p->shutdown = 1;
+  p->shutdown = true;
   pp = p->pending_picks;
   p->pending_picks = NULL;
   grpc_connectivity_state_set(
@@ -106,7 +119,7 @@ static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   if (p->selected != NULL) {
     grpc_connected_subchannel_notify_on_state_change(
         exec_ctx, p->selected, NULL, NULL, &p->connectivity_changed);
-  } else if (p->num_subchannels > 0) {
+  } else if (p->num_subchannels > 0 && p->started_picking) {
     grpc_subchannel_notify_on_state_change(
         exec_ctx, p->subchannels[p->checking_subchannel], NULL, NULL,
         &p->connectivity_changed);
@@ -170,7 +183,7 @@ static void pf_cancel_picks_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 }
 
 static void start_picking(grpc_exec_ctx *exec_ctx, pick_first_lb_policy *p) {
-  p->started_picking = 1;
+  p->started_picking = true;
   p->checking_subchannel = 0;
   p->checking_connectivity = GRPC_CHANNEL_IDLE;
   GRPC_LB_POLICY_WEAK_REF(&p->base, "pick_first_connectivity");
@@ -216,19 +229,16 @@ static int pf_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 
 static void destroy_subchannels_locked(grpc_exec_ctx *exec_ctx,
                                        pick_first_lb_policy *p) {
-  size_t i;
   size_t num_subchannels = p->num_subchannels;
-  grpc_subchannel **subchannels;
+  grpc_subchannel **subchannels = p->subchannels;
 
-  subchannels = p->subchannels;
   p->num_subchannels = 0;
   p->subchannels = NULL;
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "destroy_subchannels");
 
-  for (i = 0; i < num_subchannels; i++) {
+  for (size_t i = 0; i < num_subchannels; i++) {
     GRPC_SUBCHANNEL_UNREF(exec_ctx, subchannels[i], "pick_first");
   }
-
   gpr_free(subchannels);
 }
 
@@ -238,8 +248,53 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_subchannel *selected_subchannel;
   pending_pick *pp;
 
-  GRPC_ERROR_REF(error);
+  bool restart = false;
+  if (p->updating_selected && error == GRPC_ERROR_CANCELLED) {
+    /* Captured the unsubscription for p->selected */
+    GPR_ASSERT(p->selected != NULL);
+    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, p->selected,
+                                    "pf_update_connectivity");
+    p->updating_selected = false;
+    restart = true;
+  }
+  if (p->updating_subchannels && error == GRPC_ERROR_CANCELLED) {
+    /* Captured the unsubscription for the checking subchannel */
+    GPR_ASSERT(p->selected == NULL);
+    for (size_t i = 0; i < p->num_subchannels; i++) {
+      GRPC_SUBCHANNEL_UNREF(exec_ctx, p->subchannels[i],
+                            "pf_update_connectivity");
+    }
+    gpr_free(p->subchannels);
+    p->subchannels = NULL;
+    p->num_subchannels = 0;
+    p->updating_subchannels = false;
+    restart = true;
+  }
+  if (restart) {
+    p->selected = NULL;
+    p->selected_key = NULL;
 
+    GPR_ASSERT(p->new_subchannels != NULL);
+    GPR_ASSERT(p->num_new_subchannels > 0);
+    p->num_subchannels = p->num_new_subchannels;
+    p->subchannels = p->new_subchannels;
+    p->num_new_subchannels = 0;
+    p->new_subchannels = NULL;
+
+    if (p->started_picking) {
+      /* If we were picking, continue to do so over the new subchannels,
+       * starting from the 0th index. */
+      p->checking_subchannel = 0;
+      p->checking_connectivity = GRPC_CHANNEL_IDLE;
+      /* reuses the weak ref from start_picking */
+      grpc_subchannel_notify_on_state_change(
+          exec_ctx, p->subchannels[p->checking_subchannel],
+          p->base.interested_parties, &p->checking_connectivity,
+          &p->connectivity_changed);
+    }
+    return;
+  }
+  GRPC_ERROR_REF(error);
   if (p->shutdown) {
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "pick_first_connectivity");
     GRPC_ERROR_UNREF(error);
@@ -272,6 +327,11 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         p->selected = GRPC_CONNECTED_SUBCHANNEL_REF(
             grpc_subchannel_get_connected_subchannel(selected_subchannel),
             "picked_first");
+
+        if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
+          gpr_log(GPR_INFO, "Selected subchannel %p", (void *)p->selected);
+        }
+        p->selected_key = grpc_subchannel_get_key(selected_subchannel);
         /* drop the pick list: we are connected now */
         GRPC_LB_POLICY_WEAK_REF(&p->base, "destroy_subchannels");
         destroy_subchannels_locked(exec_ctx, p);
@@ -279,6 +339,11 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
           *pp->target = GRPC_CONNECTED_SUBCHANNEL_REF(p->selected, "picked");
+          if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
+            gpr_log(GPR_INFO,
+                    "Servicing pending pick with selected subchannel %p",
+                    (void *)p->selected);
+          }
           grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
           gpr_free(pp);
         }
@@ -379,6 +444,112 @@ static void pf_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   }
 }
 
+/* true upon success */
+static bool pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                             const grpc_lb_policy_args *args) {
+  pick_first_lb_policy *p = (pick_first_lb_policy *)policy;
+  /* Find the number of backend addresses. We ignore balancer
+   * addresses, since we don't know how to handle them. */
+  const grpc_arg *arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
+  if (arg == NULL || arg->type != GRPC_ARG_POINTER) return false;
+  const grpc_lb_addresses *addresses = arg->value.pointer.p;
+  size_t num_addrs = 0;
+  for (size_t i = 0; i < addresses->num_addresses; i++) {
+    if (!addresses->addresses[i].is_balancer) ++num_addrs;
+  }
+  if (num_addrs == 0) return false;
+  if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
+    gpr_log(GPR_INFO, "Pick First %p received update with %lu addresses",
+            (void *)p, (unsigned long)num_addrs);
+  }
+  grpc_subchannel_args *sc_args = gpr_zalloc(sizeof(*sc_args) * num_addrs);
+  static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
+  size_t sc_args_count = 0;
+
+  /* Create list of subchannel args for new addresses in \a args. */
+  for (size_t i = 0; i < addresses->num_addresses; i++) {
+    if (addresses->addresses[i].is_balancer) continue;
+    grpc_arg addr_arg =
+        grpc_create_subchannel_address_arg(&addresses->addresses[i].address);
+    grpc_channel_args *new_args = grpc_channel_args_copy_and_add_and_remove(
+        args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &addr_arg,
+        1);
+    gpr_free(addr_arg.value.string);
+    sc_args[sc_args_count++].args = new_args;
+  }
+
+  /* Check if p->selected is amongst them. If so, we are done. */
+  if (p->selected != NULL) {
+    GPR_ASSERT(p->selected_key != NULL);
+    for (size_t i = 0; i < sc_args_count; i++) {
+      grpc_subchannel_key *ith_sc_key = grpc_subchannel_key_create(&sc_args[i]);
+      const bool found_selected =
+          (grpc_subchannel_key_compare(p->selected_key, ith_sc_key) == 0);
+      grpc_subchannel_key_destroy(exec_ctx, ith_sc_key);
+      if (found_selected) {
+        // The currently selected subchannel is in the update: we are done.
+        gpr_free(sc_args);
+        return true;
+      }
+    }
+  }
+
+  /* Create the subchannels for the new subchannel args/addresses. */
+  grpc_subchannel **new_subchannels =
+      gpr_zalloc(sizeof(*new_subchannels) * sc_args_count);
+  size_t num_new_subchannels = 0;
+  for (size_t i = 0; i < sc_args_count; i++) {
+    grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
+        exec_ctx, args->client_channel_factory, &sc_args[i]);
+    grpc_channel_args_destroy(exec_ctx, (grpc_channel_args *)sc_args[i].args);
+    if (subchannel != NULL) new_subchannels[num_new_subchannels++] = subchannel;
+  }
+  gpr_free(sc_args);
+  if (num_new_subchannels == 0) {
+    gpr_free(new_subchannels);
+    return false;
+  }
+
+  /* Destroy the current subchannels. Repurpose pf_shutdown/destroy. */
+  if (p->num_subchannels > 0) {
+    GPR_ASSERT(p->selected == NULL);
+    /* cancel subscriptions */
+    grpc_subchannel_notify_on_state_change(
+        exec_ctx, p->subchannels[p->checking_subchannel], NULL, NULL,
+        &p->connectivity_changed);
+    p->updating_subchannels = true;
+  }
+  if (p->selected != NULL) {
+    GPR_ASSERT(p->num_subchannels == 0);
+    grpc_connected_subchannel_notify_on_state_change(
+        exec_ctx, p->selected, NULL, NULL, &p->connectivity_changed);
+    p->updating_selected = true;
+  }
+
+  /* Save new subchannels. The switch over will happen in
+   * pf_connectivity_changed_locked */
+  if (p->updating_selected || p->updating_subchannels) {
+    p->num_new_subchannels = num_new_subchannels;
+    p->new_subchannels = new_subchannels;
+  } else { /* nothing is updating. Get things moving from here */
+    p->num_subchannels = num_new_subchannels;
+    p->subchannels = new_subchannels;
+    p->new_subchannels = NULL;
+    p->num_new_subchannels = 0;
+    if (p->started_picking) {
+      p->checking_subchannel = 0;
+      p->checking_connectivity = GRPC_CHANNEL_IDLE;
+      // XXX
+      grpc_subchannel_notify_on_state_change(
+          exec_ctx, p->subchannels[p->checking_subchannel],
+          p->base.interested_parties, &p->checking_connectivity,
+          &p->connectivity_changed);
+    }
+  }
+  return true;
+}
+
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_destroy,
     pf_shutdown_locked,
@@ -388,7 +559,8 @@ static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_ping_one_locked,
     pf_exit_idle_locked,
     pf_check_connectivity_locked,
-    pf_notify_on_state_change_locked};
+    pf_notify_on_state_change_locked,
+    pf_update_locked};
 
 static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}
 
@@ -398,59 +570,12 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
                                          grpc_lb_policy_factory *factory,
                                          grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
-
-  /* Find the number of backend addresses. We ignore balancer
-   * addresses, since we don't know how to handle them. */
-  const grpc_arg *arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
-  if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
-    return NULL;
-  }
-  grpc_lb_addresses *addresses = arg->value.pointer.p;
-  size_t num_addrs = 0;
-  for (size_t i = 0; i < addresses->num_addresses; i++) {
-    if (!addresses->addresses[i].is_balancer) ++num_addrs;
-  }
-  if (num_addrs == 0) return NULL;
-
   pick_first_lb_policy *p = gpr_zalloc(sizeof(*p));
-
-  p->subchannels = gpr_zalloc(sizeof(grpc_subchannel *) * num_addrs);
-  grpc_subchannel_args sc_args;
-  size_t subchannel_idx = 0;
-  for (size_t i = 0; i < addresses->num_addresses; i++) {
-    /* Skip balancer addresses, since we only know how to handle backends. */
-    if (addresses->addresses[i].is_balancer) continue;
-
-    if (addresses->addresses[i].user_data != NULL) {
-      gpr_log(GPR_ERROR,
-              "This LB policy doesn't support user data. It will be ignored");
-    }
-
-    static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
-    memset(&sc_args, 0, sizeof(grpc_subchannel_args));
-    grpc_arg addr_arg =
-        grpc_create_subchannel_address_arg(&addresses->addresses[i].address);
-    grpc_channel_args *new_args = grpc_channel_args_copy_and_add_and_remove(
-        args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &addr_arg,
-        1);
-    gpr_free(addr_arg.value.string);
-    sc_args.args = new_args;
-    grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
-        exec_ctx, args->client_channel_factory, &sc_args);
-    grpc_channel_args_destroy(exec_ctx, new_args);
-
-    if (subchannel != NULL) {
-      p->subchannels[subchannel_idx++] = subchannel;
-    }
-  }
-  if (subchannel_idx == 0) {
+  if (!pf_update_locked(exec_ctx, &p->base, args) || p->num_subchannels == 0) {
     gpr_free(p->subchannels);
     gpr_free(p);
     return NULL;
   }
-  p->num_subchannels = subchannel_idx;
-
   grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner);
   grpc_closure_init(&p->connectivity_changed, pf_connectivity_changed_locked, p,
                     grpc_combiner_scheduler(args->combiner, false));
@@ -472,6 +597,7 @@ static grpc_lb_policy_factory *pick_first_lb_factory_create() {
 
 void grpc_lb_policy_pick_first_init() {
   grpc_register_lb_policy(pick_first_lb_factory_create());
+  grpc_register_tracer("pick_first", &grpc_lb_pick_first_trace);
 }
 
 void grpc_lb_policy_pick_first_shutdown() {}

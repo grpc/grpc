@@ -39,18 +39,18 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 
-#include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/test_config.h"
 
 static grpc_resolver *build_fake_resolver(
     grpc_exec_ctx *exec_ctx, grpc_combiner *combiner,
     grpc_fake_resolver_response_generator *response_generator) {
-  grpc_resolver_factory *factory = grpc_resolver_factory_lookup("test");
+  grpc_resolver_factory *factory = grpc_resolver_factory_lookup("fake");
   grpc_arg generator_arg =
       grpc_fake_resolver_response_generator_arg(response_generator);
   grpc_resolver_args args;
@@ -177,7 +177,6 @@ static void test_fake_resolver() {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  grpc_fake_resolver_init();  // Registers the "test" scheme.
   grpc_init();
 
   test_fake_resolver();

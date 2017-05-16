@@ -283,6 +283,7 @@ static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
 void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
+  // add a weak ref and subtract a strong ref (atomically)
   old_refs = ref_mutate(c, (gpr_atm)1 - (gpr_atm)(1 << INTERNAL_REF_BITS),
                         1 REF_MUTATE_PURPOSE("STRONG_UNREF"));
   if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
@@ -306,7 +307,7 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
 grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
                                         const grpc_subchannel_args *args) {
-  grpc_subchannel_key *key = grpc_subchannel_key_create(connector, args);
+  grpc_subchannel_key *key = grpc_subchannel_key_create(args);
   grpc_subchannel *c = grpc_subchannel_index_find(exec_ctx, key);
   if (c) {
     grpc_subchannel_key_destroy(exec_ctx, key);
@@ -656,7 +657,6 @@ static bool publish_transport_locked(grpc_exec_ctx *exec_ctx,
     gpr_free(sw_subchannel);
     grpc_channel_stack_destroy(exec_ctx, stk);
     gpr_free(con);
-    GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
     return false;
   }
 
@@ -768,6 +768,11 @@ void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
 grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
     grpc_subchannel *c) {
   return GET_CONNECTED_SUBCHANNEL(c, acq);
+}
+
+const grpc_subchannel_key *grpc_subchannel_get_key(
+    const grpc_subchannel *subchannel) {
+  return subchannel->key;
 }
 
 grpc_error *grpc_connected_subchannel_create_call(

@@ -879,6 +879,7 @@
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c',
         'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c',
         'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c',
+        'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c',
         'src/core/ext/filters/load_reporting/load_reporting.c',
         'src/core/ext/filters/load_reporting/load_reporting_filter.c',
         'src/core/ext/census/base_resources.c',
