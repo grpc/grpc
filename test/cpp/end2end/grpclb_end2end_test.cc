@@ -656,7 +656,7 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   SetNextResolution(addresses);
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
 
-  // XXX Wait until update has been processed, as signaled by the second backend
+  // Wait until update has been processed, as signaled by the second backend
   // receiving a request.
   EXPECT_EQ(0, backend_servers_[1].service_->request_count());
   do {

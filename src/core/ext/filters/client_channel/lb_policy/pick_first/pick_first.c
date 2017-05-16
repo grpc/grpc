@@ -540,7 +540,6 @@ static bool pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     if (p->started_picking) {
       p->checking_subchannel = 0;
       p->checking_connectivity = GRPC_CHANNEL_IDLE;
-      // XXX
       grpc_subchannel_notify_on_state_change(
           exec_ctx, p->subchannels[p->checking_subchannel],
           p->base.interested_parties, &p->checking_connectivity,
