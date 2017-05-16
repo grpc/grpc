@@ -49,6 +49,9 @@ typedef struct gpr_allocation_functions {
   void (*free_fn)(void *ptr);
 } gpr_allocation_functions;
 
+/* initialize alloc subsystem */
+GPRAPI void gpr_alloc_init(void);
+
 /* malloc.
  * If size==0, always returns NULL. Otherwise this function never returns NULL.
  * The pointer returned is suitably aligned for any kind of variable it could
