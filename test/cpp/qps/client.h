@@ -46,6 +46,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
@@ -150,7 +151,8 @@ class Client {
   Client()
       : timer_(new UsageTimer),
         interarrival_timer_(),
-        started_requests_(false) {
+        started_requests_(false),
+        last_reset_poll_count_(0) {
     gpr_event_init(&start_requests_);
   }
   virtual ~Client() {}
@@ -162,6 +164,8 @@ class Client {
 
     MaybeStartRequests();
 
+    int cur_poll_count = GetPollCount();
+    int poll_count = cur_poll_count - last_reset_poll_count_;
     if (reset) {
       std::vector<Histogram> to_merge(threads_.size());
       std::vector<StatusHistogram> to_merge_status(threads_.size());
@@ -176,6 +180,7 @@ class Client {
         MergeStatusHistogram(to_merge_status[i], &statuses);
       }
       timer_result = timer->Mark();
+      last_reset_poll_count_ = cur_poll_count;
     } else {
       // merge snapshots of each thread histogram
       for (size_t i = 0; i < threads_.size(); i++) {
@@ -195,6 +200,7 @@ class Client {
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
+    stats.set_cq_poll_count(poll_count);
     return stats;
   }
 
@@ -207,6 +213,11 @@ class Client {
     while (threads_remaining_ != 0) {
       threads_complete_.wait(g);
     }
+  }
+
+  virtual int GetPollCount() {
+    // For sync client.
+    return 0;
   }
 
  protected:
@@ -350,6 +361,8 @@ class Client {
 
   gpr_event start_requests_;
   bool started_requests_;
+
+  int last_reset_poll_count_;
 
   void MaybeStartRequests() {
     if (!started_requests_) {

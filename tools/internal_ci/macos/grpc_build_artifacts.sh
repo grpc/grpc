@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,9 @@
 
 set -ex
 
+# change to grpc repo root
 cd $(dirname $0)/../../..
 
-mkdir -p artifacts/
-cp -r $EXTERNAL_GIT_ROOT/platform={windows,linux,macos}/artifacts/php_*/* artifacts/ || true
+git submodule update --init
+
+tools/run_tests/task_runner.py -f artifact macos

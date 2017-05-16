@@ -2805,7 +2805,7 @@
   }, 
   {
     "args": [
-      "--benchmark_min_time=0"
+      "--benchmark_min_time=4"
     ], 
     "ci_platforms": [
       "linux", 

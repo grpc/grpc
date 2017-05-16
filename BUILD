@@ -33,13 +33,19 @@ licenses(["notice"])  # 3-clause BSD
 
 exports_files(["LICENSE"])
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
 
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_proto_plugin",
-    "grpc_cc_libraries",
+    "grpc_generate_one_off_targets",
 )
 
 # This should be updated along with build.yaml
@@ -58,48 +64,35 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_libraries(
+grpc_cc_library(
+    name = "grpc_unsecure",
     srcs = [
         "src/core/lib/surface/init.c",
-    ],
-    additional_dep_list = [
-        [
-            "grpc_secure",
-            "grpc_resolver_dns_ares",
-            "grpc_lb_policy_grpclb_secure",
-            "grpc_transport_chttp2_client_secure",
-            "grpc_transport_chttp2_server_secure",
-        ],
-        [],
-    ],
-    additional_src_list = [
-        [
-            "src/core/plugin_registry/grpc_plugin_registry.c",
-        ],
-        [
-            "src/core/lib/surface/init_unsecure.c",
-            "src/core/plugin_registry/grpc_unsecure_plugin_registry.c",
-        ],
+        "src/core/lib/surface/init_unsecure.c",
+        "src/core/plugin_registry/grpc_unsecure_plugin_registry.c",
     ],
     language = "c",
-    name_list = [
-        "grpc",
-        "grpc_unsecure",
-    ],
     standalone = True,
     deps = [
-        "census",
-        "grpc_base",
-        "grpc_deadline_filter",
-        "grpc_lb_policy_pick_first",
-        "grpc_lb_policy_round_robin",
-        "grpc_load_reporting",
-        "grpc_max_age_filter",
-        "grpc_message_size_filter",
-        "grpc_resolver_dns_native",
-        "grpc_resolver_sockaddr",
-        "grpc_transport_chttp2_client_insecure",
-        "grpc_transport_chttp2_server_insecure",
+        "grpc_common",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc",
+    srcs = [
+        "src/core/lib/surface/init.c",
+        "src/core/plugin_registry/grpc_plugin_registry.c",
+    ],
+    language = "c",
+    standalone = True,
+    deps = [
+        "grpc_common",
+        "grpc_lb_policy_grpclb_secure",
+        "grpc_resolver_dns_ares",
+        "grpc_secure",
+        "grpc_transport_chttp2_client_secure",
+        "grpc_transport_chttp2_server_secure",
     ],
 )
 
@@ -479,11 +472,10 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair_windows.c",
         "src/core/lib/iomgr/error.c",
         "src/core/lib/iomgr/ev_epoll1_linux.c",
-        "src/core/lib/iomgr/ev_epollsig_linux.c",
-        "src/core/lib/iomgr/ev_epollex_linux.c",
-        "src/core/lib/iomgr/is_epollexclusive_available.c",
-        "src/core/lib/iomgr/ev_epoll_thread_pool_linux.c",
         "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c",
+        "src/core/lib/iomgr/ev_epoll_thread_pool_linux.c",
+        "src/core/lib/iomgr/ev_epollex_linux.c",
+        "src/core/lib/iomgr/ev_epollsig_linux.c",
         "src/core/lib/iomgr/ev_poll_posix.c",
         "src/core/lib/iomgr/ev_posix.c",
         "src/core/lib/iomgr/exec_ctx.c",
@@ -493,6 +485,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_posix.c",
         "src/core/lib/iomgr/iomgr_uv.c",
         "src/core/lib/iomgr/iomgr_windows.c",
+        "src/core/lib/iomgr/is_epollexclusive_available.c",
         "src/core/lib/iomgr/load_file.c",
         "src/core/lib/iomgr/lockfree_event.c",
         "src/core/lib/iomgr/network_status_tracker.c",
@@ -528,8 +521,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_windows.c",
         "src/core/lib/iomgr/time_averaged_stats.c",
         "src/core/lib/iomgr/timer_generic.c",
-        "src/core/lib/iomgr/timer_manager.c",
         "src/core/lib/iomgr/timer_heap.c",
+        "src/core/lib/iomgr/timer_manager.c",
         "src/core/lib/iomgr/timer_uv.c",
         "src/core/lib/iomgr/udp_server.c",
         "src/core/lib/iomgr/unix_sockets_posix.c",
@@ -605,12 +598,10 @@ grpc_cc_library(
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
-        "src/core/lib/iomgr/ev_epollsig_linux.h",
-        "src/core/lib/iomgr/ev_epollex_linux.h",
-        "src/core/lib/iomgr/is_epollexclusive_available.h",
-        "src/core/lib/iomgr/sys_epoll_wrapper.h",
-        "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h",
         "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h",
+        "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h",
+        "src/core/lib/iomgr/ev_epollex_linux.h",
+        "src/core/lib/iomgr/ev_epollsig_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/exec_ctx.h",
@@ -619,6 +610,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_internal.h",
         "src/core/lib/iomgr/iomgr_posix.h",
+        "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/network_status_tracker.h",
@@ -640,6 +632,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils.h",
         "src/core/lib/iomgr/socket_utils_posix.h",
         "src/core/lib/iomgr/socket_windows.h",
+        "src/core/lib/iomgr/sys_epoll_wrapper.h",
         "src/core/lib/iomgr/tcp_client.h",
         "src/core/lib/iomgr/tcp_client_posix.h",
         "src/core/lib/iomgr/tcp_posix.h",
@@ -650,8 +643,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/time_averaged_stats.h",
         "src/core/lib/iomgr/timer.h",
         "src/core/lib/iomgr/timer_generic.h",
-        "src/core/lib/iomgr/timer_manager.h",
         "src/core/lib/iomgr/timer_heap.h",
+        "src/core/lib/iomgr/timer_manager.h",
         "src/core/lib/iomgr/timer_uv.h",
         "src/core/lib/iomgr/udp_server.h",
         "src/core/lib/iomgr/unix_sockets_posix.h",
@@ -713,6 +706,7 @@ grpc_cc_library(
         "include/grpc/slice.h",
         "include/grpc/slice_buffer.h",
         "include/grpc/status.h",
+        "include/grpc/support/workaround_list.h",
     ],
     deps = [
         "gpr_base",
@@ -723,12 +717,33 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_base",
-    language = "c++",
     srcs = [
         "src/core/lib/surface/lame_client.cc",
     ],
+    language = "c++",
     deps = [
         "grpc_base_c",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_common",
+    deps = [
+        "grpc_base",
+        # standard plugins
+        "census",
+        "grpc_deadline_filter",
+        "grpc_lb_policy_pick_first",
+        "grpc_lb_policy_round_robin",
+        "grpc_load_reporting",
+        "grpc_max_age_filter",
+        "grpc_message_size_filter",
+        "grpc_resolver_dns_native",
+        "grpc_resolver_sockaddr",
+        "grpc_transport_chttp2_client_insecure",
+        "grpc_transport_chttp2_server_insecure",
+        "grpc_workaround_cronet_compression_filter",
+        "grpc_server_backward_compatibility",
     ]
 )
 
@@ -841,6 +856,21 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_workaround_cronet_compression_filter",
+    srcs = [
+        "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_server_backward_compatibility",
     ],
 )
 
@@ -1270,111 +1300,124 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_libraries(
-    srcs = [
-        "src/cpp/client/channel_cc.cc",
-        "src/cpp/client/client_context.cc",
-        "src/cpp/client/create_channel.cc",
-        "src/cpp/client/create_channel_internal.cc",
-        "src/cpp/client/create_channel_posix.cc",
-        "src/cpp/client/credentials_cc.cc",
-        "src/cpp/client/generic_stub.cc",
-        "src/cpp/common/channel_arguments.cc",
-        "src/cpp/common/channel_filter.cc",
-        "src/cpp/common/completion_queue_cc.cc",
-        "src/cpp/common/core_codegen.cc",
-        "src/cpp/common/resource_quota_cc.cc",
-        "src/cpp/common/rpc_method.cc",
-        "src/cpp/common/version_cc.cc",
-        "src/cpp/server/async_generic_service.cc",
-        "src/cpp/server/channel_argument_option.cc",
-        "src/cpp/server/create_default_thread_pool.cc",
-        "src/cpp/server/dynamic_thread_pool.cc",
-        "src/cpp/server/health/default_health_check_service.cc",
-        "src/cpp/server/health/health.pb.c",
-        "src/cpp/server/health/health_check_service.cc",
-        "src/cpp/server/health/health_check_service_server_builder_option.cc",
-        "src/cpp/server/server_builder.cc",
-        "src/cpp/server/server_cc.cc",
-        "src/cpp/server/server_context.cc",
-        "src/cpp/server/server_credentials.cc",
-        "src/cpp/server/server_posix.cc",
-        "src/cpp/thread_manager/thread_manager.cc",
-        "src/cpp/util/byte_buffer_cc.cc",
-        "src/cpp/util/slice_cc.cc",
-        "src/cpp/util/status.cc",
-        "src/cpp/util/string_ref.cc",
-        "src/cpp/util/time_cc.cc",
-    ],
-    hdrs = [
-        "src/cpp/client/create_channel_internal.h",
-        "src/cpp/common/channel_filter.h",
-        "src/cpp/server/dynamic_thread_pool.h",
-        "src/cpp/server/health/default_health_check_service.h",
-        "src/cpp/server/health/health.pb.h",
-        "src/cpp/server/thread_pool_interface.h",
-        "src/cpp/thread_manager/thread_manager.h",
-    ],
-    additional_dep_list = [
-        ["grpc"],
-        ["grpc_unsecure"],
-    ],
+# TODO(ctiller): layer grpc atop grpc_unsecure, layer grpc++ atop grpc++_unsecure
+GRPCXX_SRCS = [
+    "src/cpp/client/channel_cc.cc",
+    "src/cpp/client/client_context.cc",
+    "src/cpp/client/create_channel.cc",
+    "src/cpp/client/create_channel_internal.cc",
+    "src/cpp/client/create_channel_posix.cc",
+    "src/cpp/client/credentials_cc.cc",
+    "src/cpp/client/generic_stub.cc",
+    "src/cpp/common/channel_arguments.cc",
+    "src/cpp/common/channel_filter.cc",
+    "src/cpp/common/completion_queue_cc.cc",
+    "src/cpp/common/core_codegen.cc",
+    "src/cpp/common/resource_quota_cc.cc",
+    "src/cpp/common/rpc_method.cc",
+    "src/cpp/common/version_cc.cc",
+    "src/cpp/server/async_generic_service.cc",
+    "src/cpp/server/channel_argument_option.cc",
+    "src/cpp/server/create_default_thread_pool.cc",
+    "src/cpp/server/dynamic_thread_pool.cc",
+    "src/cpp/server/health/default_health_check_service.cc",
+    "src/cpp/server/health/health.pb.c",
+    "src/cpp/server/health/health_check_service.cc",
+    "src/cpp/server/health/health_check_service_server_builder_option.cc",
+    "src/cpp/server/server_builder.cc",
+    "src/cpp/server/server_cc.cc",
+    "src/cpp/server/server_context.cc",
+    "src/cpp/server/server_credentials.cc",
+    "src/cpp/server/server_posix.cc",
+    "src/cpp/thread_manager/thread_manager.cc",
+    "src/cpp/util/byte_buffer_cc.cc",
+    "src/cpp/util/slice_cc.cc",
+    "src/cpp/util/status.cc",
+    "src/cpp/util/string_ref.cc",
+    "src/cpp/util/time_cc.cc",
+]
+
+GRPCXX_HDRS = [
+    "src/cpp/client/create_channel_internal.h",
+    "src/cpp/common/channel_filter.h",
+    "src/cpp/server/dynamic_thread_pool.h",
+    "src/cpp/server/health/default_health_check_service.h",
+    "src/cpp/server/health/health.pb.h",
+    "src/cpp/server/thread_pool_interface.h",
+    "src/cpp/thread_manager/thread_manager.h",
+]
+
+GRPCXX_PUBLIC_HDRS = [
+    "include/grpc++/alarm.h",
+    "include/grpc++/channel.h",
+    "include/grpc++/client_context.h",
+    "include/grpc++/completion_queue.h",
+    "include/grpc++/create_channel.h",
+    "include/grpc++/create_channel_posix.h",
+    "include/grpc++/ext/health_check_service_server_builder_option.h",
+    "include/grpc++/generic/async_generic_service.h",
+    "include/grpc++/generic/generic_stub.h",
+    "include/grpc++/grpc++.h",
+    "include/grpc++/health_check_service_interface.h",
+    "include/grpc++/impl/call.h",
+    "include/grpc++/impl/channel_argument_option.h",
+    "include/grpc++/impl/client_unary_call.h",
+    "include/grpc++/impl/codegen/core_codegen.h",
+    "include/grpc++/impl/grpc_library.h",
+    "include/grpc++/impl/method_handler_impl.h",
+    "include/grpc++/impl/rpc_method.h",
+    "include/grpc++/impl/rpc_service_method.h",
+    "include/grpc++/impl/serialization_traits.h",
+    "include/grpc++/impl/server_builder_option.h",
+    "include/grpc++/impl/server_builder_plugin.h",
+    "include/grpc++/impl/server_initializer.h",
+    "include/grpc++/impl/service_type.h",
+    "include/grpc++/impl/sync_cxx11.h",
+    "include/grpc++/impl/sync_no_cxx11.h",
+    "include/grpc++/resource_quota.h",
+    "include/grpc++/security/auth_context.h",
+    "include/grpc++/security/auth_metadata_processor.h",
+    "include/grpc++/security/credentials.h",
+    "include/grpc++/security/server_credentials.h",
+    "include/grpc++/server.h",
+    "include/grpc++/server_builder.h",
+    "include/grpc++/server_context.h",
+    "include/grpc++/server_posix.h",
+    "include/grpc++/support/async_stream.h",
+    "include/grpc++/support/async_unary_call.h",
+    "include/grpc++/support/byte_buffer.h",
+    "include/grpc++/support/channel_arguments.h",
+    "include/grpc++/support/config.h",
+    "include/grpc++/support/slice.h",
+    "include/grpc++/support/status.h",
+    "include/grpc++/support/status_code_enum.h",
+    "include/grpc++/support/string_ref.h",
+    "include/grpc++/support/stub_options.h",
+    "include/grpc++/support/sync_stream.h",
+    "include/grpc++/support/time.h",
+]
+
+grpc_cc_library(
+    name = "grpc++_base",
+    hdrs = GRPCXX_HDRS,
+    srcs = GRPCXX_SRCS,
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     language = "c++",
-    name_list = [
-        "grpc++_base",
-        "grpc++_base_unsecure",
-    ],
-    public_hdrs = [
-        "include/grpc++/alarm.h",
-        "include/grpc++/channel.h",
-        "include/grpc++/client_context.h",
-        "include/grpc++/completion_queue.h",
-        "include/grpc++/create_channel.h",
-        "include/grpc++/create_channel_posix.h",
-        "include/grpc++/ext/health_check_service_server_builder_option.h",
-        "include/grpc++/generic/async_generic_service.h",
-        "include/grpc++/generic/generic_stub.h",
-        "include/grpc++/grpc++.h",
-        "include/grpc++/health_check_service_interface.h",
-        "include/grpc++/impl/call.h",
-        "include/grpc++/impl/channel_argument_option.h",
-        "include/grpc++/impl/client_unary_call.h",
-        "include/grpc++/impl/codegen/core_codegen.h",
-        "include/grpc++/impl/grpc_library.h",
-        "include/grpc++/impl/method_handler_impl.h",
-        "include/grpc++/impl/rpc_method.h",
-        "include/grpc++/impl/rpc_service_method.h",
-        "include/grpc++/impl/serialization_traits.h",
-        "include/grpc++/impl/server_builder_option.h",
-        "include/grpc++/impl/server_builder_plugin.h",
-        "include/grpc++/impl/server_initializer.h",
-        "include/grpc++/impl/service_type.h",
-        "include/grpc++/impl/sync_cxx11.h",
-        "include/grpc++/impl/sync_no_cxx11.h",
-        "include/grpc++/resource_quota.h",
-        "include/grpc++/security/auth_context.h",
-        "include/grpc++/security/auth_metadata_processor.h",
-        "include/grpc++/security/credentials.h",
-        "include/grpc++/security/server_credentials.h",
-        "include/grpc++/server.h",
-        "include/grpc++/server_builder.h",
-        "include/grpc++/server_context.h",
-        "include/grpc++/server_posix.h",
-        "include/grpc++/support/async_stream.h",
-        "include/grpc++/support/async_unary_call.h",
-        "include/grpc++/support/byte_buffer.h",
-        "include/grpc++/support/channel_arguments.h",
-        "include/grpc++/support/config.h",
-        "include/grpc++/support/slice.h",
-        "include/grpc++/support/status.h",
-        "include/grpc++/support/status_code_enum.h",
-        "include/grpc++/support/string_ref.h",
-        "include/grpc++/support/stub_options.h",
-        "include/grpc++/support/sync_stream.h",
-        "include/grpc++/support/time.h",
-    ],
     deps = [
         "grpc++_codegen_base",
+        "grpc",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_base_unsecure",
+    hdrs = GRPCXX_HDRS,
+    srcs = GRPCXX_SRCS,
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    language = "c++",
+    deps = [
+        "grpc++_codegen_base",
+        "grpc_unsecure",
     ],
 )
 
@@ -1469,3 +1512,31 @@ grpc_cc_library(
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
+
+grpc_cc_library(
+    name = "grpc++_test",
+    public_hdrs = [
+        "include/grpc++/test/mock_stream.h",
+        "include/grpc++/test/server_context_test_spouse.h",
+    ],
+    deps = [
+        ":grpc++",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_server_backward_compatibility",
+    srcs = [
+        "src/core/ext/filters/workarounds/workaround_utils.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/workarounds/workaround_utils.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+
+grpc_generate_one_off_targets()

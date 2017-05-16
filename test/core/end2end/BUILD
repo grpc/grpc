@@ -27,15 +27,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
 load(":generate_tests.bzl", "grpc_end2end_tests")
 
-cc_library(
+grpc_cc_library(
     name = "cq_verifier",
     srcs = ["cq_verifier.c"],
     hdrs = ["cq_verifier.h"],
-    copts = ["-std=c99"],
+    language = "C",
     visibility = ["//test:__subpackages__"],
     deps = [
         "//:gpr",
@@ -44,7 +46,7 @@ cc_library(
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "ssl_test_data",
     srcs = [
         "data/client_certs.c",
@@ -53,15 +55,15 @@ cc_library(
         "data/test_root_cert.c",
     ],
     hdrs = ["data/ssl_test_data.h"],
-    copts = ["-std=c99"],
+    language = "C",
     visibility = ["//test:__subpackages__"],
 )
 
-cc_library(
+grpc_cc_library(
     name = "fake_resolver",
     srcs = ["fake_resolver.c"],
     hdrs = ["fake_resolver.h"],
-    copts = ["-std=c99"],
+    language = "C",
     visibility = ["//test:__subpackages__"],
     deps = [
         "//:gpr",
@@ -70,11 +72,11 @@ cc_library(
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "http_proxy",
     srcs = ["fixtures/http_proxy_fixture.c"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -82,11 +84,11 @@ cc_library(
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "proxy",
     srcs = ["fixtures/proxy.c"],
     hdrs = ["fixtures/proxy.h"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",

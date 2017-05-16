@@ -27,12 +27,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
-cc_test(
+grpc_cc_test(
     name = "alarm_test",
     srcs = ["alarm_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -41,10 +43,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "grpc_byte_buffer_reader_test",
     srcs = ["byte_buffer_reader_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -53,10 +55,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "channel_create_test",
     srcs = ["channel_create_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -65,10 +67,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "grpc_completion_queue_test",
     srcs = ["completion_queue_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -77,10 +79,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "concurrent_connectivity_test",
     srcs = ["concurrent_connectivity_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -89,10 +91,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "init_test",
     srcs = ["init_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -101,10 +103,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "grpc_invalid_channel_args_test",
     srcs = ["invalid_channel_args_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -113,10 +115,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "lame_client_test",
     srcs = ["lame_client_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -126,10 +128,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "public_headers_must_be_c89",
     srcs = ["public_headers_must_be_c89.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -138,10 +140,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "secure_channel_create_test",
     srcs = ["secure_channel_create_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -150,10 +152,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "sequential_connectivity_test",
     srcs = ["sequential_connectivity_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -163,10 +165,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "server_chttp2_test",
     srcs = ["server_chttp2_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -175,10 +177,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "server_test",
     srcs = ["server_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",

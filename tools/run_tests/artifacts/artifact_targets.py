@@ -45,6 +45,7 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   """Creates jobspec for a task running under docker."""
   environ = environ.copy()
   environ['RUN_COMMAND'] = shell_command
+  environ['ARTIFACTS_OUT'] = 'artifacts/%s' % name
 
   docker_args=[]
   for k,v in environ.items():
@@ -65,9 +66,20 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   return jobspec
 
 
-def create_jobspec(name, cmdline, environ=None, shell=False,
-                   flake_retries=0, timeout_retries=0, timeout_seconds=30*60):
+def create_jobspec(name, cmdline, environ={}, shell=False,
+                   flake_retries=0, timeout_retries=0, timeout_seconds=30*60,
+                   use_workspace=False,
+                   cpu_cost=1.0):
   """Creates jobspec."""
+  environ = environ.copy()
+  if use_workspace:
+    environ['WORKSPACE_NAME'] = 'workspace_%s' % name
+    environ['ARTIFACTS_OUT'] = os.path.join('..', 'artifacts', name)
+    cmdline = ['bash',
+               'tools/run_tests/artifacts/run_in_workspace.sh'] + cmdline
+  else:
+    environ['ARTIFACTS_OUT'] = os.path.join('artifacts', name)
+
   jobspec = jobset.JobSpec(
           cmdline=cmdline,
           environ=environ,
@@ -75,7 +87,8 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
           timeout_seconds=timeout_seconds,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries,
-          shell=shell)
+          shell=shell,
+          cpu_cost=cpu_cost)
   return jobspec
 
 
@@ -137,13 +150,14 @@ class PythonArtifact:
                              dir
                             ],
                             environ=environ,
-                            shell=True)
+                            use_workspace=True)
     else:
       environ['PYTHON'] = self.py_version
       environ['SKIP_PIP_INSTALL'] = 'TRUE'
       return create_jobspec(self.name,
                             ['tools/run_tests/artifacts/build_artifact_python.sh'],
-                            environ=environ)
+                            environ=environ,
+                            use_workspace=True)
 
   def __str__(self):
     return self.name
@@ -162,20 +176,11 @@ class RubyArtifact:
     return []
 
   def build_jobspec(self):
-    if self.platform == 'windows':
-      raise Exception("Not supported yet")
-    else:
-      if self.platform == 'linux':
-        environ = {}
-        if self.arch == 'x86':
-          environ['SETARCH_CMD'] = 'linux32'
-        return create_docker_jobspec(self.name,
-            'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
-            'tools/run_tests/artifacts/build_artifact_ruby.sh',
-            environ=environ)
-      else:
-        return create_jobspec(self.name,
-                              ['tools/run_tests/artifacts/build_artifact_ruby.sh'])
+    # Ruby build uses docker internally and docker cannot be nested.
+    # We are using a custom workspace instead.
+    return create_jobspec(self.name,
+                          ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
+                          use_workspace=True)
 
 
 class CSharpExtArtifact:
@@ -196,7 +201,7 @@ class CSharpExtArtifact:
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
                              cmake_arch_option],
-                            shell=True)
+                            use_workspace=True)
     else:
       environ = {'CONFIG': 'opt',
                  'EMBED_OPENSSL': 'true',
@@ -216,7 +221,8 @@ class CSharpExtArtifact:
         environ['LDFLAGS'] += ' %s' % archflag
         return create_jobspec(self.name,
                               ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
-                              environ=environ)
+                              environ=environ,
+                              use_workspace=True)
 
   def __str__(self):
     return self.name
@@ -242,10 +248,15 @@ class NodeExtArtifact:
 
   def build_jobspec(self):
     if self.platform == 'windows':
+      # Simultaneous builds of node on the same windows machine are flaky.
+      # Set x86 build as exclusive to make sure there is only one node build
+      # at a time. See https://github.com/grpc/grpc/issues/8293
+      cpu_cost = 1e6 if self.arch != 'x64' else 1.0
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_node.bat',
                              self.gyp_arch],
-                            shell=True)
+                            use_workspace=True,
+                            cpu_cost=cpu_cost)
     else:
       if self.platform == 'linux':
         return create_docker_jobspec(
@@ -255,7 +266,8 @@ class NodeExtArtifact:
       else:
         return create_jobspec(self.name,
                               ['tools/run_tests/artifacts/build_artifact_node.sh',
-                               self.gyp_arch])
+                               self.gyp_arch],
+                               use_workspace=True)
 
 class PHPArtifact:
   """Builds PHP PECL package"""
@@ -277,7 +289,8 @@ class PHPArtifact:
           'tools/run_tests/artifacts/build_artifact_php.sh')
     else:
       return create_jobspec(self.name,
-                            ['tools/run_tests/artifacts/build_artifact_php.sh'])
+                            ['tools/run_tests/artifacts/build_artifact_php.sh'],
+                            use_workspace=True)
 
 class ProtocArtifact:
   """Builds protoc and protoc-plugin artifacts"""
@@ -310,14 +323,16 @@ class ProtocArtifact:
         environ['CXXFLAGS'] += ' -std=c++11 -stdlib=libc++ %s' % _MACOS_COMPAT_FLAG
         return create_jobspec(self.name,
             ['tools/run_tests/artifacts/build_artifact_protoc.sh'],
-            environ=environ)
+            environ=environ,
+            use_workspace=True)
     else:
       generator = 'Visual Studio 12 Win64' if self.arch == 'x64' else 'Visual Studio 12' 
       vcplatform = 'x64' if self.arch == 'x64' else 'Win32'
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_protoc.bat'],
                             environ={'generator': generator,
-                                     'Platform': vcplatform})
+                                     'Platform': vcplatform},
+                            use_workspace=True)
 
   def __str__(self):
     return self.name
@@ -351,7 +366,6 @@ def targets():
            PythonArtifact('windows', 'x64', 'Python34'),
            PythonArtifact('windows', 'x64', 'Python35'),
            PythonArtifact('windows', 'x64', 'Python36'),
-           RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
            RubyArtifact('macos', 'x64'),
            PHPArtifact('linux', 'x64'),

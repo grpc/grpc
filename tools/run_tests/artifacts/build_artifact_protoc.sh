@@ -37,5 +37,5 @@ cd $(dirname $0)/../../..
 
 make plugins
 
-mkdir -p artifacts
-cp bins/opt/protobuf/protoc bins/opt/*_plugin artifacts/
+mkdir -p "${ARTIFACTS_OUT}"
+cp bins/opt/protobuf/protoc bins/opt/*_plugin "${ARTIFACTS_OUT}"/

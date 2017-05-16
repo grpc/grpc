@@ -173,7 +173,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_msvc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_pthread.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\useful.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\workaround_list.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />

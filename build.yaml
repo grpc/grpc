@@ -83,7 +83,6 @@ filegroups:
   - include/grpc/support/tls_msvc.h
   - include/grpc/support/tls_pthread.h
   - include/grpc/support/useful.h
-  - include/grpc/support/workaround_list.h
   headers:
   - src/core/lib/profiling/timers.h
   - src/core/lib/support/arena.h
@@ -177,6 +176,7 @@ filegroups:
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
+  - include/grpc/support/workaround_list.h
   headers:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
@@ -3364,7 +3364,7 @@ targets:
   - gpr_test_util
   - gpr
   args:
-  - --benchmark_min_time=0
+  - --benchmark_min_time=4
   defaults: benchmark
   platforms:
   - mac

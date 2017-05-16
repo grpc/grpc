@@ -54,13 +54,13 @@ grpc_proto_library(
 cc_binary(
     name = "greeter_client",
     srcs = ["cpp/helloworld/greeter_client.cc"],
-    deps = ["helloworld"],
     defines = ["BAZEL_BUILD"],
+    deps = [":helloworld"],
 )
 
 cc_binary(
     name = "greeter_server",
     srcs = ["cpp/helloworld/greeter_server.cc"],
-    deps = ["helloworld"],
     defines = ["BAZEL_BUILD"],
+    deps = [":helloworld"],
 )
