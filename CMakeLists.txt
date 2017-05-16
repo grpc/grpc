@@ -563,6 +563,7 @@ if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c h2_full+pipe_test)
 endif()
 add_dependencies(buildtests_c h2_full+trace_test)
+add_dependencies(buildtests_c h2_full+workarounds_test)
 add_dependencies(buildtests_c h2_http_proxy_test)
 add_dependencies(buildtests_c h2_load_reporting_test)
 add_dependencies(buildtests_c h2_oauth2_test)
@@ -586,6 +587,7 @@ if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c h2_full+pipe_nosec_test)
 endif()
 add_dependencies(buildtests_c h2_full+trace_nosec_test)
+add_dependencies(buildtests_c h2_full+workarounds_nosec_test)
 add_dependencies(buildtests_c h2_http_proxy_nosec_test)
 add_dependencies(buildtests_c h2_load_reporting_nosec_test)
 add_dependencies(buildtests_c h2_proxy_nosec_test)
@@ -1162,6 +1164,8 @@ add_library(grpc
   src/core/ext/census/tracing.c
   src/core/ext/filters/max_age/max_age_filter.c
   src/core/ext/filters/message_size/message_size_filter.c
+  src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c
+  src/core/ext/filters/workarounds/workaround_utils.c
   src/core/plugin_registry/grpc_plugin_registry.c
 )
 
@@ -1212,6 +1216,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -1509,6 +1514,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -1743,6 +1749,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2045,6 +2052,8 @@ add_library(grpc_unsecure
   src/core/ext/census/tracing.c
   src/core/ext/filters/max_age/max_age_filter.c
   src/core/ext/filters/message_size/message_size_filter.c
+  src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c
+  src/core/ext/filters/workarounds/workaround_utils.c
   src/core/plugin_registry/grpc_unsecure_plugin_registry.c
 )
 
@@ -2092,6 +2101,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2532,6 +2542,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc++/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
 )
@@ -2930,6 +2941,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -3637,6 +3649,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -4578,6 +4591,7 @@ add_library(end2end_tests
   test/core/end2end/tests/simple_request.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
+  test/core/end2end/tests/workaround_cronet_compression.c
   test/core/end2end/tests/write_buffering.c
   test/core/end2end/tests/write_buffering_at_end.c
 )
@@ -4675,6 +4689,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/simple_request.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
+  test/core/end2end/tests/workaround_cronet_compression.c
   test/core/end2end/tests/write_buffering.c
   test/core/end2end/tests/write_buffering_at_end.c
 )
@@ -13129,6 +13144,38 @@ target_link_libraries(h2_full+trace_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(h2_full+workarounds_test
+  test/core/end2end/fixtures/h2_full+workarounds.c
+)
+
+
+target_include_directories(h2_full+workarounds_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(h2_full+workarounds_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(h2_http_proxy_test
   test/core/end2end/fixtures/h2_http_proxy.c
 )
@@ -13668,6 +13715,38 @@ target_include_directories(h2_full+trace_nosec_test
 )
 
 target_link_libraries(h2_full+trace_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_nosec_tests
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(h2_full+workarounds_nosec_test
+  test/core/end2end/fixtures/h2_full+workarounds.c
+)
+
+
+target_include_directories(h2_full+workarounds_nosec_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(h2_full+workarounds_nosec_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure

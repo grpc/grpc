@@ -900,6 +900,7 @@ include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
+include/grpc/support/workaround_list.h \
 src/core/lib/channel/channel_args.c \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.c \
