@@ -140,6 +140,7 @@ namespace Grpc.IntegrationTesting
         readonly ClientType clientType;
         readonly RpcType rpcType;
         readonly PayloadConfig payloadConfig;
+        readonly Lazy<byte[]> cachedByteBufferRequest;
         readonly Histogram histogram;
 
         readonly List<Task> runnerTasks;
@@ -155,6 +156,7 @@ namespace Grpc.IntegrationTesting
             this.clientType = clientType;
             this.rpcType = rpcType;
             this.payloadConfig = payloadConfig;
+            this.cachedByteBufferRequest = new Lazy<byte[]>(() => new byte[payloadConfig.BytebufParams.ReqSize]);
             this.histogram = new Histogram(histogramParams.Resolution, histogramParams.MaxPossible);
 
             this.runnerTasks = new List<Task>();
@@ -286,7 +288,7 @@ namespace Grpc.IntegrationTesting
 
         private async Task RunGenericStreamingAsync(Channel channel, IInterarrivalTimer timer)
         {
-            var request = CreateByteBufferRequest();
+            var request = cachedByteBufferRequest.Value;
             var stopwatch = new Stopwatch();
 
             var callDetails = new CallInvocationDetails<byte[], byte[]>(channel, GenericService.StreamingCallMethod, new CallOptions());
@@ -349,11 +351,6 @@ namespace Grpc.IntegrationTesting
                 Payload = CreateZerosPayload(payloadConfig.SimpleParams.ReqSize),
                 ResponseSize = payloadConfig.SimpleParams.RespSize
             };
-        }
-
-        private byte[] CreateByteBufferRequest()
-        {
-            return new byte[payloadConfig.BytebufParams.ReqSize];
         }
 
         private static Payload CreateZerosPayload(int size)
