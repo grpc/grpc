@@ -364,7 +364,7 @@ ServerBuilder& ServerBuilder::EnableWorkaround(uint32_t id) {
     case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
       return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION, 1);
     default:
-      gpr_log(GPR_ERROR, "Workaround %u does not exist or obsolete.", id);
+      gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
       return *this;
   }
 }
