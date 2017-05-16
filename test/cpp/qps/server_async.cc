@@ -186,6 +186,14 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     shutdown_thread.join();
   }
 
+  int GetPollCount() override {
+    int count = 0;
+    for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); cq++) {
+      count += grpc_get_cq_poll_num((*cq)->cq());
+    }
+    return count;
+  }
+
  private:
   void ShutdownThreadFunc() {
     // TODO (vpai): Remove this deadline and allow Shutdown to finish properly

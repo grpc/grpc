@@ -27,46 +27,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM ubuntu:15.10
+FROM gcr.io/oss-fuzz-base/base-builder
 
-# Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+# Install basic packages and Bazel dependencies.
+RUN apt-get update && apt-get install -y software-properties-common python-software-properties
+RUN add-apt-repository ppa:webupd8team/java
+RUN apt-get update && apt-get -y install \
   autoconf \
-  autotools-dev \
   build-essential \
-  bzip2 \
-  ccache \
   curl \
-  gcc \
-  gcc-multilib \
-  git \
-  golang \
-  gyp \
-  lcov \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
   libtool \
   make \
-  perl \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
-
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
-
+  openjdk-8-jdk \
+  vim
 
 #========================
 # Bazel installation
-RUN apt-get install -y software-properties-common g++
 RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" > /etc/apt/sources.list.d/bazel.list
 RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
 RUN apt-get -y update

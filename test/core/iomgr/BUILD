@@ -27,155 +27,266 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
-cc_library(
+package(default_visibility = ["//visibility:public"]) # Useful for third party devs to test their io manager implementation.
+
+grpc_cc_library(
     name = "endpoint_tests",
     srcs = ["endpoint_tests.c"],
     hdrs = ["endpoint_tests.h"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    language = "C",
     visibility = ["//test:__subpackages__"],
-    copts = ['-std=c99']
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "combiner_test",
     srcs = ["combiner_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "endpoint_pair_test",
     srcs = ["endpoint_pair_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", ":endpoint_tests"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        ":endpoint_tests",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "ev_epollsig_linux_test",
     srcs = ["ev_epollsig_linux_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+    language = "C",
 )
 
-cc_test(
+grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "fd_posix_test",
     srcs = ["fd_posix_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "load_file_test",
     srcs = ["load_file_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "pollset_set_test",
     srcs = ["pollset_set_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "resolve_address_posix_test",
     srcs = ["resolve_address_posix_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "resolve_address_test",
     srcs = ["resolve_address_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "resource_quota_test",
     srcs = ["resource_quota_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "sockaddr_utils_test",
     srcs = ["sockaddr_utils_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "socket_utils_test",
     srcs = ["socket_utils_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "tcp_client_posix_test",
     srcs = ["tcp_client_posix_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "tcp_posix_test",
     srcs = ["tcp_posix_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", ":endpoint_tests"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        ":endpoint_tests",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "tcp_server_posix_test",
     srcs = ["tcp_server_posix_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "time_averaged_stats_test",
     srcs = ["time_averaged_stats_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "timer_list_test",
     srcs = ["timer_list_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "udp_server_test",
     srcs = ["udp_server_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "wakeup_fd_cv_test",
     srcs = ["wakeup_fd_cv_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )

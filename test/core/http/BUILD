@@ -27,24 +27,34 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
-  name = "response_fuzzer",
-  srcs = ["response_fuzzer.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "response_corpus",
-  copts = ["-std=c99"],
+    name = "response_fuzzer",
+    srcs = ["response_fuzzer.c"],
+    language = "C",
+    corpus = "response_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_fuzzer(
-  name = "request_fuzzer",
-  srcs = ["request_fuzzer.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "request_corpus",
-  copts = ["-std=c99"],
+    name = "request_fuzzer",
+    srcs = ["request_fuzzer.c"],
+    language = "C",
+    corpus = "request_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 # Copyright 2017, Google Inc.
@@ -80,25 +90,43 @@ licenses(["notice"])  # 3-clause BSD
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
-cc_test(
+grpc_cc_test(
     name = "httpcli_test",
     srcs = ["httpcli_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:ssl_test_data"],
-    copts = ['-std=c99'],
-    data = ['test_server.py']
+    language = "C",
+    data = ["test_server.py"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "httpscli_test",
     srcs = ["httpscli_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:ssl_test_data"],
-    copts = ['-std=c99'],
-    data = ['test_server.py']
+    language = "C",
+    data = ["test_server.py"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "parser_test",
     srcs = ["parser_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:ssl_test_data"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
