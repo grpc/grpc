@@ -29,10 +29,11 @@
 """The Python implementation of the GRPC interoperability test client."""
 
 import argparse
-from oauth2client import client as oauth2client_client
+import os
 
+from google import auth as google_auth
+from google.auth import jwt as google_auth_jwt
 import grpc
-from grpc.beta import implementations
 from src.proto.grpc.testing import test_pb2
 
 from tests.interop import methods
@@ -84,25 +85,24 @@ def _application_default_credentials():
 def _stub(args):
     target = '{}:{}'.format(args.server_host, args.server_port)
     if args.test_case == 'oauth2_auth_token':
-        google_credentials = _application_default_credentials()
-        scoped_credentials = google_credentials.create_scoped(
-            [args.oauth_scope])
-        access_token = scoped_credentials.get_access_token().access_token
-        call_credentials = grpc.access_token_call_credentials(access_token)
+        google_credentials, unused_project_id = google_auth.default(
+            scopes=[args.oauth_scope])
+        google_credentials.refresh(google_auth.transport.requests.Request())
+        call_credentials = grpc.access_token_call_credentials(
+            google_credentials.token)
     elif args.test_case == 'compute_engine_creds':
-        google_credentials = _application_default_credentials()
-        scoped_credentials = google_credentials.create_scoped(
-            [args.oauth_scope])
-        # TODO(https://github.com/grpc/grpc/issues/6799): Eliminate this last
-        # remaining use of the Beta API.
-        call_credentials = implementations.google_call_credentials(
-            scoped_credentials)
+        google_credentials, unused_project_id = google_auth.default(
+            scopes=[args.oauth_scope])
+        call_credentials = grpc.metadata_call_credentials(
+            google_auth.transport.grpc.AuthMetadataPlugin(
+                credentials=google_credentials,
+                request=google_auth.transport.requests.Request()))
     elif args.test_case == 'jwt_token_creds':
-        google_credentials = _application_default_credentials()
-        # TODO(https://github.com/grpc/grpc/issues/6799): Eliminate this last
-        # remaining use of the Beta API.
-        call_credentials = implementations.google_call_credentials(
-            google_credentials)
+        google_credentials = google_auth_jwt.OnDemandCredentials.from_service_account_file(
+            os.environ[google_auth.environment_vars.CREDENTIALS])
+        call_credentials = grpc.metadata_call_credentials(
+            google_auth.transport.grpc.AuthMetadataPlugin(
+                credentials=google_credentials, request=None))
     else:
         call_credentials = None
     if args.use_tls:

@@ -33,8 +33,10 @@ import json
 import os
 import threading
 
-from oauth2client import client as oauth2client_client
-
+from google import auth as google_auth
+from google.auth import environment_vars as google_auth_environment_vars
+from google.auth.transport import grpc as google_auth_transport_grpc
+from google.auth.transport import requests as google_auth_transport_requests
 import grpc
 from grpc.beta import implementations
 
@@ -401,8 +403,7 @@ def _compute_engine_creds(stub, args):
 
 
 def _oauth2_auth_token(stub, args):
-    json_key_filename = os.environ[
-        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     response = _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
@@ -414,8 +415,7 @@ def _oauth2_auth_token(stub, args):
 
 
 def _jwt_token_creds(stub, args):
-    json_key_filename = os.environ[
-        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     response = _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
@@ -424,15 +424,14 @@ def _jwt_token_creds(stub, args):
 
 
 def _per_rpc_creds(stub, args):
-    json_key_filename = os.environ[
-        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
-    credentials = oauth2client_client.GoogleCredentials.get_application_default()
-    scoped_credentials = credentials.create_scoped([args.oauth_scope])
-    # TODO(https://github.com/grpc/grpc/issues/6799): Eliminate this last
-    # remaining use of the Beta API.
-    call_credentials = implementations.google_call_credentials(
-        scoped_credentials)
+    google_credentials, unused_project_id = google_auth.default(
+        scopes=[args.oauth_scope])
+    call_credentials = grpc.metadata_call_credentials(
+        google_auth_transport_grpc.AuthMetadataPlugin(
+            credentials=google_credentials,
+            request=google_auth_transport_requests.Request()))
     response = _large_unary_common_behavior(stub, True, False, call_credentials)
     if wanted_email != response.username:
         raise ValueError('expected username %s, got %s' %
