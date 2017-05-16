@@ -186,7 +186,7 @@ class ServerBuilder {
 
   /// Enable a server workaround. Do not use unless you know what the workaround
   /// does. For explanation and detailed descriptions of workarounds, see
-  /// docs/workarounds.md.
+  /// doc/workarounds.md.
   ServerBuilder& EnableWorkaround(uint32_t id);
 
  private:
