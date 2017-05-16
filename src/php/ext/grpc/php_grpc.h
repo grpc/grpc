@@ -41,7 +41,7 @@ extern zend_module_entry grpc_module_entry;
 #define phpext_grpc_ptr &grpc_module_entry
 
 #define PHP_GRPC_VERSION \
-  "0.1.0" /* Replace with version number for your extension */
+  "1.4.0" /* Replace with version number for your extension */
 
 #ifdef PHP_WIN32
 #define PHP_GRPC_API __declspec(dllexport)
