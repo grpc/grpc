@@ -51,9 +51,10 @@ filegroups:
   - src/core/ext/census/resource.c
   - src/core/ext/census/trace_context.c
   - src/core/ext/census/tracing.c
+  deps:
+  - grpc_base
   plugin: census_grpc_plugin
   uses:
-  - grpc_base
   - nanopb
 - name: gpr_base
   public_headers:
@@ -164,7 +165,668 @@ filegroups:
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
+- name: grpc_client_channel
+  headers:
+  - src/core/ext/filters/client_channel/client_channel.h
+  - src/core/ext/filters/client_channel/client_channel_factory.h
+  - src/core/ext/filters/client_channel/connector.h
+  - src/core/ext/filters/client_channel/http_connect_handshaker.h
+  - src/core/ext/filters/client_channel/http_proxy.h
+  - src/core/ext/filters/client_channel/lb_policy.h
+  - src/core/ext/filters/client_channel/lb_policy_factory.h
+  - src/core/ext/filters/client_channel/lb_policy_registry.h
+  - src/core/ext/filters/client_channel/parse_address.h
+  - src/core/ext/filters/client_channel/proxy_mapper.h
+  - src/core/ext/filters/client_channel/proxy_mapper_registry.h
+  - src/core/ext/filters/client_channel/resolver.h
+  - src/core/ext/filters/client_channel/resolver_factory.h
+  - src/core/ext/filters/client_channel/resolver_registry.h
+  - src/core/ext/filters/client_channel/retry_throttle.h
+  - src/core/ext/filters/client_channel/subchannel.h
+  - src/core/ext/filters/client_channel/subchannel_index.h
+  - src/core/ext/filters/client_channel/uri_parser.h
+  src:
+  - src/core/ext/filters/client_channel/channel_connectivity.c
+  - src/core/ext/filters/client_channel/client_channel.c
+  - src/core/ext/filters/client_channel/client_channel_factory.c
+  - src/core/ext/filters/client_channel/client_channel_plugin.c
+  - src/core/ext/filters/client_channel/connector.c
+  - src/core/ext/filters/client_channel/http_connect_handshaker.c
+  - src/core/ext/filters/client_channel/http_proxy.c
+  - src/core/ext/filters/client_channel/lb_policy.c
+  - src/core/ext/filters/client_channel/lb_policy_factory.c
+  - src/core/ext/filters/client_channel/lb_policy_registry.c
+  - src/core/ext/filters/client_channel/parse_address.c
+  - src/core/ext/filters/client_channel/proxy_mapper.c
+  - src/core/ext/filters/client_channel/proxy_mapper_registry.c
+  - src/core/ext/filters/client_channel/resolver.c
+  - src/core/ext/filters/client_channel/resolver_factory.c
+  - src/core/ext/filters/client_channel/resolver_registry.c
+  - src/core/ext/filters/client_channel/retry_throttle.c
+  - src/core/ext/filters/client_channel/subchannel.c
+  - src/core/ext/filters/client_channel/subchannel_index.c
+  - src/core/ext/filters/client_channel/uri_parser.c
+  deps:
+  - grpc_base
+  plugin: grpc_client_channel
+  uses:
+  - grpc_deadline_filter
+- name: grpc_codegen
+  public_headers:
+  - include/grpc/impl/codegen/byte_buffer_reader.h
+  - include/grpc/impl/codegen/compression_types.h
+  - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/exec_ctx_fwd.h
+  - include/grpc/impl/codegen/grpc_types.h
+  - include/grpc/impl/codegen/propagation_bits.h
+  - include/grpc/impl/codegen/slice.h
+  - include/grpc/impl/codegen/status.h
+  uses:
+  - gpr_codegen
+- name: grpc_deadline_filter
+  headers:
+  - src/core/ext/filters/deadline/deadline_filter.h
+  src:
+  - src/core/ext/filters/deadline/deadline_filter.c
+  deps:
+  - grpc_base
+  plugin: grpc_deadline_filter
+- name: grpc_http_filters
+  headers:
+  - src/core/ext/filters/http/client/http_client_filter.h
+  - src/core/ext/filters/http/message_compress/message_compress_filter.h
+  - src/core/ext/filters/http/server/http_server_filter.h
+  src:
+  - src/core/ext/filters/http/client/http_client_filter.c
+  - src/core/ext/filters/http/http_filters_plugin.c
+  - src/core/ext/filters/http/message_compress/message_compress_filter.c
+  - src/core/ext/filters/http/server/http_server_filter.c
+  deps:
+  - grpc_base
+  plugin: grpc_http_filters
+- name: grpc_lb_policy_grpclb
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  deps:
+  - grpc_base
+  plugin: grpc_lb_policy_grpclb
+  uses:
+  - grpc_client_channel
+  - nanopb
+- name: grpc_lb_policy_grpclb_secure
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  deps:
+  - grpc_base
+  plugin: grpc_lb_policy_grpclb
+  uses:
+  - grpc_secure
+  - grpc_client_channel
+  - nanopb
+- name: grpc_lb_policy_pick_first
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
+  deps:
+  - grpc_base
+  plugin: grpc_lb_policy_pick_first
+  uses:
+  - grpc_client_channel
+- name: grpc_lb_policy_round_robin
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c
+  deps:
+  - grpc_base
+  plugin: grpc_lb_policy_round_robin
+  uses:
+  - grpc_client_channel
+- name: grpc_load_reporting
+  headers:
+  - src/core/ext/filters/load_reporting/load_reporting.h
+  - src/core/ext/filters/load_reporting/load_reporting_filter.h
+  src:
+  - src/core/ext/filters/load_reporting/load_reporting.c
+  - src/core/ext/filters/load_reporting/load_reporting_filter.c
+  deps:
+  - grpc_base
+  plugin: grpc_load_reporting_plugin
+- name: grpc_max_age_filter
+  headers:
+  - src/core/ext/filters/max_age/max_age_filter.h
+  src:
+  - src/core/ext/filters/max_age/max_age_filter.c
+  deps:
+  - grpc_base
+  plugin: grpc_max_age_filter
+- name: grpc_message_size_filter
+  headers:
+  - src/core/ext/filters/message_size/message_size_filter.h
+  src:
+  - src/core/ext/filters/message_size/message_size_filter.c
+  deps:
+  - grpc_base
+  plugin: grpc_message_size_filter
+- name: grpc_resolver_dns_ares
+  headers:
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
+  src:
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
+  deps:
+  - grpc_base
+  plugin: grpc_resolver_dns_ares
+  uses:
+  - grpc_client_channel
+- name: grpc_resolver_dns_native
+  src:
+  - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
+  deps:
+  - grpc_base
+  plugin: grpc_resolver_dns_native
+  uses:
+  - grpc_client_channel
+- name: grpc_resolver_sockaddr
+  src:
+  - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
+  deps:
+  - grpc_base
+  plugin: grpc_resolver_sockaddr
+  uses:
+  - grpc_client_channel
+- name: grpc_secure
+  public_headers:
+  - include/grpc/grpc_security.h
+  headers:
+  - src/core/lib/security/context/security_context.h
+  - src/core/lib/security/credentials/composite/composite_credentials.h
+  - src/core/lib/security/credentials/credentials.h
+  - src/core/lib/security/credentials/fake/fake_credentials.h
+  - src/core/lib/security/credentials/google_default/google_default_credentials.h
+  - src/core/lib/security/credentials/iam/iam_credentials.h
+  - src/core/lib/security/credentials/jwt/json_token.h
+  - src/core/lib/security/credentials/jwt/jwt_credentials.h
+  - src/core/lib/security/credentials/jwt/jwt_verifier.h
+  - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
+  - src/core/lib/security/credentials/plugin/plugin_credentials.h
+  - src/core/lib/security/credentials/ssl/ssl_credentials.h
+  - src/core/lib/security/transport/auth_filters.h
+  - src/core/lib/security/transport/lb_targets_info.h
+  - src/core/lib/security/transport/secure_endpoint.h
+  - src/core/lib/security/transport/security_connector.h
+  - src/core/lib/security/transport/security_handshaker.h
+  - src/core/lib/security/transport/tsi_error.h
+  - src/core/lib/security/util/json_util.h
+  src:
+  - src/core/lib/http/httpcli_security_connector.c
+  - src/core/lib/security/context/security_context.c
+  - src/core/lib/security/credentials/composite/composite_credentials.c
+  - src/core/lib/security/credentials/credentials.c
+  - src/core/lib/security/credentials/credentials_metadata.c
+  - src/core/lib/security/credentials/fake/fake_credentials.c
+  - src/core/lib/security/credentials/google_default/credentials_generic.c
+  - src/core/lib/security/credentials/google_default/google_default_credentials.c
+  - src/core/lib/security/credentials/iam/iam_credentials.c
+  - src/core/lib/security/credentials/jwt/json_token.c
+  - src/core/lib/security/credentials/jwt/jwt_credentials.c
+  - src/core/lib/security/credentials/jwt/jwt_verifier.c
+  - src/core/lib/security/credentials/oauth2/oauth2_credentials.c
+  - src/core/lib/security/credentials/plugin/plugin_credentials.c
+  - src/core/lib/security/credentials/ssl/ssl_credentials.c
+  - src/core/lib/security/transport/client_auth_filter.c
+  - src/core/lib/security/transport/lb_targets_info.c
+  - src/core/lib/security/transport/secure_endpoint.c
+  - src/core/lib/security/transport/security_connector.c
+  - src/core/lib/security/transport/security_handshaker.c
+  - src/core/lib/security/transport/server_auth_filter.c
+  - src/core/lib/security/transport/tsi_error.c
+  - src/core/lib/security/util/json_util.c
+  - src/core/lib/surface/init_secure.c
+  deps:
+  - grpc_base
+  secure: true
+  uses:
+  - grpc_transport_chttp2_alpn
+  - tsi
+- name: grpc_test_util_base
+  build: test
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/fake_resolver.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/iomgr/endpoint_tests.h
+  - test/core/util/debugger_macros.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/memory_counters.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/port.h
+  - test/core/util/port_server_client.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/trickle_endpoint.h
+  src:
+  - test/core/end2end/cq_verifier.c
+  - test/core/end2end/fake_resolver.c
+  - test/core/end2end/fixtures/http_proxy_fixture.c
+  - test/core/end2end/fixtures/proxy.c
+  - test/core/iomgr/endpoint_tests.c
+  - test/core/util/debugger_macros.c
+  - test/core/util/grpc_profiler.c
+  - test/core/util/memory_counters.c
+  - test/core/util/mock_endpoint.c
+  - test/core/util/parse_hexstring.c
+  - test/core/util/passthru_endpoint.c
+  - test/core/util/port.c
+  - test/core/util/port_server_client.c
+  - test/core/util/slice_splitter.c
+  - test/core/util/trickle_endpoint.c
+  deps:
+  - grpc
+  - gpr_test_util
+- name: grpc_trace
+  headers:
+  - src/core/lib/debug/trace.h
+  src:
+  - src/core/lib/debug/trace.c
+  deps:
+  - gpr
+- name: grpc_transport_chttp2
+  headers:
+  - src/core/ext/transport/chttp2/transport/bin_decoder.h
+  - src/core/ext/transport/chttp2/transport/bin_encoder.h
+  - src/core/ext/transport/chttp2/transport/chttp2_transport.h
+  - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/frame_data.h
+  - src/core/ext/transport/chttp2/transport/frame_goaway.h
+  - src/core/ext/transport/chttp2/transport/frame_ping.h
+  - src/core/ext/transport/chttp2/transport/frame_rst_stream.h
+  - src/core/ext/transport/chttp2/transport/frame_settings.h
+  - src/core/ext/transport/chttp2/transport/frame_window_update.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.h
+  - src/core/ext/transport/chttp2/transport/hpack_parser.h
+  - src/core/ext/transport/chttp2/transport/hpack_table.h
+  - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/huffsyms.h
+  - src/core/ext/transport/chttp2/transport/incoming_metadata.h
+  - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/stream_map.h
+  - src/core/ext/transport/chttp2/transport/varint.h
+  src:
+  - src/core/ext/transport/chttp2/transport/bin_decoder.c
+  - src/core/ext/transport/chttp2/transport/bin_encoder.c
+  - src/core/ext/transport/chttp2/transport/chttp2_plugin.c
+  - src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  - src/core/ext/transport/chttp2/transport/frame_data.c
+  - src/core/ext/transport/chttp2/transport/frame_goaway.c
+  - src/core/ext/transport/chttp2/transport/frame_ping.c
+  - src/core/ext/transport/chttp2/transport/frame_rst_stream.c
+  - src/core/ext/transport/chttp2/transport/frame_settings.c
+  - src/core/ext/transport/chttp2/transport/frame_window_update.c
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.c
+  - src/core/ext/transport/chttp2/transport/hpack_parser.c
+  - src/core/ext/transport/chttp2/transport/hpack_table.c
+  - src/core/ext/transport/chttp2/transport/http2_settings.c
+  - src/core/ext/transport/chttp2/transport/huffsyms.c
+  - src/core/ext/transport/chttp2/transport/incoming_metadata.c
+  - src/core/ext/transport/chttp2/transport/parsing.c
+  - src/core/ext/transport/chttp2/transport/stream_lists.c
+  - src/core/ext/transport/chttp2/transport/stream_map.c
+  - src/core/ext/transport/chttp2/transport/varint.c
+  - src/core/ext/transport/chttp2/transport/writing.c
+  deps:
+  - grpc_base
+  plugin: grpc_chttp2_plugin
+  uses:
+  - grpc_transport_chttp2_alpn
+  - grpc_http_filters
+- name: grpc_transport_chttp2_alpn
+  headers:
+  - src/core/ext/transport/chttp2/alpn/alpn.h
+  src:
+  - src/core/ext/transport/chttp2/alpn/alpn.c
+  deps:
+  - gpr
+- name: grpc_transport_chttp2_client_connector
+  headers:
+  - src/core/ext/transport/chttp2/client/chttp2_connector.h
+  src:
+  - src/core/ext/transport/chttp2/client/chttp2_connector.c
+  deps:
+  - grpc_base
+  uses:
+  - grpc_transport_chttp2
+  - grpc_client_channel
+- name: grpc_transport_chttp2_client_insecure
+  src:
+  - src/core/ext/transport/chttp2/client/insecure/channel_create.c
+  - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  deps:
+  - grpc_base
+  uses:
+  - grpc_transport_chttp2_client_connector
+  - grpc_transport_chttp2
+  - grpc_client_channel
+- name: grpc_transport_chttp2_client_secure
+  src:
+  - src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
+  deps:
+  - grpc_base
+  uses:
+  - grpc_transport_chttp2
+  - grpc_client_channel
+  - grpc_secure
+  - grpc_transport_chttp2_client_connector
+- name: grpc_transport_chttp2_server
+  headers:
+  - src/core/ext/transport/chttp2/server/chttp2_server.h
+  src:
+  - src/core/ext/transport/chttp2/server/chttp2_server.c
+  deps:
+  - grpc_base
+  uses:
+  - grpc_transport_chttp2
+- name: grpc_transport_chttp2_server_insecure
+  src:
+  - src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
+  - src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
+  deps:
+  - grpc_base
+  uses:
+  - grpc_transport_chttp2
+  - grpc_transport_chttp2_server
+- name: grpc_transport_chttp2_server_secure
+  src:
+  - src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
+  deps:
+  - grpc_base
+  uses:
+  - grpc_transport_chttp2
+  - grpc_secure
+  - grpc_transport_chttp2_server
+- name: grpc_transport_cronet_client_secure
+  public_headers:
+  - include/grpc/grpc_cronet.h
+  - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
+  headers:
+  - src/core/ext/transport/cronet/transport/cronet_transport.h
+  - third_party/objective_c/Cronet/bidirectional_stream_c.h
+  src:
+  - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
+  - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
+  - src/core/ext/transport/cronet/transport/cronet_transport.c
+  deps:
+  - grpc_base
+  filegroups:
+  - grpc_transport_chttp2
+  - grpc_http_filters
+- name: nanopb
+  headers:
+  - third_party/nanopb/pb.h
+  - third_party/nanopb/pb_common.h
+  - third_party/nanopb/pb_decode.h
+  - third_party/nanopb/pb_encode.h
+  src:
+  - third_party/nanopb/pb_common.c
+  - third_party/nanopb/pb_decode.c
+  - third_party/nanopb/pb_encode.c
+- name: tsi
+  headers:
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_adapter.h
+  - src/core/tsi/transport_security_interface.h
+  src:
+  - src/core/tsi/fake_transport_security.c
+  - src/core/tsi/ssl_transport_security.c
+  - src/core/tsi/transport_security.c
+  - src/core/tsi/transport_security_adapter.c
+  deps:
+  - gpr
+  secure: true
+  uses:
+  - grpc_trace
+- name: grpc++_base
+  language: c++
+  public_headers:
+  - include/grpc++/alarm.h
+  - include/grpc++/channel.h
+  - include/grpc++/client_context.h
+  - include/grpc++/completion_queue.h
+  - include/grpc++/create_channel.h
+  - include/grpc++/create_channel_posix.h
+  - include/grpc++/ext/health_check_service_server_builder_option.h
+  - include/grpc++/generic/async_generic_service.h
+  - include/grpc++/generic/generic_stub.h
+  - include/grpc++/grpc++.h
+  - include/grpc++/health_check_service_interface.h
+  - include/grpc++/impl/call.h
+  - include/grpc++/impl/channel_argument_option.h
+  - include/grpc++/impl/client_unary_call.h
+  - include/grpc++/impl/codegen/core_codegen.h
+  - include/grpc++/impl/grpc_library.h
+  - include/grpc++/impl/method_handler_impl.h
+  - include/grpc++/impl/rpc_method.h
+  - include/grpc++/impl/rpc_service_method.h
+  - include/grpc++/impl/serialization_traits.h
+  - include/grpc++/impl/server_builder_option.h
+  - include/grpc++/impl/server_builder_plugin.h
+  - include/grpc++/impl/server_initializer.h
+  - include/grpc++/impl/service_type.h
+  - include/grpc++/resource_quota.h
+  - include/grpc++/security/auth_context.h
+  - include/grpc++/security/auth_metadata_processor.h
+  - include/grpc++/security/credentials.h
+  - include/grpc++/security/server_credentials.h
+  - include/grpc++/server.h
+  - include/grpc++/server_builder.h
+  - include/grpc++/server_context.h
+  - include/grpc++/server_posix.h
+  - include/grpc++/support/async_stream.h
+  - include/grpc++/support/async_unary_call.h
+  - include/grpc++/support/byte_buffer.h
+  - include/grpc++/support/channel_arguments.h
+  - include/grpc++/support/config.h
+  - include/grpc++/support/slice.h
+  - include/grpc++/support/status.h
+  - include/grpc++/support/status_code_enum.h
+  - include/grpc++/support/string_ref.h
+  - include/grpc++/support/stub_options.h
+  - include/grpc++/support/sync_stream.h
+  - include/grpc++/support/time.h
+  headers:
+  - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/channel_filter.h
+  - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/health/default_health_check_service.h
+  - src/cpp/server/health/health.pb.h
+  - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
+  src:
+  - src/cpp/client/channel_cc.cc
+  - src/cpp/client/client_context.cc
+  - src/cpp/client/create_channel.cc
+  - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/credentials_cc.cc
+  - src/cpp/client/generic_stub.cc
+  - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/channel_filter.cc
+  - src/cpp/common/completion_queue_cc.cc
+  - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
+  - src/cpp/common/rpc_method.cc
+  - src/cpp/common/version_cc.cc
+  - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/channel_argument_option.cc
+  - src/cpp/server/create_default_thread_pool.cc
+  - src/cpp/server/dynamic_thread_pool.cc
+  - src/cpp/server/health/default_health_check_service.cc
+  - src/cpp/server/health/health.pb.c
+  - src/cpp/server/health/health_check_service.cc
+  - src/cpp/server/health/health_check_service_server_builder_option.cc
+  - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_cc.cc
+  - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
+  - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
+  - src/cpp/util/byte_buffer_cc.cc
+  - src/cpp/util/slice_cc.cc
+  - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
+  - src/cpp/util/time_cc.cc
+  deps:
+  - grpc_base
+  - gpr
+  uses:
+  - grpc++_codegen_base
+  - nanopb
+- name: grpc++_codegen_base
+  language: c++
+  public_headers:
+  - include/grpc++/impl/codegen/async_stream.h
+  - include/grpc++/impl/codegen/async_unary_call.h
+  - include/grpc++/impl/codegen/call.h
+  - include/grpc++/impl/codegen/call_hook.h
+  - include/grpc++/impl/codegen/channel_interface.h
+  - include/grpc++/impl/codegen/client_context.h
+  - include/grpc++/impl/codegen/client_unary_call.h
+  - include/grpc++/impl/codegen/completion_queue.h
+  - include/grpc++/impl/codegen/completion_queue_tag.h
+  - include/grpc++/impl/codegen/config.h
+  - include/grpc++/impl/codegen/core_codegen_interface.h
+  - include/grpc++/impl/codegen/create_auth_context.h
+  - include/grpc++/impl/codegen/grpc_library.h
+  - include/grpc++/impl/codegen/metadata_map.h
+  - include/grpc++/impl/codegen/method_handler_impl.h
+  - include/grpc++/impl/codegen/rpc_method.h
+  - include/grpc++/impl/codegen/rpc_service_method.h
+  - include/grpc++/impl/codegen/security/auth_context.h
+  - include/grpc++/impl/codegen/serialization_traits.h
+  - include/grpc++/impl/codegen/server_context.h
+  - include/grpc++/impl/codegen/server_interface.h
+  - include/grpc++/impl/codegen/service_type.h
+  - include/grpc++/impl/codegen/slice.h
+  - include/grpc++/impl/codegen/status.h
+  - include/grpc++/impl/codegen/status_code_enum.h
+  - include/grpc++/impl/codegen/string_ref.h
+  - include/grpc++/impl/codegen/stub_options.h
+  - include/grpc++/impl/codegen/sync_stream.h
+  - include/grpc++/impl/codegen/time.h
+  uses:
+  - grpc_codegen
+- name: grpc++_codegen_base_src
+  language: c++
+  src:
+  - src/cpp/codegen/codegen_init.cc
+  uses:
+  - grpc++_codegen_base
+- name: grpc++_codegen_proto
+  language: c++
+  public_headers:
+  - include/grpc++/impl/codegen/proto_utils.h
+  uses:
+  - grpc++_codegen_base
+  - grpc++_config_proto
+- name: grpc++_config_proto
+  language: c++
+  public_headers:
+  - include/grpc++/impl/codegen/config_protobuf.h
+- name: grpc++_reflection_proto
+  language: c++
+  src:
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
+- name: grpc++_test
+  language: c++
+  public_headers:
+  - include/grpc++/test/mock_stream.h
+  - include/grpc++/test/server_context_test_spouse.h
+  deps:
+  - grpc++
+libs:
+- name: gpr
+  build: all
+  language: c
+  filegroups:
+  - gpr_base
+  secure: false
+  vs_project_guid: '{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}'
+- name: gpr_test_util
+  build: private
+  language: c
+  headers:
+  - test/core/util/test_config.h
+  src:
+  - test/core/util/test_config.c
+  deps:
+  - gpr
+  secure: false
+  vs_project_guid: '{EAB0A629-17A9-44DB-B5FF-E91A721FE037}'
+- name: grpc
+  build: all
+  language: c
+  src:
+  - src/core/lib/surface/init.c
+  deps:
+  - grpc_base
+  baselib: true
+  deps_linkage: static
+  dll: true
+  filegroups:
+  - grpc_transport_chttp2_server_secure
+  - grpc_transport_chttp2_client_secure
+  - grpc_transport_chttp2_server_insecure
+  - grpc_transport_chttp2_client_insecure
+  - grpc_lb_policy_grpclb_secure
+  - grpc_lb_policy_pick_first
+  - grpc_lb_policy_round_robin
+  - grpc_resolver_dns_ares
+  - grpc_resolver_dns_native
+  - grpc_resolver_sockaddr
+  - grpc_load_reporting
+  - grpc_secure
+  - census
+  - grpc_max_age_filter
+  - grpc_message_size_filter
+  - grpc_deadline_filter
+  generate_plugin_registry: true
+  secure: true
+  vs_packages:
+  - grpc.dependencies.openssl
+  - grpc.dependencies.zlib
+  vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
 - name: grpc_base
+  build: all
+  language: c
   public_headers:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
@@ -417,658 +1079,23 @@ filegroups:
   - src/core/lib/transport/transport_op_string.c
   deps:
   - gpr
-  uses:
-  - grpc_codegen
-  - grpc_trace
-- name: grpc_client_channel
-  headers:
-  - src/core/ext/filters/client_channel/client_channel.h
-  - src/core/ext/filters/client_channel/client_channel_factory.h
-  - src/core/ext/filters/client_channel/connector.h
-  - src/core/ext/filters/client_channel/http_connect_handshaker.h
-  - src/core/ext/filters/client_channel/http_proxy.h
-  - src/core/ext/filters/client_channel/lb_policy.h
-  - src/core/ext/filters/client_channel/lb_policy_factory.h
-  - src/core/ext/filters/client_channel/lb_policy_registry.h
-  - src/core/ext/filters/client_channel/parse_address.h
-  - src/core/ext/filters/client_channel/proxy_mapper.h
-  - src/core/ext/filters/client_channel/proxy_mapper_registry.h
-  - src/core/ext/filters/client_channel/resolver.h
-  - src/core/ext/filters/client_channel/resolver_factory.h
-  - src/core/ext/filters/client_channel/resolver_registry.h
-  - src/core/ext/filters/client_channel/retry_throttle.h
-  - src/core/ext/filters/client_channel/subchannel.h
-  - src/core/ext/filters/client_channel/subchannel_index.h
-  - src/core/ext/filters/client_channel/uri_parser.h
-  src:
-  - src/core/ext/filters/client_channel/channel_connectivity.c
-  - src/core/ext/filters/client_channel/client_channel.c
-  - src/core/ext/filters/client_channel/client_channel_factory.c
-  - src/core/ext/filters/client_channel/client_channel_plugin.c
-  - src/core/ext/filters/client_channel/connector.c
-  - src/core/ext/filters/client_channel/http_connect_handshaker.c
-  - src/core/ext/filters/client_channel/http_proxy.c
-  - src/core/ext/filters/client_channel/lb_policy.c
-  - src/core/ext/filters/client_channel/lb_policy_factory.c
-  - src/core/ext/filters/client_channel/lb_policy_registry.c
-  - src/core/ext/filters/client_channel/parse_address.c
-  - src/core/ext/filters/client_channel/proxy_mapper.c
-  - src/core/ext/filters/client_channel/proxy_mapper_registry.c
-  - src/core/ext/filters/client_channel/resolver.c
-  - src/core/ext/filters/client_channel/resolver_factory.c
-  - src/core/ext/filters/client_channel/resolver_registry.c
-  - src/core/ext/filters/client_channel/retry_throttle.c
-  - src/core/ext/filters/client_channel/subchannel.c
-  - src/core/ext/filters/client_channel/subchannel_index.c
-  - src/core/ext/filters/client_channel/uri_parser.c
-  plugin: grpc_client_channel
-  uses:
-  - grpc_base
-  - grpc_deadline_filter
-- name: grpc_codegen
-  public_headers:
-  - include/grpc/impl/codegen/byte_buffer_reader.h
-  - include/grpc/impl/codegen/compression_types.h
-  - include/grpc/impl/codegen/connectivity_state.h
-  - include/grpc/impl/codegen/exec_ctx_fwd.h
-  - include/grpc/impl/codegen/grpc_types.h
-  - include/grpc/impl/codegen/propagation_bits.h
-  - include/grpc/impl/codegen/slice.h
-  - include/grpc/impl/codegen/status.h
-  uses:
-  - gpr_codegen
-- name: grpc_deadline_filter
-  headers:
-  - src/core/ext/filters/deadline/deadline_filter.h
-  src:
-  - src/core/ext/filters/deadline/deadline_filter.c
-  plugin: grpc_deadline_filter
-  uses:
-  - grpc_base
-- name: grpc_http_filters
-  headers:
-  - src/core/ext/filters/http/client/http_client_filter.h
-  - src/core/ext/filters/http/message_compress/message_compress_filter.h
-  - src/core/ext/filters/http/server/http_server_filter.h
-  src:
-  - src/core/ext/filters/http/client/http_client_filter.c
-  - src/core/ext/filters/http/http_filters_plugin.c
-  - src/core/ext/filters/http/message_compress/message_compress_filter.c
-  - src/core/ext/filters/http/server/http_server_filter.c
-  plugin: grpc_http_filters
-  uses:
-  - grpc_base
-- name: grpc_lb_policy_grpclb
-  headers:
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
-  src:
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  plugin: grpc_lb_policy_grpclb
-  uses:
-  - grpc_base
-  - grpc_client_channel
-  - nanopb
-- name: grpc_lb_policy_grpclb_secure
-  headers:
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
-  src:
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  plugin: grpc_lb_policy_grpclb
-  uses:
-  - grpc_base
-  - grpc_secure
-  - grpc_client_channel
-  - nanopb
-- name: grpc_lb_policy_pick_first
-  src:
-  - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
-  plugin: grpc_lb_policy_pick_first
-  uses:
-  - grpc_base
-  - grpc_client_channel
-- name: grpc_lb_policy_round_robin
-  src:
-  - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c
-  plugin: grpc_lb_policy_round_robin
-  uses:
-  - grpc_base
-  - grpc_client_channel
-- name: grpc_load_reporting
-  headers:
-  - src/core/ext/filters/load_reporting/load_reporting.h
-  - src/core/ext/filters/load_reporting/load_reporting_filter.h
-  src:
-  - src/core/ext/filters/load_reporting/load_reporting.c
-  - src/core/ext/filters/load_reporting/load_reporting_filter.c
-  plugin: grpc_load_reporting_plugin
-  uses:
-  - grpc_base
-- name: grpc_max_age_filter
-  headers:
-  - src/core/ext/filters/max_age/max_age_filter.h
-  src:
-  - src/core/ext/filters/max_age/max_age_filter.c
-  plugin: grpc_max_age_filter
-  uses:
-  - grpc_base
-- name: grpc_message_size_filter
-  headers:
-  - src/core/ext/filters/message_size/message_size_filter.h
-  src:
-  - src/core/ext/filters/message_size/message_size_filter.c
-  plugin: grpc_message_size_filter
-  uses:
-  - grpc_base
-- name: grpc_resolver_dns_ares
-  headers:
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
-  src:
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
-  plugin: grpc_resolver_dns_ares
-  uses:
-  - grpc_base
-  - grpc_client_channel
-- name: grpc_resolver_dns_native
-  src:
-  - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
-  plugin: grpc_resolver_dns_native
-  uses:
-  - grpc_base
-  - grpc_client_channel
-- name: grpc_resolver_sockaddr
-  src:
-  - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
-  plugin: grpc_resolver_sockaddr
-  uses:
-  - grpc_base
-  - grpc_client_channel
-- name: grpc_secure
-  public_headers:
-  - include/grpc/grpc_security.h
-  headers:
-  - src/core/lib/security/context/security_context.h
-  - src/core/lib/security/credentials/composite/composite_credentials.h
-  - src/core/lib/security/credentials/credentials.h
-  - src/core/lib/security/credentials/fake/fake_credentials.h
-  - src/core/lib/security/credentials/google_default/google_default_credentials.h
-  - src/core/lib/security/credentials/iam/iam_credentials.h
-  - src/core/lib/security/credentials/jwt/json_token.h
-  - src/core/lib/security/credentials/jwt/jwt_credentials.h
-  - src/core/lib/security/credentials/jwt/jwt_verifier.h
-  - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
-  - src/core/lib/security/credentials/plugin/plugin_credentials.h
-  - src/core/lib/security/credentials/ssl/ssl_credentials.h
-  - src/core/lib/security/transport/auth_filters.h
-  - src/core/lib/security/transport/lb_targets_info.h
-  - src/core/lib/security/transport/secure_endpoint.h
-  - src/core/lib/security/transport/security_connector.h
-  - src/core/lib/security/transport/security_handshaker.h
-  - src/core/lib/security/transport/tsi_error.h
-  - src/core/lib/security/util/json_util.h
-  src:
-  - src/core/lib/http/httpcli_security_connector.c
-  - src/core/lib/security/context/security_context.c
-  - src/core/lib/security/credentials/composite/composite_credentials.c
-  - src/core/lib/security/credentials/credentials.c
-  - src/core/lib/security/credentials/credentials_metadata.c
-  - src/core/lib/security/credentials/fake/fake_credentials.c
-  - src/core/lib/security/credentials/google_default/credentials_generic.c
-  - src/core/lib/security/credentials/google_default/google_default_credentials.c
-  - src/core/lib/security/credentials/iam/iam_credentials.c
-  - src/core/lib/security/credentials/jwt/json_token.c
-  - src/core/lib/security/credentials/jwt/jwt_credentials.c
-  - src/core/lib/security/credentials/jwt/jwt_verifier.c
-  - src/core/lib/security/credentials/oauth2/oauth2_credentials.c
-  - src/core/lib/security/credentials/plugin/plugin_credentials.c
-  - src/core/lib/security/credentials/ssl/ssl_credentials.c
-  - src/core/lib/security/transport/client_auth_filter.c
-  - src/core/lib/security/transport/lb_targets_info.c
-  - src/core/lib/security/transport/secure_endpoint.c
-  - src/core/lib/security/transport/security_connector.c
-  - src/core/lib/security/transport/security_handshaker.c
-  - src/core/lib/security/transport/server_auth_filter.c
-  - src/core/lib/security/transport/tsi_error.c
-  - src/core/lib/security/util/json_util.c
-  - src/core/lib/surface/init_secure.c
-  secure: true
-  uses:
-  - grpc_base
-  - grpc_transport_chttp2_alpn
-  - tsi
-- name: grpc_test_util_base
-  build: test
-  headers:
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/fake_resolver.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/iomgr/endpoint_tests.h
-  - test/core/util/debugger_macros.h
-  - test/core/util/grpc_profiler.h
-  - test/core/util/memory_counters.h
-  - test/core/util/mock_endpoint.h
-  - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
-  - test/core/util/port.h
-  - test/core/util/port_server_client.h
-  - test/core/util/slice_splitter.h
-  - test/core/util/trickle_endpoint.h
-  src:
-  - test/core/end2end/cq_verifier.c
-  - test/core/end2end/fake_resolver.c
-  - test/core/end2end/fixtures/http_proxy_fixture.c
-  - test/core/end2end/fixtures/proxy.c
-  - test/core/iomgr/endpoint_tests.c
-  - test/core/util/debugger_macros.c
-  - test/core/util/grpc_profiler.c
-  - test/core/util/memory_counters.c
-  - test/core/util/mock_endpoint.c
-  - test/core/util/parse_hexstring.c
-  - test/core/util/passthru_endpoint.c
-  - test/core/util/port.c
-  - test/core/util/port_server_client.c
-  - test/core/util/slice_splitter.c
-  - test/core/util/trickle_endpoint.c
-  deps:
-  - grpc
-  - gpr_test_util
-- name: grpc_trace
-  headers:
-  - src/core/lib/debug/trace.h
-  src:
-  - src/core/lib/debug/trace.c
-  deps:
-  - gpr
-- name: grpc_transport_chttp2
-  headers:
-  - src/core/ext/transport/chttp2/transport/bin_decoder.h
-  - src/core/ext/transport/chttp2/transport/bin_encoder.h
-  - src/core/ext/transport/chttp2/transport/chttp2_transport.h
-  - src/core/ext/transport/chttp2/transport/frame.h
-  - src/core/ext/transport/chttp2/transport/frame_data.h
-  - src/core/ext/transport/chttp2/transport/frame_goaway.h
-  - src/core/ext/transport/chttp2/transport/frame_ping.h
-  - src/core/ext/transport/chttp2/transport/frame_rst_stream.h
-  - src/core/ext/transport/chttp2/transport/frame_settings.h
-  - src/core/ext/transport/chttp2/transport/frame_window_update.h
-  - src/core/ext/transport/chttp2/transport/hpack_encoder.h
-  - src/core/ext/transport/chttp2/transport/hpack_parser.h
-  - src/core/ext/transport/chttp2/transport/hpack_table.h
-  - src/core/ext/transport/chttp2/transport/http2_settings.h
-  - src/core/ext/transport/chttp2/transport/huffsyms.h
-  - src/core/ext/transport/chttp2/transport/incoming_metadata.h
-  - src/core/ext/transport/chttp2/transport/internal.h
-  - src/core/ext/transport/chttp2/transport/stream_map.h
-  - src/core/ext/transport/chttp2/transport/varint.h
-  src:
-  - src/core/ext/transport/chttp2/transport/bin_decoder.c
-  - src/core/ext/transport/chttp2/transport/bin_encoder.c
-  - src/core/ext/transport/chttp2/transport/chttp2_plugin.c
-  - src/core/ext/transport/chttp2/transport/chttp2_transport.c
-  - src/core/ext/transport/chttp2/transport/frame_data.c
-  - src/core/ext/transport/chttp2/transport/frame_goaway.c
-  - src/core/ext/transport/chttp2/transport/frame_ping.c
-  - src/core/ext/transport/chttp2/transport/frame_rst_stream.c
-  - src/core/ext/transport/chttp2/transport/frame_settings.c
-  - src/core/ext/transport/chttp2/transport/frame_window_update.c
-  - src/core/ext/transport/chttp2/transport/hpack_encoder.c
-  - src/core/ext/transport/chttp2/transport/hpack_parser.c
-  - src/core/ext/transport/chttp2/transport/hpack_table.c
-  - src/core/ext/transport/chttp2/transport/http2_settings.c
-  - src/core/ext/transport/chttp2/transport/huffsyms.c
-  - src/core/ext/transport/chttp2/transport/incoming_metadata.c
-  - src/core/ext/transport/chttp2/transport/parsing.c
-  - src/core/ext/transport/chttp2/transport/stream_lists.c
-  - src/core/ext/transport/chttp2/transport/stream_map.c
-  - src/core/ext/transport/chttp2/transport/varint.c
-  - src/core/ext/transport/chttp2/transport/writing.c
-  plugin: grpc_chttp2_plugin
-  uses:
-  - grpc_base
-  - grpc_transport_chttp2_alpn
-  - grpc_http_filters
-- name: grpc_transport_chttp2_alpn
-  headers:
-  - src/core/ext/transport/chttp2/alpn/alpn.h
-  src:
-  - src/core/ext/transport/chttp2/alpn/alpn.c
-  deps:
-  - gpr
-- name: grpc_transport_chttp2_client_connector
-  headers:
-  - src/core/ext/transport/chttp2/client/chttp2_connector.h
-  src:
-  - src/core/ext/transport/chttp2/client/chttp2_connector.c
-  uses:
-  - grpc_transport_chttp2
-  - grpc_base
-  - grpc_client_channel
-- name: grpc_transport_chttp2_client_insecure
-  src:
-  - src/core/ext/transport/chttp2/client/insecure/channel_create.c
-  - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
-  uses:
-  - grpc_transport_chttp2_client_connector
-  - grpc_transport_chttp2
-  - grpc_base
-  - grpc_client_channel
-- name: grpc_transport_chttp2_client_secure
-  src:
-  - src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
-  uses:
-  - grpc_transport_chttp2
-  - grpc_base
-  - grpc_client_channel
-  - grpc_secure
-  - grpc_transport_chttp2_client_connector
-- name: grpc_transport_chttp2_server
-  headers:
-  - src/core/ext/transport/chttp2/server/chttp2_server.h
-  src:
-  - src/core/ext/transport/chttp2/server/chttp2_server.c
-  uses:
-  - grpc_transport_chttp2
-  - grpc_base
-- name: grpc_transport_chttp2_server_insecure
-  src:
-  - src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
-  - src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
-  uses:
-  - grpc_transport_chttp2
-  - grpc_base
-  - grpc_transport_chttp2_server
-- name: grpc_transport_chttp2_server_secure
-  src:
-  - src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
-  uses:
-  - grpc_transport_chttp2
-  - grpc_base
-  - grpc_secure
-  - grpc_transport_chttp2_server
-- name: grpc_transport_cronet_client_secure
-  public_headers:
-  - include/grpc/grpc_cronet.h
-  - include/grpc/grpc_security.h
-  - include/grpc/grpc_security_constants.h
-  headers:
-  - src/core/ext/transport/cronet/transport/cronet_transport.h
-  - third_party/objective_c/Cronet/bidirectional_stream_c.h
-  src:
-  - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
-  - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
-  - src/core/ext/transport/cronet/transport/cronet_transport.c
-  filegroups:
-  - grpc_base
-  - grpc_transport_chttp2
-  - grpc_http_filters
-- name: nanopb
-  headers:
-  - third_party/nanopb/pb.h
-  - third_party/nanopb/pb_common.h
-  - third_party/nanopb/pb_decode.h
-  - third_party/nanopb/pb_encode.h
-  src:
-  - third_party/nanopb/pb_common.c
-  - third_party/nanopb/pb_decode.c
-  - third_party/nanopb/pb_encode.c
-- name: tsi
-  headers:
-  - src/core/tsi/fake_transport_security.h
-  - src/core/tsi/ssl_transport_security.h
-  - src/core/tsi/ssl_types.h
-  - src/core/tsi/transport_security.h
-  - src/core/tsi/transport_security_adapter.h
-  - src/core/tsi/transport_security_interface.h
-  src:
-  - src/core/tsi/fake_transport_security.c
-  - src/core/tsi/ssl_transport_security.c
-  - src/core/tsi/transport_security.c
-  - src/core/tsi/transport_security_adapter.c
-  deps:
-  - gpr
-  secure: true
-  uses:
-  - grpc_trace
-- name: grpc++_base
-  language: c++
-  public_headers:
-  - include/grpc++/alarm.h
-  - include/grpc++/channel.h
-  - include/grpc++/client_context.h
-  - include/grpc++/completion_queue.h
-  - include/grpc++/create_channel.h
-  - include/grpc++/create_channel_posix.h
-  - include/grpc++/ext/health_check_service_server_builder_option.h
-  - include/grpc++/generic/async_generic_service.h
-  - include/grpc++/generic/generic_stub.h
-  - include/grpc++/grpc++.h
-  - include/grpc++/health_check_service_interface.h
-  - include/grpc++/impl/call.h
-  - include/grpc++/impl/channel_argument_option.h
-  - include/grpc++/impl/client_unary_call.h
-  - include/grpc++/impl/codegen/core_codegen.h
-  - include/grpc++/impl/grpc_library.h
-  - include/grpc++/impl/method_handler_impl.h
-  - include/grpc++/impl/rpc_method.h
-  - include/grpc++/impl/rpc_service_method.h
-  - include/grpc++/impl/serialization_traits.h
-  - include/grpc++/impl/server_builder_option.h
-  - include/grpc++/impl/server_builder_plugin.h
-  - include/grpc++/impl/server_initializer.h
-  - include/grpc++/impl/service_type.h
-  - include/grpc++/resource_quota.h
-  - include/grpc++/security/auth_context.h
-  - include/grpc++/security/auth_metadata_processor.h
-  - include/grpc++/security/credentials.h
-  - include/grpc++/security/server_credentials.h
-  - include/grpc++/server.h
-  - include/grpc++/server_builder.h
-  - include/grpc++/server_context.h
-  - include/grpc++/server_posix.h
-  - include/grpc++/support/async_stream.h
-  - include/grpc++/support/async_unary_call.h
-  - include/grpc++/support/byte_buffer.h
-  - include/grpc++/support/channel_arguments.h
-  - include/grpc++/support/config.h
-  - include/grpc++/support/slice.h
-  - include/grpc++/support/status.h
-  - include/grpc++/support/status_code_enum.h
-  - include/grpc++/support/string_ref.h
-  - include/grpc++/support/stub_options.h
-  - include/grpc++/support/sync_stream.h
-  - include/grpc++/support/time.h
-  headers:
-  - src/cpp/client/create_channel_internal.h
-  - src/cpp/common/channel_filter.h
-  - src/cpp/server/dynamic_thread_pool.h
-  - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/health/health.pb.h
-  - src/cpp/server/thread_pool_interface.h
-  - src/cpp/thread_manager/thread_manager.h
-  src:
-  - src/cpp/client/channel_cc.cc
-  - src/cpp/client/client_context.cc
-  - src/cpp/client/create_channel.cc
-  - src/cpp/client/create_channel_internal.cc
-  - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
-  - src/cpp/client/generic_stub.cc
-  - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
-  - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/core_codegen.cc
-  - src/cpp/common/resource_quota_cc.cc
-  - src/cpp/common/rpc_method.cc
-  - src/cpp/common/version_cc.cc
-  - src/cpp/server/async_generic_service.cc
-  - src/cpp/server/channel_argument_option.cc
-  - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
-  - src/cpp/server/health/default_health_check_service.cc
-  - src/cpp/server/health/health.pb.c
-  - src/cpp/server/health/health_check_service.cc
-  - src/cpp/server/health/health_check_service_server_builder_option.cc
-  - src/cpp/server/server_builder.cc
-  - src/cpp/server/server_cc.cc
-  - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
-  - src/cpp/server/server_posix.cc
-  - src/cpp/thread_manager/thread_manager.cc
-  - src/cpp/util/byte_buffer_cc.cc
-  - src/cpp/util/slice_cc.cc
-  - src/cpp/util/status.cc
-  - src/cpp/util/string_ref.cc
-  - src/cpp/util/time_cc.cc
-  uses:
-  - grpc++_codegen_base
-  - grpc_base
-  - nanopb
-- name: grpc++_codegen_base
-  language: c++
-  public_headers:
-  - include/grpc++/impl/codegen/async_stream.h
-  - include/grpc++/impl/codegen/async_unary_call.h
-  - include/grpc++/impl/codegen/call.h
-  - include/grpc++/impl/codegen/call_hook.h
-  - include/grpc++/impl/codegen/channel_interface.h
-  - include/grpc++/impl/codegen/client_context.h
-  - include/grpc++/impl/codegen/client_unary_call.h
-  - include/grpc++/impl/codegen/completion_queue.h
-  - include/grpc++/impl/codegen/completion_queue_tag.h
-  - include/grpc++/impl/codegen/config.h
-  - include/grpc++/impl/codegen/core_codegen_interface.h
-  - include/grpc++/impl/codegen/create_auth_context.h
-  - include/grpc++/impl/codegen/grpc_library.h
-  - include/grpc++/impl/codegen/metadata_map.h
-  - include/grpc++/impl/codegen/method_handler_impl.h
-  - include/grpc++/impl/codegen/rpc_method.h
-  - include/grpc++/impl/codegen/rpc_service_method.h
-  - include/grpc++/impl/codegen/security/auth_context.h
-  - include/grpc++/impl/codegen/serialization_traits.h
-  - include/grpc++/impl/codegen/server_context.h
-  - include/grpc++/impl/codegen/server_interface.h
-  - include/grpc++/impl/codegen/service_type.h
-  - include/grpc++/impl/codegen/slice.h
-  - include/grpc++/impl/codegen/status.h
-  - include/grpc++/impl/codegen/status_code_enum.h
-  - include/grpc++/impl/codegen/string_ref.h
-  - include/grpc++/impl/codegen/stub_options.h
-  - include/grpc++/impl/codegen/sync_stream.h
-  - include/grpc++/impl/codegen/time.h
-  uses:
-  - grpc_codegen
-- name: grpc++_codegen_base_src
-  language: c++
-  src:
-  - src/cpp/codegen/codegen_init.cc
-  uses:
-  - grpc++_codegen_base
-- name: grpc++_codegen_proto
-  language: c++
-  public_headers:
-  - include/grpc++/impl/codegen/proto_utils.h
-  uses:
-  - grpc++_codegen_base
-  - grpc++_config_proto
-- name: grpc++_config_proto
-  language: c++
-  public_headers:
-  - include/grpc++/impl/codegen/config_protobuf.h
-- name: grpc++_reflection_proto
-  language: c++
-  src:
-  - src/proto/grpc/reflection/v1alpha/reflection.proto
-- name: grpc++_test
-  language: c++
-  public_headers:
-  - include/grpc++/test/mock_stream.h
-  - include/grpc++/test/server_context_test_spouse.h
-  deps:
-  - grpc++
-libs:
-- name: gpr
-  build: all
-  language: c
-  filegroups:
-  - gpr_base
-  secure: false
-  vs_project_guid: '{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}'
-- name: gpr_test_util
-  build: private
-  language: c
-  headers:
-  - test/core/util/test_config.h
-  src:
-  - test/core/util/test_config.c
-  deps:
-  - gpr
-  secure: false
-  vs_project_guid: '{EAB0A629-17A9-44DB-B5FF-E91A721FE037}'
-- name: grpc
-  build: all
-  language: c
-  src:
-  - src/core/lib/surface/init.c
   baselib: true
   deps_linkage: static
-  dll: true
   filegroups:
-  - grpc_base
-  - grpc_transport_chttp2_server_secure
-  - grpc_transport_chttp2_client_secure
-  - grpc_transport_chttp2_server_insecure
-  - grpc_transport_chttp2_client_insecure
-  - grpc_lb_policy_grpclb_secure
-  - grpc_lb_policy_pick_first
-  - grpc_lb_policy_round_robin
-  - grpc_resolver_dns_ares
-  - grpc_resolver_dns_native
-  - grpc_resolver_sockaddr
-  - grpc_load_reporting
-  - grpc_secure
-  - census
-  - grpc_max_age_filter
-  - grpc_message_size_filter
-  - grpc_deadline_filter
-  generate_plugin_registry: true
-  secure: true
-  vs_packages:
-  - grpc.dependencies.openssl
-  - grpc.dependencies.zlib
-  vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
+  - grpc_codegen
+  - grpc_trace
+  vs_project_guid: '{ACE841F3-8098-4113-9A28-02BDF61F0968}'
 - name: grpc_cronet
   build: all
   language: c
   src:
   - src/core/lib/surface/init.c
+  deps:
+  - grpc_base
   baselib: true
   deps_linkage: static
   dll: true
   filegroups:
-  - grpc_base
   - grpc_transport_cronet_client_secure
   - grpc_transport_chttp2_client_secure
   - grpc_load_reporting
@@ -1113,9 +1140,9 @@ libs:
   - gpr_test_util
   - gpr
   - grpc
+  - grpc_base
   filegroups:
   - grpc_test_util_base
-  - grpc_base
   vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
 - name: grpc_test_util_unsecure
   build: private
@@ -1134,11 +1161,12 @@ libs:
   src:
   - src/core/lib/surface/init.c
   - src/core/lib/surface/init_unsecure.c
+  deps:
+  - grpc_base
   baselib: true
   deps_linkage: static
   dll: true
   filegroups:
-  - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
   - grpc_resolver_dns_ares
