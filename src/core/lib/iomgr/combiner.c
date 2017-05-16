@@ -214,7 +214,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
                               lock, grpc_exec_ctx_ready_to_finish(exec_ctx),
                               lock->time_to_execute_final_list));
 
-  if (grpc_exec_ctx_ready_to_finish(exec_ctx)) {
+  if (grpc_exec_ctx_ready_to_finish(exec_ctx) && grpc_executor_is_threaded()) {
     GPR_TIMER_MARK("offload_from_finished_exec_ctx", 0);
     // this execution context wants to move on, and we have a workqueue (and
     // so can help the execution context out): schedule remaining work to be

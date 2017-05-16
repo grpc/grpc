@@ -66,22 +66,6 @@ GPR_TLS_DECL(g_this_thread_state);
 
 static void executor_thread(void *arg);
 
-void grpc_executor_init() {
-  g_max_threads = GPR_MAX(1, 2 * gpr_cpu_num_cores());
-  gpr_atm_no_barrier_store(&g_cur_threads, 1);
-  gpr_tls_init(&g_this_thread_state);
-  g_thread_state = gpr_zalloc(sizeof(thread_state) * g_max_threads);
-  for (size_t i = 0; i < g_max_threads; i++) {
-    gpr_mu_init(&g_thread_state[i].mu);
-    gpr_cv_init(&g_thread_state[i].cv);
-    g_thread_state[i].elems = (grpc_closure_list)GRPC_CLOSURE_LIST_INIT;
-  }
-
-  gpr_thd_options opt = gpr_thd_options_default();
-  gpr_thd_options_set_joinable(&opt);
-  gpr_thd_new(&g_thread_state[0].id, executor_thread, &g_thread_state[0], &opt);
-}
-
 static size_t run_closures(grpc_exec_ctx *exec_ctx, grpc_closure_list list) {
   size_t n = 0;
 
@@ -100,24 +84,57 @@ static size_t run_closures(grpc_exec_ctx *exec_ctx, grpc_closure_list list) {
   return n;
 }
 
-void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx) {
-  for (size_t i = 0; i < g_max_threads; i++) {
-    gpr_mu_lock(&g_thread_state[i].mu);
-    g_thread_state[i].shutdown = true;
-    gpr_cv_signal(&g_thread_state[i].cv);
-    gpr_mu_unlock(&g_thread_state[i].mu);
+bool grpc_executor_is_threaded() {
+  return gpr_atm_no_barrier_load(&g_cur_threads) > 0;
+}
+
+void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool threading) {
+  gpr_atm cur_threads = gpr_atm_no_barrier_load(&g_cur_threads);
+  if (threading) {
+    if (cur_threads > 0) return;
+    g_max_threads = GPR_MAX(1, 2 * gpr_cpu_num_cores());
+    gpr_atm_no_barrier_store(&g_cur_threads, 1);
+    gpr_tls_init(&g_this_thread_state);
+    g_thread_state = gpr_zalloc(sizeof(thread_state) * g_max_threads);
+    for (size_t i = 0; i < g_max_threads; i++) {
+      gpr_mu_init(&g_thread_state[i].mu);
+      gpr_cv_init(&g_thread_state[i].cv);
+      g_thread_state[i].elems = (grpc_closure_list)GRPC_CLOSURE_LIST_INIT;
+    }
+
+    gpr_thd_options opt = gpr_thd_options_default();
+    gpr_thd_options_set_joinable(&opt);
+    gpr_thd_new(&g_thread_state[0].id, executor_thread, &g_thread_state[0],
+                &opt);
+  } else {
+    if (cur_threads == 0) return;
+    for (size_t i = 0; i < g_max_threads; i++) {
+      gpr_mu_lock(&g_thread_state[i].mu);
+      g_thread_state[i].shutdown = true;
+      gpr_cv_signal(&g_thread_state[i].cv);
+      gpr_mu_unlock(&g_thread_state[i].mu);
+    }
+    for (gpr_atm i = 0; i < g_cur_threads; i++) {
+      gpr_thd_join(g_thread_state[i].id);
+    }
+    gpr_atm_no_barrier_store(&g_cur_threads, 0);
+    for (size_t i = 0; i < g_max_threads; i++) {
+      gpr_mu_destroy(&g_thread_state[i].mu);
+      gpr_cv_destroy(&g_thread_state[i].cv);
+      run_closures(exec_ctx, g_thread_state[i].elems);
+    }
+    gpr_free(g_thread_state);
+    gpr_tls_destroy(&g_this_thread_state);
   }
-  for (gpr_atm i = 0; i < g_cur_threads; i++) {
-    gpr_thd_join(g_thread_state[i].id);
-  }
+}
+
+void grpc_executor_init(grpc_exec_ctx *exec_ctx) {
   gpr_atm_no_barrier_store(&g_cur_threads, 0);
-  for (size_t i = 0; i < g_max_threads; i++) {
-    gpr_mu_destroy(&g_thread_state[i].mu);
-    gpr_cv_destroy(&g_thread_state[i].cv);
-    run_closures(exec_ctx, g_thread_state[i].elems);
-  }
-  gpr_free(g_thread_state);
-  gpr_tls_destroy(&g_this_thread_state);
+  grpc_executor_set_threading(exec_ctx, true);
+}
+
+void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx) {
+  grpc_executor_set_threading(exec_ctx, false);
 }
 
 static void executor_thread(void *arg) {

@@ -321,8 +321,9 @@ static void test_threading(void) {
 int main(int argc, char **argv) {
   const char *poll_strategy = NULL;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
-  grpc_iomgr_start();
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_iomgr_init(&exec_ctx);
+  grpc_iomgr_start(&exec_ctx);
 
   poll_strategy = grpc_get_poll_strategy_name();
   if (poll_strategy != NULL && strcmp(poll_strategy, "epollsig") == 0) {
@@ -335,11 +336,8 @@ int main(int argc, char **argv) {
             poll_strategy);
   }
 
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_iomgr_shutdown(&exec_ctx);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+  grpc_iomgr_shutdown(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL) */
