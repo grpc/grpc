@@ -38,7 +38,7 @@ grpc_proto_library(
     srcs = [
         "monitoring.proto",
     ],
-    well_known_protos = "@com_google_protobuf//:well_known_protos",
+    well_known_protos = True,
     deps = [
         ":census_proto",
     ],
@@ -49,7 +49,7 @@ grpc_proto_library(
     srcs = [
         "census.proto",
     ],
-    well_known_protos = "@com_google_protobuf//:well_known_protos",
+    well_known_protos = True,
 )
 
 cc_binary(

@@ -29,8 +29,11 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_library(
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
+grpc_cc_library(
     name = "server_helper_lib",
+    language = "c++",
     srcs = [
         "server_helper.cc",
     ],
@@ -39,12 +42,15 @@ cc_library(
     ],
     deps = [
         "//test/cpp/util:test_util",
-        "//external:gflags",
+    ],
+    external_deps = [
+        "gflags",
     ],
 )
 
-cc_binary(
+grpc_cc_binary(
     name = "interop_server",
+    language = "c++",
     srcs = [
         "interop_server.cc",
         "interop_server_bootstrap.cc",
@@ -59,8 +65,9 @@ cc_binary(
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "client_helper_lib",
+    language = "c++",
     srcs = [
         "client_helper.cc",
         "interop_client.cc",
@@ -79,8 +86,9 @@ cc_library(
     ],
 )
 
-cc_binary(
+grpc_cc_binary(
     name = "interop_client",
+    language = "c++",
     srcs = [
         "client.cc",
     ],

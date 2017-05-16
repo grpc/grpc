@@ -67,7 +67,7 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
 
 load("//:bazel/cc_grpc_library.bzl", "cc_grpc_library")
 
-def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = None,
+def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = False,
                        has_services = True, use_external = False, generate_mock = False):
   cc_grpc_library(
     name = name,
