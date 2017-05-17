@@ -668,9 +668,9 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       }
     } else {
       gpr_atm_no_barrier_store(&g_active_poller, 0);
-      gpr_mu_unlock(&pollset->mu);
       size_t poller_neighbourhood_idx =
           (size_t)(pollset->neighbourhood - g_neighbourhoods);
+      gpr_mu_unlock(&pollset->mu);
       bool found_worker = false;
       bool scan_state[MAX_NEIGHBOURHOODS];
       for (size_t i = 0; !found_worker && i < g_num_neighbourhoods; i++) {
@@ -948,9 +948,6 @@ static const grpc_event_engine_vtable vtable = {
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create a dummy epoll_fd to make sure epoll support is available */
 const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
-  /* TODO(ctiller): temporary, until this stabilizes */
-  if (!explicit_request) return NULL;
-
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
