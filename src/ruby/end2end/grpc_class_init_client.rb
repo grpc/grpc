@@ -61,16 +61,15 @@ def run_gc_stress_test(test_proc)
 end
 
 def run_concurrency_stress_test(test_proc)
-  test_proc.call
-
-  thds = []
   100.times do
-    thds << Thread.new do
+    Thread.new do
       test_proc.call
     end
   end
 
-  raise "something"
+  test_proc.call
+
+  raise 'exception thrown while child thread initing class'
 end
 
 # default (no gc_stress and no concurrency_stress)
