@@ -161,7 +161,6 @@ void grpc_rb_channel_free(void *p) {
   if (p == NULL) {
     return;
   };
-  gpr_log(GPR_DEBUG, "channel GC function called!");
   ch = (grpc_rb_channel *)p;
 
   if (ch->bg_wrapped != NULL) {
@@ -495,7 +494,6 @@ VALUE grpc_rb_channel_get_target(VALUE self) {
 int bg_watched_channel_list_lookup(bg_watched_channel *target) {
   bg_watched_channel *cur = bg_watched_channel_list_head;
 
-  gpr_log(GPR_DEBUG, "check contains");
   while (cur != NULL) {
     if (cur == target) {
       return 1;
@@ -510,7 +508,6 @@ int bg_watched_channel_list_lookup(bg_watched_channel *target) {
 bg_watched_channel *bg_watched_channel_list_create_and_add(grpc_channel *channel) {
   bg_watched_channel *watched = gpr_zalloc(sizeof(bg_watched_channel));
 
-  gpr_log(GPR_DEBUG, "add bg");
   watched->channel = channel;
   watched->next = bg_watched_channel_list_head;
   watched->refcount = 1;
@@ -522,7 +519,6 @@ bg_watched_channel *bg_watched_channel_list_create_and_add(grpc_channel *channel
 void bg_watched_channel_list_free_and_remove(bg_watched_channel *target) {
   bg_watched_channel *bg = NULL;
 
-  gpr_log(GPR_DEBUG, "remove bg");
   GPR_ASSERT(bg_watched_channel_list_lookup(target));
   GPR_ASSERT(target->channel_destroyed && target->refcount == 0);
   if (bg_watched_channel_list_head == target) {
