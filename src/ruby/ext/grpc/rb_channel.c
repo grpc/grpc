@@ -107,7 +107,6 @@ bg_watched_channel *bg_watched_channel_list_head = NULL;
 
 void grpc_rb_channel_try_register_connection_polling(bg_watched_channel *bg);
 void *wait_until_channel_polling_thread_started_no_gil(void*);
-void wait_until_channel_polling_thread_started_unblocking_func(void*);
 void *channel_init_try_register_connection_polling_without_gil(void *arg);
 
 typedef struct channel_init_try_register_stack {
@@ -228,7 +227,7 @@ VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
 
   grpc_ruby_once_init();
   rb_thread_call_without_gvl(wait_until_channel_polling_thread_started_no_gil, NULL,
-                             wait_until_channel_polling_thread_started_unblocking_func, NULL);
+                             run_poll_channels_loop_unblocking_func, NULL);
 
   /* "3" == 3 mandatory args */
   rb_scan_args(argc, argv, "3", &target, &channel_args, &credentials);
@@ -683,15 +682,6 @@ void *wait_until_channel_polling_thread_started_no_gil(void *arg) {
   gpr_mu_unlock(&global_connection_polling_mu);
 
   return NULL;
-}
-
-void wait_until_channel_polling_thread_started_unblocking_func(void* arg) {
-  (void)arg;
-  gpr_mu_lock(&global_connection_polling_mu);
-  gpr_log(GPR_DEBUG, "GRPC_RUBY: wait_until_channel_polling_thread_started_unblocking_func - begin aborting connection polling");
-  abort_channel_polling = 1;
-  gpr_cv_broadcast(&global_connection_polling_cv);
-  gpr_mu_unlock(&global_connection_polling_mu);
 }
 
 static void *set_abort_channel_polling_without_gil(void *arg) {

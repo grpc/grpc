@@ -106,9 +106,19 @@ def main
     return
   end
 
-  thd = Thread.new { test_proc.call }
-  test_proc.call
-  thd.join
+#  test_proc.call
+
+  thds = []
+  100.times do
+    thds << Thread.new do
+      test_proc.call
+      sleep 10
+    end
+  end
+
+  #test_proc.call
+  raise "something"
+  thds.each(&:join)
 end
 
 main
