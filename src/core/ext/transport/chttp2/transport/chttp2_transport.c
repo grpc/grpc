@@ -1563,12 +1563,6 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_transport *t = op->handler_private.extra_arg;
   grpc_error *close_transport = op->disconnect_with_error;
 
-  if (op->on_connectivity_state_change != NULL) {
-    grpc_connectivity_state_notify_on_state_change(
-        exec_ctx, &t->channel_callback.state_tracker, op->connectivity_state,
-        op->on_connectivity_state_change);
-  }
-
   if (op->goaway_error) {
     send_goaway(exec_ctx, t, op->goaway_error);
   }
@@ -1590,6 +1584,12 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
   if (op->send_ping) {
     send_ping_locked(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE, NULL,
                      op->send_ping);
+  }
+
+  if (op->on_connectivity_state_change != NULL) {
+    grpc_connectivity_state_notify_on_state_change(
+        exec_ctx, &t->channel_callback.state_tracker, op->connectivity_state,
+        op->on_connectivity_state_change);
   }
 
   if (close_transport != GRPC_ERROR_NONE) {

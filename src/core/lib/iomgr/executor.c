@@ -114,6 +114,10 @@ void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool threading) {
       gpr_cv_signal(&g_thread_state[i].cv);
       gpr_mu_unlock(&g_thread_state[i].mu);
     }
+    /* ensure no thread is adding a new thread... once this is past, then
+       no thread will try to add a new one either (since shutdown is true) */
+    gpr_spinlock_lock(&g_adding_thread_lock);
+    gpr_spinlock_unlock(&g_adding_thread_lock);
     for (gpr_atm i = 0; i < g_cur_threads; i++) {
       gpr_thd_join(g_thread_state[i].id);
     }
@@ -182,10 +186,10 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   }
   grpc_closure_list_append(&ts->elems, closure, error);
   ts->depth++;
-  bool try_new_thread =
-      ts->depth > MAX_DEPTH && cur_thread_count < g_max_threads;
-  gpr_mu_unlock(&ts->mu);
+  bool try_new_thread = ts->depth > MAX_DEPTH &&
+                        cur_thread_count < g_max_threads && !ts->shutdown;
   if (try_new_thread && gpr_spinlock_trylock(&g_adding_thread_lock)) {
+    gpr_mu_unlock(&ts->mu);
     cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
     if (cur_thread_count < g_max_threads) {
       gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
@@ -196,6 +200,8 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                   &g_thread_state[cur_thread_count], &opt);
     }
     gpr_spinlock_unlock(&g_adding_thread_lock);
+  } else {
+    gpr_mu_unlock(&ts->mu);
   }
 }
 
