@@ -60,6 +60,27 @@ def run_gc_stress_test(test_proc)
   construct_many(test_proc)
 end
 
+def run_concurrency_stress_test(test_proc)
+  test_proc.call
+
+  thds = []
+  100.times do
+    thds << Thread.new do
+      test_proc.call
+    end
+  end
+
+  raise "something"
+end
+
+# default (no gc_stress and no concurrency_stress)
+def run_default_test(test_proc)
+  thd = Thread.new do
+    test_proc.call
+  end
+  test_proc.call
+end
+
 def get_test_proc(grpc_class)
   case grpc_class
   when 'channel'
@@ -89,36 +110,34 @@ end
 
 def main
   grpc_class = ''
-  gc_stress = false
+  stress_test = ''
   OptionParser.new do |opts|
     opts.on('--grpc_class=P', String) do |p|
       grpc_class = p
     end
-    opts.on('--gc_stress=P') do |p|
-      gc_stress = p
+    opts.on('--stress_test=P') do |p|
+      stress_test = p
     end
   end.parse!
 
   test_proc = get_test_proc(grpc_class)
 
-  if gc_stress == 'true'
+  # the different test configs need to be ran
+  # in separate processes, since each one tests
+  # clean shutdown in a different way
+  case stress_test
+  when 'gc'
+    p 'run gc stress'
     run_gc_stress_test(test_proc)
-    return
+  when 'concurrency'
+    p 'run concurrency stress'
+    run_concurrency_stress_test(test_proc)
+  when ''
+    p 'run default'
+    run_default_test(test_proc)
+  else
+    fail "bad --stress_test=#{stress_test} param"
   end
-
-#  test_proc.call
-
-  thds = []
-  100.times do
-    thds << Thread.new do
-      test_proc.call
-      sleep 10
-    end
-  end
-
-  #test_proc.call
-  raise "something"
-  thds.each(&:join)
 end
 
 main

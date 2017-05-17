@@ -39,17 +39,17 @@ def main
                             compression_options )
 
   # there is room for false positives in this test,
-  # do 10 runs for each config to reduce these.
-  [true, false].each do |gc_stress|
-    10.times do
-      native_grpc_classes.each do |grpc_class|
+  # do a few runs for each config
+  4.times do
+    native_grpc_classes.each do |grpc_class|
+      ['', 'gc', 'concurrency'].each do |stress_test_type|
         STDERR.puts 'start client'
         this_dir = File.expand_path(File.dirname(__FILE__))
         client_path = File.join(this_dir, 'grpc_class_init_client.rb')
         client_pid = Process.spawn(RbConfig.ruby,
                                    client_path,
                                    "--grpc_class=#{grpc_class}",
-                                   "--gc_stress=#{gc_stress}")
+                                   "--stress_test=#{stress_test_type}")
         begin
           Timeout.timeout(10) do
             Process.wait(client_pid)
@@ -65,7 +65,9 @@ def main
         end
 
         client_exit_code = $CHILD_STATUS
-        if client_exit_code != 0
+	# concurrency stress test type is expected to exit with a
+	# non-zero status due to an exception being raised
+        if client_exit_code != 0 and stress_test_type != 'concurrency'
           fail "client failed, exit code #{client_exit_code}"
         end
       end
