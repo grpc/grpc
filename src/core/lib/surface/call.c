@@ -1531,7 +1531,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         /* TODO(ctiller): just make these the same variable? */
-        call->metadata_batch[0][0].deadline = call->send_deadline;
+        if (call->is_client) {
+          call->metadata_batch[0][0].deadline = call->send_deadline;
+        }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
         stream_op_payload->send_initial_metadata.send_initial_metadata_flags =
