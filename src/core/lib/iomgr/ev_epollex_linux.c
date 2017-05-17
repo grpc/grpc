@@ -205,6 +205,7 @@ struct grpc_pollset_worker {
 struct grpc_pollset {
   pollable pollable;
   pollable *current_pollable;
+int kick_alls_pending;
   bool kicked_without_poller;
   grpc_closure *shutdown_closure;
   grpc_pollset_worker *root_worker;
@@ -643,8 +644,18 @@ static void pollset_global_shutdown(void) {
   gpr_tls_destroy(&g_current_thread_worker);
 }
 
-static grpc_error *pollset_kick_all(grpc_pollset *pollset) {
+static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
+                                          grpc_pollset *pollset) {
+  if (pollset->shutdown_closure != NULL && pollset->root_worker == NULL && pollset->kick_alls_pending==0) {
+    grpc_closure_sched(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
+    pollset->shutdown_closure = NULL;
+  }
+}
+
+static void do_kick_all(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error_unused) {
   grpc_error *error = GRPC_ERROR_NONE;
+grpc_pollset *pollset = arg;
+  gpr_mu_lock(&pollset->pollable.po.mu);
   if (pollset->root_worker != NULL) {
     grpc_pollset_worker *worker = pollset->root_worker;
     do {
@@ -665,7 +676,15 @@ static grpc_error *pollset_kick_all(grpc_pollset *pollset) {
       worker = worker->links[PWL_POLLSET].next;
     } while (worker != pollset->root_worker);
   }
-  return error;
+pollset->kick_alls_pending--;
+pollset_maybe_finish_shutdown(exec_ctx, pollset);
+  gpr_mu_unlock(&pollset->pollable.po.mu);
+  GRPC_LOG_IF_ERROR("kick_all", error);
+}
+
+static void pollset_kick_all(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
+pollset->kick_alls_pending++;
+  grpc_closure_sched(exec_ctx, grpc_closure_create(do_kick_all, pollset, grpc_schedule_on_exec_ctx), GRPC_ERROR_NONE);
 }
 
 static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p,
@@ -804,20 +823,12 @@ static grpc_error *fd_become_pollable_locked(grpc_fd *fd) {
   return error;
 }
 
-static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
-                                          grpc_pollset *pollset) {
-  if (pollset->shutdown_closure != NULL && pollset->root_worker == NULL) {
-    grpc_closure_sched(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
-    pollset->shutdown_closure = NULL;
-  }
-}
-
 /* pollset->po.mu lock must be held by the caller before calling this */
 static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                              grpc_closure *closure) {
   GPR_ASSERT(pollset->shutdown_closure == NULL);
   pollset->shutdown_closure = closure;
-  GRPC_LOG_IF_ERROR("pollset_shutdown", pollset_kick_all(pollset));
+  pollset_kick_all(exec_ctx, pollset);
   pollset_maybe_finish_shutdown(exec_ctx, pollset);
 }
 
@@ -1090,7 +1101,7 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
               "PS:%p add fd %p; transition pollable from empty to fd", pollset,
               fd);
     /* empty pollable --> single fd pollable */
-    append_error(&error, pollset_kick_all(pollset), err_desc);
+    pollset_kick_all(exec_ctx, pollset);
     pollset->current_pollable = &fd->pollable;
     if (!fd_locked) gpr_mu_lock(&fd->pollable.po.mu);
     append_error(&error, fd_become_pollable_locked(fd), err_desc);
@@ -1107,7 +1118,7 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_DEBUG,
               "PS:%p add fd %p; transition pollable from fd %p to multipoller",
               pollset, fd, had_fd);
-    append_error(&error, pollset_kick_all(pollset), err_desc);
+    pollset_kick_all(exec_ctx, pollset);
     pollset->current_pollable = &pollset->pollable;
     if (append_error(&error, pollable_materialize(&pollset->pollable),
                      err_desc)) {
