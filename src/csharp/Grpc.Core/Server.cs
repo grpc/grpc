@@ -216,6 +216,14 @@ namespace Grpc.Core
             activeCallCounter.Decrement();
         }
 
+        internal GrpcEnvironment Environment
+        {
+            get
+            {
+                return this.environment;
+            }
+        }
+
         /// <summary>
         /// Shuts down the server.
         /// </summary>

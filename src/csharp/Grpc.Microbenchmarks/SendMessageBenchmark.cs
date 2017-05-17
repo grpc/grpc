@@ -72,7 +72,7 @@ namespace Grpc.Microbenchmarks
 
             var completionRegistry = new CompletionRegistry(environment);
             var cq = CompletionQueueSafeHandle.CreateAsync(completionRegistry);
-            var call = CreateFakeCall(cq);
+            var call = CreateFakeCall(environment, cq);
 
             var sendCompletionHandler = new SendCompletionHandler((success) => { });
             var payload = new byte[payloadSize];
@@ -91,9 +91,9 @@ namespace Grpc.Microbenchmarks
             cq.Dispose();
         }
 
-        private static CallSafeHandle CreateFakeCall(CompletionQueueSafeHandle cq)
+        private static CallSafeHandle CreateFakeCall(GrpcEnvironment environment, CompletionQueueSafeHandle cq)
         {
-            var call = CallSafeHandle.CreateFake(new IntPtr(0xdead), cq);
+            var call = CallSafeHandle.CreateFake(new IntPtr(0xdead), environment, cq);
             bool success = false;
             while (!success)
             {

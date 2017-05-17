@@ -253,6 +253,14 @@ namespace Grpc.Core
             }
         }
 
+        internal GrpcThreadPool ThreadPool
+        {
+            get
+            {
+                return this.threadPool;
+            }
+        }
+
         internal bool IsAlive
         {
             get
