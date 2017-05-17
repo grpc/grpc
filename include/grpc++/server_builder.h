@@ -46,6 +46,7 @@
 #include <grpc/compression.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/useful.h>
+#include <grpc/support/workaround_list.h>
 
 struct grpc_resource_quota;
 
@@ -187,7 +188,7 @@ class ServerBuilder {
   /// Enable a server workaround. Do not use unless you know what the workaround
   /// does. For explanation and detailed descriptions of workarounds, see
   /// doc/workarounds.md.
-  ServerBuilder& EnableWorkaround(uint32_t id);
+  ServerBuilder& EnableWorkaround(grpc_workaround_list id);
 
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
