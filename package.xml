@@ -425,6 +425,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollsig_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iocp_windows.c" role="src" />
