@@ -143,8 +143,7 @@ describe 'channel connection behavior' do
     stop_server
   end
 
-  it 'observably connects and reconnects to transient server' \
-    ' when using the channel state API' do
+  it 'concurrent watches on the same channel' do
     timeout(180) do
       port = start_server
       ch = GRPC::Core::Channel.new("localhost:#{port}", {},

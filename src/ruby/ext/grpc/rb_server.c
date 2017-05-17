@@ -77,7 +77,7 @@ static void destroy_server(grpc_rb_server *server, gpr_timespec deadline) {
                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
       }
       grpc_server_destroy(server->wrapped);
-      grpc_rb_completion_queue_safe_destroy(server->queue);
+      grpc_rb_completion_queue_destroy(server->queue);
       server->wrapped = NULL;
       server->queue = NULL;
     }

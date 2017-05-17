@@ -42,7 +42,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
-#include <grpc/support/log.h>
 #include "rb_call.h"
 #include "rb_call_credentials.h"
 #include "rb_channel.h"

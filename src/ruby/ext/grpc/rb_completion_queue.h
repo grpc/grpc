@@ -38,7 +38,7 @@
 
 #include <grpc/grpc.h>
 
-void grpc_rb_completion_queue_safe_destroy(grpc_completion_queue *cq);
+void grpc_rb_completion_queue_destroy(grpc_completion_queue *cq);
 
 /**
  * Makes the implementation of CompletionQueue#pluck available in other files
