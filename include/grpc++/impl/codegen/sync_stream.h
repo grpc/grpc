@@ -320,8 +320,9 @@ class ClientReaderWriterInterface : public ClientStreamingInterface,
   /// the metadata will be available in ClientContext after the first read.
   virtual void WaitForInitialMetadata() = 0;
 
+  /// Half close writing from the client.
   /// Block until currently-pending writes are completed.
-  /// Thread-safe with respect to \a Read
+  /// Thread safe with respect to \a Read operations only
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
