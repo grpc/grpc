@@ -84,15 +84,27 @@ namespace Grpc.IntegrationTesting
             }
         }
 
-
         /// <summary>
-        /// Gets snapshot of stats and reset 
+        /// Gets snapshot of stats and optionally resets the histogram.
         /// </summary>
         public HistogramData GetSnapshot(bool reset = false)
         {
             lock (myLock)
             {
-                return GetSnapshotUnsafe(reset);    
+                var histogramData = new HistogramData();
+                GetSnapshotUnsafe(histogramData, reset);
+                return histogramData;
+            }
+        }
+
+        /// <summary>
+        /// Merges snapshot of stats into <c>mergeTo</c> and optionally resets the histogram.
+        /// </summary>
+        public void GetSnapshot(HistogramData mergeTo, bool reset)
+        {
+            lock (myLock)
+            {
+                GetSnapshotUnsafe(mergeTo, reset);
             }
         }
 
@@ -117,24 +129,39 @@ namespace Grpc.IntegrationTesting
             this.buckets[FindBucket(value)]++;
         }
 
-        private HistogramData GetSnapshotUnsafe(bool reset)
+        private void GetSnapshotUnsafe(HistogramData mergeTo, bool reset)
         {
-            var data = new HistogramData
+            GrpcPreconditions.CheckArgument(mergeTo.Bucket.Count == 0 || mergeTo.Bucket.Count == buckets.Length);
+            if (mergeTo.Count == 0)
             {
-                Count = count,
-                Sum = sum,
-                SumOfSquares = sumOfSquares,
-                MinSeen = min,
-                MaxSeen = max,
-                Bucket = { buckets }
-            };
+                mergeTo.MinSeen = min;
+                mergeTo.MaxSeen = max;
+            }
+            else
+            {
+                mergeTo.MinSeen = Math.Min(mergeTo.MinSeen, min);
+                mergeTo.MaxSeen = Math.Max(mergeTo.MaxSeen, max);
+            }
+            mergeTo.Count += count;
+            mergeTo.Sum += sum;
+            mergeTo.SumOfSquares += sumOfSquares;
+
+            if (mergeTo.Bucket.Count == 0)
+            {
+                mergeTo.Bucket.AddRange(buckets);
+            }
+            else
+            {
+                for (int i = 0; i < buckets.Length; i++)
+                {
+                    mergeTo.Bucket[i] += buckets[i];
+                }
+            }
 
             if (reset)
             {
-                ResetUnsafe();
+              ResetUnsafe();
             }
-
-            return data;
         }
 
         private void ResetUnsafe()

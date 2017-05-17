@@ -141,7 +141,7 @@ namespace Grpc.IntegrationTesting
         readonly RpcType rpcType;
         readonly PayloadConfig payloadConfig;
         readonly Lazy<byte[]> cachedByteBufferRequest;
-        readonly Histogram histogram;
+        readonly ThreadLocal<Histogram> threadLocalHistogram;
 
         readonly List<Task> runnerTasks;
         readonly CancellationTokenSource stoppedCts = new CancellationTokenSource();
@@ -157,7 +157,7 @@ namespace Grpc.IntegrationTesting
             this.rpcType = rpcType;
             this.payloadConfig = payloadConfig;
             this.cachedByteBufferRequest = new Lazy<byte[]>(() => new byte[payloadConfig.BytebufParams.ReqSize]);
-            this.histogram = new Histogram(histogramParams.Resolution, histogramParams.MaxPossible);
+            this.threadLocalHistogram = new ThreadLocal<Histogram>(() => new Histogram(histogramParams.Resolution, histogramParams.MaxPossible), true);
 
             this.runnerTasks = new List<Task>();
             foreach (var channel in this.channels)
@@ -173,7 +173,12 @@ namespace Grpc.IntegrationTesting
 
         public ClientStats GetStats(bool reset)
         {
-            var histogramData = histogram.GetSnapshot(reset);
+            var histogramData = new HistogramData();
+            foreach (var hist in threadLocalHistogram.Values)
+            {
+                hist.GetSnapshot(histogramData, reset);
+            }
+
             var secondsElapsed = wallClockStopwatch.GetElapsedSnapshot(reset).TotalSeconds;
 
             if (reset)
@@ -234,7 +239,7 @@ namespace Grpc.IntegrationTesting
                 stopwatch.Stop();
 
                 // spec requires data point in nanoseconds.
-                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                 timer.WaitForNext();
             }
@@ -253,7 +258,7 @@ namespace Grpc.IntegrationTesting
                 stopwatch.Stop();
 
                 // spec requires data point in nanoseconds.
-                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                 await timer.WaitForNextAsync();
             }
@@ -275,7 +280,7 @@ namespace Grpc.IntegrationTesting
                     stopwatch.Stop();
 
                     // spec requires data point in nanoseconds.
-                    histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                    threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                     await timer.WaitForNextAsync();
                 }
@@ -303,7 +308,7 @@ namespace Grpc.IntegrationTesting
                     stopwatch.Stop();
 
                     // spec requires data point in nanoseconds.
-                    histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                    threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                     await timer.WaitForNextAsync();
                 }
