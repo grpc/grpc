@@ -368,8 +368,8 @@ void *wait_for_watch_state_op_complete_without_gvl(void *arg) {
  * state changes from "last_state".
  * */
 VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
-                                                      VALUE last_state,
-                                                      VALUE deadline) {
+                                               VALUE last_state,
+                                               VALUE deadline) {
   grpc_rb_channel *wrapper = NULL;
   watch_state_stack stack;
   void* op_success = 0;
@@ -692,7 +692,6 @@ static void *set_abort_channel_polling_without_gil(void *arg) {
   gpr_mu_unlock(&global_connection_polling_mu);
   return NULL;
 }
-
 
 /* Temporary fix for
  * https://github.com/GoogleCloudPlatform/google-cloud-ruby/issues/899.

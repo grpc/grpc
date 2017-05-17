@@ -42,6 +42,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
+#include <grpc/support/log.h>
 #include "rb_call.h"
 #include "rb_call_credentials.h"
 #include "rb_channel.h"
@@ -295,10 +296,11 @@ static gpr_once g_once_init = GPR_ONCE_INIT;
 
 static void grpc_ruby_once_init_internal() {
   grpc_init();
-  grpc_rb_event_queue_thread_start();
-  grpc_rb_channel_polling_thread_start();
   atexit(grpc_rb_shutdown);
 }
+
+static VALUE bg_thread_init_rb_mu = Qundef;
+static int bg_thread_init_done = 0;
 
 void grpc_ruby_once_init() {
   /* ruby_vm_at_exit doesn't seem to be working. It would crash once every
@@ -312,6 +314,18 @@ void grpc_ruby_once_init() {
    * schedule our initialization and destruction only once.
    */
   gpr_once_init(&g_once_init, grpc_ruby_once_init_internal);
+
+  // Avoid calling calling into ruby library (when creating threads here)
+  // in gpr_once_init. In general, it appears to be unsafe to call
+  // into the ruby library while holding a non-ruby mutex, because a gil yield
+  // could end up trying to lock onto that same mutex and deadlocking.
+  rb_mutex_lock(bg_thread_init_rb_mu);
+  if (!bg_thread_init_done) {
+    grpc_rb_event_queue_thread_start();
+    grpc_rb_channel_polling_thread_start();
+    bg_thread_init_done = 1;
+  }
+  rb_mutex_unlock(bg_thread_init_rb_mu);
 }
 
 void Init_grpc_c() {
@@ -319,6 +333,9 @@ void Init_grpc_c() {
     rb_raise(rb_eLoadError, "Couldn't find or load gRPC's dynamic C core");
     return;
   }
+
+  bg_thread_init_rb_mu = rb_mutex_new();
+  rb_global_variable(&bg_thread_init_rb_mu);
 
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");

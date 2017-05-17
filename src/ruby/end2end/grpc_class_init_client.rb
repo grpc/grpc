@@ -69,7 +69,7 @@ def run_concurrency_stress_test(test_proc)
 
   test_proc.call
 
-  raise 'exception thrown while child thread initing class'
+  fail 'exception thrown while child thread initing class'
 end
 
 # default (no gc_stress and no concurrency_stress)
@@ -78,6 +78,7 @@ def run_default_test(test_proc)
     test_proc.call
   end
   test_proc.call
+  thd.join
 end
 
 def get_test_proc(grpc_class)

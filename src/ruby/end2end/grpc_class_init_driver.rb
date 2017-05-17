@@ -65,9 +65,9 @@ def main
         end
 
         client_exit_code = $CHILD_STATUS
-	# concurrency stress test type is expected to exit with a
-	# non-zero status due to an exception being raised
-        if client_exit_code != 0 and stress_test_type != 'concurrency'
+        # concurrency stress test type is expected to exit with a
+        # non-zero status due to an exception being raised
+        if client_exit_code != 0 && stress_test_type != 'concurrency'
           fail "client failed, exit code #{client_exit_code}"
         end
       end
