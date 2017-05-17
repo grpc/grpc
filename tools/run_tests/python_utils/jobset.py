@@ -225,6 +225,22 @@ class JobResult(object):
     self.cpu_estimated = 1
     self.cpu_measured = 0
 
+
+def eintr_be_gone(fn):
+  """Run fn until it doesn't stop because of EINTR"""
+  while True:
+    try:
+      return fn()
+    except IOError, e:
+      if e.errno != errno.EINTR:
+        raise
+
+
+def read_from_start(f):
+  f.seek(0)
+  return f.read()
+
+
 class Job(object):
   """Manages one job."""
 
@@ -255,7 +271,7 @@ class Job(object):
     self._start = time.time()
     cmdline = self._spec.cmdline
     if measure_cpu_costs:
-      cmdline = ['time', '--portability'] + cmdline
+      cmdline = ['time', '-p'] + cmdline
     try_start = lambda: subprocess.Popen(args=cmdline,
                                          stderr=subprocess.STDOUT,
                                          stdout=self._tempfile,
@@ -278,8 +294,7 @@ class Job(object):
   def state(self):
     """Poll current state of the job. Prints messages at completion."""
     def stdout(self=self):
-      self._tempfile.seek(0)
-      stdout = self._tempfile.read()
+      stdout = read_from_start(self._tempfile)
       self.result.message = stdout[-_MAX_RESULT_SIZE:]
       return stdout
     if self._state == _RUNNING and self._process.poll() is not None:
@@ -307,7 +322,7 @@ class Job(object):
         self._state = _SUCCESS
         measurement = ''
         if measure_cpu_costs:
-          m = re.search(r'real ([0-9.]+)\nuser ([0-9.]+)\nsys ([0-9.]+)', stdout())
+          m = re.search(r'real\s+([0-9.]+)\nuser\s+([0-9.]+)\nsys\s+([0-9.]+)', stdout())
           real = float(m.group(1))
           user = float(m.group(2))
           sys = float(m.group(3))
@@ -415,7 +430,7 @@ class Jobset(object):
     while self._running:
       dead = set()
       for job in self._running:
-        st = job.state()
+        st = eintr_be_gone(lambda: job.state())
         if st == _RUNNING: continue
         if st == _FAILURE or st == _KILLED:
           self._failures += 1

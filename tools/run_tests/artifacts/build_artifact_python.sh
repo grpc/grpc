@@ -41,8 +41,9 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 # Because multiple builds run in parallel, some distutils file
 # operations may collide.  To avoid this, each build is run in
 # a temp directory
-mkdir -p artifacts
-ARTIFACT_DIR="$PWD/artifacts"
+# TODO(jtattermusch): it doesn't look like builds are actually running in parallel in the same dir
+mkdir -p "${ARTIFACTS_OUT}"
+ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
 BUILD_DIR=`mktemp -d "${TMPDIR:-/tmp}/pygrpc.XXXXXX"`
 trap "rm -rf $BUILD_DIR" EXIT
 cp -r * "$BUILD_DIR"

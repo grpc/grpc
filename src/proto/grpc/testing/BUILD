@@ -42,8 +42,11 @@ grpc_proto_library(
 grpc_proto_library(
     name = "control_proto",
     srcs = ["control.proto"],
-    deps = ["payloads_proto", "stats_proto"],
     has_services = False,
+    deps = [
+        "payloads_proto",
+        "stats_proto",
+    ],
 )
 
 grpc_proto_library(
@@ -101,5 +104,8 @@ grpc_proto_library(
 grpc_proto_library(
     name = "test_proto",
     srcs = ["test.proto"],
-    deps = ["empty_proto", "messages_proto"],
+    deps = [
+        "empty_proto",
+        "messages_proto",
+    ],
 )

@@ -27,8 +27,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary")
+
 def grpc_fuzzer(name, corpus, srcs = [], deps = [], **kwargs):
-  native.cc_binary(
+  grpc_cc_binary(
     name = '%s/one_entry.bin' % name,
     srcs = srcs,
     deps = deps + ["//test/core/util:one_corpus_entry_fuzzer"],

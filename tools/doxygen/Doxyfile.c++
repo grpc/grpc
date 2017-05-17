@@ -792,6 +792,7 @@ doc/service_config.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
+doc/unit_testing.md \
 doc/wait-for-ready.md \
 include/grpc++/alarm.h \
 include/grpc++/channel.h \
@@ -897,7 +898,8 @@ include/grpc/impl/codegen/sync_windows.h \
 include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
-include/grpc/status.h
+include/grpc/status.h \
+include/grpc/support/workaround_list.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

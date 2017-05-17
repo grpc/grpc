@@ -296,6 +296,9 @@ each time recvmsg (or equivalent) is called */
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_timeout_ms"
+/** If non-zero, grpc server's cronet compression workaround will be enabled */
+#define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
+  "grpc.workaround.cronet_compression"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -589,7 +592,7 @@ typedef enum {
 /** Specifies the type of APIs to use to pop events from the completion queue */
 typedef enum {
   /** Events are popped out by calling grpc_completion_queue_next() API ONLY */
-  GRPC_CQ_NEXT = 1,
+  GRPC_CQ_NEXT,
 
   /** Events are popped out by calling grpc_completion_queue_pluck() API ONLY*/
   GRPC_CQ_PLUCK

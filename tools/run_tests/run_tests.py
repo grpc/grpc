@@ -75,8 +75,9 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['epollex', 'epollsig', 'poll', 'poll-cv']
-# TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
+  'linux': ['epollex', 'epollsig', 'poll', 'poll-cv'],
+# TODO(ctiller, sreecha): enable epoll1, epoll-thread-pool
+  'mac': ['poll'],
 }
 
 
@@ -340,7 +341,8 @@ class CLanguage(object):
     if self.platform == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
-    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
+    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target,
+            'check_epollexclusive']
 
   def make_options(self):
     return self._make_options;

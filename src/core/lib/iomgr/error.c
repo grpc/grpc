@@ -769,7 +769,7 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
               GRPC_ERROR_INT_ERRNO, err),
           GRPC_ERROR_STR_OS_ERROR,
           grpc_slice_from_static_string(strerror(err))),
-      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_static_string(call_name));
+      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_copied_string(call_name));
 }
 
 #ifdef GPR_WINDOWS

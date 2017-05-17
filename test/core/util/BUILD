@@ -27,23 +27,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
-cc_library(
+package(default_visibility = ["//visibility:public"])
+
+grpc_cc_library(
     name = "gpr_test_util",
     srcs = [
-        "test_config.c",
         "memory_counters.c",
+        "test_config.c",
     ],
     hdrs = [
-        "test_config.h",
         "memory_counters.h",
+        "test_config.h",
     ],
     deps = ["//:gpr"],
-    visibility = ["//:__subpackages__"],
 )
 
-cc_library(
+grpc_cc_library(
     name = "grpc_test_util",
     srcs = [
         "debugger_macros.c",
@@ -60,7 +63,6 @@ cc_library(
     ],
     hdrs = [
         "debugger_macros.h",
-        "trickle_endpoint.h",
         "grpc_profiler.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
@@ -70,21 +72,25 @@ cc_library(
         "reconnect_server.h",
         "slice_splitter.h",
         "test_tcp_server.h",
+        "trickle_endpoint.h",
     ],
-    deps = [":gpr_test_util", "//:grpc"],
-    visibility = ["//test:__subpackages__"],
-    copts = ["-std=c99"],
+    language = "C",
+    deps = [
+        ":gpr_test_util",
+        "//:grpc",
+    ],
 )
 
-cc_library(
-  name = "one_corpus_entry_fuzzer",
-  srcs = ["one_corpus_entry_fuzzer.c"],
-  deps = [":gpr_test_util", "//:grpc"],
-  visibility = ["//test:__subpackages__"],
+grpc_cc_library(
+    name = "one_corpus_entry_fuzzer",
+    srcs = ["one_corpus_entry_fuzzer.c"],
+    deps = [
+        ":gpr_test_util",
+        "//:grpc",
+    ],
 )
 
 sh_library(
-  name = "fuzzer_one_entry_runner",
-  srcs = ["fuzzer_one_entry_runner.sh"],
-  visibility = ["//test:__subpackages__"],
+    name = "fuzzer_one_entry_runner",
+    srcs = ["fuzzer_one_entry_runner.sh"],
 )

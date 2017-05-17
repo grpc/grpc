@@ -47,6 +47,9 @@ message ServerStats {
 
   // change in idle time of the server (data from proc/stat)
   uint64 idle_cpu_time = 5;
+
+  // Number of polls called inside completion queue
+  uint64 cq_poll_count = 6;
 }
 
 // Histogram params based on grpc/support/histogram.c
@@ -81,4 +84,7 @@ message ClientStats {
 
   // Number of failed requests (one row per status code seen)
   repeated RequestResultCount request_results = 5;
+
+  // Number of polls called inside completion queue
+  uint64 cq_poll_count = 6;
 }

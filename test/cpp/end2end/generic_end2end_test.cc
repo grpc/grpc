@@ -46,12 +46,13 @@
 #include <grpc/grpc.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+
+#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -115,6 +116,10 @@ class GenericEnd2endTest : public ::testing::Test {
   void client_fail(int i) { verify_ok(&cli_cq_, i, false); }
 
   void SendRpc(int num_rpcs) {
+    SendRpc(num_rpcs, false, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+  }
+
+  void SendRpc(int num_rpcs, bool check_deadline, gpr_timespec deadline) {
     const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest send_request;
@@ -129,6 +134,11 @@ class GenericEnd2endTest : public ::testing::Test {
 
       // The string needs to be long enough to test heap-based slice.
       send_request.set_message("Hello world. Hello world. Hello world.");
+
+      if (check_deadline) {
+        cli_ctx.set_deadline(deadline);
+      }
+
       std::unique_ptr<GenericClientAsyncReaderWriter> call =
           generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
       client_ok(1);
@@ -147,6 +157,12 @@ class GenericEnd2endTest : public ::testing::Test {
       verify_ok(srv_cq_.get(), 4, true);
       EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
       EXPECT_EQ(kMethodName, srv_ctx.method());
+
+      if (check_deadline) {
+        EXPECT_TRUE(gpr_time_similar(deadline, srv_ctx.raw_deadline(),
+                                     gpr_time_from_millis(100, GPR_TIMESPAN)));
+      }
+
       ByteBuffer recv_buffer;
       stream.Read(&recv_buffer, tag(5));
       server_ok(5);
@@ -260,6 +276,12 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
+}
+
+TEST_F(GenericEnd2endTest, Deadline) {
+  ResetStub();
+  SendRpc(1, true, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                gpr_time_from_seconds(10, GPR_TIMESPAN)));
 }
 
 }  // namespace
