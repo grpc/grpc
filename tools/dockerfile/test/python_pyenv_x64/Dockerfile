@@ -96,14 +96,28 @@ RUN apt-get update && apt-get install -y \
 
 # Install Pyenv and dev Python versions 3.5 and 3.6
 RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
-ENV PATH /root/.pyenv/bin:$PATH
+ENV PATH /root/.pyenv/bin:/root/.pyenv/shims:$PATH
 RUN eval "$(pyenv init -)"
 RUN eval "$(pyenv virtualenv-init -)"
 RUN pyenv update
+RUN pyenv install 2.7-dev
 RUN pyenv install 3.5-dev
 RUN pyenv install 3.6-dev
 RUN pyenv install pypy-5.3.1
-RUN pyenv local 3.5-dev 3.6-dev pypy-5.3.1
+# 2.7-dev first on the list, so that python points to python2.7 because some of our
+# testing Python files are not 3.x compatible.
+RUN pyenv local 2.7-dev 3.5-dev 3.6-dev pypy-5.3.1
+
+RUN python2.7 -m pip install futures==2.2.0 protobuf==3.0.0a2 six==1.10.0 virtualenv
+RUN python3.5 -m pip install futures==2.2.0 protobuf==3.0.0a2 six==1.10.0 virtualenv
+RUN python3.6 -m pip install futures==2.2.0 protobuf==3.0.0a2 six==1.10.0 virtualenv
+RUN pypy -m pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 six==1.10.0 virtualenv
+
+# Export PATH changes to ~/.bashrc, so alternative Python versions are recognized when
+# running tests in this container. "ENV PATH /root/.pyenv/bin:/root/.pyenv/shims:$PATH"
+# does not accomplish this.
+RUN /bin/bash -l -c "echo 'export PATH=/root/.pyenv/shims:$PATH' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'export PATH=/root/.pyenv/bin:$PATH' >> ~/.bashrc"
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
