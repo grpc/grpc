@@ -36,6 +36,7 @@
 
 namespace grpc {
 
+/// Useful interface for generated stubs
 class StubOptions {};
 
 }  // namespace grpc

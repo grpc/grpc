@@ -921,8 +921,12 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            chand->interested_parties);
   call_or_error coe = get_call_or_error(calld);
   if (calld->connected_subchannel == NULL) {
-    grpc_error *failure = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "Failed to create subchannel", &error, 1);
+    grpc_error *failure =
+        error == GRPC_ERROR_NONE
+            ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "Call dropped by load balancing policy")
+            : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                  "Failed to create subchannel", &error, 1);
     gpr_atm_no_barrier_store(&calld->subchannel_call_or_error,
                              1 | (gpr_atm)GRPC_ERROR_REF(failure));
     fail_locked(exec_ctx, calld, failure);
@@ -1186,6 +1190,15 @@ static void start_transport_stream_op_batch_locked_inner(
             &calld->next_step)) {
       calld->pick_pending = false;
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
+      if (calld->connected_subchannel == NULL) {
+        grpc_error *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Call dropped by load balancing policy");
+        gpr_atm_no_barrier_store(&calld->subchannel_call_or_error,
+                                 1 | (gpr_atm)error);
+        fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
+        grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
+        return;  // Early out.
+      }
     } else {
       grpc_polling_entity_add_to_pollset_set(exec_ctx, calld->pollent,
                                              chand->interested_parties);

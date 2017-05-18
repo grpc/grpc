@@ -50,14 +50,14 @@ class MockClientReader : public ClientReaderInterface<R> {
  public:
   MockClientReader() = default;
 
-  // ClientStreamingInterface
+  /// ClientStreamingInterface
   MOCK_METHOD0_T(Finish, Status());
 
-  // ReaderInterface
+  /// ReaderInterface
   MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
   MOCK_METHOD1_T(Read, bool(R*));
 
-  // ClientReaderInterface
+  /// ClientReaderInterface
   MOCK_METHOD0_T(WaitForInitialMetadata, void());
 };
 
@@ -66,13 +66,13 @@ class MockClientWriter : public ClientWriterInterface<W> {
  public:
   MockClientWriter() = default;
 
-  // ClientStreamingInterface
+  /// ClientStreamingInterface
   MOCK_METHOD0_T(Finish, Status());
 
-  // WriterInterface
+  /// WriterInterface
   MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
 
-  // ClientWriterInterface
+  /// ClientWriterInterface
   MOCK_METHOD0_T(WritesDone, bool());
 };
 
@@ -81,22 +81,22 @@ class MockClientReaderWriter : public ClientReaderWriterInterface<W, R> {
  public:
   MockClientReaderWriter() = default;
 
-  // ClientStreamingInterface
+  /// ClientStreamingInterface
   MOCK_METHOD0_T(Finish, Status());
 
-  // ReaderInterface
+  /// ReaderInterface
   MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
   MOCK_METHOD1_T(Read, bool(R*));
 
-  // WriterInterface
+  /// WriterInterface
   MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
 
-  // ClientReaderWriterInterface
+  /// ClientReaderWriterInterface
   MOCK_METHOD0_T(WaitForInitialMetadata, void());
   MOCK_METHOD0_T(WritesDone, bool());
 };
 
-// TODO: We do not support mocking an async RPC for now.
+/// TODO: We do not support mocking an async RPC for now.
 
 template <class R>
 class MockClientAsyncResponseReader
@@ -113,11 +113,11 @@ class MockClientAsyncReader : public ClientAsyncReaderInterface<R> {
  public:
   MockClientAsyncReader() = default;
 
-  // ClientAsyncStreamingInterface
+  /// ClientAsyncStreamingInterface
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD2_T(Finish, void(Status*, void*));
 
-  // AsyncReaderInterface
+  /// AsyncReaderInterface
   MOCK_METHOD2_T(Read, void(R*, void*));
 };
 
@@ -126,14 +126,14 @@ class MockClientAsyncWriter : public ClientAsyncWriterInterface<W> {
  public:
   MockClientAsyncWriter() = default;
 
-  // ClientAsyncStreamingInterface
+  /// ClientAsyncStreamingInterface
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD2_T(Finish, void(Status*, void*));
 
-  // AsyncWriterInterface
+  /// AsyncWriterInterface
   MOCK_METHOD2_T(Write, void(const W&, void*));
 
-  // ClientAsyncWriterInterface
+  /// ClientAsyncWriterInterface
   MOCK_METHOD1_T(WritesDone, void(void*));
 };
 
@@ -143,17 +143,17 @@ class MockClientAsyncReaderWriter
  public:
   MockClientAsyncReaderWriter() = default;
 
-  // ClientAsyncStreamingInterface
+  /// ClientAsyncStreamingInterface
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD2_T(Finish, void(Status*, void*));
 
-  // AsyncWriterInterface
+  /// AsyncWriterInterface
   MOCK_METHOD2_T(Write, void(const W&, void*));
 
-  // AsyncReaderInterface
+  /// AsyncReaderInterface
   MOCK_METHOD2_T(Read, void(R*, void*));
 
-  // ClientAsyncReaderWriterInterface
+  /// ClientAsyncReaderWriterInterface
   MOCK_METHOD1_T(WritesDone, void(void*));
 };
 

@@ -67,7 +67,7 @@ extern "C" {
   "grpc.compression_enabled_algorithms_bitset"
 /** \} */
 
-/* The various compression algorithms supported by gRPC */
+/** The various compression algorithms supported by gRPC */
 typedef enum {
   GRPC_COMPRESS_NONE = 0,
   GRPC_COMPRESS_DEFLATE,

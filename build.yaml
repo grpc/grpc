@@ -4623,7 +4623,6 @@ php_config_m4:
   deps:
   - grpc
   - gpr
-  - ares
   - boringssl
   headers:
   - src/php/ext/grpc/byte_buffer.h
@@ -4637,6 +4636,7 @@ php_config_m4:
   - src/php/ext/grpc/server.h
   - src/php/ext/grpc/server_credentials.h
   - src/php/ext/grpc/timeval.h
+  - src/php/ext/grpc/version.h
   src:
   - src/php/ext/grpc/byte_buffer.c
   - src/php/ext/grpc/call.c
