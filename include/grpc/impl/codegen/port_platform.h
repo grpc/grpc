@@ -424,4 +424,8 @@ typedef unsigned __int64 uint64_t;
 #define CENSUSAPI GRPCAPI
 #endif
 
+#ifndef GRPC_NEED_UDP
+#define GRPC_NEED_UDP 1
+#endif
+
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */
