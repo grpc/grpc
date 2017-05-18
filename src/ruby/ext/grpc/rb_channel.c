@@ -366,6 +366,16 @@ static void *wait_for_watch_state_op_complete_without_gvl(void *arg) {
   return success;
 }
 
+static void wait_for_watch_state_op_complete_unblocking_func(void *arg) {
+  bg_watched_channel *bg = (bg_watched_channel *)arg;
+  gpr_mu_lock(&global_connection_polling_mu);
+  if (!bg->channel_destroyed) {
+    grpc_channel_destroy(bg->channel);
+    bg->channel_destroyed = 1;
+  }
+  gpr_mu_unlock(&global_connection_polling_mu);
+}
+
 /* Wait until the channel's connectivity state becomes different from
  * "last_state", or "deadline" expires.
  * Returns true if the the channel's connectivity state becomes
@@ -400,7 +410,7 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
 
   op_success = rb_thread_call_without_gvl(
       wait_for_watch_state_op_complete_without_gvl, &stack,
-      run_poll_channels_loop_unblocking_func, NULL);
+      wait_for_watch_state_op_complete_unblocking_func, wrapper->bg_wrapped);
 
   return op_success ? Qtrue : Qfalse;
 }
@@ -577,11 +587,7 @@ static void grpc_rb_channel_try_register_connection_polling(
     return;
   }
   GPR_ASSERT(bg->refcount == 1);
-  if (bg->channel_destroyed) {
-    GPR_ASSERT(abort_channel_polling);
-    return;
-  }
-  if (abort_channel_polling) {
+  if (bg->channel_destroyed || abort_channel_polling) {
     return;
   }
 
