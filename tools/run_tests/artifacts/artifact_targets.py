@@ -41,7 +41,7 @@ import python_utils.jobset as jobset
 
 def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
                    flake_retries=0, timeout_retries=0, timeout_seconds=30*60,
-                   docker_base_image=None):
+                   docker_base_image=None, extra_docker_args=None):
   """Creates jobspec for a task running under docker."""
   environ = environ.copy()
   environ['RUN_COMMAND'] = shell_command
@@ -56,6 +56,8 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
 
   if docker_base_image is not None:
     docker_env['DOCKER_BASE_IMAGE'] = docker_base_image
+  if extra_docker_args is not None:
+    docker_env['EXTRA_DOCKER_ARGS'] = extra_docker_args
   jobspec = jobset.JobSpec(
           cmdline=['tools/run_tests/dockerize/build_and_run_docker.sh'] + docker_args,
           environ=docker_env,
@@ -115,7 +117,22 @@ class PythonArtifact:
 
   def build_jobspec(self):
     environ = {}
-    if self.platform == 'linux':
+    if self.platform == 'linux_extra':
+      # Raspberry Pi build
+      environ['PYTHON'] = '/usr/local/bin/python{}'.format(self.py_version)
+      environ['PIP'] = '/usr/local/bin/pip{}'.format(self.py_version)
+      # https://github.com/resin-io-projects/armv7hf-debian-qemu/issues/9
+      # A QEMU bug causes submodule update to hang, so we copy directly
+      environ['RELATIVE_COPY_PATH'] = '.'
+      extra_args = ' --entrypoint=/usr/bin/qemu-arm-static '
+      return create_docker_jobspec(self.name,
+          'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
+          'tools/run_tests/artifacts/build_artifact_python.sh',
+          environ=environ,
+          timeout_seconds=60*60*5,
+          docker_base_image='quay.io/grpc/raspbian_{}'.format(self.arch),
+          extra_docker_args=extra_args)
+    elif self.platform == 'linux':
       if self.arch == 'x86':
         environ['SETARCH_CMD'] = 'linux32'
       # Inside the manylinux container, the python installations are located in
@@ -349,6 +366,14 @@ def targets():
            PythonArtifact('linux', 'x86', 'cp34-cp34m'),
            PythonArtifact('linux', 'x86', 'cp35-cp35m'),
            PythonArtifact('linux', 'x86', 'cp36-cp36m'),
+           PythonArtifact('linux_extra', 'armv7', '2.7'),
+           PythonArtifact('linux_extra', 'armv7', '3.4'),
+           PythonArtifact('linux_extra', 'armv7', '3.5'),
+           PythonArtifact('linux_extra', 'armv7', '3.6'),
+           PythonArtifact('linux_extra', 'armv6', '2.7'),
+           PythonArtifact('linux_extra', 'armv6', '3.4'),
+           PythonArtifact('linux_extra', 'armv6', '3.5'),
+           PythonArtifact('linux_extra', 'armv6', '3.6'),
            PythonArtifact('linux', 'x64', 'cp27-cp27m'),
            PythonArtifact('linux', 'x64', 'cp27-cp27mu'),
            PythonArtifact('linux', 'x64', 'cp34-cp34m'),
