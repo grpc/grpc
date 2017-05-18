@@ -10,8 +10,6 @@
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
-    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares)
-    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/cares)
 
     LIBS="-lpthread $LIBS"
 
@@ -25,10 +23,8 @@
 
     case $host in
       *darwin*)
-        PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/config_darwin)
         ;;
       *)
-        PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/config_linux)
         PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
         PHP_ADD_LIBRARY(rt)
         ;;
@@ -47,7 +43,7 @@
       % endfor
       , $ext_shared, , -fvisibility=hidden ${"\\"}
       -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN ${"\\"}
-      -D_HAS_EXCEPTIONS=0 -DNOMINMAX)
+      -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0)
 
     PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   <%

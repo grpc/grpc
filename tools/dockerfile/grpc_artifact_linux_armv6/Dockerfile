@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,33 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Docker file for building gRPC Raspbian binaries
 
-cd $(dirname $0)
+FROM quay.io/grpc/raspbian_armv6
 
-mkdir -p ../../artifacts/
-
-# Collect the artifacts built by the previous build step
-mkdir -p nativelibs
-cp -r $EXTERNAL_GIT_ROOT/platform={windows,linux,macos}/artifacts/csharp_ext_* nativelibs || true
-
-# Collect protoc artifacts built by the previous build step
-mkdir -p protoc_plugins
-cp -r $EXTERNAL_GIT_ROOT/platform={windows,linux,macos}/artifacts/protoc_* protoc_plugins || true
-
-dotnet restore Grpc.sln
-
-# To be able to build, we also need to put grpc_csharp_ext to its normal location
-mkdir -p ../../libs/opt
-cp nativelibs/csharp_ext_linux_x64/libgrpc_csharp_ext.so ../../libs/opt
-
-dotnet pack --configuration Release --include-symbols --include-source Grpc.Core --output ../../../artifacts
-dotnet pack --configuration Release --include-symbols --include-source Grpc.Core.Testing --output ../../../artifacts
-dotnet pack --configuration Release --include-symbols --include-source Grpc.Auth --output ../../../artifacts
-dotnet pack --configuration Release --include-symbols --include-source Grpc.HealthCheck --output ../../../artifacts
-dotnet pack --configuration Release --include-symbols --include-source Grpc.Reflection --output ../../../artifacts
-
-nuget pack Grpc.nuspec -Version "1.4.0-dev" -OutputDirectory ../../artifacts
-nuget pack Grpc.Tools.nuspec -Version "1.4.0-dev" -OutputDirectory ../../artifacts
-
-(cd ../../artifacts && zip csharp_nugets_dotnetcli.zip *.nupkg)
+# Place any extra build instructions between these commands
+# Recommend modifying upstream docker image (quay.io/grpc/raspbian_armv6)
+# for build steps because running them under QEMU is very slow
+# (https://github.com/kpayson64/armv7hf-debian-qemu)
+# RUN [ "cross-build-start" ]
+# RUN [ "cross-build-end" ]
