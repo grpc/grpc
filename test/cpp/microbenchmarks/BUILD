@@ -31,6 +31,13 @@ licenses(["notice"])  # 3-clause BSD
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
 
+package(
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
+
 grpc_cc_test(
     name = "noop-benchmark",
     srcs = ["noop-benchmark.cc"],

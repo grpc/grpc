@@ -31,6 +31,13 @@ licenses(["notice"])  # 3-clause BSD
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
+package(
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
+
 grpc_cc_test(
     name = "codegen_test_full",
     srcs = ["codegen_test_full.cc"],

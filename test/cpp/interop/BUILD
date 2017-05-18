@@ -29,6 +29,13 @@
 
 licenses(["notice"])  # 3-clause BSD
 
+package(
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
+
 cc_library(
     name = "server_helper_lib",
     srcs = [
