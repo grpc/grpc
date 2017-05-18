@@ -37,14 +37,30 @@
 
 namespace grpc {
 
+class DefaultGlobalCallbacks GRPC_FINAL : public GenericStub::GlobalCallbacks {
+ public:
+  void PreSynchronousRequest(ClientContext* context) GRPC_OVERRIDE {}
+};
+
+static DefaultGlobalCallbacks g_default_callbacks;
+static GenericStub::GlobalCallbacks* g_callbacks = &g_default_callbacks;
+
 // begin a call to a named method
 std::unique_ptr<GenericClientAsyncReaderWriter> GenericStub::Call(
     ClientContext* context, const grpc::string& method, CompletionQueue* cq,
     void* tag) {
+  g_callbacks->PreSynchronousRequest(context);
   return std::unique_ptr<GenericClientAsyncReaderWriter>(
       GenericClientAsyncReaderWriter::Create(
           channel_.get(), cq,
           RpcMethod(method.c_str(), RpcMethod::BIDI_STREAMING), context, tag));
+}
+
+void GenericStub::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
+  GPR_ASSERT(g_callbacks == &g_default_callbacks);
+  GPR_ASSERT(callbacks != NULL);
+  GPR_ASSERT(callbacks != &g_default_callbacks);
+  g_callbacks = callbacks;
 }
 
 }  // namespace grpc
