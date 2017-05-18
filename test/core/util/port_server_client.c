@@ -108,6 +108,7 @@ void grpc_free_port_using_server(int port) {
                    &rsp);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   gpr_mu_lock(pr.mu);
+  grpc_exec_ctx_flush(&exec_ctx);
   while (!pr.done) {
     grpc_pollset_worker *worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
@@ -240,6 +241,7 @@ int grpc_pick_port_using_server(void) {
       &pr.response);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   gpr_mu_lock(pr.mu);
+  grpc_exec_ctx_flush(&exec_ctx);
   while (pr.port == -1) {
     grpc_pollset_worker *worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
