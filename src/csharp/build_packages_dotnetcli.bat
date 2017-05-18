@@ -28,7 +28,7 @@
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @rem Current package versions
-set VERSION=1.3.3
+set VERSION=1.3.4
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
