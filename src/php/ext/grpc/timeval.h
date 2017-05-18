@@ -54,23 +54,11 @@ PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_timeval)
   gpr_timespec wrapped;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_timeval)
 
-#if PHP_MAJOR_VERSION < 7
-
-#define Z_WRAPPED_GRPC_TIMEVAL_P(zv) \
-  (wrapped_grpc_timeval *)zend_object_store_get_object(zv TSRMLS_CC)
-
-#else
-
 static inline wrapped_grpc_timeval
 *wrapped_grpc_timeval_from_obj(zend_object *obj) {
   return (wrapped_grpc_timeval*)((char*)(obj) -
                                  XtOffsetOf(wrapped_grpc_timeval, std));
 }
-
-#define Z_WRAPPED_GRPC_TIMEVAL_P(zv) \
-  wrapped_grpc_timeval_from_obj(Z_OBJ_P((zv)))
-
-#endif /* PHP_MAJOR_VERSION */
 
 /* Initialize the Timeval PHP class */
 void grpc_init_timeval(TSRMLS_D);

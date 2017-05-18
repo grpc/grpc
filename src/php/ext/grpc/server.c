@@ -59,9 +59,7 @@
 #include "timeval.h"
 
 zend_class_entry *grpc_ce_server;
-#if PHP_MAJOR_VERSION >= 7
-static zend_object_handlers server_ce_handlers;
-#endif
+PHP_GRPC_DECLARE_OBJECT_HANDLER(server_ce_handlers)
 
 /* Frees and destroys an instance of wrapped_grpc_server */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server)
@@ -89,7 +87,8 @@ php_grpc_zend_object create_wrapped_grpc_server(zend_class_entry *class_type
  * @param array $args_array The arguments to pass to the server (optional)
  */
 PHP_METHOD(Server, __construct) {
-  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
+  wrapped_grpc_server *server =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_server, getThis());
   zval *args_array = NULL;
   grpc_channel_args args;
 
@@ -97,15 +96,12 @@ PHP_METHOD(Server, __construct) {
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a", &args_array) ==
       FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "Server expects an array",
-                         1 TSRMLS_CC);
+                         "Server expects an array", 1 TSRMLS_CC);
     return;
   }
   if (args_array == NULL) {
     server->wrapped = grpc_server_create(NULL, NULL);
   } else {
-    //TODO(thinkerou): deal it if key of array is long, crash now on php7
-    // and update unit test case
     php_grpc_read_args_array(args_array, &args TSRMLS_CC);
     server->wrapped = grpc_server_create(&args, NULL);
     efree(args.args);
@@ -125,7 +121,8 @@ PHP_METHOD(Server, requestCall) {
   grpc_metadata_array metadata;
   grpc_event event;
 
-  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
+  wrapped_grpc_server *server =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_server, getThis());
   zval *result;
   PHP_GRPC_MAKE_STD_ZVAL(result);
   object_init(result);
@@ -133,8 +130,8 @@ PHP_METHOD(Server, requestCall) {
   grpc_call_details_init(&details);
   grpc_metadata_array_init(&metadata);
   error_code =
-      grpc_server_request_call(server->wrapped, &call, &details, &metadata,
-                               completion_queue, completion_queue, NULL);
+    grpc_server_request_call(server->wrapped, &call, &details, &metadata,
+                             completion_queue, completion_queue, NULL);
   if (error_code != GRPC_CALL_OK) {
     zend_throw_exception(spl_ce_LogicException, "request_call failed",
                          (long)error_code TSRMLS_CC);
@@ -155,25 +152,12 @@ PHP_METHOD(Server, requestCall) {
   php_grpc_add_property_string(result, "host", host_text, true);
   gpr_free(method_text);
   gpr_free(host_text);
-#if PHP_MAJOR_VERSION < 7
-  add_property_zval(result, "call", grpc_php_wrap_call(call, true TSRMLS_CC));
-  add_property_zval(result, "absolute_deadline",
-                    grpc_php_wrap_timeval(details.deadline TSRMLS_CC));
-  add_property_zval(result, "metadata", grpc_parse_metadata_array(&metadata
-                                                                  TSRMLS_CC));
-#else
-  zval zv_call;
-  zval zv_timeval;
-  zval zv_md;
-  //TODO(thinkerou): why use zval* to unit test error?
-  zv_call = *grpc_php_wrap_call(call, true);
-  zv_timeval = *grpc_php_wrap_timeval(details.deadline);
-  zv_md = *grpc_parse_metadata_array(&metadata);
-
-  add_property_zval(result, "call", &zv_call);
-  add_property_zval(result, "absolute_deadline", &zv_timeval);
-  add_property_zval(result, "metadata", &zv_md);
-#endif
+  php_grpc_add_property_zval(result, "call",
+                             grpc_php_wrap_call(call, true TSRMLS_CC));
+  php_grpc_add_property_zval(result, "absolute_deadline",
+                             grpc_php_wrap_timeval(details.deadline TSRMLS_CC));
+  php_grpc_add_property_zval(result, "metadata",
+                             grpc_parse_metadata_array(&metadata TSRMLS_CC));
 
  cleanup:
   grpc_call_details_destroy(&details);
@@ -189,7 +173,8 @@ PHP_METHOD(Server, requestCall) {
 PHP_METHOD(Server, addHttp2Port) {
   const char *addr;
   php_grpc_int addr_len;
-  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
+  wrapped_grpc_server *server =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_server, getThis());
 
   /* "s" == 1 string */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len)
@@ -211,19 +196,20 @@ PHP_METHOD(Server, addSecureHttp2Port) {
   const char *addr;
   php_grpc_int addr_len;
   zval *creds_obj;
-  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
+  wrapped_grpc_server *server =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_server, getThis());
 
   /* "sO" == 1 string, 1 object */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sO", &addr, &addr_len,
                             &creds_obj, grpc_ce_server_credentials) ==
       FAILURE) {
-    zend_throw_exception(
-        spl_ce_InvalidArgumentException,
-        "add_http2_port expects a string and a ServerCredentials", 1 TSRMLS_CC);
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "add_http2_port expects a string and a "
+                         "ServerCredentials", 1 TSRMLS_CC);
     return;
   }
   wrapped_grpc_server_credentials *creds =
-    Z_WRAPPED_GRPC_SERVER_CREDS_P(creds_obj);
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_server_credentials, creds_obj);
   RETURN_LONG(grpc_server_add_secure_http2_port(server->wrapped, addr,
                                                 creds->wrapped));
 }
@@ -233,7 +219,8 @@ PHP_METHOD(Server, addSecureHttp2Port) {
  * @return void
  */
 PHP_METHOD(Server, start) {
-  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
+  wrapped_grpc_server *server =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_server, getThis());
   grpc_server_start(server->wrapped);
 }
 

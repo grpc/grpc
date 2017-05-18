@@ -55,23 +55,11 @@ PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_call_credentials)
   grpc_call_credentials *wrapped;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_call_credentials)
 
-#if PHP_MAJOR_VERSION < 7
-
-#define Z_WRAPPED_GRPC_CALL_CREDS_P(zv) \
-  (wrapped_grpc_call_credentials *)zend_object_store_get_object(zv TSRMLS_CC)
-
-#else
-
 static inline wrapped_grpc_call_credentials
 *wrapped_grpc_call_credentials_from_obj(zend_object *obj) {
   return (wrapped_grpc_call_credentials*)(
       (char*)(obj) - XtOffsetOf(wrapped_grpc_call_credentials, std));
 }
-
-#define Z_WRAPPED_GRPC_CALL_CREDS_P(zv) \
-  wrapped_grpc_call_credentials_from_obj(Z_OBJ_P((zv)))
-
-#endif /* PHP_MAJOR_VERSION */
 
 /* Struct to hold callback function for plugin creds API */
 typedef struct plugin_state {

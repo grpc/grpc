@@ -114,6 +114,25 @@ class ServerTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException InvalidArgumentException
      */
+    public function testConstructorWithNumKeyOfArray()
+    {
+        $this->server = new Grpc\Server([10 => '127.0.0.1',
+                                         20 => '8080', ]);
+        $this->assertNull($this->server);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testConstructorWithList()
+    {
+        $this->server = new Grpc\Server(['127.0.0.1', '8080']);
+        $this->assertNull($this->server);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
     public function testInvalidAddHttp2Port()
     {
         $this->server = new Grpc\Server([]);
