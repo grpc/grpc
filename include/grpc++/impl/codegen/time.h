@@ -39,17 +39,16 @@
 
 namespace grpc {
 
-/* If you are trying to use CompletionQueue::AsyncNext with a time class that
-   isn't either gpr_timespec or std::chrono::system_clock::time_point, you
-   will most likely be looking at this comment as your compiler will have
-   fired an error below. In order to fix this issue, you have two potential
-   solutions:
+/** If you are trying to use CompletionQueue::AsyncNext with a time class that
+    isn't either gpr_timespec or std::chrono::system_clock::time_point, you
+    will most likely be looking at this comment as your compiler will have
+    fired an error below. In order to fix this issue, you have two potential
+    solutions:
 
-     1. Use gpr_timespec or std::chrono::system_clock::time_point instead
-     2. Specialize the TimePoint class with whichever time class that you
-        want to use here. See below for two examples of how to do this.
+      1. Use gpr_timespec or std::chrono::system_clock::time_point instead
+      2. Specialize the TimePoint class with whichever time class that you
+         want to use here. See below for two examples of how to do this.
  */
-
 template <typename T>
 class TimePoint {
  public:

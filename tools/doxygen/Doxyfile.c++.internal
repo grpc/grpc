@@ -794,6 +794,7 @@ doc/statuscodes.md \
 doc/stress_test_framework.md \
 doc/unit_testing.md \
 doc/wait-for-ready.md \
+doc/workarounds.md \
 include/grpc++/alarm.h \
 include/grpc++/channel.h \
 include/grpc++/client_context.h \

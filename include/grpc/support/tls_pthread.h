@@ -37,7 +37,7 @@
 #include <grpc/support/log.h> /* for GPR_ASSERT */
 #include <pthread.h>
 
-/* Thread local storage based on pthread library calls.
+/** Thread local storage based on pthread library calls.
    #include tls.h to use this - and see that file for documentation */
 
 struct gpr_pthread_thread_local {

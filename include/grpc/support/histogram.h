@@ -48,7 +48,7 @@ GPRAPI gpr_histogram *gpr_histogram_create(double resolution,
 GPRAPI void gpr_histogram_destroy(gpr_histogram *h);
 GPRAPI void gpr_histogram_add(gpr_histogram *h, double x);
 
-/* The following merges the second histogram into the first. It only works
+/** The following merges the second histogram into the first. It only works
    if they have the same buckets and resolution. Returns 0 on failure, 1
    on success */
 GPRAPI int gpr_histogram_merge(gpr_histogram *dst, const gpr_histogram *src);

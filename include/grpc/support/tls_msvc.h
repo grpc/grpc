@@ -34,7 +34,7 @@
 #ifndef GRPC_SUPPORT_TLS_MSVC_H
 #define GRPC_SUPPORT_TLS_MSVC_H
 
-/* Thread local storage based on ms visual c compiler primitives.
+/** Thread local storage based on ms visual c compiler primitives.
    #include tls.h to use this - and see that file for documentation */
 
 struct gpr_msvc_thread_local {
