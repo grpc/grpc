@@ -56,36 +56,311 @@
 namespace grpc {
 namespace testing {
 
-template <class RequestType, class ResponseType, class ServiceType,
-          class ServerContextType>
+static Status ProcessMessage(const PayloadConfig &payload_config,
+                             const SimpleRequest *request,
+                             SimpleResponse *response) {
+  if (request->response_size() > 0) {
+    if (!Server::SetPayload(request->response_type(), request->response_size(),
+                            response->mutable_payload())) {
+      return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+    }
+  }
+  return Status::OK;
+}
+
+static Status ProcessMessage(const PayloadConfig &payload_config,
+                             const ByteBuffer *request, ByteBuffer *response) {
+  int resp_size = payload_config.bytebuf_params().resp_size();
+  std::unique_ptr<char[]> buf(new char[resp_size]);
+  grpc_slice s = grpc_slice_from_copied_buffer(buf.get(), resp_size);
+  Slice slice(s, Slice::STEAL_REF);
+  *response = ByteBuffer(&slice, 1);
+  return Status::OK;
+}
+
+template <class ServerTraits>
+class ServerRpcContext {
+ public:
+  ServerRpcContext() {}
+  virtual ~ServerRpcContext(){};
+  virtual bool RunNextState(bool) = 0;  // next state, return false if done
+  virtual void Reset() = 0;             // start this back at a clean state
+  static void *tag(ServerRpcContext *func) {
+    return reinterpret_cast<void *>(func);
+  }
+  static ServerRpcContext *detag(void *tag) {
+    return reinterpret_cast<ServerRpcContext *>(tag);
+  }
+};
+
+template <class ServerTraits>
+struct ContextArgs {
+  typename ServerTraits::ServiceType *service;
+  ServerCompletionQueue *cq;
+  PayloadConfig config;
+};
+
+template <class ServerTraits>
+class ServerRpcContextUnaryImpl final : public ServerRpcContext<ServerTraits> {
+ public:
+  ServerRpcContextUnaryImpl(const ContextArgs<ServerTraits> &context_args)
+      : context_args_(context_args),
+        srv_ctx_(new typename ServerTraits::ContextType),
+        next_state_(&ServerRpcContextUnaryImpl::invoker),
+        response_writer_(srv_ctx_.get()) {}
+  ~ServerRpcContextUnaryImpl() override {}
+
+  bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
+  void Reset() override {
+    srv_ctx_.reset(new typename ServerTraits::ContextType);
+    req_ = typename ServerTraits::RequestType();
+    response_writer_ =
+        grpc::ServerAsyncResponseWriter<typename ServerTraits::ResponseType>(
+            srv_ctx_.get());
+
+    // Then request the method
+    next_state_ = &ServerRpcContextUnaryImpl::invoker;
+    context_args_.service->RequestUnaryCall(
+        srv_ctx_.get(), &req_, &response_writer_, context_args_.cq,
+        context_args_.cq, ServerRpcContext<ServerTraits>::tag(this));
+  }
+
+ private:
+  bool finisher(bool) { return false; }
+  bool invoker(bool ok) {
+    if (!ok) {
+      return false;
+    }
+
+    // Call the RPC processing function
+    grpc::Status status =
+        ProcessMessage(context_args_.config, &req_, &response_);
+
+    // Have the response writer work and invoke on_finish when done
+    next_state_ = &ServerRpcContextUnaryImpl::finisher;
+    response_writer_.Finish(response_, status,
+                            ServerRpcContext<ServerTraits>::tag(this));
+    return true;
+  }
+  ContextArgs<ServerTraits> context_args_;
+  std::unique_ptr<typename ServerTraits::ContextType> srv_ctx_;
+  typename ServerTraits::RequestType req_;
+  typename ServerTraits::ResponseType response_;
+  bool (ServerRpcContextUnaryImpl::*next_state_)(bool);
+  grpc::ServerAsyncResponseWriter<typename ServerTraits::ResponseType>
+      response_writer_;
+};
+
+template <class ServerTraits>
+class ServerRpcContextStreamingImpl final
+    : public ServerRpcContext<ServerTraits> {
+ public:
+  ServerRpcContextStreamingImpl(const ContextArgs<ServerTraits> &context_args)
+      : context_args_(context_args),
+        srv_ctx_(new typename ServerTraits::ContextType),
+        next_state_(&ServerRpcContextStreamingImpl::request_done),
+        stream_(srv_ctx_.get()) {}
+  ~ServerRpcContextStreamingImpl() override {}
+  bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
+  void Reset() override {
+    srv_ctx_.reset(new typename ServerTraits::ContextType);
+    req_ = typename ServerTraits::RequestType();
+    stream_ = grpc::ServerAsyncReaderWriter<typename ServerTraits::ResponseType,
+                                            typename ServerTraits::RequestType>(
+        srv_ctx_.get());
+
+    // Then request the method
+    next_state_ = &ServerRpcContextStreamingImpl::request_done;
+    ServerTraits::RequestStreamingCall(
+        context_args_.service, srv_ctx_.get(), &stream_, context_args_.cq,
+        context_args_.cq, ServerRpcContext<ServerTraits>::tag(this));
+  }
+
+ private:
+  bool request_done(bool ok) {
+    if (!ok) {
+      return false;
+    }
+    next_state_ = &ServerRpcContextStreamingImpl::read_done;
+    stream_.Read(&req_, ServerRpcContext<ServerTraits>::tag(this));
+    return true;
+  }
+
+  bool read_done(bool ok) {
+    if (ok) {
+      // invoke the method
+      // Call the RPC processing function
+      grpc::Status status =
+          ProcessMessage(context_args_.config, &req_, &response_);
+      // initiate the write
+      next_state_ = &ServerRpcContextStreamingImpl::write_done;
+      stream_.Write(response_, ServerRpcContext<ServerTraits>::tag(this));
+    } else {  // client has sent writes done
+      // finish the stream
+      next_state_ = &ServerRpcContextStreamingImpl::finish_done;
+      stream_.Finish(Status::OK, ServerRpcContext<ServerTraits>::tag(this));
+    }
+    return true;
+  }
+  bool write_done(bool ok) {
+    // now go back and get another streaming read!
+    if (ok) {
+      next_state_ = &ServerRpcContextStreamingImpl::read_done;
+      stream_.Read(&req_, ServerRpcContext<ServerTraits>::tag(this));
+    } else {
+      next_state_ = &ServerRpcContextStreamingImpl::finish_done;
+      stream_.Finish(Status::OK, ServerRpcContext<ServerTraits>::tag(this));
+    }
+    return true;
+  }
+  bool finish_done(bool ok) { return false; /* reset the context */ }
+
+  ContextArgs<ServerTraits> context_args_;
+  std::unique_ptr<typename ServerTraits::ContextType> srv_ctx_;
+  typename ServerTraits::RequestType req_;
+  typename ServerTraits::ResponseType response_;
+  bool (ServerRpcContextStreamingImpl::*next_state_)(bool);
+  grpc::ServerAsyncReaderWriter<typename ServerTraits::ResponseType,
+                                typename ServerTraits::RequestType>
+      stream_;
+};
+
+template <class ServerTraits>
+class ServerRpcContextStreamingFromClientImpl final
+    : public ServerRpcContext<ServerTraits> {
+ public:
+  ServerRpcContextStreamingFromClientImpl(
+      const ContextArgs<ServerTraits> &context_args)
+      : context_args_(context_args),
+        srv_ctx_(new typename ServerTraits::ContextType),
+        next_state_(&ServerRpcContextStreamingFromClientImpl::request_done),
+        stream_(srv_ctx_.get()) {}
+  ~ServerRpcContextStreamingFromClientImpl() override {}
+  bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
+  void Reset() override {
+    srv_ctx_.reset(new typename ServerTraits::ContextType);
+    req_ = typename ServerTraits::RequestType();
+    stream_ = grpc::ServerAsyncReader<typename ServerTraits::ResponseType,
+                                      typename ServerTraits::RequestType>(
+        srv_ctx_.get());
+
+    // Then request the method
+    next_state_ = &ServerRpcContextStreamingFromClientImpl::request_done;
+    context_args_.service->RequestStreamingFromClient(
+        srv_ctx_.get(), &stream_, context_args_.cq, context_args_.cq,
+        ServerRpcContext<ServerTraits>::tag(this));
+  }
+
+ private:
+  bool request_done(bool ok) {
+    if (!ok) {
+      return false;
+    }
+    next_state_ = &ServerRpcContextStreamingFromClientImpl::read_done;
+    stream_.Read(&req_, ServerRpcContext<ServerTraits>::tag(this));
+    return true;
+  }
+
+  bool read_done(bool ok) {
+    if (ok) {
+      // In this case, just do another read
+      // next_state_ is unchanged
+      stream_.Read(&req_, ServerRpcContext<ServerTraits>::tag(this));
+      return true;
+    } else {  // client has sent writes done
+      // invoke the method
+      // Call the RPC processing function
+      grpc::Status status =
+          ProcessMessage(context_args_.config, &req_, &response_);
+      // finish the stream
+      next_state_ = &ServerRpcContextStreamingFromClientImpl::finish_done;
+      stream_.Finish(response_, Status::OK,
+                     ServerRpcContext<ServerTraits>::tag(this));
+    }
+    return true;
+  }
+  bool finish_done(bool ok) { return false; /* reset the context */ }
+
+  ContextArgs<ServerTraits> context_args_;
+  std::unique_ptr<typename ServerTraits::ContextType> srv_ctx_;
+  typename ServerTraits::RequestType req_;
+  typename ServerTraits::ResponseType response_;
+  bool (ServerRpcContextStreamingFromClientImpl::*next_state_)(bool);
+  grpc::ServerAsyncReader<typename ServerTraits::ResponseType,
+                          typename ServerTraits::RequestType>
+      stream_;
+};
+
+template <class ServerTraits>
+class ServerRpcContextStreamingFromServerImpl final
+    : public ServerRpcContext<ServerTraits> {
+ public:
+  ServerRpcContextStreamingFromServerImpl(
+      const ContextArgs<ServerTraits> &context_args)
+      : context_args_(context_args),
+        srv_ctx_(new typename ServerTraits::ContextType),
+        next_state_(&ServerRpcContextStreamingFromServerImpl::request_done),
+        stream_(srv_ctx_.get()) {
+    Reset();
+  }
+  ~ServerRpcContextStreamingFromServerImpl() override {}
+  bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
+  void Reset() override {
+    srv_ctx_.reset(new typename ServerTraits::ContextType);
+    req_ = typename ServerTraits::RequestType();
+    stream_ = grpc::ServerAsyncWriter<typename ServerTraits::ResponseType>(
+        srv_ctx_.get());
+
+    // Then request the method
+    next_state_ = &ServerRpcContextStreamingFromServerImpl::request_done;
+    context_args_.service->RequestStreamingFromServer(
+        srv_ctx_.get(), &req_, &stream_, context_args_.cq, context_args_.cq,
+        ServerRpcContext<ServerTraits>::tag(this));
+  }
+
+ private:
+  bool request_done(bool ok) {
+    if (!ok) {
+      return false;
+    }
+    // invoke the method
+    // Call the RPC processing function
+    grpc::Status status =
+        ProcessMessage(context_args_.config, &req_, &response_);
+
+    next_state_ = &ServerRpcContextStreamingFromServerImpl::write_done;
+    stream_.Write(response_, ServerRpcContext<ServerTraits>::tag(this));
+    return true;
+  }
+
+  bool write_done(bool ok) {
+    if (ok) {
+      // Do another write!
+      // next_state_ is unchanged
+      stream_.Write(response_, ServerRpcContext<ServerTraits>::tag(this));
+    } else {  // must be done so let's finish
+      next_state_ = &ServerRpcContextStreamingFromServerImpl::finish_done;
+      stream_.Finish(Status::OK, ServerRpcContext<ServerTraits>::tag(this));
+    }
+    return true;
+  }
+  bool finish_done(bool ok) { return false; /* reset the context */ }
+
+  ContextArgs<ServerTraits> context_args_;
+  std::unique_ptr<typename ServerTraits::ContextType> srv_ctx_;
+  typename ServerTraits::RequestType req_;
+  typename ServerTraits::ResponseType response_;
+  bool (ServerRpcContextStreamingFromServerImpl::*next_state_)(bool);
+  grpc::ServerAsyncWriter<typename ServerTraits::ResponseType> stream_;
+};
+
+template <class ServerTraits>
 class AsyncQpsServerTest final : public grpc::testing::Server {
  public:
   AsyncQpsServerTest(
       const ServerConfig &config,
-      std::function<void(ServerBuilder *, ServiceType *)> register_service,
-      std::function<void(ServiceType *, ServerContextType *, RequestType *,
-                         ServerAsyncResponseWriter<ResponseType> *,
-                         CompletionQueue *, ServerCompletionQueue *, void *)>
-          request_unary_function,
-      std::function<void(ServiceType *, ServerContextType *,
-                         ServerAsyncReaderWriter<ResponseType, RequestType> *,
-                         CompletionQueue *, ServerCompletionQueue *, void *)>
-          request_streaming_function,
-      std::function<void(ServiceType *, ServerContextType *,
-                         ServerAsyncReader<ResponseType, RequestType> *,
-                         CompletionQueue *, ServerCompletionQueue *, void *)>
-          request_streaming_from_client_function,
-      std::function<void(ServiceType *, ServerContextType *, RequestType *,
-                         ServerAsyncWriter<ResponseType> *, CompletionQueue *,
-                         ServerCompletionQueue *, void *)>
-          request_streaming_from_server_function,
-      std::function<void(ServiceType *, ServerContextType *,
-                         ServerAsyncReaderWriter<ResponseType, RequestType> *,
-                         CompletionQueue *, ServerCompletionQueue *, void *)>
-          request_streaming_both_ways_function,
-      std::function<grpc::Status(const PayloadConfig &, const RequestType *,
-                                 ResponseType *)>
-          process_rpc)
+      const std::vector<std::function<ServerRpcContext<ServerTraits> *(
+          const ContextArgs<ServerTraits> &)>> &context_factories)
       : Server(config) {
     char *server_address = NULL;
 
@@ -96,7 +371,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
                              Server::CreateServerCredentials(config));
     gpr_free(server_address);
 
-    register_service(&builder, &async_service_);
+    ServerTraits::RegisterService(&async_service_, &builder);
 
     int num_threads = config.async_server_threads();
     if (num_threads <= 0) {  // dynamic sizing
@@ -115,47 +390,11 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
     server_ = builder.BuildAndStart();
 
-    auto process_rpc_bound =
-        std::bind(process_rpc, config.payload_config(), std::placeholders::_1,
-                  std::placeholders::_2);
-
     for (int i = 0; i < 5000; i++) {
       for (int j = 0; j < num_threads; j++) {
-        if (request_unary_function) {
-          auto request_unary = std::bind(
-              request_unary_function, &async_service_, std::placeholders::_1,
-              std::placeholders::_2, std::placeholders::_3, srv_cqs_[j].get(),
-              srv_cqs_[j].get(), std::placeholders::_4);
-          contexts_.emplace_back(
-              new ServerRpcContextUnaryImpl(request_unary, process_rpc_bound));
-        }
-        if (request_streaming_function) {
-          auto request_streaming = std::bind(
-              request_streaming_function, &async_service_,
-              std::placeholders::_1, std::placeholders::_2, srv_cqs_[j].get(),
-              srv_cqs_[j].get(), std::placeholders::_3);
-          contexts_.emplace_back(new ServerRpcContextStreamingImpl(
-              request_streaming, process_rpc_bound));
-        }
-        if (request_streaming_from_client_function) {
-          auto request_streaming_from_client = std::bind(
-              request_streaming_from_client_function, &async_service_,
-              std::placeholders::_1, std::placeholders::_2, srv_cqs_[j].get(),
-              srv_cqs_[j].get(), std::placeholders::_3);
-          contexts_.emplace_back(new ServerRpcContextStreamingFromClientImpl(
-              request_streaming_from_client, process_rpc_bound));
-        }
-        if (request_streaming_from_server_function) {
-          auto request_streaming_from_server =
-              std::bind(request_streaming_from_server_function, &async_service_,
-                        std::placeholders::_1, std::placeholders::_2,
-                        std::placeholders::_3, srv_cqs_[j].get(),
-                        srv_cqs_[j].get(), std::placeholders::_4);
-          contexts_.emplace_back(new ServerRpcContextStreamingFromServerImpl(
-              request_streaming_from_server, process_rpc_bound));
-        }
-        if (request_streaming_both_ways_function) {
-          // TODO(vjpai): Add this code
+        for (const auto &factory : context_factories) {
+          contexts_.emplace_back(factory(ContextArgs<ServerTraits>{
+              &async_service_, srv_cqs_[j].get(), config.payload_config()}));
         }
       }
     }
@@ -206,7 +445,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     bool ok;
     void *got_tag;
     while (srv_cqs_[thread_idx]->Next(&got_tag, &ok)) {
-      ServerRpcContext *ctx = detag(got_tag);
+      auto *ctx = ServerRpcContext<ServerTraits>::detag(got_tag);
       // The tag is a pointer to an RPC context to invoke
       // Proceed while holding a lock to make sure that
       // this thread isn't supposed to shut down
@@ -223,303 +462,11 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     return;
   }
 
-  class ServerRpcContext {
-   public:
-    ServerRpcContext() {}
-    virtual ~ServerRpcContext(){};
-    virtual bool RunNextState(bool) = 0;  // next state, return false if done
-    virtual void Reset() = 0;             // start this back at a clean state
-  };
-  static void *tag(ServerRpcContext *func) {
-    return reinterpret_cast<void *>(func);
-  }
-  static ServerRpcContext *detag(void *tag) {
-    return reinterpret_cast<ServerRpcContext *>(tag);
-  }
-
-  class ServerRpcContextUnaryImpl final : public ServerRpcContext {
-   public:
-    ServerRpcContextUnaryImpl(
-        std::function<void(ServerContextType *, RequestType *,
-                           grpc::ServerAsyncResponseWriter<ResponseType> *,
-                           void *)>
-            request_method,
-        std::function<grpc::Status(const RequestType *, ResponseType *)>
-            invoke_method)
-        : srv_ctx_(new ServerContextType),
-          next_state_(&ServerRpcContextUnaryImpl::invoker),
-          request_method_(request_method),
-          invoke_method_(invoke_method),
-          response_writer_(srv_ctx_.get()) {
-      request_method_(srv_ctx_.get(), &req_, &response_writer_,
-                      AsyncQpsServerTest::tag(this));
-    }
-    ~ServerRpcContextUnaryImpl() override {}
-    bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
-    void Reset() override {
-      srv_ctx_.reset(new ServerContextType);
-      req_ = RequestType();
-      response_writer_ =
-          grpc::ServerAsyncResponseWriter<ResponseType>(srv_ctx_.get());
-
-      // Then request the method
-      next_state_ = &ServerRpcContextUnaryImpl::invoker;
-      request_method_(srv_ctx_.get(), &req_, &response_writer_,
-                      AsyncQpsServerTest::tag(this));
-    }
-
-   private:
-    bool finisher(bool) { return false; }
-    bool invoker(bool ok) {
-      if (!ok) {
-        return false;
-      }
-
-      // Call the RPC processing function
-      grpc::Status status = invoke_method_(&req_, &response_);
-
-      // Have the response writer work and invoke on_finish when done
-      next_state_ = &ServerRpcContextUnaryImpl::finisher;
-      response_writer_.Finish(response_, status, AsyncQpsServerTest::tag(this));
-      return true;
-    }
-    std::unique_ptr<ServerContextType> srv_ctx_;
-    RequestType req_;
-    ResponseType response_;
-    bool (ServerRpcContextUnaryImpl::*next_state_)(bool);
-    std::function<void(ServerContextType *, RequestType *,
-                       grpc::ServerAsyncResponseWriter<ResponseType> *, void *)>
-        request_method_;
-    std::function<grpc::Status(const RequestType *, ResponseType *)>
-        invoke_method_;
-    grpc::ServerAsyncResponseWriter<ResponseType> response_writer_;
-  };
-
-  class ServerRpcContextStreamingImpl final : public ServerRpcContext {
-   public:
-    ServerRpcContextStreamingImpl(
-        std::function<void(
-            ServerContextType *,
-            grpc::ServerAsyncReaderWriter<ResponseType, RequestType> *, void *)>
-            request_method,
-        std::function<grpc::Status(const RequestType *, ResponseType *)>
-            invoke_method)
-        : srv_ctx_(new ServerContextType),
-          next_state_(&ServerRpcContextStreamingImpl::request_done),
-          request_method_(request_method),
-          invoke_method_(invoke_method),
-          stream_(srv_ctx_.get()) {
-      request_method_(srv_ctx_.get(), &stream_, AsyncQpsServerTest::tag(this));
-    }
-    ~ServerRpcContextStreamingImpl() override {}
-    bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
-    void Reset() override {
-      srv_ctx_.reset(new ServerContextType);
-      req_ = RequestType();
-      stream_ = grpc::ServerAsyncReaderWriter<ResponseType, RequestType>(
-          srv_ctx_.get());
-
-      // Then request the method
-      next_state_ = &ServerRpcContextStreamingImpl::request_done;
-      request_method_(srv_ctx_.get(), &stream_, AsyncQpsServerTest::tag(this));
-    }
-
-   private:
-    bool request_done(bool ok) {
-      if (!ok) {
-        return false;
-      }
-      next_state_ = &ServerRpcContextStreamingImpl::read_done;
-      stream_.Read(&req_, AsyncQpsServerTest::tag(this));
-      return true;
-    }
-
-    bool read_done(bool ok) {
-      if (ok) {
-        // invoke the method
-        // Call the RPC processing function
-        grpc::Status status = invoke_method_(&req_, &response_);
-        // initiate the write
-        next_state_ = &ServerRpcContextStreamingImpl::write_done;
-        stream_.Write(response_, AsyncQpsServerTest::tag(this));
-      } else {  // client has sent writes done
-        // finish the stream
-        next_state_ = &ServerRpcContextStreamingImpl::finish_done;
-        stream_.Finish(Status::OK, AsyncQpsServerTest::tag(this));
-      }
-      return true;
-    }
-    bool write_done(bool ok) {
-      // now go back and get another streaming read!
-      if (ok) {
-        next_state_ = &ServerRpcContextStreamingImpl::read_done;
-        stream_.Read(&req_, AsyncQpsServerTest::tag(this));
-      } else {
-        next_state_ = &ServerRpcContextStreamingImpl::finish_done;
-        stream_.Finish(Status::OK, AsyncQpsServerTest::tag(this));
-      }
-      return true;
-    }
-    bool finish_done(bool ok) { return false; /* reset the context */ }
-
-    std::unique_ptr<ServerContextType> srv_ctx_;
-    RequestType req_;
-    ResponseType response_;
-    bool (ServerRpcContextStreamingImpl::*next_state_)(bool);
-    std::function<void(
-        ServerContextType *,
-        grpc::ServerAsyncReaderWriter<ResponseType, RequestType> *, void *)>
-        request_method_;
-    std::function<grpc::Status(const RequestType *, ResponseType *)>
-        invoke_method_;
-    grpc::ServerAsyncReaderWriter<ResponseType, RequestType> stream_;
-  };
-
-  class ServerRpcContextStreamingFromClientImpl final
-      : public ServerRpcContext {
-   public:
-    ServerRpcContextStreamingFromClientImpl(
-        std::function<void(ServerContextType *,
-                           grpc::ServerAsyncReader<ResponseType, RequestType> *,
-                           void *)>
-            request_method,
-        std::function<grpc::Status(const RequestType *, ResponseType *)>
-            invoke_method)
-        : srv_ctx_(new ServerContextType),
-          next_state_(&ServerRpcContextStreamingFromClientImpl::request_done),
-          request_method_(request_method),
-          invoke_method_(invoke_method),
-          stream_(srv_ctx_.get()) {
-      request_method_(srv_ctx_.get(), &stream_, AsyncQpsServerTest::tag(this));
-    }
-    ~ServerRpcContextStreamingFromClientImpl() override {}
-    bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
-    void Reset() override {
-      srv_ctx_.reset(new ServerContextType);
-      req_ = RequestType();
-      stream_ =
-          grpc::ServerAsyncReader<ResponseType, RequestType>(srv_ctx_.get());
-
-      // Then request the method
-      next_state_ = &ServerRpcContextStreamingFromClientImpl::request_done;
-      request_method_(srv_ctx_.get(), &stream_, AsyncQpsServerTest::tag(this));
-    }
-
-   private:
-    bool request_done(bool ok) {
-      if (!ok) {
-        return false;
-      }
-      next_state_ = &ServerRpcContextStreamingFromClientImpl::read_done;
-      stream_.Read(&req_, AsyncQpsServerTest::tag(this));
-      return true;
-    }
-
-    bool read_done(bool ok) {
-      if (ok) {
-        // In this case, just do another read
-        // next_state_ is unchanged
-        stream_.Read(&req_, AsyncQpsServerTest::tag(this));
-        return true;
-      } else {  // client has sent writes done
-        // invoke the method
-        // Call the RPC processing function
-        grpc::Status status = invoke_method_(&req_, &response_);
-        // finish the stream
-        next_state_ = &ServerRpcContextStreamingFromClientImpl::finish_done;
-        stream_.Finish(response_, Status::OK, AsyncQpsServerTest::tag(this));
-      }
-      return true;
-    }
-    bool finish_done(bool ok) { return false; /* reset the context */ }
-
-    std::unique_ptr<ServerContextType> srv_ctx_;
-    RequestType req_;
-    ResponseType response_;
-    bool (ServerRpcContextStreamingFromClientImpl::*next_state_)(bool);
-    std::function<void(ServerContextType *,
-                       grpc::ServerAsyncReader<ResponseType, RequestType> *,
-                       void *)>
-        request_method_;
-    std::function<grpc::Status(const RequestType *, ResponseType *)>
-        invoke_method_;
-    grpc::ServerAsyncReader<ResponseType, RequestType> stream_;
-  };
-
-  class ServerRpcContextStreamingFromServerImpl final
-      : public ServerRpcContext {
-   public:
-    ServerRpcContextStreamingFromServerImpl(
-        std::function<void(ServerContextType *, RequestType *,
-                           grpc::ServerAsyncWriter<ResponseType> *, void *)>
-            request_method,
-        std::function<grpc::Status(const RequestType *, ResponseType *)>
-            invoke_method)
-        : srv_ctx_(new ServerContextType),
-          next_state_(&ServerRpcContextStreamingFromServerImpl::request_done),
-          request_method_(request_method),
-          invoke_method_(invoke_method),
-          stream_(srv_ctx_.get()) {
-      request_method_(srv_ctx_.get(), &req_, &stream_,
-                      AsyncQpsServerTest::tag(this));
-    }
-    ~ServerRpcContextStreamingFromServerImpl() override {}
-    bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
-    void Reset() override {
-      srv_ctx_.reset(new ServerContextType);
-      req_ = RequestType();
-      stream_ = grpc::ServerAsyncWriter<ResponseType>(srv_ctx_.get());
-
-      // Then request the method
-      next_state_ = &ServerRpcContextStreamingFromServerImpl::request_done;
-      request_method_(srv_ctx_.get(), &req_, &stream_,
-                      AsyncQpsServerTest::tag(this));
-    }
-
-   private:
-    bool request_done(bool ok) {
-      if (!ok) {
-        return false;
-      }
-      // invoke the method
-      // Call the RPC processing function
-      grpc::Status status = invoke_method_(&req_, &response_);
-
-      next_state_ = &ServerRpcContextStreamingFromServerImpl::write_done;
-      stream_.Write(response_, AsyncQpsServerTest::tag(this));
-      return true;
-    }
-
-    bool write_done(bool ok) {
-      if (ok) {
-        // Do another write!
-        // next_state_ is unchanged
-        stream_.Write(response_, AsyncQpsServerTest::tag(this));
-      } else {  // must be done so let's finish
-        next_state_ = &ServerRpcContextStreamingFromServerImpl::finish_done;
-        stream_.Finish(Status::OK, AsyncQpsServerTest::tag(this));
-      }
-      return true;
-    }
-    bool finish_done(bool ok) { return false; /* reset the context */ }
-
-    std::unique_ptr<ServerContextType> srv_ctx_;
-    RequestType req_;
-    ResponseType response_;
-    bool (ServerRpcContextStreamingFromServerImpl::*next_state_)(bool);
-    std::function<void(ServerContextType *, RequestType *,
-                       grpc::ServerAsyncWriter<ResponseType> *, void *)>
-        request_method_;
-    std::function<grpc::Status(const RequestType *, ResponseType *)>
-        invoke_method_;
-    grpc::ServerAsyncWriter<ResponseType> stream_;
-  };
-
   std::vector<std::thread> threads_;
   std::unique_ptr<grpc::Server> server_;
   std::vector<std::unique_ptr<grpc::ServerCompletionQueue>> srv_cqs_;
-  ServiceType async_service_;
-  std::vector<std::unique_ptr<ServerRpcContext>> contexts_;
+  typename ServerTraits::ServiceType async_service_;
+  std::vector<std::unique_ptr<ServerRpcContext<ServerTraits>>> contexts_;
 
   struct PerThreadShutdownState {
     mutable std::mutex mutex;
@@ -530,58 +477,71 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
   std::vector<std::unique_ptr<PerThreadShutdownState>> shutdown_state_;
 };
 
-static void RegisterBenchmarkService(ServerBuilder *builder,
-                                     BenchmarkService::AsyncService *service) {
-  builder->RegisterService(service);
-}
-static void RegisterGenericService(ServerBuilder *builder,
-                                   grpc::AsyncGenericService *service) {
-  builder->RegisterAsyncGenericService(service);
-}
+struct ProtoServerTraits {
+  typedef BenchmarkService::AsyncService ServiceType;
+  typedef SimpleRequest RequestType;
+  typedef SimpleResponse ResponseType;
+  typedef grpc::ServerContext ContextType;
 
-static Status ProcessSimpleRPC(const PayloadConfig &,
-                               const SimpleRequest *request,
-                               SimpleResponse *response) {
-  if (request->response_size() > 0) {
-    if (!Server::SetPayload(request->response_type(), request->response_size(),
-                            response->mutable_payload())) {
-      return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
-    }
+  static void RegisterService(ServiceType *service, ServerBuilder *builder) {
+    builder->RegisterService(service);
   }
-  return Status::OK;
-}
 
-static Status ProcessGenericRPC(const PayloadConfig &payload_config,
-                                const ByteBuffer *request,
-                                ByteBuffer *response) {
-  int resp_size = payload_config.bytebuf_params().resp_size();
-  std::unique_ptr<char[]> buf(new char[resp_size]);
-  grpc_slice s = grpc_slice_from_copied_buffer(buf.get(), resp_size);
-  Slice slice(s, Slice::STEAL_REF);
-  *response = ByteBuffer(&slice, 1);
-  return Status::OK;
+  static void RequestStreamingCall(
+      ServiceType *service, ContextType *context,
+      ServerAsyncReaderWriter<ResponseType, RequestType> *stream,
+      CompletionQueue *new_call_cq, ServerCompletionQueue *notification_cq,
+      void *tag) {
+    service->RequestStreamingCall(context, stream, new_call_cq, notification_cq,
+                                  tag);
+  }
+};
+
+struct GenericServerTraits {
+  typedef AsyncGenericService ServiceType;
+  typedef ByteBuffer RequestType;
+  typedef ByteBuffer ResponseType;
+  typedef GenericServerContext ContextType;
+
+  static void RegisterService(ServiceType *service, ServerBuilder *builder) {
+    builder->RegisterAsyncGenericService(service);
+  }
+
+  static void RequestStreamingCall(
+      ServiceType *service, ContextType *context,
+      ServerAsyncReaderWriter<ResponseType, RequestType> *stream,
+      CompletionQueue *new_call_cq, ServerCompletionQueue *notification_cq,
+      void *tag) {
+    service->RequestCall(context, stream, new_call_cq, notification_cq, tag);
+  }
+};
+
+template <template <class> class ContextImpl, class Traits>
+static std::function<
+    ServerRpcContext<Traits> *(const ContextArgs<Traits> &traits)>
+ContextFactory() {
+  return [](const ContextArgs<Traits> &args) {
+    return new ContextImpl<Traits>(args);
+  };
 }
 
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config) {
-  return std::unique_ptr<Server>(
-      new AsyncQpsServerTest<SimpleRequest, SimpleResponse,
-                             BenchmarkService::AsyncService,
-                             grpc::ServerContext>(
-          config, RegisterBenchmarkService,
-          &BenchmarkService::AsyncService::RequestUnaryCall,
-          &BenchmarkService::AsyncService::RequestStreamingCall,
-          &BenchmarkService::AsyncService::RequestStreamingFromClient,
-          &BenchmarkService::AsyncService::RequestStreamingFromServer,
-          &BenchmarkService::AsyncService::RequestStreamingBothWays,
-          ProcessSimpleRPC));
+  return std::unique_ptr<Server>(new AsyncQpsServerTest<ProtoServerTraits>(
+      config,
+      {
+          ContextFactory<ServerRpcContextUnaryImpl, ProtoServerTraits>(),
+          ContextFactory<ServerRpcContextStreamingImpl, ProtoServerTraits>(),
+          ContextFactory<ServerRpcContextStreamingFromClientImpl,
+                         ProtoServerTraits>(),
+          ContextFactory<ServerRpcContextStreamingFromServerImpl,
+                         ProtoServerTraits>(),
+      }));
 }
+
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config) {
-  return std::unique_ptr<Server>(
-      new AsyncQpsServerTest<ByteBuffer, ByteBuffer, grpc::AsyncGenericService,
-                             grpc::GenericServerContext>(
-          config, RegisterGenericService, nullptr,
-          &grpc::AsyncGenericService::RequestCall, nullptr, nullptr, nullptr,
-          ProcessGenericRPC));
+  return std::unique_ptr<Server>(new AsyncQpsServerTest<GenericServerTraits>(
+      config,
+      {ContextFactory<ServerRpcContextStreamingImpl, GenericServerTraits>()}));
 }
 
 }  // namespace testing
