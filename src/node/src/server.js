@@ -782,7 +782,7 @@ Server.prototype.addService = function(service, implementation) {
 };
 
 var logAddProtoServiceDeprecationOnce = _.once(function() {
-    common.log(grpc.logVerbosity.INFO,
+    common.log(constants.logVerbosity.INFO,
                'Server#addProtoService is deprecated. Use addService instead');
 });
 
