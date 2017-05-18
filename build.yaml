@@ -4389,6 +4389,7 @@ targets:
   cpu_cost: 100
   build: test
   language: c++
+  timeout_seconds: 1200
   src:
   - test/cpp/end2end/thread_stress_test.cc
   deps:
