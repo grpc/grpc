@@ -12,7 +12,7 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2017-03-01</date>
+   <date>2017-05-05</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
@@ -24,8 +24,7 @@
    </stability>
    <license>BSD</license>
    <notes>
-  - Added arg info macros #9751
-  - Updated codegen to be consistent with protobuf #9492
+  - Fixed some memory leaks #9559, #10996
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
@@ -43,6 +42,7 @@
       % endfor
       % endif
       % endfor
+      <file name="LICENSE" role="doc" />
     </dir>
    </contents>
    <dependencies>
@@ -352,6 +352,22 @@
       <api>beta</api>
      </stability>
      <date>2017-03-01</date>
+     <license>BSD</license>
+     <notes>
+  - Added arg info macros #9751
+  - Updated codegen to be consistent with protobuf #9492
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.2.0</release>
+      <api>1.2.0</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2017-03-20</date>
      <license>BSD</license>
      <notes>
   - Added arg info macros #9751

@@ -99,7 +99,7 @@ class AuthContext {
   virtual AuthPropertyIterator begin() const = 0;
   virtual AuthPropertyIterator end() const = 0;
 
-  // Mutation functions: should only be used by an AuthMetadataProcessor.
+  /// Mutation functions: should only be used by an AuthMetadataProcessor.
   virtual void AddProperty(const grpc::string& key,
                            const grpc::string_ref& value) = 0;
   virtual bool SetPeerIdentityPropertyName(const grpc::string& name) = 0;

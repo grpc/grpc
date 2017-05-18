@@ -46,6 +46,7 @@
 #include <grpc/compression.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/useful.h>
+#include <grpc/support/workaround_list.h>
 
 struct grpc_resource_quota;
 
@@ -183,6 +184,11 @@ class ServerBuilder {
   /// For internal use only: Register a ServerBuilderPlugin factory function.
   static void InternalAddPluginFactory(
       std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)());
+
+  /// Enable a server workaround. Do not use unless you know what the workaround
+  /// does. For explanation and detailed descriptions of workarounds, see
+  /// doc/workarounds.md.
+  ServerBuilder& EnableWorkaround(grpc_workaround_list id);
 
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
