@@ -1440,6 +1440,9 @@ def _has_epollexclusive():
     return True
   except subprocess.CalledProcessError, e:
     return False
+  except OSError, e:
+    # For languages other than C and Windows the binary won't exist
+    return False
 
 
 # returns a list of things that failed (or an empty list on success)
