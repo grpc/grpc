@@ -284,9 +284,9 @@ class BuildExt(build_ext.build_ext):
                 stderr=subprocess.PIPE)
             make_out, make_err = make_process.communicate()
             if make_out and make_process.returncode != 0:
-                sys.stdout.write(make_out + '\n')
+                sys.stdout.write(str(make_out) + '\n')
             if make_err:
-                sys.stderr.write(make_err + '\n')
+                sys.stderr.write(str(make_err) + '\n')
             if make_process.returncode != 0:
                 raise Exception("make command failed!")
 

@@ -79,7 +79,11 @@ docker run \
   -e HOST_GIT_ROOT=$git_root \
   -e LOCAL_GIT_ROOT=$docker_instance_git_root \
   -e "BUILD_ID=$BUILD_ID" \
+  -e "BUILD_URL=$BUILD_URL" \
+  -e "JOB_BASE_NAME=$JOB_BASE_NAME" \
   -i $TTY_FLAG \
+  --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+  -v ~/.config/gcloud:/root/.config/gcloud \
   -v "$git_root:$docker_instance_git_root" \
   -v /tmp/ccache:/tmp/ccache \
   -v /tmp/npm-cache:/tmp/npm-cache \

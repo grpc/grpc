@@ -50,6 +50,15 @@ If you plan to build from source and run tests, install the following as well:
  $ brew install gflags
 ```
 
+*Tip*: when building, 
+you *may* want to explicitly set the `LIBTOOL` and `LIBTOOLIZE`
+environment variables when running `make` to ensure the version
+installed by `brew` is being used:
+
+```sh
+ $ LIBTOOL=glibtool LIBTOOLIZE=glibtoolize make
+```
+
 ###HP-UX
 
 Install the following, to build from source:
@@ -58,7 +67,6 @@ Install the following, to build from source:
 * gcc-4.8.5
 * openssl-1.0.2j
 * zlib-1.2.8
-
 
 ## Protoc
 

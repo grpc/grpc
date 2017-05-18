@@ -486,6 +486,35 @@ cdef extern from "grpc/grpc_security.h":
   grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
       grpc_metadata_credentials_plugin plugin, void *reserved) nogil
 
+  ctypedef struct grpc_auth_property_iterator:
+    pass
+
+  ctypedef struct grpc_auth_property:
+    char *name
+    char *value
+    size_t value_length
+
+  grpc_auth_property *grpc_auth_property_iterator_next(
+      grpc_auth_property_iterator *it)
+
+  grpc_auth_property_iterator grpc_auth_context_property_iterator(
+      const grpc_auth_context *ctx)
+ 
+  grpc_auth_property_iterator grpc_auth_context_peer_identity(
+      const grpc_auth_context *ctx)
+
+  char *grpc_auth_context_peer_identity_property_name(
+      const grpc_auth_context *ctx)
+
+  grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
+      const grpc_auth_context *ctx, const char *name)
+
+  grpc_auth_context_peer_is_authenticated(
+      const grpc_auth_context *ctx)
+
+  grpc_auth_context *grpc_call_auth_context(grpc_call *call)
+
+  void grpc_auth_context_release(grpc_auth_context *context)
 
 cdef extern from "grpc/compression.h":
 

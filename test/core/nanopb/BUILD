@@ -27,23 +27,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
-  name = "fuzzer_response",
-  srcs = ["fuzzer_response.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "corpus_response",
-  copts = ["-std=c99"],
+    name = "fuzzer_response",
+    srcs = ["fuzzer_response.c"],
+    language = "C",
+    corpus = "corpus_response",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_fuzzer(
-  name = "fuzzer_serverlist",
-  srcs = ["fuzzer_serverlist.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "corpus_serverlist",
-  copts = ["-std=c99"],
+    name = "fuzzer_serverlist",
+    srcs = ["fuzzer_serverlist.c"],
+    language = "C",
+    corpus = "corpus_serverlist",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
-

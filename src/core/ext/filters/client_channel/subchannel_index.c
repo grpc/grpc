@@ -183,8 +183,11 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
   enter_ctx(exec_ctx);
 
   grpc_subchannel *c = NULL;
+  bool need_to_unref_constructed;
 
   while (c == NULL) {
+    need_to_unref_constructed = false;
+
     // Compare and swap loop:
     // - take a reference to the current index
     gpr_mu_lock(&g_mu);
@@ -194,8 +197,11 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
     // - Check to see if a subchannel already exists
     c = gpr_avl_get(index, key);
     if (c != NULL) {
+      c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "index_register");
+    }
+    if (c != NULL) {
       // yes -> we're done
-      GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, constructed, "index_register");
+      need_to_unref_constructed = true;
     } else {
       // no -> update the avl and compare/swap
       gpr_avl updated =
@@ -218,6 +224,10 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
   }
 
   leave_ctx(exec_ctx);
+
+  if (need_to_unref_constructed) {
+    GRPC_SUBCHANNEL_UNREF(exec_ctx, constructed, "index_register");
+  }
 
   return c;
 }

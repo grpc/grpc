@@ -67,7 +67,9 @@ static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {
   *mu = &ps->mu;
 }
 
-static void pollset_destroy(grpc_pollset* ps) { gpr_mu_destroy(&ps->mu); }
+static void pollset_destroy(grpc_exec_ctx* exec_ctx, grpc_pollset* ps) {
+  gpr_mu_destroy(&ps->mu);
+}
 
 static grpc_error* pollset_kick(grpc_pollset* p, grpc_pollset_worker* worker) {
   return GRPC_ERROR_NONE;
@@ -79,10 +81,16 @@ static void cq_done_cb(grpc_exec_ctx* exec_ctx, void* done_arg,
   gpr_free(cq_completion);
 }
 
-/* Queues a completion tag. ZERO polling overhead */
+/* Queues a completion tag if deadline is > 0.
+ * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
 static grpc_error* pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
                                 grpc_pollset_worker** worker, gpr_timespec now,
                                 gpr_timespec deadline) {
+  if (gpr_time_cmp(deadline, gpr_time_0(GPR_CLOCK_MONOTONIC)) == 0) {
+    gpr_log(GPR_ERROR, "no-op");
+    return GRPC_ERROR_NONE;
+  }
+
   gpr_mu_unlock(&ps->mu);
   grpc_cq_begin_op(g_cq, g_tag);
   grpc_cq_end_op(exec_ctx, g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, NULL,
@@ -113,6 +121,14 @@ static void setup() {
 
 static void teardown() {
   grpc_completion_queue_shutdown(g_cq);
+
+  /* Drain any events */
+  gpr_timespec deadline = gpr_time_0(GPR_CLOCK_MONOTONIC);
+  while (grpc_completion_queue_next(g_cq, deadline, NULL).type !=
+         GRPC_QUEUE_SHUTDOWN) {
+    /* Do nothing */
+  }
+
   grpc_completion_queue_destroy(g_cq);
 }
 

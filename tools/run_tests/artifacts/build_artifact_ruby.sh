@@ -63,6 +63,6 @@ if [ "$SYSTEM" == "Darwin" ] ; then
   rm `ls pkg/*.gem | grep -v darwin`
 fi
 
-mkdir -p artifacts
+mkdir -p "${ARTIFACTS_OUT}"
 
-cp pkg/*.gem artifacts
+cp pkg/*.gem "${ARTIFACTS_OUT}"/

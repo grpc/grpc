@@ -59,7 +59,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
 
-extern int grpc_tcp_trace;
+extern grpc_tracer_flag grpc_tcp_trace;
 
 typedef struct {
   gpr_mu mu;
@@ -115,7 +115,7 @@ done:
 static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   int done;
   async_connect *ac = acp;
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str,
             str);
@@ -153,7 +153,7 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 
   GRPC_ERROR_REF(error);
 
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: error=%s",
             ac->addr_str, str);
@@ -331,9 +331,9 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
                     grpc_schedule_on_exec_ctx);
   ac->channel_args = grpc_channel_args_copy(channel_args);
 
-  if (grpc_tcp_trace) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
-            ac->addr_str);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
+            ac->addr_str, fdobj);
   }
 
   gpr_mu_lock(&ac->mu);

@@ -52,6 +52,9 @@ enum ServerType {
 enum RpcType {
   UNARY = 0;
   STREAMING = 1;
+  STREAMING_FROM_CLIENT = 2;
+  STREAMING_FROM_SERVER = 3;
+  STREAMING_BOTH_WAYS = 4;
 }
 
 // Parameters of poisson process distribution, which is a good representation
@@ -241,6 +244,10 @@ message ScenarioResultSummary
   // Number of requests that succeeded/failed
   double successful_requests_per_second = 13;
   double failed_requests_per_second = 14;
+
+  // Number of polls called inside completion queue per request
+  double client_polls_per_request = 15;
+  double server_polls_per_request = 16;
 }
 
 // Results of a single benchmark scenario.

@@ -101,7 +101,7 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
                                            void *reserved) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE(
-      "grpc_insecure_channel_create(target=%p, args=%p, reserved=%p)", 3,
+      "grpc_insecure_channel_create(target=%s, args=%p, reserved=%p)", 3,
       (target, args, reserved));
   GPR_ASSERT(reserved == NULL);
   // Add channel arg containing the client channel factory.

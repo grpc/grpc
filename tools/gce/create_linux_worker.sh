@@ -45,7 +45,8 @@ gcloud compute instances create $INSTANCE_NAME \
     --machine-type n1-standard-16 \
     --image=ubuntu-1510 \
     --image-project=grpc-testing \
-    --boot-disk-size 1000
+    --boot-disk-size 1000 \
+    --scopes https://www.googleapis.com/auth/bigquery
 
 echo 'Created GCE instance, waiting 60 seconds for it to come online.'
 sleep 60

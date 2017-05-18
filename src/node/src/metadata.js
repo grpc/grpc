@@ -35,12 +35,7 @@
  * Metadata module
  *
  * This module defines the Metadata class, which represents header and trailer
- * metadata for gRPC calls. Here is an example of how to use it:
- *
- * var metadata = new metadata_module.Metadata();
- * metadata.set('key1', 'value1');
- * metadata.add('key1', 'value2');
- * metadata.get('key1') // returns ['value1', 'value2']
+ * metadata for gRPC calls.
  *
  * @module
  */
@@ -54,6 +49,12 @@ var grpc = require('./grpc_extension');
 /**
  * Class for storing metadata. Keys are normalized to lowercase ASCII.
  * @constructor
+ * @alias module:src/metadata.Metadata
+ * @example
+ * var metadata = new metadata_module.Metadata();
+ * metadata.set('key1', 'value1');
+ * metadata.add('key1', 'value2');
+ * metadata.get('key1') // returns ['value1', 'value2']
  */
 function Metadata() {
   this._internal_repr = {};

@@ -38,6 +38,7 @@
 #include <grpc/support/cpu.h>
 #include <vector>
 
+#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -49,7 +50,8 @@ namespace testing {
 
 class Server {
  public:
-  explicit Server(const ServerConfig& config) : timer_(new UsageTimer) {
+  explicit Server(const ServerConfig& config)
+      : timer_(new UsageTimer), last_reset_poll_count_(0) {
     cores_ = gpr_cpu_num_cores();
     if (config.port()) {
       port_ = config.port();
@@ -62,10 +64,13 @@ class Server {
 
   ServerStats Mark(bool reset) {
     UsageTimer::Result timer_result;
+    int cur_poll_count = GetPollCount();
+    int poll_count = cur_poll_count - last_reset_poll_count_;
     if (reset) {
       std::unique_ptr<UsageTimer> timer(new UsageTimer);
       timer.swap(timer_);
       timer_result = timer->Mark();
+      last_reset_poll_count_ = cur_poll_count;
     } else {
       timer_result = timer_->Mark();
     }
@@ -76,6 +81,7 @@ class Server {
     stats.set_time_user(timer_result.user);
     stats.set_total_cpu_time(timer_result.total_cpu_time);
     stats.set_idle_cpu_time(timer_result.idle_cpu_time);
+    stats.set_cq_poll_count(poll_count);
     return stats;
   }
 
@@ -106,10 +112,16 @@ class Server {
     }
   }
 
+  virtual int GetPollCount() {
+    // For sync server.
+    return 0;
+  }
+
  private:
   int port_;
   int cores_;
   std::unique_ptr<UsageTimer> timer_;
+  int last_reset_poll_count_;
 };
 
 std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
