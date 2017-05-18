@@ -57,11 +57,13 @@ typedef struct {
   grpc_chttp2_flow_control_urgency send_bdp_ping;
   grpc_chttp2_flow_control_urgency send_stream_update;
   grpc_chttp2_flow_control_urgency send_transport_update;
+  grpc_chttp2_flow_control_urgency send_max_frame_update;
   int64_t announce_transport_window;
   int64_t announce_stream_window;
+  int64_t announce_max_frame;
 } grpc_chttp2_flow_control_action;
 
-grpc_chttp2_flow_control_action check_for_flow_control_action(
-    const grpc_chttp2_transport* t, const grpc_chttp2_stream* s);
+grpc_chttp2_flow_control_action grpc_chttp2_check_for_flow_control_action(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H */
