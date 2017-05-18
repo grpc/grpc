@@ -1,5 +1,6 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,18 +29,35 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+require_relative './end2end_common'
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+Thread.abort_on_exception = true
 
-EXIT_CODE=0
-ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_state_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/channel_closing_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/sig_int_during_channel_watch_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/killed_client_thread_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/forking_client_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/grpc_class_init_driver.rb || EXIT_CODE=1
-ruby src/ruby/end2end/multiple_killed_watching_threads_driver.rb || EXIT_CODE=1
-exit $EXIT_CODE
+include GRPC::Core::ConnectivityStates
+
+def watch_state(ch)
+  thd = Thread.new do
+    state = ch.connectivity_state(false)
+    fail "non-idle state: #{state}" unless state == IDLE
+    ch.watch_connectivity_state(IDLE, Time.now + 360)
+  end
+  sleep 0.1
+  thd.kill
+end
+
+def main
+  channels = []
+  10.times do
+    ch = GRPC::Core::Channel.new('dummy_host',
+                                 nil, :this_channel_is_insecure)
+    watch_state(ch)
+    channels << ch
+  end
+
+  # checking state should still be safe to call
+  channels.each do |c|
+    fail unless c.connectivity_state(false) == FATAL_FAILURE
+  end
+end
+
+main
