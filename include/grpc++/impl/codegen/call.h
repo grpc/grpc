@@ -634,10 +634,10 @@ class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
   }
 };
 
-// Straightforward wrapping of the C call object
+/// Straightforward wrapping of the C call object
 class Call final {
  public:
-  /* call is owned by the caller */
+  /** call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
       : call_hook_(call_hook),
         cq_(cq),

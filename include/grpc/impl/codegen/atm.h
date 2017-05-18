@@ -34,7 +34,7 @@
 #ifndef GRPC_IMPL_CODEGEN_ATM_H
 #define GRPC_IMPL_CODEGEN_ATM_H
 
-/* This interface provides atomic operations and barriers.
+/** This interface provides atomic operations and barriers.
    It is internal to gpr support code and should not be used outside it.
 
    If an operation with acquire semantics precedes another memory access by the

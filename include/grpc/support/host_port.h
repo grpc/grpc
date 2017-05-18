@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-/* Given a host and port, creates a newly-allocated string of the form
+/** Given a host and port, creates a newly-allocated string of the form
    "host:port" or "[ho:st]:port", depending on whether the host contains colons
    like an IPv6 literal.  If the host is already bracketed, then additional
    brackets will not be added.
@@ -52,7 +52,7 @@ extern "C" {
    In the unlikely event of an error, returns -1 and sets *out to NULL. */
 GPRAPI int gpr_join_host_port(char **out, const char *host, int port);
 
-/* Given a name in the form "host:port" or "[ho:st]:port", split into hostname
+/** Given a name in the form "host:port" or "[ho:st]:port", split into hostname
    and port number, into newly allocated strings, which must later be
    destroyed using gpr_free().
    Return 1 on success, 0 on failure. Guarantees *host and *port == NULL on
