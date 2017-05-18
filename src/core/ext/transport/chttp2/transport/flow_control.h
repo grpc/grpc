@@ -42,31 +42,26 @@
 /* module that handles all flow control related logic */
 
 typedef enum {
-  // No action needs to be taken to change flow control.
-  FLOW_CONTROL_UPDATE_NONE,
-  // Send a new bdp ping.
-  FLOW_CONTROL_SEND_BDP_PING,
-  // Set the initial window to `value`.
-  FLOW_CONTROL_UPDATE_ABSOLUTE,
-  // Increment the initial window by `value`.
-  FLOW_CONTROL_UPDATE_DELTA,
-} flow_control_action_type;
-
-typedef enum {
+  // Nothing to be done.
+  GRPC_CHTTP2_FLOW_CONTROL_NO_ACTION_NEEDED = 0,
   // Initiate a write to update the initial window immediately.
-  FLOW_CONTROL_UPDATE_IMMEDIATELY,
+  GRPC_CHTTP2_FLOW_CONTROL_UPDATE_IMMEDIATELY,
+  // Update withing 100 milliseconds. TODO(ncteisen): tune this
+  GRPC_CHTTP2_FLOW_CONTROL_UPDATE_SOON,
   // Push the flow control update into a send buffer, to be sent
   // out the next time a write is initiated.
-  FLOW_CONTROL_QUEUE_UPDATE,
-} flow_control_urgency;
+  GRPC_CHTTP2_FLOW_CONTROL_QUEUE_UPDATE,
+} grpc_chttp2_flow_control_urgency;
 
 typedef struct {
-  flow_control_action_type action_type;
-  flow_control_urgency urgency;
-  uint64_t value;
-} flow_control_action;
+  grpc_chttp2_flow_control_urgency send_bdp_ping;
+  grpc_chttp2_flow_control_urgency send_stream_update;
+  grpc_chttp2_flow_control_urgency send_transport_update;
+  int64_t announce_transport_window;
+  int64_t announce_stream_window;
+} grpc_chttp2_flow_control_action;
 
-flow_control_action check_for_flow_control_action(grpc_chttp2_transport* t,
-                                                  grpc_chttp2_stream* s);
+grpc_chttp2_flow_control_action check_for_flow_control_action(
+    const grpc_chttp2_transport* t, const grpc_chttp2_stream* s);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H */
