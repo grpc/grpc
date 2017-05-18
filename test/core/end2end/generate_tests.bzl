@@ -57,6 +57,7 @@ END2END_FIXTURES = {
     'h2_full': fixture_options(),
     'h2_full+pipe': fixture_options(platforms=['linux']),
     'h2_full+trace': fixture_options(tracing=True),
+    'h2_full+workarounds': fixture_options(),
     'h2_http_proxy': fixture_options(),
     'h2_oauth2': fixture_options(),
     'h2_proxy': fixture_options(includes_proxy=True),
@@ -136,6 +137,7 @@ END2END_TESTS = {
     'trailing_metadata': test_options(),
     'authority_not_supported': test_options(),
     'filter_latency': test_options(),
+    'workaround_cronet_compression': test_options(),
     'write_buffering': test_options(),
     'write_buffering_at_end': test_options(),
 }

@@ -581,7 +581,7 @@ def auth_options(language, test_case):
   env = {}
 
   # TODO(jtattermusch): this file path only works inside docker
-  key_filepath = '/root/service_account/stubbyCloudTestingTest-ee3fce360ac5.json'
+  key_filepath = '/root/service_account/GrpcTesting-726eb1347f15.json'
   oauth_scope_arg = '--oauth_scope=https://www.googleapis.com/auth/xapi.zoo'
   key_file_arg = '--service_account_key_file=%s' % key_filepath
   default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'

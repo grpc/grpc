@@ -74,8 +74,9 @@ docker run \
   -v "$git_root:/var/local/jenkins/grpc:ro" \
   -w /var/local/git/grpc \
   --name=$CONTAINER_NAME \
+  $EXTRA_DOCKER_ARGS \
   $DOCKER_IMAGE_NAME \
-  bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || FAILED="true"
+  /bin/bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || FAILED="true"
 
 # Copy output artifacts
 if [ "$OUTPUT_DIR" != "" ]

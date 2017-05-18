@@ -27,37 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-licenses(["notice"])  # 3-clause BSD
+# Docker file for building gRPC Raspbian binaries
 
-package(default_visibility = ["//visibility:public"])
+FROM quay.io/grpc/raspbian_armv6
 
-load("//:bazel/grpc_build_system.bzl", "grpc_proto_library")
-
-grpc_proto_library(
-    name = "monitoring_proto",
-    srcs = [
-        "monitoring.proto",
-    ],
-    well_known_protos = "@com_google_protobuf//:well_known_protos",
-    deps = [
-        ":census_proto",
-    ],
-)
-
-grpc_proto_library(
-    name = "census_proto",
-    srcs = [
-        "census.proto",
-    ],
-    well_known_protos = "@com_google_protobuf//:well_known_protos",
-)
-
-cc_binary(
-    name = "grpcz_client",
-    srcs = ["grpcz_client.cc"],
-    deps = [
-        "monitoring_proto",
-        "//external:gflags",
-        "@mongoose_repo//:mongoose_lib",
-    ],
-)
+# Place any extra build instructions between these commands
+# Recommend modifying upstream docker image (quay.io/grpc/raspbian_armv6)
+# for build steps because running them under QEMU is very slow
+# (https://github.com/kpayson64/armv7hf-debian-qemu)
+# RUN [ "cross-build-start" ]
+# RUN [ "cross-build-end" ]

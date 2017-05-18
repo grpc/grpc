@@ -205,6 +205,14 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
   }
 
+  int GetPollCount() override {
+    int count = 0;
+    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
+      count += grpc_get_cq_poll_num((*cq)->cq());
+    }
+    return count;
+  }
+
  protected:
   const int num_async_threads_;
 

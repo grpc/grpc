@@ -39,9 +39,9 @@
 #define GRPC_CUSTOM_STRING std::string
 #endif
 
-// The following macros are deprecated and appear only for users
-// with PB files generated using gRPC 1.0.x plugins. They should
-// not be used in new code
+/// The following macros are deprecated and appear only for users
+/// with PB files generated using gRPC 1.0.x plugins. They should
+/// not be used in new code
 #define GRPC_OVERRIDE override  // deprecated
 #define GRPC_FINAL final        // deprecated
 

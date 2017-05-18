@@ -478,6 +478,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_epollsig_linux.c",
         "src/core/lib/iomgr/ev_poll_posix.c",
         "src/core/lib/iomgr/ev_posix.c",
+        "src/core/lib/iomgr/ev_windows.c",
         "src/core/lib/iomgr/exec_ctx.c",
         "src/core/lib/iomgr/executor.c",
         "src/core/lib/iomgr/iocp_windows.c",
@@ -706,6 +707,7 @@ grpc_cc_library(
         "include/grpc/slice.h",
         "include/grpc/slice_buffer.h",
         "include/grpc/status.h",
+        "include/grpc/support/workaround_list.h",
     ],
     deps = [
         "gpr_base",
@@ -741,7 +743,9 @@ grpc_cc_library(
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
-    ]
+        "grpc_workaround_cronet_compression_filter",
+        "grpc_server_backward_compatibility",
+    ],
 )
 
 grpc_cc_library(
@@ -853,6 +857,21 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_workaround_cronet_compression_filter",
+    srcs = [
+        "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_server_backward_compatibility",
     ],
 )
 
@@ -1381,22 +1400,22 @@ GRPCXX_PUBLIC_HDRS = [
 
 grpc_cc_library(
     name = "grpc++_base",
-    hdrs = GRPCXX_HDRS,
     srcs = GRPCXX_SRCS,
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    hdrs = GRPCXX_HDRS,
     language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
-        "grpc++_codegen_base",
         "grpc",
+        "grpc++_codegen_base",
     ],
 )
 
 grpc_cc_library(
     name = "grpc++_base_unsecure",
-    hdrs = GRPCXX_HDRS,
     srcs = GRPCXX_SRCS,
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    hdrs = GRPCXX_HDRS,
     language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "grpc++_codegen_base",
         "grpc_unsecure",
@@ -1503,6 +1522,20 @@ grpc_cc_library(
     ],
     deps = [
         ":grpc++",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_server_backward_compatibility",
+    srcs = [
+        "src/core/ext/filters/workarounds/workaround_utils.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/workarounds/workaround_utils.h",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
     ],
 )
 
