@@ -107,6 +107,7 @@ static bg_watched_channel *bg_watched_channel_list_head = NULL;
 static void grpc_rb_channel_try_register_connection_polling(
     bg_watched_channel *bg);
 static void *wait_until_channel_polling_thread_started_no_gil(void *);
+static void wait_until_channel_polling_thread_started_unblocking_func(void *);
 static void *channel_init_try_register_connection_polling_without_gil(
     void *arg);
 
@@ -227,12 +228,15 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   char *target_chars = NULL;
   grpc_channel_args args;
   channel_init_try_register_stack stack;
+  int stop_waiting_for_thread_start = 0;
   MEMZERO(&args, grpc_channel_args, 1);
 
   grpc_ruby_once_init();
-  rb_thread_call_without_gvl(wait_until_channel_polling_thread_started_no_gil,
-                             NULL, run_poll_channels_loop_unblocking_func,
-                             NULL);
+  rb_thread_call_without_gvl(
+      wait_until_channel_polling_thread_started_no_gil,
+      &stop_waiting_for_thread_start,
+      wait_until_channel_polling_thread_started_unblocking_func,
+      &stop_waiting_for_thread_start);
 
   /* "3" == 3 mandatory args */
   rb_scan_args(argc, argv, "3", &target, &channel_args, &credentials);
@@ -699,16 +703,28 @@ static VALUE run_poll_channels_loop(VALUE arg) {
 }
 
 static void *wait_until_channel_polling_thread_started_no_gil(void *arg) {
-  (void)arg;
+  int *stop_waiting = (int *)arg;
   gpr_log(GPR_DEBUG, "GRPC_RUBY: wait for channel polling thread to start");
   gpr_mu_lock(&global_connection_polling_mu);
-  while (!channel_polling_thread_started && !abort_channel_polling) {
+  while (!channel_polling_thread_started && !abort_channel_polling &&
+         !*stop_waiting) {
     gpr_cv_wait(&global_connection_polling_cv, &global_connection_polling_mu,
                 gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&global_connection_polling_mu);
 
   return NULL;
+}
+
+static void wait_until_channel_polling_thread_started_unblocking_func(
+    void *arg) {
+  int *stop_waiting = (int *)arg;
+  gpr_mu_lock(&global_connection_polling_mu);
+  gpr_log(GPR_DEBUG,
+          "GRPC_RUBY: interrupt wait for channel polling thread to start");
+  *stop_waiting = 1;
+  gpr_cv_broadcast(&global_connection_polling_cv);
+  gpr_mu_unlock(&global_connection_polling_mu);
 }
 
 static void *set_abort_channel_polling_without_gil(void *arg) {
