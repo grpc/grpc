@@ -86,9 +86,9 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     next_allowed_ping = gpr_time_add(t->ping_recv_state.last_ping_recv_time,
                                      gpr_time_from_seconds(7200, GPR_TIMESPAN));
   }
-  /*gpr_log(GPR_DEBUG, "next_allowed_ping:%d.%09d now:%d.%09d",
-          (int)next_allowed_ping.tv_sec, (int)next_allowed_pingpsed.tv_nsec,
-          (int)now.tv_sec, (int)now.tv_nsec);*/
+  /* gpr_log(GPR_DEBUG, "next_allowed_ping:%d.%09d now:%d.%09d",
+          (int)next_allowed_ping.tv_sec, (int)next_allowed_ping.tv_nsec,
+          (int)now.tv_sec, (int)now.tv_nsec); */
   if (gpr_time_cmp(next_allowed_ping, now) > 0) {
     /* not enough elapsed time between successive pings */
     if (GRPC_TRACER_ON(grpc_http_trace) ||
@@ -99,11 +99,9 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     }
     if (!t->ping_state.is_delayed_ping_timer_set) {
       t->ping_state.is_delayed_ping_timer_set = true;
-      grpc_timer_init(
-          exec_ctx, &t->ping_state.delayed_ping_timer,
-          gpr_time_add(t->ping_state.last_ping_sent_time,
-                       t->ping_policy.min_sent_ping_interval_without_data),
-          &t->retry_initiate_ping_locked, gpr_now(GPR_CLOCK_MONOTONIC));
+      grpc_timer_init(exec_ctx, &t->ping_state.delayed_ping_timer,
+                      next_allowed_ping, &t->retry_initiate_ping_locked,
+                      gpr_now(GPR_CLOCK_MONOTONIC));
     }
     return;
   }
