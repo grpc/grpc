@@ -4389,7 +4389,6 @@ targets:
   cpu_cost: 100
   build: test
   language: c++
-  timeout_seconds: 1200
   src:
   - test/cpp/end2end/thread_stress_test.cc
   deps:
@@ -4399,6 +4398,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  timeout_seconds: 1200
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5
