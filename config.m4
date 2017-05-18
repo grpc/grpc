@@ -13,9 +13,11 @@ if test "$PHP_GRPC" != "no"; then
 
   LIBS="-lpthread $LIBS"
 
+  CFLAGS="-Wall -Werror -Wno-parentheses-equality -Wno-unused-value -std=c11"
+  CXXFLAGS="-std=c++11"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
+  PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
-
   PHP_ADD_LIBRARY(dl,,GRPC_SHARED_LIBADD)
   PHP_ADD_LIBRARY(dl)
 
@@ -688,9 +690,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/cares/cares/inet_net_pton.c \
     third_party/cares/cares/inet_ntop.c \
     third_party/cares/cares/windows_port.c \
-    , $ext_shared, , -Wall -Werror \
-    -Wno-parentheses-equality -Wno-unused-value -std=c11 \
-    -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
+    , $ext_shared, , -fvisibility=hidden \
+    -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX)
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
