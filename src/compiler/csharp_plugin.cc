@@ -38,6 +38,7 @@
 #include "src/compiler/config.h"
 #include "src/compiler/csharp_generator.h"
 #include "src/compiler/csharp_generator_helpers.h"
+#include "src/compiler/protobuf_plugin.h"
 
 class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
@@ -67,8 +68,10 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
     }
 
+	ProtoBufFile pbfile(file);
+
     grpc::string code = grpc_csharp_generator::GetServices(
-        file, generate_client, generate_server, internal_access);
+        &pbfile, generate_client, generate_server, internal_access);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services
     }

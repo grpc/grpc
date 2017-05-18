@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "src/compiler/config.h"
+#include "src/compiler/schema_interface.h"
 
 namespace grpc_generator {
 
@@ -179,6 +180,26 @@ inline MethodType GetMethodType(
       return METHODTYPE_NO_STREAMING;
     }
   }
+}
+
+inline MethodType GetMethodType(
+	const grpc_generator::Method *method) {
+	if (method->ClientStreaming()) {
+		if (method->ServerStreaming()) {
+			return METHODTYPE_BIDI_STREAMING;
+		}
+		else {
+			return METHODTYPE_CLIENT_STREAMING;
+		}
+	}
+	else {
+		if (method->ServerStreaming()) {
+			return METHODTYPE_SERVER_STREAMING;
+		}
+		else {
+			return METHODTYPE_NO_STREAMING;
+		}
+	}
 }
 
 inline void Split(const grpc::string &s, char delim,

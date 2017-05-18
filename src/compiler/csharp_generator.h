@@ -35,12 +35,13 @@
 #define GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_H
 
 #include "src/compiler/config.h"
+#include "src/compiler/schema_interface.h"
 
 #include <google/protobuf/compiler/csharp/csharp_names.h>
 
 namespace grpc_csharp_generator {
 
-grpc::string GetServices(const grpc::protobuf::FileDescriptor *file,
+grpc::string GetServices(const grpc_generator::File *file,
                          bool generate_client, bool generate_server,
                          bool internal_access);
 
