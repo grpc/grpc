@@ -50,6 +50,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -60,7 +61,6 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/port.h"
 
@@ -73,7 +73,7 @@ struct grpc_end2end_http_proxy {
   grpc_pollset* pollset;
   gpr_refcount users;
 
-  grpc_combiner *combiner;
+  grpc_combiner* combiner;
 };
 
 //
@@ -508,7 +508,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_pollset_shutdown(&exec_ctx, proxy->pollset,
                         grpc_closure_create(destroy_pollset, proxy->pollset,
                                             grpc_schedule_on_exec_ctx));
-    grpc_combiner_unref(&exec_ctx, proxy->combiner);
+  grpc_combiner_unref(&exec_ctx, proxy->combiner);
   gpr_free(proxy);
   grpc_exec_ctx_finish(&exec_ctx);
 }
