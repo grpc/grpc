@@ -106,17 +106,17 @@ static void *grpc_rb_wait_for_event_no_gil(void *param) {
   grpc_rb_event *event = NULL;
   (void)param;
   gpr_mu_lock(&event_queue.mu);
-  while ((event = grpc_rb_event_queue_dequeue()) == NULL) {
+  while (!event_queue.abort) {
+    if ((event = grpc_rb_event_queue_dequeue()) != NULL) {
+      gpr_mu_unlock(&event_queue.mu);
+      return event;
+    }
     gpr_cv_wait(&event_queue.cv,
                 &event_queue.mu,
                 gpr_inf_future(GPR_CLOCK_REALTIME));
-    if (event_queue.abort) {
-      gpr_mu_unlock(&event_queue.mu);
-      return NULL;
-    }
   }
   gpr_mu_unlock(&event_queue.mu);
-  return event;
+  return NULL;
 }
 
 static void grpc_rb_event_unblocking_func(void *arg) {
