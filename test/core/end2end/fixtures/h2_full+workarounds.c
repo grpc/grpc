@@ -83,10 +83,11 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
 
 void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *server_args) {
+  int i;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   fullstack_fixture_data *ffd = f->fixture_data;
   grpc_arg args[GRPC_MAX_WORKAROUND_ID];
-  for (uint32_t i = 0; i < GRPC_MAX_WORKAROUND_ID; i++) {
+  for (i = 0; i < GRPC_MAX_WORKAROUND_ID; i++) {
     args[i].key = workarounds_arg[i];
     args[i].type = GRPC_ARG_INTEGER;
     args[i].value.integer = 1;
