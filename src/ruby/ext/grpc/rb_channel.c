@@ -273,7 +273,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
 }
 
 typedef struct get_state_stack {
-  grpc_channel *channel;
+  bg_watched_channel *bg;
   int try_to_connect;
   int out;
 } get_state_stack;
@@ -283,14 +283,10 @@ static void *get_state_without_gil(void *arg) {
 
   gpr_mu_lock(&global_connection_polling_mu);
   GPR_ASSERT(abort_channel_polling || channel_polling_thread_started);
-  if (abort_channel_polling) {
-    // Assume that this channel has been destroyed by the
-    // background thread.
-    // The case in which the channel polling thread
-    // failed to start just always shows shutdown state.
+  if (stack->bg->channel_destroyed) {
     stack->out = GRPC_CHANNEL_SHUTDOWN;
   } else {
-    stack->out = grpc_channel_check_connectivity_state(stack->channel,
+    stack->out = grpc_channel_check_connectivity_state(stack->bg->channel,
                                                        stack->try_to_connect);
   }
   gpr_mu_unlock(&global_connection_polling_mu);
@@ -322,7 +318,7 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE *argv,
     return Qnil;
   }
 
-  stack.channel = wrapper->bg_wrapped->channel;
+  stack.bg = wrapper->bg_wrapped;
   stack.try_to_connect = RTEST(try_to_connect_param) ? 1 : 0;
   rb_thread_call_without_gvl(get_state_without_gil, &stack, NULL, NULL);
 

@@ -46,10 +46,17 @@ def watch_state(ch)
 end
 
 def main
+  channels = []
   10.times do
     ch = GRPC::Core::Channel.new('dummy_host',
                                  nil, :this_channel_is_insecure)
     watch_state(ch)
+    channels << ch
+  end
+
+  # checking state should still be safe to call
+  channels.each do |c|
+    fail unless c.connectivity_state(false) == FATAL_FAILURE
   end
 end
 
