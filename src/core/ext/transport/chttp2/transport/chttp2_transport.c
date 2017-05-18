@@ -155,7 +155,7 @@ static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 #define DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
 #define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
-#define DEFAULT_MAX_PINGS_BETWEEN_DATA 2
+#define DEFAULT_MAX_PINGS_BETWEEN_DATA 0                      /* unlimited */
 #define DEFAULT_MAX_PING_STRIKES 2
 
 /** keepalive-relevant functions */
