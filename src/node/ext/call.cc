@@ -721,6 +721,14 @@ NAN_METHOD(Call::StartBatch) {
   }
   Local<Function> callback_func = info[1].As<Function>();
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
+  if (call->wrapped_call == NULL) {
+    /* This implies that the call has completed and has been destroyed. To emulate
+     * previous behavior, we should call the callback immediately with an error,
+     * as though the batch had failed in core */
+    Local<Value> argv[] = {Nan::Error("The async function failed because the call has completed")};
+    Nan::Call(callback_func, Nan::New<Object>(), 1, argv);
+    return;
+  }
   Local<Object> obj = Nan::To<Object>(info[0]).ToLocalChecked();
   Local<Array> keys = Nan::GetOwnPropertyNames(obj).ToLocalChecked();
   size_t nops = keys->Length();
