@@ -86,13 +86,21 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_binary(
-    name = "interop_client",
+grpc_cc_library(
+    name = "interop_client_main",
     language = "c++",
     srcs = [
         "client.cc",
     ],
     deps = [
-        ":client_helper_lib",
+        ":client_helper_lib"
+    ],
+)
+
+grpc_cc_binary(
+    name = "interop_client",
+    language = "c++",
+    deps = [
+        ":interop_client_main",
     ],
 )

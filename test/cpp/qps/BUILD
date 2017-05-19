@@ -67,9 +67,6 @@ grpc_cc_library(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    external_deps = [
-        "gtest",
-    ],
 )
 
 grpc_cc_library(

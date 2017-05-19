@@ -35,6 +35,7 @@ package(default_visibility=["//visibility:public"]) # Allows external users to i
 
 grpc_cc_library(
     name = "test_service_impl",
+    testonly = True,
     srcs = ["test_service_impl.cc"],
     hdrs = ["test_service_impl.h"],
     deps = [
