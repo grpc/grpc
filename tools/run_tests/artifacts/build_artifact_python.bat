@@ -38,8 +38,9 @@ set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
 @rem Multiple builds are running simultaneously, so to avoid distutils
 @rem file collisions, we build everything in a tmp directory
-if not exist "artifacts" mkdir "artifacts"
-set ARTIFACT_DIR=%cd%\artifacts
+@rem TODO(jtattermusch): it doesn't look like builds are actually running in parallel in the same dir
+mkdir -p %ARTIFACTS_OUT%
+set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 set BUILD_DIR=C:\Windows\Temp\pygrpc-%3\
 mkdir %BUILD_DIR%
 xcopy /s/e/q %cd%\* %BUILD_DIR%

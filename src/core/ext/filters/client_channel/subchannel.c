@@ -283,6 +283,7 @@ static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
 void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
+  // add a weak ref and subtract a strong ref (atomically)
   old_refs = ref_mutate(c, (gpr_atm)1 - (gpr_atm)(1 << INTERNAL_REF_BITS),
                         1 REF_MUTATE_PURPOSE("STRONG_UNREF"));
   if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
@@ -656,7 +657,6 @@ static bool publish_transport_locked(grpc_exec_ctx *exec_ctx,
     gpr_free(sw_subchannel);
     grpc_channel_stack_destroy(exec_ctx, stk);
     gpr_free(con);
-    GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
     return false;
   }
 

@@ -1,4 +1,4 @@
-# Overview
+# gRPC Web
 
 gRPC-Web provides a JS client library that supports the same API
 as gRPC-Node to access a gRPC service. Due to browser limitation,

@@ -50,6 +50,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -71,6 +72,8 @@ struct grpc_end2end_http_proxy {
   gpr_mu* mu;
   grpc_pollset* pollset;
   gpr_refcount users;
+
+  grpc_combiner* combiner;
 };
 
 //
@@ -400,19 +403,19 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_pollset_set_add_pollset(exec_ctx, conn->pollset_set, proxy->pollset);
   grpc_endpoint_add_to_pollset_set(exec_ctx, endpoint, conn->pollset_set);
   grpc_closure_init(&conn->on_read_request_done, on_read_request_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(conn->proxy->combiner, false));
   grpc_closure_init(&conn->on_server_connect_done, on_server_connect_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(conn->proxy->combiner, false));
   grpc_closure_init(&conn->on_write_response_done, on_write_response_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(conn->proxy->combiner, false));
   grpc_closure_init(&conn->on_client_read_done, on_client_read_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(conn->proxy->combiner, false));
   grpc_closure_init(&conn->on_client_write_done, on_client_write_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(conn->proxy->combiner, false));
   grpc_closure_init(&conn->on_server_read_done, on_server_read_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(conn->proxy->combiner, false));
   grpc_closure_init(&conn->on_server_write_done, on_server_write_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(conn->proxy->combiner, false));
   grpc_slice_buffer_init(&conn->client_read_buffer);
   grpc_slice_buffer_init(&conn->client_deferred_write_buffer);
   grpc_slice_buffer_init(&conn->client_write_buffer);
@@ -453,6 +456,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(void) {
   grpc_end2end_http_proxy* proxy =
       (grpc_end2end_http_proxy*)gpr_malloc(sizeof(*proxy));
   memset(proxy, 0, sizeof(*proxy));
+  proxy->combiner = grpc_combiner_create(NULL);
   gpr_ref_init(&proxy->users, 1);
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
@@ -504,6 +508,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_pollset_shutdown(&exec_ctx, proxy->pollset,
                         grpc_closure_create(destroy_pollset, proxy->pollset,
                                             grpc_schedule_on_exec_ctx));
+  grpc_combiner_unref(&exec_ctx, proxy->combiner);
   gpr_free(proxy);
   grpc_exec_ctx_finish(&exec_ctx);
 }

@@ -100,6 +100,12 @@ class FullstackFixture : public BaseFixture {
     }
   }
 
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    BaseFixture::AddToLabel(out, state);
+    out << " polls/iter:"
+        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
+  }
+
   ServerCompletionQueue* cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
 
@@ -212,6 +218,12 @@ class EndpointPairFixture : public BaseFixture {
     }
   }
 
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    BaseFixture::AddToLabel(out, state);
+    out << " polls/iter:"
+        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
+  }
+
   ServerCompletionQueue* cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
 
@@ -245,7 +257,7 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << ((double)stats_.num_writes / (double)state.iterations());
+        << (double)stats_.num_writes / (double)state.iterations();
   }
 
  private:

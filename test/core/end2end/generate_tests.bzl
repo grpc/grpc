@@ -28,6 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_sh_test", "grpc_cc_binary", "grpc_cc_library")
 
 """Generates the appropriate build.json data for all the end2end tests."""
 
@@ -56,6 +57,7 @@ END2END_FIXTURES = {
     'h2_full': fixture_options(),
     'h2_full+pipe': fixture_options(platforms=['linux']),
     'h2_full+trace': fixture_options(tracing=True),
+    'h2_full+workarounds': fixture_options(),
     'h2_http_proxy': fixture_options(),
     'h2_oauth2': fixture_options(),
     'h2_proxy': fixture_options(includes_proxy=True),
@@ -135,6 +137,7 @@ END2END_TESTS = {
     'trailing_metadata': test_options(),
     'authority_not_supported': test_options(),
     'filter_latency': test_options(),
+    'workaround_cronet_compression': test_options(),
     'write_buffering': test_options(),
     'write_buffering_at_end': test_options(),
 }
@@ -157,7 +160,7 @@ def compatible(fopt, topt):
 
 
 def grpc_end2end_tests():
-  native.cc_library(
+  grpc_cc_library(
     name = 'end2end_tests',
     srcs = ['end2end_tests.c', 'end2end_test_utils.c'] + [
              'tests/%s.c' % t
@@ -166,31 +169,33 @@ def grpc_end2end_tests():
       'tests/cancel_test_helpers.h',
       'end2end_tests.h'
     ],
-    copts = ['-std=c99'],
+    language = "C",
     deps = [
       ':cq_verifier',
       ':ssl_test_data',
       ':fake_resolver',
       ':http_proxy',
       ':proxy',
-      '//test/core/util:grpc_test_util',
-      '//:grpc',
-      '//test/core/util:gpr_test_util',
-      '//:gpr',
     ]
   )
 
   for f, fopt in END2END_FIXTURES.items():
-    native.cc_binary(
+    grpc_cc_binary(
       name = '%s_test' % f,
       srcs = ['fixtures/%s.c' % f],
-      copts = ['-std=c99'],
-      deps = [':end2end_tests']
+      language = "C",
+      deps = [
+        ':end2end_tests',
+        '//test/core/util:grpc_test_util',
+        '//:grpc',
+        '//test/core/util:gpr_test_util',
+        '//:gpr',
+      ],
     )
     for t, topt in END2END_TESTS.items():
       #print(compatible(fopt, topt), f, t, fopt, topt)
       if not compatible(fopt, topt): continue
-      native.sh_test(
+      grpc_sh_test(
         name = '%s_test@%s' % (f, t),
         srcs = ['end2end_test.sh'],
         args = ['$(location %s_test)' % f, t],
