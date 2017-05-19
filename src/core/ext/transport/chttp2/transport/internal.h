@@ -53,7 +53,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/pid_controller.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 /* streams are kept in various linked lists depending on what things need to
@@ -378,10 +377,11 @@ struct grpc_chttp2_transport {
 
   /* bdp estimator */
   grpc_bdp_estimator bdp_estimator;
-  grpc_pid_controller pid_controller;
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
-  gpr_timespec last_pid_update;
+
+  /* sticky avg */
+  double old_target;
 
   /* if non-NULL, close the transport with this error when writes are finished
    */
