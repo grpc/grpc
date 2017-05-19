@@ -48,7 +48,10 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -58,6 +61,8 @@ static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
 
 typedef struct grpc_ares_request {
+  /** indicates the DNS server to use, if specified */
+  struct ares_addr_port_node dns_server_addr;
   /** following members are set in grpc_resolve_address_ares_impl */
   /** host to resolve, parsed from the name to resolve */
   char *host;
@@ -192,11 +197,12 @@ static void on_done_cb(void *arg, int status, int timeouts,
   grpc_ares_request_unref(NULL, r);
 }
 
-void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
-                                    const char *default_port,
-                                    grpc_pollset_set *interested_parties,
-                                    grpc_closure *on_done,
-                                    grpc_resolved_addresses **addrs) {
+void grpc_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
+                          const char *name, const char *default_port,
+                          grpc_pollset_set *interested_parties,
+                          grpc_closure *on_done,
+                          grpc_resolved_addresses **addrs) {
+  grpc_error *error = GRPC_ERROR_NONE;
   /* TODO(zyc): Enable tracing after #9603 is checked in */
   /* if (grpc_dns_trace) {
       gpr_log(GPR_DEBUG, "resolve_address (blocking): name=%s, default_port=%s",
@@ -208,28 +214,23 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   char *port;
   gpr_split_host_port(name, &host, &port);
   if (host == NULL) {
-    grpc_error *err = grpc_error_set_str(
+    error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
         GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
-    grpc_closure_sched(exec_ctx, on_done, err);
     goto error_cleanup;
   } else if (port == NULL) {
     if (default_port == NULL) {
-      grpc_error *err = grpc_error_set_str(
+      error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
           GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
-      grpc_closure_sched(exec_ctx, on_done, err);
       goto error_cleanup;
     }
     port = gpr_strdup(default_port);
   }
 
   grpc_ares_ev_driver *ev_driver;
-  grpc_error *err = grpc_ares_ev_driver_create(&ev_driver, interested_parties);
-  if (err != GRPC_ERROR_NONE) {
-    GRPC_LOG_IF_ERROR("grpc_ares_ev_driver_create() failed", err);
-    goto error_cleanup;
-  }
+  error = grpc_ares_ev_driver_create(&ev_driver, interested_parties);
+  if (error != GRPC_ERROR_NONE) goto error_cleanup;
 
   grpc_ares_request *r = gpr_malloc(sizeof(grpc_ares_request));
   gpr_mu_init(&r->mu);
@@ -242,6 +243,40 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   r->success = false;
   r->error = GRPC_ERROR_NONE;
   ares_channel *channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
+
+  // If dns_server is specified, use it.
+  if (dns_server != NULL) {
+    gpr_log(GPR_INFO, "Using DNS server %s", dns_server);
+    grpc_resolved_address addr;
+    if (grpc_parse_ipv4_hostport(dns_server, &addr, false /* log_errors */)) {
+      r->dns_server_addr.family = AF_INET;
+      memcpy(&r->dns_server_addr.addr.addr4, addr.addr, addr.len);
+      r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
+      r->dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
+    } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
+                                        false /* log_errors */)) {
+      r->dns_server_addr.family = AF_INET6;
+      memcpy(&r->dns_server_addr.addr.addr6, addr.addr, addr.len);
+      r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
+      r->dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
+    } else {
+      error = grpc_error_set_str(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
+          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+      goto error_cleanup;
+    }
+    int status = ares_set_servers_ports(*channel, &r->dns_server_addr);
+    if (status != ARES_SUCCESS) {
+      char *error_msg;
+      gpr_asprintf(&error_msg, "C-ares status is not ARES_SUCCESS: %s",
+                   ares_strerror(status));
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
+      gpr_free(error_msg);
+      goto error_cleanup;
+    }
+  }
+  // An extra reference is put here to avoid destroying the request in
+  // on_done_cb before calling grpc_ares_ev_driver_start.
   gpr_ref_init(&r->pending_queries, 2);
   if (grpc_ipv6_loopback_available()) {
     gpr_ref(&r->pending_queries);
@@ -254,8 +289,18 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   return;
 
 error_cleanup:
+  grpc_closure_sched(exec_ctx, on_done, error);
   gpr_free(host);
   gpr_free(port);
+}
+
+void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
+                                    const char *default_port,
+                                    grpc_pollset_set *interested_parties,
+                                    grpc_closure *on_done,
+                                    grpc_resolved_addresses **addrs) {
+  grpc_dns_lookup_ares(exec_ctx, NULL /* dns_server */, name, default_port,
+                       interested_parties, on_done, addrs);
 }
 
 void (*grpc_resolve_address_ares)(
