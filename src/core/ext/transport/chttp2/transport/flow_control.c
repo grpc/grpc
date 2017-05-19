@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+// Returns true if value is more that 10% different than current setting.
 static bool delta_is_significant(const grpc_chttp2_transport* t, int32_t value,
                                  grpc_chttp2_setting_id setting_id) {
   int64_t delta =
@@ -47,6 +48,37 @@ static bool delta_is_significant(const grpc_chttp2_transport* t, int32_t value,
   return (delta != 0 && (delta <= -value / 10 || delta >= value / 10));
 }
 
+// Takes in a target and uses the pid controller to return a stabilized
+// guess at the new bdp.
+static double get_pid_controller_guess(grpc_chttp2_transport* t,
+                                       double target) {
+  double bdp_error = target - grpc_pid_controller_last(&t->pid_controller);
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
+  double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
+  if (dt > 0.1) {
+    dt = 0.1;
+  }
+  double log2_bdp_guess =
+      grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
+  t->last_pid_update = now;
+  return pow(2, log2_bdp_guess);
+}
+
+// Take in a target and modifies it based on the memory pressure of the system
+static double get_target_under_memory_pressure(grpc_chttp2_transport* t,
+                                               double target) {
+  // do not increase window under heavy memory pressure.
+  double memory_pressure = grpc_resource_quota_get_memory_pressure(
+      grpc_resource_user_quota(grpc_endpoint_get_resource_user(t->ep)));
+  if (memory_pressure > 0.8) {
+    target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
+  }
+  return target;
+}
+
+// Examines transport and stream and returns a struct that details the actions
+// chttp2 transport needs to take.
 grpc_chttp2_flow_control_action grpc_chttp2_check_for_flow_control_action(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s) {
   grpc_chttp2_flow_control_action action;
@@ -64,28 +96,20 @@ grpc_chttp2_flow_control_action grpc_chttp2_check_for_flow_control_action(
     if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
       double target = 1 + log2((double)estimate);
 
-      // do not increase window under heavy memory pressure.
-      double memory_pressure = grpc_resource_quota_get_memory_pressure(
-          grpc_resource_user_quota(grpc_endpoint_get_resource_user(t->ep)));
-      if (memory_pressure > 0.8) {
-        target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
-      }
+      // target might change based on how much memory pressure we are under
+      // TODO(ncteisen): experiment with setting target to be huge under low
+      // memory pressure.
+      target = get_target_under_memory_pressure(t, target);
 
       // run our target through the pid controller to stabilize change.
-      double bdp_error = target - grpc_pid_controller_last(&t->pid_controller);
-      gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-      gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
-      double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
-      if (dt > 0.1) {
-        dt = 0.1;
-      }
-      double log2_bdp_guess =
-          grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
-      t->last_pid_update = now;
-      double bdp_guess = pow(2, log2_bdp_guess);
+      // TODO(ncteisen): experiment with other controllers here.
+      // TODO(ncteisen): this could be a pluggable feature if different
+      // made sense for different situations.
+      double bdp_guess = get_pid_controller_guess(t, target);
 
-      // initial window size bounded [1,2^31-1], but we set the min to 128.
-      bdp = GPR_CLAMP((int32_t)bdp_guess, 128, INT32_MAX);
+      // Though initial window 'could' drop to 0, we keep the floor at 128
+      bdp = GPR_MAX((int32_t)bdp_guess, 128);
+
       // TODO(ncteisen): Idea -- if the delta is REALLY significant, send the
       // update immediately. Otherwise, just queue it
       if (delta_is_significant(t, bdp,
@@ -101,6 +125,7 @@ grpc_chttp2_flow_control_action grpc_chttp2_check_for_flow_control_action(
     if (grpc_bdp_estimator_get_bw(&t->bdp_estimator, &bw_dbl)) {
       // we target the max of BDP or bandwidth in microseconds.
       int32_t frame_size = GPR_MAX((int32_t)bw_dbl / 1000, bdp);
+
       if (delta_is_significant(t, frame_size,
                                GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE)) {
         action.send_max_frame_update =
