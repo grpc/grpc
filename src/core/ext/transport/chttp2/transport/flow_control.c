@@ -50,19 +50,10 @@ static bool delta_is_significant(const grpc_chttp2_transport* t, int32_t value,
 
 // Takes in a target and uses the pid controller to return a stabilized
 // guess at the new bdp.
-static double get_pid_controller_guess(grpc_chttp2_transport* t,
+#define STICKINESS 0.95
+static double get_sticky_avg_guess(grpc_chttp2_transport* t,
                                        double target) {
-  double bdp_error = target - grpc_pid_controller_last(&t->pid_controller);
-  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-  gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
-  double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
-  if (dt > 0.1) {
-    dt = 0.1;
-  }
-  double log2_bdp_guess =
-      grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
-  t->last_pid_update = now;
-  return pow(2, log2_bdp_guess);
+  return STICKINESS * t->old_target + (1 - STICKINESS) * target;
 }
 
 // Take in a target and modifies it based on the memory pressure of the system
@@ -101,11 +92,8 @@ grpc_chttp2_flow_control_action grpc_chttp2_check_for_flow_control_action(
       // memory pressure.
       target = get_target_under_memory_pressure(t, target);
 
-      // run our target through the pid controller to stabilize change.
-      // TODO(ncteisen): experiment with other controllers here.
-      // TODO(ncteisen): this could be a pluggable feature if different
-      // made sense for different situations.
-      double bdp_guess = get_pid_controller_guess(t, target);
+      // run our target through sticky avg to stabilize change.
+      double bdp_guess = get_sticky_avg_guess(t, target);
 
       // Though initial window 'could' drop to 0, we keep the floor at 128
       bdp = GPR_MAX((int32_t)bdp_guess, 128);
