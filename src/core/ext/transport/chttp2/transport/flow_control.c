@@ -40,24 +40,38 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+static bool delta_is_significant(const grpc_chttp2_transport* t, int32_t value,
+                                 grpc_chttp2_setting_id setting_id) {
+  int64_t delta =
+      (int64_t)value - (int64_t)t->settings[GRPC_LOCAL_SETTINGS][setting_id];
+  return (delta != 0 && (delta <= -value / 10 || delta >= value / 10));
+}
+
 grpc_chttp2_flow_control_action grpc_chttp2_check_for_flow_control_action(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s) {
   grpc_chttp2_flow_control_action action;
   memset(&action, 0, sizeof(action));
+
   if (t->enable_bdp_probe) {
     // check for needed ping
     if (grpc_bdp_estimator_need_ping(&t->bdp_estimator)) {
       action.send_bdp_ping = GRPC_CHTTP2_FLOW_CONTROL_UPDATE_IMMEDIATELY;
     }
+
+    // get bdp estimate and update initial_window accordingly.
     int64_t estimate = -1;
     int32_t bdp = -1;
     if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
       double target = 1 + log2((double)estimate);
+
+      // do not increase window under heavy memory pressure.
       double memory_pressure = grpc_resource_quota_get_memory_pressure(
           grpc_resource_user_quota(grpc_endpoint_get_resource_user(t->ep)));
       if (memory_pressure > 0.8) {
         target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
       }
+
+      // run our target through the pid controller to stabilize change.
       double bdp_error = target - grpc_pid_controller_last(&t->pid_controller);
       gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
       gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
@@ -67,30 +81,28 @@ grpc_chttp2_flow_control_action grpc_chttp2_check_for_flow_control_action(
       }
       double log2_bdp_guess =
           grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
-      double bdp_guess = pow(2, log2_bdp_guess);
       t->last_pid_update = now;
+      double bdp_guess = pow(2, log2_bdp_guess);
+
       // initial window size bounded [1,2^31-1], but we set the min to 128.
       bdp = GPR_CLAMP((int32_t)bdp_guess, 128, INT32_MAX);
-      int64_t delta =
-          (int64_t)bdp -
-          (int64_t)t->settings[GRPC_LOCAL_SETTINGS]
-                              [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-      if (delta != 0 && (delta <= -bdp / 10 || delta >= bdp / 10)) {
+      // TODO(ncteisen): Idea -- if the delta is REALLY significant, send the
+      // update immediately. Otherwise, just queue it
+      if (delta_is_significant(t, bdp,
+                               GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE)) {
         action.send_transport_update =
             GRPC_CHTTP2_FLOW_CONTROL_UPDATE_IMMEDIATELY;
         action.announce_transport_window = bdp;
       }
     }
 
+    // get bandwidth estimate and update max_frame accordingly.
     double bw_dbl = -1;
     if (grpc_bdp_estimator_get_bw(&t->bdp_estimator, &bw_dbl)) {
       // we target the max of BDP or bandwidth in microseconds.
       int32_t frame_size = GPR_MAX((int32_t)bw_dbl / 1000, bdp);
-      int64_t delta = (int64_t)frame_size -
-                      (int64_t)t->settings[GRPC_LOCAL_SETTINGS]
-                                          [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
-      if (delta != 0 &&
-          (delta <= -frame_size / 10 || delta >= frame_size / 10)) {
+      if (delta_is_significant(t, frame_size,
+                               GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE)) {
         action.send_max_frame_update =
             GRPC_CHTTP2_FLOW_CONTROL_UPDATE_IMMEDIATELY;
         action.announce_max_frame = frame_size;
