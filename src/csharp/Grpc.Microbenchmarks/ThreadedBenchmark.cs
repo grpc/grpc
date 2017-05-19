@@ -32,22 +32,48 @@
 #endregion
 
 using System;
+using System.Threading;
 using Grpc.Core;
 using Grpc.Core.Internal;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Grpc.Microbenchmarks
 {
-    class Program
+    public class ThreadedBenchmark
     {
-        public static void Main(string[] args)
+        List<ThreadStart> runners;
+
+        public ThreadedBenchmark(IEnumerable<ThreadStart> runners)
         {
-            var benchmark = new SendMessageBenchmark();
-            benchmark.Init();
-            foreach (int threadCount in new int[] {1, 1, 2, 4, 8, 12})
+            this.runners = new List<ThreadStart>(runners);
+        }
+
+        public ThreadedBenchmark(int threadCount, Action threadBody)
+        {
+            this.runners = new List<ThreadStart>();
+            for (int i = 0; i < threadCount; i++)
             {
-                benchmark.Run(threadCount, 4 * 1000 * 1000, 0);
+                this.runners.Add(new ThreadStart(() => threadBody()));
             }
-            benchmark.Cleanup();
+        }
+        
+        public void Run()
+        {
+            Console.WriteLine("Running threads.");
+            var threads = new List<Thread>();
+            for (int i = 0; i < runners.Count; i++)
+            {
+                var thread = new Thread(runners[i]);
+                thread.Start();
+                threads.Add(thread);
+            }
+
+            foreach (var thread in threads)
+            {
+                thread.Join();
+            }
+            Console.WriteLine("All threads finished.");
         }
     }
 }
