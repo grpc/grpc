@@ -58,12 +58,13 @@ static void test_get_estimate_no_samples(void) {
 
 static void add_samples(grpc_bdp_estimator *estimator, int64_t *samples,
                         size_t n) {
-  GPR_ASSERT(grpc_bdp_estimator_add_incoming_bytes(estimator, 1234567) == true);
+  grpc_bdp_estimator_add_incoming_bytes(estimator, 1234567);
+  GPR_ASSERT(grpc_bdp_estimator_need_ping(estimator) == true);
   grpc_bdp_estimator_schedule_ping(estimator);
   grpc_bdp_estimator_start_ping(estimator);
   for (size_t i = 0; i < n; i++) {
-    GPR_ASSERT(grpc_bdp_estimator_add_incoming_bytes(estimator, samples[i]) ==
-               false);
+    grpc_bdp_estimator_add_incoming_bytes(estimator, samples[i]);
+    GPR_ASSERT(grpc_bdp_estimator_need_ping(estimator) == false);
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
