@@ -33,11 +33,11 @@
 #ifndef GRPC_IMPL_CODEGEN_GPR_SLICE_H
 #define GRPC_IMPL_CODEGEN_GPR_SLICE_H
 
-/* WARNING: Please do not use this header. This was added as a temporary measure
- * to not break some of the external projects that depend on gpr_slice_*
- * functions. We are actively working on moving all the gpr_slice_* references
- * to grpc_slice_* and this file will be removed
- * */
+/** WARNING: Please do not use this header. This was added as a temporary
+ * measure to not break some of the external projects that depend on
+ * gpr_slice_* functions. We are actively working on moving all the
+ * gpr_slice_* references to grpc_slice_* and this file will be removed
+ */
 
 /* TODO (sreek) - Allowed by default but will be very soon turned off */
 #define GRPC_ALLOW_GPR_SLICE_FUNCTIONS 1

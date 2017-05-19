@@ -75,8 +75,9 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['epollsig', 'poll', 'poll-cv']
+  'linux': ['epollsig', 'poll', 'poll-cv'],
 # TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
+  'mac': ['poll'],
 }
 
 
@@ -1440,6 +1441,9 @@ def _has_epollexclusive():
     return True
   except subprocess.CalledProcessError, e:
     return False
+  except OSError, e:
+    # For languages other than C and Windows the binary won't exist
+    return False
 
 
 # returns a list of things that failed (or an empty list on success)
@@ -1459,7 +1463,7 @@ def _build_and_run(
                                            suite_name=args.report_suite_name)
     return []
 
-  if not args.travis and not _has_epollexclusive() and 'epollex' in _POLLING_STRATEGIES[platform_string()]:
+  if not args.travis and not _has_epollexclusive() and platform_string() in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[platform_string()]:
     print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
     _POLLING_STRATEGIES[platform_string()].remove('epollex')
 

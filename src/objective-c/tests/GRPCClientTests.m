@@ -293,6 +293,35 @@ static GRPCProtoMethod *kUnaryCallMethod;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+- (void)testTrailers {
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Empty response received."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                             path:kEmptyCallMethod.HTTPPath
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+  // Setting this special key in the header will cause the interop server to echo back the
+  // trailer data.
+  const unsigned char raw_bytes[] = {1,2,3,4};
+  NSData *trailer_data = [NSData dataWithBytes:raw_bytes length:sizeof(raw_bytes)];
+  call.requestHeaders[@"x-grpc-test-echo-trailing-bin"] = trailer_data;
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssertNotNil(value, @"nil value received as response.");
+    XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
+    [response fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+    XCTAssertEqualObjects((NSData *)call.responseTrailers[@"x-grpc-test-echo-trailing-bin"],
+                          trailer_data,
+                          @"Did not receive expected trailer");
+    [completion fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 // TODO(makarandd): Move to a different file that contains only unit tests
 - (void)testExceptions {
   // Try to set parameters to nil for GRPCCall. This should cause an exception

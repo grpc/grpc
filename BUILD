@@ -478,6 +478,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_epollsig_linux.c",
         "src/core/lib/iomgr/ev_poll_posix.c",
         "src/core/lib/iomgr/ev_posix.c",
+        "src/core/lib/iomgr/ev_windows.c",
         "src/core/lib/iomgr/exec_ctx.c",
         "src/core/lib/iomgr/executor.c",
         "src/core/lib/iomgr/iocp_windows.c",
@@ -744,7 +745,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_server_insecure",
         "grpc_workaround_cronet_compression_filter",
         "grpc_server_backward_compatibility",
-    ]
+    ],
 )
 
 grpc_cc_library(
@@ -1399,22 +1400,22 @@ GRPCXX_PUBLIC_HDRS = [
 
 grpc_cc_library(
     name = "grpc++_base",
-    hdrs = GRPCXX_HDRS,
     srcs = GRPCXX_SRCS,
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    hdrs = GRPCXX_HDRS,
     language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
-        "grpc++_codegen_base",
         "grpc",
+        "grpc++_codegen_base",
     ],
 )
 
 grpc_cc_library(
     name = "grpc++_base_unsecure",
-    hdrs = GRPCXX_HDRS,
     srcs = GRPCXX_SRCS,
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    hdrs = GRPCXX_HDRS,
     language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "grpc++_codegen_base",
         "grpc_unsecure",
@@ -1537,6 +1538,5 @@ grpc_cc_library(
         "grpc_base",
     ],
 )
-
 
 grpc_generate_one_off_targets()

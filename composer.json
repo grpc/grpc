@@ -6,11 +6,14 @@
   "homepage": "http://grpc.io",
   "license": "BSD-3-Clause",
   "require": {
-    "php": ">=5.5.0",
-    "google/protobuf": "^v3.3.0"
+    "php": ">=5.5.0"
   },
   "require-dev": {
     "google/auth": "v0.9"
+  },
+  "suggest": {
+    "ext-protobuf": "For better performance, install the protobuf C extension.",
+    "google/protobuf": "To get started using grpc quickly, install the native protobuf library."
   },
   "autoload": {
     "psr-4": {

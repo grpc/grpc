@@ -52,7 +52,7 @@ namespace grpc {
 class ServerContext;
 class StreamContextInterface;
 
-// Base class for running an RPC handler.
+/// Base class for running an RPC handler.
 class MethodHandler {
  public:
   virtual ~MethodHandler() {}
@@ -67,17 +67,17 @@ class MethodHandler {
   virtual void RunHandler(const HandlerParameter& param) = 0;
 };
 
-// Server side rpc method class
+/// Server side rpc method class
 class RpcServiceMethod : public RpcMethod {
  public:
-  // Takes ownership of the handler
+  /// Takes ownership of the handler
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,
                    MethodHandler* handler)
       : RpcMethod(name, type), server_tag_(nullptr), handler_(handler) {}
 
   void set_server_tag(void* tag) { server_tag_ = tag; }
   void* server_tag() const { return server_tag_; }
-  // if MethodHandler is nullptr, then this is an async method
+  /// if MethodHandler is nullptr, then this is an async method
   MethodHandler* handler() const { return handler_.get(); }
   void ResetHandler() { handler_.reset(); }
   void SetHandler(MethodHandler* handler) { handler_.reset(handler); }

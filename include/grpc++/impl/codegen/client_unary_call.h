@@ -47,7 +47,7 @@ class ClientContext;
 class CompletionQueue;
 class RpcMethod;
 
-// Wrapper that performs a blocking unary call
+/// Wrapper that performs a blocking unary call
 template <class InputMessage, class OutputMessage>
 Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
                          ClientContext* context, const InputMessage& request,

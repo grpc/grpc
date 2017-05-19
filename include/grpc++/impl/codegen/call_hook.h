@@ -39,7 +39,8 @@ namespace grpc {
 class CallOpSetInterface;
 class Call;
 
-/// Channel and Server implement this to allow them to hook performing ops
+/// This is an interface that Channel and Server implement to allow them to hook
+/// performing ops.
 class CallHook {
  public:
   virtual ~CallHook() {}

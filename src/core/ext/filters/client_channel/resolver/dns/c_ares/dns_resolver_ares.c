@@ -61,6 +61,8 @@
 typedef struct {
   /** base class: must be first */
   grpc_resolver base;
+  /** DNS server to use (if not system default) */
+  char *dns_server;
   /** name to resolve (usually the same as target_name) */
   char *name_to_resolve;
   /** default port to use */
@@ -163,6 +165,8 @@ static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
     result = grpc_channel_args_copy_and_add(r->channel_args, &new_arg, 1);
     grpc_lb_addresses_destroy(exec_ctx, r->lb_addresses);
   } else {
+    const char *msg = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
     gpr_timespec timeout = gpr_time_sub(next_try, now);
@@ -212,9 +216,10 @@ static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!r->resolving);
   r->resolving = true;
   r->lb_addresses = NULL;
-  grpc_resolve_grpclb_address_ares(
-      exec_ctx, r->name_to_resolve, r->default_port, r->interested_parties,
-      &r->dns_ares_on_resolved_locked, &r->lb_addresses);
+  grpc_dns_lookup_ares(exec_ctx, r->dns_server, r->name_to_resolve,
+                       r->default_port, r->interested_parties,
+                       &r->dns_ares_on_resolved_locked,
+                       (void **)&r->lb_addresses, true /* is_lb_addrs_out */);
 }
 
 static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
@@ -238,6 +243,7 @@ static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
   grpc_pollset_set_destroy(exec_ctx, r->interested_parties);
+  gpr_free(r->dns_server);
   gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
   grpc_channel_args_destroy(exec_ctx, r->channel_args);
@@ -249,14 +255,13 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
                                       const char *default_port) {
   /* Get name from args. */
   const char *path = args->uri->path;
-  if (0 != strcmp(args->uri->authority, "")) {
-    gpr_log(GPR_ERROR, "authority based dns uri's not supported");
-    return NULL;
-  }
   if (path[0] == '/') ++path;
   /* Create resolver. */
   ares_dns_resolver *r = gpr_zalloc(sizeof(ares_dns_resolver));
   grpc_resolver_init(&r->base, &dns_ares_resolver_vtable, args->combiner);
+  if (0 != strcmp(args->uri->authority, "")) {
+    r->dns_server = gpr_strdup(args->uri->authority);
+  }
   r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   r->channel_args = grpc_channel_args_copy(args->args);
