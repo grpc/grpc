@@ -34,6 +34,7 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -50,6 +51,19 @@ extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
                                          grpc_pollset_set *interested_parties,
                                          grpc_closure *on_done,
                                          grpc_resolved_addresses **addresses);
+
+/* Asynchronously resolve addr. It will try to resolve grpclb SRV records in
+  addition to the normal address records. For normal address records, it uses
+  \a default_port if a port isn't designated in \a addr, otherwise it uses the
+  port in \a addr. grpc_ares_init() must be called at least once before this
+  function. \a on_done may be called directly in this function without being
+  scheduled with \a exec_ctx, it must not try to acquire locks that are being
+  held by the caller. */
+void grpc_resolve_grpclb_address_ares(grpc_exec_ctx *exec_ctx, const char *addr,
+                                      const char *default_port,
+                                      grpc_pollset_set *interested_parties,
+                                      grpc_closure *on_done,
+                                      grpc_lb_addresses **addresses);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
