@@ -2168,7 +2168,7 @@ static void update_frame(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   if (delta == 0 || (delta > -frame_size / 10 && delta < frame_size / 10)) {
     return;
   }
-  if (grpc_bdp_estimator_trace) {
+  if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
     gpr_log(GPR_DEBUG, "%s: update max_frame size to %d", t->peer_string,
             (int)frame_size);
   }
