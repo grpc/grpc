@@ -385,6 +385,10 @@ struct grpc_chttp2_transport {
   grpc_pid_controller pid_controller;
   gpr_timespec last_pid_update;
 
+  /* tracks avg message size */
+  int64_t read_msg_count;
+  int64_t read_byte_count;
+
   /* if non-NULL, close the transport with this error when writes are finished
    */
   grpc_error *close_transport_on_writes_finished;

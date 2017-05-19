@@ -74,6 +74,10 @@ static double get_target_under_memory_pressure(grpc_chttp2_transport* t,
   if (memory_pressure > 0.8) {
     target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
   }
+  if (memory_pressure < 0.2) {
+    target =
+        GPR_MAX(target, (double)t->read_byte_count / (double)t->read_msg_count);
+  }
   return target;
 }
 

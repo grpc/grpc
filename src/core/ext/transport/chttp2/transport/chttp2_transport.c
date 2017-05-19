@@ -330,6 +330,9 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                  .max_control_value = 25,
                                  .integral_range = 10});
 
+  t->read_msg_count = 0;
+  t->read_byte_count = 0;
+
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(exec_ctx, &t->hpack_parser);
 
@@ -2179,6 +2182,9 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
   grpc_chttp2_transport *t = tp;
 
+  // TODO(ncteisen): is this the right place to do this?
+  t->read_msg_count += 1;
+
   GRPC_ERROR_REF(error);
 
   grpc_error *err = error;
@@ -2201,6 +2207,8 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
           (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
       errors[1] =
           grpc_chttp2_perform_read(exec_ctx, t, t->read_buffer.slices[i]);
+      t->read_byte_count +=
+          (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]);
     }
     if (errors[1] != GRPC_ERROR_NONE) {
       errors[2] = try_http_parsing(exec_ctx, t);
