@@ -37,6 +37,7 @@ Content-Type
 
 1. application/grpc-web
   * e.g. application/grpc-web+[proto, json, thrift]
+  * the message format, e.g. +proto, +json, should always be specified by the sender
 2. application/grpc-web-text
   * text-encoded streams of “application/grpc-web”
   * e.g. application/grpc-web-text+[proto, thrift]
