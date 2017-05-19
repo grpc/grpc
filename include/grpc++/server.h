@@ -67,7 +67,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
  public:
   ~Server();
 
-  /// Block waiting for all work to complete.
+  /// Block until the server shuts down.
   ///
   /// \warning The server must be either shutting down or some other thread must
   /// call \a Shutdown for this function to ever return.

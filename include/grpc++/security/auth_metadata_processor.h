@@ -42,6 +42,9 @@
 
 namespace grpc {
 
+/// Interface allowing custom server-side authorization based on credentials
+/// encoded in metadata.  Objects of this type can be passed to
+/// \a ServerCredentials::SetAuthMetadataProcessor().
 class AuthMetadataProcessor {
  public:
   typedef std::multimap<grpc::string_ref, grpc::string_ref> InputMetadata;
