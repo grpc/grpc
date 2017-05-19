@@ -378,10 +378,16 @@ struct grpc_chttp2_transport {
 
   /* bdp estimator */
   grpc_bdp_estimator bdp_estimator;
-  grpc_pid_controller pid_controller;
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
+
+  /* pid controller */
+  grpc_pid_controller pid_controller;
   gpr_timespec last_pid_update;
+
+  /* tracks avg message size */
+  int64_t read_msg_count;
+  int64_t read_byte_count;
 
   /* if non-NULL, close the transport with this error when writes are finished
    */
