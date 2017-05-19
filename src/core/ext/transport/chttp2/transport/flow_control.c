@@ -50,7 +50,7 @@ static bool delta_is_significant(const grpc_chttp2_transport* t, int32_t value,
 
 // Takes in a target and uses the pid controller to return a stabilized
 // guess at the new bdp.
-#define STICKINESS 0.95
+#define STICKINESS 0.75
 static double get_sticky_avg_guess(grpc_chttp2_transport* t,
                                        double target) {
   return STICKINESS * t->old_target + (1 - STICKINESS) * target;
