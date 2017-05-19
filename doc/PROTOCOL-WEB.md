@@ -37,8 +37,8 @@ Content-Type
 
 1. application/grpc-web
   * e.g. application/grpc-web+[proto, json, thrift]
-  * the sender should always specifiy the message format, e.g. +proto, +json
-  * the receiver should assume the default is "+proto" when the message format is mssing in the C-T, i.e. "application/grpc-web"
+  * the sender should always specify the message format, e.g. +proto, +json
+  * the receiver should assume the default is "+proto" when the message format is missing in Content-Type (as "application/grpc-web")
 2. application/grpc-web-text
   * text-encoded streams of “application/grpc-web”
   * e.g. application/grpc-web-text+[proto, thrift]
