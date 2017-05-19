@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,37 +28,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-licenses(["notice"])  # 3-clause BSD
+set -ex
 
-package(default_visibility = ["//visibility:public"])
+# change to grpc repo root
+cd $(dirname $0)/../../../..
 
-load("//:bazel/grpc_build_system.bzl", "grpc_proto_library")
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-grpc_proto_library(
-    name = "monitoring_proto",
-    srcs = [
-        "monitoring.proto",
-    ],
-    well_known_protos = "@com_google_protobuf//:well_known_protos",
-    deps = [
-        ":census_proto",
-    ],
-)
-
-grpc_proto_library(
-    name = "census_proto",
-    srcs = [
-        "census.proto",
-    ],
-    well_known_protos = "@com_google_protobuf//:well_known_protos",
-)
-
-cc_binary(
-    name = "grpcz_client",
-    srcs = ["grpcz_client.cc"],
-    deps = [
-        "monitoring_proto",
-        "//external:gflags",
-        "@mongoose_repo//:mongoose_lib",
-    ],
-)
+tools/run_tests/run_tests_matrix.py -f c ubsan --inner_jobs 16 -j 1 --internal_ci

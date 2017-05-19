@@ -48,11 +48,11 @@ dotnet restore Grpc.sln
 mkdir -p ../../libs/opt
 cp nativelibs/csharp_ext_linux_x64/libgrpc_csharp_ext.so ../../libs/opt
 
-dotnet pack --configuration Release Grpc.Core --output ../../../artifacts
-dotnet pack --configuration Release Grpc.Core.Testing --output ../../../artifacts
-dotnet pack --configuration Release Grpc.Auth --output ../../../artifacts
-dotnet pack --configuration Release Grpc.HealthCheck --output ../../../artifacts
-dotnet pack --configuration Release Grpc.Reflection --output ../../../artifacts
+dotnet pack --configuration Release --include-symbols --include-source Grpc.Core --output ../../../artifacts
+dotnet pack --configuration Release --include-symbols --include-source Grpc.Core.Testing --output ../../../artifacts
+dotnet pack --configuration Release --include-symbols --include-source Grpc.Auth --output ../../../artifacts
+dotnet pack --configuration Release --include-symbols --include-source Grpc.HealthCheck --output ../../../artifacts
+dotnet pack --configuration Release --include-symbols --include-source Grpc.Reflection --output ../../../artifacts
 
 nuget pack Grpc.nuspec -Version "1.4.0-dev" -OutputDirectory ../../artifacts
 nuget pack Grpc.Tools.nuspec -Version "1.4.0-dev" -OutputDirectory ../../artifacts

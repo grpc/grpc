@@ -262,6 +262,7 @@ typedef struct cq_data {
   int is_server_cq;
 
   int num_pluckers;
+  int num_polls;
   plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
   grpc_closure pollset_shutdown_done;
 
@@ -425,6 +426,7 @@ grpc_completion_queue *grpc_completion_queue_create_internal(
   cqd->shutdown_called = 0;
   cqd->is_server_cq = 0;
   cqd->num_pluckers = 0;
+  cqd->num_polls = 0;
   gpr_atm_no_barrier_store(&cqd->things_queued_ever, 0);
 #ifndef NDEBUG
   cqd->outstanding_tag_count = 0;
@@ -440,6 +442,14 @@ grpc_completion_queue *grpc_completion_queue_create_internal(
 
 grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue *cc) {
   return cc->vtable->cq_completion_type;
+}
+
+int grpc_get_cq_poll_num(grpc_completion_queue *cc) {
+  int cur_num_polls;
+  gpr_mu_lock(cc->data.mu);
+  cur_num_polls = cc->data.num_polls;
+  gpr_mu_unlock(cc->data.mu);
+  return cur_num_polls;
 }
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
@@ -572,9 +582,9 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
   cq_event_queue_push(&cqd->queue, storage);
   gpr_atm_no_barrier_fetch_add(&cqd->things_queued_ever, 1);
 
-  int shutdown = gpr_unref(&cqd->pending_events);
-
   gpr_mu_lock(cqd->mu);
+
+  int shutdown = gpr_unref(&cqd->pending_events);
   if (!shutdown) {
     grpc_error *kick_error = cc->poller_vtable->kick(POLLSET_FROM_CQ(cc), NULL);
     gpr_mu_unlock(cqd->mu);
@@ -830,6 +840,7 @@ static grpc_event cq_next(grpc_completion_queue *cc, gpr_timespec deadline,
 
     /* The main polling work happens in grpc_pollset_work */
     gpr_mu_lock(cqd->mu);
+    cqd->num_polls++;
     grpc_error *err = cc->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cc),
                                               NULL, now, iteration_deadline);
     gpr_mu_unlock(cqd->mu);
@@ -1015,6 +1026,7 @@ static grpc_event cq_pluck(grpc_completion_queue *cc, void *tag,
       break;
     }
 
+    cqd->num_polls++;
     grpc_error *err = cc->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cc),
                                               &worker, now, deadline);
     if (err != GRPC_ERROR_NONE) {

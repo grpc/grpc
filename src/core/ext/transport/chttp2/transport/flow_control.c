@@ -50,6 +50,7 @@ grpc_chttp2_flow_control_action grpc_chttp2_check_for_flow_control_action(
       action.send_bdp_ping = GRPC_CHTTP2_FLOW_CONTROL_UPDATE_IMMEDIATELY;
     }
     int64_t estimate = -1;
+    int32_t bdp = -1;
     if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
       double target = 1 + log2((double)estimate);
       double memory_pressure = grpc_resource_quota_get_memory_pressure(
@@ -66,19 +67,10 @@ grpc_chttp2_flow_control_action grpc_chttp2_check_for_flow_control_action(
       }
       double log2_bdp_guess =
           grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
+      double bdp_guess = pow(2, log2_bdp_guess);
       t->last_pid_update = now;
-      double bdp_dbl = pow(2, log2_bdp_guess);
-      action.send_transport_update =
-          GRPC_CHTTP2_FLOW_CONTROL_UPDATE_IMMEDIATELY;
-      int64_t bdp;
-      const int64_t kMinBDP = 128;
-      if (bdp_dbl <= kMinBDP) {
-        bdp = kMinBDP;
-      } else if (bdp_dbl > INT32_MAX) {
-        bdp = INT32_MAX;
-      } else {
-        bdp = (int64_t)(bdp_dbl);
-      }
+      // initial window size bounded [1,2^31-1], but we set the min to 128.
+      bdp = GPR_CLAMP((int32_t)bdp_guess, 128, INT32_MAX);
       int64_t delta =
           (int64_t)bdp -
           (int64_t)t->settings[GRPC_LOCAL_SETTINGS]
@@ -87,9 +79,21 @@ grpc_chttp2_flow_control_action grpc_chttp2_check_for_flow_control_action(
         action.send_transport_update =
             GRPC_CHTTP2_FLOW_CONTROL_UPDATE_IMMEDIATELY;
         action.announce_transport_window = bdp;
+      }
+    }
+
+    double bw_dbl = -1;
+    if (grpc_bdp_estimator_get_bw(&t->bdp_estimator, &bw_dbl)) {
+      // we target the max of BDP or bandwidth in microseconds.
+      int32_t frame_size = GPR_MAX((int32_t)bw_dbl / 1000, bdp);
+      int64_t delta = (int64_t)frame_size -
+                      (int64_t)t->settings[GRPC_LOCAL_SETTINGS]
+                                          [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
+      if (delta != 0 &&
+          (delta <= -frame_size / 10 || delta >= frame_size / 10)) {
         action.send_max_frame_update =
             GRPC_CHTTP2_FLOW_CONTROL_UPDATE_IMMEDIATELY;
-        action.announce_max_frame = bdp;
+        action.announce_max_frame = frame_size;
       }
     }
   }

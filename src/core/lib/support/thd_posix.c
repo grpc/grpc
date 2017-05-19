@@ -65,7 +65,7 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
   pthread_t p;
   /* don't use gpr_malloc as we may cause an infinite recursion with
    * the profiling code */
-  struct thd_arg *a = malloc(sizeof(*a));
+  struct thd_arg *a = (struct thd_arg *)malloc(sizeof(*a));
   GPR_ASSERT(a != NULL);
   a->body = thd_body;
   a->arg = arg;

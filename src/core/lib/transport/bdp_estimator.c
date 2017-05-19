@@ -53,6 +53,12 @@ bool grpc_bdp_estimator_get_estimate(const grpc_bdp_estimator *estimator,
   return true;
 }
 
+bool grpc_bdp_estimator_get_bw(const grpc_bdp_estimator *estimator,
+                               double *bw) {
+  *bw = estimator->bw_est;
+  return true;
+}
+
 void grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes) {
   estimator->accumulator += num_bytes;

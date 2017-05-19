@@ -60,6 +60,7 @@ END2END_FIXTURES = {
     'h2_full+pipe': default_unsecure_fixture_options._replace(
         platforms=['linux'], exclude_iomgrs=['uv']),
     'h2_full+trace': default_unsecure_fixture_options._replace(tracing=True),
+    'h2_full+workarounds': default_unsecure_fixture_options,
     'h2_http_proxy': default_unsecure_fixture_options._replace(
         ci_mac=False, exclude_iomgrs=['uv']),
     'h2_oauth2': default_secure_fixture_options._replace(
@@ -151,6 +152,7 @@ END2END_TESTS = {
     'simple_request': default_test_options,
     'streaming_error_response': default_test_options._replace(cpu_cost=LOWCPU),
     'trailing_metadata': default_test_options,
+    'workaround_cronet_compression': default_test_options,
     'write_buffering': default_test_options._replace(cpu_cost=LOWCPU),
     'write_buffering_at_end': default_test_options._replace(cpu_cost=LOWCPU),
 }

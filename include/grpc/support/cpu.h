@@ -40,13 +40,13 @@
 extern "C" {
 #endif
 
-/* Interface providing CPU information for currently running system */
+/** Interface providing CPU information for currently running system */
 
-/* Return the number of CPU cores on the current system. Will return 0 if
+/** Return the number of CPU cores on the current system. Will return 0 if
    the information is not available. */
 GPRAPI unsigned gpr_cpu_num_cores(void);
 
-/* Return the CPU on which the current thread is executing; N.B. This should
+/** Return the CPU on which the current thread is executing; N.B. This should
    be considered advisory only - it is possible that the thread is switched
    to a different CPU at any time. Returns a value in range
    [0, gpr_cpu_num_cores() - 1] */

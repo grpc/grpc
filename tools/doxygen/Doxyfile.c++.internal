@@ -794,6 +794,7 @@ doc/statuscodes.md \
 doc/stress_test_framework.md \
 doc/unit_testing.md \
 doc/wait-for-ready.md \
+doc/workarounds.md \
 include/grpc++/alarm.h \
 include/grpc++/channel.h \
 include/grpc++/client_context.h \
@@ -900,6 +901,7 @@ include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
+include/grpc/support/workaround_list.h \
 src/core/lib/channel/channel_args.c \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.c \
@@ -954,6 +956,7 @@ src/core/lib/iomgr/ev_poll_posix.c \
 src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.c \
 src/core/lib/iomgr/ev_posix.h \
+src/core/lib/iomgr/ev_windows.c \
 src/core/lib/iomgr/exec_ctx.c \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.c \

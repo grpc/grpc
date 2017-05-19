@@ -1249,6 +1249,7 @@ h2_fd_test: $(BINDIR)/$(CONFIG)/h2_fd_test
 h2_full_test: $(BINDIR)/$(CONFIG)/h2_full_test
 h2_full+pipe_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_test
 h2_full+trace_test: $(BINDIR)/$(CONFIG)/h2_full+trace_test
+h2_full+workarounds_test: $(BINDIR)/$(CONFIG)/h2_full+workarounds_test
 h2_http_proxy_test: $(BINDIR)/$(CONFIG)/h2_http_proxy_test
 h2_load_reporting_test: $(BINDIR)/$(CONFIG)/h2_load_reporting_test
 h2_oauth2_test: $(BINDIR)/$(CONFIG)/h2_oauth2_test
@@ -1266,6 +1267,7 @@ h2_fd_nosec_test: $(BINDIR)/$(CONFIG)/h2_fd_nosec_test
 h2_full_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_nosec_test
 h2_full+pipe_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test
 h2_full+trace_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+trace_nosec_test
+h2_full+workarounds_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+workarounds_nosec_test
 h2_http_proxy_nosec_test: $(BINDIR)/$(CONFIG)/h2_http_proxy_nosec_test
 h2_load_reporting_nosec_test: $(BINDIR)/$(CONFIG)/h2_load_reporting_nosec_test
 h2_proxy_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test
@@ -1494,6 +1496,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_full_test \
   $(BINDIR)/$(CONFIG)/h2_full+pipe_test \
   $(BINDIR)/$(CONFIG)/h2_full+trace_test \
+  $(BINDIR)/$(CONFIG)/h2_full+workarounds_test \
   $(BINDIR)/$(CONFIG)/h2_http_proxy_test \
   $(BINDIR)/$(CONFIG)/h2_load_reporting_test \
   $(BINDIR)/$(CONFIG)/h2_oauth2_test \
@@ -1511,6 +1514,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_full_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_full+trace_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+workarounds_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_http_proxy_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_load_reporting_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test \
@@ -2920,6 +2924,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
     src/core/lib/iomgr/iocp_windows.c \
@@ -3138,6 +3143,8 @@ LIBGRPC_SRC = \
     src/core/ext/census/tracing.c \
     src/core/ext/filters/max_age/max_age_filter.c \
     src/core/ext/filters/message_size/message_size_filter.c \
+    src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
+    src/core/ext/filters/workarounds/workaround_utils.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -3151,6 +3158,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
+    include/grpc/support/workaround_list.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -3253,6 +3261,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
     src/core/lib/iomgr/iocp_windows.c \
@@ -3449,6 +3458,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
+    include/grpc/support/workaround_list.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -3570,6 +3580,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
     src/core/lib/iomgr/iocp_windows.c \
@@ -3682,6 +3693,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
+    include/grpc/support/workaround_list.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -3804,6 +3816,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
     src/core/lib/iomgr/iocp_windows.c \
@@ -3992,6 +4005,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/census/tracing.c \
     src/core/ext/filters/max_age/max_age_filter.c \
     src/core/ext/filters/message_size/message_size_filter.c \
+    src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
+    src/core/ext/filters/workarounds/workaround_utils.c \
     src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -4005,6 +4020,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
+    include/grpc/support/workaround_list.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -4209,6 +4225,7 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
     src/core/lib/iomgr/iocp_windows.c \
@@ -4418,6 +4435,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
+    include/grpc/support/workaround_list.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/config_protobuf.h \
 
@@ -4548,6 +4566,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
     src/core/lib/iomgr/iocp_windows.c \
@@ -4825,6 +4844,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
+    include/grpc/support/workaround_list.h \
     include/grpc/census.h \
 
 LIBGRPC++_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CRONET_SRC))))
@@ -5314,6 +5334,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
     src/core/lib/iomgr/iocp_windows.c \
@@ -5523,6 +5544,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
+    include/grpc/support/workaround_list.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 
@@ -8470,6 +8492,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/simple_request.c \
     test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
+    test/core/end2end/tests/workaround_cronet_compression.c \
     test/core/end2end/tests/write_buffering.c \
     test/core/end2end/tests/write_buffering_at_end.c \
 
@@ -8562,6 +8585,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/simple_request.c \
     test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
+    test/core/end2end/tests/workaround_cronet_compression.c \
     test/core/end2end/tests/write_buffering.c \
     test/core/end2end/tests/write_buffering_at_end.c \
 
@@ -18607,6 +18631,38 @@ endif
 endif
 
 
+H2_FULL+WORKAROUNDS_TEST_SRC = \
+    test/core/end2end/fixtures/h2_full+workarounds.c \
+
+H2_FULL+WORKAROUNDS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL+WORKAROUNDS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+workarounds_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+workarounds_test: $(H2_FULL+WORKAROUNDS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_FULL+WORKAROUNDS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+workarounds_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full+workarounds.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_full+workarounds_test: $(H2_FULL+WORKAROUNDS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_FULL+WORKAROUNDS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 H2_HTTP_PROXY_TEST_SRC = \
     test/core/end2end/fixtures/h2_http_proxy.c \
 
@@ -19076,6 +19132,26 @@ deps_h2_full+trace_nosec_test: $(H2_FULL+TRACE_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(H2_FULL+TRACE_NOSEC_TEST_OBJS:.o=.dep)
+endif
+
+
+H2_FULL+WORKAROUNDS_NOSEC_TEST_SRC = \
+    test/core/end2end/fixtures/h2_full+workarounds.c \
+
+H2_FULL+WORKAROUNDS_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL+WORKAROUNDS_NOSEC_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/h2_full+workarounds_nosec_test: $(H2_FULL+WORKAROUNDS_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_FULL+WORKAROUNDS_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+workarounds_nosec_test
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full+workarounds.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_full+workarounds_nosec_test: $(H2_FULL+WORKAROUNDS_NOSEC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(H2_FULL+WORKAROUNDS_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
 

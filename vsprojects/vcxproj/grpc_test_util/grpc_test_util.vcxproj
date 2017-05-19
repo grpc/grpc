@@ -157,6 +157,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\slice_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\workaround_list.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
@@ -401,6 +402,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.c">
     </ClCompile>

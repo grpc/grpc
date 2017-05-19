@@ -64,6 +64,8 @@ void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name);
 // Returns true if a reasonable estimate could be obtained
 bool grpc_bdp_estimator_get_estimate(const grpc_bdp_estimator *estimator,
                                      int64_t *estimate);
+// Returns true if a reasonable estimate could be obtained
+bool grpc_bdp_estimator_get_bw(const grpc_bdp_estimator *estimator, double *bw);
 // Tracks new bytes read.
 void grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes);
