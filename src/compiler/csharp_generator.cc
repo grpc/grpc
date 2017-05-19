@@ -67,70 +67,59 @@ using std::vector;
 
 namespace grpc_csharp_generator {
 namespace {
-
+	static const std::string COMMENT_PREFIX = "//";
 // This function is a massaged version of
 // https://github.com/google/protobuf/blob/master/src/google/protobuf/compiler/csharp/csharp_doc_comment.cc
 // Currently, we cannot easily reuse the functionality as
 // google/protobuf/compiler/csharp/csharp_doc_comment.h is not a public header.
 // TODO(jtattermusch): reuse the functionality from google/protobuf.
-bool GenerateDocCommentBodyImpl(grpc_generator::Printer *printer,
-                                grpc::protobuf::SourceLocation location) { //ERR ref to pb
-  grpc::string comments = location.leading_comments.empty()
-                              ? location.trailing_comments
-                              : location.leading_comments;
-  if (comments.empty()) {
-    return false;
-  }
-  // XML escaping... no need for apostrophes etc as the whole text is going to
-  // be a child
-  // node of a summary element, not part of an attribute.
-  comments = grpc_generator::StringReplace(comments, "&", "&amp;", true);
-  comments = grpc_generator::StringReplace(comments, "<", "&lt;", true);
-
-  std::vector<grpc::string> lines;
-  grpc_generator::Split(comments, '\n', &lines);
-  // TODO: We really should work out which part to put in the summary and which
-  // to put in the remarks...
-  // but that needs to be part of a bigger effort to understand the markdown
-  // better anyway.
-  printer->Print("/// <summary>\n");
-  bool last_was_empty = false;
-  // We squash multiple blank lines down to one, and remove any trailing blank
-  // lines. We need
-  // to preserve the blank lines themselves, as this is relevant in the
-  // markdown.
-  // Note that we can't remove leading or trailing whitespace as *that's*
-  // relevant in markdown too.
-  // (We don't skip "just whitespace" lines, either.)
-  for (std::vector<grpc::string>::iterator it = lines.begin();
-       it != lines.end(); ++it) {
-    grpc::string line = *it;
-    if (line.empty()) {
-      last_was_empty = true;
-    } else {
-      if (last_was_empty) {
-        printer->Print("///\n");
-      }
-      last_was_empty = false;
-	  std::map<grpc::string, grpc::string> vars;
-	  vars["line"] = *it;
-      printer->Print(vars,"///$line$\n");
-    }
-  }
-  printer->Print("/// </summary>\n");
-  return true;
-}
-
-template <typename DescriptorType_>
 bool GenerateDocCommentBody(grpc_generator::Printer *printer,
-                            const DescriptorType_ *descriptor) {
-  grpc::protobuf::SourceLocation location; //ERR ref to pb
-  /* ERR you can't just comment away all of your problems
-  if (!descriptor->GetSourceLocation(&location)) {
-    return false;
-  }
-  */
-  return GenerateDocCommentBodyImpl(printer, location);
+	const grpc_generator::CommentHolder *holder) {
+	grpc::string comments = holder->GetLeadingComments(COMMENT_PREFIX).empty()
+		? holder->GetTrailingComments(COMMENT_PREFIX)
+		: holder->GetLeadingComments(COMMENT_PREFIX);
+	if (comments.empty()) {
+		return false;
+	}
+	// XML escaping... no need for apostrophes etc as the whole text is going to
+	// be a child
+	// node of a summary element, not part of an attribute.
+	comments = grpc_generator::StringReplace(comments, "&", "&amp;", true);
+	comments = grpc_generator::StringReplace(comments, "<", "&lt;", true);
+
+	std::vector<grpc::string> lines;
+	grpc_generator::Split(comments, '\n', &lines);
+	// TODO: We really should work out which part to put in the summary and which
+	// to put in the remarks...
+	// but that needs to be part of a bigger effort to understand the markdown
+	// better anyway.
+	printer->Print("/// <summary>\n");
+	bool last_was_empty = false;
+	// We squash multiple blank lines down to one, and remove any trailing blank
+	// lines. We need
+	// to preserve the blank lines themselves, as this is relevant in the
+	// markdown.
+	// Note that we can't remove leading or trailing whitespace as *that's*
+	// relevant in markdown too.
+	// (We don't skip "just whitespace" lines, either.)
+	for (std::vector<grpc::string>::iterator it = lines.begin();
+		it != lines.end(); ++it) {
+		grpc::string line = *it;
+		if (line.empty()) {
+			last_was_empty = true;
+		}
+		else {
+			if (last_was_empty) {
+				printer->Print("///\n");
+			}
+			last_was_empty = false;
+			std::map<grpc::string, grpc::string> vars;
+			vars["line"] = *it;
+			printer->Print(vars, "///$line$\n");
+		}
+	}
+	printer->Print("/// </summary>\n");
+	return true;
 }
 
 void GenerateDocCommentServerMethod(grpc_generator::Printer *printer,
@@ -226,9 +215,6 @@ std::string GetCSharpMethodType(MethodType method_type) {
 
 std::string GetServiceNameFieldName() { return "__ServiceName"; }
 
-std::string GetMarshallerFieldName(const Descriptor *message) {//ERR ref to pb
-  return "__Marshaller_" + message->name();
-}
 std::string GetMarshallerFieldName(const grpc::string message) {
 	return "__Marshaller_" + message;
 }
@@ -337,19 +323,20 @@ std::vector<grpc::string > GetUsedMessages(
 	return result;
 }
 
+
 void GenerateMarshallerFields(Printer *out, const grpc_generator::Service *service) {
 	std::vector<grpc::string> used_messages = GetUsedMessages(service);
 	for (size_t i = 0; i < used_messages.size(); i++) {
 		grpc::string message = used_messages[i];
-	std::map<grpc::string, grpc::string> vars;
-	vars["fieldname"] = GetMarshallerFieldName(message);
-	vars["type"] = "ERR";// GetClassName(message);
-    out->Print(
-		vars,
-        "static readonly grpc::Marshaller<$type$> $fieldname$ = "
-        "grpc::Marshallers.Create((arg) => "
-        "global::Google.Protobuf.MessageExtensions.ToByteArray(arg), " //ERR ref to pb
-        "$type$.Parser.ParseFrom);\n"); 
+		std::map<grpc::string, grpc::string> vars;
+		vars["fieldname"] = GetMarshallerFieldName(message);
+		vars["type"] = message;
+		out->Print(
+			vars,
+			"static readonly grpc::Marshaller<$type$> $fieldname$ = "
+			"grpc::Marshallers.Create((arg) => "
+			"global::Google.Protobuf.MessageExtensions.ToByteArray(arg), " //ERR ref to pb
+			"$type$.Parser.ParseFrom);\n"); 
   }
   out->Print("\n");
 }
@@ -382,6 +369,7 @@ void GenerateStaticMethodField(Printer *out, const grpc_generator::Method *metho
   out->Outdent();
   out->Outdent();
 }
+
 
 void GenerateServiceDescriptorProperty(Printer *out,
                                        const grpc_generator::Service *service) {
@@ -710,7 +698,7 @@ grpc::string GetServices(const grpc_generator::File *file, bool generate_client,
 	printer->Print(vars, "// source: $filename$\n");
 
     // use C++ style as there are no file-level XML comments in .NET
-	grpc::string leading_comments = "ERR";//GetCsharpComments(file, true);  //ERR there's a template down the line that wants file to have a GetSourceLocation method
+	grpc::string leading_comments = GetCsharpComments(file, true);
     if (!leading_comments.empty()) {
 		printer->Print("// Original file comments:\n");
 		printer->Print(leading_comments.c_str());
@@ -724,7 +712,7 @@ grpc::string GetServices(const grpc_generator::File *file, bool generate_client,
 	printer->Print("using grpc = global::Grpc.Core;\n");
 	printer->Print("\n");
 
-	vars["namespace"] = "ERR";// GetFileNamespace(file);
+	vars["namespace"] = file->package();
 	printer->Print(vars,"namespace $namespace$ {\n");
 	printer->Indent();
     for (int i = 0; i < file->service_count(); i++) {

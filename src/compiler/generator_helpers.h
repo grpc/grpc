@@ -241,6 +241,30 @@ inline void GetComment(const DescriptorType *desc, CommentType type,
     abort();
   }
 }
+template <>
+inline void GetComment(const grpc_generator::File *desc, CommentType type,
+	std::vector<grpc::string> *out) {
+	if (desc->GetAllComments().empty()) {
+		return;
+	}
+	if (type == COMMENTTYPE_LEADING || type == COMMENTTYPE_TRAILING) {
+		const grpc::string &comments = type == COMMENTTYPE_LEADING
+			? desc->GetLeadingComments("")
+			: desc->GetTrailingComments("");
+		Split(comments, '\n', out);
+	}
+	else if (type == COMMENTTYPE_LEADING_DETACHED) {
+		for (unsigned int i = 0; i < desc->GetAllComments().size();
+			i++) {
+			Split(desc->GetAllComments()[i], '\n', out);
+			out->push_back("");
+		}
+	}
+	else {
+		std::cerr << "Unknown comment type " << type << std::endl;
+		abort();
+	}
+}
 
 // Each raw comment line without newline is appended to out.
 // For file level leading and detached leading comments, we return comments
