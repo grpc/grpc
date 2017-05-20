@@ -330,6 +330,9 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                  .max_control_value = 25,
                                  .integral_range = 10});
 
+  // assume start with small message
+  gpr_atm_no_barrier_store(&t->read_rpc_size_estimate, 128);
+
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(exec_ctx, &t->hpack_parser);
 
@@ -2173,6 +2176,24 @@ static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
   return error;
 }
 
+static void update_read_rpc_size_estimate(grpc_chttp2_transport *t, int64_t read_size) {
+  int64_t cur = (int64_t)gpr_atm_no_barrier_load(&t->read_rpc_size_estimate);
+  if (cur < read_size) {
+    /* size grew: update estimate */
+    gpr_atm_no_barrier_cas(&t->read_rpc_size_estimate, (gpr_atm)cur,
+                           (gpr_atm)read_size);
+    /* if we lose: never mind, something else will likely update soon enough */
+  } else if (cur == read_size) {
+    /* no change: holding pattern */
+  } else if (cur > 0) {
+    /* size shrank: decrease estimate */
+    gpr_atm_no_barrier_cas(
+        &t->read_rpc_size_estimate, (gpr_atm)cur,
+        (gpr_atm)(GPR_MIN(cur - 1, (255 * cur + read_size) / 256)));
+    /* if we lose: never mind, something else will likely update soon enough */
+  }
+}
+
 static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                grpc_error *error) {
   GPR_TIMER_BEGIN("reading_action_locked", 0);
@@ -2201,6 +2222,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
           (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
       errors[1] =
           grpc_chttp2_perform_read(exec_ctx, t, t->read_buffer.slices[i]);
+          update_read_rpc_size_estimate(t, (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
     }
     if (errors[1] != GRPC_ERROR_NONE) {
       errors[2] = try_http_parsing(exec_ctx, t);

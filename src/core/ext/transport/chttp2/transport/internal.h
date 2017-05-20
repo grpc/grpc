@@ -385,6 +385,9 @@ struct grpc_chttp2_transport {
   grpc_pid_controller pid_controller;
   gpr_timespec last_pid_update;
 
+  /* incoming rpc size estimate */
+  gpr_atm read_rpc_size_estimate;
+
   /* if non-NULL, close the transport with this error when writes are finished
    */
   grpc_error *close_transport_on_writes_finished;

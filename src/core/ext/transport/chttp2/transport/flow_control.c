@@ -74,6 +74,9 @@ static double get_target_under_memory_pressure(grpc_chttp2_transport* t,
   if (memory_pressure > 0.8) {
     target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
   }
+  if (memory_pressure < 0.2) {
+    target = (double)((int64_t)gpr_atm_no_barrier_load(&t->read_rpc_size_estimate));
+  }
   return target;
 }
 
