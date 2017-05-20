@@ -27,21 +27,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
-  name = "uri_fuzzer_test",
-  srcs = ["uri_fuzzer_test.c"],
-  deps = ["//:gpr", "//:grpc", "//test/core/util:grpc_test_util"],
-  corpus = "uri_corpus",
-  copts = ["-std=c99"],
+    name = "uri_fuzzer_test",
+    srcs = ["uri_fuzzer_test.c"],
+    language = "C",
+    corpus = "uri_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "lb_policies_test",
     srcs = ["lb_policies_test.c"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util", "//test/core/end2end:cq_verifier"],
-    copts = ['-std=c99']
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )

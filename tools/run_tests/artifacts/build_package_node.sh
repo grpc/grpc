@@ -40,7 +40,7 @@ base=$(pwd)
 artifacts=$base/artifacts
 
 mkdir -p $artifacts
-cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=node,platform={windows,linux,macos}/artifacts/* $artifacts/ || true
+cp -r $EXTERNAL_GIT_ROOT/platform={windows,linux,macos}/artifacts/node_ext_*/* $artifacts/ || true
 
 npm update
 npm pack
@@ -86,7 +86,7 @@ for arch in {x86,x64}; do
         ;;
     esac
     rm -r bin/*
-    input_dir="$EXTERNAL_GIT_ROOT/architecture=$arch,language=protoc,platform=$plat/artifacts"
+    input_dir="$EXTERNAL_GIT_ROOT/platform=${plat}/artifacts/protoc_${plat}_${arch}"
     cp $input_dir/protoc* bin/
     cp $input_dir/grpc_node_plugin* bin/
     mkdir -p bin/google/protobuf

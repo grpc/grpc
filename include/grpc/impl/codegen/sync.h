@@ -33,7 +33,7 @@
 
 #ifndef GRPC_IMPL_CODEGEN_SYNC_H
 #define GRPC_IMPL_CODEGEN_SYNC_H
-/* Synchronization primitives for GPR.
+/** Synchronization primitives for GPR.
 
    The type  gpr_mu              provides a non-reentrant mutex (lock).
 

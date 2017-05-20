@@ -176,6 +176,7 @@ filegroups:
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
+  - include/grpc/support/workaround_list.h
   headers:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
@@ -316,6 +317,7 @@ filegroups:
   - src/core/lib/iomgr/ev_epollsig_linux.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
+  - src/core/lib/iomgr/ev_windows.c
   - src/core/lib/iomgr/exec_ctx.c
   - src/core/lib/iomgr/executor.c
   - src/core/lib/iomgr/iocp_windows.c
@@ -658,6 +660,13 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2_alpn
   - tsi
+- name: grpc_server_backward_compatibility
+  headers:
+  - src/core/ext/filters/workarounds/workaround_utils.h
+  src:
+  - src/core/ext/filters/workarounds/workaround_utils.c
+  uses:
+  - grpc_base
 - name: grpc_test_util_base
   build: test
   headers:
@@ -824,6 +833,15 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2
   - grpc_http_filters
+- name: grpc_workaround_cronet_compression_filter
+  headers:
+  - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
+  src:
+  - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c
+  plugin: grpc_workaround_cronet_compression_filter
+  uses:
+  - grpc_base
+  - grpc_server_backward_compatibility
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
@@ -942,9 +960,10 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
+  deps:
+  - grpc
   uses:
   - grpc++_codegen_base
-  - grpc_base
   - nanopb
 - name: grpc++_codegen_base
   language: c++
@@ -1053,6 +1072,8 @@ libs:
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
+  - grpc_workaround_cronet_compression_filter
+  - grpc_server_backward_compatibility
   generate_plugin_registry: true
   secure: true
   vs_packages:
@@ -1152,6 +1173,8 @@ libs:
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
+  - grpc_workaround_cronet_compression_filter
+  - grpc_server_backward_compatibility
   generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
@@ -3343,7 +3366,7 @@ targets:
   - gpr_test_util
   - gpr
   args:
-  - --benchmark_min_time=0
+  - --benchmark_min_time=4
   defaults: benchmark
   platforms:
   - mac
@@ -4606,7 +4629,6 @@ php_config_m4:
   deps:
   - grpc
   - gpr
-  - ares
   - boringssl
   headers:
   - src/php/ext/grpc/byte_buffer.h
@@ -4620,6 +4642,7 @@ php_config_m4:
   - src/php/ext/grpc/server.h
   - src/php/ext/grpc/server_credentials.h
   - src/php/ext/grpc/timeval.h
+  - src/php/ext/grpc/version.h
   src:
   - src/php/ext/grpc/byte_buffer.c
   - src/php/ext/grpc/call.c

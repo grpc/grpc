@@ -792,7 +792,9 @@ doc/service_config.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
+doc/unit_testing.md \
 doc/wait-for-ready.md \
+doc/workarounds.md \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
@@ -861,6 +863,7 @@ include/grpc/support/tls_gcc.h \
 include/grpc/support/tls_msvc.h \
 include/grpc/support/tls_pthread.h \
 include/grpc/support/useful.h \
+include/grpc/support/workaround_list.h \
 src/core/README.md \
 src/core/ext/README.md \
 src/core/ext/census/README.md \
@@ -975,6 +978,10 @@ src/core/ext/filters/max_age/max_age_filter.c \
 src/core/ext/filters/max_age/max_age_filter.h \
 src/core/ext/filters/message_size/message_size_filter.c \
 src/core/ext/filters/message_size/message_size_filter.h \
+src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
+src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h \
+src/core/ext/filters/workarounds/workaround_utils.c \
+src/core/ext/filters/workarounds/workaround_utils.h \
 src/core/ext/transport/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.c \
@@ -1092,6 +1099,7 @@ src/core/lib/iomgr/ev_poll_posix.c \
 src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.c \
 src/core/lib/iomgr/ev_posix.h \
+src/core/lib/iomgr/ev_windows.c \
 src/core/lib/iomgr/exec_ctx.c \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.c \

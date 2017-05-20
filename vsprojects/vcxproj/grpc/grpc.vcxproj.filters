@@ -82,6 +82,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_windows.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -733,6 +736,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.c">
       <Filter>src\core\ext\filters\message_size</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_cronet_compression_filter.c">
+      <Filter>src\core\ext\filters\workarounds</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_utils.c">
+      <Filter>src\core\ext\filters\workarounds</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
       <Filter>src\core\plugin_registry</Filter>
     </ClCompile>
@@ -767,6 +776,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h">
       <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\workaround_list.h">
+      <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h">
       <Filter>include\grpc\impl\codegen</Filter>
@@ -1475,6 +1487,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.h">
       <Filter>src\core\ext\filters\message_size</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_cronet_compression_filter.h">
+      <Filter>src\core\ext\filters\workarounds</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_utils.h">
+      <Filter>src\core\ext\filters\workarounds</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -1489,6 +1507,9 @@
     </Filter>
     <Filter Include="include\grpc\impl\codegen">
       <UniqueIdentifier>{def748f5-ed2a-a9bb-40d9-c31d00f0e13b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc\support">
+      <UniqueIdentifier>{31de82ea-dc6c-73fb-a640-979b8a7b240c}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{d538af37-07b2-062b-fa2a-d9f882cb2737}</UniqueIdentifier>
@@ -1573,6 +1594,9 @@
     </Filter>
     <Filter Include="src\core\ext\filters\message_size">
       <UniqueIdentifier>{5ca3f38c-539f-3c4f-b68c-38b31ba339ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\workarounds">
+      <UniqueIdentifier>{2ec64619-e2c4-da0f-c10e-e03f5a151300}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\transport">
       <UniqueIdentifier>{e3abfd0a-064e-0f2f-c8e8-7c5a7e98142a}</UniqueIdentifier>

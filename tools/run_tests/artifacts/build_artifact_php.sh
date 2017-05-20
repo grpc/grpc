@@ -33,8 +33,8 @@ set -ex
 
 cd $(dirname $0)/../../..
 
-mkdir -p artifacts
+mkdir -p "${ARTIFACTS_OUT}"
 
 pear package
 
-cp -r grpc-*.tgz artifacts/
+cp -r grpc-*.tgz "${ARTIFACTS_OUT}"/

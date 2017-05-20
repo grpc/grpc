@@ -40,6 +40,7 @@ import artifacts.artifact_targets as artifact_targets
 import artifacts.distribtest_targets as distribtest_targets
 import artifacts.package_targets as package_targets
 import python_utils.jobset as jobset
+import python_utils.report_utils as report_utils
 
 _TARGETS = []
 _TARGETS += artifact_targets.targets()
@@ -116,8 +117,10 @@ if not build_jobs:
   sys.exit(1)
 
 jobset.message('START', 'Building targets.', do_newline=True)
-num_failures, _ = jobset.run(
+num_failures, resultset = jobset.run(
     build_jobs, newline_on_success=True, maxjobs=args.jobs)
+report_utils.render_junit_xml_report(resultset, 'report_taskrunner_sponge_log.xml',
+                                     suite_name='tasks')
 if num_failures == 0:
   jobset.message('SUCCESS', 'All targets built successfully.',
                  do_newline=True)

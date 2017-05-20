@@ -48,7 +48,6 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"

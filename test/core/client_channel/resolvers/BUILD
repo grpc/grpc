@@ -27,12 +27,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
-cc_test(
+grpc_cc_test(
     name = "dns_resolver_connectivity_test",
     srcs = ["dns_resolver_connectivity_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -41,10 +43,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "dns_resolver_test",
     srcs = ["dns_resolver_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -53,10 +55,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "sockaddr_resolver_test",
     srcs = ["sockaddr_resolver_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -65,10 +67,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "fake_resolver_test",
     srcs = ["fake_resolver_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",

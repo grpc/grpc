@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-/* Returns a string allocated with gpr_malloc that contains a UTF-8
+/** Returns a string allocated with gpr_malloc that contains a UTF-8
  * formatted error message, corresponding to the error messageid.
  * Use in conjunction with GetLastError() et al.
  */
