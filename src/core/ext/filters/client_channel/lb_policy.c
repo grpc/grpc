@@ -167,7 +167,8 @@ grpc_connectivity_state grpc_lb_policy_check_connectivity_locked(
                                                    connectivity_error);
 }
 
-bool grpc_lb_policy_update(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                           const grpc_lb_policy_args *lb_policy_args) {
-  return policy->vtable->update(exec_ctx, policy, lb_policy_args);
+bool grpc_lb_policy_update_locked(grpc_exec_ctx *exec_ctx,
+                                  grpc_lb_policy *policy,
+                                  const grpc_lb_policy_args *lb_policy_args) {
+  return policy->vtable->update_locked(exec_ctx, policy, lb_policy_args);
 }

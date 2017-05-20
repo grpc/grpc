@@ -77,6 +77,19 @@ static void destroy_string(grpc_exec_ctx* exec_ctx, void* value) {
   gpr_free(value);
 }
 
+static grpc_slice_hash_table* create_table_from_entries(
+    const test_entry* test_entries, size_t num_test_entries,
+    bool (*value_cmp_fn)(void*, void*)) {
+  // Construct table.
+  grpc_slice_hash_table_entry* entries =
+      gpr_zalloc(sizeof(*entries) * num_test_entries);
+  populate_entries(test_entries, num_test_entries, entries);
+  grpc_slice_hash_table* table = grpc_slice_hash_table_create(
+      num_test_entries, entries, destroy_string, value_cmp_fn);
+  gpr_free(entries);
+  return table;
+}
+
 static void test_slice_hash_table() {
   const test_entry test_entries[] = {
       {"key_0", "value_0"},   {"key_1", "value_1"},   {"key_2", "value_2"},
@@ -115,13 +128,8 @@ static void test_slice_hash_table() {
       {"key_99", "value_99"},
   };
   const size_t num_entries = GPR_ARRAY_SIZE(test_entries);
-  // Construct table.
-  grpc_slice_hash_table_entry* entries =
-      gpr_zalloc(sizeof(*entries) * num_entries);
-  populate_entries(test_entries, num_entries, entries);
   grpc_slice_hash_table* table =
-      grpc_slice_hash_table_create(num_entries, entries, destroy_string);
-  gpr_free(entries);
+      create_table_from_entries(test_entries, num_entries, NULL);
   // Check contents of table.
   check_values(test_entries, num_entries, table);
   check_non_existent_value("XX", table);
@@ -131,8 +139,67 @@ static void test_slice_hash_table() {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+static bool value_cmp_fn(void* a, void* b) {
+  const char* a_str = a;
+  const char* b_str = b;
+  return strcmp(a_str, b_str) == 0;
+}
+
+static void test_slice_hash_table_eq_success() {
+  const test_entry test_entries_a[] = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_a = GPR_ARRAY_SIZE(test_entries_a);
+  grpc_slice_hash_table* table_a =
+      create_table_from_entries(test_entries_a, num_entries_a, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_eq(table_a, table_a));
+
+  const test_entry test_entries_b[] = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_b = GPR_ARRAY_SIZE(test_entries_b);
+  grpc_slice_hash_table* table_b =
+      create_table_from_entries(test_entries_b, num_entries_b, value_cmp_fn);
+
+  GPR_ASSERT(grpc_slice_hash_table_eq(table_a, table_b));
+}
+
+static void test_slice_hash_table_eq_failure() {
+  const test_entry test_entries_a[] = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_a = GPR_ARRAY_SIZE(test_entries_a);
+  grpc_slice_hash_table* table_a =
+      create_table_from_entries(test_entries_a, num_entries_a, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_eq(table_a, table_a));
+
+  // Different sizes.
+  const test_entry test_entries_b[] = {{"key_0", "value_0"},
+                                       {"key_1", "value_1"}};
+  const size_t num_entries_b = GPR_ARRAY_SIZE(test_entries_b);
+  grpc_slice_hash_table* table_b =
+      create_table_from_entries(test_entries_b, num_entries_b, value_cmp_fn);
+
+  GPR_ASSERT(!grpc_slice_hash_table_eq(table_a, table_b));
+
+  // One key doesn't match.
+  const test_entry test_entries_c[] = {
+      {"key_00", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_c = GPR_ARRAY_SIZE(test_entries_c);
+  grpc_slice_hash_table* table_c =
+      create_table_from_entries(test_entries_c, num_entries_c, value_cmp_fn);
+  GPR_ASSERT(!grpc_slice_hash_table_eq(table_a, table_c));
+
+  // One value doesn't match.
+  const test_entry test_entries_d[] = {
+      {"key_0", "value_00"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_d = GPR_ARRAY_SIZE(test_entries_d);
+  grpc_slice_hash_table* table_d =
+      create_table_from_entries(test_entries_d, num_entries_d, value_cmp_fn);
+  GPR_ASSERT(!grpc_slice_hash_table_eq(table_a, table_d));
+}
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_slice_hash_table();
+  test_slice_hash_table_eq_success();
+  test_slice_hash_table_eq_failure();
   return 0;
 }

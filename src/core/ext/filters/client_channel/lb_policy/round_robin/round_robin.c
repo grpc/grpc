@@ -689,14 +689,14 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 static bool rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                              const grpc_lb_policy_args *args) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)policy;
-  /* Find the number of backend addresses. We ignore balancer
-   * addresses, since we don't know how to handle them. We also need to remove
-   * the LB addresses in order to subchannels connecting to the same server but
-   * from a different batch of addresses. */
+  /* Find the number of backend addresses. We ignore balancer addresses, since
+   * we don't know how to handle them. We also need to remove the LB addresses
+   * in order to be able to compare the subchannel keys of subchannels
+   * connecting to the same server but from a different batch of addresses. */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
-    return NULL;
+    return false;
   }
   const grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_addrs = 0;
@@ -747,7 +747,7 @@ static bool rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
       grpc_subchannel_key *new_sc_key =
           grpc_subchannel_key_create(&sc_args[j].args);
       const bool known_subchannel_in_update =
-          (grpc_subchannel_key_compare(curr_sc_key, new_sc_key) == 0);
+          grpc_subchannel_key_compare(curr_sc_key, new_sc_key) == 0;
       grpc_subchannel_key_destroy(exec_ctx, new_sc_key);
       if (known_subchannel_in_update) {
         sc_args[j].ignore = true; /* Known SC: don't create new SC. */

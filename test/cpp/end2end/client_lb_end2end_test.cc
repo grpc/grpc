@@ -86,6 +86,11 @@ class MyTestServiceImpl : public TestServiceImpl {
     return request_count_;
   }
 
+  void ResetCounters() {
+    std::unique_lock<std::mutex> lock(mu_);
+    request_count_ = 0;
+  }
+
  private:
   std::mutex mu_;
   int request_count_;
@@ -112,24 +117,17 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  struct AddressData {
-    int port;
-    bool is_balancer;
-    grpc::string balancer_name;
-  };
-
-  void SetNextResolution(const std::vector<AddressData>& address_data) {
+  void SetNextResolution(const std::vector<int>& ports) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_lb_addresses* addresses =
-        grpc_lb_addresses_create(address_data.size(), NULL);
-    for (size_t i = 0; i < address_data.size(); ++i) {
+    grpc_lb_addresses* addresses = grpc_lb_addresses_create(ports.size(), NULL);
+    for (size_t i = 0; i < ports.size(); ++i) {
       char* lb_uri_str;
-      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", address_data[i].port);
+      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", ports[i]);
       grpc_uri* lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
       GPR_ASSERT(lb_uri != NULL);
-      grpc_lb_addresses_set_address_from_uri(
-          addresses, i, lb_uri, address_data[i].is_balancer,
-          address_data[i].balancer_name.c_str(), NULL);
+      grpc_lb_addresses_set_address_from_uri(addresses, i, lb_uri,
+                                             false /* is balancer */,
+                                             "" /* balancer name */, NULL);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
@@ -144,9 +142,11 @@ class ClientLbEnd2endTest : public ::testing::Test {
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
-  void ResetStub(const grpc::string& lb_policy_name) {
+  void ResetStub(const grpc::string& lb_policy_name = "") {
     ChannelArguments args;
-    args.SetLoadBalancingPolicyName(lb_policy_name);
+    if (lb_policy_name.size() > 0) {
+      args.SetLoadBalancingPolicyName(lb_policy_name);
+    }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_);
     std::ostringstream uri;
@@ -211,6 +211,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     do {
       SendRpc();
     } while (servers_[server_idx]->service_.request_count() == start_count);
+    servers_[server_idx]->service_.ResetCounters();
     return servers_[server_idx]->service_.request_count();
   }
 
@@ -225,12 +226,12 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("pick_first");
-  std::vector<AddressData> addresses;
+  ResetStub();  // implicit pick first
+  std::vector<int> ports;
   for (size_t i = 0; i < servers_.size(); ++i) {
-    addresses.emplace_back(AddressData{servers_[i]->port_, false, ""});
+    ports.emplace_back(servers_[i]->port_);
   }
-  SetNextResolution(addresses);
+  SetNextResolution(ports);
   for (size_t i = 0; i < servers_.size(); ++i) {
     SendRpc();
   }
@@ -253,46 +254,74 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("pick_first");
-  std::vector<AddressData> addresses;
+  ResetStub();  // implicit pick first
+  std::vector<int> ports;
 
   // Perform one RPC against the first server.
-  addresses.emplace_back(AddressData{servers_[0]->port_, false, ""});
-  SetNextResolution(addresses);
+  ports.emplace_back(servers_[0]->port_);
+  SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [0] *******");
   SendRpc();
+  EXPECT_EQ(servers_[0]->service_.request_count(), 1);
 
-  // An empty update doesn't trigger a policy update. The RPC will go to
-  // servers_[0]
-  addresses.clear();
-  SetNextResolution(addresses);
+  // An empty update will result in the channel going into TRANSIENT_FAILURE.
+  ports.clear();
+  SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET none *******");
   SendRpc();
-  EXPECT_EQ(2, servers_[0]->service_.request_count());
+  grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
+  do {
+    channel_state = channel_->GetState(true /* try to connect */);
+  } while (channel_state == GRPC_CHANNEL_READY);
+  GPR_ASSERT(channel_state != GRPC_CHANNEL_READY);
+  servers_[0]->service_.ResetCounters();
 
-  // Next update will replace servers_[0] with servers_[1], forcing the update
-  // of the policy's selected subchannel.
-  addresses.clear();
-  addresses.emplace_back(AddressData{servers_[1]->port_, false, ""});
-  SetNextResolution(addresses);
+  // Next update introduces servers_[1], making the channel recover.
+  ports.clear();
+  ports.emplace_back(servers_[1]->port_);
+  SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [1] *******");
-  for (int i = 0; i < 10; ++i) SendRpc();
-  EXPECT_GT(servers_[1]->service_.request_count(), 0);
-  EXPECT_EQ(servers_[0]->service_.request_count() +
-                servers_[1]->service_.request_count(),
-            12);
+  WaitForServer(1, 0);
+  EXPECT_EQ(servers_[0]->service_.request_count(), 0);
 
   // And again for servers_[2]
-  addresses.clear();
-  addresses.emplace_back(AddressData{servers_[2]->port_, false, ""});
-  SetNextResolution(addresses);
+  ports.clear();
+  ports.emplace_back(servers_[2]->port_);
+  SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [2] *******");
-  for (int i = 0; i < 10; ++i) SendRpc();
-  EXPECT_GT(servers_[2]->service_.request_count(), 0);
-  EXPECT_EQ(servers_[0]->service_.request_count() +
-                servers_[1]->service_.request_count() +
-                servers_[2]->service_.request_count(),
-            22);
+  WaitForServer(2, 0);
+  EXPECT_EQ(servers_[0]->service_.request_count(), 0);
+  EXPECT_EQ(servers_[1]->service_.request_count(), 0);
+
+  // Check LB policy name for the channel.
+  EXPECT_EQ("pick_first", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
+  // Start servers and send one RPC per server.
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  ResetStub();  // implicit pick first
+  std::vector<int> ports;
+
+  // Perform one RPC against the first server.
+  ports.emplace_back(servers_[0]->port_);
+  SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** SET [0] *******");
+  SendRpc();
+  EXPECT_EQ(servers_[0]->service_.request_count(), 1);
+  servers_[0]->service_.ResetCounters();
+
+  // Send and superset update
+  ports.clear();
+  ports.emplace_back(servers_[1]->port_);
+  ports.emplace_back(servers_[0]->port_);
+  SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** SET superset *******");
+  SendRpc();
+  // We stick to the previously connected server.
+  WaitForServer(0, 0);
+  EXPECT_EQ(0, servers_[1]->service_.request_count());
 
   // Check LB policy name for the channel.
   EXPECT_EQ("pick_first", channel_->GetLoadBalancingPolicyName());
@@ -303,11 +332,11 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   ResetStub("round_robin");
-  std::vector<AddressData> addresses;
+  std::vector<int> ports;
   for (const auto& server : servers_) {
-    addresses.emplace_back(AddressData{server->port_, false, ""});
+    ports.emplace_back(server->port_);
   }
-  SetNextResolution(addresses);
+  SetNextResolution(ports);
   for (size_t i = 0; i < servers_.size(); ++i) {
     SendRpc();
   }
@@ -319,73 +348,66 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
 }
 
-
 TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
   ResetStub("round_robin");
-  std::vector<AddressData> addresses;
-  std::vector<int> server_expectations(servers_.size(), 0);
-  std::vector<int> base_counts(servers_.size(), 0);
+  std::vector<int> ports;
 
   // Start with a single server.
-  addresses.emplace_back(AddressData{servers_[0]->port_, false, ""});
-  SetNextResolution(addresses);
+  ports.emplace_back(servers_[0]->port_);
+  SetNextResolution(ports);
   // Send RPCs. They should all go servers_[0]
   for (size_t i = 0; i < 10; ++i) SendRpc();
   EXPECT_EQ(10, servers_[0]->service_.request_count());
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
-  server_expectations[0] = 10;
+  servers_[0]->service_.ResetCounters();
 
   // And now for the second server.
-  addresses.clear();
-  addresses.emplace_back(AddressData{servers_[1]->port_, false, ""});
-  SetNextResolution(addresses);
+  ports.clear();
+  ports.emplace_back(servers_[1]->port_);
+  SetNextResolution(ports);
 
   // Wait until update has been processed, as signaled by the second backend
   // receiving a request.
   EXPECT_EQ(0, servers_[1]->service_.request_count());
-  base_counts[1] = WaitForServer(1, 0);
+  WaitForServer(1, 0);
 
   for (size_t i = 0; i < 10; ++i) SendRpc();
-  // One request should have gone to each server.
-  EXPECT_EQ(server_expectations[0], servers_[0]->service_.request_count());
-  EXPECT_EQ(base_counts[1] + 10, servers_[1]->service_.request_count());
+  EXPECT_EQ(0, servers_[0]->service_.request_count());
+  EXPECT_EQ(10, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
-  server_expectations[1] = base_counts[1] + 10;
+  servers_[1]->service_.ResetCounters();
 
   // ... and for the last server.
-  addresses.clear();
-  addresses.emplace_back(AddressData{servers_[2]->port_, false, ""});
-  SetNextResolution(addresses);
-
-  EXPECT_EQ(0, servers_[2]->service_.request_count());
-  base_counts[2] = WaitForServer(2, 0);
+  ports.clear();
+  ports.emplace_back(servers_[2]->port_);
+  SetNextResolution(ports);
+  WaitForServer(2, 0);
 
   for (size_t i = 0; i < 10; ++i) SendRpc();
-  EXPECT_EQ(server_expectations[0], servers_[0]->service_.request_count());
-  EXPECT_EQ(server_expectations[1], servers_[1]->service_.request_count());
-  EXPECT_EQ(base_counts[2] + 10, servers_[2]->service_.request_count());
-  server_expectations[2] = base_counts[2] + 10;
+  EXPECT_EQ(0, servers_[0]->service_.request_count());
+  EXPECT_EQ(0, servers_[1]->service_.request_count());
+  EXPECT_EQ(10, servers_[2]->service_.request_count());
+  servers_[2]->service_.ResetCounters();
 
   // Back to all servers.
-  addresses.clear();
-  addresses.emplace_back(AddressData{servers_[0]->port_, false, ""});
-  addresses.emplace_back(AddressData{servers_[1]->port_, false, ""});
-  addresses.emplace_back(AddressData{servers_[2]->port_, false, ""});
-  SetNextResolution(addresses);
-
-  base_counts[0] = WaitForServer(0, server_expectations[0]);
-  base_counts[1] = WaitForServer(1, server_expectations[1]);
-  base_counts[2] = WaitForServer(2, server_expectations[2]);
+  ports.clear();
+  ports.emplace_back(servers_[0]->port_);
+  ports.emplace_back(servers_[1]->port_);
+  ports.emplace_back(servers_[2]->port_);
+  SetNextResolution(ports);
+  WaitForServer(0, 0);
+  WaitForServer(1, 0);
+  WaitForServer(2, 0);
 
   // Send three RPCs, one per server.
   for (size_t i = 0; i < 3; ++i) SendRpc();
-  EXPECT_EQ(base_counts[0] + 1, servers_[0]->service_.request_count());
-  EXPECT_EQ(base_counts[1] + 1, servers_[1]->service_.request_count());
-  EXPECT_EQ(base_counts[2] + 1, servers_[2]->service_.request_count());
+  EXPECT_EQ(1, servers_[0]->service_.request_count());
+  EXPECT_EQ(1, servers_[1]->service_.request_count());
+  EXPECT_EQ(1, servers_[2]->service_.request_count());
 
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());

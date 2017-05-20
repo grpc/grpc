@@ -54,12 +54,8 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect);
 
 void grpc_client_channel_watch_connectivity_state(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
-    grpc_connectivity_state *state, grpc_closure *on_complete);
-
-void grpc_client_lb_channel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
-    grpc_pollset_set *pollset_set, grpc_connectivity_state *state,
+    grpc_polling_entity pollent, grpc_connectivity_state *state,
     grpc_closure *on_complete);
 
 /* Debug helper: pull the subchannel call from a call stack element */

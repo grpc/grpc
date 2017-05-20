@@ -215,9 +215,10 @@ void grpc_channel_watch_connectivity_state(
 
   if (client_channel_elem->filter == &grpc_client_channel_filter) {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");
-    grpc_client_channel_watch_connectivity_state(&exec_ctx, client_channel_elem,
-                                                 grpc_cq_pollset(cq), &w->state,
-                                                 &w->on_complete);
+    grpc_client_channel_watch_connectivity_state(
+        &exec_ctx, client_channel_elem,
+        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &w->state,
+        &w->on_complete);
   } else {
     abort();
   }

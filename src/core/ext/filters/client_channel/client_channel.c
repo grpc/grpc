@@ -392,6 +392,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   service_config_parsing_state parsing_state;
   memset(&parsing_state, 0, sizeof(parsing_state));
 
+  bool lb_policy_update_ok = false;
   bool lb_policy_updated = false;
   if (chand->resolver_result != NULL) {
     // Find LB policy name.
@@ -401,26 +402,24 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
       lb_policy_name = channel_arg->value.string;
     }
-    // Special case: If all of the addresses are balancer addresses,
-    // assume that we should use the grpclb policy, regardless of what the
-    // resolver actually specified.
+    // Special case: If at least one balancer address is present, we use
+    // the grpclb policy, regardless of what the resolver actually specified.
     channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
     if (channel_arg != NULL && channel_arg->type == GRPC_ARG_POINTER) {
       grpc_lb_addresses *addresses = channel_arg->value.pointer.p;
-      bool found_backend_address = false;
+      bool found_balancer_address = false;
       for (size_t i = 0; i < addresses->num_addresses; ++i) {
-        if (!addresses->addresses[i].is_balancer) {
-          found_backend_address = true;
+        if (addresses->addresses[i].is_balancer) {
+          found_balancer_address = true;
           break;
         }
       }
-      if (addresses->num_addresses > 0 && !found_backend_address) {
+      if (found_balancer_address) {
         if (lb_policy_name != NULL && strcmp(lb_policy_name, "grpclb") != 0) {
           gpr_log(GPR_INFO,
-                  "resolver requested LB policy %s but provided only balancer "
-                  "addresses, no backend addresses -- forcing use of grpclb LB "
-                  "policy",
+                  "resolver requested LB policy %s but provided at least one "
+                  "balancer address -- forcing use of grpclb LB policy",
                   lb_policy_name);
         }
         lb_policy_name = "grpclb";
@@ -440,19 +439,30 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         (strcmp(chand->info_lb_policy_name, lb_policy_name) != 0);
     if (chand->lb_policy != NULL && !lb_policy_type_changed) {
       // update
-      lb_policy_updated =
-          grpc_lb_policy_update(exec_ctx, chand->lb_policy, &lb_policy_args);
+      lb_policy_updated = true;
+      lb_policy_update_ok = grpc_lb_policy_update_locked(
+          exec_ctx, chand->lb_policy, &lb_policy_args);
+      if (lb_policy_update_ok) {
+        GRPC_ERROR_UNREF(state_error);
+        state = grpc_lb_policy_check_connectivity_locked(
+            exec_ctx, chand->lb_policy, &state_error);
+      } else {
+        // it'll keep its default GRPC_CHANNEL_TRANSIENT_FAILURE value.
+        gpr_log(GPR_INFO, "LB UPDATE FOR %s FAILED", lb_policy_name);
+      }
     } else {
       lb_policy =
           grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
-    }
-    if (lb_policy != NULL) {
-      GRPC_LB_POLICY_REF(lb_policy, "config_change");
-      GRPC_ERROR_UNREF(state_error);
-      state = grpc_lb_policy_check_connectivity_locked(exec_ctx, lb_policy,
-                                                       &state_error);
-      old_lb_policy = chand->lb_policy;
-      chand->lb_policy = lb_policy;
+      if (lb_policy != NULL) {
+        GRPC_LB_POLICY_REF(lb_policy, "config_change");
+        GRPC_ERROR_UNREF(state_error);
+        state = grpc_lb_policy_check_connectivity_locked(exec_ctx, lb_policy,
+                                                         &state_error);
+        gpr_log(GPR_INFO, "CLIENT CHANNEL STATE FOR %s: %d", lb_policy_name,
+                state);
+        old_lb_policy = chand->lb_policy;
+        chand->lb_policy = lb_policy;
+      }
     }
 
     // Find service config.
@@ -1466,33 +1476,14 @@ static void watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void grpc_client_channel_watch_connectivity_state(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
-    grpc_connectivity_state *state, grpc_closure *closure) {
-  channel_data *chand = elem->channel_data;
-  external_connectivity_watcher *w = gpr_malloc(sizeof(*w));
-  w->chand = chand;
-  w->pollent = grpc_polling_entity_create_from_pollset(pollset);
-  w->on_complete = closure;
-  w->state = state;
-  grpc_pollset_set_add_pollset(exec_ctx, chand->interested_parties, pollset);
-  GRPC_CHANNEL_STACK_REF(w->chand->owning_stack,
-                         "external_connectivity_watcher");
-  grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_init(&w->my_closure, watch_connectivity_state_locked, w,
-                        grpc_combiner_scheduler(chand->combiner, true)),
-      GRPC_ERROR_NONE);
-}
-
-void grpc_client_lb_channel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
-    grpc_pollset_set *pollset_set, grpc_connectivity_state *state,
-    grpc_closure *on_complete) {
+    grpc_polling_entity pollent, grpc_connectivity_state *state,
+    grpc_closure *closure) {
   channel_data *chand = elem->channel_data;
   external_connectivity_watcher *w = gpr_malloc(sizeof(*w));
   w->chand = chand;
-  w->pollent = grpc_polling_entity_create_from_pollset_set(pollset_set);
-  w->on_complete = on_complete;
+  w->pollent = pollent;
+  w->on_complete = closure;
   w->state = state;
   grpc_polling_entity_add_to_pollset_set(exec_ctx, &w->pollent,
                                          chand->interested_parties);
