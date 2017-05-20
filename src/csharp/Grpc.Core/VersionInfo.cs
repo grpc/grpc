@@ -48,11 +48,11 @@ namespace Grpc.Core
         /// <summary>
         /// Current <c>AssemblyFileVersion</c> of gRPC C# assemblies
         /// </summary>
-        public const string CurrentAssemblyFileVersion = "1.3.4.0";
+        public const string CurrentAssemblyFileVersion = "1.3.5.0";
 
         /// <summary>
         /// Current version of gRPC C#
         /// </summary>
-        public const string CurrentVersion = "1.3.4";
+        public const string CurrentVersion = "1.3.5";
     }
 }
