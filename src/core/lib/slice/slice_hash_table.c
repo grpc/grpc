@@ -43,6 +43,7 @@
 struct grpc_slice_hash_table {
   gpr_refcount refs;
   void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value);
+  bool (*cmp_value)(void* a, void* b);
   size_t size;
   size_t max_num_probes;
   grpc_slice_hash_table_entry* entries;
@@ -72,10 +73,12 @@ static void grpc_slice_hash_table_add(grpc_slice_hash_table* table,
 
 grpc_slice_hash_table* grpc_slice_hash_table_create(
     size_t num_entries, grpc_slice_hash_table_entry* entries,
-    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value)) {
+    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value),
+    bool (*cmp_value)(void* a, void* b)) {
   grpc_slice_hash_table* table = gpr_zalloc(sizeof(*table));
   gpr_ref_init(&table->refs, 1);
   table->destroy_value = destroy_value;
+  table->cmp_value = cmp_value;
   // Keep load factor low to improve performance of lookups.
   table->size = num_entries * 2;
   const size_t entry_size = sizeof(grpc_slice_hash_table_entry) * table->size;
@@ -120,4 +123,21 @@ void* grpc_slice_hash_table_get(const grpc_slice_hash_table* table,
     }
   }
   return NULL;  // Not found.
+}
+
+bool grpc_slice_hash_table_eq(const grpc_slice_hash_table* a,
+                              const grpc_slice_hash_table* b) {
+  bool (*cmp_value_fn_a)(void* a, void* b) = a->cmp_value;
+  bool (*cmp_value_fn_b)(void* a, void* b) = a->cmp_value;
+  GPR_ASSERT(cmp_value_fn_a != NULL);
+  GPR_ASSERT(cmp_value_fn_b != NULL);
+  if (cmp_value_fn_a != cmp_value_fn_b) return false;
+  if (a->size != b->size) return false;
+  for (size_t i = 0; i < a->size; ++i) {
+    if (is_empty(&a->entries[i]) != is_empty(&b->entries[i])) return false;
+    if (is_empty(&a->entries[i])) continue;
+    if (!grpc_slice_eq(a->entries[i].key, b->entries[i].key)) return false;
+    if (!cmp_value_fn_a(a->entries[i].value, b->entries[i].value)) return false;
+  }
+  return true;
 }

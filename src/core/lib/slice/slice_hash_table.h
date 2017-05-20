@@ -58,7 +58,8 @@ typedef struct grpc_slice_hash_table_entry {
     \a entries.  Values will be cleaned up via \a destroy_value(). */
 grpc_slice_hash_table *grpc_slice_hash_table_create(
     size_t num_entries, grpc_slice_hash_table_entry *entries,
-    void (*destroy_value)(grpc_exec_ctx *exec_ctx, void *value));
+    void (*destroy_value)(grpc_exec_ctx *exec_ctx, void *value),
+    bool (*cmp_value)(void *a, void *b));
 
 grpc_slice_hash_table *grpc_slice_hash_table_ref(grpc_slice_hash_table *table);
 void grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,
@@ -68,5 +69,9 @@ void grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,
     Returns NULL if \a key is not found. */
 void *grpc_slice_hash_table_get(const grpc_slice_hash_table *table,
                                 const grpc_slice key);
+
+/** Returns true if \a a and \a b contains the same set of (key, value) items */
+bool grpc_slice_hash_table_eq(const grpc_slice_hash_table *a,
+                              const grpc_slice_hash_table *b);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H */

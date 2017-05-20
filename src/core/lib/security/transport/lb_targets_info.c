@@ -44,7 +44,9 @@ static void *targets_info_copy(void *p) { return grpc_slice_hash_table_ref(p); }
 static void targets_info_destroy(grpc_exec_ctx *exec_ctx, void *p) {
   grpc_slice_hash_table_unref(exec_ctx, p);
 }
-static int targets_info_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
+static int targets_info_cmp(void *a, void *b) {
+  return grpc_slice_hash_table_eq(a, b) ? 0 : 1;
+}
 static const grpc_arg_pointer_vtable server_to_balancer_names_vtable = {
     targets_info_copy, targets_info_destroy, targets_info_cmp};
 

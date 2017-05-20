@@ -44,39 +44,12 @@
 typedef struct grpc_lb_policy grpc_lb_policy;
 typedef struct grpc_lb_policy_vtable grpc_lb_policy_vtable;
 
-/** A resolved address alongside any LB related information associated with it.
- * \a user_data, if not NULL, contains opaque data meant to be consumed by the
- * gRPC LB policy. Note that no all LB policies support \a user_data as input.
- * Those who don't will simply ignore it and will correspondingly return NULL in
- * their namesake pick() output argument. */
-typedef struct grpc_lb_address {
-  grpc_resolved_address address;
-  bool is_balancer;
-  char *balancer_name; /* For secure naming. */
-  void *user_data;
-} grpc_lb_address;
-
-typedef struct grpc_lb_user_data_vtable {
-  void *(*copy)(void *);
-  void (*destroy)(grpc_exec_ctx *exec_ctx, void *);
-  int (*cmp)(void *, void *);
-} grpc_lb_user_data_vtable;
-
-typedef struct grpc_lb_addresses {
-  size_t num_addresses;
-  grpc_lb_address *addresses;
-  const grpc_lb_user_data_vtable *user_data_vtable;
-} grpc_lb_addresses;
-
 /** Arguments passed to LB policies. */
 typedef struct grpc_lb_policy_args {
   grpc_client_channel_factory *client_channel_factory;
   grpc_channel_args *args;
   grpc_combiner *combiner;
 } grpc_lb_policy_args;
-
-typedef void (*grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel,
-                                   grpc_status_code status, const char *errmsg);
 
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable *vtable;
@@ -141,8 +114,8 @@ struct grpc_lb_policy_vtable {
                                         grpc_connectivity_state *state,
                                         grpc_closure *closure);
 
-  bool (*update)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                 const grpc_lb_policy_args *args);
+  bool (*update_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                        const grpc_lb_policy_args *args);
 };
 
 /*#define GRPC_LB_POLICY_REFCOUNT_DEBUG*/
@@ -244,7 +217,8 @@ grpc_connectivity_state grpc_lb_policy_check_connectivity_locked(
     grpc_error **connectivity_error);
 
 /** Update \a policy with \a lb_policy_args. Returns true upon success. */
-bool grpc_lb_policy_update(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                           const grpc_lb_policy_args *lb_policy_args);
+bool grpc_lb_policy_update_locked(grpc_exec_ctx *exec_ctx,
+                                  grpc_lb_policy *policy,
+                                  const grpc_lb_policy_args *lb_policy_args);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H */

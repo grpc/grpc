@@ -143,15 +143,9 @@ grpc_channel_args *grpc_channel_args_union(const grpc_channel_args *a,
   size_t uniques_idx = a->num_args;
   for (size_t i = 0; i < b->num_args; ++i) {
     const char *b_key = b->args[i].key;
-    bool found = false;
-    for (size_t j = 0; j < a->num_args; ++j) {
-      const char *a_key = a->args[j].key;
-      if (strcmp(a_key, b_key) == 0) {
-        found = true;
-        break;
-      }
+    if (grpc_channel_args_find(a, b_key) == NULL) {  // not found
+      uniques[uniques_idx++] = b->args[i];
     }
-    if (!found) uniques[uniques_idx++] = b->args[i];
   }
   grpc_channel_args *result =
       grpc_channel_args_copy_and_add(NULL, uniques, uniques_idx);
