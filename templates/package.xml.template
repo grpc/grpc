@@ -29,6 +29,7 @@
    <contents>
     <dir baseinstalldir="/" name="/">
       <file baseinstalldir="/" name="config.m4" role="src" />
+      <file baseinstalldir="/" name="config.w32" role="src" />
       <file baseinstalldir="/" name="src/php/README.md" role="src" />
       <file baseinstalldir="/" name="src/php/ext/grpc/CREDITS" role="src" />
       <file baseinstalldir="/" name="src/php/ext/grpc/LICENSE" role="src" />

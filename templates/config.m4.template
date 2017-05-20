@@ -35,7 +35,7 @@
       ${source} ${"\\"}
       % endfor
       % for lib in libs:
-      % if lib.name in php_config_m4.get('deps', []):
+      % if lib.name in php_config_m4.get('deps', []) and lib.name != 'z':
       % for source in lib.src:
       ${source} ${"\\"}
       % endfor
@@ -49,7 +49,7 @@
   <%
     dirs = {}
     for lib in libs:
-      if lib.name in php_config_m4.get('deps', []):
+      if lib.name in php_config_m4.get('deps', []) and lib.name != 'z':
         for source in lib.src:
           dirs[source[:source.rfind('/')]] = 1
     dirs = dirs.keys()
