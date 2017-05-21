@@ -120,6 +120,10 @@ namespace Grpc.Core.Internal
                     }
                     catch (Exception e)
                     {
+                        // Make sure the Tasks are completed. Set the task result to an exception only if its not already in
+                        // some final state, since we don't know where an exception might have occured in HandleUnaryResponse.
+                        unaryResponseTcs.TrySetException(e);
+                        responseHeadersTcs.TrySetException(e);
                         Logger.Error(e, "Exception occured while invoking completion delegate.");
                     }
                 }
