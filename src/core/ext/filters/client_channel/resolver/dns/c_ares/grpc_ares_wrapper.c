@@ -411,6 +411,7 @@ void grpc_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
           GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+      gpr_free(r);
       goto error_cleanup;
     }
     int status = ares_set_servers_ports(*channel, &r->dns_server_addr);
@@ -420,6 +421,7 @@ void grpc_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
                    ares_strerror(status));
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
       gpr_free(error_msg);
+      gpr_free(r);
       goto error_cleanup;
     }
   }
@@ -446,6 +448,7 @@ void grpc_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
   /* TODO(zyc): Handle CNAME records here. */
   grpc_ares_ev_driver_start(exec_ctx, r->ev_driver);
   grpc_ares_request_unref(exec_ctx, r);
+  gpr_free(port);
   return;
 
 error_cleanup:
