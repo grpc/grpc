@@ -238,7 +238,6 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
       wait_until_channel_polling_thread_started_unblocking_func,
       &stop_waiting_for_thread_start);
 
-
   /* "3" == 3 mandatory args */
   rb_scan_args(argc, argv, "3", &target, &channel_args, &credentials);
 
@@ -264,7 +263,6 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   rb_thread_call_without_gvl(
       channel_init_try_register_connection_polling_without_gil, &stack, NULL,
       NULL);
-
 
   if (args.args != NULL) {
     xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */

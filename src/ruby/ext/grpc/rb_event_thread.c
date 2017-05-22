@@ -110,8 +110,7 @@ static void *grpc_rb_wait_for_event_no_gil(void *param) {
       gpr_mu_unlock(&event_queue.mu);
       return event;
     }
-    gpr_cv_wait(&event_queue.cv,
-                &event_queue.mu,
+    gpr_cv_wait(&event_queue.cv, &event_queue.mu,
                 gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&event_queue.mu);
