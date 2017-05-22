@@ -166,6 +166,9 @@
   [pipe writeValue:anyValue];
   [pipe writesFinishedWithError:nil];
 
+  // Wait buffered pipe to be flushed.
+  sleep(1);
+
   // Then:
   XCTAssertEqual(handler.timesCalled, 1);
   XCTAssertEqualObjects(handler.value, anyValue);
@@ -202,6 +205,7 @@
   [pipe writesFinishedWithError:nil];
   // then start the writeable
   [pipe startWithWriteable:writeable];
+  sleep(1);
 
   // Then:
   XCTAssertEqual(handler.timesCalled, 1);

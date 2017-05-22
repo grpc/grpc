@@ -82,11 +82,6 @@
   if (errorOrNil) {
     // No need to write pending values.
     [self finishWithError:_errorOrNil];
-  } else {
-    // Wait until all the pending writes to be finished.
-    dispatch_sync(_writeQueue, ^{
-      return;
-    });
   }
 }
 
