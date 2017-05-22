@@ -56,7 +56,7 @@ _BM_SPECS = {
   },
   'BM_PumpUnbalancedUnary_Trickle': {
     'tpl': [],
-    'dyn': ['request_size', 'bandwidth_kilobits'],
+    'dyn': ['cli_req_size', 'svr_req_size', 'bandwidth_kilobits'],
   },
   'BM_ErrorStringOnNewError': {
     'tpl': ['fixture'],
