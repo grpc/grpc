@@ -138,7 +138,7 @@ class Grpc(object):
           {
             'name': 'boringssl_%s' % os.path.basename(test[0]),
             'args': [map_testarg(arg) for arg in test[1:]],
-            'exclude_configs': ['asan'],
+            'exclude_configs': ['asan', 'ubsan'],
             'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
             'platforms': ['linux', 'mac', 'posix', 'windows'],
             'flaky': False,

@@ -134,14 +134,9 @@ class NewCallOp : public Op {
     return scope.Escape(obj);
   }
 
-  bool ParseOp(Local<Value> value, grpc_op *out) {
-    return true;
-  }
-  bool IsFinalOp() {
-    return false;
-  }
-  void OnComplete(bool success) {
-  }
+  bool ParseOp(Local<Value> value, grpc_op *out) { return true; }
+  bool IsFinalOp() { return false; }
+  void OnComplete(bool success) {}
 
   grpc_call *call;
   grpc_call_details details;
@@ -151,7 +146,7 @@ class NewCallOp : public Op {
   std::string GetTypeString() const { return "new_call"; }
 };
 
-class TryShutdownOp: public Op {
+class TryShutdownOp : public Op {
  public:
   TryShutdownOp(Server *server, Local<Value> server_value) : server(server) {
     server_persist.Reset(server_value);
@@ -160,19 +155,17 @@ class TryShutdownOp: public Op {
     EscapableHandleScope scope;
     return scope.Escape(Nan::New(server_persist));
   }
-  bool ParseOp(Local<Value> value, grpc_op *out) {
-    return true;
-  }
-  bool IsFinalOp() {
-    return false;
-  }
+  bool ParseOp(Local<Value> value, grpc_op *out) { return true; }
+  bool IsFinalOp() { return false; }
   void OnComplete(bool success) {
     if (success) {
       server->DestroyWrappedServer();
     }
   }
+
  protected:
   std::string GetTypeString() const { return "try_shutdown"; }
+
  private:
   Server *server;
   Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>>
@@ -284,10 +277,9 @@ NAN_METHOD(Server::RequestCall) {
   ops->push_back(unique_ptr<Op>(op));
   grpc_call_error error = grpc_server_request_call(
       server->wrapped_server, &op->call, &op->details, &op->request_metadata,
-      GetCompletionQueue(),
-      GetCompletionQueue(),
-      new struct tag(new Callback(info[0].As<Function>()), ops.release(),
-                     NULL, Nan::Null()));
+      GetCompletionQueue(), GetCompletionQueue(),
+      new struct tag(new Callback(info[0].As<Function>()), ops.release(), NULL,
+                     Nan::Null()));
   if (error != GRPC_CALL_OK) {
     return Nan::ThrowError(nanErrorWithCode("requestCall failed", error));
   }

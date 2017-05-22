@@ -34,8 +34,8 @@
 #ifndef GRPC_RB_H_
 #define GRPC_RB_H_
 
-#include <sys/time.h>
 #include <ruby/ruby.h>
+#include <sys/time.h>
 
 #include <grpc/support/time.h>
 
@@ -68,7 +68,7 @@ extern VALUE sym_metadata;
 
 /* GRPC_RB_MEMSIZE_UNAVAILABLE is used in rb_data_type_t to indicate that the
  * number of bytes used by the wrapped struct is not available. */
-#define GRPC_RB_MEMSIZE_UNAVAILABLE (size_t (*)(const void*))(NULL)
+#define GRPC_RB_MEMSIZE_UNAVAILABLE (size_t(*)(const void*))(NULL)
 
 /* A ruby object alloc func that fails by raising an exception. */
 VALUE grpc_rb_cannot_alloc(VALUE cls);

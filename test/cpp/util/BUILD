@@ -29,7 +29,20 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_library(
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+# The following builds a shared-object to confirm that grpc++_unsecure
+# builds properly. Build-only is sufficient here
+grpc_cc_binary(
+    name = "testso.so",
+    srcs = [],
+    linkshared = 1,
+    deps = ["//:grpc++_unsecure"],
+)
+
+grpc_cc_library(
     name = "test_config",
     srcs = [
         "test_config_cc.cc",
@@ -37,14 +50,15 @@ cc_library(
     hdrs = [
         "test_config.h",
     ],
-    visibility = ["//test:__subpackages__"],
+    external_deps = [
+        "gflags",
+    ],
     deps = [
         "//:gpr",
-        "//external:gflags",
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "grpc++_proto_reflection_desc_db",
     srcs = [
         "proto_reflection_descriptor_database.cc",
@@ -52,14 +66,13 @@ cc_library(
     hdrs = [
         "proto_reflection_descriptor_database.h",
     ],
-    visibility = ["//test:__subpackages__"],
     deps = [
         "//:grpc++_config_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "test_util",
     srcs = [
         "byte_buffer_proto_helper.cc",
@@ -75,11 +88,56 @@ cc_library(
         "subprocess.h",
         "test_credentials_provider.h",
     ],
-    visibility = ["//test:__subpackages__"],
     deps = [
         "//:grpc++",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_cli_libs",
+    srcs = [
+        "cli_call.cc",
+        "cli_credentials.cc",
+        "grpc_tool.cc",
+        "proto_file_parser.cc",
+        "service_describer.cc",
+    ],
+    hdrs = [
+        "cli_call.h",
+        "cli_credentials.h",
+        "config_grpc_cli.h",
+        "grpc_tool.h",
+        "proto_file_parser.h",
+        "service_describer.h",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        ":grpc++_proto_reflection_desc_db",
+    ],
+    external_deps = [
+        "gflags",
+        "protobuf",
+        "protobuf_clib",
+    ],
+)
+
+grpc_cc_library(
+    name = "metrics_server_lib",
+    srcs = [
+        "metrics_server.cc",
+    ],
+    hdrs = [
+        "metrics_server.h",
+    ],
+    deps = [
+        "//src/proto/grpc/testing:metrics_proto",
+        "//:grpc++",
     ],
 )
 
@@ -95,5 +153,29 @@ cc_test(
     ],
 )
 
-
-
+cc_binary(
+    name = "grpc_cli",
+    srcs = [
+        "cli_call.cc",
+        "cli_call.h",
+        "cli_credentials.cc",
+        "cli_credentials.h",
+        "config_grpc_cli.h",
+        "grpc_cli.cc",
+        "grpc_tool.cc",
+        "grpc_tool.h",
+        "proto_file_parser.cc",
+        "proto_file_parser.h",
+        "proto_reflection_descriptor_database.cc",
+        "proto_reflection_descriptor_database.h",
+        "service_describer.cc",
+        "service_describer.h",
+        "test_config.h",
+        "test_config_cc.cc",
+    ],
+    deps = [
+        "//:grpc++",
+        "//external:gflags",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+)

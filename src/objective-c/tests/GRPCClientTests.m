@@ -293,6 +293,35 @@ static GRPCProtoMethod *kUnaryCallMethod;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+- (void)testTrailers {
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Empty response received."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                             path:kEmptyCallMethod.HTTPPath
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+  // Setting this special key in the header will cause the interop server to echo back the
+  // trailer data.
+  const unsigned char raw_bytes[] = {1,2,3,4};
+  NSData *trailer_data = [NSData dataWithBytes:raw_bytes length:sizeof(raw_bytes)];
+  call.requestHeaders[@"x-grpc-test-echo-trailing-bin"] = trailer_data;
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssertNotNil(value, @"nil value received as response.");
+    XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
+    [response fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+    XCTAssertEqualObjects((NSData *)call.responseTrailers[@"x-grpc-test-echo-trailing-bin"],
+                          trailer_data,
+                          @"Did not receive expected trailer");
+    [completion fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 // TODO(makarandd): Move to a different file that contains only unit tests
 - (void)testExceptions {
   // Try to set parameters to nil for GRPCCall. This should cause an exception
@@ -349,6 +378,61 @@ static GRPCProtoMethod *kUnaryCallMethod;
   }];
 
   [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testAlternateDispatchQueue {
+  const int32_t kPayloadSize = 100;
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseSize = kPayloadSize;
+
+  __weak XCTestExpectation *expectation1 = [self expectationWithDescription:@"AlternateDispatchQueue1"];
+
+  // Use default (main) dispatch queue
+  NSString *main_queue_label = [NSString stringWithUTF8String:dispatch_queue_get_label(dispatch_get_main_queue())];
+
+  GRXWriter *requestsWriter1 = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call1 = [[GRPCCall alloc] initWithHost:kHostAddress
+                                              path:kUnaryCallMethod.HTTPPath
+                                    requestsWriter:requestsWriter1];
+
+  id<GRXWriteable> responsesWriteable1 = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    NSString *label = [NSString stringWithUTF8String:dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL)];
+    XCTAssert([label isEqualToString:main_queue_label]);
+
+    [expectation1 fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+  }];
+
+  [call1 startWithWriteable:responsesWriteable1];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+
+  // Use a custom  queue
+  __weak XCTestExpectation *expectation2 = [self expectationWithDescription:@"AlternateDispatchQueue2"];
+
+  NSString *queue_label = @"test.queue1";
+  dispatch_queue_t queue = dispatch_queue_create([queue_label UTF8String], DISPATCH_QUEUE_SERIAL);
+
+  GRXWriter *requestsWriter2 = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call2 = [[GRPCCall alloc] initWithHost:kHostAddress
+                                              path:kUnaryCallMethod.HTTPPath
+                                    requestsWriter:requestsWriter2];
+
+  [call2 setResponseDispatchQueue:queue];
+
+  id<GRXWriteable> responsesWriteable2 = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    NSString *label = [NSString stringWithUTF8String:dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL)];
+    XCTAssert([label isEqualToString:queue_label]);
+
+    [expectation2 fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+  }];
+
+  [call2 startWithWriteable:responsesWriteable2];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }

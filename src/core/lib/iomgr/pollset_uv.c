@@ -106,7 +106,7 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
 }
 
-void grpc_pollset_destroy(grpc_pollset *pollset) {
+void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   uv_close((uv_handle_t *)&pollset->timer, timer_close_cb);
   // timer.data is a boolean indicating that the timer has finished closing
   pollset->timer.data = (void *)0;

@@ -35,14 +35,14 @@
 
 #include "grpc/support/log.h"
 
-#include <node.h>
 #include <nan.h>
-#include "grpc/grpc.h"
-#include "grpc/grpc_security.h"
+#include <node.h>
 #include "call.h"
 #include "channel.h"
-#include "completion_queue.h"
 #include "channel_credentials.h"
+#include "completion_queue.h"
+#include "grpc/grpc.h"
+#include "grpc/grpc_security.h"
 #include "timeval.h"
 
 namespace grpc {
@@ -81,8 +81,8 @@ bool ParseChannelArgs(Local<Value> args_val,
     *channel_args_ptr = NULL;
     return false;
   }
-  grpc_channel_args *channel_args = reinterpret_cast<grpc_channel_args*>(
-      malloc(sizeof(grpc_channel_args)));
+  grpc_channel_args *channel_args =
+      reinterpret_cast<grpc_channel_args *>(malloc(sizeof(grpc_channel_args)));
   *channel_args_ptr = channel_args;
   Local<Object> args_hash = Nan::To<Object>(args_val).ToLocalChecked();
   Local<Array> keys = Nan::GetOwnPropertyNames(args_hash).ToLocalChecked();
@@ -103,16 +103,16 @@ bool ParseChannelArgs(Local<Value> args_val,
     } else if (value->IsString()) {
       Utf8String val_str(value);
       channel_args->args[i].type = GRPC_ARG_STRING;
-      channel_args->args[i].value.string = reinterpret_cast<char*>(
-          calloc(val_str.length() + 1,sizeof(char)));
-      memcpy(channel_args->args[i].value.string,
-             *val_str, val_str.length() + 1);
+      channel_args->args[i].value.string =
+          reinterpret_cast<char *>(calloc(val_str.length() + 1, sizeof(char)));
+      memcpy(channel_args->args[i].value.string, *val_str,
+             val_str.length() + 1);
     } else {
       // The value does not match either of the accepted types
       return false;
     }
-    channel_args->args[i].key = reinterpret_cast<char*>(
-        calloc(key_str.length() + 1, sizeof(char)));
+    channel_args->args[i].key =
+        reinterpret_cast<char *>(calloc(key_str.length() + 1, sizeof(char)));
     memcpy(channel_args->args[i].key, *key_str, key_str.length() + 1);
   }
   return true;
@@ -189,12 +189,13 @@ NAN_METHOD(Channel::New) {
     grpc_channel_args *channel_args_ptr = NULL;
     if (!ParseChannelArgs(info[2], &channel_args_ptr)) {
       DeallocateChannelArgs(channel_args_ptr);
-      return Nan::ThrowTypeError("Channel options must be an object with "
-                                 "string keys and integer or string values");
+      return Nan::ThrowTypeError(
+          "Channel options must be an object with "
+          "string keys and integer or string values");
     }
     if (creds == NULL) {
-      wrapped_channel = grpc_insecure_channel_create(*host, channel_args_ptr,
-                                                     NULL);
+      wrapped_channel =
+          grpc_insecure_channel_create(*host, channel_args_ptr, NULL);
     } else {
       wrapped_channel =
           grpc_secure_channel_create(creds, *host, channel_args_ptr, NULL);
@@ -207,8 +208,8 @@ NAN_METHOD(Channel::New) {
   } else {
     const int argc = 3;
     Local<Value> argv[argc] = {info[0], info[1], info[2]};
-    MaybeLocal<Object> maybe_instance = Nan::NewInstance(
-        constructor->GetFunction(), argc, argv);
+    MaybeLocal<Object> maybe_instance =
+        Nan::NewInstance(constructor->GetFunction(), argc, argv);
     if (maybe_instance.IsEmpty()) {
       // There's probably a pending exception
       return;
@@ -231,11 +232,13 @@ NAN_METHOD(Channel::Close) {
 
 NAN_METHOD(Channel::GetTarget) {
   if (!HasInstance(info.This())) {
-    return Nan::ThrowTypeError("getTarget can only be called on Channel objects");
+    return Nan::ThrowTypeError(
+        "getTarget can only be called on Channel objects");
   }
   Channel *channel = ObjectWrap::Unwrap<Channel>(info.This());
-  info.GetReturnValue().Set(Nan::New(
-      grpc_channel_get_target(channel->wrapped_channel)).ToLocalChecked());
+  info.GetReturnValue().Set(
+      Nan::New(grpc_channel_get_target(channel->wrapped_channel))
+          .ToLocalChecked());
 }
 
 NAN_METHOD(Channel::GetConnectivityState) {
@@ -245,9 +248,8 @@ NAN_METHOD(Channel::GetConnectivityState) {
   }
   Channel *channel = ObjectWrap::Unwrap<Channel>(info.This());
   int try_to_connect = (int)info[0]->Equals(Nan::True());
-  info.GetReturnValue().Set(
-      grpc_channel_check_connectivity_state(channel->wrapped_channel,
-                                            try_to_connect));
+  info.GetReturnValue().Set(grpc_channel_check_connectivity_state(
+      channel->wrapped_channel, try_to_connect));
 }
 
 NAN_METHOD(Channel::WatchConnectivityState) {
@@ -267,9 +269,8 @@ NAN_METHOD(Channel::WatchConnectivityState) {
     return Nan::ThrowTypeError(
         "watchConnectivityState's third argument must be a callback");
   }
-  grpc_connectivity_state last_state =
-      static_cast<grpc_connectivity_state>(
-          Nan::To<uint32_t>(info[0]).FromJust());
+  grpc_connectivity_state last_state = static_cast<grpc_connectivity_state>(
+      Nan::To<uint32_t>(info[0]).FromJust());
   double deadline = Nan::To<double>(info[1]).FromJust();
   Local<Function> callback_func = info[2].As<Function>();
   Nan::Callback *callback = new Callback(callback_func);
@@ -278,8 +279,7 @@ NAN_METHOD(Channel::WatchConnectivityState) {
   grpc_channel_watch_connectivity_state(
       channel->wrapped_channel, last_state, MillisecondsToTimespec(deadline),
       GetCompletionQueue(),
-      new struct tag(callback,
-                     ops.release(), NULL, Nan::Null()));
+      new struct tag(callback, ops.release(), NULL, Nan::Null()));
   CompletionQueueNext();
 }
 

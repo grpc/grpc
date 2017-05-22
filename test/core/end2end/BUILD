@@ -27,54 +27,73 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
 licenses(["notice"])  # 3-clause BSD
 
 load(":generate_tests.bzl", "grpc_end2end_tests")
 
-cc_library(
-  name = 'cq_verifier',
-  srcs = ['cq_verifier.c'],
-  hdrs = ['cq_verifier.h'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util'],
-  copts = ['-std=c99'],
-  visibility = ["//test:__subpackages__"],
+grpc_cc_library(
+    name = "cq_verifier",
+    srcs = ["cq_verifier.c"],
+    hdrs = ["cq_verifier.h"],
+    language = "C",
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_library(
-  name = 'ssl_test_data',
-  visibility = ["//test:__subpackages__"],
-  hdrs = ['data/ssl_test_data.h'],
-  copts = ['-std=c99'],
-  srcs = [
-    "data/client_certs.c",
-    "data/server1_cert.c",
-    "data/server1_key.c",
-    "data/test_root_cert.c",
-  ]
+grpc_cc_library(
+    name = "ssl_test_data",
+    srcs = [
+        "data/client_certs.c",
+        "data/server1_cert.c",
+        "data/server1_key.c",
+        "data/test_root_cert.c",
+    ],
+    hdrs = ["data/ssl_test_data.h"],
+    language = "C",
+    visibility = ["//test:__subpackages__"],
 )
 
-cc_library(
-  name = 'fake_resolver',
-  hdrs = ['fake_resolver.h'],
-  srcs = ['fake_resolver.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
+grpc_cc_library(
+    name = "fake_resolver",
+    srcs = ["fake_resolver.c"],
+    hdrs = ["fake_resolver.h"],
+    language = "C",
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_library(
-  name = 'http_proxy',
-  hdrs = ['fixtures/http_proxy_fixture.h'],
-  srcs = ['fixtures/http_proxy_fixture.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
+grpc_cc_library(
+    name = "http_proxy",
+    srcs = ["fixtures/http_proxy_fixture.c"],
+    hdrs = ["fixtures/http_proxy_fixture.h"],
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
-cc_library(
-  name = 'proxy',
-  hdrs = ['fixtures/proxy.h'],
-  srcs = ['fixtures/proxy.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
+grpc_cc_library(
+    name = "proxy",
+    srcs = ["fixtures/proxy.c"],
+    hdrs = ["fixtures/proxy.h"],
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_end2end_tests()

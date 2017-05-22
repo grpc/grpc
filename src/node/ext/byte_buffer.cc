@@ -33,10 +33,10 @@
 
 #include <string.h>
 
-#include <node.h>
 #include <nan.h>
-#include "grpc/grpc.h"
+#include <node.h>
 #include "grpc/byte_buffer_reader.h"
+#include "grpc/grpc.h"
 #include "grpc/slice.h"
 
 #include "byte_buffer.h"

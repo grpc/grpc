@@ -33,20 +33,20 @@
 
 #include <ruby/ruby.h>
 
-#include "rb_grpc_imports.generated.h"
 #include "rb_event_thread.h"
+#include "rb_grpc_imports.generated.h"
 
 #include <stdbool.h>
 
-#include <ruby/thread.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <grpc/support/log.h>
+#include <ruby/thread.h>
 
 typedef struct grpc_rb_event {
   // callback will be called with argument while holding the GVL
-  void (*callback)(void*);
+  void (*callback)(void *);
   void *argument;
 
   struct grpc_rb_event *next;
@@ -65,8 +65,7 @@ typedef struct grpc_rb_event_queue {
 
 static grpc_rb_event_queue event_queue;
 
-void grpc_rb_event_queue_enqueue(void (*callback)(void*),
-                                 void *argument) {
+void grpc_rb_event_queue_enqueue(void (*callback)(void *), void *argument) {
   grpc_rb_event *event = gpr_malloc(sizeof(grpc_rb_event));
   event->callback = callback;
   event->argument = argument;
@@ -132,10 +131,10 @@ static void grpc_rb_event_unblocking_func(void *arg) {
 static VALUE grpc_rb_event_thread(VALUE arg) {
   grpc_rb_event *event;
   (void)arg;
-  while(true) {
-    event = (grpc_rb_event*)rb_thread_call_without_gvl(
-        grpc_rb_wait_for_event_no_gil, NULL,
-        grpc_rb_event_unblocking_func, NULL);
+  while (true) {
+    event = (grpc_rb_event *)rb_thread_call_without_gvl(
+        grpc_rb_wait_for_event_no_gil, NULL, grpc_rb_event_unblocking_func,
+        NULL);
     if (event == NULL) {
       // Indicates that the thread needs to shut down
       break;

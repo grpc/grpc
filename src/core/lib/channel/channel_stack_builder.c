@@ -38,7 +38,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-int grpc_trace_channel_stack_builder = 0;
+grpc_tracer_flag grpc_trace_channel_stack_builder =
+    GRPC_TRACER_INITIALIZER(false);
 
 typedef struct filter_node {
   struct filter_node *next;
@@ -111,6 +112,17 @@ grpc_channel_stack_builder_iterator *
 grpc_channel_stack_builder_create_iterator_at_last(
     grpc_channel_stack_builder *builder) {
   return create_iterator_at_filter_node(builder, &builder->end);
+}
+
+bool grpc_channel_stack_builder_iterator_is_end(
+    grpc_channel_stack_builder_iterator *iterator) {
+  return iterator->node == &iterator->builder->end;
+}
+
+const char *grpc_channel_stack_builder_iterator_filter_name(
+    grpc_channel_stack_builder_iterator *iterator) {
+  if (iterator->node->filter == NULL) return NULL;
+  return iterator->node->filter->name;
 }
 
 bool grpc_channel_stack_builder_move_next(

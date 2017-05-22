@@ -36,8 +36,8 @@
 
 #include <string.h>
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 #include "grpc/grpc.h"
 
 namespace grpc {

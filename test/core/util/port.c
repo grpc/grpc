@@ -77,9 +77,11 @@ static int free_chosen_port(int port) {
 
 static void free_chosen_ports(void) {
   size_t i;
+  grpc_init();
   for (i = 0; i < num_chosen_ports; i++) {
     grpc_free_port_using_server(chosen_ports[i]);
   }
+  grpc_shutdown();
   gpr_free(chosen_ports);
 }
 

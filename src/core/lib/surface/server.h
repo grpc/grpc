@@ -36,12 +36,13 @@
 
 #include <grpc/grpc.h>
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/transport.h"
 
 extern const grpc_channel_filter grpc_server_top_filter;
 
 /** Lightweight tracing of server channel state */
-extern int grpc_server_channel_trace;
+extern grpc_tracer_flag grpc_server_channel_trace;
 
 /* Add a listener to the server: when the server starts, it will call start,
    and when it shuts down, it will call destroy */

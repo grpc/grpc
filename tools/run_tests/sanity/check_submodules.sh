@@ -46,9 +46,8 @@ cat << EOF | awk '{ print $1 }' | sort > $want_submodules
  886e7d75368e3f4fab3f4d0d3584e4abfc557755 third_party/boringssl-with-bazel (version_for_cocoapods_7.0-857-g886e7d7)
  30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e third_party/gflags (v2.2.0)
  ec44c6c1675c25b9827aacd08c02433cccde7780 third_party/googletest (release-1.8.0)
- 593e917c176b5bc5aafa57bf9f6030d749d91cd5 third_party/protobuf (v3.1.0-alpha-1-326-g593e917)
- bcad91771b7f0bff28a1cac1981d7ef2b9bcef3c third_party/thrift (bcad917)
- 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
+ a6189acd18b00611c1dc7042299ad75486f08a1a third_party/protobuf (v3.3.0)
+ cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
  7691f773af79bf75a62d1863fd0f13ebf9dc51b1 third_party/cares/cares (1.12.0)
 EOF
 

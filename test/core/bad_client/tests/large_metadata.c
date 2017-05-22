@@ -131,7 +131,7 @@ static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  grpc_call_destroy(s);
+  grpc_call_unref(s);
   cq_verifier_destroy(cqv);
 }
 
@@ -177,7 +177,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   grpc_slice_unref(meta.value);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  grpc_call_destroy(s);
+  grpc_call_unref(s);
   cq_verifier_destroy(cqv);
 }
 
@@ -212,12 +212,14 @@ static void client_validator(grpc_slice_buffer *incoming) {
 }
 
 int main(int argc, char **argv) {
+  int i;
+
   grpc_test_init(argc, argv);
 
   // Test sending more metadata than the server will accept.
   gpr_strvec headers;
   gpr_strvec_init(&headers);
-  for (int i = 0; i < NUM_HEADERS; ++i) {
+  for (i = 0; i < NUM_HEADERS; ++i) {
     char *str;
     gpr_asprintf(&str, "%s%02d%s",
                  PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,

@@ -75,7 +75,7 @@ typedef struct {
   gpr_refcount ref;
 } secure_endpoint;
 
-int grpc_trace_secure_endpoint = 0;
+grpc_tracer_flag grpc_trace_secure_endpoint = GRPC_TRACER_INITIALIZER(false);
 
 static void destroy(grpc_exec_ctx *exec_ctx, secure_endpoint *secure_ep) {
   secure_endpoint *ep = secure_ep;
@@ -130,14 +130,14 @@ static void secure_endpoint_ref(secure_endpoint *ep) { gpr_ref(&ep->ref); }
 static void flush_read_staging_buffer(secure_endpoint *ep, uint8_t **cur,
                                       uint8_t **end) {
   grpc_slice_buffer_add(ep->read_buffer, ep->read_staging_buffer);
-  ep->read_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
+  ep->read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   *cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
   *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 }
 
 static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
                          grpc_error *error) {
-  if (grpc_trace_secure_endpoint) {
+  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
       char *data = grpc_dump_slice(ep->read_buffer->slices[i],
@@ -252,7 +252,7 @@ static void endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
 static void flush_write_staging_buffer(secure_endpoint *ep, uint8_t **cur,
                                        uint8_t **end) {
   grpc_slice_buffer_add(&ep->output_buffer, ep->write_staging_buffer);
-  ep->write_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
+  ep->write_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   *cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
   *end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 }
@@ -269,7 +269,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
 
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &ep->output_buffer);
 
-  if (grpc_trace_secure_endpoint) {
+  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
     for (i = 0; i < slices->count; i++) {
       char *data =
           grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -415,8 +415,8 @@ grpc_endpoint *grpc_secure_endpoint_create(
     grpc_slice_buffer_add(&ep->leftover_bytes,
                           grpc_slice_ref_internal(leftover_slices[i]));
   }
-  ep->write_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
-  ep->read_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
+  ep->write_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
+  ep->read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   grpc_slice_buffer_init(&ep->output_buffer);
   grpc_slice_buffer_init(&ep->source_buffer);
   ep->read_buffer = NULL;

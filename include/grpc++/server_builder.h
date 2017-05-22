@@ -46,6 +46,7 @@
 #include <grpc/compression.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/useful.h>
+#include <grpc/support/workaround_list.h>
 
 struct grpc_resource_quota;
 
@@ -184,6 +185,11 @@ class ServerBuilder {
   static void InternalAddPluginFactory(
       std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)());
 
+  /// Enable a server workaround. Do not use unless you know what the workaround
+  /// does. For explanation and detailed descriptions of workarounds, see
+  /// doc/workarounds.md.
+  ServerBuilder& EnableWorkaround(grpc_workaround_list id);
+
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
 
@@ -195,10 +201,10 @@ class ServerBuilder {
 
   struct SyncServerSettings {
     SyncServerSettings()
-        : num_cqs(1),
+        : num_cqs(GPR_MAX(1, gpr_cpu_num_cores())),
           min_pollers(1),
-          max_pollers(INT_MAX),
-          cq_timeout_msec(1000) {}
+          max_pollers(2),
+          cq_timeout_msec(10000) {}
 
     // Number of server completion queues to create to listen to incoming RPCs.
     int num_cqs;

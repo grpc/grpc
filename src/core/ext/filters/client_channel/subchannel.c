@@ -59,9 +59,9 @@
 #define INTERNAL_REF_BITS 16
 #define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))
 
-#define GRPC_SUBCHANNEL_MIN_CONNECT_TIMEOUT_SECONDS 20
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER 1.6
+#define GRPC_SUBCHANNEL_RECONNECT_MIN_BACKOFF_SECONDS 20
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
@@ -283,6 +283,7 @@ static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
 void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
+  // add a weak ref and subtract a strong ref (atomically)
   old_refs = ref_mutate(c, (gpr_atm)1 - (gpr_atm)(1 << INTERNAL_REF_BITS),
                         1 REF_MUTATE_PURPOSE("STRONG_UNREF"));
   if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
@@ -353,8 +354,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                "subchannel");
   int initial_backoff_ms =
       GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
+  int min_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MIN_BACKOFF_SECONDS * 1000;
   int max_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
-  int min_backoff_ms = GRPC_SUBCHANNEL_MIN_CONNECT_TIMEOUT_SECONDS * 1000;
   bool fixed_reconnect_backoff = false;
   if (c->args) {
     for (size_t i = 0; i < c->args->num_args; i++) {
@@ -365,6 +366,12 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
             grpc_channel_arg_get_integer(
                 &c->args->args[i],
                 (grpc_integer_options){initial_backoff_ms, 100, INT_MAX});
+      } else if (0 == strcmp(c->args->args[i].key,
+                             GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
+        fixed_reconnect_backoff = false;
+        min_backoff_ms = grpc_channel_arg_get_integer(
+            &c->args->args[i],
+            (grpc_integer_options){min_backoff_ms, 100, INT_MAX});
       } else if (0 == strcmp(c->args->args[i].key,
                              GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
@@ -609,7 +616,7 @@ void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
   elem->filter->start_transport_op(exec_ctx, elem, op);
 }
 
-static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
+static bool publish_transport_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel *c) {
   grpc_connected_subchannel *con;
   grpc_channel_stack *stk;
@@ -625,15 +632,16 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   if (!grpc_channel_init_create_stack(exec_ctx, builder,
                                       GRPC_CLIENT_SUBCHANNEL)) {
     grpc_channel_stack_builder_destroy(exec_ctx, builder);
-    abort(); /* TODO(ctiller): what to do here (previously we just crashed) */
+    return false;
   }
   grpc_error *error = grpc_channel_stack_builder_finish(
       exec_ctx, builder, 0, 1, connection_destroy, NULL, (void **)&con);
   if (error != GRPC_ERROR_NONE) {
+    grpc_transport_destroy(exec_ctx, c->connecting_result.transport);
     gpr_log(GPR_ERROR, "error initializing subchannel stack: %s",
             grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
-    abort(); /* TODO(ctiller): what to do here? */
+    return false;
   }
   stk = CHANNEL_STACK_FROM_CONNECTION(con);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
@@ -649,8 +657,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
     gpr_free(sw_subchannel);
     grpc_channel_stack_destroy(exec_ctx, stk);
     gpr_free(con);
-    GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
-    return;
+    return false;
   }
 
   /* publish */
@@ -672,6 +679,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   /* signal completion */
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker, GRPC_CHANNEL_READY,
                               GRPC_ERROR_NONE, "connected");
+  return true;
 }
 
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
@@ -682,8 +690,9 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_SUBCHANNEL_WEAK_REF(c, "connected");
   gpr_mu_lock(&c->mu);
   c->connecting = false;
-  if (c->connecting_result.transport != NULL) {
-    publish_transport_locked(exec_ctx, c);
+  if (c->connecting_result.transport != NULL &&
+      publish_transport_locked(exec_ctx, c)) {
+    /* do nothing, transport was published */
   } else if (c->disconnected) {
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   } else {
@@ -772,7 +781,7 @@ grpc_error *grpc_connected_subchannel_create_call(
   (*call)->connection = GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   const grpc_call_element_args call_args = {.call_stack = callstk,
                                             .server_transport_data = NULL,
-                                            .context = NULL,
+                                            .context = args->context,
                                             .path = args->path,
                                             .start_time = args->start_time,
                                             .deadline = args->deadline,
@@ -797,13 +806,7 @@ static void grpc_uri_to_sockaddr(grpc_exec_ctx *exec_ctx, const char *uri_str,
                                  grpc_resolved_address *addr) {
   grpc_uri *uri = grpc_uri_parse(exec_ctx, uri_str, 0 /* suppress_errors */);
   GPR_ASSERT(uri != NULL);
-  if (strcmp(uri->scheme, "ipv4") == 0) {
-    GPR_ASSERT(parse_ipv4(uri, addr));
-  } else if (strcmp(uri->scheme, "ipv6") == 0) {
-    GPR_ASSERT(parse_ipv6(uri, addr));
-  } else {
-    GPR_ASSERT(parse_unix(uri, addr));
-  }
+  if (!grpc_parse_uri(uri, addr)) memset(addr, 0, sizeof(*addr));
   grpc_uri_destroy(uri);
 }
 

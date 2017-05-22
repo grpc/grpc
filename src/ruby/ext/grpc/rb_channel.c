@@ -238,6 +238,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
       wait_until_channel_polling_thread_started_unblocking_func,
       &stop_waiting_for_thread_start);
 
+
   /* "3" == 3 mandatory args */
   rb_scan_args(argc, argv, "3", &target, &channel_args, &credentials);
 
@@ -263,6 +264,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   rb_thread_call_without_gvl(
       channel_init_try_register_connection_polling_without_gil, &stack, NULL,
       NULL);
+
 
   if (args.args != NULL) {
     xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */
@@ -443,7 +445,7 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent, VALUE mask,
     parent_call = grpc_rb_get_wrapped_call(parent);
   }
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_pluck(NULL);
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   if (wrapper->bg_wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "closed!");
@@ -756,7 +758,7 @@ void grpc_rb_channel_polling_thread_start() {
   gpr_mu_init(&global_connection_polling_mu);
   gpr_cv_init(&global_connection_polling_cv);
 
-  channel_polling_cq = grpc_completion_queue_create(NULL);
+  channel_polling_cq = grpc_completion_queue_create_for_next(NULL);
   background_thread = rb_thread_create(run_poll_channels_loop, NULL);
 
   if (!RTEST(background_thread)) {

@@ -83,7 +83,8 @@ ServerBuilder::~ServerBuilder() {
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
     bool is_frequently_polled) {
-  ServerCompletionQueue* cq = new ServerCompletionQueue(is_frequently_polled);
+  ServerCompletionQueue* cq = new ServerCompletionQueue(
+      is_frequently_polled ? GRPC_CQ_DEFAULT_POLLING : GRPC_CQ_NON_LISTENING);
   cqs_.push_back(cq);
   return std::unique_ptr<ServerCompletionQueue>(cq);
 }
@@ -242,6 +243,16 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       sync_server_cqs(std::make_shared<
                       std::vector<std::unique_ptr<ServerCompletionQueue>>>());
 
+  int num_frequently_polled_cqs = 0;
+  for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
+    if ((*it)->IsFrequentlyPolled()) {
+      num_frequently_polled_cqs++;
+    }
+  }
+
+  const bool is_hybrid_server =
+      has_sync_methods && num_frequently_polled_cqs > 0;
+
   if (has_sync_methods) {
     // This is a Sync server
     gpr_log(GPR_INFO,
@@ -251,9 +262,12 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
             sync_server_settings_.max_pollers,
             sync_server_settings_.cq_timeout_msec);
 
+    grpc_cq_polling_type polling_type =
+        is_hybrid_server ? GRPC_CQ_NON_POLLING : GRPC_CQ_DEFAULT_POLLING;
+
     // Create completion queues to listen to incoming rpc requests
     for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
-      sync_server_cqs->emplace_back(new ServerCompletionQueue());
+      sync_server_cqs->emplace_back(new ServerCompletionQueue(polling_type));
     }
   }
 
@@ -269,12 +283,10 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   //     server
   //  2. cqs_: Completion queues added via AddCompletionQueue() call
 
-  // All sync cqs (if any) are frequently polled by ThreadManager
-  int num_frequently_polled_cqs = sync_server_cqs->size();
-
   for (auto it = sync_server_cqs->begin(); it != sync_server_cqs->end(); ++it) {
     grpc_server_register_completion_queue(server->server_, (*it)->cq(),
                                           nullptr);
+    num_frequently_polled_cqs++;
   }
 
   // cqs_ contains the completion queue added by calling the ServerBuilder's
@@ -283,14 +295,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   // listening to incoming channels. Such completion queues must be registered
   // as non-listening queues
   for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
-    if ((*it)->IsFrequentlyPolled()) {
-      grpc_server_register_completion_queue(server->server_, (*it)->cq(),
-                                            nullptr);
-      num_frequently_polled_cqs++;
-    } else {
-      grpc_server_register_non_listening_completion_queue(server->server_,
-                                                          (*it)->cq(), nullptr);
-    }
+    grpc_server_register_completion_queue(server->server_, (*it)->cq(),
+                                          nullptr);
   }
 
   if (num_frequently_polled_cqs == 0) {
@@ -337,10 +343,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
 
   auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
-  if (!server->Start(cqs_data, cqs_.size())) {
-    if (added_port) server->Shutdown();
-    return nullptr;
-  }
+  server->Start(cqs_data, cqs_.size());
 
   for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
     (*plugin)->Finish(initializer);
@@ -353,6 +356,16 @@ void ServerBuilder::InternalAddPluginFactory(
     std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)()) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   (*g_plugin_factory_list).push_back(CreatePlugin);
+}
+
+ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
+  switch (id) {
+    case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
+      return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION, 1);
+    default:
+      gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
+      return *this;
+  }
 }
 
 }  // namespace grpc

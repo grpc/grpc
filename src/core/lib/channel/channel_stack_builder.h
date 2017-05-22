@@ -98,6 +98,10 @@ bool grpc_channel_stack_builder_iterator_is_first(
 bool grpc_channel_stack_builder_iterator_is_end(
     grpc_channel_stack_builder_iterator *iterator);
 
+/// What is the name of the filter at this iterator position?
+const char *grpc_channel_stack_builder_iterator_filter_name(
+    grpc_channel_stack_builder_iterator *iterator);
+
 /// Move an iterator to the next item
 bool grpc_channel_stack_builder_move_next(
     grpc_channel_stack_builder_iterator *iterator);
@@ -161,7 +165,7 @@ grpc_error *grpc_channel_stack_builder_finish(
 void grpc_channel_stack_builder_destroy(grpc_exec_ctx *exec_ctx,
                                         grpc_channel_stack_builder *builder);
 
-extern int grpc_trace_channel_stack_builder;
+extern grpc_tracer_flag grpc_trace_channel_stack_builder;
 
 #ifdef __cplusplus
 }

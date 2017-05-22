@@ -42,13 +42,13 @@
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
 
-int grpc_combiner_trace = 0;
+grpc_tracer_flag grpc_combiner_trace = GRPC_TRACER_INITIALIZER(false);
 
-#define GRPC_COMBINER_TRACE(fn) \
-  do {                          \
-    if (grpc_combiner_trace) {  \
-      fn;                       \
-    }                           \
+#define GRPC_COMBINER_TRACE(fn)                \
+  do {                                         \
+    if (GRPC_TRACER_ON(grpc_combiner_trace)) { \
+      fn;                                      \
+    }                                          \
   } while (0)
 
 #define STATE_UNORPHANED 1

@@ -34,11 +34,12 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/transport/transport.h"
 
-extern int grpc_http_trace;
-extern int grpc_flowctl_trace;
+extern grpc_tracer_flag grpc_http_trace;
+extern grpc_tracer_flag grpc_flowctl_trace;
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,

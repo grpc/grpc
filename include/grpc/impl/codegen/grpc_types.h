@@ -34,6 +34,8 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -41,7 +43,6 @@
 #include <grpc/impl/codegen/status.h>
 
 #include <stddef.h>
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +50,7 @@ extern "C" {
 
 typedef enum {
   GRPC_BB_RAW
-  /* Future types may include GRPC_BB_PROTOBUF, etc. */
+  /** Future types may include GRPC_BB_PROTOBUF, etc. */
 } grpc_byte_buffer_type;
 
 typedef struct grpc_byte_buffer {
@@ -66,8 +67,8 @@ typedef struct grpc_byte_buffer {
   } data;
 } grpc_byte_buffer;
 
-/** Completion Queues enable notification of the completion of asynchronous
-    actions. */
+/** Completion Queues enable notification of the completion of
+ * asynchronous actions. */
 typedef struct grpc_completion_queue grpc_completion_queue;
 
 /** An alarm associated with a completion queue. */
@@ -133,9 +134,9 @@ typedef struct {
     Used to set optional channel-level configuration.
     These configuration options are modelled as key-value pairs as defined
     by grpc_arg; keys are strings to allow easy backwards-compatible extension
-    by arbitrary parties.
-    All evaluation is performed at channel creation time (i.e. the values in
-    this structure need only live through the creation invocation).
+    by arbitrary parties. All evaluation is performed at channel creation
+    time (i.e. the values in this structure need only live through the
+    creation invocation).
 
     See the description of the \ref grpc_arg_keys "available args" for more
     details. */
@@ -161,7 +162,8 @@ typedef struct {
 /** Maximum message length that the channel can receive. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
-/** \deprecated For backward compatibility. */
+/** \deprecated For backward compatibility.
+ * Use GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH instead. */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
 /** Maximum message length that the channel can send. Int valued, bytes.
     -1 means unlimited. */
@@ -169,13 +171,19 @@ typedef struct {
 /** Maximum time that a channel may have no outstanding rpcs. Int valued,
     milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_IDLE_MS "grpc.max_connection_idle_ms"
-/** Maximum time that a channel may exist. Int valued, milliseconds. INT_MAX
-   means unlimited. */
+/** Maximum time that a channel may exist. Int valued, milliseconds.
+ * INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_MS "grpc.max_connection_age_ms"
 /** Grace period after the chennel reaches its max age. Int valued,
    milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
-/** Initial sequence number for http2 transports. Int valued. */
+/** Enable/disable support for per-message compression. Defaults to 1, unless
+    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
+#define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"
+/** Enable/disable support for deadline checking. Defaults to 1, unless
+    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
+#define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
+/** Initial stream ID for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
 /** Amount to read ahead on individual streams. Defaults to 64kb, larger
@@ -190,25 +198,24 @@ typedef struct {
 #define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
   "grpc.http2.hpack_table_size.encoder"
 /** How big a frame are we willing to receive via HTTP2.
-    Min 16384, max 16777215.
-    Larger values give lower CPU usage for large messages, but more head of line
-    blocking for small messages. */
+    Min 16384, max 16777215. Larger values give lower CPU usage for large
+    messages, but more head of line blocking for small messages. */
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
 /** Should BDP probing be performed? */
 #define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
 /** Minimum time (in milliseconds) between successive ping frames being sent */
 #define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
   "grpc.http2.min_time_between_pings_ms"
+/** Channel arg to override the http2 :scheme header */
+#define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can we send before needing to send a data frame or header
-    frame?
-    (0 indicates that an infinite number of pings can be sent without sending
-     a data frame or header frame) */
+    frame? (0 indicates that an infinite number of pings can be sent without
+    sending a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
 /** How many misbehaving pings the server can bear before sending goaway and
-    closing the transport?
-    (0 indicates that the server can bear an infinite number of misbehaving
-     pings) */
+    closing the transport? (0 indicates that the server can bear an infinite
+    number of misbehaving pings) */
 #define GRPC_ARG_HTTP2_MAX_PING_STRIKES "grpc.http2.max_ping_strikes"
 /** Minimum allowed time between two pings without sending any data frame. Int
     valued, seconds */
@@ -240,25 +247,29 @@ typedef struct {
 /** Secondary user agent: goes at the end of the user-agent metadata
     sent on each request. A string. */
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
+/** The minimum time between subsequent connection attempts, in ms */
+#define GRPC_ARG_MIN_RECONNECT_BACKOFF_MS "grpc.min_reconnect_backoff_ms"
 /** The maximum time between subsequent connection attempts, in ms */
 #define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
 /** The time between the first and second connection attempts, in ms */
 #define GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS \
   "grpc.initial_reconnect_backoff_ms"
-/* The caller of the secure_channel_create functions may override the target
-   name used for SSL host name checking using this channel argument which is of
-   type \a GRPC_ARG_STRING. This *should* be used for testing only.
-   If this argument is not specified, the name used for SSL host name checking
-   will be the target parameter (assuming that the secure channel is an SSL
-   channel). If this parameter is specified and the underlying is not an SSL
-   channel, it will just be ignored. */
+/** This *should* be used for testing only.
+    The caller of the secure_channel_create functions may override the target
+    name used for SSL host name checking using this channel argument which is of
+    type \a GRPC_ARG_STRING. If this argument is not specified, the name used
+    for SSL host name checking will be the target parameter (assuming that the
+    secure channel is an SSL channel). If this parameter is specified and the
+    underlying is not an SSL channel, it will just be ignored. */
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
-/* Maximum metadata size, in bytes. */
+/** Maximum metadata size, in bytes. Note this limit applies to the max sum of
+    all metadata key-value entries in a batch of headers. */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
-/** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
-   to fetch an appropriate pointer arg vtable) */
+/** If non-zero, a pointer to a buffer pool (a pointer of type
+ * grpc_resource_quota*). (use grpc_resource_quota_arg_vtable() to fetch an
+ * appropriate pointer arg vtable) */
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
 /** If non-zero, expand wildcard addresses to a list of local addresses. */
 #define GRPC_ARG_EXPAND_WILDCARD_ADDRS "grpc.expand_wildcard_addrs"
@@ -270,18 +281,27 @@ typedef struct {
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** The grpc_socket_factory instance to create and bind sockets. A pointer. */
 #define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
-/** If non-zero, Cronet transport will coalesce packets to fewer frames when
- * possible. */
+/** If non-zero, Cronet transport will coalesce packets to fewer frames
+ * when possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
   "grpc.use_cronet_packet_coalescing"
-/* Channel arg (integer) setting how large a slice to try and read from the wire
-each time recvmsg (or equivalent) is called */
+/** Channel arg (integer) setting how large a slice to try and read from the
+   wire each time recvmsg (or equivalent) is called **/
 #define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
+/** Note this is not a "channel arg" key. This is the default slice size to use
+ * when trying to read from the wire if the GRPC_ARG_TCP_READ_CHUNK_SIZE
+ * channel arg is unspecified. */
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 #define GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_min_read_chunk_size"
 #define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_max_read_chunk_size"
+/* Timeout in milliseconds to use for calls to the grpclb load balancer.
+   If 0 or unset, the balancer calls will have no deadline. */
+#define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_timeout_ms"
+/** If non-zero, grpc server's cronet compression workaround will be enabled */
+#define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
+  "grpc.workaround.cronet_compression"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -314,8 +334,8 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_INVALID_METADATA,
   /** invalid message was passed to this call */
   GRPC_CALL_ERROR_INVALID_MESSAGE,
-  /** completion queue for notification has not been registered with the
-      server */
+  /** completion queue for notification has not been registered
+   * with the server */
   GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE,
   /** this batch of operations leads to more operations than allowed */
   GRPC_CALL_ERROR_BATCH_TOO_BIG,
@@ -323,12 +343,12 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
 } grpc_call_error;
 
-/* Default send/receive message size limits in bytes. -1 for unlimited. */
-/* TODO(roth) Make this match the default receive limit after next release */
+/** Default send/receive message size limits in bytes. -1 for unlimited. */
+/** TODO(roth) Make this match the default receive limit after next release */
 #define GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH -1
 #define GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
 
-/* Write Flags: */
+/** Write Flags: */
 /** Hint that the write may be buffered and need not go out on the wire
     immediately. GRPC is free to buffer the message until the next non-buffered
     write, or until writes_done, but it need not buffer completely or at all. */
@@ -339,7 +359,7 @@ typedef enum grpc_call_error {
 /** Mask of all valid flags. */
 #define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
 
-/* Initial metadata flags */
+/** Initial metadata flags */
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
@@ -362,8 +382,8 @@ typedef enum grpc_call_error {
 
 /** A single metadata element */
 typedef struct grpc_metadata {
-  /* the key, value values are expected to line up with grpc_mdelem: if changing
-     them, update metadata.h at the same time. */
+  /** the key, value values are expected to line up with grpc_mdelem: if
+     changing them, update metadata.h at the same time. */
   grpc_slice key;
   grpc_slice value;
 
@@ -393,8 +413,11 @@ typedef enum grpc_completion_type {
 typedef struct grpc_event {
   /** The type of the completion. */
   grpc_completion_type type;
-  /** non-zero if the operation was successful, 0 upon failure.
-      Only GRPC_OP_COMPLETE can succeed or fail. */
+  /** If the grpc_completion_type is GRPC_OP_COMPLETE, this field indicates
+      whether the operation was successful or not; 0 in case of failure and
+      non-zero in case of success.
+      If grpc_completion_type is GRPC_QUEUE_SHUTDOWN or GRPC_QUEUE_TIMEOUT, this
+      field is guaranteed to be 0 */
   int success;
   /** The tag passed to grpc_call_start_batch etc to start this operation.
       Only GRPC_OP_COMPLETE has a tag. */
@@ -427,15 +450,13 @@ typedef enum {
   GRPC_OP_SEND_MESSAGE,
   /** Send a close from the client: one and only one instance MUST be sent from
       the client, unless the call was cancelled - in which case this can be
-      skipped.
-      This op completes after all bytes for the call (including the close)
-      have passed outgoing flow control. */
+      skipped. This op completes after all bytes for the call
+      (including the close) have passed outgoing flow control. */
   GRPC_OP_SEND_CLOSE_FROM_CLIENT,
   /** Send status from the server: one and only one instance MUST be sent from
       the server unless the call was cancelled - in which case this can be
-      skipped.
-      This op completes after all bytes for the call (including the status)
-      have passed outgoing flow control. */
+      skipped. This op completes after all bytes for the call
+      (including the status) have passed outgoing flow control. */
   GRPC_OP_SEND_STATUS_FROM_SERVER,
   /** Receive initial metadata: one and only one MUST be made on the client,
       must not be made on the server.
@@ -453,10 +474,10 @@ typedef enum {
       This op completes after all activity on the call has completed. */
   GRPC_OP_RECV_STATUS_ON_CLIENT,
   /** Receive close on the server: one and only one must be made on the
-      server.
-      This op completes after the close has been received by the server.
-      This operation always succeeds, meaning ops paired with this operation
-      will also appear to succeed, even though they may not have. */
+      server. This op completes after the close has been received by the
+      server. This operation always succeeds, meaning ops paired with
+      this operation will also appear to succeed, even though they may not
+      have. */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
@@ -493,7 +514,7 @@ typedef struct grpc_op {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
       grpc_status_code status;
-      /* optional: set to NULL if no details need sending, non-NULL if they do
+      /** optional: set to NULL if no details need sending, non-NULL if they do
        * pointer will not be retained past the start_batch call
        */
       grpc_slice *status_details;
@@ -517,8 +538,7 @@ typedef struct grpc_op {
           elements stays with the call object (ie key, value members are owned
           by the call object, trailing_metadata->array is owned by the caller).
           After the operation completes, call grpc_metadata_array_destroy on
-         this
-          value, or reuse it in a future op. */
+          this value, or reuse it in a future op. */
       grpc_metadata_array *trailing_metadata;
       grpc_status_code *status;
       grpc_slice *status_details;
@@ -533,15 +553,64 @@ typedef struct grpc_op {
 
 /** Information requested from the channel. */
 typedef struct {
-  /* If non-NULL, will be set to point to a string indicating the LB
+  /** If non-NULL, will be set to point to a string indicating the LB
    * policy name.  Caller takes ownership. */
   char **lb_policy_name;
-  /* If non-NULL, will be set to point to a string containing the
+  /** If non-NULL, will be set to point to a string containing the
    * service config used by the channel in JSON form. */
   char **service_config_json;
 } grpc_channel_info;
 
 typedef struct grpc_resource_quota grpc_resource_quota;
+
+/** Completion queues internally MAY maintain a set of file descriptors in a
+    structure called 'pollset'. This enum specifies if a completion queue has an
+    associated pollset and any restrictions on the type of file descriptors that
+    can be present in the pollset.
+
+    I/O progress can only be made when grpc_completion_queue_next() or
+    grpc_completion_queue_pluck() are called on the completion queue (unless the
+    grpc_cq_polling_type is GRPC_CQ_NON_POLLING) and hence it is very important
+    to actively call these APIs */
+typedef enum {
+  /** The completion queue will have an associated pollset and there is no
+      restriction on the type of file descriptors the pollset may contain */
+  GRPC_CQ_DEFAULT_POLLING,
+
+  /** Similar to GRPC_CQ_DEFAULT_POLLING except that the completion queues will
+      not contain any 'listening file descriptors' (i.e file descriptors used to
+      listen to incoming channels) */
+  GRPC_CQ_NON_LISTENING,
+
+  /** The completion queue will not have an associated pollset. Note that
+      grpc_completion_queue_next() or grpc_completion_queue_pluck() MUST still
+      be called to pop events from the completion queue; it is not required to
+      call them actively to make I/O progress */
+  GRPC_CQ_NON_POLLING
+} grpc_cq_polling_type;
+
+/** Specifies the type of APIs to use to pop events from the completion queue */
+typedef enum {
+  /** Events are popped out by calling grpc_completion_queue_next() API ONLY */
+  GRPC_CQ_NEXT,
+
+  /** Events are popped out by calling grpc_completion_queue_pluck() API ONLY*/
+  GRPC_CQ_PLUCK
+} grpc_cq_completion_type;
+
+#define GRPC_CQ_CURRENT_VERSION 1
+typedef struct grpc_completion_queue_attributes {
+  /** The version number of this structure. More fields might be added to this
+     structure in future. */
+  int version; /** Set to GRPC_CQ_CURRENT_VERSION */
+
+  grpc_cq_completion_type cq_completion_type;
+
+  grpc_cq_polling_type cq_polling_type;
+} grpc_completion_queue_attributes;
+
+/** The completion queue factory structure is opaque to the callers of grpc */
+typedef struct grpc_completion_queue_factory grpc_completion_queue_factory;
 
 #ifdef __cplusplus
 }

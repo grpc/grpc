@@ -112,6 +112,8 @@ static deque<string> get_workers(const string& env_name) {
 static double WallTime(ClientStats s) { return s.time_elapsed(); }
 static double SystemTime(ClientStats s) { return s.time_system(); }
 static double UserTime(ClientStats s) { return s.time_user(); }
+static double CliPollCount(ClientStats s) { return s.cq_poll_count(); }
+static double SvrPollCount(ServerStats s) { return s.cq_poll_count(); }
 static double ServerWallTime(ServerStats s) { return s.time_elapsed(); }
 static double ServerSystemTime(ServerStats s) { return s.time_system(); }
 static double ServerUserTime(ServerStats s) { return s.time_user(); }
@@ -180,6 +182,11 @@ static void postprocess_scenario_result(ScenarioResult* result) {
     result->mutable_summary()->set_failed_requests_per_second(failures /
                                                               time_estimate);
   }
+
+  result->mutable_summary()->set_client_polls_per_request(
+      sum(result->client_stats(), CliPollCount) / histogram.Count());
+  result->mutable_summary()->set_server_polls_per_request(
+      sum(result->server_stats(), SvrPollCount) / histogram.Count());
 }
 
 std::unique_ptr<ScenarioResult> RunScenario(

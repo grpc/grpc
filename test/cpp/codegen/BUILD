@@ -29,49 +29,59 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_test(
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+
+grpc_cc_test(
     name = "codegen_test_full",
     srcs = ["codegen_test_full.cc"],
     deps = [
         "//:grpc++",
-        "//external:gtest",
         "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "codegen_test_minimal",
     srcs = ["codegen_test_minimal.cc"],
     deps = [
         "//:grpc++",
-        "//external:gtest",
         "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "proto_utils_test",
     srcs = ["proto_utils_test.cc"],
     deps = [
         "//:grpc++",
-        "//external:gtest",
         "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "golden_file_test",
     srcs = ["golden_file_test.cc"],
-    args = ["--generated_file_path=$(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.h"],
+    args = ["--generated_file_path=$(GENDIR)/src/proto/grpc/testing/"],
     data = [
         ":compiler_test_golden",
         "//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen",
     ],
     deps = [
         "//:grpc++",
-        "//external:gflags",
-        "//external:gtest",
         "//src/proto/grpc/testing:compiler_test_proto",
         "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+        "gflags",
     ],
 )

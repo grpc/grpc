@@ -31,7 +31,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL'
-  version = '8.0'
+  version = '8.2'
   s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.'
   # Adapted from the homepage:
@@ -69,8 +69,9 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://boringssl.googlesource.com/boringssl',
-    :tag => "version_for_cocoapods_#{version}",
-    # :commit => '4fec04b48406111cb88fdd8d196253adc54f7a31',
+    # Restore this version name hack in the next version!!
+    # :tag => "version_for_cocoapods_#{version}",
+    :tag => "version_for_cocoapods_8.0",
   }
 
   name = 'openssl'
@@ -95,7 +96,7 @@ Pod::Spec.new do |s|
   # The module map and umbrella header created automatically by Cocoapods don't work for C libraries
   # like this one. The following file, and a correct umbrella header, are created on the fly by the
   # `prepare_command` of this pod.
-  s.module_map = 'include/openssl/module.modulemap'
+  s.module_map = 'include/openssl/BoringSSL.modulemap'
 
   # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
   # want that for some reason.
@@ -148,10 +149,10 @@ Pod::Spec.new do |s|
       #include "ssl.h"
       #include "crypto.h"
       #include "aes.h"
-      /* The following macros are defined by base.h. The latter is the first file included by the
-         other headers. */
-      #if defined(OPENSSL_ARM) || defined(OPENSSL_AARCH64)
-      #  include "arm_arch.h"
+      /* The following macros are defined by base.h. The latter is the first file included by the    
+         other headers. */    
+      #if defined(OPENSSL_ARM) || defined(OPENSSL_AARCH64)    
+      #  include "arm_arch.h"   
       #endif
       #include "asn1.h"
       #include "asn1_mac.h"
@@ -186,7 +187,7 @@ Pod::Spec.new do |s|
       #include "x509.h"
       #include "x509v3.h"
     EOF
-    cat > include/openssl/module.modulemap <<EOF
+    cat > include/openssl/BoringSSL.modulemap <<EOF
       framework module openssl {
         umbrella header "umbrella.h"
         export *

@@ -36,11 +36,11 @@
 void TrackCounters::Finish(benchmark::State &state) {
   std::ostringstream out;
   AddToLabel(out, state);
-  auto label = out.str();
+  std::string label = out.str();
   if (label.length() && label[0] == ' ') {
     label = label.substr(1);
   }
-  state.SetLabel(label);
+  state.SetLabel(label.c_str());
 }
 
 void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
@@ -56,6 +56,10 @@ void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
       << " atm_add/iter:"
       << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_add) -
                    atm_add_at_start_) /
+          (double)state.iterations())
+      << " nows/iter:"
+      << ((double)(gpr_atm_no_barrier_load(&gpr_now_call_count) -
+                   now_calls_at_start_) /
           (double)state.iterations())
       << " allocs/iter:"
       << ((double)(counters_at_end.total_allocs_absolute -

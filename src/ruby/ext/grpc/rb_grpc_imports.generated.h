@@ -233,7 +233,7 @@ extern grpc_completion_queue_create_for_next_type grpc_completion_queue_create_f
 typedef grpc_completion_queue *(*grpc_completion_queue_create_for_pluck_type)(void *reserved);
 extern grpc_completion_queue_create_for_pluck_type grpc_completion_queue_create_for_pluck_import;
 #define grpc_completion_queue_create_for_pluck grpc_completion_queue_create_for_pluck_import
-typedef grpc_completion_queue *(*grpc_completion_queue_create_type)(void *reserved);
+typedef grpc_completion_queue *(*grpc_completion_queue_create_type)(const grpc_completion_queue_factory *factory, const grpc_completion_queue_attributes *attributes, void *reserved);
 extern grpc_completion_queue_create_type grpc_completion_queue_create_import;
 #define grpc_completion_queue_create grpc_completion_queue_create_import
 typedef grpc_event(*grpc_completion_queue_next_type)(grpc_completion_queue *cq, gpr_timespec deadline, void *reserved);
@@ -278,15 +278,15 @@ extern grpc_channel_register_call_type grpc_channel_register_call_import;
 typedef grpc_call *(*grpc_channel_create_registered_call_type)(grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask, grpc_completion_queue *completion_queue, void *registered_call_handle, gpr_timespec deadline, void *reserved);
 extern grpc_channel_create_registered_call_type grpc_channel_create_registered_call_import;
 #define grpc_channel_create_registered_call grpc_channel_create_registered_call_import
+typedef void *(*grpc_call_arena_alloc_type)(grpc_call *call, size_t size);
+extern grpc_call_arena_alloc_type grpc_call_arena_alloc_import;
+#define grpc_call_arena_alloc grpc_call_arena_alloc_import
 typedef grpc_call_error(*grpc_call_start_batch_type)(grpc_call *call, const grpc_op *ops, size_t nops, void *tag, void *reserved);
 extern grpc_call_start_batch_type grpc_call_start_batch_import;
 #define grpc_call_start_batch grpc_call_start_batch_import
 typedef char *(*grpc_call_get_peer_type)(grpc_call *call);
 extern grpc_call_get_peer_type grpc_call_get_peer_import;
 #define grpc_call_get_peer grpc_call_get_peer_import
-typedef void(*grpc_call_set_load_reporting_cost_context_type)(grpc_call *call, struct grpc_load_reporting_cost_context *context);
-extern grpc_call_set_load_reporting_cost_context_type grpc_call_set_load_reporting_cost_context_import;
-#define grpc_call_set_load_reporting_cost_context grpc_call_set_load_reporting_cost_context_import
 typedef void(*grpc_census_call_set_context_type)(grpc_call *call, struct census_context *context);
 extern grpc_census_call_set_context_type grpc_census_call_set_context_import;
 #define grpc_census_call_set_context grpc_census_call_set_context_import
@@ -314,9 +314,12 @@ extern grpc_call_cancel_type grpc_call_cancel_import;
 typedef grpc_call_error(*grpc_call_cancel_with_status_type)(grpc_call *call, grpc_status_code status, const char *description, void *reserved);
 extern grpc_call_cancel_with_status_type grpc_call_cancel_with_status_import;
 #define grpc_call_cancel_with_status grpc_call_cancel_with_status_import
-typedef void(*grpc_call_destroy_type)(grpc_call *call);
-extern grpc_call_destroy_type grpc_call_destroy_import;
-#define grpc_call_destroy grpc_call_destroy_import
+typedef void(*grpc_call_ref_type)(grpc_call *call);
+extern grpc_call_ref_type grpc_call_ref_import;
+#define grpc_call_ref grpc_call_ref_import
+typedef void(*grpc_call_unref_type)(grpc_call *call);
+extern grpc_call_unref_type grpc_call_unref_import;
+#define grpc_call_unref grpc_call_unref_import
 typedef grpc_call_error(*grpc_server_request_call_type)(grpc_server *server, grpc_call **call, grpc_call_details *details, grpc_metadata_array *request_metadata, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag_new);
 extern grpc_server_request_call_type grpc_server_request_call_import;
 #define grpc_server_request_call grpc_server_request_call_import
@@ -332,9 +335,6 @@ extern grpc_server_create_type grpc_server_create_import;
 typedef void(*grpc_server_register_completion_queue_type)(grpc_server *server, grpc_completion_queue *cq, void *reserved);
 extern grpc_server_register_completion_queue_type grpc_server_register_completion_queue_import;
 #define grpc_server_register_completion_queue grpc_server_register_completion_queue_import
-typedef void(*grpc_server_register_non_listening_completion_queue_type)(grpc_server *server, grpc_completion_queue *q, void *reserved);
-extern grpc_server_register_non_listening_completion_queue_type grpc_server_register_non_listening_completion_queue_import;
-#define grpc_server_register_non_listening_completion_queue grpc_server_register_non_listening_completion_queue_import
 typedef int(*grpc_server_add_insecure_http2_port_type)(grpc_server *server, const char *addr);
 extern grpc_server_add_insecure_http2_port_type grpc_server_add_insecure_http2_port_import;
 #define grpc_server_add_insecure_http2_port grpc_server_add_insecure_http2_port_import
@@ -491,6 +491,9 @@ extern grpc_slice_ref_type grpc_slice_ref_import;
 typedef void(*grpc_slice_unref_type)(grpc_slice s);
 extern grpc_slice_unref_type grpc_slice_unref_import;
 #define grpc_slice_unref grpc_slice_unref_import
+typedef grpc_slice(*grpc_slice_copy_type)(grpc_slice s);
+extern grpc_slice_copy_type grpc_slice_copy_import;
+#define grpc_slice_copy grpc_slice_copy_import
 typedef grpc_slice(*grpc_slice_new_type)(void *p, size_t len, void (*destroy)(void *));
 extern grpc_slice_new_type grpc_slice_new_import;
 #define grpc_slice_new grpc_slice_new_import
@@ -503,6 +506,9 @@ extern grpc_slice_new_with_len_type grpc_slice_new_with_len_import;
 typedef grpc_slice(*grpc_slice_malloc_type)(size_t length);
 extern grpc_slice_malloc_type grpc_slice_malloc_import;
 #define grpc_slice_malloc grpc_slice_malloc_import
+typedef grpc_slice(*grpc_slice_malloc_large_type)(size_t length);
+extern grpc_slice_malloc_large_type grpc_slice_malloc_large_import;
+#define grpc_slice_malloc_large grpc_slice_malloc_large_import
 typedef grpc_slice(*grpc_slice_intern_type)(grpc_slice slice);
 extern grpc_slice_intern_type grpc_slice_intern_import;
 #define grpc_slice_intern grpc_slice_intern_import
@@ -527,6 +533,9 @@ extern grpc_slice_sub_no_ref_type grpc_slice_sub_no_ref_import;
 typedef grpc_slice(*grpc_slice_split_tail_type)(grpc_slice *s, size_t split);
 extern grpc_slice_split_tail_type grpc_slice_split_tail_import;
 #define grpc_slice_split_tail grpc_slice_split_tail_import
+typedef grpc_slice(*grpc_slice_split_tail_maybe_ref_type)(grpc_slice *s, size_t split, grpc_slice_ref_whom ref_whom);
+extern grpc_slice_split_tail_maybe_ref_type grpc_slice_split_tail_maybe_ref_import;
+#define grpc_slice_split_tail_maybe_ref grpc_slice_split_tail_maybe_ref_import
 typedef grpc_slice(*grpc_slice_split_head_type)(grpc_slice *s, size_t split);
 extern grpc_slice_split_head_type grpc_slice_split_head_import;
 #define grpc_slice_split_head grpc_slice_split_head_import
@@ -611,6 +620,9 @@ extern grpc_slice_buffer_trim_end_type grpc_slice_buffer_trim_end_import;
 typedef void(*grpc_slice_buffer_move_first_type)(grpc_slice_buffer *src, size_t n, grpc_slice_buffer *dst);
 extern grpc_slice_buffer_move_first_type grpc_slice_buffer_move_first_import;
 #define grpc_slice_buffer_move_first grpc_slice_buffer_move_first_import
+typedef void(*grpc_slice_buffer_move_first_no_ref_type)(grpc_slice_buffer *src, size_t n, grpc_slice_buffer *dst);
+extern grpc_slice_buffer_move_first_no_ref_type grpc_slice_buffer_move_first_no_ref_import;
+#define grpc_slice_buffer_move_first_no_ref grpc_slice_buffer_move_first_no_ref_import
 typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_exec_ctx *exec_ctx, grpc_slice_buffer *src, size_t n, void *dst);
 extern grpc_slice_buffer_move_first_into_buffer_type grpc_slice_buffer_move_first_into_buffer_import;
 #define grpc_slice_buffer_move_first_into_buffer grpc_slice_buffer_move_first_into_buffer_import

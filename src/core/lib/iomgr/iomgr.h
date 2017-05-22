@@ -40,6 +40,9 @@
 /** Initializes the iomgr. */
 void grpc_iomgr_init(void);
 
+/** Starts any background threads for iomgr. */
+void grpc_iomgr_start(void);
+
 /** Signals the intention to shutdown the iomgr. Expects to be able to flush
  * exec_ctx. */
 void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx);

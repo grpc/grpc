@@ -34,13 +34,15 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
 #define GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
 
+#include <grpc/support/time.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "src/core/lib/debug/trace.h"
 
 #define GRPC_BDP_SAMPLES 16
 #define GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE 3
 
-extern int grpc_bdp_estimator_trace;
+extern grpc_tracer_flag grpc_bdp_estimator_trace;
 
 typedef enum {
   GRPC_BDP_PING_UNSCHEDULED,
@@ -52,6 +54,8 @@ typedef struct grpc_bdp_estimator {
   grpc_bdp_estimator_ping_state ping_state;
   int64_t accumulator;
   int64_t estimate;
+  gpr_timespec ping_start_time;
+  double bw_est;
   const char *name;
 } grpc_bdp_estimator;
 
@@ -60,6 +64,8 @@ void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name);
 // Returns true if a reasonable estimate could be obtained
 bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
                                      int64_t *estimate);
+// Returns true if a reasonable estimate could be obtained
+bool grpc_bdp_estimator_get_bw(grpc_bdp_estimator *estimator, double *bw);
 // Returns true if the user should schedule a ping
 bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes);

@@ -29,32 +29,66 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_test(
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+
+grpc_cc_test(
     name = "alarm_cpp_test",
     srcs = ["alarm_cpp_test.cc"],
-    deps = ["//:grpc++", "//external:gtest", "//test/core/util:gpr_test_util"],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "auth_property_iterator_test",
     srcs = ["auth_property_iterator_test.cc"],
-    deps = ["//:grpc++", "//external:gtest", "//test/core/util:gpr_test_util", "//test/cpp/util:test_util"],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:gpr_test_util",
+        "//test/cpp/util:test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "channel_arguments_test",
     srcs = ["channel_arguments_test.cc"],
-    deps = ["//:grpc++", "//external:gtest", "//test/core/util:gpr_test_util"],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "channel_filter_test",
     srcs = ["channel_filter_test.cc"],
-    deps = ["//:grpc++", "//external:gtest", "//test/core/util:gpr_test_util"],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "secure_auth_context_test",
     srcs = ["secure_auth_context_test.cc"],
-    deps = ["//:grpc++", "//external:gtest", "//test/core/util:gpr_test_util", "//test/cpp/util:test_util"],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:gpr_test_util",
+        "//test/cpp/util:test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
 )

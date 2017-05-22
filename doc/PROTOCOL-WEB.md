@@ -1,4 +1,4 @@
-# Overview
+# gRPC Web
 
 gRPC-Web provides a JS client library that supports the same API
 as gRPC-Node to access a gRPC service. Due to browser limitation,
@@ -37,6 +37,8 @@ Content-Type
 
 1. application/grpc-web
   * e.g. application/grpc-web+[proto, json, thrift]
+  * the sender should always specify the message format, e.g. +proto, +json
+  * the receiver should assume the default is "+proto" when the message format is missing in Content-Type (as "application/grpc-web")
 2. application/grpc-web-text
   * text-encoded streams of “application/grpc-web”
   * e.g. application/grpc-web-text+[proto, thrift]

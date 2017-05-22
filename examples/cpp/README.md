@@ -1,4 +1,4 @@
-#gRPC in 3 minutes (C++)
+# gRPC in 3 minutes (C++)
 
 ## Installation
 

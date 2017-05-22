@@ -35,6 +35,7 @@
 
 var assert = require('assert');
 var grpc = require('../src/grpc_extension');
+var constants = require('../src/constants');
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -90,7 +91,7 @@ describe('end-to-end', function() {
         client_close: true,
         metadata: {},
         status: {
-          code: grpc.status.OK,
+          code: constants.status.OK,
           details: status_text,
           metadata: {}
         }
@@ -107,7 +108,7 @@ describe('end-to-end', function() {
       server_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
       server_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
         metadata: {},
-        code: grpc.status.OK,
+        code: constants.status.OK,
         details: status_text
       };
       server_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
@@ -141,7 +142,7 @@ describe('end-to-end', function() {
         send_metadata: true,
         client_close: true,
         metadata: {server_key: ['server_value']},
-        status: {code: grpc.status.OK,
+        status: {code: constants.status.OK,
                  details: status_text,
                  metadata: {}}
       });
@@ -161,7 +162,7 @@ describe('end-to-end', function() {
       };
       server_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
         metadata: {},
-        code: grpc.status.OK,
+        code: constants.status.OK,
         details: status_text
       };
       server_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
@@ -198,7 +199,7 @@ describe('end-to-end', function() {
       assert.deepEqual(response.metadata, {});
       assert(response.send_message);
       assert.strictEqual(response.read.toString(), reply_text);
-      assert.deepEqual(response.status, {code: grpc.status.OK,
+      assert.deepEqual(response.status, {code: constants.status.OK,
                                          details: status_text,
                                          metadata: {}});
       done();
@@ -220,7 +221,7 @@ describe('end-to-end', function() {
         response_batch[grpc.opType.SEND_MESSAGE] = new Buffer(reply_text);
         response_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
           metadata: {},
-          code: grpc.status.OK,
+          code: constants.status.OK,
           details: status_text
         };
         response_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
@@ -260,7 +261,7 @@ describe('end-to-end', function() {
           send_message: true,
           client_close: true,
           status: {
-            code: grpc.status.OK,
+            code: constants.status.OK,
             details: status_text,
             metadata: {}
           }
@@ -290,7 +291,7 @@ describe('end-to-end', function() {
           end_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
           end_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
             metadata: {},
-            code: grpc.status.OK,
+            code: constants.status.OK,
             details: status_text
           };
           server_call.startBatch(end_batch, function(err, response) {

@@ -34,8 +34,7 @@
 #ifndef GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H
 #define GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H
 
-#include <stdbool.h>
-#include <stdint.h>
+#include <grpc/impl/codegen/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,7 +67,7 @@ extern "C" {
   "grpc.compression_enabled_algorithms_bitset"
 /** \} */
 
-/* The various compression algorithms supported by gRPC */
+/** The various compression algorithms supported by gRPC */
 typedef enum {
   GRPC_COMPRESS_NONE = 0,
   GRPC_COMPRESS_DEFLATE,
@@ -101,7 +100,7 @@ typedef struct grpc_compression_options {
    * precedence over \a default_algorithm.
    * TODO(dgq): currently only available for server channels. */
   struct {
-    bool is_set;
+    int is_set;
     grpc_compression_level level;
   } default_level;
 
@@ -109,7 +108,7 @@ typedef struct grpc_compression_options {
    * call specific settings. This option corresponds to the channel argument key
    * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM. */
   struct {
-    bool is_set;
+    int is_set;
     grpc_compression_algorithm algorithm;
   } default_algorithm;
 

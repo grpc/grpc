@@ -11,9 +11,11 @@ if test "$PHP_GRPC" != "no"; then
 
   LIBS="-lpthread $LIBS"
 
+  CFLAGS="-Wall -Werror -Wno-parentheses-equality -Wno-unused-value -std=c11"
+  CXXFLAGS="-std=c++11"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
+  PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
-
   PHP_ADD_LIBRARY(dl,,GRPC_SHARED_LIBADD)
   PHP_ADD_LIBRARY(dl)
 
@@ -87,18 +89,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -109,9 +105,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
+    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
+    src/core/lib/iomgr/ev_epollex_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
     src/core/lib/iomgr/iocp_windows.c \
@@ -119,6 +120,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
@@ -155,6 +157,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -191,7 +194,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/completion_queue_factory.c \
     src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
     src/core/lib/surface/validate_metadata.c \
@@ -209,6 +212,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \
@@ -232,6 +236,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
+    src/core/ext/filters/http/client/http_client_filter.c \
+    src/core/ext/filters/http/http_filters_plugin.c \
+    src/core/ext/filters/http/message_compress/message_compress_filter.c \
+    src/core/ext/filters/http/server/http_server_filter.c \
     src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/security/context/security_context.c \
     src/core/lib/security/credentials/composite/composite_credentials.c \
@@ -259,6 +267,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
+    src/core/tsi/transport_security_adapter.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/filters/client_channel/channel_connectivity.c \
@@ -281,13 +290,16 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/subchannel.c \
     src/core/ext/filters/client_channel/subchannel_index.c \
     src/core/ext/filters/client_channel/uri_parser.c \
+    src/core/ext/filters/deadline/deadline_filter.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -317,6 +329,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
     src/core/ext/filters/max_age/max_age_filter.c \
+    src/core/ext/filters/message_size/message_size_filter.c \
+    src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
+    src/core/ext/filters/workarounds/workaround_utils.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
     src/boringssl/err_data.c \
     third_party/boringssl/crypto/aes/aes.c \
@@ -622,9 +637,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/tls13_server.c \
     third_party/boringssl/ssl/tls_method.c \
     third_party/boringssl/ssl/tls_record.c \
-    , $ext_shared, , -Wall -Werror \
-    -Wno-parentheses-equality -Wno-unused-value -std=c11 \
-    -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
+    , $ext_shared, , -fvisibility=hidden \
+    -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0)
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
@@ -640,8 +654,15 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/c_ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/sockaddr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/client)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/message_compress)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/load_reporting)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/max_age)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/workarounds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)

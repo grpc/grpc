@@ -217,8 +217,14 @@ static uint8_t get_placement(grpc_error **err, size_t size) {
     if ((*err)->arena_size + slots > (*err)->arena_capacity) {
       return UINT8_MAX;
     }
+#ifdef GRPC_ERROR_REFCOUNT_DEBUG
+    grpc_error *orig = *err;
+#endif
     *err = gpr_realloc(
         *err, sizeof(grpc_error) + (*err)->arena_capacity * sizeof(intptr_t));
+#ifdef GRPC_ERROR_REFCOUNT_DEBUG
+    if (*err != orig) gpr_log(GPR_DEBUG, "realloc %p -> %p", orig, *err);
+#endif
   }
   uint8_t placement = (*err)->arena_size;
   (*err)->arena_size = (uint8_t)((*err)->arena_size + slots);
@@ -313,7 +319,7 @@ static void internal_add_error(grpc_error **err, grpc_error *new) {
 // It is very common to include and extra int and string in an error
 #define SURPLUS_CAPACITY (2 * SLOTS_PER_INT + SLOTS_PER_TIME)
 
-grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
+grpc_error *grpc_error_create(const char *file, int line, grpc_slice desc,
                               grpc_error **referencing,
                               size_t num_referencing) {
   GPR_TIMER_BEGIN("grpc_error_create", 0);
@@ -339,7 +345,8 @@ grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
   memset(err->times, UINT8_MAX, GRPC_ERROR_TIME_MAX);
 
   internal_set_int(&err, GRPC_ERROR_INT_FILE_LINE, line);
-  internal_set_str(&err, GRPC_ERROR_STR_FILE, file);
+  internal_set_str(&err, GRPC_ERROR_STR_FILE,
+                   grpc_slice_from_static_string(file));
   internal_set_str(&err, GRPC_ERROR_STR_DESCRIPTION, desc);
 
   for (size_t i = 0; i < num_referencing; ++i) {
@@ -756,13 +763,13 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
   return grpc_error_set_str(
       grpc_error_set_str(
           grpc_error_set_int(
-              grpc_error_create(grpc_slice_from_static_string(file), line,
+              grpc_error_create(file, line,
                                 grpc_slice_from_static_string("OS Error"), NULL,
                                 0),
               GRPC_ERROR_INT_ERRNO, err),
           GRPC_ERROR_STR_OS_ERROR,
           grpc_slice_from_static_string(strerror(err))),
-      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_static_string(call_name));
+      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_copied_string(call_name));
 }
 
 #ifdef GPR_WINDOWS
@@ -772,7 +779,7 @@ grpc_error *grpc_wsa_error(const char *file, int line, int err,
   grpc_error *error = grpc_error_set_str(
       grpc_error_set_str(
           grpc_error_set_int(
-              grpc_error_create(grpc_slice_from_static_string(file), line,
+              grpc_error_create(file, line,
                                 grpc_slice_from_static_string("OS Error"), NULL,
                                 0),
               GRPC_ERROR_INT_WSA_ERROR, err),

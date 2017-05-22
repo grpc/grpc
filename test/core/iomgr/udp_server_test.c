@@ -91,7 +91,7 @@ static void on_write(grpc_exec_ctx *exec_ctx, grpc_fd *emfd, void *user_data) {
 }
 
 static void on_fd_orphaned(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
-                           void *user_data) {
+                           grpc_closure *closure, void *user_data) {
   gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
           grpc_fd_wrapped_fd(emfd));
   g_number_of_orphan_calls++;
@@ -228,9 +228,9 @@ static void test_no_op_with_port_and_start(void) {
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  /* The server had a single FD, which is orphaned once in *
-   * deactivated_all_ports, and once in grpc_udp_server_destroy. */
-  GPR_ASSERT(g_number_of_orphan_calls == 2);
+  /* The server had a single FD, which is orphaned exactly once in *
+   * grpc_udp_server_destroy. */
+  GPR_ASSERT(g_number_of_orphan_calls == 1);
 }
 
 static void test_receive(int number_of_clients) {
@@ -297,9 +297,9 @@ static void test_receive(int number_of_clients) {
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  /* The server had a single FD, which is orphaned once in *
-   * deactivated_all_ports, and once in grpc_udp_server_destroy. */
-  GPR_ASSERT(g_number_of_orphan_calls == 2);
+  /* The server had a single FD, which is orphaned exactly once in *
+   * grpc_udp_server_destroy. */
+  GPR_ASSERT(g_number_of_orphan_calls == 1);
 
   /* The write callback should have fired a few times. */
   GPR_ASSERT(g_number_of_writes > 0);
@@ -307,7 +307,7 @@ static void test_receive(int number_of_clients) {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(p);
+  grpc_pollset_destroy(exec_ctx, p);
 }
 
 int main(int argc, char **argv) {
