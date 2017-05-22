@@ -38,11 +38,11 @@ package(default_visibility = ["//visibility:public"])
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
 
 # This should be updated along with build.yaml
-g_stands_for = "gentle"
+g_stands_for = "gregarious"
 
-core_version = "3.0.0"
+core_version = "3.0.0-dev"
 
-version = "1.3.5"
+version = "1.4.0-dev"
 
 grpc_cc_library(
     name = "gpr",
