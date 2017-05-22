@@ -529,6 +529,31 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_destroy(grpc_call *call) {
   grpc_call_unref(call);
 }
 
+typedef grpc_call_error (*grpcsharp_call_start_batch_func) (
+    grpc_call *call, const grpc_op *ops, size_t nops,
+    void *tag, void *reserved);
+
+/* Only for testing */
+static grpc_call_error grpcsharp_call_start_batch_nop(
+    grpc_call *call, const grpc_op *ops, size_t nops,
+    void *tag, void *reserved) {
+  return GRPC_CALL_OK;
+}
+
+static grpc_call_error grpcsharp_call_start_batch_default(
+    grpc_call *call, const grpc_op *ops, size_t nops,
+    void *tag, void *reserved) {
+  return grpc_call_start_batch(call, ops, nops, tag, reserved);
+}
+
+static grpcsharp_call_start_batch_func g_call_start_batch_func = grpcsharp_call_start_batch_default;
+
+static grpc_call_error grpcsharp_call_start_batch(
+    grpc_call *call, const grpc_op *ops, size_t nops,
+    void *tag, void *reserved) {
+  return g_call_start_batch_func(call, ops, nops, tag, reserved);
+}
+
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
     grpc_call *call, grpcsharp_batch_context *ctx, const char *send_buffer,
     size_t send_buffer_len, uint32_t write_flags,
@@ -576,7 +601,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
   ops[5].flags = 0;
   ops[5].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
 }
 
@@ -616,7 +641,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_client_streaming(
   ops[3].flags = 0;
   ops[3].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
 }
 
@@ -656,7 +681,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
   ops[3].flags = 0;
   ops[3].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
 }
 
@@ -685,7 +710,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_duplex_streaming(
   ops[1].flags = 0;
   ops[1].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
 }
 
@@ -699,7 +724,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
 }
 
@@ -720,7 +745,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_message(
   ops[1].flags = 0;
   ops[1].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, nops, ctx, NULL);
+  return grpcsharp_call_start_batch(call, ops, nops, ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_close_from_client(
@@ -731,7 +756,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_close_from_client(
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
 }
 
@@ -773,7 +798,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
     ops[nops].reserved = NULL;
     nops++;
   }
-  return grpc_call_start_batch(call, ops, nops, ctx, NULL);
+  return grpcsharp_call_start_batch(call, ops, nops, ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
@@ -784,7 +809,7 @@ grpcsharp_call_recv_message(grpc_call *call, grpcsharp_batch_context *ctx) {
   ops[0].data.recv_message.recv_message = &(ctx->recv_message);
   ops[0].flags = 0;
   ops[0].reserved = NULL;
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
 }
 
@@ -798,7 +823,7 @@ grpcsharp_call_start_serverside(grpc_call *call, grpcsharp_batch_context *ctx) {
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
 }
 
@@ -817,7 +842,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_initial_metadata(
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
 }
 
@@ -1092,3 +1117,21 @@ GPR_EXPORT void *GPR_CALLTYPE grpcsharp_test_nop(void *ptr) { return ptr; }
 GPR_EXPORT int32_t GPR_CALLTYPE grpcsharp_sizeof_grpc_event(void) {
   return sizeof(grpc_event);
 }
+
+/* Override a method for testing */
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_test_override_method(const char *method_name,
+    const char *variant) {
+  if (strcmp("grpcsharp_call_start_batch", method_name) == 0)
+  { 
+    if (strcmp("nop", variant) == 0)
+    {
+      g_call_start_batch_func = grpcsharp_call_start_batch_nop;
+    } else {
+      GPR_ASSERT(0);
+    }
+  } else {
+    GPR_ASSERT(0);
+  }
+}
+
+
