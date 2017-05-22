@@ -83,7 +83,7 @@ namespace Grpc.Microbenchmarks
             {
                 call.StartSendMessage(sendCompletionHandler, payload, writeFlags, false);
                 var callback = completionRegistry.Extract(completionRegistry.LastRegisteredKey);
-                callback();
+                callback(true);
             }
             stopwatch.Stop();
             Console.WriteLine("Elapsed millis: " + stopwatch.ElapsedMilliseconds);

@@ -437,7 +437,7 @@ namespace Grpc.Core.Internal
 
             public delegate CallError grpcsharp_test_callback_delegate([MarshalAs(UnmanagedType.FunctionPtr)] OpCompletionDelegate callback);
             public delegate IntPtr grpcsharp_test_nop_delegate(IntPtr ptr);
-            public delegate void grpcsharp_test_override_method(string methodName, string variant);
+            public delegate void grpcsharp_test_override_method_delegate(string methodName, string variant);
         }
     }
 }
