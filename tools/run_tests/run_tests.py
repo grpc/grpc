@@ -623,7 +623,7 @@ class PythonLanguage(object):
     return 'tools/dockerfile/test/python_%s_%s' % (self.python_manager_name(), _docker_arch_suffix(self.args.arch))
 
   def python_manager_name(self):
-    if self.args.compiler in ['python3.5', 'python3.6']:
+    if self.args.compiler in ['default', 'python3.5', 'python3.6']:
       return 'pyenv'
     elif self.args.compiler == 'python_alpine':
       return 'alpine'
@@ -673,7 +673,7 @@ class PythonLanguage(object):
       if os.name == 'nt':
         return (python27_config,)
       else:
-        return (python27_config, python34_config,)
+        return (python27_config, python34_config, python36_config,)
     elif args.compiler == 'python2.7':
       return (python27_config,)
     elif args.compiler == 'python3.4':
