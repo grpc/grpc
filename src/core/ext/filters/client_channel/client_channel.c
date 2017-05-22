@@ -1454,10 +1454,24 @@ static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
 static void watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                             grpc_error *error_ignored) {
   external_connectivity_watcher *w = arg;
-  grpc_closure_init(&w->my_closure, on_external_watch_complete, w,
-                    grpc_schedule_on_exec_ctx);
-  grpc_connectivity_state_notify_on_state_change(
-      exec_ctx, &w->chand->state_tracker, w->state, &w->my_closure);
+  if (w->state != NULL) {
+    /* TODO: add to active list here */
+    grpc_closure_init(&w->my_closure, on_external_watch_complete, w,
+                      grpc_schedule_on_exec_ctx);
+    grpc_connectivity_state_notify_on_state_change(
+        exec_ctx, &w->chand->state_tracker, w->state, &w->my_closure);
+  } else {
+    /* TODO: find in active list */
+    external_connectivity_watcher *found = something;
+    /* TODO: if found: */
+    grpc_connectivity_state_notify_on_state_change(
+        exec_ctx, &w->chand->state_tracker, NULL, &found->my_closure);
+    grpc_pollset_set_del_pollset(exec_ctx, w->chand->interested_parties,
+                                 w->pollset);
+    GRPC_CHANNEL_STACK_UNREF(exec_ctx, w->chand->owning_stack,
+                             "external_connectivity_watcher");
+    gpr_free(w);
+  }
 }
 
 void grpc_client_channel_watch_connectivity_state(
