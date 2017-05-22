@@ -36,6 +36,7 @@ cd $(dirname $0)/../../../
 if [ -x "$(command -v bazel)" ]
 then
   cd third_party/protobuf
+  git clean -xfd
   bazel query 'deps('$1')'
 else
   docker build -t bazel_local_img tools/dockerfile/test/sanity
