@@ -174,6 +174,28 @@ $ sudo make install
 ```
 
 
+### Protobuf Runtime library
+
+There are two protobuf runtime libraries to choose from. They are idenfical in terms of APIs offered.
+
+1. C implementation (for better performance)
+
+``` sh
+$ sudo pecl install protobuf
+```
+
+2. PHP implementation (for easier installation)
+
+
+Add this to your `composer.json` file:
+
+```
+  "require": {
+    "google/protobuf": "^v3.3.0"
+  }
+``` 
+
+
 ### PHP Protoc Plugin
 
 You need the gRPC PHP protoc plugin to generate the client stub classes.

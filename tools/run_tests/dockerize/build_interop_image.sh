@@ -39,21 +39,24 @@ set -x
 #  TTY_FLAG - optional -t flag to make docker allocate tty
 #  BUILD_INTEROP_DOCKER_EXTRA_ARGS - optional args to be passed to the
 #    docker run command
+#  GRPC_ROOT - grpc base directory, default to top of this tree.
+#  GRPC_GO_ROOT - grpc-go base directory, default to '$GRPC_ROOT/../grpc-go'
+#  GRPC_JAVA_ROOT - grpc-java base directory, default to '$GRPC_ROOT/../grpc-java'
 
 cd `dirname $0`/../../..
-GRPC_ROOT=`pwd`
+echo "GRPC_ROOT: ${GRPC_ROOT:=$(pwd)}"
 MOUNT_ARGS="-v $GRPC_ROOT:/var/local/jenkins/grpc:ro"
 
-GRPC_JAVA_ROOT=`cd ../grpc-java && pwd`
-if [ "$GRPC_JAVA_ROOT" != "" ]
+echo "GRPC_JAVA_ROOT: ${GRPC_JAVA_ROOT:=$(cd ../grpc-java && pwd)}"
+if [ -n "$GRPC_JAVA_ROOT" ]
 then
   MOUNT_ARGS+=" -v $GRPC_JAVA_ROOT:/var/local/jenkins/grpc-java:ro"
 else
   echo "WARNING: grpc-java not found, it won't be mounted to the docker container."
 fi
 
-GRPC_GO_ROOT=`cd ../grpc-go && pwd`
-if [ "$GRPC_GO_ROOT" != "" ]
+echo "GRPC_GO_ROOT: ${GRPC_GO_ROOT:=$(cd ../grpc-go && pwd)}"
+if [ -n "$GRPC_GO_ROOT" ]
 then
   MOUNT_ARGS+=" -v $GRPC_GO_ROOT:/var/local/jenkins/grpc-go:ro"
 else

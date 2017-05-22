@@ -34,12 +34,12 @@
 #ifndef GRPC_SUPPORT_USEFUL_H
 #define GRPC_SUPPORT_USEFUL_H
 
-/* useful macros that don't belong anywhere else */
+/** useful macros that don't belong anywhere else */
 
 #define GPR_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define GPR_MAX(a, b) ((a) > (b) ? (a) : (b))
 #define GPR_CLAMP(a, min, max) ((a) < (min) ? (min) : (a) > (max) ? (max) : (a))
-/* rotl, rotr assume x is unsigned */
+/** rotl, rotr assume x is unsigned */
 #define GPR_ROTL(x, n) (((x) << (n)) | ((x) >> (sizeof(x) * 8 - (n))))
 #define GPR_ROTR(x, n) (((x) >> (n)) | ((x) << (sizeof(x) * 8 - (n))))
 

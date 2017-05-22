@@ -2139,15 +2139,8 @@ static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                        double bdp_dbl) {
-  int32_t bdp;
-  const int32_t kMinBDP = 128;
-  if (bdp_dbl <= kMinBDP) {
-    bdp = kMinBDP;
-  } else if (bdp_dbl > INT32_MAX) {
-    bdp = INT32_MAX;
-  } else {
-    bdp = (int32_t)(bdp_dbl);
-  }
+  // initial window size bounded [1,2^31-1], but we set the min to 128.
+  int32_t bdp = GPR_CLAMP((int32_t)bdp_dbl, 128, INT32_MAX);
   int64_t delta =
       (int64_t)bdp -
       (int64_t)t->settings[GRPC_LOCAL_SETTINGS]
@@ -2161,7 +2154,26 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
   push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
                (uint32_t)bdp);
-  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, (uint32_t)bdp);
+}
+
+static void update_frame(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                         double bw_dbl, double bdp_dbl) {
+  int32_t bdp = GPR_CLAMP((int32_t)bdp_dbl, 128, INT32_MAX);
+  int32_t target = GPR_MAX((int32_t)bw_dbl / 1000, bdp);
+  // frame size is bounded [2^14,2^24-1]
+  int32_t frame_size = GPR_CLAMP(target, 16384, 16777215);
+  int64_t delta = (int64_t)frame_size -
+                  (int64_t)t->settings[GRPC_LOCAL_SETTINGS]
+                                      [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
+  if (delta == 0 || (delta > -frame_size / 10 && delta < frame_size / 10)) {
+    return;
+  }
+  if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+    gpr_log(GPR_DEBUG, "%s: update max_frame size to %d", t->peer_string,
+            (int)frame_size);
+  }
+  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+               (uint32_t)frame_size);
 }
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
@@ -2280,6 +2292,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       }
 
       int64_t estimate = -1;
+      double bdp_guess = -1;
       if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
         double target = 1 + log2((double)estimate);
         double memory_pressure = grpc_resource_quota_get_memory_pressure(
@@ -2297,8 +2310,14 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
         }
         double log2_bdp_guess =
             grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
-        update_bdp(exec_ctx, t, pow(2, log2_bdp_guess));
+        bdp_guess = pow(2, log2_bdp_guess);
+        update_bdp(exec_ctx, t, bdp_guess);
         t->last_pid_update = now;
+      }
+
+      double bw = -1;
+      if (grpc_bdp_estimator_get_bw(&t->bdp_estimator, &bw)) {
+        update_frame(exec_ctx, t, bw, bdp_guess);
       }
     }
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");

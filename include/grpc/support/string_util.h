@@ -40,13 +40,13 @@
 extern "C" {
 #endif
 
-/* String utility functions */
+/** String utility functions */
 
-/* Returns a copy of src that can be passed to gpr_free().
+/** Returns a copy of src that can be passed to gpr_free().
    If allocation fails or if src is NULL, returns NULL. */
 GPRAPI char *gpr_strdup(const char *src);
 
-/* printf to a newly-allocated string.  The set of supported formats may vary
+/** printf to a newly-allocated string.  The set of supported formats may vary
    between platforms.
 
    On success, returns the number of bytes printed (excluding the final '\0'),

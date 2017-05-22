@@ -362,4 +362,14 @@ void ServerBuilder::InternalAddPluginFactory(
   (*g_plugin_factory_list).push_back(CreatePlugin);
 }
 
+ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
+  switch (id) {
+    case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
+      return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION, 1);
+    default:
+      gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
+      return *this;
+  }
+}
+
 }  // namespace grpc

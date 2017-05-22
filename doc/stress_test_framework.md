@@ -2,7 +2,7 @@
 
 (Sree Kuchibhotla - sreek@)
 
-> Status: This is implemented. More details at [README.md](https://github.com/grpc/grpc/blob/master/tools/run_tests/stress_test/README.md)
+Status: This is implemented. More details at [README.md](https://github.com/grpc/grpc/blob/master/tools/run_tests/stress_test/README.md)
 
 
 **I. GOALS**

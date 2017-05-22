@@ -85,6 +85,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_windows.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
