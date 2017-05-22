@@ -68,8 +68,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
     }
 
-	ProtoBufFile pbfile(file);
-
+    ProtoBufFile pbfile(file);
     grpc::string code = grpc_csharp_generator::GetServices(
         &pbfile, generate_client, generate_server, internal_access);
     if (code.size() == 0) {
