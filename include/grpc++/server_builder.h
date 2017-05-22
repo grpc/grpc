@@ -73,10 +73,10 @@ class ServerBuilder {
 
   /// Options for synchronous servers.
   enum SyncServerOption {
-    NUM_CQS,         // Number of completion queues.
-    MIN_POLLERS,     // Minimum number of polling threads.
-    MAX_POLLERS,     // Maximum number of polling threads.
-    CQ_TIMEOUT_MSEC  // Completion queue timeout in milliseconds.
+    NUM_CQS,         /// Number of completion queues.
+    MIN_POLLERS,     /// Minimum number of polling threads.
+    MAX_POLLERS,     /// Maximum number of polling threads.
+    CQ_TIMEOUT_MSEC  /// Completion queue timeout in milliseconds.
   };
 
   /// Register a service. This call does not take ownership of the service.
