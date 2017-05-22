@@ -43,9 +43,10 @@ namespace grpc {
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-/// Adds new client to a \a Server communicating over given file descriptor
+/// Add a new client to a \a Server communicating over the given
+/// file descriptor.
 ///
-/// \param server The server to add a client to.
+/// \param server The server to add the client to.
 /// \param fd The file descriptor representing a socket.
 void AddInsecureChannelFromFd(Server* server, int fd);
 

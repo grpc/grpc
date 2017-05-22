@@ -307,7 +307,7 @@ class ClientContext {
 
   /// Flag whether the initial metadata should be \a corked
   ///
-  /// If \a corked is true, then the initial metadata will be colasced with the
+  /// If \a corked is true, then the initial metadata will be coalesced with the
   /// write of first message in the stream.
   ///
   /// \param corked The flag indicating whether the initial metadata is to be
