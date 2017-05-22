@@ -29,4 +29,4 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
 
-VERSION='1.3.5'
+VERSION='1.4.0.dev0'
