@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-/* Propagation bits: this can be bitwise or-ed to form propagation_mask for
+/** Propagation bits: this can be bitwise or-ed to form propagation_mask for
  * grpc_call */
 /** Propagate deadline */
 #define GRPC_PROPAGATE_DEADLINE ((uint32_t)1)
@@ -50,7 +50,7 @@ extern "C" {
 /** Propagate cancellation */
 #define GRPC_PROPAGATE_CANCELLATION ((uint32_t)8)
 
-/* Default propagation mask: clients of the core API are encouraged to encode
+/** Default propagation mask: clients of the core API are encouraged to encode
    deltas from this in their implementations... ie write:
    GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline
    propagation. Doing so gives flexibility in the future to define new

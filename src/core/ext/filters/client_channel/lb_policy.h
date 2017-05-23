@@ -149,7 +149,9 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
 
 /** Finds an appropriate subchannel for a call, based on \a pick_args.
 
-    \a target will be set to the selected subchannel, or NULL on failure.
+    \a target will be set to the selected subchannel, or NULL on failure
+    or when the LB policy decides to drop the call.
+
     Upon success, \a user_data will be set to whatever opaque information
     may need to be propagated from the LB policy, or NULL if not needed.
     \a context will be populated with context to pass to the subchannel

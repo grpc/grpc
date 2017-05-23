@@ -680,6 +680,7 @@
         'src/core/lib/iomgr/ev_epollsig_linux.c',
         'src/core/lib/iomgr/ev_poll_posix.c',
         'src/core/lib/iomgr/ev_posix.c',
+        'src/core/lib/iomgr/ev_windows.c',
         'src/core/lib/iomgr/exec_ctx.c',
         'src/core/lib/iomgr/executor.c',
         'src/core/lib/iomgr/iocp_windows.c',
@@ -897,6 +898,8 @@
         'src/core/ext/census/tracing.c',
         'src/core/ext/filters/max_age/max_age_filter.c',
         'src/core/ext/filters/message_size/message_size_filter.c',
+        'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c',
+        'src/core/ext/filters/workarounds/workaround_utils.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
       "conditions": [

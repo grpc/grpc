@@ -32,8 +32,15 @@
 # the BUILD file for gRPC. It contains the mapping for the template system we
 # use to generate other platform's build system files.
 #
+# Please consider that there should be a high bar for additions and changes to
+# this file.
+# Each rule listed must be re-written for Google's internal build system, and
+# each change must be ported from one to the other.
+#
 
-def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [], external_deps = [], deps = [], standalone = False, language = "C++"):
+def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
+                    external_deps = [], deps = [], standalone = False,
+                    language = "C++", testonly = False, visibility = None):
   copts = []
   if language.upper() == "C":
     copts = ["-std=c99"]
@@ -43,27 +50,13 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [], external_deps 
     hdrs = hdrs + public_hdrs,
     deps = deps + ["//external:" + dep for dep in external_deps],
     copts = copts,
+    visibility = visibility,
+    testonly = testonly,
     linkopts = ["-pthread"],
     includes = [
         "include"
     ]
   )
-
-def grpc_cc_libraries(name_list, additional_src_list = [], additional_dep_list = [], srcs = [], public_hdrs = [], hdrs = [], external_deps = [], deps = [], standalone = False, language="C++"):
-  names = len(name_list)
-  asl = additional_src_list + [[]]*(names - len(additional_src_list))
-  adl = additional_dep_list + [[]]*(names - len(additional_dep_list))
-  for i in range(names):
-    grpc_cc_library(
-      name = name_list[i],
-      srcs = srcs + asl[i],
-      hdrs = hdrs,
-      public_hdrs = public_hdrs,
-      deps = deps + adl[i],
-      external_deps = external_deps,
-      standalone = standalone,
-      language = language
-    )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
   native.cc_binary(
@@ -86,3 +79,42 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = None,
     generate_mock = generate_mock,
   )
 
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++"):
+  copts = []
+  if language.upper() == "C":
+    copts = ["-std=c99"]
+  native.cc_test(
+    name = name,
+    srcs = srcs,
+    args = args,
+    data = data,
+    deps = deps + ["//external:" + dep for dep in external_deps],
+    copts = copts,
+    linkopts = ["-pthread"],
+  )
+
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False):
+  copts = []
+  if language.upper() == "C":
+    copts = ["-std=c99"]
+  native.cc_binary(
+    name = name,
+    srcs = srcs,
+    args = args,
+    data = data,
+    testonly = testonly,
+    linkshared = linkshared,
+    deps = deps + ["//external:" + dep for dep in external_deps],
+    copts = copts,
+    linkopts = ["-pthread"],
+  )
+
+def grpc_generate_one_off_targets():
+    pass
+
+def grpc_sh_test(name, srcs, args = [], data = []):
+    native.sh_test(
+        name = name,
+        srcs = srcs,
+        args = args,
+        data = data)

@@ -33,6 +33,10 @@
 # Need to increase open files limit for c tests
 ulimit -n 32768
 
+# Move docker's storage location to scratch disk so we don't run out of space.
+echo 'DOCKER_OPTS="${DOCKER_OPTS} --graph=/tmpfs/docker"' | sudo tee --append /etc/default/docker
+sudo service docker restart
+
 # Download Docker images from DockerHub
 export DOCKERHUB_ORGANIZATION=grpctesting
 

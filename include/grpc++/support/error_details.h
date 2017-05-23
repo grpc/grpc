@@ -44,16 +44,16 @@ class Status;
 
 namespace grpc {
 
-// Maps a grpc::Status to a google::rpc::Status.
-// The given \a to object will be cleared.
-// On success, returns status with OK.
-// Returns status with INVALID_ARGUMENT, if failed to deserialize.
-// Returns status with FAILED_PRECONDITION, if \a to is nullptr.
+/// Map a \a grpc::Status to a \a google::rpc::Status.
+/// The given \a to object will be cleared.
+/// On success, returns status with OK.
+/// Returns status with \a INVALID_ARGUMENT, if failed to deserialize.
+/// Returns status with \a FAILED_PRECONDITION, if \a to is nullptr.
 Status ExtractErrorDetails(const Status& from, ::google::rpc::Status* to);
 
-// Maps google::rpc::Status to a grpc::Status.
-// Returns OK on success.
-// Returns status with FAILED_PRECONDITION if \a to is nullptr.
+/// Map \a google::rpc::Status to a \a grpc::Status.
+/// Returns OK on success.
+/// Returns status with \a FAILED_PRECONDITION if \a to is nullptr.
 Status SetErrorDetails(const ::google::rpc::Status& from, Status* to);
 
 }  // namespace grpc
