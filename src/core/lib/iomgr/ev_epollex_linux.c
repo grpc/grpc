@@ -529,6 +529,7 @@ static void fd_invoke_workqueue(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
 }
 
 static grpc_closure_scheduler *workqueue_scheduler(grpc_workqueue *workqueue) {
+  if (workqueue == NULL) return NULL;
   return &((grpc_fd *)workqueue)->workqueue_scheduler;
 }
 
