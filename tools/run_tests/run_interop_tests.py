@@ -544,12 +544,14 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   return docker_cmdline
 
 
-def manual_cmdline(docker_cmdline):
+def manual_cmdline(docker_cmdline, docker_image):
   """Returns docker cmdline adjusted for manual invocation."""
   print_cmdline = []
   for item in docker_cmdline:
     if item.startswith('--name='):
       continue
+    if item == docker_image:
+      item = "$docker_image"
     # add quotes when necessary
     if any(character.isspace() for character in item):
       item = "\"%s\"" % item
@@ -644,7 +646,9 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
                                  docker_args=['--net=host',
                                               '--name=%s' % container_name])
     if manual_cmd_log is not None:
-      manual_cmd_log.append(manual_cmdline(cmdline))
+      if manual_cmd_log == []:
+        manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' % docker_image)
+      manual_cmd_log.append(manual_cmdline(cmdline, docker_image))
     cwd = None
     environ = None
 
@@ -710,7 +714,9 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                                  docker_args=['--net=host',
                                               '--name=%s' % container_name])
     if manual_cmd_log is not None:
-      manual_cmd_log.append(manual_cmdline(cmdline))
+      if manual_cmd_log == []:
+        manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' % docker_image)
+      manual_cmd_log.append(manual_cmdline(cmdline, docker_iamge))
     cwd = None
 
   test_job = jobset.JobSpec(
@@ -770,7 +776,9 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
                                       environ=environ,
                                       docker_args=docker_args)
   if manual_cmd_log is not None:
-      manual_cmd_log.append(manual_cmdline(docker_cmdline))
+      if manual_cmd_log == []:
+        manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' % docker_image)
+      manual_cmd_log.append(manual_cmdline(docker_cmdline, docker_iamge))
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
           environ=environ,

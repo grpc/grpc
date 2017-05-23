@@ -955,9 +955,10 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
+  deps:
+  - grpc
   uses:
   - grpc++_codegen_base
-  - grpc_base
   - nanopb
 - name: grpc++_codegen_base
   language: c++
@@ -4624,6 +4625,7 @@ php_config_m4:
   - grpc
   - gpr
   - boringssl
+  - z
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
