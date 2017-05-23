@@ -66,11 +66,11 @@
   mkdir -p ../../libs/opt
   cp nativelibs/linux_x64/libgrpc_csharp_ext.so ../../libs/opt
   
-  dotnet pack --configuration Release --include-symbols --include-source Grpc.Core --output ../../../artifacts
-  dotnet pack --configuration Release --include-symbols --include-source Grpc.Core.Testing --output ../../../artifacts
-  dotnet pack --configuration Release --include-symbols --include-source Grpc.Auth --output ../../../artifacts
-  dotnet pack --configuration Release --include-symbols --include-source Grpc.HealthCheck --output ../../../artifacts
-  dotnet pack --configuration Release --include-symbols --include-source Grpc.Reflection --output ../../../artifacts
+  dotnet pack --configuration Release Grpc.Core --output ../../../artifacts
+  dotnet pack --configuration Release Grpc.Core.Testing --output ../../../artifacts
+  dotnet pack --configuration Release Grpc.Auth --output ../../../artifacts
+  dotnet pack --configuration Release Grpc.HealthCheck --output ../../../artifacts
+  dotnet pack --configuration Release Grpc.Reflection --output ../../../artifacts
   
   nuget pack Grpc.nuspec -Version "${settings.csharp_version}" -OutputDirectory ../../artifacts
   nuget pack Grpc.Tools.nuspec -Version "${settings.csharp_version}" -OutputDirectory ../../artifacts
