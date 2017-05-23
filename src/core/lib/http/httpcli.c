@@ -120,6 +120,7 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
   grpc_slice_buffer_destroy_internal(exec_ctx, &req->incoming);
   grpc_slice_buffer_destroy_internal(exec_ctx, &req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
+  GRPC_ERROR_UNREF(error);
   grpc_resource_quota_unref_internal(exec_ctx, req->resource_quota);
   gpr_free(req);
 }
