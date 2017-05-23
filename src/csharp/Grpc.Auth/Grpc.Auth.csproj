@@ -23,7 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj">
+      <PrivateAssets>None</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
