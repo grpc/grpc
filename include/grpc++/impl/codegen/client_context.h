@@ -331,8 +331,9 @@ class ClientContext {
     return census_context_;
   }
 
-  /// Send a best-effort out-of-band cancel. The call could be in any stage.
-  /// e.g. if it is already finished, it may still return success.
+  /// Send a best-effort out-of-band cancel on the call associated with
+  /// this client context.  The call could be in any stage; e.g., if it is
+  /// already finished, it may still return success.
   ///
   /// There is no guarantee the call will be cancelled.
   void TryCancel();
