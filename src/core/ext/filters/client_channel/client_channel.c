@@ -813,6 +813,24 @@ static call_or_error get_call_or_error(call_data *p) {
     return (call_or_error){(grpc_subchannel_call *)c, NULL};
 }
 
+static bool set_call_or_error(call_data *p, call_or_error coe) {
+  // this should always be under a lock
+  call_or_error existing = get_call_or_error(p);
+  if (existing.error != GRPC_ERROR_NONE) {
+    GRPC_ERROR_UNREF(coe.error);
+    return false;
+  }
+  GPR_ASSERT(existing.subchannel_call == NULL);
+  if (coe.error != GRPC_ERROR_NONE) {
+	  GPR_ASSERT(coe.subchannel_call == NULL);
+	  gpr_atm_rel_store(&p->subchannel_call_or_error, 1|(gpr_atm)coe.error);
+  } else {
+     GPR_ASSERT(coe.subchannel_call != NULL);
+     gpr_atm_rel_store(&p->subchannel_call_or_error, (gpr_atm)coe.subchannel_call);
+  }
+  return true;
+}
+
 grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
     grpc_call_element *call_elem) {
   return get_call_or_error(call_elem->call_data).subchannel_call;
@@ -927,8 +945,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
                   "Call dropped by load balancing policy")
             : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                   "Failed to create subchannel", &error, 1);
-    gpr_atm_no_barrier_store(&calld->subchannel_call_or_error,
-                             1 | (gpr_atm)GRPC_ERROR_REF(failure));
+    set_call_or_error(calld, (call_or_error){.error = GRPC_ERROR_REF(failure)});
     fail_locked(exec_ctx, calld, failure);
   } else if (coe.error != GRPC_ERROR_NONE) {
     /* already cancelled before subchannel became ready */
@@ -956,8 +973,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
         .context = calld->subchannel_call_context};
     grpc_error *new_error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
-    gpr_atm_rel_store(&calld->subchannel_call_or_error,
-                      (gpr_atm)subchannel_call);
+    GPR_ASSERT(set_call_or_error(calld, (call_or_error){.subchannel_call = subchannel_call}));
     if (new_error != GRPC_ERROR_NONE) {
       new_error = grpc_error_add_child(new_error, error);
       fail_locked(exec_ctx, calld, new_error);
@@ -1147,30 +1163,22 @@ static void start_transport_stream_op_batch_locked_inner(
   }
   /* if this is a cancellation, then we can raise our cancelled flag */
   if (op->cancel_stream) {
-    grpc_error *error = GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error);
-    if (!gpr_atm_rel_cas(&calld->subchannel_call_or_error, 0,
-                         1 | (gpr_atm)error)) {
-      GRPC_ERROR_UNREF(error);
-      /* recurse to retry */
-      start_transport_stream_op_batch_locked_inner(exec_ctx, op, elem);
-      /* early out */
-      return;
+    grpc_error *error = op->payload->cancel_stream.cancel_error;
+    /* Stash a copy of cancel_error in our call data, so that we can use
+       it for subsequent operations.  This ensures that if the call is
+       cancelled before any ops are passed down (e.g., if the deadline
+       is in the past when the call starts), we can return the right
+       error to the caller when the first op does get passed down. */
+    set_call_or_error(calld, (call_or_error){.error = GRPC_ERROR_REF(error)});
+    if (calld->pick_pending) {
+      cancel_pick_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
     } else {
-      /* Stash a copy of cancel_error in our call data, so that we can use
-         it for subsequent operations.  This ensures that if the call is
-         cancelled before any ops are passed down (e.g., if the deadline
-         is in the past when the call starts), we can return the right
-         error to the caller when the first op does get passed down. */
-      if (calld->pick_pending) {
-        cancel_pick_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
-      } else {
-        fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
-      }
-      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op,
-                                                         GRPC_ERROR_REF(error));
-      /* early out */
-      return;
+      fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
     }
+    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op,
+                                                      GRPC_ERROR_REF(error));
+    /* early out */
+    return;
   }
   /* if we don't have a subchannel, try to get one */
   if (!calld->pick_pending && calld->connected_subchannel == NULL &&
@@ -1193,10 +1201,9 @@ static void start_transport_stream_op_batch_locked_inner(
       if (calld->connected_subchannel == NULL) {
         grpc_error *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Call dropped by load balancing policy");
-        gpr_atm_no_barrier_store(&calld->subchannel_call_or_error,
-                                 1 | (gpr_atm)error);
+	set_call_or_error(calld, (call_or_error){.error = GRPC_ERROR_REF(error)});
         fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
-        grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
+        grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, GRPC_ERROR_REF(error));
         return;  // Early out.
       }
     } else {
@@ -1216,8 +1223,7 @@ static void start_transport_stream_op_batch_locked_inner(
         .context = calld->subchannel_call_context};
     grpc_error *error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
-    gpr_atm_rel_store(&calld->subchannel_call_or_error,
-                      (gpr_atm)subchannel_call);
+    GPR_ASSERT(set_call_or_error(calld, (call_or_error){.subchannel_call = subchannel_call}));
     if (error != GRPC_ERROR_NONE) {
       fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
       grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
