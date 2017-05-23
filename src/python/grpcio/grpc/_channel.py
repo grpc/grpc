@@ -575,6 +575,11 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                     _call_error_set_RPCstate(state, call_error, metadata)
                     return _Rendezvous(state, None, None, deadline)
                 drive_call()
+                call.start_client_batch(
+                    cygrpc.Operations(
+                        (cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
+                    event_handler)
+                state.due.add(cygrpc.OperationType.receive_message)
             return _Rendezvous(state, call, self._response_deserializer,
                                deadline)
 
