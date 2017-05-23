@@ -65,7 +65,7 @@ typedef enum gpr_log_severity {
 #define GPR_LOG_VERBOSITY_UNSET -1
 
 /** Returns a string representation of the log severity */
-const char *gpr_log_severity_string(gpr_log_severity severity);
+GPRAPI const char *gpr_log_severity_string(gpr_log_severity severity);
 
 /** Macros to build log contexts at various severity levels */
 #define GPR_DEBUG __FILE__, __LINE__, GPR_LOG_SEVERITY_DEBUG

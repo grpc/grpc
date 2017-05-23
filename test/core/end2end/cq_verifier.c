@@ -189,10 +189,16 @@ int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
   return res;
 }
 
+static bool is_probably_integer(void *p) { return ((uintptr_t)p) < 1000000; }
+
 static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
   char *tmp;
 
-  gpr_asprintf(&tmp, "%p ", e->tag);
+  if (is_probably_integer(e->tag)) {
+    gpr_asprintf(&tmp, "tag(%" PRIdPTR ") ", (intptr_t)e->tag);
+  } else {
+    gpr_asprintf(&tmp, "%p ", e->tag);
+  }
   gpr_strvec_add(buf, tmp);
 
   switch (e->type) {

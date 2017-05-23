@@ -10,8 +10,6 @@
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
-    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares)
-    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/cares)
 
     LIBS="-lpthread $LIBS"
 
@@ -25,10 +23,8 @@
 
     case $host in
       *darwin*)
-        PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/config_darwin)
         ;;
       *)
-        PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/config_linux)
         PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
         PHP_ADD_LIBRARY(rt)
         ;;
@@ -39,7 +35,7 @@
       ${source} ${"\\"}
       % endfor
       % for lib in libs:
-      % if lib.name in php_config_m4.get('deps', []):
+      % if lib.name in php_config_m4.get('deps', []) and lib.name != 'z':
       % for source in lib.src:
       ${source} ${"\\"}
       % endfor
@@ -47,13 +43,13 @@
       % endfor
       , $ext_shared, , -fvisibility=hidden ${"\\"}
       -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN ${"\\"}
-      -D_HAS_EXCEPTIONS=0 -DNOMINMAX)
+      -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0)
 
     PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   <%
     dirs = {}
     for lib in libs:
-      if lib.name in php_config_m4.get('deps', []):
+      if lib.name in php_config_m4.get('deps', []) and lib.name != 'z':
         for source in lib.src:
           dirs[source[:source.rfind('/')]] = 1
     dirs = dirs.keys()
