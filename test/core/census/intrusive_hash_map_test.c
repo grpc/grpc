@@ -28,14 +28,17 @@
 /* The initial size of an intrusive hash map will be 2 to this power. */
 static const uint32_t kInitialLog2Size = 4;
 
+/* Simple object used for testing intrusive_hash_map. */
 typedef struct object { uint64_t val; } object;
 
+/* Helper function to allocate and initialize object. */
 static inline object *make_new_object(uint64_t val) {
   object *obj = (object *)gpr_malloc(sizeof(object));
   obj->val = val;
   return obj;
 }
 
+/* Wrapper struct for object. */
 typedef struct ptr_item {
   INTRUSIVE_HASH_MAP_HEADER;
   object *obj;
@@ -51,8 +54,10 @@ static inline ptr_item *make_ptr_item(uint64_t key, uint64_t value) {
   return new_item;
 }
 
+/* Helper function to deallocate ptr_item. */
 static void free_ptr_item(void *ptr) { gpr_free(((ptr_item *)ptr)->obj); }
 
+/* Simple string object used for testing intrusive_hash_map. */
 typedef struct string_item {
   INTRUSIVE_HASH_MAP_HEADER;
   // User data.
@@ -60,6 +65,7 @@ typedef struct string_item {
   uint16_t len;
 } string_item;
 
+/* Helper function to allocate and initialize string object. */
 static string_item *make_string_item(uint64_t key, const char *buf,
                                      uint16_t len) {
   string_item *item = (string_item *)gpr_malloc(sizeof(string_item));
@@ -70,6 +76,7 @@ static string_item *make_string_item(uint64_t key, const char *buf,
   return item;
 }
 
+/* Helper function for comparing two string objects. */
 static bool compare_string_item(const string_item *A, const string_item *B) {
   if (A->IHM_key != B->IHM_key || A->len != B->len)
     return false;
@@ -90,7 +97,7 @@ void test_empty() {
   intrusive_hash_map_free(&hash_map, NULL);
 }
 
-void test_basic() {
+void test_single_item() {
   intrusive_hash_map hash_map;
   intrusive_hash_map_init(&hash_map, kInitialLog2Size);
 
@@ -113,7 +120,7 @@ void test_basic() {
   intrusive_hash_map_free(&hash_map, &free_ptr_item);
 }
 
-void test_basic2() {
+void test_two_items() {
   intrusive_hash_map hash_map;
   intrusive_hash_map_init(&hash_map, kInitialLog2Size);
 
@@ -215,10 +222,12 @@ void test_stress() {
   intrusive_hash_map_init(&hash_map, kInitialLog2Size);
   size_t n = 0;
 
+  // Randomly add and insert entries 1000000 times.
   for (uint64_t i = 0; i < 1000000; ++i) {
     int op = rand() & 0x1;
 
     switch (op) {
+      // Case 0 is insertion of entry.
       case 0: {
         uint64_t key = (uint64_t)(rand() % 10000);
         ptr_item *item = make_ptr_item(key, key);
@@ -231,6 +240,7 @@ void test_stress() {
         }
         break;
       }
+      // Case 1 is removal of entry.
       case 1: {
         uint64_t key = (uint64_t)(rand() % 10000);
         ptr_item *item = (ptr_item *)intrusive_hash_map_find(&hash_map, key);
@@ -262,8 +272,8 @@ int main(int argc, char **argv) {
   srand((unsigned)gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
 
   test_empty();
-  test_basic();
-  test_basic2();
+  test_single_item();
+  test_two_items();
   test_reset_clear();
   test_extend();
   test_stress();

@@ -27,8 +27,7 @@ static inline uint32_t chunked_vector_hasher(uint64_t key) {
 /* Vector chunks are 1MiB divided by pointer size. */
 static const size_t VECTOR_CHUNK_SIZE = (1 << 20) / sizeof(void *);
 
-/* Helper functions which return buckets from the chunked vector. These are
-   meant for internal use only within the intrusive_hash_map data structure. */
+/* Helper functions which return buckets from the chunked vector. */
 static inline void **get_mutable_bucket(const chunked_vector *buckets,
                                         uint32_t index) {
   if (index < VECTOR_CHUNK_SIZE) {
@@ -68,7 +67,7 @@ static void chunked_vector_clear(chunked_vector *vec) {
   }
   if (vec->rest_ != NULL) {
     size_t rest_size = RestSize(vec);
-    for (uint32_t i = 0; i < rest_size; ++i) {
+    for (size_t i = 0; i < rest_size; ++i) {
       if (vec->rest_[i] != NULL) {
         gpr_free(vec->rest_[i]);
       }

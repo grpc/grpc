@@ -17,21 +17,17 @@
 #ifndef GRPC_CORE_EXT_CENSUS_INTRUSIVE_HASH_MAP_H
 #define GRPC_CORE_EXT_CENSUS_INTRUSIVE_HASH_MAP_H
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
-#include <stdbool.h>
+#include "src/core/ext/census/intrusive_hash_map_internal.h"
 
-/* intrusive_hash_map is a fast chained hash table. It is almost always faster
- * than STL hash_map, since this hash map avoids malloc and free during insert
- * and erase. This hash map is faster than a dense hash map when the application
- * calls insert and erase more often than find. When the workload is dominated
- * by find() a dense hash map may be faster.
+/* intrusive_hash_map is a fast chained hash table. This hash map is faster than
+ * a dense hash map when the application calls insert and erase more often than
+ * find. When the workload is dominated by find() a dense hash map may be
+ * faster.
  *
  * intrusive_hash_map uses an intrusive header placed within a user defined
- * struct. IHM_key MUST be set to a valid value before insertion into the hash
- * map or undefined behavior may occur.  IHM_hash_link needs to be set to NULL
- * initially.
+ * struct. The header field IHM_key MUST be set to a valid value before
+ * insertion into the hash map or undefined behavior may occur. The header field
+ * IHM_hash_link MUST to be set to NULL initially.
  *
  * EXAMPLE USAGE:
  *
@@ -53,6 +49,8 @@
  *    return item;
  *  }
  *
+ *  intrusive_hash_map hash_map;
+ *  intrusive_hash_map_init(&hash_map, 4);
  *  string_item *new_item1 = make_string_item(10, "test1", 5);
  *  bool ok = intrusive_hash_map_insert(&hash_map, (hm_item *)new_item1);
  *
@@ -61,9 +59,10 @@
  */
 
 /* Hash map item. Stores key and a pointer to the actual object. A user defined
- * version of this can be passed in as long as the first 2 entries (key and
- * hash_link) are the same. Pointer to struct will need to be cast as
- * (hm_item *) when passed to hash map. This allows it to be intrusive. */
+ * version of this can be passed in provided the first 2 entries (key and
+ * hash_link) are the same. These entries must be first in the user defined
+ * struct. Pointer to struct will need to be cast as (hm_item *) when passed to
+ * hash map. This allows it to be intrusive. */
 typedef struct hm_item {
   uint64_t key;
   struct hm_item *hash_link;
@@ -71,32 +70,11 @@ typedef struct hm_item {
 } hm_item;
 
 /* Macro provided for ease of use.  This must be first in the user defined
- * struct. */
+ * struct (i.e. uint64_t key and hm_item * must be the first two elements in
+ * that order). */
 #define INTRUSIVE_HASH_MAP_HEADER \
   uint64_t IHM_key;               \
   struct hm_item *IHM_hash_link
-
-/* The chunked vector is a data structure that allocates buckets for use in the
- * hash map. ChunkedVector is logically equivalent to T*[N] (cast void* as
- * T*). It's internally implemented as an array of 1MB arrays to avoid
- * allocating large consecutive memory chunks. This is an internal data
- * structure that should never be accessed directly. */
-typedef struct chunked_vector {
-  size_t size_;
-  void **first_;
-  void ***rest_;
-} chunked_vector;
-
-/* Core intrusive hash map data structure. All internal elements are managed by
- * functions and should not be altered manually. intrusive_hash_map_init()
- * must first be called before an intrusive_hash_map can be used. */
-typedef struct intrusive_hash_map {
-  uint32_t num_items;
-  uint32_t extend_threshold;
-  uint32_t log2_num_buckets;
-  uint32_t hash_mask;
-  chunked_vector buckets;
-} intrusive_hash_map;
 
 /* Index struct which acts as a pseudo-iterator within the hash map. */
 typedef struct hm_index {
@@ -110,7 +88,10 @@ inline bool hm_index_compare(const hm_index *A, const hm_index *B) {
   return (A->item == B->item && A->bucket_index == B->bucket_index);
 }
 
-/* Helper functions for iterating over the hash map. */
+/*
+  Helper functions for iterating over the hash map.
+  */
+
 /* On return idx will contain an invalid index which is always equal to
  * hash_map->buckets.size_ */
 void intrusive_hash_map_end(const intrusive_hash_map *hash_map, hm_index *idx);
@@ -152,18 +133,18 @@ hm_item *intrusive_hash_map_erase(intrusive_hash_map *hash_map, uint64_t key);
  * Otherwise, it will insert the new item and return true. */
 bool intrusive_hash_map_insert(intrusive_hash_map *hash_map, hm_item *item);
 
-/* Clear entire contents of the hash map, but leaves internal data structure
- * untouched. Second argument takes a function pointer to a method that will
+/* Clears entire contents of the hash map, but leaves internal data structure
+ * untouched. Second argument takes a function pointer to a function that will
  * free the object designated by the user and pointed to by hash_map->value. */
 void intrusive_hash_map_clear(intrusive_hash_map *hash_map,
                               void (*free_object)(void *));
 
 /* Erase all contents of hash map and free the memory. Hash map is invalid
  * after calling this function and cannot be used until it has been
- * reinitialized (intrusive_hash_map_init()). takes a function pointer to a
- * method that will free the object designated by the user and pointed to by
- * hash_map->value.*/
+ * reinitialized (intrusive_hash_map_init()). This function takes a function
+ * pointer to a function that will free the object designated by the user and
+ * pointed to by hash_map->value. */
 void intrusive_hash_map_free(intrusive_hash_map *hash_map,
                              void (*free_object)(void *));
 
-#endif
+#endif // GRPC_CORE_EXT_CENSUS_INTRUSIVE_HASH_MAP_H

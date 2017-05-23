@@ -380,6 +380,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/census/gen/trace_context.pb.h )
   s.files += %w( src/core/ext/census/grpc_filter.h )
   s.files += %w( src/core/ext/census/intrusive_hash_map.h )
+  s.files += %w( src/core/ext/census/intrusive_hash_map_internal.h )
   s.files += %w( src/core/ext/census/mlog.h )
   s.files += %w( src/core/ext/census/resource.h )
   s.files += %w( src/core/ext/census/rpc_metric_id.h )
