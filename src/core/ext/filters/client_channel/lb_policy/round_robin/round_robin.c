@@ -165,20 +165,21 @@ static size_t get_next_ready_subchannel_index_locked(
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR: %p] getting next ready subchannel, "
-            "last_ready_subchannel_index=%zu",
-            p, p->last_ready_subchannel_index);
+            "last_ready_subchannel_index=%lu",
+            p, (unsigned long)p->last_ready_subchannel_index);
   }
   for (size_t i = 0; i < p->num_subchannels; ++i) {
     const size_t index =
         (i + p->last_ready_subchannel_index + 1) % p->num_subchannels;
     if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_DEBUG, "[RR %p] checking index %zu: state=%d", p, index,
+      gpr_log(GPR_DEBUG, "[RR %p] checking index %lu: state=%d", p,
+              (unsigned long)index,
               p->subchannels[index].curr_connectivity_state);
     }
     if (p->subchannels[index].curr_connectivity_state == GRPC_CHANNEL_READY) {
       if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
-        gpr_log(GPR_DEBUG, "[RR %p] found next ready subchannel at index %zu",
-                p, index);
+        gpr_log(GPR_DEBUG, "[RR %p] found next ready subchannel at index %lu",
+                p, (unsigned long)index);
       }
       return index;
     }
@@ -196,8 +197,8 @@ static void update_last_ready_subchannel_index_locked(round_robin_lb_policy *p,
   p->last_ready_subchannel_index = last_ready_index;
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG,
-            "[RR: %p] setting last_ready_subchannel_index=%zu (SC %p, CSC %p)",
-            (void *)p, last_ready_index,
+            "[RR: %p] setting last_ready_subchannel_index=%lu (SC %p, CSC %p)",
+            (void *)p, (unsigned long)last_ready_index,
             (void *)p->subchannels[last_ready_index].subchannel,
             (void *)grpc_subchannel_get_connected_subchannel(
                 p->subchannels[last_ready_index].subchannel));
@@ -342,8 +343,8 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     }
     if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_DEBUG,
-              "[RR PICK] TARGET <-- CONNECTED SUBCHANNEL %p (INDEX %zu)",
-              (void *)*target, next_ready_index);
+              "[RR PICK] TARGET <-- CONNECTED SUBCHANNEL %p (INDEX %lu)",
+              (void *)*target, (unsigned long)next_ready_index);
     }
     /* only advance the last picked pointer if the selection was used */
     update_last_ready_subchannel_index_locked(p, next_ready_index);
@@ -510,8 +511,9 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         }
         if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
           gpr_log(GPR_DEBUG,
-                  "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (INDEX %zu)",
-                  (void *)selected->subchannel, next_ready_index);
+                  "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (INDEX %lu)",
+                  (void *)selected->subchannel,
+                  (unsigned long)next_ready_index);
         }
         grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
         gpr_free(pp);
@@ -616,8 +618,8 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
       char *address_uri =
           grpc_sockaddr_to_uri(&addresses->addresses[i].address);
-      gpr_log(GPR_DEBUG, "index %zu: Created subchannel %p for address uri %s",
-              subchannel_index, (void *)subchannel, address_uri);
+      gpr_log(GPR_DEBUG, "index %lu: Created subchannel %p for address uri %s",
+              (unsigned long)subchannel_index, (void *)subchannel, address_uri);
       gpr_free(address_uri);
     }
     grpc_channel_args_destroy(exec_ctx, new_args);

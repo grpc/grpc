@@ -67,12 +67,11 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
   vars["input_type_id"] = MessageIdentifierName(input_type->full_name());
   vars["output_type_id"] = MessageIdentifierName(output_type->full_name());
 
-  out->Print("/**\n");
-  out->Print(GetPHPComments(method, " *").c_str());
+  out->Print(GetPHPComments(method, " //").c_str());
   if (method->client_streaming()) {
     out->Print(vars,
-               " * @param array $$metadata metadata\n"
-               " * @param array $$options call options\n */\n"
+               " // @param array $$metadata metadata\n"
+               " // @param array $$options call options\n"
                "public function $name$($$metadata = [], "
                "$$options = []) {\n");
     out->Indent();
@@ -87,9 +86,9 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
                "$$metadata, $$options);\n");
   } else {
     out->Print(vars,
-               " * @param \\$input_type_id$ $$argument input argument\n"
-               " * @param array $$metadata metadata\n"
-               " * @param array $$options call options\n */\n"
+               " // @param \\$input_type_id$ $$argument input argument\n"
+               " // @param array $$metadata metadata\n"
+               " // @param array $$options call options\n"
                "public function $name$(\\$input_type_id$ $$argument,\n"
                "  $$metadata = [], $$options = []) {\n");
     out->Indent();
@@ -116,10 +115,10 @@ void PrintService(const ServiceDescriptor *service, Printer *out) {
   out->Print(vars, "class $name$Client extends \\Grpc\\BaseStub {\n\n");
   out->Indent();
   out->Print(
-      "/**\n * @param string $$hostname hostname\n"
-      " * @param array $$opts channel options\n"
-      " * @param \\Grpc\\Channel $$channel (optional) re-use channel "
-      "object\n */\n"
+      " // @param string $$hostname hostname\n"
+      " // @param array $$opts channel options\n"
+      " // @param \\Grpc\\Channel $$channel (optional) re-use channel "
+      "object\n"
       "public function __construct($$hostname, $$opts, "
       "$$channel = null) {\n");
   out->Indent();

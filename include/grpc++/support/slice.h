@@ -48,7 +48,7 @@ class Slice final {
  public:
   /// Construct an empty slice.
   Slice();
-  // Destructor - drops one reference.
+  /// Destructor - drops one reference.
   ~Slice();
 
   enum AddRef { ADD_REF };
