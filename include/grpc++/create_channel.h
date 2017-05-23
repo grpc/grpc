@@ -68,6 +68,20 @@ std::shared_ptr<Channel> CreateCustomChannel(
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args);
 
+/// Global Callbacks for CreateChannel and CreateCustomChannel
+///
+/// Can be set exactly once per application to install hooks whenever
+/// a channel is created.
+class CreateChannelGlobalCallbacks {
+ public:
+  virtual ~CreateChannelGlobalCallbacks() {}
+  /// Called before channel is created.
+  virtual void UpdateArguments(ChannelArguments* args) {}
+};
+/// Set the global callback object for CreateChannel. Can only be called once.
+/// Does not take ownership of callbacks.
+void SetCreateChannelGlobalCallbacks(CreateChannelGlobalCallbacks* callbacks);
+
 }  // namespace grpc
 
 #endif  // GRPCXX_CREATE_CHANNEL_H
