@@ -40,6 +40,7 @@
 
 namespace grpc {
 
+/// Descriptor of an RPC method
 class RpcMethod {
  public:
   enum RpcType {

@@ -347,6 +347,7 @@ add_custom_target(plugins
 
 add_custom_target(tools_c
   DEPENDS
+  check_epollexclusive
   gen_hpack_tables
   gen_legal_metadata_characters
   gen_percent_encoding_tables
@@ -393,7 +394,7 @@ endif()
 add_dependencies(buildtests_c endpoint_pair_test)
 add_dependencies(buildtests_c error_test)
 if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c ev_epoll_linux_test)
+add_dependencies(buildtests_c ev_epollsig_linux_test)
 endif()
 add_dependencies(buildtests_c fake_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -563,6 +564,7 @@ if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c h2_full+pipe_test)
 endif()
 add_dependencies(buildtests_c h2_full+trace_test)
+add_dependencies(buildtests_c h2_full+workarounds_test)
 add_dependencies(buildtests_c h2_http_proxy_test)
 add_dependencies(buildtests_c h2_load_reporting_test)
 add_dependencies(buildtests_c h2_oauth2_test)
@@ -586,6 +588,7 @@ if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c h2_full+pipe_nosec_test)
 endif()
 add_dependencies(buildtests_c h2_full+trace_nosec_test)
+add_dependencies(buildtests_c h2_full+workarounds_nosec_test)
 add_dependencies(buildtests_c h2_http_proxy_nosec_test)
 add_dependencies(buildtests_c h2_load_reporting_nosec_test)
 add_dependencies(buildtests_c h2_proxy_nosec_test)
@@ -928,7 +931,6 @@ add_library(grpc
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -939,9 +941,14 @@ add_library(grpc
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
+  src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
   src/core/lib/iomgr/iocp_windows.c
@@ -949,6 +956,7 @@ add_library(grpc
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -985,6 +993,7 @@ add_library(grpc
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1039,6 +1048,7 @@ add_library(grpc
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
   src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
   src/core/ext/transport/chttp2/transport/bin_decoder.c
   src/core/ext/transport/chttp2/transport/bin_encoder.c
@@ -1122,8 +1132,10 @@ add_library(grpc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
@@ -1155,6 +1167,8 @@ add_library(grpc
   src/core/ext/census/tracing.c
   src/core/ext/filters/max_age/max_age_filter.c
   src/core/ext/filters/message_size/message_size_filter.c
+  src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c
+  src/core/ext/filters/workarounds/workaround_utils.c
   src/core/plugin_registry/grpc_plugin_registry.c
 )
 
@@ -1205,6 +1219,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -1255,7 +1270,6 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1266,9 +1280,14 @@ add_library(grpc_cronet
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
+  src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
   src/core/lib/iomgr/iocp_windows.c
@@ -1276,6 +1295,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -1312,6 +1332,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1366,6 +1387,7 @@ add_library(grpc_cronet
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
   src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
   src/core/ext/transport/cronet/transport/cronet_api_dummy.c
   src/core/ext/transport/cronet/transport/cronet_transport.c
@@ -1496,6 +1518,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -1566,7 +1589,6 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1577,9 +1599,14 @@ add_library(grpc_test_util
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
+  src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
   src/core/lib/iomgr/iocp_windows.c
@@ -1587,6 +1614,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -1623,6 +1651,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1677,6 +1706,7 @@ add_library(grpc_test_util
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
 )
 
 if(WIN32 AND MSVC)
@@ -1724,6 +1754,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -1822,7 +1853,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1833,9 +1863,14 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
+  src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
   src/core/lib/iomgr/iocp_windows.c
@@ -1843,6 +1878,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -1879,6 +1915,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -1933,6 +1970,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/lib/debug/trace.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/transport/bin_decoder.c
@@ -1993,8 +2031,10 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/filters/load_reporting/load_reporting.c
   src/core/ext/filters/load_reporting/load_reporting_filter.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
@@ -2019,6 +2059,8 @@ add_library(grpc_unsecure
   src/core/ext/census/tracing.c
   src/core/ext/filters/max_age/max_age_filter.c
   src/core/ext/filters/message_size/message_size_filter.c
+  src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c
+  src/core/ext/filters/workarounds/workaround_utils.c
   src/core/plugin_registry/grpc_unsecure_plugin_registry.c
 )
 
@@ -2066,6 +2108,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2233,126 +2276,6 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
-  src/core/lib/channel/channel_args.c
-  src/core/lib/channel/channel_stack.c
-  src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/handshaker.c
-  src/core/lib/channel/handshaker_factory.c
-  src/core/lib/channel/handshaker_registry.c
-  src/core/lib/compression/compression.c
-  src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
-  src/core/lib/http/format_request.c
-  src/core/lib/http/httpcli.c
-  src/core/lib/http/parser.c
-  src/core/lib/iomgr/closure.c
-  src/core/lib/iomgr/combiner.c
-  src/core/lib/iomgr/endpoint.c
-  src/core/lib/iomgr/endpoint_pair_posix.c
-  src/core/lib/iomgr/endpoint_pair_uv.c
-  src/core/lib/iomgr/endpoint_pair_windows.c
-  src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
-  src/core/lib/iomgr/ev_poll_posix.c
-  src/core/lib/iomgr/ev_posix.c
-  src/core/lib/iomgr/exec_ctx.c
-  src/core/lib/iomgr/executor.c
-  src/core/lib/iomgr/iocp_windows.c
-  src/core/lib/iomgr/iomgr.c
-  src/core/lib/iomgr/iomgr_posix.c
-  src/core/lib/iomgr/iomgr_uv.c
-  src/core/lib/iomgr/iomgr_windows.c
-  src/core/lib/iomgr/load_file.c
-  src/core/lib/iomgr/lockfree_event.c
-  src/core/lib/iomgr/network_status_tracker.c
-  src/core/lib/iomgr/polling_entity.c
-  src/core/lib/iomgr/pollset_set_uv.c
-  src/core/lib/iomgr/pollset_set_windows.c
-  src/core/lib/iomgr/pollset_uv.c
-  src/core/lib/iomgr/pollset_windows.c
-  src/core/lib/iomgr/resolve_address_posix.c
-  src/core/lib/iomgr/resolve_address_uv.c
-  src/core/lib/iomgr/resolve_address_windows.c
-  src/core/lib/iomgr/resource_quota.c
-  src/core/lib/iomgr/sockaddr_utils.c
-  src/core/lib/iomgr/socket_factory_posix.c
-  src/core/lib/iomgr/socket_mutator.c
-  src/core/lib/iomgr/socket_utils_common_posix.c
-  src/core/lib/iomgr/socket_utils_linux.c
-  src/core/lib/iomgr/socket_utils_posix.c
-  src/core/lib/iomgr/socket_utils_uv.c
-  src/core/lib/iomgr/socket_utils_windows.c
-  src/core/lib/iomgr/socket_windows.c
-  src/core/lib/iomgr/tcp_client_posix.c
-  src/core/lib/iomgr/tcp_client_uv.c
-  src/core/lib/iomgr/tcp_client_windows.c
-  src/core/lib/iomgr/tcp_posix.c
-  src/core/lib/iomgr/tcp_server_posix.c
-  src/core/lib/iomgr/tcp_server_utils_posix_common.c
-  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c
-  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c
-  src/core/lib/iomgr/tcp_server_uv.c
-  src/core/lib/iomgr/tcp_server_windows.c
-  src/core/lib/iomgr/tcp_uv.c
-  src/core/lib/iomgr/tcp_windows.c
-  src/core/lib/iomgr/time_averaged_stats.c
-  src/core/lib/iomgr/timer_generic.c
-  src/core/lib/iomgr/timer_heap.c
-  src/core/lib/iomgr/timer_uv.c
-  src/core/lib/iomgr/udp_server.c
-  src/core/lib/iomgr/unix_sockets_posix.c
-  src/core/lib/iomgr/unix_sockets_posix_noop.c
-  src/core/lib/iomgr/wakeup_fd_cv.c
-  src/core/lib/iomgr/wakeup_fd_eventfd.c
-  src/core/lib/iomgr/wakeup_fd_nospecial.c
-  src/core/lib/iomgr/wakeup_fd_pipe.c
-  src/core/lib/iomgr/wakeup_fd_posix.c
-  src/core/lib/iomgr/workqueue_uv.c
-  src/core/lib/iomgr/workqueue_windows.c
-  src/core/lib/json/json.c
-  src/core/lib/json/json_reader.c
-  src/core/lib/json/json_string.c
-  src/core/lib/json/json_writer.c
-  src/core/lib/slice/b64.c
-  src/core/lib/slice/percent_encoding.c
-  src/core/lib/slice/slice.c
-  src/core/lib/slice/slice_buffer.c
-  src/core/lib/slice/slice_hash_table.c
-  src/core/lib/slice/slice_intern.c
-  src/core/lib/slice/slice_string_helpers.c
-  src/core/lib/surface/alarm.c
-  src/core/lib/surface/api_trace.c
-  src/core/lib/surface/byte_buffer.c
-  src/core/lib/surface/byte_buffer_reader.c
-  src/core/lib/surface/call.c
-  src/core/lib/surface/call_details.c
-  src/core/lib/surface/call_log_batch.c
-  src/core/lib/surface/channel.c
-  src/core/lib/surface/channel_init.c
-  src/core/lib/surface/channel_ping.c
-  src/core/lib/surface/channel_stack_type.c
-  src/core/lib/surface/completion_queue.c
-  src/core/lib/surface/completion_queue_factory.c
-  src/core/lib/surface/event_string.c
-  src/core/lib/surface/lame_client.cc
-  src/core/lib/surface/metadata_array.c
-  src/core/lib/surface/server.c
-  src/core/lib/surface/validate_metadata.c
-  src/core/lib/surface/version.c
-  src/core/lib/transport/bdp_estimator.c
-  src/core/lib/transport/byte_stream.c
-  src/core/lib/transport/connectivity_state.c
-  src/core/lib/transport/error_utils.c
-  src/core/lib/transport/metadata.c
-  src/core/lib/transport/metadata_batch.c
-  src/core/lib/transport/pid_controller.c
-  src/core/lib/transport/service_config.c
-  src/core/lib/transport/static_metadata.c
-  src/core/lib/transport/status_conversion.c
-  src/core/lib/transport/timeout_encoding.c
-  src/core/lib/transport/transport.c
-  src/core/lib/transport/transport_op_string.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -2393,7 +2316,6 @@ target_link_libraries(grpc++
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
-  gpr
 )
 
 foreach(_hdr
@@ -2490,16 +2412,6 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/byte_buffer.h
-  include/grpc/byte_buffer_reader.h
-  include/grpc/compression.h
-  include/grpc/grpc.h
-  include/grpc/grpc_posix.h
-  include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
-  include/grpc/slice.h
-  include/grpc/slice_buffer.h
-  include/grpc/status.h
   include/grpc++/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
 )
@@ -2558,6 +2470,34 @@ add_library(grpc++_cronet
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
+  src/cpp/codegen/codegen_init.cc
+  src/core/ext/transport/chttp2/client/insecure/channel_create.c
+  src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
+  src/core/ext/transport/chttp2/transport/bin_decoder.c
+  src/core/ext/transport/chttp2/transport/bin_encoder.c
+  src/core/ext/transport/chttp2/transport/chttp2_plugin.c
+  src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/frame_data.c
+  src/core/ext/transport/chttp2/transport/frame_goaway.c
+  src/core/ext/transport/chttp2/transport/frame_ping.c
+  src/core/ext/transport/chttp2/transport/frame_rst_stream.c
+  src/core/ext/transport/chttp2/transport/frame_settings.c
+  src/core/ext/transport/chttp2/transport/frame_window_update.c
+  src/core/ext/transport/chttp2/transport/hpack_encoder.c
+  src/core/ext/transport/chttp2/transport/hpack_parser.c
+  src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/http2_settings.c
+  src/core/ext/transport/chttp2/transport/huffsyms.c
+  src/core/ext/transport/chttp2/transport/incoming_metadata.c
+  src/core/ext/transport/chttp2/transport/parsing.c
+  src/core/ext/transport/chttp2/transport/stream_lists.c
+  src/core/ext/transport/chttp2/transport/stream_map.c
+  src/core/ext/transport/chttp2/transport/varint.c
+  src/core/ext/transport/chttp2/transport/writing.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -2567,7 +2507,6 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2578,9 +2517,14 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
+  src/core/lib/iomgr/ev_epoll1_linux.c
+  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
+  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
+  src/core/lib/iomgr/ev_epollex_linux.c
+  src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
+  src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
   src/core/lib/iomgr/iocp_windows.c
@@ -2588,6 +2532,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/is_epollexclusive_available.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/lockfree_event.c
   src/core/lib/iomgr/network_status_tracker.c
@@ -2624,6 +2569,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/time_averaged_stats.c
   src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_manager.c
   src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
@@ -2678,34 +2624,7 @@ add_library(grpc++_cronet
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
-  src/cpp/codegen/codegen_init.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create.c
-  src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
-  src/core/ext/transport/chttp2/client/chttp2_connector.c
-  src/core/ext/transport/chttp2/transport/bin_decoder.c
-  src/core/ext/transport/chttp2/transport/bin_encoder.c
-  src/core/ext/transport/chttp2/transport/chttp2_plugin.c
-  src/core/ext/transport/chttp2/transport/chttp2_transport.c
-  src/core/ext/transport/chttp2/transport/frame_data.c
-  src/core/ext/transport/chttp2/transport/frame_goaway.c
-  src/core/ext/transport/chttp2/transport/frame_ping.c
-  src/core/ext/transport/chttp2/transport/frame_rst_stream.c
-  src/core/ext/transport/chttp2/transport/frame_settings.c
-  src/core/ext/transport/chttp2/transport/frame_window_update.c
-  src/core/ext/transport/chttp2/transport/hpack_encoder.c
-  src/core/ext/transport/chttp2/transport/hpack_parser.c
-  src/core/ext/transport/chttp2/transport/hpack_table.c
-  src/core/ext/transport/chttp2/transport/http2_settings.c
-  src/core/ext/transport/chttp2/transport/huffsyms.c
-  src/core/ext/transport/chttp2/transport/incoming_metadata.c
-  src/core/ext/transport/chttp2/transport/parsing.c
-  src/core/ext/transport/chttp2/transport/stream_lists.c
-  src/core/ext/transport/chttp2/transport/stream_map.c
-  src/core/ext/transport/chttp2/transport/varint.c
-  src/core/ext/transport/chttp2/transport/writing.c
+  src/core/lib/debug/trace.c
   src/core/ext/transport/chttp2/alpn/alpn.c
   src/core/ext/filters/http/client/http_client_filter.c
   src/core/ext/filters/http/http_filters_plugin.c
@@ -2787,6 +2706,7 @@ target_link_libraries(grpc++_cronet
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_cronet
+  grpc
 )
 
 foreach(_hdr
@@ -2893,6 +2813,7 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -3328,126 +3249,6 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
-  src/core/lib/channel/channel_args.c
-  src/core/lib/channel/channel_stack.c
-  src/core/lib/channel/channel_stack_builder.c
-  src/core/lib/channel/connected_channel.c
-  src/core/lib/channel/handshaker.c
-  src/core/lib/channel/handshaker_factory.c
-  src/core/lib/channel/handshaker_registry.c
-  src/core/lib/compression/compression.c
-  src/core/lib/compression/message_compress.c
-  src/core/lib/debug/trace.c
-  src/core/lib/http/format_request.c
-  src/core/lib/http/httpcli.c
-  src/core/lib/http/parser.c
-  src/core/lib/iomgr/closure.c
-  src/core/lib/iomgr/combiner.c
-  src/core/lib/iomgr/endpoint.c
-  src/core/lib/iomgr/endpoint_pair_posix.c
-  src/core/lib/iomgr/endpoint_pair_uv.c
-  src/core/lib/iomgr/endpoint_pair_windows.c
-  src/core/lib/iomgr/error.c
-  src/core/lib/iomgr/ev_epoll_linux.c
-  src/core/lib/iomgr/ev_poll_posix.c
-  src/core/lib/iomgr/ev_posix.c
-  src/core/lib/iomgr/exec_ctx.c
-  src/core/lib/iomgr/executor.c
-  src/core/lib/iomgr/iocp_windows.c
-  src/core/lib/iomgr/iomgr.c
-  src/core/lib/iomgr/iomgr_posix.c
-  src/core/lib/iomgr/iomgr_uv.c
-  src/core/lib/iomgr/iomgr_windows.c
-  src/core/lib/iomgr/load_file.c
-  src/core/lib/iomgr/lockfree_event.c
-  src/core/lib/iomgr/network_status_tracker.c
-  src/core/lib/iomgr/polling_entity.c
-  src/core/lib/iomgr/pollset_set_uv.c
-  src/core/lib/iomgr/pollset_set_windows.c
-  src/core/lib/iomgr/pollset_uv.c
-  src/core/lib/iomgr/pollset_windows.c
-  src/core/lib/iomgr/resolve_address_posix.c
-  src/core/lib/iomgr/resolve_address_uv.c
-  src/core/lib/iomgr/resolve_address_windows.c
-  src/core/lib/iomgr/resource_quota.c
-  src/core/lib/iomgr/sockaddr_utils.c
-  src/core/lib/iomgr/socket_factory_posix.c
-  src/core/lib/iomgr/socket_mutator.c
-  src/core/lib/iomgr/socket_utils_common_posix.c
-  src/core/lib/iomgr/socket_utils_linux.c
-  src/core/lib/iomgr/socket_utils_posix.c
-  src/core/lib/iomgr/socket_utils_uv.c
-  src/core/lib/iomgr/socket_utils_windows.c
-  src/core/lib/iomgr/socket_windows.c
-  src/core/lib/iomgr/tcp_client_posix.c
-  src/core/lib/iomgr/tcp_client_uv.c
-  src/core/lib/iomgr/tcp_client_windows.c
-  src/core/lib/iomgr/tcp_posix.c
-  src/core/lib/iomgr/tcp_server_posix.c
-  src/core/lib/iomgr/tcp_server_utils_posix_common.c
-  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c
-  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c
-  src/core/lib/iomgr/tcp_server_uv.c
-  src/core/lib/iomgr/tcp_server_windows.c
-  src/core/lib/iomgr/tcp_uv.c
-  src/core/lib/iomgr/tcp_windows.c
-  src/core/lib/iomgr/time_averaged_stats.c
-  src/core/lib/iomgr/timer_generic.c
-  src/core/lib/iomgr/timer_heap.c
-  src/core/lib/iomgr/timer_uv.c
-  src/core/lib/iomgr/udp_server.c
-  src/core/lib/iomgr/unix_sockets_posix.c
-  src/core/lib/iomgr/unix_sockets_posix_noop.c
-  src/core/lib/iomgr/wakeup_fd_cv.c
-  src/core/lib/iomgr/wakeup_fd_eventfd.c
-  src/core/lib/iomgr/wakeup_fd_nospecial.c
-  src/core/lib/iomgr/wakeup_fd_pipe.c
-  src/core/lib/iomgr/wakeup_fd_posix.c
-  src/core/lib/iomgr/workqueue_uv.c
-  src/core/lib/iomgr/workqueue_windows.c
-  src/core/lib/json/json.c
-  src/core/lib/json/json_reader.c
-  src/core/lib/json/json_string.c
-  src/core/lib/json/json_writer.c
-  src/core/lib/slice/b64.c
-  src/core/lib/slice/percent_encoding.c
-  src/core/lib/slice/slice.c
-  src/core/lib/slice/slice_buffer.c
-  src/core/lib/slice/slice_hash_table.c
-  src/core/lib/slice/slice_intern.c
-  src/core/lib/slice/slice_string_helpers.c
-  src/core/lib/surface/alarm.c
-  src/core/lib/surface/api_trace.c
-  src/core/lib/surface/byte_buffer.c
-  src/core/lib/surface/byte_buffer_reader.c
-  src/core/lib/surface/call.c
-  src/core/lib/surface/call_details.c
-  src/core/lib/surface/call_log_batch.c
-  src/core/lib/surface/channel.c
-  src/core/lib/surface/channel_init.c
-  src/core/lib/surface/channel_ping.c
-  src/core/lib/surface/channel_stack_type.c
-  src/core/lib/surface/completion_queue.c
-  src/core/lib/surface/completion_queue_factory.c
-  src/core/lib/surface/event_string.c
-  src/core/lib/surface/lame_client.cc
-  src/core/lib/surface/metadata_array.c
-  src/core/lib/surface/server.c
-  src/core/lib/surface/validate_metadata.c
-  src/core/lib/surface/version.c
-  src/core/lib/transport/bdp_estimator.c
-  src/core/lib/transport/byte_stream.c
-  src/core/lib/transport/connectivity_state.c
-  src/core/lib/transport/error_utils.c
-  src/core/lib/transport/metadata.c
-  src/core/lib/transport/metadata_batch.c
-  src/core/lib/transport/pid_controller.c
-  src/core/lib/transport/service_config.c
-  src/core/lib/transport/static_metadata.c
-  src/core/lib/transport/status_conversion.c
-  src/core/lib/transport/timeout_encoding.c
-  src/core/lib/transport/transport.c
-  src/core/lib/transport/transport_op_string.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -3488,6 +3289,7 @@ target_link_libraries(grpc++_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_unsecure
+  grpc
 )
 
 foreach(_hdr
@@ -3584,16 +3386,6 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/byte_buffer.h
-  include/grpc/byte_buffer_reader.h
-  include/grpc/compression.h
-  include/grpc/grpc.h
-  include/grpc/grpc_posix.h
-  include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
-  include/grpc/slice.h
-  include/grpc/slice_buffer.h
-  include/grpc/status.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -4535,6 +4327,7 @@ add_library(end2end_tests
   test/core/end2end/tests/simple_request.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
+  test/core/end2end/tests/workaround_cronet_compression.c
   test/core/end2end/tests/write_buffering.c
   test/core/end2end/tests/write_buffering_at_end.c
 )
@@ -4632,6 +4425,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/simple_request.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
+  test/core/end2end/tests/workaround_cronet_compression.c
   test/core/end2end/tests/write_buffering.c
   test/core/end2end/tests/write_buffering_at_end.c
 )
@@ -5101,6 +4895,42 @@ target_link_libraries(channel_create_test
 )
 
 endif (gRPC_BUILD_TESTS)
+
+add_executable(check_epollexclusive
+  test/build/check_epollexclusive.c
+)
+
+
+target_include_directories(check_epollexclusive
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(check_epollexclusive
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
+)
+
+
+if (gRPC_INSTALL)
+  install(TARGETS check_epollexclusive EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
+
 if (gRPC_BUILD_TESTS)
 
 add_executable(chttp2_hpack_encoder_test
@@ -5478,12 +5308,12 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
-add_executable(ev_epoll_linux_test
-  test/core/iomgr/ev_epoll_linux_test.c
+add_executable(ev_epollsig_linux_test
+  test/core/iomgr/ev_epollsig_linux_test.c
 )
 
 
-target_include_directories(ev_epoll_linux_test
+target_include_directories(ev_epollsig_linux_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
@@ -5498,7 +5328,7 @@ target_include_directories(ev_epoll_linux_test
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
 )
 
-target_link_libraries(ev_epoll_linux_test
+target_link_libraries(ev_epollsig_linux_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -13081,6 +12911,38 @@ target_link_libraries(h2_full+trace_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(h2_full+workarounds_test
+  test/core/end2end/fixtures/h2_full+workarounds.c
+)
+
+
+target_include_directories(h2_full+workarounds_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(h2_full+workarounds_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(h2_http_proxy_test
   test/core/end2end/fixtures/h2_http_proxy.c
 )
@@ -13620,6 +13482,38 @@ target_include_directories(h2_full+trace_nosec_test
 )
 
 target_link_libraries(h2_full+trace_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_nosec_tests
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(h2_full+workarounds_nosec_test
+  test/core/end2end/fixtures/h2_full+workarounds.c
+)
+
+
+target_include_directories(h2_full+workarounds_nosec_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(h2_full+workarounds_nosec_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure

@@ -36,6 +36,7 @@
 
 #include <grpc/slice_buffer.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 
@@ -50,7 +51,7 @@ typedef grpc_lb_v1_LoadBalanceRequest grpc_grpclb_request;
 typedef grpc_lb_v1_InitialLoadBalanceResponse grpc_grpclb_initial_response;
 typedef grpc_lb_v1_Server grpc_grpclb_server;
 typedef grpc_lb_v1_Duration grpc_grpclb_duration;
-typedef struct grpc_grpclb_serverlist {
+typedef struct {
   grpc_grpclb_server **servers;
   size_t num_servers;
   grpc_grpclb_duration expiration_interval;
@@ -58,6 +59,8 @@ typedef struct grpc_grpclb_serverlist {
 
 /** Create a request for a gRPC LB service under \a lb_service_name */
 grpc_grpclb_request *grpc_grpclb_request_create(const char *lb_service_name);
+grpc_grpclb_request *grpc_grpclb_load_report_request_create(
+    grpc_grpclb_client_stats *client_stats);
 
 /** Protocol Buffers v3-encode \a request */
 grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request);
@@ -92,6 +95,9 @@ void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist *serverlist);
  * < 0 if \a lhs represents a duration shorter than \a rhs and > 0 otherwise */
 int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
                                  const grpc_grpclb_duration *rhs);
+
+gpr_timespec grpc_grpclb_duration_to_timespec(
+    grpc_grpclb_duration *duration_pb);
 
 /** Destroy \a initial_response */
 void grpc_grpclb_initial_response_destroy(

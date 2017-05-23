@@ -151,7 +151,7 @@ static void test_subscribe_with_failure_then_destroy(void) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  grpc_connectivity_state_trace = 1;
+  grpc_connectivity_state_trace.value = 1;
   test_connectivity_state_name();
   test_check();
   test_subscribe_then_unsubscribe();

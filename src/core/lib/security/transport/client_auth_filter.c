@@ -253,7 +253,7 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
   grpc_linked_mdelem *l;
   grpc_client_security_context *sec_ctx = NULL;
 
-  if (calld->security_context_set == 0 && !op->cancel_stream) {
+  if (!op->cancel_stream && calld->security_context_set == 0) {
     calld->security_context_set = 1;
     GPR_ASSERT(op->payload->context != NULL);
     if (op->payload->context[GRPC_CONTEXT_SECURITY].value == NULL) {

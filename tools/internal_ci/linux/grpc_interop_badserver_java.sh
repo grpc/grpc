@@ -35,7 +35,8 @@ export LANG=en_US.UTF-8
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-git submodule update --init
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+source tools/internal_ci/helper_scripts/prepare_build_interop_rc
 
-tools/run_tests/run_interop_tests.py -l java --use_docker --http2_server_interop $@
+tools/run_tests/run_interop_tests.py -l java --use_docker --http2_server_interop
 

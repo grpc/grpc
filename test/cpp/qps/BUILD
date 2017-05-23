@@ -29,14 +29,17 @@
 
 licenses(["notice"])  # 3-clause BSD
 
-cc_library(
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary")
+
+grpc_cc_library(
     name = "parse_json",
     srcs = ["parse_json.cc"],
     hdrs = ["parse_json.h"],
     deps = ["//:grpc++"],
+    external_deps = ["protobuf"],
 )
 
-cc_library(
+grpc_cc_library(
     name = "qps_worker_impl",
     srcs = [
         "client_async.cc",
@@ -56,7 +59,6 @@ cc_library(
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
-        "//external:gtest",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",
         "//src/proto/grpc/testing:services_proto",
@@ -65,9 +67,12 @@ cc_library(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    external_deps = [
+        "gtest",
+    ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "driver_impl",
     srcs = [
         "driver.cc",
@@ -90,7 +95,7 @@ cc_library(
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "benchmark_config",
     srcs = [
         "benchmark_config.cc",
@@ -102,12 +107,14 @@ cc_library(
         ":driver_impl",
         ":histogram",
         "//:grpc++",
-        "//external:gflags",
         "//src/proto/grpc/testing:control_proto",
+    ],
+    external_deps = [
+        "gflags",
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "histogram",
     hdrs = [
         "histogram.h",
@@ -116,13 +123,13 @@ cc_library(
     deps = ["//:gpr"],
 )
 
-cc_library(
+grpc_cc_library(
     name = "interarrival",
     hdrs = ["interarrival.h"],
     deps = ["//:grpc++"],
 )
 
-cc_binary(
+grpc_cc_binary(
     name = "json_run_localhost",
     srcs = ["json_run_localhost.cc"],
     deps = [
@@ -133,7 +140,7 @@ cc_binary(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "qps_interarrival_test",
     srcs = ["qps_interarrival_test.cc"],
     deps = [
@@ -142,18 +149,20 @@ cc_test(
     ],
 )
 
-cc_binary(
+grpc_cc_binary(
     name = "qps_json_driver",
     srcs = ["qps_json_driver.cc"],
     deps = [
         ":benchmark_config",
         ":driver_impl",
         "//:grpc++",
-        "//external:gflags",
+    ],
+    external_deps = [
+        "gflags",
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
     deps = [
@@ -163,7 +172,7 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "secure_sync_unary_ping_pong_test",
     srcs = ["secure_sync_unary_ping_pong_test.cc"],
     deps = [
@@ -173,14 +182,14 @@ cc_test(
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "usage_timer",
     srcs = ["usage_timer.cc"],
     hdrs = ["usage_timer.h"],
     deps = ["//:gpr"],
 )
 
-cc_binary(
+grpc_cc_binary(
     name = "qps_worker",
     srcs = ["worker.cc"],
     deps = [

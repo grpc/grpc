@@ -42,14 +42,14 @@
 #include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+
+#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -130,22 +130,10 @@ class RoundRobinEnd2endTest : public ::testing::Test {
     int port_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
-    std::unique_ptr<std::thread> thread_;
 
     explicit ServerData(const grpc::string& server_host) {
       port_ = grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting server on port %d", port_);
-      std::mutex mu;
-      std::condition_variable cond;
-      thread_.reset(new std::thread(
-          std::bind(&ServerData::Start, this, server_host, &mu, &cond)));
-      std::unique_lock<std::mutex> lock(mu);
-      cond.wait(lock);
-      gpr_log(GPR_INFO, "server startup complete");
-    }
-
-    void Start(const grpc::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -153,18 +141,13 @@ class RoundRobinEnd2endTest : public ::testing::Test {
                                InsecureServerCredentials());
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
-      std::lock_guard<std::mutex> lock(*mu);
-      cond->notify_one();
+      gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Shutdown() {
-      server_->Shutdown();
-      thread_->join();
-    }
+    void Shutdown() { server_->Shutdown(); }
   };
 
   const grpc::string server_host_;
-  CompletionQueue cli_cq_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;
@@ -196,10 +179,13 @@ TEST_F(RoundRobinEnd2endTest, RoundRobin) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   ResetStub(true /* round_robin */);
-  SendRpc(kNumServers);
-  // One request should have gone to each server.
+  // Send one RPC per backend and make sure they are used in order.
+  // Note: This relies on the fact that the subchannels are reported in
+  // state READY in the order in which the addresses are specified,
+  // which is only true because the backends are all local.
   for (size_t i = 0; i < servers_.size(); ++i) {
-    EXPECT_EQ(1, servers_[i]->service_.request_count());
+    SendRpc(1);
+    EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());

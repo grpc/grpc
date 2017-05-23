@@ -60,23 +60,26 @@ class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
 
-/// Models a gRPC server.
+/// Represents a gRPC server.
 ///
-/// Servers are configured and started via \a grpc::ServerBuilder.
+/// Use a \a grpc::ServerBuilder to create, configure, and start
+/// \a Server instances.
 class Server final : public ServerInterface, private GrpcLibraryCodegen {
  public:
   ~Server();
 
-  /// Block waiting for all work to complete.
+  /// Block until the server shuts down.
   ///
   /// \warning The server must be either shutting down or some other thread must
   /// call \a Shutdown for this function to ever return.
   void Wait() override;
 
-  /// Global Callbacks
-  ///
-  /// Can be set exactly once per application to install hooks whenever
-  /// a server event occurs
+  /// Global callbacks are a set of hooks that are called when server
+  /// events occur.  \a SetGlobalCallbacks method is used to register
+  /// the hooks with gRPC.  Note that
+  /// the \a GlobalCallbacks instance will be shared among all
+  /// \a Server instances in an application and can be set exactly
+  /// once per application.
   class GlobalCallbacks {
    public:
     virtual ~GlobalCallbacks() {}
@@ -92,12 +95,14 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
     virtual void AddPort(Server* server, const grpc::string& addr,
                          ServerCredentials* creds, int port) {}
   };
-  /// Set the global callback object. Can only be called once. Does not take
-  /// ownership of callbacks, and expects the pointed to object to be alive
-  /// until all server objects in the process have been destroyed.
+  /// Set the global callback object. Can only be called once per application.
+  /// Does not take ownership of callbacks, and expects the pointed to object
+  /// to be alive until all server objects in the process have been destroyed.
+  /// The same \a GlobalCallbacks object will be used throughout the
+  /// application and is shared among all \a Server objects.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
-  // Returns a \em raw pointer to the underlying grpc_server instance.
+  // Returns a \em raw pointer to the underlying \a grpc_server instance.
   grpc_server* c_server();
 
   /// Returns the health check service.
@@ -158,17 +163,19 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// service. The service must exist for the lifetime of the Server instance.
   void RegisterAsyncGenericService(AsyncGenericService* service) override;
 
-  /// Tries to bind \a server to the given \a addr.
+  /// Try binding the server to the given \a addr endpoint
+  /// (port, and optionally including IP address to bind to).
   ///
-  /// It can be invoked multiple times.
+  /// It can be invoked multiple times. Should be used before
+  /// starting the server.
   ///
   /// \param addr The address to try to bind to the server (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.).
   /// \params creds The credentials associated with the server.
   ///
-  /// \return bound port number on sucess, 0 on failure.
+  /// \return bound port number on success, 0 on failure.
   ///
-  /// \warning It's an error to call this method on an already started server.
+  /// \warning It is an error to call this method on an already started server.
   int AddListeningPort(const grpc::string& addr,
                        ServerCredentials* creds) override;
 
@@ -194,13 +201,14 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
 
   const int max_receive_message_size_;
 
-  /// The following completion queues are ONLY used in case of Sync API i.e if
-  /// the server has any services with sync methods. The server uses these
-  /// completion queues to poll for new RPCs
+  /// The following completion queues are ONLY used in case of Sync API
+  /// i.e. if the server has any services with sync methods. The server uses
+  /// these completion queues to poll for new RPCs
   std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
       sync_server_cqs_;
 
-  /// List of ThreadManager instances (one for each cq in the sync_server_cqs)
+  /// List of \a ThreadManager instances (one for each cq in
+  /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
   // Sever status

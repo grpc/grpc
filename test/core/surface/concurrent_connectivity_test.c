@@ -112,7 +112,9 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *vargs, grpc_endpoint *tcp,
   grpc_endpoint_shutdown(exec_ctx, tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(exec_ctx, tcp);
+  gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
+  gpr_mu_unlock(args->mu);
 }
 
 void bad_server_thread(void *vargs) {
@@ -162,7 +164,7 @@ void bad_server_thread(void *vargs) {
 
 static void done_pollset_shutdown(grpc_exec_ctx *exec_ctx, void *pollset,
                                   grpc_error *error) {
-  grpc_pollset_destroy(pollset);
+  grpc_pollset_destroy(exec_ctx, pollset);
   gpr_free(pollset);
 }
 

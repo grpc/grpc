@@ -45,7 +45,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 #include <grpc++/test/mock_stream.h>
 
@@ -54,6 +53,8 @@
 #include "src/proto/grpc/testing/echo_mock.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#include <gtest/gtest.h>
 
 #include <iostream>
 

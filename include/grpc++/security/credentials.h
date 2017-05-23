@@ -151,7 +151,7 @@ std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
 /// json_key is the JSON key string containing the client's private key.
 /// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 /// (JWT) created with this credentials. It should not exceed
-/// grpc_max_auth_token_lifetime or will be cropped to this value.
+/// \a grpc_max_auth_token_lifetime or will be cropped to this value.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key, long token_lifetime_seconds);
 
@@ -204,23 +204,23 @@ std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
 /// Credentials for a channel using Cronet.
 std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
 
-// User defined metadata credentials.
+/// User defined metadata credentials.
 class MetadataCredentialsPlugin {
  public:
   virtual ~MetadataCredentialsPlugin() {}
 
-  // If this method returns true, the Process function will be scheduled in
-  // a different thread from the one processing the call.
+  /// If this method returns true, the Process function will be scheduled in
+  /// a different thread from the one processing the call.
   virtual bool IsBlocking() const { return true; }
 
-  // Type of credentials this plugin is implementing.
+  /// Type of credentials this plugin is implementing.
   virtual const char* GetType() const { return ""; }
 
-  // Gets the auth metatada produced by this plugin.
-  // The fully qualified method name is:
-  // service_url + "/" + method_name.
-  // The channel_auth_context contains (among other things), the identity of
-  // the server.
+  /// Gets the auth metatada produced by this plugin.
+  /// The fully qualified method name is:
+  /// service_url + "/" + method_name.
+  /// The channel_auth_context contains (among other things), the identity of
+  /// the server.
   virtual Status GetMetadata(
       grpc::string_ref service_url, grpc::string_ref method_name,
       const AuthContext& channel_auth_context,

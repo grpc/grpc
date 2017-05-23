@@ -36,35 +36,26 @@ set DOTNET=dotnet
 
 set -ex
 
-mkdir -p ..\..\artifacts\
+mkdir ..\..\artifacts
 
 @rem Collect the artifacts built by the previous build step if running on Jenkins
-@rem TODO(jtattermusch): is there a better way to do this?
-xcopy /Y /I ..\..\architecture=x86,language=csharp,platform=windows\artifacts\* nativelibs\windows_x86\
-xcopy /Y /I ..\..\architecture=x64,language=csharp,platform=windows\artifacts\* nativelibs\windows_x64\
-xcopy /Y /I ..\..\architecture=x86,language=csharp,platform=linux\artifacts\* nativelibs\linux_x86\
-xcopy /Y /I ..\..\architecture=x64,language=csharp,platform=linux\artifacts\* nativelibs\linux_x64\
-xcopy /Y /I ..\..\architecture=x86,language=csharp,platform=macos\artifacts\* nativelibs\macosx_x86\
-xcopy /Y /I ..\..\architecture=x64,language=csharp,platform=macos\artifacts\* nativelibs\macosx_x64\
+mkdir nativelibs
+powershell -Command "cp -r ..\..\platform=*\artifacts\csharp_ext_* nativelibs"
 
 @rem Collect protoc artifacts built by the previous build step
-xcopy /Y /I ..\..\architecture=x86,language=protoc,platform=windows\artifacts\* protoc_plugins\windows_x86\
-xcopy /Y /I ..\..\architecture=x64,language=protoc,platform=windows\artifacts\* protoc_plugins\windows_x64\
-xcopy /Y /I ..\..\architecture=x86,language=protoc,platform=linux\artifacts\* protoc_plugins\linux_x86\
-xcopy /Y /I ..\..\architecture=x64,language=protoc,platform=linux\artifacts\* protoc_plugins\linux_x64\
-xcopy /Y /I ..\..\architecture=x86,language=protoc,platform=macos\artifacts\* protoc_plugins\macosx_x86\
-xcopy /Y /I ..\..\architecture=x64,language=protoc,platform=macos\artifacts\* protoc_plugins\macosx_x64\
+mkdir protoc_plugins
+powershell -Command "cp -r ..\..\platform=*\artifacts\protoc_* protoc_plugins"
 
 %DOTNET% restore Grpc.sln || goto :error
 
 @rem To be able to build, we also need to put grpc_csharp_ext to its normal location
-xcopy /Y /I nativelibs\windows_x64\grpc_csharp_ext.dll ..\..\cmake\build\x64\Release\
+xcopy /Y /I nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.dll ..\..\cmake\build\x64\Release\
 
-%DOTNET% pack --configuration Release Grpc.Core --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release Grpc.Core.Testing --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release Grpc.Auth --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release Grpc.HealthCheck --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release Grpc.Reflection --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release --include-symbols --include-source Grpc.Core --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release --include-symbols --include-source Grpc.Core.Testing --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release --include-symbols --include-source Grpc.Auth --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release --include-symbols --include-source Grpc.HealthCheck --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release --include-symbols --include-source Grpc.Reflection --output ..\..\..\artifacts || goto :error
 
 %NUGET% pack Grpc.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts || goto :error
 %NUGET% pack Grpc.Tools.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts

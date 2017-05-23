@@ -94,6 +94,7 @@ static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
   GetReporter()->ReportLatency(*result);
   GetReporter()->ReportTimes(*result);
   GetReporter()->ReportCpuUsage(*result);
+  GetReporter()->ReportPollCount(*result);
 
   for (int i = 0; *success && i < result->client_success_size(); i++) {
     *success = result->client_success(i);

@@ -38,7 +38,7 @@ cd $(dirname $0)/../../..
 
 rm -rf build || true
 
-mkdir -p artifacts
+mkdir -p "${ARTIFACTS_OUT}"
 
 npm update
 
@@ -48,12 +48,12 @@ electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 )
 
 for version in ${node_versions[@]}
 do
-  ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH
-  cp -r build/stage/* artifacts/
+  ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH --grpc_alpine=true
+  cp -r build/stage/* "${ARTIFACTS_OUT}"/
 done
 
 for version in ${electron_versions[@]}
 do
   HOME=~/.electron-gyp ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --runtime=electron --target=$version --target_arch=$NODE_TARGET_ARCH --disturl=https://atom.io/download/electron
-  cp -r build/stage/* artifacts/
+  cp -r build/stage/* "${ARTIFACTS_OUT}"/
 done

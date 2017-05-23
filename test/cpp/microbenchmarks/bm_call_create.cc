@@ -563,7 +563,8 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   }
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  size_t channel_size = grpc_channel_stack_size(&filters[0], filters.size());
+  size_t channel_size = grpc_channel_stack_size(
+      filters.size() == 0 ? NULL : &filters[0], filters.size());
   grpc_channel_stack *channel_stack =
       static_cast<grpc_channel_stack *>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(

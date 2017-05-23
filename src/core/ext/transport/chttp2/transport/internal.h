@@ -552,9 +552,14 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_transport *t,
                                 bool covered_by_poller, const char *reason);
 
-/** Someone is unlocking the transport mutex: check to see if writes
-    are required, and frame them if so */
-bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
+typedef enum {
+  GRPC_CHTTP2_NOTHING_TO_WRITE,
+  GRPC_CHTTP2_PARTIAL_WRITE,
+  GRPC_CHTTP2_FULL_WRITE,
+} grpc_chttp2_begin_write_result;
+
+grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
 void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            grpc_error *error);
 
@@ -629,13 +634,13 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-extern int grpc_http_trace;
-extern int grpc_flowctl_trace;
+extern grpc_tracer_flag grpc_http_trace;
+extern grpc_tracer_flag grpc_flowctl_trace;
 
-#define GRPC_CHTTP2_IF_TRACING(stmt) \
-  if (!(grpc_http_trace))            \
-    ;                                \
-  else                               \
+#define GRPC_CHTTP2_IF_TRACING(stmt)      \
+  if (!(GRPC_TRACER_ON(grpc_http_trace))) \
+    ;                                     \
+  else                                    \
   stmt
 
 typedef enum {
@@ -648,7 +653,7 @@ typedef enum {
                                      dst_var, src_context, src_var)           \
   do {                                                                        \
     assert(id1 == id2);                                                       \
-    if (grpc_flowctl_trace) {                                                 \
+    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                 \
       grpc_chttp2_flowctl_trace(                                              \
           __FILE__, __LINE__, phase, GRPC_CHTTP2_FLOWCTL_MOVE, #dst_context,  \
           #dst_var, #src_context, #src_var, transport->is_client, id1,        \
@@ -671,7 +676,7 @@ typedef enum {
 #define GRPC_CHTTP2_FLOW_CREDIT_COMMON(phase, transport, id, dst_context,      \
                                        dst_var, amount)                        \
   do {                                                                         \
-    if (grpc_flowctl_trace) {                                                  \
+    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                  \
       grpc_chttp2_flowctl_trace(__FILE__, __LINE__, phase,                     \
                                 GRPC_CHTTP2_FLOWCTL_CREDIT, #dst_context,      \
                                 #dst_var, NULL, #amount, transport->is_client, \
@@ -729,7 +734,7 @@ typedef enum {
 #define GRPC_CHTTP2_FLOW_DEBIT_COMMON(phase, transport, id, dst_context,       \
                                       dst_var, amount)                         \
   do {                                                                         \
-    if (grpc_flowctl_trace) {                                                  \
+    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                  \
       grpc_chttp2_flowctl_trace(__FILE__, __LINE__, phase,                     \
                                 GRPC_CHTTP2_FLOWCTL_DEBIT, #dst_context,       \
                                 #dst_var, NULL, #amount, transport->is_client, \
@@ -815,7 +820,7 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 /** Add a new ping strike to ping_recv_state.ping_strikes. If
     ping_recv_state.ping_strikes > ping_policy.max_ping_strikes, it sends GOAWAY
     with error code ENHANCE_YOUR_CALM and additional debug data resembling
-    “too_many_pings” followed by immediately closing the connection. */
+    "too_many_pings" followed by immediately closing the connection. */
 void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport *t);
 

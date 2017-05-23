@@ -159,7 +159,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// will start to return false and \a AsyncNext will return \a
   /// NextStatus::SHUTDOWN. Only once either one of these methods does that
   /// (that is, once the queue has been \em drained) can an instance of this
-  /// class be destroyed.
+  /// class be destroyed. Also note that applications must ensure that
+  /// no work is enqueued on this completion queue after this method is called.
   void Shutdown();
 
   /// Returns a \em raw pointer to the underlying \a grpc_completion_queue

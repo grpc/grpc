@@ -58,7 +58,7 @@ int gpr_asprintf(char **strp, const char *format, ...) {
 
   /* Allocate a new buffer, with space for the NUL terminator. */
   strp_buflen = (size_t)ret + 1;
-  if ((*strp = gpr_malloc(strp_buflen)) == NULL) {
+  if ((*strp = (char *)gpr_malloc(strp_buflen)) == NULL) {
     /* This shouldn't happen, because gpr_malloc() calls abort(). */
     return -1;
   }

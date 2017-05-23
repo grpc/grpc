@@ -27,9 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-
-from six.moves import urllib
+import urllib
 import jobset
 import logging
 import os
@@ -50,9 +48,9 @@ def start_port_server():
     # otherwise, leave it up
     try:
         version = int(
-            urllib.request.urlopen(
-                'http://localhost:%d/version_number' % _PORT_SERVER_PORT,
-                timeout=10).read())
+            urllib.urlopen(
+                'http://localhost:%d/version_number' %
+                _PORT_SERVER_PORT).read())
         logging.info('detected port server running version %d', version)
         running = True
     except Exception as e:
@@ -69,8 +67,8 @@ def start_port_server():
         running = (version >= current_version)
         if not running:
             logging.info('port_server version mismatch: killing the old one')
-            urllib.request.urlopen('http://localhost:%d/quitquitquit' %
-                                   _PORT_SERVER_PORT).read()
+            urllib.urlopen('http://localhost:%d/quitquitquit' %
+                           _PORT_SERVER_PORT).read()
             time.sleep(1)
     if not running:
         fd, logfile = tempfile.mkstemp()
@@ -109,9 +107,8 @@ def start_port_server():
                 # try one final time: maybe another build managed to start one
                 time.sleep(1)
                 try:
-                    urllib.request.urlopen(
-                        'http://localhost:%d/get' % _PORT_SERVER_PORT,
-                        timeout=1).read()
+                    urllib.urlopen(
+                        'http://localhost:%d/get' % _PORT_SERVER_PORT).read()
                     logging.info(
                         'last ditch attempt to contact port server succeeded')
                     break
@@ -119,18 +116,18 @@ def start_port_server():
                     logging.exception(
                         'final attempt to contact port server failed')
                     port_log = open(logfile, 'r').read()
-                    print(port_log)
+                    print port_log
                     sys.exit(1)
             try:
                 port_server_url = 'http://localhost:%d/get' % _PORT_SERVER_PORT
-                urllib.request.urlopen(port_server_url, timeout=1).read()
+                urllib.urlopen(port_server_url).read()
                 logging.info('port server is up and ready')
                 break
             except socket.timeout:
                 logging.exception('while waiting for port_server')
                 time.sleep(1)
                 waits += 1
-            except urllib.error.URLError:
+            except IOError:
                 logging.exception('while waiting for port_server')
                 time.sleep(1)
                 waits += 1
