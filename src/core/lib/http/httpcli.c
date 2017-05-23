@@ -245,7 +245,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   internal_request *req = arg;
   if (error != GRPC_ERROR_NONE) {
-    finish(exec_ctx, req, error);
+    finish(exec_ctx, req, GRPC_ERROR_REF(error));
     return;
   }
   req->next_address = 0;
