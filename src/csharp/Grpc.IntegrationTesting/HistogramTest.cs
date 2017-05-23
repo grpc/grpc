@@ -73,10 +73,34 @@ namespace Grpc.IntegrationTesting
         {
             var hist = new Histogram(0.01, 60e9);
             hist.AddObservation(-0.5);  // should be in the first bucket
-            hist.AddObservation(1e12);  // should be in the last bucket 
+            hist.AddObservation(1e12);  // should be in the last bucket
 
             var data = hist.GetSnapshot();
             Assert.AreEqual(1, data.Bucket[0]);
+            Assert.AreEqual(1, data.Bucket[data.Bucket.Count - 1]);
+        }
+
+        [Test]
+        public void MergeSnapshots()
+        {
+            var data = new HistogramData();
+
+            var hist1 = new Histogram(0.01, 60e9);
+            hist1.AddObservation(-0.5);  // should be in the first bucket
+            hist1.AddObservation(1e12);  // should be in the last bucket
+            hist1.GetSnapshot(data, false);
+
+            var hist2 = new Histogram(0.01, 60e9);
+            hist2.AddObservation(10000);
+            hist2.AddObservation(11000);
+            hist2.GetSnapshot(data, false);
+
+            Assert.AreEqual(4, data.Count);
+            Assert.AreEqual(-0.5, data.MinSeen);
+            Assert.AreEqual(1e12, data.MaxSeen);
+            Assert.AreEqual(1, data.Bucket[0]);
+            Assert.AreEqual(1, data.Bucket[925]);
+            Assert.AreEqual(1, data.Bucket[935]);
             Assert.AreEqual(1, data.Bucket[data.Bucket.Count - 1]);
         }
 

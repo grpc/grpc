@@ -53,7 +53,7 @@ namespace Grpc.Core.Internal
             return Native.grpcsharp_ssl_server_credentials_create(pemRootCerts,
                                                                   keyCertPairCertChainArray, keyCertPairPrivateKeyArray,
                                                                   new UIntPtr((ulong)keyCertPairCertChainArray.Length),
-                                                                  forceClientAuth);
+                                                                  forceClientAuth ? 1 : 0);
         }
 
         protected override bool ReleaseHandle()

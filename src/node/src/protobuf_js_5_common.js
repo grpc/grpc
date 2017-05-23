@@ -45,8 +45,7 @@ var client = require('./client');
  *     objects. Defaults to true
  * @return {function(Buffer):cls} The deserialization function
  */
-exports.deserializeCls = function deserializeCls(cls, binaryAsBase64,
-                                                 longsAsStrings) {
+exports.deserializeCls = function deserializeCls(cls, options) {
   /**
    * Deserialize a buffer to a message object
    * @param {Buffer} arg_buf The buffer to deserialize
@@ -55,7 +54,8 @@ exports.deserializeCls = function deserializeCls(cls, binaryAsBase64,
   return function deserialize(arg_buf) {
     // Convert to a native object with binary fields as Buffers (first argument)
     // and longs as strings (second argument)
-    return cls.decode(arg_buf).toRaw(binaryAsBase64, longsAsStrings);
+    return cls.decode(arg_buf).toRaw(options.binaryAsBase64,
+                                     options.longsAsStrings);
   };
 };
 
@@ -128,10 +128,10 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
       responseType: method.resolvedResponseType,
       requestSerialize: serializeCls(method.resolvedRequestType.build()),
       requestDeserialize: deserializeCls(method.resolvedRequestType.build(),
-                                         binaryAsBase64, longsAsStrings),
+                                         options),
       responseSerialize: serializeCls(method.resolvedResponseType.build()),
       responseDeserialize: deserializeCls(method.resolvedResponseType.build(),
-                                          binaryAsBase64, longsAsStrings)
+                                          options)
     };
   }));
 };
