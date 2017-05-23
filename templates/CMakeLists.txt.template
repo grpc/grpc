@@ -251,6 +251,9 @@
       endif()
       set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND AND NOT PROTOBUF_FOUND)\n  find_package(Protobuf <%text>${gRPC_PROTOBUF_PACKAGE_TYPE}</%text>)\nendif()")
     endif()
+    if(PROTOBUF_FOUND)
+      include_directories(<%text>${PROTOBUF_INCLUDE_DIRS}</%text>)
+    endif()
     set(PROTOBUF_WELLKNOWN_IMPORT_DIR /usr/local/include)
   endif()
 
