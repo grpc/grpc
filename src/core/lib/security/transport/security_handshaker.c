@@ -227,24 +227,26 @@ static grpc_error *on_handshake_next_done_locked(
     return grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), result);
   }
-  // Send data to peer.
+  // Update handshaker result.
+  if (handshaker_result != NULL) {
+    GPR_ASSERT(h->handshaker_result == NULL);
+    h->handshaker_result = handshaker_result;
+  }
   if (bytes_to_send_size > 0) {
+    // Send data to peer, if needed.
     grpc_slice to_send = grpc_slice_from_copied_buffer(
         (const char *)bytes_to_send, bytes_to_send_size);
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &h->outgoing);
     grpc_slice_buffer_add(&h->outgoing, to_send);
     grpc_endpoint_write(exec_ctx, h->args->endpoint, &h->outgoing,
                         &h->on_handshake_data_sent_to_peer);
-  }
-  // If handshake has completed, check peer and so on. Otherwise, need to read
-  // more data from the peer.
-  if (handshaker_result != NULL) {
-    GPR_ASSERT(h->handshaker_result == NULL);
-    h->handshaker_result = handshaker_result;
-    error = check_peer_locked(exec_ctx, h);
-  } else {
+  } else if (handshaker_result == NULL) {
+    // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(exec_ctx, h->args->endpoint, h->args->read_buffer,
                        &h->on_handshake_data_received_from_peer);
+  } else {
+    // Handshake has finished, check peer and so on.
+    error = check_peer_locked(exec_ctx, h);
   }
   return error;
 }
@@ -345,6 +347,19 @@ static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_mu_unlock(&h->mu);
     security_handshaker_unref(exec_ctx, h);
     return;
+  }
+  // We may be done.
+  if (h->handshaker_result == NULL) {
+    grpc_endpoint_read(exec_ctx, h->args->endpoint, h->args->read_buffer,
+                       &h->on_handshake_data_received_from_peer);
+  } else {
+    error = check_peer_locked(exec_ctx, h);
+    if (error != GRPC_ERROR_NONE) {
+      security_handshake_failed_locked(exec_ctx, h, error);
+      gpr_mu_unlock(&h->mu);
+      security_handshaker_unref(exec_ctx, h);
+      return;
+    }
   }
   gpr_mu_unlock(&h->mu);
 }
