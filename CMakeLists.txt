@@ -285,11 +285,6 @@ if(WIN32 AND MSVC)
   set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
 endif()
 
-find_package(Threads)
-if(Threads_FOUND)
-  set(_gRPC_BASELIB_LIBRARIES ${_gRPC_BASELIB_LIBRARIES} pthread)
-endif()
-
 include(GNUInstallDirs)
 if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
   set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/gRPC")
@@ -3568,6 +3563,7 @@ target_include_directories(grpc_plugin_support
 
 target_link_libraries(grpc_plugin_support
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
