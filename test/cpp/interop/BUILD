@@ -93,5 +93,6 @@ cc_binary(
     ],
     deps = [
         ":client_helper_lib",
+        "//:grpc++",
     ],
 )
