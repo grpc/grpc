@@ -89,8 +89,8 @@ inline bool hm_index_compare(const hm_index *A, const hm_index *B) {
 }
 
 /*
-  Helper functions for iterating over the hash map.
-  */
+ * Helper functions for iterating over the hash map.
+ */
 
 /* On return idx will contain an invalid index which is always equal to
  * hash_map->buckets.size_ */
