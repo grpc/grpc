@@ -38,6 +38,8 @@
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter.h>
 
+#define TEST_TIMEOUT 1
+
 // A mock of a GRXSingleValueHandler block that can be queried for how many times it was called and
 // what were the last values passed to it.
 //
@@ -155,9 +157,14 @@
 #pragma mark BufferedPipe
 
 - (void)testBufferedPipePropagatesValue {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Response received"];
   // Given:
   CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
-  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+    handler.block(value, errorOrNil);
+    [expectation fulfill];
+  }];
+
   id anyValue = @7;
 
   // If:
@@ -166,13 +173,12 @@
   [pipe writeValue:anyValue];
   [pipe writesFinishedWithError:nil];
 
-  // Wait buffered pipe to be flushed.
-  sleep(1);
-
   // Then:
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   XCTAssertEqual(handler.timesCalled, 1);
   XCTAssertEqualObjects(handler.value, anyValue);
   XCTAssertEqualObjects(handler.errorOrNil, nil);
+
 }
 
 - (void)testBufferedPipePropagatesError {
@@ -193,9 +199,13 @@
 }
 
 - (void)testBufferedPipeFinishWriteWhilePaused {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Response received"];
   // Given:
   CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
-  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+    handler.block(value, errorOrNil);
+    [expectation fulfill];
+  }];
   id anyValue = @7;
 
   // If:
@@ -205,9 +215,9 @@
   [pipe writesFinishedWithError:nil];
   // then start the writeable
   [pipe startWithWriteable:writeable];
-  sleep(1);
 
   // Then:
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   XCTAssertEqual(handler.timesCalled, 1);
   XCTAssertEqualObjects(handler.value, anyValue);
   XCTAssertEqualObjects(handler.errorOrNil, nil);
