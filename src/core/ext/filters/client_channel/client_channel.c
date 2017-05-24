@@ -822,11 +822,12 @@ static bool set_call_or_error(call_data *p, call_or_error coe) {
   }
   GPR_ASSERT(existing.subchannel_call == NULL);
   if (coe.error != GRPC_ERROR_NONE) {
-	  GPR_ASSERT(coe.subchannel_call == NULL);
-	  gpr_atm_rel_store(&p->subchannel_call_or_error, 1|(gpr_atm)coe.error);
+    GPR_ASSERT(coe.subchannel_call == NULL);
+    gpr_atm_rel_store(&p->subchannel_call_or_error, 1 | (gpr_atm)coe.error);
   } else {
-     GPR_ASSERT(coe.subchannel_call != NULL);
-     gpr_atm_rel_store(&p->subchannel_call_or_error, (gpr_atm)coe.subchannel_call);
+    GPR_ASSERT(coe.subchannel_call != NULL);
+    gpr_atm_rel_store(&p->subchannel_call_or_error,
+                      (gpr_atm)coe.subchannel_call);
   }
   return true;
 }
@@ -973,7 +974,8 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx, void *arg,
         .context = calld->subchannel_call_context};
     grpc_error *new_error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
-    GPR_ASSERT(set_call_or_error(calld, (call_or_error){.subchannel_call = subchannel_call}));
+    GPR_ASSERT(set_call_or_error(
+        calld, (call_or_error){.subchannel_call = subchannel_call}));
     if (new_error != GRPC_ERROR_NONE) {
       new_error = grpc_error_add_child(new_error, error);
       fail_locked(exec_ctx, calld, new_error);
@@ -1176,7 +1178,7 @@ static void start_transport_stream_op_batch_locked_inner(
       fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
     }
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op,
-                                                      GRPC_ERROR_REF(error));
+                                                       GRPC_ERROR_REF(error));
     /* early out */
     return;
   }
@@ -1201,9 +1203,11 @@ static void start_transport_stream_op_batch_locked_inner(
       if (calld->connected_subchannel == NULL) {
         grpc_error *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Call dropped by load balancing policy");
-	set_call_or_error(calld, (call_or_error){.error = GRPC_ERROR_REF(error)});
+        set_call_or_error(calld,
+                          (call_or_error){.error = GRPC_ERROR_REF(error)});
         fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
-        grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, GRPC_ERROR_REF(error));
+        grpc_transport_stream_op_batch_finish_with_failure(
+            exec_ctx, op, GRPC_ERROR_REF(error));
         return;  // Early out.
       }
     } else {
@@ -1223,7 +1227,8 @@ static void start_transport_stream_op_batch_locked_inner(
         .context = calld->subchannel_call_context};
     grpc_error *error = grpc_connected_subchannel_create_call(
         exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
-    GPR_ASSERT(set_call_or_error(calld, (call_or_error){.subchannel_call = subchannel_call}));
+    GPR_ASSERT(set_call_or_error(
+        calld, (call_or_error){.subchannel_call = subchannel_call}));
     if (error != GRPC_ERROR_NONE) {
       fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
       grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);

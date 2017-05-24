@@ -83,7 +83,7 @@ void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       grpc_lb_addresses_cmp(actual_lb_addresses, expected_lb_addresses) == 0);
   grpc_channel_args_destroy(exec_ctx, res->resolver_result);
   grpc_channel_args_destroy(exec_ctx, res->expected_resolver_result);
-  gpr_event_set(&res->ev, (void*)1);
+  gpr_event_set(&res->ev, (void *)1);
 }
 
 static void test_fake_resolver() {
@@ -126,7 +126,8 @@ static void test_fake_resolver() {
   grpc_resolver_next_locked(&exec_ctx, resolver, &on_res_arg.resolver_result,
                             on_resolution);
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(gpr_event_wait(&on_res_arg.ev, grpc_timeout_seconds_to_deadline(5)) != NULL);
+  GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
+                            grpc_timeout_seconds_to_deadline(5)) != NULL);
 
   // Setup update.
   grpc_uri *uris_update[] = {
@@ -161,7 +162,8 @@ static void test_fake_resolver() {
   grpc_resolver_next_locked(&exec_ctx, resolver,
                             &on_res_arg_update.resolver_result, on_resolution);
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(gpr_event_wait(&on_res_arg_update.ev, grpc_timeout_seconds_to_deadline(5)) != NULL);
+  GPR_ASSERT(gpr_event_wait(&on_res_arg_update.ev,
+                            grpc_timeout_seconds_to_deadline(5)) != NULL);
 
   // Requesting a new resolution without re-senting the response shouldn't
   // trigger the resolution callback.
@@ -169,7 +171,9 @@ static void test_fake_resolver() {
   grpc_resolver_next_locked(&exec_ctx, resolver, &on_res_arg.resolver_result,
                             on_resolution);
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(gpr_event_wait(&on_res_arg.ev, grpc_timeout_milliseconds_to_deadline(100)) == NULL);
+  GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
+                            grpc_timeout_milliseconds_to_deadline(100)) ==
+             NULL);
 
   GRPC_COMBINER_UNREF(&exec_ctx, combiner, "test_fake_resolver");
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_fake_resolver");

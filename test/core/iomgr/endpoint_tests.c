@@ -276,11 +276,13 @@ static void wait_for_fail_count(grpc_exec_ctx *exec_ctx, int *fail_count,
   grpc_exec_ctx_flush(exec_ctx);
   gpr_mu_lock(g_mu);
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
-  while (gpr_time_cmp(gpr_now(deadline.clock_type), deadline) < 0 && *fail_count < want_fail_count) {
+  while (gpr_time_cmp(gpr_now(deadline.clock_type), deadline) < 0 &&
+         *fail_count < want_fail_count) {
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(exec_ctx, g_pollset, &worker, gpr_now(deadline.clock_type), deadline)));
+        grpc_pollset_work(exec_ctx, g_pollset, &worker,
+                          gpr_now(deadline.clock_type), deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(exec_ctx);
     gpr_mu_lock(g_mu);
