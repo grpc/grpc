@@ -114,6 +114,7 @@
 }
 
 - (void)dealloc {
+  gpr_slice_unref(*_op.data.send_message->data.raw.slice_buffer.slices);
   grpc_byte_buffer_destroy(_op.data.send_message.send_message);
 }
 
