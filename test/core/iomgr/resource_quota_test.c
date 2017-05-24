@@ -39,8 +39,23 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
+gpr_mu g_mu;
+gpr_cv g_cv;
+
 static void inc_int_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
+  gpr_mu_lock(&g_mu);
   ++*(int *)a;
+  gpr_cv_signal(&g_cv);
+  gpr_mu_unlock(&g_mu);
+}
+
+static void assert_counter_becomes(int *ctr, int value) {
+  gpr_mu_lock(&g_mu);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  while (*ctr != value) {
+    GPR_ASSERT(!gpr_cv_wait(&g_cv, &g_mu, deadline));
+  }
+  gpr_mu_unlock(&g_mu);
 }
 
 static void set_event_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
@@ -730,7 +745,7 @@ static void test_one_slice(void) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_alloc_slices(&exec_ctx, &alloc, 1024, 1, &buffer);
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(num_allocs == start_allocs + 1);
+    assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
 
   {
@@ -763,7 +778,7 @@ static void test_one_slice_deleted_late(void) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_alloc_slices(&exec_ctx, &alloc, 1024, 1, &buffer);
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(num_allocs == start_allocs + 1);
+    assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
 
   {
@@ -807,7 +822,7 @@ static void test_negative_rq_free_pool(void) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_alloc_slices(&exec_ctx, &alloc, 1024, 1, &buffer);
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(num_allocs == start_allocs + 1);
+    assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
 
   grpc_resource_quota_resize(q, 512);
@@ -833,6 +848,8 @@ static void test_negative_rq_free_pool(void) {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
+  gpr_mu_init(&g_mu);
+  gpr_cv_init(&g_cv);
   test_no_op();
   test_resize_then_destroy();
   test_resource_user_no_op();
@@ -855,6 +872,8 @@ int main(int argc, char **argv) {
   test_one_slice_deleted_late();
   test_resize_to_zero();
   test_negative_rq_free_pool();
+  gpr_mu_destroy(&g_mu);
+  gpr_cv_destroy(&g_cv);
   grpc_shutdown();
   return 0;
 }
