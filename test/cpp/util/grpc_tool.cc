@@ -55,6 +55,9 @@
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 #include "test/cpp/util/service_describer.h"
 
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+
 #if GPR_WINDOWS
 #include <io.h>
 #else
@@ -72,6 +75,9 @@ DEFINE_string(proto_path, ".", "Path to look for the proto file.");
 DEFINE_string(protofiles, "", "Name of the proto file.");
 DEFINE_bool(binary_input, false, "Input in binary format");
 DEFINE_bool(binary_output, false, "Output in binary format");
+DEFINE_bool(
+    repeated, false,
+    "Wrap binary messages into parent protobuf message with tag number 1");
 DEFINE_string(infile, "", "Input file (default is stdin)");
 
 namespace {
@@ -624,6 +630,17 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       if (receive_initial_metadata) {
         PrintMetadata(server_initial_metadata,
                       "Received initial metadata from server:");
+      }
+      if (FLAGS_binary_output && FLAGS_repeated) {
+        std::stringstream output;
+        {
+          google::protobuf::io::OstreamOutputStream ostream(&output);
+          google::protobuf::io::CodedOutputStream stream(&ostream);
+          stream.WriteTag((1 << 3) | 2);
+          stream.WriteVarint32(serialized_response_proto.size());
+          stream.WriteString(serialized_response_proto);
+        }
+        serialized_response_proto = output.str();
       }
       if (!callback(serialized_response_proto)) {
         return false;
