@@ -46,7 +46,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/spinlock.h"
 
-#define MAX_DEPTH 4
+#define MAX_DEPTH 2
 
 typedef struct {
   gpr_mu mu;
