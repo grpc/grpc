@@ -68,7 +68,8 @@ namespace Grpc.Microbenchmarks
         private void ThreadBody(int iterations, int payloadSize)
         {
             // TODO(jtattermusch): parametrize by number of pending completions.
-            // TODO(jtattermusch): parametrize by cached/non-cached BatchContextSafeHandle
+            
+            environment.ThreadPool.BatchContextPools.Value = new SimpleObjectPool<BatchContextSafeHandle>(Thread.CurrentThread, () => BatchContextSafeHandle.Create(), 1000);
 
             var completionRegistry = new CompletionRegistry(environment);
             var cq = CompletionQueueSafeHandle.CreateAsync(completionRegistry);
