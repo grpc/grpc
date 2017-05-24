@@ -68,13 +68,7 @@ typedef struct grpc_ares_request {
   /** closure to call when the request completes */
   grpc_closure *on_done;
   /** the pointer to receive the resolved addresses */
-  union {
-    grpc_resolved_addresses **addrs;
-    grpc_lb_addresses **lb_addrs;
-  } addrs_out;
-  /** if true, the output addresses are in the format of grpc_lb_addresses,
-      otherwise they are in the format of grpc_resolved_addresses */
-  bool lb_addrs_out;
+  grpc_lb_addresses **lb_addrs_out;
   /** the evernt driver used by this request */
   grpc_ares_ev_driver *ev_driver;
   /** number of ongoing queries */
@@ -170,115 +164,60 @@ static void on_hostbyname_done_cb(void *arg, int status, int timeouts,
     GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
     r->success = true;
-    if (r->lb_addrs_out) {
-      grpc_lb_addresses **lb_addresses = r->addrs_out.lb_addrs;
-      if (*lb_addresses == NULL) {
-        *lb_addresses = grpc_lb_addresses_create(0, NULL);
-      }
-      size_t prev_naddr = (*lb_addresses)->num_addresses;
-      size_t i;
-      for (i = 0; hostent->h_addr_list[i] != NULL; i++) {
-      }
-      (*lb_addresses)->num_addresses += i;
-      (*lb_addresses)->addresses =
-          gpr_realloc((*lb_addresses)->addresses,
-                      sizeof(grpc_lb_address) * (*lb_addresses)->num_addresses);
-      for (i = prev_naddr; i < (*lb_addresses)->num_addresses; i++) {
-        memset(&(*lb_addresses)->addresses[i], 0, sizeof(grpc_lb_address));
-        switch (hostent->h_addrtype) {
-          case AF_INET6: {
-            size_t addr_len = sizeof(struct sockaddr_in6);
-            struct sockaddr_in6 addr;
-            memcpy(&addr.sin6_addr, hostent->h_addr_list[i - prev_naddr],
-                   sizeof(struct in6_addr));
-            addr.sin6_family = (sa_family_t)hostent->h_addrtype;
-            addr.sin6_port = hr->port;
-            grpc_lb_addresses_set_address(
-                *lb_addresses, i, &addr, addr_len,
-                hr->is_balancer /* is_balancer */,
-                hr->is_balancer ? strdup(hr->host) : NULL /* balancer_name */,
-                NULL /* user_data */);
-            char output[INET6_ADDRSTRLEN];
-            ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
-            gpr_log(GPR_DEBUG,
-                    "c-ares resolver gets a AF_INET6 result: \n"
-                    "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-                    output, ntohs(hr->port), addr.sin6_scope_id);
-            break;
-          }
-          case AF_INET: {
-            size_t addr_len = sizeof(struct sockaddr_in);
-            struct sockaddr_in addr;
-            memcpy(&addr.sin_addr, hostent->h_addr_list[i - prev_naddr],
-                   sizeof(struct in_addr));
-            addr.sin_family = (sa_family_t)hostent->h_addrtype;
-            addr.sin_port = hr->port;
-            grpc_lb_addresses_set_address(
-                *lb_addresses, i, &addr, addr_len,
-                hr->is_balancer /* is_balancer */,
-                hr->is_balancer ? strdup(hr->host) : NULL /* balancer_name */,
-                NULL /* user_data */);
-            char output[INET_ADDRSTRLEN];
-            ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
-            gpr_log(GPR_DEBUG,
-                    "c-ares resolver gets a AF_INET result: \n"
-                    "  addr: %s\n  port: %d\n",
-                    output, ntohs(hr->port));
-            break;
-          }
+    grpc_lb_addresses **lb_addresses = r->lb_addrs_out;
+    if (*lb_addresses == NULL) {
+      *lb_addresses = grpc_lb_addresses_create(0, NULL);
+    }
+    size_t prev_naddr = (*lb_addresses)->num_addresses;
+    size_t i;
+    for (i = 0; hostent->h_addr_list[i] != NULL; i++) {
+    }
+    (*lb_addresses)->num_addresses += i;
+    (*lb_addresses)->addresses =
+        gpr_realloc((*lb_addresses)->addresses,
+                    sizeof(grpc_lb_address) * (*lb_addresses)->num_addresses);
+    for (i = prev_naddr; i < (*lb_addresses)->num_addresses; i++) {
+      memset(&(*lb_addresses)->addresses[i], 0, sizeof(grpc_lb_address));
+      switch (hostent->h_addrtype) {
+        case AF_INET6: {
+          size_t addr_len = sizeof(struct sockaddr_in6);
+          struct sockaddr_in6 addr;
+          memcpy(&addr.sin6_addr, hostent->h_addr_list[i - prev_naddr],
+                 sizeof(struct in6_addr));
+          addr.sin6_family = (sa_family_t)hostent->h_addrtype;
+          addr.sin6_port = hr->port;
+          grpc_lb_addresses_set_address(
+              *lb_addresses, i, &addr, addr_len,
+              hr->is_balancer /* is_balancer */,
+              hr->is_balancer ? strdup(hr->host) : NULL /* balancer_name */,
+              NULL /* user_data */);
+          char output[INET6_ADDRSTRLEN];
+          ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
+          gpr_log(GPR_DEBUG,
+                  "c-ares resolver gets a AF_INET6 result: \n"
+                  "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
+                  output, ntohs(hr->port), addr.sin6_scope_id);
+          break;
         }
-      }
-    } else { /* r->lb_addrs_out */
-      grpc_resolved_addresses **addresses = r->addrs_out.addrs;
-      if (*addresses == NULL) {
-        *addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
-        (*addresses)->naddrs = 0;
-        (*addresses)->addrs = NULL;
-      }
-      size_t prev_naddr = (*addresses)->naddrs;
-      size_t i;
-      for (i = 0; hostent->h_addr_list[i] != NULL; i++) {
-      }
-      (*addresses)->naddrs += i;
-      (*addresses)->addrs =
-          gpr_realloc((*addresses)->addrs,
-                      sizeof(grpc_resolved_address) * (*addresses)->naddrs);
-      for (i = prev_naddr; i < (*addresses)->naddrs; i++) {
-        memset(&(*addresses)->addrs[i], 0, sizeof(grpc_resolved_address));
-        switch (hostent->h_addrtype) {
-          case AF_INET6: {
-            (*addresses)->addrs[i].len = sizeof(struct sockaddr_in6);
-            struct sockaddr_in6 *addr =
-                (struct sockaddr_in6 *)&(*addresses)->addrs[i].addr;
-            addr->sin6_family = (sa_family_t)hostent->h_addrtype;
-            addr->sin6_port = hr->port;
-            char output[INET6_ADDRSTRLEN];
-            memcpy(&addr->sin6_addr, hostent->h_addr_list[i - prev_naddr],
-                   sizeof(struct in6_addr));
-            ares_inet_ntop(AF_INET6, &addr->sin6_addr, output,
-                           INET6_ADDRSTRLEN);
-            gpr_log(GPR_DEBUG,
-                    "c-ares resolver gets a AF_INET6 result: \n"
-                    "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-                    output, ntohs(hr->port), addr->sin6_scope_id);
-            break;
-          }
-          case AF_INET: {
-            (*addresses)->addrs[i].len = sizeof(struct sockaddr_in);
-            struct sockaddr_in *addr =
-                (struct sockaddr_in *)&(*addresses)->addrs[i].addr;
-            memcpy(&addr->sin_addr, hostent->h_addr_list[i - prev_naddr],
-                   sizeof(struct in_addr));
-            addr->sin_family = (sa_family_t)hostent->h_addrtype;
-            addr->sin_port = hr->port;
-            char output[INET_ADDRSTRLEN];
-            ares_inet_ntop(AF_INET, &addr->sin_addr, output, INET_ADDRSTRLEN);
-            gpr_log(GPR_DEBUG,
-                    "c-ares resolver gets a AF_INET result: \n"
-                    "  addr: %s\n  port: %d\n",
-                    output, ntohs(hr->port));
-            break;
-          }
+        case AF_INET: {
+          size_t addr_len = sizeof(struct sockaddr_in);
+          struct sockaddr_in addr;
+          memcpy(&addr.sin_addr, hostent->h_addr_list[i - prev_naddr],
+                 sizeof(struct in_addr));
+          addr.sin_family = (sa_family_t)hostent->h_addrtype;
+          addr.sin_port = hr->port;
+          grpc_lb_addresses_set_address(
+              *lb_addresses, i, &addr, addr_len,
+              hr->is_balancer /* is_balancer */,
+              hr->is_balancer ? strdup(hr->host) : NULL /* balancer_name */,
+              NULL /* user_data */);
+          char output[INET_ADDRSTRLEN];
+          ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
+          gpr_log(GPR_DEBUG,
+                  "c-ares resolver gets a AF_INET result: \n"
+                  "  addr: %s\n  port: %d\n",
+                  output, ntohs(hr->port));
+          break;
         }
       }
     }
@@ -346,7 +285,7 @@ static void on_srv_query_done_cb(void *arg, int status, int timeouts,
 void grpc_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
                           const char *name, const char *default_port,
                           grpc_pollset_set *interested_parties,
-                          grpc_closure *on_done, void **addrs,
+                          grpc_closure *on_done, grpc_lb_addresses **addrs,
                           bool check_grpclb) {
   grpc_error *error = GRPC_ERROR_NONE;
   /* TODO(zyc): Enable tracing after #9603 is checked in */
@@ -382,12 +321,7 @@ void grpc_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
   gpr_mu_init(&r->mu);
   r->ev_driver = ev_driver;
   r->on_done = on_done;
-  r->lb_addrs_out = check_grpclb;
-  if (check_grpclb) {
-    r->addrs_out.lb_addrs = (grpc_lb_addresses **)addrs;
-  } else {
-    r->addrs_out.addrs = (grpc_resolved_addresses **)addrs;
-  }
+  r->lb_addrs_out = addrs;
   r->success = false;
   r->error = GRPC_ERROR_NONE;
   ares_channel *channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
@@ -458,21 +392,6 @@ error_cleanup:
   gpr_free(port);
 }
 
-void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
-                                    const char *default_port,
-                                    grpc_pollset_set *interested_parties,
-                                    grpc_closure *on_done,
-                                    grpc_resolved_addresses **addrs) {
-  grpc_dns_lookup_ares(exec_ctx, NULL /* dns_server */, name, default_port,
-                       interested_parties, on_done, (void **)addrs,
-                       false /* check_grpclb */);
-}
-
-void (*grpc_resolve_address_ares)(
-    grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
-    grpc_pollset_set *interested_parties, grpc_closure *on_done,
-    grpc_resolved_addresses **addrs) = grpc_resolve_address_ares_impl;
-
 grpc_error *grpc_ares_init(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
   gpr_mu_lock(&g_init_mu);
@@ -495,5 +414,65 @@ void grpc_ares_cleanup(void) {
   ares_library_cleanup();
   gpr_mu_unlock(&g_init_mu);
 }
+
+/*
+ * grpc_resolve_address_ares related structs and functions
+ */
+
+typedef struct grpc_resolve_address_ares_request {
+  /** the pointer to receive the resolved addresses */
+  grpc_resolved_addresses **addrs_out;
+  /** currently resolving lb addresses */
+  grpc_lb_addresses *lb_addrs;
+  /** closure to call when the resolve_address_ares request completes */
+  grpc_closure *on_resolve_address_done;
+  /** a closure wrapping on_dns_lookup_done_cb, which should be invoked when the
+      grpc_dns_lookup_ares operation is done. */
+  grpc_closure on_dns_lookup_done;
+} grpc_resolve_address_ares_request;
+
+static void on_dns_lookup_done_cb(grpc_exec_ctx *exec_ctx, void *arg,
+                                  grpc_error *error) {
+  grpc_resolve_address_ares_request *r =
+      (grpc_resolve_address_ares_request *)arg;
+  grpc_resolved_addresses **resolved_addresses = r->addrs_out;
+  if (r->lb_addrs == NULL || r->lb_addrs->num_addresses == 0) {
+    *resolved_addresses = NULL;
+  } else {
+    *resolved_addresses = gpr_zalloc(sizeof(grpc_resolved_addresses));
+    (*resolved_addresses)->naddrs = r->lb_addrs->num_addresses;
+    (*resolved_addresses)->addrs = gpr_zalloc(sizeof(grpc_resolved_address) *
+                                              (*resolved_addresses)->naddrs);
+    for (size_t i = 0; i < (*resolved_addresses)->naddrs; i++) {
+      GPR_ASSERT(!r->lb_addrs->addresses[i].is_balancer);
+      memcpy(&(*resolved_addresses)->addrs[i],
+             &r->lb_addrs->addresses[i].address, sizeof(grpc_resolved_address));
+    }
+  }
+  grpc_closure_sched(exec_ctx, r->on_resolve_address_done,
+                     GRPC_ERROR_REF(error));
+  gpr_free(r);
+}
+
+void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
+                                    const char *default_port,
+                                    grpc_pollset_set *interested_parties,
+                                    grpc_closure *on_done,
+                                    grpc_resolved_addresses **addrs) {
+  grpc_resolve_address_ares_request *r =
+      gpr_zalloc(sizeof(grpc_resolve_address_ares_request));
+  r->addrs_out = addrs;
+  r->on_resolve_address_done = on_done;
+  grpc_closure_init(&r->on_dns_lookup_done, on_dns_lookup_done_cb, r,
+                    grpc_schedule_on_exec_ctx);
+  grpc_dns_lookup_ares(exec_ctx, NULL /* dns_server */, name, default_port,
+                       interested_parties, &r->on_dns_lookup_done, &r->lb_addrs,
+                       false /* check_grpclb */);
+}
+
+void (*grpc_resolve_address_ares)(
+    grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
+    grpc_pollset_set *interested_parties, grpc_closure *on_done,
+    grpc_resolved_addresses **addrs) = grpc_resolve_address_ares_impl;
 
 #endif /* GRPC_ARES == 1 && !defined(GRPC_UV) */

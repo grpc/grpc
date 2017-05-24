@@ -218,8 +218,8 @@ static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   r->lb_addresses = NULL;
   grpc_dns_lookup_ares(exec_ctx, r->dns_server, r->name_to_resolve,
                        r->default_port, r->interested_parties,
-                       &r->dns_ares_on_resolved_locked,
-                       (void **)&r->lb_addresses, true /* is_lb_addrs_out */);
+                       &r->dns_ares_on_resolved_locked, &r->lb_addresses,
+                       true /* check_grpclb */);
 }
 
 static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
