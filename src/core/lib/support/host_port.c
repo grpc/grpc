@@ -98,7 +98,7 @@ int gpr_split_host_port(const char *name, char **host, char **port) {
   }
 
   /* Allocate return values. */
-  *host = gpr_malloc(host_len + 1);
+  *host = (char *)gpr_malloc(host_len + 1);
   memcpy(*host, host_start, host_len);
   (*host)[host_len] = '\0';
 

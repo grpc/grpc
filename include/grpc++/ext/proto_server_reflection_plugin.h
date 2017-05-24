@@ -59,8 +59,8 @@ class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
   std::shared_ptr<grpc::ProtoServerReflection> reflection_service_;
 };
 
-/// Add proto reflection plugin to ServerBuilder. This function should be called
-/// at the static initialization time.
+/// Add proto reflection plugin to \a ServerBuilder.
+/// This function should be called at the static initialization time.
 void InitProtoReflectionServerBuilderPlugin();
 
 }  // namespace reflection

@@ -10,7 +10,7 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2017-05-05</date>
+ <date>2017-05-22</date>
  <time>16:06:07</time>
  <version>
   <release>1.4.0dev</release>
@@ -23,13 +23,18 @@
  <license>BSD</license>
  <notes>
 - Fixed some memory leaks #9559, #10996
+- Disabled cares dependency from gRPC C Core #10940
+- De-coupled protobuf dependency #11112
+- Fixed extension reported version #10842
+- Added config.w32 for Windows support #8161
+- Fixed PHP distrib test after cc files were added #11193
+- Fixed protoc plugin comment escape bug #11025
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
     <file baseinstalldir="/" name="config.m4" role="src" />
+    <file baseinstalldir="/" name="config.w32" role="src" />
     <file baseinstalldir="/" name="src/php/README.md" role="src" />
-    <file baseinstalldir="/" name="src/php/ext/grpc/CREDITS" role="src" />
-    <file baseinstalldir="/" name="src/php/ext/grpc/LICENSE" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call_credentials.c" role="src" />
@@ -388,6 +393,8 @@
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
@@ -638,6 +645,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/initialize.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/mlog.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/operation.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/placeholders.c" role="src" />
@@ -1057,6 +1065,32 @@
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_server.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_method.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inffast.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inffixed.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inftrees.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/trees.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zconf.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zutil.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/crc32.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/deflate.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzclose.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzlib.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzread.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzwrite.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/infback.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inffast.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inflate.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inftrees.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/trees.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/uncompr.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zutil.c" role="src" />
     <file name="LICENSE" role="doc" />
   </dir>
  </contents>

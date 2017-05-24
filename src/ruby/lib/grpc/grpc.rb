@@ -34,6 +34,6 @@ begin
   if File.directory?(distrib_lib_dir)
     require_relative "#{distrib_lib_dir}/grpc_c"
   else
-    require_relative 'grpc_c'
+    require 'grpc/grpc_c'
   end
 end

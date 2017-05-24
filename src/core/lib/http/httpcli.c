@@ -120,6 +120,7 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
   grpc_slice_buffer_destroy_internal(exec_ctx, &req->incoming);
   grpc_slice_buffer_destroy_internal(exec_ctx, &req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
+  GRPC_ERROR_UNREF(error);
   grpc_resource_quota_unref_internal(exec_ctx, req->resource_quota);
   gpr_free(req);
 }
@@ -244,7 +245,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   internal_request *req = arg;
   if (error != GRPC_ERROR_NONE) {
-    finish(exec_ctx, req, error);
+    finish(exec_ctx, req, GRPC_ERROR_REF(error));
     return;
   }
   req->next_address = 0;

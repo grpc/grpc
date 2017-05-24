@@ -76,6 +76,7 @@
 // IWYU pragma: end_exports
 
 namespace grpc {
+/// Return gRPC library version.
 grpc::string Version();
 }  // namespace grpc
 

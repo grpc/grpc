@@ -51,6 +51,12 @@ extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
                                          grpc_closure *on_done,
                                          grpc_resolved_addresses **addresses);
 
+void grpc_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
+                          const char *addr, const char *default_port,
+                          grpc_pollset_set *interested_parties,
+                          grpc_closure *on_done,
+                          grpc_resolved_addresses **addresses);
+
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
 grpc_error *grpc_ares_init(void);
