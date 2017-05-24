@@ -67,12 +67,11 @@ static grpc_resolver *build_fake_resolver(
 typedef struct on_resolution_arg {
   grpc_channel_args *resolver_result;
   grpc_channel_args *expected_resolver_result;
-  bool was_called;
+  gpr_event ev;
 } on_resolution_arg;
 
 void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   on_resolution_arg *res = arg;
-  res->was_called = true;
   // We only check the addresses channel arg because that's the only one
   // explicitly set by the test via
   // grpc_fake_resolver_response_generator_set_response.
@@ -84,6 +83,7 @@ void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       grpc_lb_addresses_cmp(actual_lb_addresses, expected_lb_addresses) == 0);
   grpc_channel_args_destroy(exec_ctx, res->resolver_result);
   grpc_channel_args_destroy(exec_ctx, res->expected_resolver_result);
+  gpr_event_set(&res->ev, (void*)1);
 }
 
 static void test_fake_resolver() {
@@ -115,6 +115,7 @@ static void test_fake_resolver() {
   on_resolution_arg on_res_arg;
   memset(&on_res_arg, 0, sizeof(on_res_arg));
   on_res_arg.expected_resolver_result = results;
+  gpr_event_init(&on_res_arg.ev);
   grpc_closure *on_resolution = grpc_closure_create(
       on_resolution_cb, &on_res_arg, grpc_combiner_scheduler(combiner));
 
@@ -125,7 +126,7 @@ static void test_fake_resolver() {
   grpc_resolver_next_locked(&exec_ctx, resolver, &on_res_arg.resolver_result,
                             on_resolution);
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(on_res_arg.was_called);
+  GPR_ASSERT(gpr_event_wait(&on_res_arg.ev, grpc_timeout_seconds_to_deadline(5)) != NULL);
 
   // Setup update.
   grpc_uri *uris_update[] = {
@@ -150,6 +151,7 @@ static void test_fake_resolver() {
   on_resolution_arg on_res_arg_update;
   memset(&on_res_arg_update, 0, sizeof(on_res_arg_update));
   on_res_arg_update.expected_resolver_result = results_update;
+  gpr_event_init(&on_res_arg_update.ev);
   on_resolution = grpc_closure_create(on_resolution_cb, &on_res_arg_update,
                                       grpc_combiner_scheduler(combiner));
 
@@ -159,7 +161,7 @@ static void test_fake_resolver() {
   grpc_resolver_next_locked(&exec_ctx, resolver,
                             &on_res_arg_update.resolver_result, on_resolution);
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(on_res_arg.was_called);
+  GPR_ASSERT(gpr_event_wait(&on_res_arg_update.ev, grpc_timeout_seconds_to_deadline(5)) != NULL);
 
   // Requesting a new resolution without re-senting the response shouldn't
   // trigger the resolution callback.
@@ -167,7 +169,7 @@ static void test_fake_resolver() {
   grpc_resolver_next_locked(&exec_ctx, resolver, &on_res_arg.resolver_result,
                             on_resolution);
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(!on_res_arg.was_called);
+  GPR_ASSERT(gpr_event_wait(&on_res_arg.ev, grpc_timeout_milliseconds_to_deadline(100)) == NULL);
 
   GRPC_COMBINER_UNREF(&exec_ctx, combiner, "test_fake_resolver");
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_fake_resolver");
