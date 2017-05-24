@@ -265,7 +265,10 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 
 static void inc_on_failure(grpc_exec_ctx *exec_ctx, void *arg,
                            grpc_error *error) {
+  gpr_mu_lock(g_mu);
   *(int *)arg += (error != GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, NULL)));
+  gpr_mu_unlock(g_mu);
 }
 
 static void wait_for_fail_count(grpc_exec_ctx *exec_ctx, int *fail_count,
