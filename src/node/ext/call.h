@@ -97,6 +97,7 @@ class Call : public Nan::ObjectWrap {
      call, this is GRPC_OP_RECV_STATUS_ON_CLIENT and for a server call, this
      is GRPC_OP_SEND_STATUS_FROM_SERVER */
   bool has_final_op_completed;
+  char *peer;
 };
 
 class Op {
