@@ -60,6 +60,7 @@ grpc_cc_binary(
     language = "C++",
     deps = [
         "//:grpc++",
+        ":interop_server_lib",
     ],
 )
 
@@ -106,5 +107,30 @@ grpc_cc_binary(
     deps = [
         ":client_helper_lib",
         "//:grpc++",
+    ],
+)
+
+grpc_cc_binary(
+    name = "reconnect_interop_client",
+    srcs = [
+        "reconnect_interop_client.cc",
+    ],
+    deps = [
+        ":client_helper_lib",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_binary(
+    name = "reconnect_interop_server",
+    srcs = [
+        "reconnect_interop_server.cc"
+    ],
+    language = "C++",
+    deps = [
+        "//:grpc++",
+        ":interop_server_lib",
+        "//test/core/util:grpc_test_util",
     ],
 )
