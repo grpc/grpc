@@ -254,7 +254,7 @@ int run_concurrent_connectivity_test() {
 
 void watches_with_short_timeouts(void *addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS_SHORT_TIMEOUTS; ++i) {
-    grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+    grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
     grpc_channel *chan = grpc_insecure_channel_create((char *)addr, NULL, NULL);
 
     for (int j = 0; j < NUM_INNER_LOOPS_SHORT_TIMEOUTS; ++j) {
