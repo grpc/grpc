@@ -47,7 +47,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 extern "C" {
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -60,6 +59,8 @@ extern "C" {
 
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+
+#include <gtest/gtest.h>
 
 // TODO(dgq): Other scenarios in need of testing:
 // - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
