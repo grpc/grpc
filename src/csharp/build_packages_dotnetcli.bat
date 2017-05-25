@@ -60,11 +60,11 @@ xcopy /Y /I ..\..\architecture=x64,language=protoc,platform=macos\artifacts\* pr
 @rem To be able to build, we also need to put grpc_csharp_ext to its normal location
 xcopy /Y /I nativelibs\windows_x64\grpc_csharp_ext.dll ..\..\cmake\build\x64\Release\
 
-%DOTNET% pack --configuration Release --include-symbols --include-source Grpc.Core --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release --include-symbols --include-source Grpc.Core.Testing --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release --include-symbols --include-source Grpc.Auth --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release --include-symbols --include-source Grpc.HealthCheck --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release --include-symbols --include-source Grpc.Reflection --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Core --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Core.Testing --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Auth --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.HealthCheck --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Reflection --output ..\..\..\artifacts || goto :error
 
 %NUGET% pack Grpc.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts || goto :error
 %NUGET% pack Grpc.Tools.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts
