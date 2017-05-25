@@ -12,7 +12,7 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2017-03-01</date>
+   <date>2017-05-05</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
@@ -24,12 +24,12 @@
    </stability>
    <license>BSD</license>
    <notes>
-  - Added arg info macros #9751
-  - Updated codegen to be consistent with protobuf #9492
+  - Fixed some memory leaks #9559, #10996
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
       <file baseinstalldir="/" name="config.m4" role="src" />
+      <file baseinstalldir="/" name="config.w32" role="src" />
       <file baseinstalldir="/" name="src/php/README.md" role="src" />
       <file baseinstalldir="/" name="src/php/ext/grpc/CREDITS" role="src" />
       <file baseinstalldir="/" name="src/php/ext/grpc/LICENSE" role="src" />
@@ -43,6 +43,7 @@
       % endfor
       % endif
       % endfor
+      <file name="LICENSE" role="doc" />
     </dir>
    </contents>
    <dependencies>
@@ -352,6 +353,22 @@
       <api>beta</api>
      </stability>
      <date>2017-03-01</date>
+     <license>BSD</license>
+     <notes>
+  - Added arg info macros #9751
+  - Updated codegen to be consistent with protobuf #9492
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.2.0</release>
+      <api>1.2.0</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2017-03-20</date>
      <license>BSD</license>
      <notes>
   - Added arg info macros #9751

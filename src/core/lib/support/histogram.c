@@ -88,7 +88,7 @@ static double bucket_start(gpr_histogram *h, double x) {
 
 gpr_histogram *gpr_histogram_create(double resolution,
                                     double max_bucket_start) {
-  gpr_histogram *h = gpr_malloc(sizeof(gpr_histogram));
+  gpr_histogram *h = (gpr_histogram *)gpr_malloc(sizeof(gpr_histogram));
   GPR_ASSERT(resolution > 0.0);
   GPR_ASSERT(max_bucket_start > resolution);
   h->sum = 0.0;
@@ -102,7 +102,7 @@ gpr_histogram *gpr_histogram_create(double resolution,
   h->num_buckets = bucket_for_unchecked(h, max_bucket_start) + 1;
   GPR_ASSERT(h->num_buckets > 1);
   GPR_ASSERT(h->num_buckets < 100000000);
-  h->buckets = gpr_zalloc(sizeof(uint32_t) * h->num_buckets);
+  h->buckets = (uint32_t *)gpr_zalloc(sizeof(uint32_t) * h->num_buckets);
   return h;
 }
 

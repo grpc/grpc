@@ -5967,7 +5967,6 @@
   }, 
   {
     "deps": [
-      "gpr", 
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
@@ -6004,6 +6003,7 @@
     "deps": [
       "census", 
       "gpr", 
+      "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
@@ -6151,6 +6151,7 @@
   {
     "deps": [
       "gpr", 
+      "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
@@ -7971,6 +7972,7 @@
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.c", 
       "src/core/lib/iomgr/ev_posix.h", 
+      "src/core/lib/iomgr/ev_windows.c", 
       "src/core/lib/iomgr/exec_ctx.c", 
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.c", 
@@ -9016,9 +9018,8 @@
   }, 
   {
     "deps": [
-      "gpr", 
+      "grpc", 
       "grpc++_codegen_base", 
-      "grpc_base", 
       "nanopb"
     ], 
     "headers": [

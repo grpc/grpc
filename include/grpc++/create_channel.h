@@ -43,7 +43,7 @@
 
 namespace grpc {
 
-/// Create a new \a Channel pointing to \a target
+/// Create a new \a Channel pointing to \a target.
 ///
 /// \param target The URI of the endpoint to connect to.
 /// \param creds Credentials to use for the created channel. If it does not hold
@@ -52,7 +52,7 @@ std::shared_ptr<Channel> CreateChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds);
 
-/// Create a new \em custom \a Channel pointing to \a target
+/// Create a new \em custom \a Channel pointing to \a target.
 ///
 /// \warning For advanced use and testing ONLY. Override default channel
 /// arguments only if necessary.

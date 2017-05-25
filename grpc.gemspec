@@ -420,6 +420,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/ev_epollsig_linux.c )
   s.files += %w( src/core/lib/iomgr/ev_poll_posix.c )
   s.files += %w( src/core/lib/iomgr/ev_posix.c )
+  s.files += %w( src/core/lib/iomgr/ev_windows.c )
   s.files += %w( src/core/lib/iomgr/exec_ctx.c )
   s.files += %w( src/core/lib/iomgr/executor.c )
   s.files += %w( src/core/lib/iomgr/iocp_windows.c )

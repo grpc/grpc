@@ -358,6 +358,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // Start with a single server.
   ports.emplace_back(servers_[0]->port_);
   SetNextResolution(ports);
+  WaitForServer(0, 0);
   // Send RPCs. They should all go servers_[0]
   for (size_t i = 0; i < 10; ++i) SendRpc();
   EXPECT_EQ(10, servers_[0]->service_.request_count());

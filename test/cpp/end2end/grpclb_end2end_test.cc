@@ -98,12 +98,12 @@ namespace {
 template <typename ServiceType>
 class CountedService : public ServiceType {
  public:
-  int request_count() {
+  size_t request_count() {
     std::unique_lock<std::mutex> lock(mu_);
     return request_count_;
   }
 
-  int response_count() {
+  size_t response_count() {
     std::unique_lock<std::mutex> lock(mu_);
     return response_count_;
   }
@@ -127,8 +127,8 @@ class CountedService : public ServiceType {
   std::mutex mu_;
 
  private:
-  int request_count_ = 0;
-  int response_count_ = 0;
+  size_t request_count_ = 0;
+  size_t response_count_ = 0;
 };
 
 using BackendService = CountedService<TestServiceImpl>;
@@ -263,9 +263,18 @@ class BalancerServiceImpl : public BalancerService {
   }
 
   static LoadBalanceResponse BuildResponseForBackends(
-      const std::vector<int>& backend_ports) {
+      const std::vector<int>& backend_ports, int num_drops_for_rate_limiting,
+      int num_drops_for_load_balancing) {
     LoadBalanceResponse response;
-    for (const int backend_port : backend_ports) {
+    for (int i = 0; i < num_drops_for_rate_limiting; ++i) {
+      auto* server = response.mutable_server_list()->add_servers();
+      server->set_drop_for_rate_limiting(true);
+    }
+    for (int i = 0; i < num_drops_for_load_balancing; ++i) {
+      auto* server = response.mutable_server_list()->add_servers();
+      server->set_drop_for_load_balancing(true);
+    }
+    for (const int& backend_port : backend_ports) {
       auto* server = response.mutable_server_list()->add_servers();
       server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
       server->set_port(backend_port);
@@ -495,27 +504,34 @@ class SingleBalancerTest : public GrpclbEnd2endTest {
 };
 
 TEST_F(SingleBalancerTest, Vanilla) {
+  const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts()), 0);
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
-  // Start servers and send 100 RPCs per server.
-  const auto& statuses_and_responses = SendRpc(kMessage_, 100 * num_backends_);
+  // Send 100 RPCs per server.
+  const auto& statuses_and_responses =
+      SendRpc(kMessage_, kNumRpcsPerAddress * num_backends_);
 
   for (const auto& status_and_response : statuses_and_responses) {
-    EXPECT_TRUE(status_and_response.first.ok());
-    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+    const Status& status = status_and_response.first;
+    const EchoResponse& response = status_and_response.second;
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    EXPECT_EQ(response.message(), kMessage_);
   }
 
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(100, backend_servers_[i].service_->request_count());
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backend_servers_[i].service_->request_count());
   }
   balancers_[0]->NotifyDoneWithServerlists();
   // The balancer got a single request.
-  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
-  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
@@ -529,7 +545,7 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   ScheduleResponseForBalancer(0, LoadBalanceResponse(), 0);
   // Send non-empty serverlist only after kServerlistDelayMs
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts()),
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
       kServerlistDelayMs);
 
   const auto t0 = system_clock::now();
@@ -547,17 +563,20 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
 
   // Each backend should have gotten 1 request.
   for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(1, backend_servers_[i].service_->request_count());
+    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
   }
   for (const auto& status_and_response : statuses_and_responses) {
-    EXPECT_TRUE(status_and_response.first.ok());
-    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+    const Status& status = status_and_response.first;
+    const EchoResponse& response = status_and_response.second;
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    EXPECT_EQ(response.message(), kMessage_);
   }
   balancers_[0]->NotifyDoneWithServerlists();
   // The balancer got a single request.
-  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent two responses.
-  EXPECT_EQ(2, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(2U, balancer_servers_[0].service_->response_count());
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
@@ -568,10 +587,11 @@ TEST_F(SingleBalancerTest, RepeatedServerlist) {
 
   // Send a serverlist right away.
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts()), 0);
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0);
   // ... and the same one a bit later.
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts()),
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
       kServerlistDelayMs);
 
   // Send num_backends/2 requests.
@@ -579,14 +599,19 @@ TEST_F(SingleBalancerTest, RepeatedServerlist) {
   // only the first half of the backends will receive them.
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (i < backends_.size() / 2)
-      EXPECT_EQ(1, backend_servers_[i].service_->request_count());
+      EXPECT_EQ(1U, backend_servers_[i].service_->request_count())
+          << "for backend #" << i;
     else
-      EXPECT_EQ(0, backend_servers_[i].service_->request_count());
+      EXPECT_EQ(0U, backend_servers_[i].service_->request_count())
+          << "for backend #" << i;
   }
   EXPECT_EQ(statuses_and_responses.size(), num_backends_ / 2);
   for (const auto& status_and_response : statuses_and_responses) {
-    EXPECT_TRUE(status_and_response.first.ok());
-    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+    const Status& status = status_and_response.first;
+    const EchoResponse& response = status_and_response.second;
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    EXPECT_EQ(response.message(), kMessage_);
   }
 
   // Wait for the (duplicated) serverlist update.
@@ -595,7 +620,7 @@ TEST_F(SingleBalancerTest, RepeatedServerlist) {
       gpr_time_from_millis(kServerlistDelayMs * 1.1, GPR_TIMESPAN)));
 
   // Verify the LB has sent two responses.
-  EXPECT_EQ(2, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(2U, balancer_servers_[0].service_->response_count());
 
   // Some more calls to complete the total number of backends.
   statuses_and_responses = SendRpc(
@@ -604,16 +629,19 @@ TEST_F(SingleBalancerTest, RepeatedServerlist) {
   // Because a duplicated serverlist should have no effect, all backends must
   // have been hit once now.
   for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(1, backend_servers_[i].service_->request_count());
+    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
   }
   EXPECT_EQ(statuses_and_responses.size(), num_backends_ / 2);
   for (const auto& status_and_response : statuses_and_responses) {
-    EXPECT_TRUE(status_and_response.first.ok());
-    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+    const Status& status = status_and_response.first;
+    const EchoResponse& response = status_and_response.second;
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    EXPECT_EQ(response.message(), kMessage_);
   }
   balancers_[0]->NotifyDoneWithServerlists();
   // The balancer got a single request.
-  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
@@ -628,9 +656,9 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   const std::vector<int> second_backend{GetBackendPorts()[1]};
 
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend), 0);
+      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, 0, 0), 0);
   ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend), 0);
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, 0, 0), 0);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -642,19 +670,19 @@ TEST_F(UpdatesTest, UpdateBalancers) {
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
   // All 10 requests should have gone to the first backend.
-  EXPECT_EQ(10, backend_servers_[0].service_->request_count());
+  EXPECT_EQ(10U, backend_servers_[0].service_->request_count());
 
   balancers_[0]->NotifyDoneWithServerlists();
   balancers_[1]->NotifyDoneWithServerlists();
   balancers_[2]->NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
-  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
-  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
-  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
-  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
-  EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
-  EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
 
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
@@ -664,7 +692,7 @@ TEST_F(UpdatesTest, UpdateBalancers) {
 
   // Wait until update has been processed, as signaled by the second backend
   // receiving a request.
-  EXPECT_EQ(0, backend_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   do {
     auto statuses_and_responses = SendRpc(kMessage_, 1);
     for (const auto& status_and_response : statuses_and_responses) {
@@ -682,20 +710,17 @@ TEST_F(UpdatesTest, UpdateBalancers) {
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
   // All 10 requests should have gone to the second backend.
-  EXPECT_EQ(10, backend_servers_[1].service_->request_count());
+  EXPECT_EQ(10U, backend_servers_[1].service_->request_count());
 
   balancers_[0]->NotifyDoneWithServerlists();
   balancers_[1]->NotifyDoneWithServerlists();
   balancers_[2]->NotifyDoneWithServerlists();
-  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
-  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
-
-  EXPECT_EQ(1, balancer_servers_[1].service_->request_count());
-  EXPECT_EQ(1, balancer_servers_[1].service_->response_count());
-
-  EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
-  EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
-
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(1U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
@@ -708,9 +733,9 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   const std::vector<int> second_backend{GetBackendPorts()[0]};
 
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend), 0);
+      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, 0, 0), 0);
   ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend), 0);
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, 0, 0), 0);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -722,17 +747,17 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
   // All 10 requests should have gone to the first backend.
-  EXPECT_EQ(10, backend_servers_[0].service_->request_count());
+  EXPECT_EQ(10U, backend_servers_[0].service_->request_count());
 
   balancers_[0]->NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
-  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
-  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
-  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
-  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
-  EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
-  EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
 
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
@@ -742,7 +767,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   SetNextResolution(addresses);
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
 
-  EXPECT_EQ(0, backend_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   gpr_timespec deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(10000, GPR_TIMESPAN));
   // Send 10 seconds worth of RPCs
@@ -755,7 +780,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
   // grpclb continued using the original LB call to the first balancer, which
   // doesn't assign the second balancer.
-  EXPECT_EQ(0, backend_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   balancers_[0]->NotifyDoneWithServerlists();
 
   addresses.clear();
@@ -765,7 +790,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   SetNextResolution(addresses);
   gpr_log(GPR_INFO, "========= UPDATE 2 DONE ==========");
 
-  EXPECT_EQ(0, backend_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                           gpr_time_from_millis(10000, GPR_TIMESPAN));
   // Send 10 seconds worth of RPCs
@@ -778,7 +803,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
   // grpclb continued using the original LB call to the first balancer, which
   // doesn't assign the second balancer.
-  EXPECT_EQ(0, backend_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   balancers_[0]->NotifyDoneWithServerlists();
 
   // Check LB policy name for the channel.
@@ -790,9 +815,9 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   const std::vector<int> second_backend{GetBackendPorts()[1]};
 
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend), 0);
+      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, 0, 0), 0);
   ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend), 0);
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, 0, 0), 0);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -803,7 +828,7 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
   // All 10 requests should have gone to the first backend.
-  EXPECT_EQ(10, backend_servers_[0].service_->request_count());
+  EXPECT_EQ(10U, backend_servers_[0].service_->request_count());
 
   // Kill balancer 0
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
@@ -819,20 +844,20 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
   // All 10 requests should again have gone to the first backend.
-  EXPECT_EQ(20, backend_servers_[0].service_->request_count());
-  EXPECT_EQ(0, backend_servers_[1].service_->request_count());
+  EXPECT_EQ(20U, backend_servers_[0].service_->request_count());
+  EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
 
   balancers_[0]->NotifyDoneWithServerlists();
   balancers_[1]->NotifyDoneWithServerlists();
   balancers_[2]->NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
-  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
-  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
-  EXPECT_EQ(0, balancer_servers_[1].service_->request_count());
-  EXPECT_EQ(0, balancer_servers_[1].service_->response_count());
-  EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
-  EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
 
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
@@ -843,7 +868,7 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   // Wait until update has been processed, as signaled by the second backend
   // receiving a request. In the meantime, the client continues to be serviced
   // (by the first backend) without interruption.
-  EXPECT_EQ(0, backend_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   do {
     auto statuses_and_responses = SendRpc(kMessage_, 1);
     for (const auto& status_and_response : statuses_and_responses) {
@@ -862,22 +887,54 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
     EXPECT_EQ(status_and_response.second.message(), kMessage_);
   }
   // All 10 requests should have gone to the second backend.
-  EXPECT_EQ(10, backend_servers_[1].service_->request_count());
+  EXPECT_EQ(10U, backend_servers_[1].service_->request_count());
 
   balancers_[0]->NotifyDoneWithServerlists();
   balancers_[1]->NotifyDoneWithServerlists();
   balancers_[2]->NotifyDoneWithServerlists();
-  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
-  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
-
-  EXPECT_EQ(1, balancer_servers_[1].service_->request_count());
-  EXPECT_EQ(1, balancer_servers_[1].service_->response_count());
-
-  EXPECT_EQ(0, balancer_servers_[2].service_->request_count());
-  EXPECT_EQ(0, balancer_servers_[2].service_->response_count());
-
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(1U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, Drop) {
+  const size_t kNumRpcsPerAddress = 100;
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 1, 2),
+      0);
+  // Send 100 RPCs for each server and drop address.
+  const auto& statuses_and_responses =
+      SendRpc(kMessage_, kNumRpcsPerAddress * (num_backends_ + 3));
+
+  size_t num_drops = 0;
+  for (const auto& status_and_response : statuses_and_responses) {
+    const Status& status = status_and_response.first;
+    const EchoResponse& response = status_and_response.second;
+    if (!status.ok() &&
+        status.error_message() == "Call dropped by load balancing policy") {
+      ++num_drops;
+    } else {
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kMessage_);
+    }
+  }
+  EXPECT_EQ(kNumRpcsPerAddress * 3, num_drops);
+
+  // Each backend should have gotten 100 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backend_servers_[i].service_->request_count());
+  }
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
 }
 
 class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
@@ -886,33 +943,90 @@ class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
 };
 
 TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
+  const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts()), 0);
-  // Start servers and send 100 RPCs per server.
-  const auto& statuses_and_responses = SendRpc(kMessage_, 100 * num_backends_);
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0);
+  // Send 100 RPCs per server.
+  const auto& statuses_and_responses =
+      SendRpc(kMessage_, kNumRpcsPerAddress * num_backends_);
 
   for (const auto& status_and_response : statuses_and_responses) {
-    EXPECT_TRUE(status_and_response.first.ok());
-    EXPECT_EQ(status_and_response.second.message(), kMessage_);
+    const Status& status = status_and_response.first;
+    const EchoResponse& response = status_and_response.second;
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    EXPECT_EQ(response.message(), kMessage_);
   }
 
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(100, backend_servers_[i].service_->request_count());
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backend_servers_[i].service_->request_count());
   }
   balancers_[0]->NotifyDoneWithServerlists();
   // The balancer got a single request.
-  EXPECT_EQ(1, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
-  EXPECT_EQ(1, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
 
   const ClientStats client_stats = WaitForLoadReports();
-  EXPECT_EQ(100 * num_backends_, client_stats.num_calls_started);
-  EXPECT_EQ(100 * num_backends_, client_stats.num_calls_finished);
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_, client_stats.num_calls_started);
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_,
+            client_stats.num_calls_finished);
   EXPECT_EQ(0U, client_stats.num_calls_finished_with_drop_for_rate_limiting);
   EXPECT_EQ(0U, client_stats.num_calls_finished_with_drop_for_load_balancing);
   EXPECT_EQ(0U, client_stats.num_calls_finished_with_client_failed_to_send);
-  EXPECT_EQ(100 * num_backends_,
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_,
+            client_stats.num_calls_finished_known_received);
+}
+
+TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
+  const size_t kNumRpcsPerAddress = 3;
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 2, 1),
+      0);
+  // Send 100 RPCs for each server and drop address.
+  const auto& statuses_and_responses =
+      SendRpc(kMessage_, kNumRpcsPerAddress * (num_backends_ + 3));
+
+  size_t num_drops = 0;
+  for (const auto& status_and_response : statuses_and_responses) {
+    const Status& status = status_and_response.first;
+    const EchoResponse& response = status_and_response.second;
+    if (!status.ok() &&
+        status.error_message() == "Call dropped by load balancing policy") {
+      ++num_drops;
+    } else {
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kMessage_);
+    }
+  }
+  EXPECT_EQ(kNumRpcsPerAddress * 3, num_drops);
+
+  // Each backend should have gotten 100 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backend_servers_[i].service_->request_count());
+  }
+  balancers_[0]->NotifyDoneWithServerlists();
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+
+  const ClientStats client_stats = WaitForLoadReports();
+  EXPECT_EQ(kNumRpcsPerAddress * (num_backends_ + 3),
+            client_stats.num_calls_started);
+  EXPECT_EQ(kNumRpcsPerAddress * (num_backends_ + 3),
+            client_stats.num_calls_finished);
+  EXPECT_EQ(kNumRpcsPerAddress * 2,
+            client_stats.num_calls_finished_with_drop_for_rate_limiting);
+  EXPECT_EQ(kNumRpcsPerAddress,
+            client_stats.num_calls_finished_with_drop_for_load_balancing);
+  EXPECT_EQ(0U, client_stats.num_calls_finished_with_client_failed_to_send);
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_,
             client_stats.num_calls_finished_known_received);
 }
 

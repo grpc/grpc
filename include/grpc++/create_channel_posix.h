@@ -44,7 +44,7 @@ namespace grpc {
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-/// Create a new \a Channel communicating over given file descriptor
+/// Create a new \a Channel communicating over the given file descriptor.
 ///
 /// \param target The name of the target.
 /// \param fd The file descriptor representing a socket.
@@ -52,7 +52,7 @@ std::shared_ptr<Channel> CreateInsecureChannelFromFd(const grpc::string& target,
                                                      int fd);
 
 /// Create a new \a Channel communicating over given file descriptor with custom
-/// channel arguments
+/// channel arguments.
 ///
 /// \param target The name of the target.
 /// \param fd The file descriptor representing a socket.

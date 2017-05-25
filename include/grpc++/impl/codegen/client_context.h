@@ -151,6 +151,20 @@ namespace testing {
 class InteropClientContextInspector;
 }  // namespace testing
 
+/// A ClientContext allows the person implementing a service client to:
+///
+/// - Add custom metadata key-value pairs that will propagated to the server
+///   side.
+/// - Control call settings such as compression and authentication.
+/// - Initial and trailing metadata coming from the server.
+/// - Get performance metrics (ie, census).
+///
+/// Context settings are only relevant to the call they are invoked with, that
+/// is to say, they aren't sticky. Some of these settings, such as the
+/// compression options, can be made persistant at channel construction time
+/// (see \a grpc::CreateCustomChannel).
+///
+/// \warning ClientContext instances should \em not be reused across rpcs.
 class ClientContext {
  public:
   ClientContext();
@@ -178,9 +192,8 @@ class ClientContext {
   ///
   /// \param meta_key The metadata key. If \a meta_value is binary data, it must
   /// end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary, it must be
-  /// base64-encoding (see https://tools.ietf.org/html/rfc4648#section-4) and \a
-  /// meta_key must end in "-bin".
+  /// \param meta_value The metadata value. If its value is binary, the key name
+  /// must end in "-bin".
   void AddMetadata(const grpc::string& meta_key,
                    const grpc::string& meta_value);
 
@@ -222,13 +235,24 @@ class ClientContext {
     deadline_ = deadline_tp.raw_time();
   }
 
-  /// EXPERIMENTAL: Set this request to be idempotent
+  /// EXPERIMENTAL: Indicate that this request is idempotent.
+  /// By default, RPCs are assumed to <i>not</i> be idempotent.
+  ///
+  /// If true, the gRPC library assumes that it's safe to initiate
+  /// this RPC multiple times.
   void set_idempotent(bool idempotent) { idempotent_ = idempotent; }
 
-  /// EXPERIMENTAL: Set this request to be cacheable
+  /// EXPERIMENTAL: Set this request to be cacheable.
+  /// If set, grpc is free to use the HTTP GET verb for sending the request,
+  /// with the possibility of receiving a cached respone.
   void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
 
-  /// EXPERIMENTAL: Trigger wait-for-ready or not on this request
+  /// EXPERIMENTAL: Trigger wait-for-ready or not on this request.
+  /// See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md.
+  /// If set, if an RPC is made when a channel's connectivity state is
+  /// TRANSIENT_FAILURE or CONNECTING, the call will not "fail fast",
+  /// and the channel will wait until the channel is READY before making the
+  /// call.
   void set_wait_for_ready(bool wait_for_ready) {
     wait_for_ready_ = wait_for_ready;
     wait_for_ready_explicitly_set_ = true;
@@ -283,7 +307,7 @@ class ClientContext {
 
   /// Flag whether the initial metadata should be \a corked
   ///
-  /// If \a corked is true, then the initial metadata will be colasced with the
+  /// If \a corked is true, then the initial metadata will be coalesced with the
   /// write of first message in the stream.
   ///
   /// \param corked The flag indicating whether the initial metadata is to be
@@ -325,8 +349,8 @@ class ClientContext {
   };
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
-  // Should be used for framework-level extensions only.
-  // Applications never need to call this method.
+  /// Should be used for framework-level extensions only.
+  /// Applications never need to call this method.
   grpc_call* c_call() { return call_; }
 
  private:

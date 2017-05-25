@@ -40,10 +40,10 @@ namespace grpc {
 class CompletionQueueTag {
  public:
   virtual ~CompletionQueueTag() {}
-  // Called prior to returning from Next(), return value is the status of the
-  // operation (return status is the default thing to do). If this function
-  // returns false, the tag is dropped and not returned from the completion
-  // queue
+  /// Called prior to returning from Next(), return value is the status of the
+  /// operation (return status is the default thing to do). If this function
+  /// returns false, the tag is dropped and not returned from the completion
+  /// queue
   virtual bool FinalizeResult(void** tag, bool* status) = 0;
 };
 

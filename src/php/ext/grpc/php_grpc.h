@@ -40,9 +40,6 @@
 extern zend_module_entry grpc_module_entry;
 #define phpext_grpc_ptr &grpc_module_entry
 
-#define PHP_GRPC_VERSION \
-  "0.1.0" /* Replace with version number for your extension */
-
 #ifdef PHP_WIN32
 #define PHP_GRPC_API __declspec(dllexport)
 #elif defined(__GNUC__) && __GNUC__ >= 4
@@ -56,10 +53,9 @@ extern zend_module_entry grpc_module_entry;
 #endif
 
 #include "php.h"
-
 #include "php7_wrapper.h"
-
 #include "grpc/grpc.h"
+#include "version.h"
 
 /* These are all function declarations */
 /* Code that runs at module initialization */

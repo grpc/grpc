@@ -582,9 +582,9 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
   cq_event_queue_push(&cqd->queue, storage);
   gpr_atm_no_barrier_fetch_add(&cqd->things_queued_ever, 1);
 
-  int shutdown = gpr_unref(&cqd->pending_events);
-
   gpr_mu_lock(cqd->mu);
+
+  int shutdown = gpr_unref(&cqd->pending_events);
   if (!shutdown) {
     grpc_error *kick_error = cc->poller_vtable->kick(POLLSET_FROM_CQ(cc), NULL);
     gpr_mu_unlock(cqd->mu);

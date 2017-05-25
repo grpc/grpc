@@ -317,6 +317,7 @@ filegroups:
   - src/core/lib/iomgr/ev_epollsig_linux.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
+  - src/core/lib/iomgr/ev_windows.c
   - src/core/lib/iomgr/exec_ctx.c
   - src/core/lib/iomgr/executor.c
   - src/core/lib/iomgr/iocp_windows.c
@@ -968,9 +969,10 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
+  deps:
+  - grpc
   uses:
   - grpc++_codegen_base
-  - grpc_base
   - nanopb
 - name: grpc++_codegen_base
   language: c++
@@ -4644,8 +4646,8 @@ php_config_m4:
   deps:
   - grpc
   - gpr
-  - ares
   - boringssl
+  - z
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -4658,6 +4660,7 @@ php_config_m4:
   - src/php/ext/grpc/server.h
   - src/php/ext/grpc/server_credentials.h
   - src/php/ext/grpc/timeval.h
+  - src/php/ext/grpc/version.h
   src:
   - src/php/ext/grpc/byte_buffer.c
   - src/php/ext/grpc/call.c
