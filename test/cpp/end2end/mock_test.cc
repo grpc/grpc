@@ -34,7 +34,6 @@
 #include <climits>
 #include <thread>
 
-#include <gmock/gmock.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -46,14 +45,15 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
-#include <grpc++/test/mock_stream.h>
-
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_mock.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
+#include <grpc++/test/mock_stream.h>
+
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <iostream>
