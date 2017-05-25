@@ -93,10 +93,10 @@ static void start_timer_thread_and_unlock(void) {
   if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
     gpr_log(GPR_DEBUG, "Spawn timer thread");
   }
-  gpr_thd_id thd;
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&opt);
-  gpr_thd_new(&thd, timer_thread, NULL, &opt);
+  completed_thread *ct = gpr_malloc(sizeof(*ct));
+  gpr_thd_new(&ct->t, timer_thread, ct, &opt);
 }
 
 void grpc_timer_manager_tick() {
@@ -107,7 +107,7 @@ void grpc_timer_manager_tick() {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void timer_thread(void *unused) {
+static void timer_thread(void *completed_thread_ptr) {
   // this threads exec_ctx: we try to run things through to completion here
   // since it's easy to spin up new threads
   grpc_exec_ctx exec_ctx =
@@ -194,8 +194,7 @@ static void timer_thread(void *unused) {
   if (0 == g_thread_count) {
     gpr_cv_signal(&g_cv_shutdown);
   }
-  completed_thread *ct = gpr_malloc(sizeof(*ct));
-  ct->t = gpr_thd_currentid();
+  completed_thread *ct = completed_thread_ptr;
   ct->next = g_completed_threads;
   g_completed_threads = ct;
   gpr_mu_unlock(&g_mu);

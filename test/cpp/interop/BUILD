@@ -40,6 +40,7 @@ package(
 
 grpc_cc_library(
     name = "server_helper_lib",
+    language = "c++",
     srcs = [
         "server_helper.cc",
     ],
@@ -48,12 +49,15 @@ grpc_cc_library(
     ],
     deps = [
         "//test/cpp/util:test_util",
-        "//external:gflags",
+    ],
+    external_deps = [
+        "gflags",
     ],
 )
 
 grpc_cc_binary(
     name = "interop_server",
+    language = "c++",
     srcs = [
         "interop_server_bootstrap.cc",
     ],
@@ -81,6 +85,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "client_helper_lib",
+    language = "c++",
     srcs = [
         "client_helper.cc",
         "interop_client.cc",
@@ -147,5 +152,9 @@ grpc_cc_binary(
         "//:grpc++",
         "//test/cpp/util:metrics_server_lib",
         "//test/cpp/util:test_config",
+    name = "interop_client",
+    language = "c++",
+    deps = [
+        ":interop_client_main",
     ],
 )

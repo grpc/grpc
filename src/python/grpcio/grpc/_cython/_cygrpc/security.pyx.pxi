@@ -49,7 +49,7 @@ cdef grpc_ssl_roots_override_result ssl_roots_override_callback(
 def peer_identities(Call call):
   cdef grpc_auth_context* auth_context
   cdef grpc_auth_property_iterator properties
-  cdef grpc_auth_property* property
+  cdef const grpc_auth_property* property
 
   auth_context = grpc_call_auth_context(call.c_call)
   if auth_context == NULL:
@@ -67,7 +67,7 @@ def peer_identities(Call call):
 
 def peer_identity_key(Call call):
   cdef grpc_auth_context* auth_context
-  cdef char* c_key
+  cdef const char* c_key
   auth_context = grpc_call_auth_context(call.c_call)
   if auth_context == NULL:
     return None
@@ -82,7 +82,7 @@ def peer_identity_key(Call call):
 def auth_context(Call call):
   cdef grpc_auth_context* auth_context
   cdef grpc_auth_property_iterator properties
-  cdef grpc_auth_property* property
+  cdef const grpc_auth_property* property
 
   auth_context = grpc_call_auth_context(call.c_call)
   if auth_context == NULL:

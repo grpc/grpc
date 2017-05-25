@@ -27,6 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+licenses(["notice"])  # 3-clause BSD
+
 package(default_visibility = ["//visibility:public"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
