@@ -129,8 +129,23 @@ grpc_cc_binary(
     ],
     language = "C++",
     deps = [
-        "//:grpc++",
         ":interop_server_lib",
+        "//:grpc++",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_binary(
+    name = "stress_test",
+    srcs = [
+        "stress_test.cc",
+        "stress_interop_client.cc",
+        "stress_interop_client.h",
+    ],
+    deps = [
+        ":client_helper_lib",
+        "//:grpc++",
+        "//test/cpp/util:metrics_server_lib",
+        "//test/cpp/util:test_config",
     ],
 )
