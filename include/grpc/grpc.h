@@ -178,6 +178,12 @@ GRPCAPI void grpc_alarm_destroy(grpc_alarm *alarm);
 GRPCAPI grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel *channel, int try_to_connect);
 
+/** Number of active "external connectivity state watchers" attached to a
+ * channel.
+ * Useful for testing. **/
+GRPCAPI int grpc_channel_num_external_connectivity_watchers(
+    grpc_channel *channel);
+
 /** Watch for a change in connectivity state.
     Once the channel connectivity state is different from last_observed_state,
     tag will be enqueued on cq with success=1.

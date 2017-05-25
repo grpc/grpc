@@ -508,9 +508,14 @@ void Call::DestroyCall() {
 }
 
 Call::Call(grpc_call *call)
-    : wrapped_call(call), pending_batches(0), has_final_op_completed(false) {}
+    : wrapped_call(call), pending_batches(0), has_final_op_completed(false) {
+  peer = grpc_call_get_peer(call);
+}
 
-Call::~Call() { DestroyCall(); }
+Call::~Call() {
+  DestroyCall();
+  gpr_free(peer);
+}
 
 void Call::Init(Local<Object> exports) {
   HandleScope scope;
@@ -662,6 +667,16 @@ NAN_METHOD(Call::StartBatch) {
   }
   Local<Function> callback_func = info[1].As<Function>();
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
+  if (call->wrapped_call == NULL) {
+    /* This implies that the call has completed and has been destroyed. To
+     * emulate
+     * previous behavior, we should call the callback immediately with an error,
+     * as though the batch had failed in core */
+    Local<Value> argv[] = {
+        Nan::Error("The async function failed because the call has completed")};
+    Nan::Call(callback_func, Nan::New<Object>(), 1, argv);
+    return;
+  }
   Local<Object> obj = Nan::To<Object>(info[0]).ToLocalChecked();
   Local<Array> keys = Nan::GetOwnPropertyNames(obj).ToLocalChecked();
   size_t nops = keys->Length();
@@ -727,6 +742,11 @@ NAN_METHOD(Call::Cancel) {
     return Nan::ThrowTypeError("cancel can only be called on Call objects");
   }
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
+  if (call->wrapped_call == NULL) {
+    /* Cancel is supposed to be idempotent. If the call has already finished,
+     * cancel should just complete silently */
+    return;
+  }
   grpc_call_error error = grpc_call_cancel(call->wrapped_call, NULL);
   if (error != GRPC_CALL_OK) {
     return Nan::ThrowError(nanErrorWithCode("cancel failed", error));
@@ -747,6 +767,11 @@ NAN_METHOD(Call::CancelWithStatus) {
         "cancelWithStatus's second argument must be a string");
   }
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
+  if (call->wrapped_call == NULL) {
+    /* Cancel is supposed to be idempotent. If the call has already finished,
+     * cancel should just complete silently */
+    return;
+  }
   grpc_status_code code =
       static_cast<grpc_status_code>(Nan::To<uint32_t>(info[0]).FromJust());
   if (code == GRPC_STATUS_OK) {
@@ -763,9 +788,7 @@ NAN_METHOD(Call::GetPeer) {
     return Nan::ThrowTypeError("getPeer can only be called on Call objects");
   }
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
-  char *peer = grpc_call_get_peer(call->wrapped_call);
-  Local<Value> peer_value = Nan::New(peer).ToLocalChecked();
-  gpr_free(peer);
+  Local<Value> peer_value = Nan::New(call->peer).ToLocalChecked();
   info.GetReturnValue().Set(peer_value);
 }
 
@@ -780,6 +803,10 @@ NAN_METHOD(Call::SetCredentials) {
         "setCredentials' first argument must be a CallCredentials");
   }
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
+  if (call->wrapped_call == NULL) {
+    return Nan::ThrowError(
+        "Cannot set credentials on a call that has already started");
+  }
   CallCredentials *creds_object = ObjectWrap::Unwrap<CallCredentials>(
       Nan::To<Object>(info[0]).ToLocalChecked());
   grpc_call_credentials *creds = creds_object->GetWrappedCredentials();

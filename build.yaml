@@ -2694,6 +2694,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: num_external_connectivity_watchers_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/num_external_connectivity_watchers_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
 - name: parse_address_test
   build: test
   language: c
