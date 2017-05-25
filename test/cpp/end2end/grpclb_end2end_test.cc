@@ -569,9 +569,11 @@ TEST_F(SingleBalancerTest, RepeatedServerlist) {
   // only the first half of the backends will receive them.
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (i < backends_.size() / 2)
-      EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
+      EXPECT_EQ(1U, backend_servers_[i].service_->request_count())
+          << "for backend #" << i;
     else
-      EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
+      EXPECT_EQ(0U, backend_servers_[i].service_->request_count())
+          << "for backend #" << i;
   }
   EXPECT_EQ(statuses_and_responses.size(), num_backends_ / 2);
   for (const auto& status_and_response : statuses_and_responses) {

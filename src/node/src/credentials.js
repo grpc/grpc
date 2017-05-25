@@ -1,5 +1,5 @@
-/*
- *
+/**
+ * @license
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -48,6 +48,7 @@
  * For example, to create a client secured with SSL that uses Google
  * default application credentials to authenticate:
  *
+ * @example
  * var channel_creds = credentials.createSsl(root_certs);
  * (new GoogleAuth()).getApplicationDefault(function(err, credential) {
  *   var call_creds = credentials.createFromGoogleCredential(credential);
@@ -56,15 +57,25 @@
  *   var client = new Client(address, combined_creds);
  * });
  *
- * @module
+ * @namespace grpc.credentials
  */
 
 'use strict';
 
 var grpc = require('./grpc_extension');
 
+/**
+ * This cannot be constructed directly. Instead, instances of this class should
+ * be created using the factory functions in {@link grpc.credentials}
+ * @constructor grpc.credentials~CallCredentials
+ */
 var CallCredentials = grpc.CallCredentials;
 
+/**
+ * This cannot be constructed directly. Instead, instances of this class should
+ * be created using the factory functions in {@link grpc.credentials}
+ * @constructor grpc.credentials~ChannelCredentials
+ */
 var ChannelCredentials = grpc.ChannelCredentials;
 
 var Metadata = require('./metadata.js');
@@ -76,24 +87,48 @@ var constants = require('./constants');
 var _ = require('lodash');
 
 /**
+ * @external GoogleCredential
+ * @see https://github.com/google/google-auth-library-nodejs
+ */
+
+/**
  * Create an SSL Credentials object. If using a client-side certificate, both
  * the second and third arguments must be passed.
+ * @memberof grpc.credentials
+ * @alias grpc.credentials.createSsl
+ * @kind function
  * @param {Buffer} root_certs The root certificate data
  * @param {Buffer=} private_key The client certificate private key, if
  *     applicable
  * @param {Buffer=} cert_chain The client certificate cert chain, if applicable
- * @return {ChannelCredentials} The SSL Credentials object
+ * @return {grpc.credentials.ChannelCredentials} The SSL Credentials object
  */
 exports.createSsl = ChannelCredentials.createSsl;
+
+/**
+ * @callback grpc.credentials~metadataCallback
+ * @param {Error} error The error, if getting metadata failed
+ * @param {grpc.Metadata} metadata The metadata
+ */
+
+/**
+ * @callback grpc.credentials~generateMetadata
+ * @param {Object} params Parameters that can modify metadata generation
+ * @param {string} params.service_url The URL of the service that the call is
+ *     going to
+ * @param {grpc.credentials~metadataCallback} callback
+ */
 
 /**
  * Create a gRPC credentials object from a metadata generation function. This
  * function gets the service URL and a callback as parameters. The error
  * passed to the callback can optionally have a 'code' value attached to it,
  * which corresponds to a status code that this library uses.
- * @param {function(String, function(Error, Metadata))} metadata_generator The
- *     function that generates metadata
- * @return {CallCredentials} The credentials object
+ * @memberof grpc.credentials
+ * @alias grpc.credentials.createFromMetadataGenerator
+ * @param {grpc.credentials~generateMetadata} metadata_generator The function
+ *     that generates metadata
+ * @return {grpc.credentials.CallCredentials} The credentials object
  */
 exports.createFromMetadataGenerator = function(metadata_generator) {
   return CallCredentials.createFromPlugin(function(service_url, cb_data,
@@ -119,8 +154,11 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
 
 /**
  * Create a gRPC credential from a Google credential object.
- * @param {Object} google_credential The Google credential object to use
- * @return {CallCredentials} The resulting credentials object
+ * @memberof grpc.credentials
+ * @alias grpc.credentials.createFromGoogleCredential
+ * @param {external:GoogleCredential} google_credential The Google credential
+ *     object to use
+ * @return {grpc.credentials.CallCredentials} The resulting credentials object
  */
 exports.createFromGoogleCredential = function(google_credential) {
   return exports.createFromMetadataGenerator(function(auth_context, callback) {
@@ -141,6 +179,8 @@ exports.createFromGoogleCredential = function(google_credential) {
 /**
  * Combine a ChannelCredentials with any number of CallCredentials into a single
  * ChannelCredentials object.
+ * @memberof grpc.credentials
+ * @alias grpc.credentials.combineChannelCredentials
  * @param {ChannelCredentials} channel_credential The ChannelCredentials to
  *     start with
  * @param {...CallCredentials} credentials The CallCredentials to compose
@@ -157,6 +197,8 @@ exports.combineChannelCredentials = function(channel_credential) {
 
 /**
  * Combine any number of CallCredentials into a single CallCredentials object
+ * @memberof grpc.credentials
+ * @alias grpc.credentials.combineCallCredentials
  * @param {...CallCredentials} credentials the CallCredentials to compose
  * @return CallCredentials A credentials object that combines all of the input
  *     credentials
@@ -172,6 +214,9 @@ exports.combineCallCredentials = function() {
 /**
  * Create an insecure credentials object. This is used to create a channel that
  * does not use SSL. This cannot be composed with anything.
+ * @memberof grpc.credentials
+ * @alias grpc.credentials.createInsecure
+ * @kind function
  * @return {ChannelCredentials} The insecure credentials object
  */
 exports.createInsecure = ChannelCredentials.createInsecure;

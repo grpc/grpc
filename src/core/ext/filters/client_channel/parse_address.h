@@ -54,4 +54,10 @@ bool grpc_parse_ipv6(const grpc_uri *uri, grpc_resolved_address *resolved_addr);
 /** Populate \a resolved_addr from \a uri. Returns true upon success. */
 bool grpc_parse_uri(const grpc_uri *uri, grpc_resolved_address *resolved_addr);
 
+/** Parse bare IPv4 or IPv6 "IP:port" strings. */
+bool grpc_parse_ipv4_hostport(const char *hostport, grpc_resolved_address *addr,
+                              bool log_errors);
+bool grpc_parse_ipv6_hostport(const char *hostport, grpc_resolved_address *addr,
+                              bool log_errors);
+
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H */

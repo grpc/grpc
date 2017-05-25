@@ -47,7 +47,7 @@ class ServerContextTestSpouse {
   explicit ServerContextTestSpouse(ServerContext* ctx) : ctx_(ctx) {}
 
   /// Inject client metadata to the ServerContext for the test. The test spouse
-  /// must be alive when ServerContext::client_metadata is called.
+  /// must be alive when \a ServerContext::client_metadata is called.
   void AddClientMetadata(const grpc::string& key, const grpc::string& value) {
     client_metadata_storage_.insert(
         std::pair<grpc::string, grpc::string>(key, value));
@@ -70,7 +70,7 @@ class ServerContextTestSpouse {
   }
 
  private:
-  ServerContext* ctx_;  /// not owned
+  ServerContext* ctx_;  // not owned
   std::multimap<grpc::string, grpc::string> client_metadata_storage_;
 };
 

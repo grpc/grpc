@@ -37,6 +37,8 @@ Content-Type
 
 1. application/grpc-web
   * e.g. application/grpc-web+[proto, json, thrift]
+  * the sender should always specify the message format, e.g. +proto, +json
+  * the receiver should assume the default is "+proto" when the message format is missing in Content-Type (as "application/grpc-web")
 2. application/grpc-web-text
   * text-encoded streams of “application/grpc-web”
   * e.g. application/grpc-web-text+[proto, thrift]
@@ -101,10 +103,6 @@ to security policies with XHR
   * While the server runtime will always base64-encode and flush gRPC messages
   atomically the client library should not assume base64 padding always
   happens at the boundary of message frames. That is, the implementation may send base64-encoded "chunks" with potential padding whenever the runtime needs to flush a byte buffer.
-3. For binary trailers, when the content-type is set to
-application/grpc-web-text, the extra base64 encoding specified
-in [gRPC over HTTP2](http://www.grpc.io/docs/guides/wire.html)
-for binary custom metadata is skipped.
 
 # Other features
 
