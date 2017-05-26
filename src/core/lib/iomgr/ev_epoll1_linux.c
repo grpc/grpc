@@ -473,7 +473,9 @@ static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
 static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                              grpc_closure *closure) {
   GPR_ASSERT(pollset->shutdown_closure == NULL);
+  GPR_ASSERT(!pollset->shutting_down);
   pollset->shutdown_closure = closure;
+  pollset->shutting_down = true;
   GRPC_LOG_IF_ERROR("pollset_shutdown", pollset_kick_all(pollset));
   pollset_maybe_finish_shutdown(exec_ctx, pollset);
 }
@@ -600,8 +602,7 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
     GPR_ASSERT(gpr_atm_no_barrier_load(&g_active_poller) != (gpr_atm)worker);
     worker->initialized_cv = true;
     gpr_cv_init(&worker->cv);
-    while (worker->kick_state == UNKICKED &&
-           pollset->shutdown_closure == NULL) {
+    while (worker->kick_state == UNKICKED && !pollset->shutting_down) {
       if (gpr_cv_wait(&worker->cv, &pollset->mu, deadline) &&
           worker->kick_state == UNKICKED) {
         SET_KICK_STATE(worker, KICKED);
@@ -610,8 +611,7 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
     *now = gpr_now(now->clock_type);
   }
 
-  return worker->kick_state == DESIGNATED_POLLER &&
-         pollset->shutdown_closure == NULL;
+  return worker->kick_state == DESIGNATED_POLLER && !pollset->shutting_down;
 }
 
 static bool check_neighbourhood_for_available_poller(
@@ -745,7 +745,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)pollset);
   if (begin_worker(pollset, &worker, worker_hdl, &now, deadline)) {
     gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
-    GPR_ASSERT(!pollset->shutdown_closure);
+    GPR_ASSERT(!pollset->shutting_down);
     GPR_ASSERT(!pollset->seen_inactive);
     gpr_mu_unlock(&pollset->mu);
     append_error(&error, pollset_epoll(exec_ctx, pollset, now, deadline),
