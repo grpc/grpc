@@ -581,22 +581,20 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
   /* Add the completion to the queue */
   bool is_first = cq_event_queue_push(&cqd->queue, storage);
   gpr_atm_no_barrier_fetch_add(&cqd->things_queued_ever, 1);
+  bool shutdown = gpr_unref(&cqd->pending_events);
 
-  gpr_mu_lock(cqd->mu);
-
-  int shutdown = gpr_unref(&cqd->pending_events);
   if (!shutdown) {
     /* Only kick if this is the first item queued */
-    grpc_error *kick_error =
-        is_first ? cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), NULL)
-                 : GRPC_ERROR_NONE;
-    gpr_mu_unlock(cqd->mu);
+    if (is_first) {
+      gpr_mu_lock(cqd->mu);
+      grpc_error *kick_error = cq->poller_vtable->kick(POLLSET_FROM_CQ(cq);
+      gpr_mu_unlock(cqd->mu);
 
-    if (kick_error != GRPC_ERROR_NONE) {
-      const char *msg = grpc_error_string(kick_error);
-      gpr_log(GPR_ERROR, "Kick failed: %s", msg);
-
-      GRPC_ERROR_UNREF(kick_error);
+      if (kick_error != GRPC_ERROR_NONE) {
+        const char *msg = grpc_error_string(kick_error);
+        gpr_log(GPR_ERROR, "Kick failed: %s", msg);
+        GRPC_ERROR_UNREF(kick_error);
+      }
     }
   } else {
     cq_finish_shutdown(exec_ctx, cq);
@@ -866,7 +864,8 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(is_finished_arg.stolen_completion == NULL);
 
-  if (cq_event_queue_num_items(&cqd->queue) > 0) {
+  if (cq_event_queue_num_items(&cqd->queue) > 0 &&
+      gpr_atm_no_barrier_load(&cqd->shutdown) == 0) {
     gpr_mu_lock(cqd->mu);
     cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), NULL);
     gpr_mu_unlock(cqd->mu);
