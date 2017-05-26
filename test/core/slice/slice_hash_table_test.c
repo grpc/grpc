@@ -162,6 +162,10 @@ static void test_slice_hash_table_eq_success() {
       create_table_from_entries(test_entries_b, num_entries_b, value_eq_fn);
 
   GPR_ASSERT(grpc_slice_hash_table_equals(table_a, table_b));
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice_hash_table_unref(&exec_ctx, table_a);
+  grpc_slice_hash_table_unref(&exec_ctx, table_b);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_slice_hash_table_eq_failure() {
@@ -209,6 +213,15 @@ static void test_slice_hash_table_eq_failure() {
   grpc_slice_hash_table* table_f =
       create_table_from_entries(test_entries_f, num_entries_f, pointer_eq_fn);
   GPR_ASSERT(!grpc_slice_hash_table_equals(table_e, table_f));
+
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice_hash_table_unref(&exec_ctx, table_a);
+  grpc_slice_hash_table_unref(&exec_ctx, table_b);
+  grpc_slice_hash_table_unref(&exec_ctx, table_c);
+  grpc_slice_hash_table_unref(&exec_ctx, table_d);
+  grpc_slice_hash_table_unref(&exec_ctx, table_e);
+  grpc_slice_hash_table_unref(&exec_ctx, table_f);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char** argv) {
