@@ -164,4 +164,4 @@ void intrusive_hash_map_clear(intrusive_hash_map *hash_map,
 void intrusive_hash_map_free(intrusive_hash_map *hash_map,
                              void (*free_object)(void *));
 
-#endif // GRPC_CORE_EXT_CENSUS_INTRUSIVE_HASH_MAP_H
+#endif  // GRPC_CORE_EXT_CENSUS_INTRUSIVE_HASH_MAP_H
