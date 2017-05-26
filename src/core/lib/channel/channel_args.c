@@ -129,11 +129,6 @@ grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src) {
   return grpc_channel_args_copy_and_add(src, NULL, 0);
 }
 
-grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
-                                           const grpc_channel_args *b) {
-  return grpc_channel_args_copy_and_add(a, b->args, b->num_args);
-}
-
 grpc_channel_args *grpc_channel_args_union(const grpc_channel_args *a,
                                            const grpc_channel_args *b) {
   const size_t max_out = (a->num_args + b->num_args);

@@ -31,6 +31,7 @@
  *
  */
 
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -207,10 +208,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   };
 
-  int WaitForServer(size_t server_idx, int start_count) {
+  int WaitForServer(size_t server_idx) {
     do {
       SendRpc();
-    } while (servers_[server_idx]->service_.request_count() == start_count);
+    } while (servers_[server_idx]->service_.request_count() == 0);
     servers_[server_idx]->service_.ResetCounters();
     return servers_[server_idx]->service_.request_count();
   }
@@ -281,7 +282,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   ports.emplace_back(servers_[1]->port_);
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [1] *******");
-  WaitForServer(1, 0);
+  WaitForServer(1);
   EXPECT_EQ(servers_[0]->service_.request_count(), 0);
 
   // And again for servers_[2]
@@ -289,7 +290,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   ports.emplace_back(servers_[2]->port_);
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [2] *******");
-  WaitForServer(2, 0);
+  WaitForServer(2);
   EXPECT_EQ(servers_[0]->service_.request_count(), 0);
   EXPECT_EQ(servers_[1]->service_.request_count(), 0);
 
@@ -320,7 +321,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   gpr_log(GPR_INFO, "****** SET superset *******");
   SendRpc();
   // We stick to the previously connected server.
-  WaitForServer(0, 0);
+  WaitForServer(0);
   EXPECT_EQ(0, servers_[1]->service_.request_count());
 
   // Check LB policy name for the channel.
@@ -358,7 +359,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // Start with a single server.
   ports.emplace_back(servers_[0]->port_);
   SetNextResolution(ports);
-  WaitForServer(0, 0);
+  WaitForServer(0);
   // Send RPCs. They should all go servers_[0]
   for (size_t i = 0; i < 10; ++i) SendRpc();
   EXPECT_EQ(10, servers_[0]->service_.request_count());
@@ -374,7 +375,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // Wait until update has been processed, as signaled by the second backend
   // receiving a request.
   EXPECT_EQ(0, servers_[1]->service_.request_count());
-  WaitForServer(1, 0);
+  WaitForServer(1);
 
   for (size_t i = 0; i < 10; ++i) SendRpc();
   EXPECT_EQ(0, servers_[0]->service_.request_count());
@@ -386,7 +387,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   ports.clear();
   ports.emplace_back(servers_[2]->port_);
   SetNextResolution(ports);
-  WaitForServer(2, 0);
+  WaitForServer(2);
 
   for (size_t i = 0; i < 10; ++i) SendRpc();
   EXPECT_EQ(0, servers_[0]->service_.request_count());
@@ -400,9 +401,9 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   ports.emplace_back(servers_[1]->port_);
   ports.emplace_back(servers_[2]->port_);
   SetNextResolution(ports);
-  WaitForServer(0, 0);
-  WaitForServer(1, 0);
-  WaitForServer(2, 0);
+  WaitForServer(0);
+  WaitForServer(1);
+  WaitForServer(2);
 
   // Send three RPCs, one per server.
   for (size_t i = 0; i < 3; ++i) SendRpc();
