@@ -52,7 +52,7 @@ namespace Grpc.Core.Internal
 
         readonly GrpcEnvironment environment;
         readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>(new IntPtrComparer());
-        IntPtr lastRegisteredKey;
+        IntPtr lastRegisteredKey;  // only for testing
 
         public CompletionRegistry(GrpcEnvironment environment)
         {
@@ -86,6 +86,9 @@ namespace Grpc.Core.Internal
             return value;
         }
 
+        /// <summary>
+        /// For testing purposes only.
+        /// </summary>
         public IntPtr LastRegisteredKey
         {
             get { return this.lastRegisteredKey; }
