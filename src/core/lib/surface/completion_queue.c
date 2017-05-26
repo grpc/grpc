@@ -587,7 +587,8 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
     /* Only kick if this is the first item queued */
     if (is_first) {
       gpr_mu_lock(cqd->mu);
-      grpc_error *kick_error = cq->poller_vtable->kick(POLLSET_FROM_CQ(cq);
+      grpc_error *kick_error =
+          cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), NULL);
       gpr_mu_unlock(cqd->mu);
 
       if (kick_error != GRPC_ERROR_NONE) {
