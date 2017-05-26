@@ -60,4 +60,4 @@ typedef struct intrusive_hash_map {
   chunked_vector buckets;
 } intrusive_hash_map;
 
-#endif  // GRPC_CORE_EXT_CENSUS_INTRUSIVE_HASH_MAP_INTERNAL_H
+#endif /* GRPC_CORE_EXT_CENSUS_INTRUSIVE_HASH_MAP_INTERNAL_H */
