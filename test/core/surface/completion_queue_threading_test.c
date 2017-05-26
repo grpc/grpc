@@ -205,7 +205,8 @@ static void consumer_thread(void *arg) {
 
   gpr_log(GPR_INFO, "consumer %d phase 2", opt->id);
   for (;;) {
-    ev = grpc_completion_queue_next(opt->cc, ten_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(opt->cc,
+                                    gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
         GPR_ASSERT(ev.success);
