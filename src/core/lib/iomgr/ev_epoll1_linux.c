@@ -836,7 +836,6 @@ static grpc_error *pollset_kick(grpc_pollset *pollset,
         return GRPC_ERROR_NONE;
       }
     } else {
-      GPR_ASSERT(false);
       return GRPC_ERROR_NONE;
     }
   } else if (specific_worker->kick_state == KICKED) {
