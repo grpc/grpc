@@ -865,7 +865,8 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(is_finished_arg.stolen_completion == NULL);
 
-  if (cq_event_queue_num_items(&cqd->queue) > 0) {
+  if (cq_event_queue_num_items(&cqd->queue) > 0 &&
+      gpr_atm_no_barrier_load(&cqd->shutdown) == 0) {
     gpr_mu_lock(cqd->mu);
     cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), NULL);
     gpr_mu_unlock(cqd->mu);
