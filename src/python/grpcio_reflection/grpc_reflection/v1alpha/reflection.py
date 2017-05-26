@@ -152,4 +152,4 @@ def enable_server_reflection(service_names, server, pool=None):
       pool: DescriptorPool object to use (descriptor_pool.Default() if None).
     """
     reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
-        ReflectionServicer(service_names), server, pool)
+        ReflectionServicer(service_names, pool), server)
