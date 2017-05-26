@@ -320,8 +320,8 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
 }
 
 static void StreamingTrickleArgs(benchmark::internal::Benchmark* b) {
-  for (int i = 1; i <= 128 * 1024 * 1024; i *= 16) {
-    for (int j = 64; j <= 128 * 1024 * 1024; j *= 16) {
+  for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
+    for (int j = 64; j <= 128 * 1024 * 1024; j *= 8) {
       double expected_time =
           static_cast<double>(14 + i) / (125.0 * static_cast<double>(j));
       if (expected_time > 2.0) continue;
@@ -419,18 +419,18 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
 }
 
 static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
+  // A selection of interesting numbers
   const int cli_1024k = 1024 * 1024;
   const int cli_32M = 32 * 1024 * 1024;
   const int svr_256k = 256 * 1024;
   const int svr_4M = 4 * 1024 * 1024;
   const int svr_64M = 64 * 1024 * 1024;
   for (int bw = 64; bw <= 128 * 1024 * 1024; bw *= 16) {
-    b->Args({cli_1024k, svr_256k, bw});
-    b->Args({cli_1024k, svr_4M, bw});
-    b->Args({cli_1024k, svr_64M, bw});
-    b->Args({cli_32M, svr_256k, bw});
-    b->Args({cli_32M, svr_4M, bw});
-    b->Args({cli_32M, svr_64M, bw});
+    for (auto svr : {svr_256k, svr_4M, svr_64M}) {
+      for (auto cli: {cli_1024k, cli_32M}) {
+        b->Args({cli, svr, bw});
+      }
+    }
   }
 }
 BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
