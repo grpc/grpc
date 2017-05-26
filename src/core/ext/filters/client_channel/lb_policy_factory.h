@@ -117,6 +117,13 @@ grpc_arg grpc_lb_addresses_create_channel_arg(
 grpc_lb_addresses *grpc_lb_addresses_find_channel_arg(
     const grpc_channel_args *channel_args);
 
+/** Arguments passed to LB policies. */
+struct grpc_lb_policy_args {
+  grpc_client_channel_factory *client_channel_factory;
+  grpc_channel_args *args;
+  grpc_combiner *combiner;
+};
+
 struct grpc_lb_policy_factory_vtable {
   void (*ref)(grpc_lb_policy_factory *factory);
   void (*unref)(grpc_lb_policy_factory *factory);

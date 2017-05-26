@@ -725,7 +725,7 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-// Send and update with the same set of LBs as the one in SetUp() in order to
+// Send an update with the same set of LBs as the one in SetUp() in order to
 // verify that the LB channel inside grpclb keeps the initial connection (which
 // by definition is also present in the update).
 TEST_F(UpdatesTest, UpdateBalancersRepeated) {
@@ -779,7 +779,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
     }
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
   // grpclb continued using the original LB call to the first balancer, which
-  // doesn't assign the second balancer.
+  // doesn't assign the second backend.
   EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   balancers_[0]->NotifyDoneWithServerlists();
 
@@ -802,7 +802,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
     }
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
   // grpclb continued using the original LB call to the first balancer, which
-  // doesn't assign the second balancer.
+  // doesn't assign the second backend.
   EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   balancers_[0]->NotifyDoneWithServerlists();
 

@@ -34,7 +34,6 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
 
-#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -43,13 +42,7 @@
     is expected to be extended to contain some parameters) */
 typedef struct grpc_lb_policy grpc_lb_policy;
 typedef struct grpc_lb_policy_vtable grpc_lb_policy_vtable;
-
-/** Arguments passed to LB policies. */
-typedef struct grpc_lb_policy_args {
-  grpc_client_channel_factory *client_channel_factory;
-  grpc_channel_args *args;
-  grpc_combiner *combiner;
-} grpc_lb_policy_args;
+typedef struct grpc_lb_policy_args grpc_lb_policy_args;
 
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable *vtable;
@@ -118,7 +111,7 @@ struct grpc_lb_policy_vtable {
                         const grpc_lb_policy_args *args);
 };
 
-#define GRPC_LB_POLICY_REFCOUNT_DEBUG
+//#define GRPC_LB_POLICY_REFCOUNT_DEBUG
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
 
 /* Strong references: the policy will shutdown when they reach zero */
@@ -219,6 +212,11 @@ grpc_connectivity_state grpc_lb_policy_check_connectivity_locked(
     grpc_error **connectivity_error);
 
 /** Update \a policy with \a lb_policy_args. Returns true upon success. */
+/* TODO(dgq): instead of returning a bool, add an \a on_complete closure to be
+ * invoked once the update has been processed. Note that only the last update
+ * of a sequence arriving while still processing a previous update will take
+ * effect. All others will be discarded and their associated \a on_complete
+ * invoked with their error set to GRPC_ERROR_CANCELLED */
 bool grpc_lb_policy_update_locked(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy *policy,
                                   const grpc_lb_policy_args *lb_policy_args);

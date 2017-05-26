@@ -557,12 +557,12 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 static bool rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                              const grpc_lb_policy_args *args) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)policy;
-  /* Find the number of backend addresses. We ignore balancer
-   * addresses, since we don't know how to handle them. */
+  /* Find the number of backend addresses. We ignore balancer addresses, since
+   * we don't know how to handle them. */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
-    return NULL;
+    return false;
   }
   grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_addrs = 0;
@@ -571,6 +571,7 @@ static bool rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   }
 
   subchannel_data **update_subchannels = NULL;
+  size_t subchannel_index = 0;
   if (num_addrs > 0) {
     update_subchannels = gpr_zalloc(sizeof(*update_subchannels) * num_addrs);
   } else {
@@ -579,7 +580,8 @@ static bool rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   }
 
   grpc_subchannel_args sc_args;
-  size_t subchannel_index = 0;
+  /* We need to remove the LB addresses in order to be able to compare the
+   * subchannel keys of subchannels from a different batch of addresses. */
   static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
                                          GRPC_ARG_LB_ADDRESSES};
   /* 1. Create subchannels for addresses in the update. */
@@ -636,7 +638,7 @@ static bool rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
         /* use some sentinel value outside of the range of
          * grpc_connectivity_state to signal an undefined previous state. We
          * won't be referring to this value again and it'll be overwritten after
-         * the first call to rr_connectivity_changed */
+         * the first call to rr_connectivity_changed_locked */
         sd->prev_connectivity_state = GRPC_CHANNEL_INIT;
         sd->curr_connectivity_state = GRPC_CHANNEL_IDLE;
         sd->user_data_vtable = addresses->user_data_vtable;

@@ -90,9 +90,9 @@ grpc_channel_args *grpc_lb_policy_grpclb_build_lb_channel_args(
    *
    * - The channel arg for the resolved addresses, since that will be generated
    *   by the name resolver used in the LB channel.  Note that the LB channel
-   *   will use the sockaddr resolver, so this won't actually generate a query
+   *   will use the fake resolver, so this won't actually generate a query
    *   to DNS (or some other name service).  However, the addresses returned by
-   *   the sockaddr resolver will have is_balancer=false, whereas our own
+   *   the fake resolver will have is_balancer=false, whereas our own
    *   addresses have is_balancer=true.  We need the LB channel to return
    *   addresses with is_balancer=false so that it does not wind up recursively
    *   using the grpclb LB policy, as per the special case logic in
