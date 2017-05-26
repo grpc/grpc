@@ -446,9 +446,6 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         GRPC_ERROR_UNREF(state_error);
         state = grpc_lb_policy_check_connectivity_locked(
             exec_ctx, chand->lb_policy, &state_error);
-      } else {
-        // it'll keep its default GRPC_CHANNEL_TRANSIENT_FAILURE value.
-        gpr_log(GPR_INFO, "LB UPDATE FOR %s FAILED", lb_policy_name);
       }
     } else {
       lb_policy =
@@ -458,8 +455,6 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         GRPC_ERROR_UNREF(state_error);
         state = grpc_lb_policy_check_connectivity_locked(exec_ctx, lb_policy,
                                                          &state_error);
-        gpr_log(GPR_INFO, "CLIENT CHANNEL STATE FOR %s: %d", lb_policy_name,
-                state);
         old_lb_policy = chand->lb_policy;
         chand->lb_policy = lb_policy;
       }

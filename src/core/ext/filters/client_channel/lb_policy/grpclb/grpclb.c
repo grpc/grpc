@@ -362,6 +362,9 @@ typedef struct glb_lb_policy {
   /** called upon changes to the LB channel's connectivity. */
   grpc_closure lb_channel_on_connectivity_changed;
 
+  /** args from the latest update received while already updating, or NULL */
+  grpc_lb_policy_args *pending_update_args;
+
   /************************************************************/
   /*  client data associated with the LB server communication */
   /************************************************************/
@@ -1039,6 +1042,10 @@ static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     grpc_grpclb_destroy_serverlist(glb_policy->serverlist);
   }
   grpc_fake_resolver_response_generator_unref(glb_policy->response_generator);
+  if (glb_policy->pending_update_args != NULL) {
+    grpc_channel_args_destroy(exec_ctx, glb_policy->pending_update_args->args);
+    gpr_free(glb_policy->pending_update_args);
+  }
   gpr_free(glb_policy);
 }
 
@@ -1712,6 +1719,60 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
                             "lb_on_server_status_received");
 }
 
+static bool glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                              const grpc_lb_policy_args *args) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
+
+  if (glb_policy->updating_lb_channel) {
+    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+      gpr_log(GPR_INFO,
+              "Update already in progress for grpclb %p. Deferring update.",
+              (void *)glb_policy);
+    }
+    if (glb_policy->pending_update_args != NULL) {
+      gpr_free(glb_policy->pending_update_args);
+    }
+    glb_policy->pending_update_args =
+        gpr_zalloc(sizeof(*glb_policy->pending_update_args));
+    glb_policy->pending_update_args->client_channel_factory =
+        args->client_channel_factory;
+    glb_policy->pending_update_args->args = grpc_channel_args_copy(args->args);
+    glb_policy->pending_update_args->combiner = args->combiner;
+    return true;
+  }
+
+  glb_policy->updating_lb_channel = true;
+  // Propagate update to lb_channel (pick first).
+  const grpc_arg *arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
+  if (arg == NULL || arg->type != GRPC_ARG_POINTER) return false;
+  const grpc_lb_addresses *addresses = arg->value.pointer.p;
+  GPR_ASSERT(glb_policy->lb_channel != NULL);
+  grpc_channel_args *lb_channel_args = build_lb_channel_args(
+      exec_ctx, addresses, glb_policy->response_generator, args->args);
+  /* Propagate updates to the LB channel through the fake resolver */
+  grpc_fake_resolver_response_generator_set_response(
+      exec_ctx, glb_policy->response_generator, lb_channel_args);
+  grpc_channel_args_destroy(exec_ctx, lb_channel_args);
+
+  if (!glb_policy->watching_lb_channel) {
+    // Watch the LB channel connectivity for connection.
+    glb_policy->lb_channel_connectivity = GRPC_CHANNEL_INIT;
+    grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
+        grpc_channel_get_channel_stack(glb_policy->lb_channel));
+    GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
+    glb_policy->watching_lb_channel = true;
+    GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "watch_lb_channel_connectivity");
+    grpc_client_channel_watch_connectivity_state(
+        exec_ctx, client_channel_elem,
+        grpc_polling_entity_create_from_pollset_set(
+            glb_policy->base.interested_parties),
+        &glb_policy->lb_channel_connectivity,
+        &glb_policy->lb_channel_on_connectivity_changed);
+  }
+  return true;
+}
+
 // Invoked as part of the update process. It continues watching the LB channel
 // until it shuts down or becomes READY. It's invoked even if the LB channel
 // stayed READY throughout the update (for example if the update is identical).
@@ -1719,8 +1780,6 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
                                                       void *arg,
                                                       grpc_error *error) {
   glb_lb_policy *glb_policy = arg;
-  gpr_log(GPR_INFO, "LOL glb_lb_channel_on_connectivity_changed_cb %d",
-          glb_policy->lb_channel_connectivity);
   if (glb_policy->shutting_down) goto done;
   // Re-initialize the lb_call. This should also take care of updating the
   // embedded RR policy. Note that the current RR policy, if any, will stay in
@@ -1754,6 +1813,10 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
         grpc_call_cancel(glb_policy->lb_call, NULL);
         // lb_on_server_status_received will pick up the cancel and reinit
         // lb_call.
+        if (glb_policy->pending_update_args != NULL) {
+          glb_update_locked(exec_ctx, &glb_policy->base,
+                            glb_policy->pending_update_args);
+        }
       } else if (glb_policy->started_picking && !glb_policy->shutting_down) {
         if (glb_policy->retry_timer_active) {
           grpc_timer_cancel(exec_ctx, &glb_policy->lb_call_retry_timer);
@@ -1769,50 +1832,6 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
                                 "watch_lb_channel_connectivity_cb_shutdown");
       break;
   }
-}
-
-static bool glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                              const grpc_lb_policy_args *args) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
-  if (glb_policy->updating_lb_channel) {
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "Update already in progress for grpclb %p. Ignoring incoming update.",
-          (void *)glb_policy);
-    }
-    return false;
-  }
-  glb_policy->updating_lb_channel = true;
-  // Propagate update to lb_channel (pick first).
-  const grpc_arg *arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
-  if (arg == NULL || arg->type != GRPC_ARG_POINTER) return false;
-  const grpc_lb_addresses *addresses = arg->value.pointer.p;
-  GPR_ASSERT(glb_policy->lb_channel != NULL);
-  grpc_channel_args *lb_channel_args = build_lb_channel_args(
-      exec_ctx, addresses, glb_policy->response_generator, args->args);
-  /* Propagate updates to the LB channel through the fake resolver */
-  grpc_fake_resolver_response_generator_set_response(
-      exec_ctx, glb_policy->response_generator, lb_channel_args);
-  grpc_channel_args_destroy(exec_ctx, lb_channel_args);
-
-  if (!glb_policy->watching_lb_channel) {
-    // Watch the LB channel connectivity for connection.
-    glb_policy->lb_channel_connectivity = GRPC_CHANNEL_INIT;
-    grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
-        grpc_channel_get_channel_stack(glb_policy->lb_channel));
-    GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-    glb_policy->watching_lb_channel = true;
-    GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "watch_lb_channel_connectivity");
-    grpc_client_channel_watch_connectivity_state(
-        exec_ctx, client_channel_elem,
-        grpc_polling_entity_create_from_pollset_set(
-            glb_policy->base.interested_parties),
-        &glb_policy->lb_channel_connectivity,
-        &glb_policy->lb_channel_on_connectivity_changed);
-  }
-  return true;
 }
 
 /* Code wiring the policy with the rest of the core */
