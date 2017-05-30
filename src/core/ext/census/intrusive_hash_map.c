@@ -37,7 +37,7 @@
 extern bool hm_index_compare(const hm_index *A, const hm_index *B);
 
 /* Simple hashing function that takes lower 32 bits. */
-static inline uint32_t chunked_vector_hasher(uint64_t key) {
+static __inline uint32_t chunked_vector_hasher(uint64_t key) {
   return (uint32_t)key;
 }
 
@@ -45,7 +45,7 @@ static inline uint32_t chunked_vector_hasher(uint64_t key) {
 static const size_t VECTOR_CHUNK_SIZE = (1 << 20) / sizeof(void *);
 
 /* Helper functions which return buckets from the chunked vector. */
-static inline void **get_mutable_bucket(const chunked_vector *buckets,
+static __inline void **get_mutable_bucket(const chunked_vector *buckets,
                                         uint32_t index) {
   if (index < VECTOR_CHUNK_SIZE) {
     return &buckets->first_[index];
@@ -54,7 +54,7 @@ static inline void **get_mutable_bucket(const chunked_vector *buckets,
   return &buckets->rest_[rest_index][index % VECTOR_CHUNK_SIZE];
 }
 
-static inline void *get_bucket(const chunked_vector *buckets, uint32_t index) {
+static __inline void *get_bucket(const chunked_vector *buckets, uint32_t index) {
   if (index < VECTOR_CHUNK_SIZE) {
     return buckets->first_[index];
   }
@@ -63,7 +63,7 @@ static inline void *get_bucket(const chunked_vector *buckets, uint32_t index) {
 }
 
 /* Helper function. */
-static inline size_t RestSize(const chunked_vector *vec) {
+static __inline size_t RestSize(const chunked_vector *vec) {
   return (vec->size_ <= VECTOR_CHUNK_SIZE)
              ? 0
              : (vec->size_ - VECTOR_CHUNK_SIZE - 1) / VECTOR_CHUNK_SIZE + 1;
@@ -222,7 +222,7 @@ hm_item *intrusive_hash_map_erase(intrusive_hash_map *hash_map, uint64_t key) {
  * array_size-1. Returns true if it is a new hm_item and false if the hm_item
  * already existed.
  */
-static inline bool intrusive_hash_map_internal_insert(chunked_vector *buckets,
+static __inline bool intrusive_hash_map_internal_insert(chunked_vector *buckets,
                                                       uint32_t hash_mask,
                                                       hm_item *item) {
   const uint64_t key = item->key;
