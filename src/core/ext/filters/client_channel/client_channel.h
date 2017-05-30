@@ -53,9 +53,13 @@ extern const grpc_channel_filter grpc_client_channel_filter;
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect);
 
+int grpc_client_channel_num_external_connectivity_watchers(
+    grpc_channel_element *elem);
+
 void grpc_client_channel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
-    grpc_connectivity_state *state, grpc_closure *on_complete);
+    grpc_connectivity_state *state, grpc_closure *on_complete,
+    grpc_closure *watcher_timer_init);
 
 /* Debug helper: pull the subchannel call from a call stack element */
 grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
