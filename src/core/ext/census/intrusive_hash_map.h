@@ -101,7 +101,7 @@ typedef struct hm_index {
 
 /* Returns true if two hm_indices point to the same object within the hash map
  * and false otherwise. */
-inline bool hm_index_compare(const hm_index *A, const hm_index *B) {
+__inline bool hm_index_compare(const hm_index *A, const hm_index *B) {
   return (A->item == B->item && A->bucket_index == B->bucket_index);
 }
 
