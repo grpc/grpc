@@ -107,7 +107,8 @@ void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx) {
       }
       last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
     }
-    if (grpc_timer_check(exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL)) {
+    if (grpc_timer_check(exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL) ==
+        GRPC_TIMERS_FIRED) {
       gpr_mu_unlock(&g_mu);
       grpc_exec_ctx_flush(exec_ctx);
       grpc_iomgr_platform_flush();

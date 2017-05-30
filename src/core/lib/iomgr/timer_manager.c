@@ -107,86 +107,116 @@ void grpc_timer_manager_tick() {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void timer_thread(void *unused) {
-  // this threads exec_ctx: we try to run things through to completion here
-  // since it's easy to spin up new threads
-  grpc_exec_ctx exec_ctx =
-      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
+static void run_some_timers(grpc_exec_ctx *exec_ctx) {
+  // if there's something to execute...
+  gpr_mu_lock(&g_mu);
+  // remove a waiter from the pool, and start another thread if necessary
+  --g_waiter_count;
+  if (g_waiter_count == 0 && g_threaded) {
+    start_timer_thread_and_unlock();
+  } else {
+    // if there's no thread waiting with a timeout, kick an existing
+    // waiter
+    // so that the next deadline is not missed
+    if (!g_has_timed_waiter) {
+      if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+        gpr_log(GPR_DEBUG, "kick untimed waiter");
+      }
+      gpr_cv_signal(&g_cv_wait);
+    }
+    gpr_mu_unlock(&g_mu);
+  }
+  // without our lock, flush the exec_ctx
+  grpc_exec_ctx_flush(exec_ctx);
+  gpr_mu_lock(&g_mu);
+  // garbage collect any threads hanging out that are dead
+  gc_completed_threads();
+  // get ready to wait again
+  ++g_waiter_count;
+  gpr_mu_unlock(&g_mu);
+}
+
+// wait until 'next' (or forever if there is already a timed waiter in the pool)
+// returns true if the thread should continue executing (false if it should
+// shutdown)
+static bool wait_until(gpr_timespec next) {
+  const gpr_timespec inf_future = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  gpr_mu_lock(&g_mu);
+  // if we're not threaded anymore, leave
+  if (!g_threaded) return false;
+  // if there's no timed waiter, we should become one: that waiter waits
+  // only until the next timer should expire
+  // all other timers wait forever
+  uint64_t my_timed_waiter_generation = g_timed_waiter_generation - 1;
+  if (!g_has_timed_waiter && gpr_time_cmp(next, inf_future) != 0) {
+    g_has_timed_waiter = true;
+    // we use a generation counter to track the timed waiter so we can
+    // cancel an existing one quickly (and when it actually times out it'll
+    // figure stuff out instead of incurring a wakeup)
+    my_timed_waiter_generation = ++g_timed_waiter_generation;
+    if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+      gpr_log(GPR_DEBUG, "sleep for a while");
+    }
+  } else {
+    next = inf_future;
+    if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+      gpr_log(GPR_DEBUG, "sleep until kicked");
+    }
+  }
+  gpr_cv_wait(&g_cv_wait, &g_mu, next);
+  if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+    gpr_log(GPR_DEBUG, "wait ended: was_timed:%d kicked:%d",
+            my_timed_waiter_generation == g_timed_waiter_generation, g_kicked);
+  }
+  // if this was the timed waiter, then we need to check timers, and flag
+  // that there's now no timed waiter... we'll look for a replacement if
+  // there's work to do after checking timers (code above)
+  if (my_timed_waiter_generation == g_timed_waiter_generation) {
+    g_has_timed_waiter = false;
+  }
+  // if this was a kick from the timer system, consume it (and don't stop
+  // this thread yet)
+  if (g_kicked) {
+    grpc_timer_consume_kick();
+    g_kicked = false;
+  }
+  gpr_mu_unlock(&g_mu);
+  return true;
+}
+
+static void timer_main_loop(grpc_exec_ctx *exec_ctx) {
   const gpr_timespec inf_future = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   for (;;) {
     gpr_timespec next = inf_future;
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     // check timer state, updates next to the next time to run a check
-    if (grpc_timer_check(&exec_ctx, now, &next)) {
-      // if there's something to execute...
-      gpr_mu_lock(&g_mu);
-      // remove a waiter from the pool, and start another thread if necessary
-      --g_waiter_count;
-      if (g_waiter_count == 0 && g_threaded) {
-        start_timer_thread_and_unlock();
-      } else {
-        // if there's no thread waiting with a timeout, kick an existing waiter
-        // so that the next deadline is not missed
-        if (!g_has_timed_waiter) {
-          if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
-            gpr_log(GPR_DEBUG, "kick untimed waiter");
-          }
-          gpr_cv_signal(&g_cv_wait);
-        }
-        gpr_mu_unlock(&g_mu);
-      }
-      // without our lock, flush the exec_ctx
-      grpc_exec_ctx_flush(&exec_ctx);
-      gpr_mu_lock(&g_mu);
-      // garbage collect any threads hanging out that are dead
-      gc_completed_threads();
-      // get ready to wait again
-      ++g_waiter_count;
-      gpr_mu_unlock(&g_mu);
-    } else {
-      gpr_mu_lock(&g_mu);
-      // if we're not threaded anymore, leave
-      if (!g_threaded) break;
-      // if there's no timed waiter, we should become one: that waiter waits
-      // only until the next timer should expire
-      // all other timers wait forever
-      uint64_t my_timed_waiter_generation = g_timed_waiter_generation - 1;
-      if (!g_has_timed_waiter) {
-        g_has_timed_waiter = true;
-        // we use a generation counter to track the timed waiter so we can
-        // cancel an existing one quickly (and when it actually times out it'll
-        // figure stuff out instead of incurring a wakeup)
-        my_timed_waiter_generation = ++g_timed_waiter_generation;
-        if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
-          gpr_log(GPR_DEBUG, "sleep for a while");
-        }
-      } else {
+    switch (grpc_timer_check(exec_ctx, now, &next)) {
+      case GRPC_TIMERS_FIRED:
+        run_some_timers(exec_ctx);
+        break;
+      case GRPC_TIMERS_NOT_CHECKED:
+        /* This case only happens under contention, meaning more than one timer
+           manager thread checked timers concurrently.
+
+           If that happens, we're guaranteed that some other thread has just
+           checked timers, and this will avalanche into some other thread seeing
+           empty timers and doing a timed sleep.
+
+           Consequently, we can just sleep forever here and be happy at some
+           saved wakeup cycles. */
         next = inf_future;
-        if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
-          gpr_log(GPR_DEBUG, "sleep until kicked");
+      /* fall through */
+      case GRPC_TIMERS_CHECKED_AND_EMPTY:
+        if (!wait_until(next)) {
+          return;
         }
-      }
-      gpr_cv_wait(&g_cv_wait, &g_mu, next);
-      if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
-        gpr_log(GPR_DEBUG, "wait ended: was_timed:%d kicked:%d",
-                my_timed_waiter_generation == g_timed_waiter_generation,
-                g_kicked);
-      }
-      // if this was the timed waiter, then we need to check timers, and flag
-      // that there's now no timed waiter... we'll look for a replacement if
-      // there's work to do after checking timers (code above)
-      if (my_timed_waiter_generation == g_timed_waiter_generation) {
-        g_has_timed_waiter = false;
-      }
-      // if this was a kick from the timer system, consume it (and don't stop
-      // this thread yet)
-      if (g_kicked) {
-        grpc_timer_consume_kick();
-        g_kicked = false;
-      }
-      gpr_mu_unlock(&g_mu);
+        break;
     }
   }
+}
+
+static void timer_thread_cleanup(void) {
+  gpr_mu_lock(&g_mu);
   // terminate the thread: drop the waiter count, thread count, and let whomever
   // stopped the threading stuff know that we're done
   --g_waiter_count;
@@ -199,10 +229,19 @@ static void timer_thread(void *unused) {
   ct->next = g_completed_threads;
   g_completed_threads = ct;
   gpr_mu_unlock(&g_mu);
-  grpc_exec_ctx_finish(&exec_ctx);
   if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
     gpr_log(GPR_DEBUG, "End timer thread");
   }
+}
+
+static void timer_thread(void *unused) {
+  // this threads exec_ctx: we try to run things through to completion here
+  // since it's easy to spin up new threads
+  grpc_exec_ctx exec_ctx =
+      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
+  timer_main_loop(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
+  timer_thread_cleanup();
 }
 
 static void start_threads(void) {
