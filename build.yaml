@@ -14,7 +14,7 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 4.0.0-dev
   g_stands_for: gregarious
-  version: 1.4.0-dev
+  version: 1.5.0-dev
 filegroups:
 - name: census
   public_headers:
