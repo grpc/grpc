@@ -92,15 +92,12 @@ static void run_timeouts_test(const test_fixture *fixture) {
 
   /* start 1 watcher and then let it time out */
   channel_idle_start_watch(channel, cq);
-  GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) == 1);
   channel_idle_poll_for_timeout(channel, cq);
   GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) == 0);
 
   /* start 3 watchers and then let them all time out */
   for (size_t i = 1; i <= 3; i++) {
     channel_idle_start_watch(channel, cq);
-    GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) ==
-               (int)i);
   }
   for (size_t i = 1; i <= 3; i++) {
     channel_idle_poll_for_timeout(channel, cq);
@@ -111,14 +108,11 @@ static void run_timeouts_test(const test_fixture *fixture) {
    * time out */
   for (size_t i = 1; i <= 3; i++) {
     channel_idle_start_watch(channel, cq);
-    GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) ==
-               (int)i);
   }
   channel_idle_poll_for_timeout(channel, cq);
   for (size_t i = 3; i <= 5; i++) {
     channel_idle_start_watch(channel, cq);
   }
-  GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) >= 3);
   for (size_t i = 1; i <= 5; i++) {
     channel_idle_poll_for_timeout(channel, cq);
   }
@@ -160,7 +154,6 @@ static void run_channel_shutdown_before_timeout_test(
 
   grpc_channel_watch_connectivity_state(channel, GRPC_CHANNEL_IDLE,
                                         connect_deadline, cq, (void *)1);
-  GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) == 1);
   grpc_channel_destroy(channel);
 
   grpc_event ev =
