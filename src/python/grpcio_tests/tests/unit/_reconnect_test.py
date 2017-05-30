@@ -1,6 +1,4 @@
-#!/usr/bin/env ruby
-
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,45 +26,45 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""Tests that a channel will reconnect if a connection is dropped"""
 
-require_relative './end2end_common'
+import unittest
 
-# Start polling the channel state in both the main thread
-# and a child thread. Try to get the driver to send process-ending
-# interrupt while both a child thread and the main thread are in the
-# middle of a blocking connectivity_state call.
-def main
-  server_port = ''
-  OptionParser.new do |opts|
-    opts.on('--client_control_port=P', String) do
-      STDERR.puts 'client_control_port not used'
-    end
-    opts.on('--server_port=P', String) do |p|
-      server_port = p
-    end
-  end.parse!
+import grpc
+from grpc.framework.foundation import logging_pool
 
-  trap('SIGINT') { exit 0 }
+from tests.unit.framework.common import test_constants
 
-  thd = Thread.new do
-    child_thread_channel = GRPC::Core::Channel.new("localhost:#{server_port}",
-                                                   {},
-                                                   :this_channel_is_insecure)
-    loop do
-      state = child_thread_channel.connectivity_state(false)
-      child_thread_channel.watch_connectivity_state(state, Time.now + 360)
-    end
-  end
+_REQUEST = b'\x00\x00\x00'
+_RESPONSE = b'\x00\x00\x01'
 
-  main_channel = GRPC::Core::Channel.new("localhost:#{server_port}",
-                                         {},
-                                         :this_channel_is_insecure)
-  loop do
-    state = main_channel.connectivity_state(false)
-    main_channel.watch_connectivity_state(state, Time.now + 360)
-  end
+_UNARY_UNARY = '/test/UnaryUnary'
 
-  thd.join
-end
 
-main
+def _handle_unary_unary(unused_request, unused_servicer_context):
+    return _RESPONSE
+
+
+class ReconnectTest(unittest.TestCase):
+
+    def test_reconnect(self):
+        server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
+        handler = grpc.method_handlers_generic_handler('test', {
+            'UnaryUnary':
+            grpc.unary_unary_rpc_method_handler(_handle_unary_unary)
+        })
+        server = grpc.server(server_pool, (handler,))
+        port = server.add_insecure_port('[::]:0')
+        server.start()
+        channel = grpc.insecure_channel('localhost:%d' % port)
+        multi_callable = channel.unary_unary(_UNARY_UNARY)
+        self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
+        server.stop(None)
+        server = grpc.server(server_pool, (handler,))
+        server.add_insecure_port('[::]:{}'.format(port))
+        server.start()
+        self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
