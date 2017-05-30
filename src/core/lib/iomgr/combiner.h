@@ -48,7 +48,7 @@
 
 // Initialize the lock, with an optional workqueue to shift load to when
 // necessary
-grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
+grpc_combiner *grpc_combiner_create(void);
 
 //#define GRPC_COMBINER_REFCOUNT_DEBUG
 #ifdef GRPC_COMBINER_REFCOUNT_DEBUG
@@ -71,11 +71,9 @@ grpc_combiner *grpc_combiner_ref(grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS);
 void grpc_combiner_unref(grpc_exec_ctx *exec_ctx,
                          grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS);
 // Fetch a scheduler to schedule closures against
-grpc_closure_scheduler *grpc_combiner_scheduler(grpc_combiner *lock,
-                                                bool covered_by_poller);
+grpc_closure_scheduler *grpc_combiner_scheduler(grpc_combiner *lock);
 // Scheduler to execute \a action within the lock just prior to unlocking.
-grpc_closure_scheduler *grpc_combiner_finally_scheduler(grpc_combiner *lock,
-                                                        bool covered_by_poller);
+grpc_closure_scheduler *grpc_combiner_finally_scheduler(grpc_combiner *lock);
 
 bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx);
 

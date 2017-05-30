@@ -73,7 +73,6 @@ typedef enum {
   GRPC_CHTTP2_WRITE_STATE_IDLE,
   GRPC_CHTTP2_WRITE_STATE_WRITING,
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
-  GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER,
 } grpc_chttp2_write_state;
 
 typedef enum {
@@ -458,7 +457,6 @@ struct grpc_chttp2_stream {
   grpc_slice fetching_slice;
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
-  bool complete_fetch_covered_by_poller;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
 
@@ -549,8 +547,7 @@ struct grpc_chttp2_stream {
     The actual call chain is documented in the implementation of this function.
     */
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t,
-                                bool covered_by_poller, const char *reason);
+                                grpc_chttp2_transport *t, const char *reason);
 
 typedef enum {
   GRPC_CHTTP2_NOTHING_TO_WRITE,

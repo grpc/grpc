@@ -173,10 +173,9 @@ void grpc_fake_resolver_response_generator_set_response(
   GPR_ASSERT(generator->resolver != NULL);
   generator->next_response = grpc_channel_args_copy(next_response);
   grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_create(
-          set_response_cb, generator,
-          grpc_combiner_scheduler(generator->resolver->base.combiner, false)),
+      exec_ctx, grpc_closure_create(set_response_cb, generator,
+                                    grpc_combiner_scheduler(
+                                        generator->resolver->base.combiner)),
       GRPC_ERROR_NONE);
 }
 

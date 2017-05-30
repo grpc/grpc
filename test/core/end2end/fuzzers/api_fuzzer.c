@@ -41,6 +41,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -724,6 +725,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   gpr_now_impl = now_impl;
   grpc_init();
   grpc_timer_manager_set_threading(false);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_executor_set_threading(&exec_ctx, false);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   grpc_resolve_address = my_resolve_address;
 
   GPR_ASSERT(g_channel == NULL);

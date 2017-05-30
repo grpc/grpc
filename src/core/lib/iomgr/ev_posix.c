@@ -171,10 +171,6 @@ grpc_fd *grpc_fd_create(int fd, const char *name) {
   return g_event_engine->fd_create(fd, name);
 }
 
-grpc_workqueue *grpc_fd_get_workqueue(grpc_fd *fd) {
-  return g_event_engine->fd_get_workqueue(fd);
-}
-
 int grpc_fd_wrapped_fd(grpc_fd *fd) {
   return g_event_engine->fd_wrapped_fd(fd);
 }
@@ -274,28 +270,6 @@ void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
 void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd) {
   g_event_engine->pollset_set_del_fd(exec_ctx, pollset_set, fd);
-}
-
-#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
-                                   int line, const char *reason) {
-  return g_event_engine->workqueue_ref(workqueue, file, line, reason);
-}
-void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                          const char *file, int line, const char *reason) {
-  g_event_engine->workqueue_unref(exec_ctx, workqueue, file, line, reason);
-}
-#else
-grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue) {
-  return g_event_engine->workqueue_ref(workqueue);
-}
-void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
-  g_event_engine->workqueue_unref(exec_ctx, workqueue);
-}
-#endif
-
-grpc_closure_scheduler *grpc_workqueue_scheduler(grpc_workqueue *workqueue) {
-  return g_event_engine->workqueue_scheduler(workqueue);
 }
 
 #endif  // GRPC_POSIX_SOCKET

@@ -65,7 +65,8 @@ typedef struct {
   */
   grpc_polling_entity *pollent;
   grpc_transport_stream_op_batch op;
-  uint8_t security_context_set;
+  gpr_atm security_context_set;
+  gpr_mu security_context_mu;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   grpc_auth_metadata_context auth_md_context;
 } call_data;
@@ -253,19 +254,26 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
   grpc_linked_mdelem *l;
   grpc_client_security_context *sec_ctx = NULL;
 
-  if (!op->cancel_stream && calld->security_context_set == 0) {
-    calld->security_context_set = 1;
-    GPR_ASSERT(op->payload->context != NULL);
-    if (op->payload->context[GRPC_CONTEXT_SECURITY].value == NULL) {
-      op->payload->context[GRPC_CONTEXT_SECURITY].value =
-          grpc_client_security_context_create();
-      op->payload->context[GRPC_CONTEXT_SECURITY].destroy =
-          grpc_client_security_context_destroy;
+  if (!op->cancel_stream) {
+    /* double checked lock over security context to ensure it's set once */
+    if (gpr_atm_acq_load(&calld->security_context_set) == 0) {
+      gpr_mu_lock(&calld->security_context_mu);
+      if (gpr_atm_acq_load(&calld->security_context_set) == 0) {
+        GPR_ASSERT(op->payload->context != NULL);
+        if (op->payload->context[GRPC_CONTEXT_SECURITY].value == NULL) {
+          op->payload->context[GRPC_CONTEXT_SECURITY].value =
+              grpc_client_security_context_create();
+          op->payload->context[GRPC_CONTEXT_SECURITY].destroy =
+              grpc_client_security_context_destroy;
+        }
+        sec_ctx = op->payload->context[GRPC_CONTEXT_SECURITY].value;
+        GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
+        sec_ctx->auth_context =
+            GRPC_AUTH_CONTEXT_REF(chand->auth_context, "client_auth_filter");
+        gpr_atm_rel_store(&calld->security_context_set, 1);
+      }
+      gpr_mu_unlock(&calld->security_context_mu);
     }
-    sec_ctx = op->payload->context[GRPC_CONTEXT_SECURITY].value;
-    GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
-    sec_ctx->auth_context =
-        GRPC_AUTH_CONTEXT_REF(chand->auth_context, "client_auth_filter");
   }
 
   if (op->send_initial_metadata) {
@@ -312,6 +320,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(*calld));
+  gpr_mu_init(&calld->security_context_mu);
   return GRPC_ERROR_NONE;
 }
 
@@ -335,6 +344,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_slice_unref_internal(exec_ctx, calld->method);
   }
   reset_auth_metadata_context(&calld->auth_md_context);
+  gpr_mu_destroy(&calld->security_context_mu);
 }
 
 /* Constructor for channel_data */

@@ -39,15 +39,30 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
+gpr_mu g_mu;
+gpr_cv g_cv;
+
 static void inc_int_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
+  gpr_mu_lock(&g_mu);
   ++*(int *)a;
+  gpr_cv_signal(&g_cv);
+  gpr_mu_unlock(&g_mu);
 }
 
-static void set_bool_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
-  *(bool *)a = true;
+static void assert_counter_becomes(int *ctr, int value) {
+  gpr_mu_lock(&g_mu);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  while (*ctr != value) {
+    GPR_ASSERT(!gpr_cv_wait(&g_cv, &g_mu, deadline));
+  }
+  gpr_mu_unlock(&g_mu);
 }
-grpc_closure *set_bool(bool *p) {
-  return grpc_closure_create(set_bool_cb, p, grpc_schedule_on_exec_ctx);
+
+static void set_event_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
+  gpr_event_set((gpr_event *)a, (void *)1);
+}
+grpc_closure *set_event(gpr_event *ev) {
+  return grpc_closure_create(set_event_cb, ev, grpc_schedule_on_exec_ctx);
 }
 
 typedef struct {
@@ -154,11 +169,13 @@ static void test_simple_async_alloc(void) {
   grpc_resource_quota_resize(q, 1024 * 1024);
   grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -175,15 +192,18 @@ static void test_async_alloc_blocked_by_size(void) {
       grpc_resource_quota_create("test_async_alloc_blocked_by_size");
   grpc_resource_quota_resize(q, 1);
   grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
-  bool done = false;
+  gpr_event ev;
+  gpr_event_init(&ev);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(!done);
+    GPR_ASSERT(gpr_event_wait(
+                   &ev, grpc_timeout_milliseconds_to_deadline(100)) == NULL);
   }
   grpc_resource_quota_resize(q, 1024);
-  GPR_ASSERT(done);
+  GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) != NULL);
+  ;
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_free(&exec_ctx, usr, 1024);
@@ -200,11 +220,14 @@ static void test_scavenge(void) {
   grpc_resource_user *usr1 = grpc_resource_user_create(q, "usr1");
   grpc_resource_user *usr2 = grpc_resource_user_create(q, "usr2");
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr1, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr1, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -212,11 +235,14 @@ static void test_scavenge(void) {
     grpc_exec_ctx_finish(&exec_ctx);
   }
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr2, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr2, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -234,26 +260,31 @@ static void test_scavenge_blocked(void) {
   grpc_resource_quota_resize(q, 1024);
   grpc_resource_user *usr1 = grpc_resource_user_create(q, "usr1");
   grpc_resource_user *usr2 = grpc_resource_user_create(q, "usr2");
-  bool done;
+  gpr_event ev;
   {
-    done = false;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr1, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr1, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
   {
-    done = false;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr2, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr2, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(!done);
+    GPR_ASSERT(gpr_event_wait(
+                   &ev, grpc_timeout_milliseconds_to_deadline(100)) == NULL);
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_free(&exec_ctx, usr1, 1024);
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -272,27 +303,35 @@ static void test_blocked_until_scheduled_reclaim(void) {
   grpc_resource_quota_resize(q, 1024);
   grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
-  bool reclaim_done = false;
+  gpr_event reclaim_done;
+  gpr_event_init(&reclaim_done);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_post_reclaimer(
         &exec_ctx, usr, false,
-        make_reclaimer(usr, 1024, set_bool(&reclaim_done)));
+        make_reclaimer(usr, 1024, set_event(&reclaim_done)));
     grpc_exec_ctx_finish(&exec_ctx);
   }
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(reclaim_done);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&reclaim_done,
+                              grpc_timeout_seconds_to_deadline(5)) != NULL);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -311,27 +350,35 @@ static void test_blocked_until_scheduled_reclaim_and_scavenge(void) {
   grpc_resource_user *usr1 = grpc_resource_user_create(q, "usr1");
   grpc_resource_user *usr2 = grpc_resource_user_create(q, "usr2");
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr1, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr1, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
-  bool reclaim_done = false;
+  gpr_event reclaim_done;
+  gpr_event_init(&reclaim_done);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_post_reclaimer(
         &exec_ctx, usr1, false,
-        make_reclaimer(usr1, 1024, set_bool(&reclaim_done)));
+        make_reclaimer(usr1, 1024, set_event(&reclaim_done)));
     grpc_exec_ctx_finish(&exec_ctx);
   }
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr2, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr2, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(reclaim_done);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&reclaim_done,
+                              grpc_timeout_seconds_to_deadline(5)) != NULL);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -350,27 +397,35 @@ static void test_blocked_until_scheduled_destructive_reclaim(void) {
   grpc_resource_quota_resize(q, 1024);
   grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
-  bool reclaim_done = false;
+  gpr_event reclaim_done;
+  gpr_event_init(&reclaim_done);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_post_reclaimer(
         &exec_ctx, usr, true,
-        make_reclaimer(usr, 1024, set_bool(&reclaim_done)));
+        make_reclaimer(usr, 1024, set_event(&reclaim_done)));
     grpc_exec_ctx_finish(&exec_ctx);
   }
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(reclaim_done);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&reclaim_done,
+                              grpc_timeout_seconds_to_deadline(5)) != NULL);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -387,23 +442,31 @@ static void test_unused_reclaim_is_cancelled(void) {
       grpc_resource_quota_create("test_unused_reclaim_is_cancelled");
   grpc_resource_quota_resize(q, 1024);
   grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
-  bool benign_done = false;
-  bool destructive_done = false;
+  gpr_event benign_done;
+  gpr_event_init(&benign_done);
+  gpr_event destructive_done;
+  gpr_event_init(&destructive_done);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_post_reclaimer(
-        &exec_ctx, usr, false, make_unused_reclaimer(set_bool(&benign_done)));
+        &exec_ctx, usr, false, make_unused_reclaimer(set_event(&benign_done)));
     grpc_resource_user_post_reclaimer(
         &exec_ctx, usr, true,
-        make_unused_reclaimer(set_bool(&destructive_done)));
+        make_unused_reclaimer(set_event(&destructive_done)));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(!benign_done);
-    GPR_ASSERT(!destructive_done);
+    GPR_ASSERT(gpr_event_wait(&benign_done,
+                              grpc_timeout_milliseconds_to_deadline(100)) ==
+               NULL);
+    GPR_ASSERT(gpr_event_wait(&destructive_done,
+                              grpc_timeout_milliseconds_to_deadline(100)) ==
+               NULL);
   }
   grpc_resource_quota_unref(q);
   destroy_user(usr);
-  GPR_ASSERT(benign_done);
-  GPR_ASSERT(destructive_done);
+  GPR_ASSERT(gpr_event_wait(&benign_done,
+                            grpc_timeout_seconds_to_deadline(5)) != NULL);
+  GPR_ASSERT(gpr_event_wait(&destructive_done,
+                            grpc_timeout_seconds_to_deadline(5)) != NULL);
 }
 
 static void test_benign_reclaim_is_preferred(void) {
@@ -412,35 +475,49 @@ static void test_benign_reclaim_is_preferred(void) {
       grpc_resource_quota_create("test_benign_reclaim_is_preferred");
   grpc_resource_quota_resize(q, 1024);
   grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
-  bool benign_done = false;
-  bool destructive_done = false;
+  gpr_event benign_done;
+  gpr_event_init(&benign_done);
+  gpr_event destructive_done;
+  gpr_event_init(&destructive_done);
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_post_reclaimer(
         &exec_ctx, usr, false,
-        make_reclaimer(usr, 1024, set_bool(&benign_done)));
+        make_reclaimer(usr, 1024, set_event(&benign_done)));
     grpc_resource_user_post_reclaimer(
         &exec_ctx, usr, true,
-        make_unused_reclaimer(set_bool(&destructive_done)));
+        make_unused_reclaimer(set_event(&destructive_done)));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(!benign_done);
-    GPR_ASSERT(!destructive_done);
+    GPR_ASSERT(gpr_event_wait(&benign_done,
+                              grpc_timeout_milliseconds_to_deadline(100)) ==
+               NULL);
+    GPR_ASSERT(gpr_event_wait(&destructive_done,
+                              grpc_timeout_milliseconds_to_deadline(100)) ==
+               NULL);
   }
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(benign_done);
-    GPR_ASSERT(!destructive_done);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&benign_done,
+                              grpc_timeout_seconds_to_deadline(5)) != NULL);
+    GPR_ASSERT(gpr_event_wait(&destructive_done,
+                              grpc_timeout_milliseconds_to_deadline(100)) ==
+               NULL);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -449,8 +526,10 @@ static void test_benign_reclaim_is_preferred(void) {
   }
   grpc_resource_quota_unref(q);
   destroy_user(usr);
-  GPR_ASSERT(benign_done);
-  GPR_ASSERT(destructive_done);
+  GPR_ASSERT(gpr_event_wait(&benign_done,
+                            grpc_timeout_seconds_to_deadline(5)) != NULL);
+  GPR_ASSERT(gpr_event_wait(&destructive_done,
+                            grpc_timeout_seconds_to_deadline(5)) != NULL);
 }
 
 static void test_multiple_reclaims_can_be_triggered(void) {
@@ -459,35 +538,49 @@ static void test_multiple_reclaims_can_be_triggered(void) {
       grpc_resource_quota_create("test_multiple_reclaims_can_be_triggered");
   grpc_resource_quota_resize(q, 1024);
   grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
-  bool benign_done = false;
-  bool destructive_done = false;
+  gpr_event benign_done;
+  gpr_event_init(&benign_done);
+  gpr_event destructive_done;
+  gpr_event_init(&destructive_done);
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_post_reclaimer(
         &exec_ctx, usr, false,
-        make_reclaimer(usr, 512, set_bool(&benign_done)));
+        make_reclaimer(usr, 512, set_event(&benign_done)));
     grpc_resource_user_post_reclaimer(
         &exec_ctx, usr, true,
-        make_reclaimer(usr, 512, set_bool(&destructive_done)));
+        make_reclaimer(usr, 512, set_event(&destructive_done)));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(!benign_done);
-    GPR_ASSERT(!destructive_done);
+    GPR_ASSERT(gpr_event_wait(&benign_done,
+                              grpc_timeout_milliseconds_to_deadline(100)) ==
+               NULL);
+    GPR_ASSERT(gpr_event_wait(&destructive_done,
+                              grpc_timeout_milliseconds_to_deadline(100)) ==
+               NULL);
   }
   {
-    bool done = false;
+    gpr_event ev;
+    gpr_event_init(&ev);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&done));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&ev));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(benign_done);
-    GPR_ASSERT(destructive_done);
-    GPR_ASSERT(done);
+    GPR_ASSERT(gpr_event_wait(&benign_done,
+                              grpc_timeout_seconds_to_deadline(5)) != NULL);
+    GPR_ASSERT(gpr_event_wait(&destructive_done,
+                              grpc_timeout_seconds_to_deadline(5)) != NULL);
+    GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+               NULL);
+    ;
   }
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -496,8 +589,10 @@ static void test_multiple_reclaims_can_be_triggered(void) {
   }
   grpc_resource_quota_unref(q);
   destroy_user(usr);
-  GPR_ASSERT(benign_done);
-  GPR_ASSERT(destructive_done);
+  GPR_ASSERT(gpr_event_wait(&benign_done,
+                            grpc_timeout_seconds_to_deadline(5)) != NULL);
+  GPR_ASSERT(gpr_event_wait(&destructive_done,
+                            grpc_timeout_seconds_to_deadline(5)) != NULL);
 }
 
 static void test_resource_user_stays_allocated_until_memory_released(void) {
@@ -538,34 +633,44 @@ test_resource_user_stays_allocated_and_reclaimers_unrun_until_memory_released(
   grpc_resource_quota_resize(q, 1024);
   for (int i = 0; i < 10; i++) {
     grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
-    bool reclaimer_cancelled = false;
+    gpr_event reclaimer_cancelled;
+    gpr_event_init(&reclaimer_cancelled);
     {
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       grpc_resource_user_post_reclaimer(
           &exec_ctx, usr, false,
-          make_unused_reclaimer(set_bool(&reclaimer_cancelled)));
+          make_unused_reclaimer(set_event(&reclaimer_cancelled)));
       grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(!reclaimer_cancelled);
+      GPR_ASSERT(gpr_event_wait(&reclaimer_cancelled,
+                                grpc_timeout_milliseconds_to_deadline(100)) ==
+                 NULL);
     }
     {
-      bool allocated = false;
+      gpr_event allocated;
+      gpr_event_init(&allocated);
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&allocated));
+      grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&allocated));
       grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(allocated);
-      GPR_ASSERT(!reclaimer_cancelled);
+      GPR_ASSERT(gpr_event_wait(&allocated,
+                                grpc_timeout_seconds_to_deadline(5)) != NULL);
+      GPR_ASSERT(gpr_event_wait(&reclaimer_cancelled,
+                                grpc_timeout_milliseconds_to_deadline(100)) ==
+                 NULL);
     }
     {
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       grpc_resource_user_unref(&exec_ctx, usr);
       grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(!reclaimer_cancelled);
+      GPR_ASSERT(gpr_event_wait(&reclaimer_cancelled,
+                                grpc_timeout_milliseconds_to_deadline(100)) ==
+                 NULL);
     }
     {
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       grpc_resource_user_free(&exec_ctx, usr, 1024);
       grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(reclaimer_cancelled);
+      GPR_ASSERT(gpr_event_wait(&reclaimer_cancelled,
+                                grpc_timeout_seconds_to_deadline(5)) != NULL);
     }
   }
   grpc_resource_quota_unref(q);
@@ -578,29 +683,37 @@ static void test_reclaimers_can_be_posted_repeatedly(void) {
   grpc_resource_quota_resize(q, 1024);
   grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
-    bool allocated = false;
+    gpr_event allocated;
+    gpr_event_init(&allocated);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&allocated));
+    grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&allocated));
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(allocated);
+    GPR_ASSERT(gpr_event_wait(&allocated,
+                              grpc_timeout_seconds_to_deadline(5)) != NULL);
   }
   for (int i = 0; i < 10; i++) {
-    bool reclaimer_done = false;
+    gpr_event reclaimer_done;
+    gpr_event_init(&reclaimer_done);
     {
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       grpc_resource_user_post_reclaimer(
           &exec_ctx, usr, false,
-          make_reclaimer(usr, 1024, set_bool(&reclaimer_done)));
+          make_reclaimer(usr, 1024, set_event(&reclaimer_done)));
       grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(!reclaimer_done);
+      GPR_ASSERT(gpr_event_wait(&reclaimer_done,
+                                grpc_timeout_milliseconds_to_deadline(100)) ==
+                 NULL);
     }
     {
-      bool allocated = false;
+      gpr_event allocated;
+      gpr_event_init(&allocated);
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_bool(&allocated));
+      grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&allocated));
       grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(allocated);
-      GPR_ASSERT(reclaimer_done);
+      GPR_ASSERT(gpr_event_wait(&allocated,
+                                grpc_timeout_seconds_to_deadline(5)) != NULL);
+      GPR_ASSERT(gpr_event_wait(&reclaimer_done,
+                                grpc_timeout_seconds_to_deadline(5)) != NULL);
     }
   }
   {
@@ -632,7 +745,7 @@ static void test_one_slice(void) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_alloc_slices(&exec_ctx, &alloc, 1024, 1, &buffer);
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(num_allocs == start_allocs + 1);
+    assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
 
   {
@@ -665,7 +778,7 @@ static void test_one_slice_deleted_late(void) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_alloc_slices(&exec_ctx, &alloc, 1024, 1, &buffer);
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(num_allocs == start_allocs + 1);
+    assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
 
   {
@@ -709,7 +822,7 @@ static void test_negative_rq_free_pool(void) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resource_user_alloc_slices(&exec_ctx, &alloc, 1024, 1, &buffer);
     grpc_exec_ctx_finish(&exec_ctx);
-    GPR_ASSERT(num_allocs == start_allocs + 1);
+    assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
 
   grpc_resource_quota_resize(q, 512);
@@ -735,6 +848,8 @@ static void test_negative_rq_free_pool(void) {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
+  gpr_mu_init(&g_mu);
+  gpr_cv_init(&g_cv);
   test_no_op();
   test_resize_then_destroy();
   test_resource_user_no_op();
@@ -757,6 +872,8 @@ int main(int argc, char **argv) {
   test_one_slice_deleted_late();
   test_resize_to_zero();
   test_negative_rq_free_pool();
+  gpr_mu_destroy(&g_mu);
+  gpr_cv_destroy(&g_cv);
   grpc_shutdown();
   return 0;
 }
