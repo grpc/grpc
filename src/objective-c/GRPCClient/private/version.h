@@ -38,4 +38,4 @@
 // `tools/buildgen/generate_projects.sh`.
 
 
-#define GRPC_OBJC_VERSION_STRING @"1.3.6"
+#define GRPC_OBJC_VERSION_STRING @"1.3.7"
