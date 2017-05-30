@@ -375,6 +375,7 @@ add_dependencies(buildtests_c bdp_estimator_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
 add_dependencies(buildtests_c census_context_test)
+add_dependencies(buildtests_c census_intrusive_hash_map_test)
 add_dependencies(buildtests_c census_resource_test)
 add_dependencies(buildtests_c census_trace_context_test)
 add_dependencies(buildtests_c channel_create_test)
@@ -1157,6 +1158,7 @@ add_library(grpc
   src/core/ext/census/grpc_filter.c
   src/core/ext/census/grpc_plugin.c
   src/core/ext/census/initialize.c
+  src/core/ext/census/intrusive_hash_map.c
   src/core/ext/census/mlog.c
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
@@ -2048,6 +2050,7 @@ add_library(grpc_unsecure
   src/core/ext/census/grpc_filter.c
   src/core/ext/census/grpc_plugin.c
   src/core/ext/census/initialize.c
+  src/core/ext/census/intrusive_hash_map.c
   src/core/ext/census/mlog.c
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
@@ -2659,6 +2662,7 @@ add_library(grpc++_cronet
   src/core/ext/census/grpc_filter.c
   src/core/ext/census/grpc_plugin.c
   src/core/ext/census/initialize.c
+  src/core/ext/census/intrusive_hash_map.c
   src/core/ext/census/mlog.c
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
@@ -4759,6 +4763,37 @@ target_include_directories(census_context_test
 )
 
 target_link_libraries(census_context_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(census_intrusive_hash_map_test
+  test/core/census/intrusive_hash_map_test.c
+)
+
+
+target_include_directories(census_intrusive_hash_map_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(census_intrusive_hash_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
