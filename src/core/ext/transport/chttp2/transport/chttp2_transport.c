@@ -2294,7 +2294,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       int64_t estimate = -1;
       double bdp_guess = -1;
       if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
-        double target = 1 + log2((double)estimate);
+        double target = log2((double)estimate);
         double memory_pressure = grpc_resource_quota_get_memory_pressure(
             grpc_resource_user_quota(grpc_endpoint_get_resource_user(t->ep)));
         if (memory_pressure > 0.8) {
