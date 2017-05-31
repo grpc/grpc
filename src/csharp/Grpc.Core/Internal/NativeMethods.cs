@@ -164,6 +164,8 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_test_callback_delegate grpcsharp_test_callback;
         public readonly Delegates.grpcsharp_test_nop_delegate grpcsharp_test_nop;
 
+        public readonly Delegates.grpcsharp_test_override_method_delegate grpcsharp_test_override_method;
+
         #endregion
 
         public NativeMethods(UnmanagedLibrary library)
@@ -278,6 +280,7 @@ namespace Grpc.Core.Internal
 
             this.grpcsharp_test_callback = GetMethodDelegate<Delegates.grpcsharp_test_callback_delegate>(library);
             this.grpcsharp_test_nop = GetMethodDelegate<Delegates.grpcsharp_test_nop_delegate>(library);
+            this.grpcsharp_test_override_method = GetMethodDelegate<Delegates.grpcsharp_test_override_method_delegate>(library);
         }
 
         /// <summary>
@@ -434,6 +437,7 @@ namespace Grpc.Core.Internal
 
             public delegate CallError grpcsharp_test_callback_delegate([MarshalAs(UnmanagedType.FunctionPtr)] OpCompletionDelegate callback);
             public delegate IntPtr grpcsharp_test_nop_delegate(IntPtr ptr);
+            public delegate void grpcsharp_test_override_method_delegate(string methodName, string variant);
         }
     }
 }

@@ -34,44 +34,110 @@
 
 require_relative './end2end_common'
 
-def main
-  grpc_class = ''
-  OptionParser.new do |opts|
-    opts.on('--grpc_class=P', String) do |p|
-      grpc_class = p
+def construct_many(test_proc)
+  thds = []
+  4.times do
+    thds << Thread.new do
+      20.times do
+        test_proc.call
+      end
     end
-  end.parse!
+  end
+  20.times do
+    test_proc.call
+  end
+  thds.each(&:join)
+end
 
-  test_proc = nil
+def run_gc_stress_test(test_proc)
+  GC.disable
+  construct_many(test_proc)
 
+  GC.enable
+  construct_many(test_proc)
+
+  GC.start(full_mark: true, immediate_sweep: true)
+  construct_many(test_proc)
+end
+
+def run_concurrency_stress_test(test_proc)
+  100.times do
+    Thread.new do
+      test_proc.call
+    end
+  end
+
+  test_proc.call
+
+  fail 'exception thrown while child thread initing class'
+end
+
+# default (no gc_stress and no concurrency_stress)
+def run_default_test(test_proc)
+  thd = Thread.new do
+    test_proc.call
+  end
+  test_proc.call
+  thd.join
+end
+
+def get_test_proc(grpc_class)
   case grpc_class
   when 'channel'
-    test_proc = proc do
+    return proc do
       GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
     end
   when 'server'
-    test_proc = proc do
+    return proc do
       GRPC::Core::Server.new({})
     end
   when 'channel_credentials'
-    test_proc = proc do
+    return proc do
       GRPC::Core::ChannelCredentials.new
     end
   when 'call_credentials'
-    test_proc = proc do
+    return proc do
       GRPC::Core::CallCredentials.new(proc { |noop| noop })
     end
   when 'compression_options'
-    test_proc = proc do
+    return proc do
       GRPC::Core::CompressionOptions.new
     end
   else
     fail "bad --grpc_class=#{grpc_class} param"
   end
+end
 
-  th = Thread.new { test_proc.call }
-  test_proc.call
-  th.join
+def main
+  grpc_class = ''
+  stress_test = ''
+  OptionParser.new do |opts|
+    opts.on('--grpc_class=P', String) do |p|
+      grpc_class = p
+    end
+    opts.on('--stress_test=P') do |p|
+      stress_test = p
+    end
+  end.parse!
+
+  test_proc = get_test_proc(grpc_class)
+
+  # the different test configs need to be ran
+  # in separate processes, since each one tests
+  # clean shutdown in a different way
+  case stress_test
+  when 'gc'
+    p 'run gc stress'
+    run_gc_stress_test(test_proc)
+  when 'concurrency'
+    p 'run concurrency stress'
+    run_concurrency_stress_test(test_proc)
+  when ''
+    p 'run default'
+    run_default_test(test_proc)
+  else
+    fail "bad --stress_test=#{stress_test} param"
+  end
 end
 
 main
