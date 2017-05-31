@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -101,30 +101,40 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__thd__options.html">gpr_thd_options</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread creation options.  <a href="structgpr__thd__options.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
 <tr class="memitem:a568f2dcd15b98e9e93063eb04ad36a90"><td class="memItemLeft" align="right" valign="top">typedef uintptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a></td></tr>
+<tr class="memdesc:a568f2dcd15b98e9e93063eb04ad36a90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread interface for GPR.  <a href="#a568f2dcd15b98e9e93063eb04ad36a90">More...</a><br/></td></tr>
 <tr class="separator:a568f2dcd15b98e9e93063eb04ad36a90"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a1512fb59795f3c7acf6f1d25dd188a86"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a1512fb59795f3c7acf6f1d25dd188a86">gpr_thd_new</a> (<a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a> *t, void(*thd_body)(void *arg), void *arg, const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="memdesc:a1512fb59795f3c7acf6f1d25dd188a86"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new thread running (*thd_body)(arg) and place its thread identifier in *t, and return true.  <a href="#a1512fb59795f3c7acf6f1d25dd188a86">More...</a><br/></td></tr>
 <tr class="separator:a1512fb59795f3c7acf6f1d25dd188a86"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae568dd50aa735eb5b5bc9cd7f0a511b2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#ae568dd50aa735eb5b5bc9cd7f0a511b2">gpr_thd_options_default</a> (void)</td></tr>
+<tr class="memdesc:ae568dd50aa735eb5b5bc9cd7f0a511b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a <a class="el" href="structgpr__thd__options.html" title="Thread creation options. ">gpr_thd_options</a> struct with all fields set to defaults.  <a href="#ae568dd50aa735eb5b5bc9cd7f0a511b2">More...</a><br/></td></tr>
 <tr class="separator:ae568dd50aa735eb5b5bc9cd7f0a511b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a378bba9e91aea353a95cdf22bfca0e8f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a378bba9e91aea353a95cdf22bfca0e8f">gpr_thd_options_set_detached</a> (<a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="memdesc:a378bba9e91aea353a95cdf22bfca0e8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the thread to become detached on startup - this is the default.  <a href="#a378bba9e91aea353a95cdf22bfca0e8f">More...</a><br/></td></tr>
 <tr class="separator:a378bba9e91aea353a95cdf22bfca0e8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e7d20212eaad5c06a0cbd554eec01e9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a2e7d20212eaad5c06a0cbd554eec01e9">gpr_thd_options_set_joinable</a> (<a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="memdesc:a2e7d20212eaad5c06a0cbd554eec01e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the thread to become joinable - mutually exclusive with detached.  <a href="#a2e7d20212eaad5c06a0cbd554eec01e9">More...</a><br/></td></tr>
 <tr class="separator:a2e7d20212eaad5c06a0cbd554eec01e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9733626e12522fd2f04095a2d4c61cf5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a9733626e12522fd2f04095a2d4c61cf5">gpr_thd_options_is_detached</a> (const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="memdesc:a9733626e12522fd2f04095a2d4c61cf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns non-zero if the option detached is set.  <a href="#a9733626e12522fd2f04095a2d4c61cf5">More...</a><br/></td></tr>
 <tr class="separator:a9733626e12522fd2f04095a2d4c61cf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a77574a5c01a28e81b8bdc0d2b9ffb6df"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a77574a5c01a28e81b8bdc0d2b9ffb6df">gpr_thd_options_is_joinable</a> (const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="memdesc:a77574a5c01a28e81b8bdc0d2b9ffb6df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns non-zero if the option joinable is set.  <a href="#a77574a5c01a28e81b8bdc0d2b9ffb6df">More...</a><br/></td></tr>
 <tr class="separator:a77574a5c01a28e81b8bdc0d2b9ffb6df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a31f4f0f3d23991877b30e44a966d3306"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a31f4f0f3d23991877b30e44a966d3306">gpr_thd_currentid</a> (void)</td></tr>
+<tr class="memdesc:a31f4f0f3d23991877b30e44a966d3306"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the identifier of the current thread.  <a href="#a31f4f0f3d23991877b30e44a966d3306">More...</a><br/></td></tr>
 <tr class="separator:a31f4f0f3d23991877b30e44a966d3306"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4735072c325ed1c09d1ca41033cdb362"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a4735072c325ed1c09d1ca41033cdb362">gpr_thd_join</a> (<a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a> t)</td></tr>
+<tr class="memdesc:a4735072c325ed1c09d1ca41033cdb362"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocks until the specified thread properly terminates.  <a href="#a4735072c325ed1c09d1ca41033cdb362">More...</a><br/></td></tr>
 <tr class="separator:a4735072c325ed1c09d1ca41033cdb362"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
@@ -137,6 +147,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Thread interface for GPR. </p>
+<p>Types gpr_thd_id a thread identifier. (Currently no calls take a thread identifier. It exists for future extensibility.) <a class="el" href="structgpr__thd__options.html" title="Thread creation options. ">gpr_thd_options</a> options used when creating a thread </p>
 
 </div>
 </div>
@@ -155,6 +168,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Returns the identifier of the current thread. </p>
+
 </div>
 </div>
 <a class="anchor" id="a4735072c325ed1c09d1ca41033cdb362"></a>
@@ -170,6 +185,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Blocks until the specified thread properly terminates. </p>
+<p>Calling this on a detached thread has unpredictable results. </p>
 
 </div>
 </div>
@@ -209,6 +227,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Create a new thread running (*thd_body)(arg) and place its thread identifier in *t, and return true. </p>
+<p>If there are insufficient resources, return false. If options==NULL, default options are used. The thread is immediately runnable, and exits when (*thd_body)() returns. </p>
+
 </div>
 </div>
 <a class="anchor" id="ae568dd50aa735eb5b5bc9cd7f0a511b2"></a>
@@ -224,6 +245,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Return a <a class="el" href="structgpr__thd__options.html" title="Thread creation options. ">gpr_thd_options</a> struct with all fields set to defaults. </p>
 
 </div>
 </div>
@@ -241,6 +264,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Returns non-zero if the option detached is set. </p>
+
 </div>
 </div>
 <a class="anchor" id="a77574a5c01a28e81b8bdc0d2b9ffb6df"></a>
@@ -256,6 +281,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Returns non-zero if the option joinable is set. </p>
 
 </div>
 </div>
@@ -273,6 +300,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Set the thread to become detached on startup - this is the default. </p>
+
 </div>
 </div>
 <a class="anchor" id="a2e7d20212eaad5c06a0cbd554eec01e9"></a>
@@ -289,12 +318,14 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Set the thread to become joinable - mutually exclusive with detached. </p>
+
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

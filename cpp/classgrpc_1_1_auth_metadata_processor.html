@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -97,6 +97,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>Interface allowing custom server-side authorization based on credentials encoded in metadata.  
+ <a href="classgrpc_1_1_auth_metadata_processor.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="auth__metadata__processor_8h_source.html">auth_metadata_processor.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
@@ -114,11 +117,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae64e2159109378600eb17f613ec4bbeb"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_metadata_processor.html#ae64e2159109378600eb17f613ec4bbeb">~AuthMetadataProcessor</a> ()</td></tr>
 <tr class="separator:ae64e2159109378600eb17f613ec4bbeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6cfe6ac34d5a25f14a5528462077243c"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_metadata_processor.html#a6cfe6ac34d5a25f14a5528462077243c">IsBlocking</a> () const </td></tr>
+<tr class="memdesc:a6cfe6ac34d5a25f14a5528462077243c"><td class="mdescLeft">&#160;</td><td class="mdescRight">If this method returns true, the <em>Process</em> function will be scheduled in a different thread from the one processing the call.  <a href="#a6cfe6ac34d5a25f14a5528462077243c">More...</a><br/></td></tr>
 <tr class="separator:a6cfe6ac34d5a25f14a5528462077243c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adc0db66aa261c59bd29f81c53f466303"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_metadata_processor.html#adc0db66aa261c59bd29f81c53f466303">Process</a> (const <a class="el" href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">InputMetadata</a> &amp;auth_metadata, <a class="el" href="classgrpc_1_1_auth_context.html">AuthContext</a> *context, <a class="el" href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">OutputMetadata</a> *consumed_auth_metadata, <a class="el" href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">OutputMetadata</a> *response_metadata)=0</td></tr>
+<tr class="memdesc:adc0db66aa261c59bd29f81c53f466303"><td class="mdescLeft">&#160;</td><td class="mdescRight">context is read/write: it contains the properties of the channel peer and it is the job of the Process method to augment it with properties derived from the passed-in auth_metadata.  <a href="#adc0db66aa261c59bd29f81c53f466303">More...</a><br/></td></tr>
 <tr class="separator:adc0db66aa261c59bd29f81c53f466303"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Typedef Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Interface allowing custom server-side authorization based on credentials encoded in metadata. </p>
+<p>Objects of this type can be passed to <em><a class="el" href="classgrpc_1_1_server_credentials.html#a72cd4ae61b6c43024df0ffb3f1d51650" title="This method is not thread-safe and has to be called before the server is started. ...">ServerCredentials::SetAuthMetadataProcessor()</a></em>. </p>
+</div><h2 class="groupheader">Member Typedef Documentation</h2>
 <a class="anchor" id="a0c5846f57c862880f0f6db29577bb9e5"></a>
 <div class="memitem">
 <div class="memproto">
@@ -189,6 +197,8 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>If this method returns true, the <em>Process</em> function will be scheduled in a different thread from the one processing the call. </p>
+
 </div>
 </div>
 <a class="anchor" id="adc0db66aa261c59bd29f81c53f466303"></a>
@@ -235,6 +245,9 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>context is read/write: it contains the properties of the channel peer and it is the job of the Process method to augment it with properties derived from the passed-in auth_metadata. </p>
+<p>consumed_auth_metadata needs to be filled with metadata that has been consumed by the processor and will be removed from the call. response_metadata is the metadata that will be sent as part of the response. If the return value is not <a class="el" href="classgrpc_1_1_status.html#acbac12f241ad08f449aa1b9086ec7acc" title="An OK pre-defined instance. ">Status::OK</a>, the rpc call will be aborted with the error code and error message sent back to the client. </p>
+
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
@@ -243,7 +256,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

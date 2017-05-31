@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -136,26 +136,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="structgpr__allocation__functions.html">   45</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgpr__allocation__functions.html">gpr_allocation_functions</a> {</div>
 <div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="structgpr__allocation__functions.html#a8b4c22c83d45aad9a15df42b0ea856de">   46</a></span>&#160;  <span class="keywordtype">void</span> *(*malloc_fn)(<span class="keywordtype">size_t</span> size);</div>
-<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="structgpr__allocation__functions.html#a3b5179cfe5bb7bfd124c8ccfc4115c3f">   47</a></span>&#160;  <span class="keywordtype">void</span> *(*zalloc_fn)(<span class="keywordtype">size_t</span> size); <span class="comment">/* if NULL, uses malloc_fn then memset */</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="structgpr__allocation__functions.html#a3b5179cfe5bb7bfd124c8ccfc4115c3f">   47</a></span>&#160;  <span class="keywordtype">void</span> *(*zalloc_fn)(<span class="keywordtype">size_t</span> size); </div>
 <div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="structgpr__allocation__functions.html#a9531b5caeb40a8feb26c9f2009c87af1">   48</a></span>&#160;  <span class="keywordtype">void</span> *(*realloc_fn)(<span class="keywordtype">void</span> *ptr, <span class="keywordtype">size_t</span> size);</div>
 <div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="structgpr__allocation__functions.html#ad323a5e8635f58683d9c87ade4b04a7e">   49</a></span>&#160;  void (*<a class="code" href="structgpr__allocation__functions.html#ad323a5e8635f58683d9c87ade4b04a7e">free_fn</a>)(<span class="keywordtype">void</span> *ptr);</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;} <a class="code" href="alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7">gpr_allocation_functions</a>;</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">/* malloc.</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment"> * If size==0, always returns NULL. Otherwise this function never returns NULL.</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment"> * The pointer returned is suitably aligned for any kind of variable it could</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment"> * contain.</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> *<a class="code" href="alloc_8h.html#aa15f6aa58f356420b0d955fc6e506a60">gpr_malloc</a>(<span class="keywordtype">size_t</span> size);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="comment">/* like malloc, but zero all bytes before returning them */</span></div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> *<a class="code" href="alloc_8h.html#ad9a7a782f4f00cad27d64d27ebbd1a72">gpr_zalloc</a>(<span class="keywordtype">size_t</span> size);</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="comment">/* free */</span></div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> <a class="code" href="alloc_8h.html#a7f8641de6e80a37dd003d3100cc94bd7">gpr_free</a>(<span class="keywordtype">void</span> *ptr);</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="comment">/* realloc, never returns NULL */</span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> *<a class="code" href="alloc_8h.html#a4282437d10bb2b1a2c44d665a97984f4">gpr_realloc</a>(<span class="keywordtype">void</span> *p, <span class="keywordtype">size_t</span> size);</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment">/* aligned malloc, never returns NULL, will align to 1 &lt;&lt; alignment_log */</span></div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> *<a class="code" href="alloc_8h.html#a06063f6aa3522eaed0f1eae1987c31db">gpr_malloc_aligned</a>(<span class="keywordtype">size_t</span> size, <span class="keywordtype">size_t</span> alignment_log);</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">/* free memory allocated by gpr_malloc_aligned */</span></div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> <a class="code" href="alloc_8h.html#aafbdc542e56bcd24fcb80a9cd55afef1">gpr_free_aligned</a>(<span class="keywordtype">void</span> *ptr);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> <a class="code" href="alloc_8h.html#a2a32fcafdda423e2a11b4130d55951b4">gpr_set_allocation_functions</a>(<a class="code" href="structgpr__allocation__functions.html">gpr_allocation_functions</a> functions);</div>
@@ -170,20 +160,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="structgpr__allocation__functions_html_ad323a5e8635f58683d9c87ade4b04a7e"><div class="ttname"><a href="structgpr__allocation__functions.html#ad323a5e8635f58683d9c87ade4b04a7e">gpr_allocation_functions::free_fn</a></div><div class="ttdeci">void(* free_fn)(void *ptr)</div><div class="ttdef"><b>Definition:</b> alloc.h:49</div></div>
 <div class="ttc" id="alloc_8h_html_a54bbd527f303da4b618adb37ae44efd7"><div class="ttname"><a href="alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7">gpr_allocation_functions</a></div><div class="ttdeci">struct gpr_allocation_functions gpr_allocation_functions</div></div>
 <div class="ttc" id="structgpr__allocation__functions_html"><div class="ttname"><a href="structgpr__allocation__functions.html">gpr_allocation_functions</a></div><div class="ttdef"><b>Definition:</b> alloc.h:45</div></div>
-<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:410</div></div>
-<div class="ttc" id="alloc_8h_html_aafbdc542e56bcd24fcb80a9cd55afef1"><div class="ttname"><a href="alloc_8h.html#aafbdc542e56bcd24fcb80a9cd55afef1">gpr_free_aligned</a></div><div class="ttdeci">GPRAPI void gpr_free_aligned(void *ptr)</div></div>
+<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:416</div></div>
+<div class="ttc" id="alloc_8h_html_aafbdc542e56bcd24fcb80a9cd55afef1"><div class="ttname"><a href="alloc_8h.html#aafbdc542e56bcd24fcb80a9cd55afef1">gpr_free_aligned</a></div><div class="ttdeci">GPRAPI void gpr_free_aligned(void *ptr)</div><div class="ttdoc">free memory allocated by gpr_malloc_aligned </div></div>
 <div class="ttc" id="alloc_8h_html_ac0a25de49821991a7c7b1ea91a8f06ee"><div class="ttname"><a href="alloc_8h.html#ac0a25de49821991a7c7b1ea91a8f06ee">gpr_get_allocation_functions</a></div><div class="ttdeci">GPRAPI gpr_allocation_functions gpr_get_allocation_functions()</div><div class="ttdoc">Return the family of allocation functions currently in effect. </div></div>
-<div class="ttc" id="alloc_8h_html_a06063f6aa3522eaed0f1eae1987c31db"><div class="ttname"><a href="alloc_8h.html#a06063f6aa3522eaed0f1eae1987c31db">gpr_malloc_aligned</a></div><div class="ttdeci">GPRAPI void * gpr_malloc_aligned(size_t size, size_t alignment_log)</div></div>
-<div class="ttc" id="alloc_8h_html_a7f8641de6e80a37dd003d3100cc94bd7"><div class="ttname"><a href="alloc_8h.html#a7f8641de6e80a37dd003d3100cc94bd7">gpr_free</a></div><div class="ttdeci">GPRAPI void gpr_free(void *ptr)</div></div>
-<div class="ttc" id="alloc_8h_html_a4282437d10bb2b1a2c44d665a97984f4"><div class="ttname"><a href="alloc_8h.html#a4282437d10bb2b1a2c44d665a97984f4">gpr_realloc</a></div><div class="ttdeci">GPRAPI void * gpr_realloc(void *p, size_t size)</div></div>
-<div class="ttc" id="alloc_8h_html_ad9a7a782f4f00cad27d64d27ebbd1a72"><div class="ttname"><a href="alloc_8h.html#ad9a7a782f4f00cad27d64d27ebbd1a72">gpr_zalloc</a></div><div class="ttdeci">GPRAPI void * gpr_zalloc(size_t size)</div></div>
+<div class="ttc" id="alloc_8h_html_a06063f6aa3522eaed0f1eae1987c31db"><div class="ttname"><a href="alloc_8h.html#a06063f6aa3522eaed0f1eae1987c31db">gpr_malloc_aligned</a></div><div class="ttdeci">GPRAPI void * gpr_malloc_aligned(size_t size, size_t alignment_log)</div><div class="ttdoc">aligned malloc, never returns NULL, will align to 1 &lt;&lt; alignment_log </div></div>
+<div class="ttc" id="alloc_8h_html_a7f8641de6e80a37dd003d3100cc94bd7"><div class="ttname"><a href="alloc_8h.html#a7f8641de6e80a37dd003d3100cc94bd7">gpr_free</a></div><div class="ttdeci">GPRAPI void gpr_free(void *ptr)</div><div class="ttdoc">free </div></div>
+<div class="ttc" id="alloc_8h_html_a4282437d10bb2b1a2c44d665a97984f4"><div class="ttname"><a href="alloc_8h.html#a4282437d10bb2b1a2c44d665a97984f4">gpr_realloc</a></div><div class="ttdeci">GPRAPI void * gpr_realloc(void *p, size_t size)</div><div class="ttdoc">realloc, never returns NULL </div></div>
+<div class="ttc" id="alloc_8h_html_ad9a7a782f4f00cad27d64d27ebbd1a72"><div class="ttname"><a href="alloc_8h.html#ad9a7a782f4f00cad27d64d27ebbd1a72">gpr_zalloc</a></div><div class="ttdeci">GPRAPI void * gpr_zalloc(size_t size)</div><div class="ttdoc">like malloc, but zero all bytes before returning them </div></div>
 <div class="ttc" id="alloc_8h_html_a2a32fcafdda423e2a11b4130d55951b4"><div class="ttname"><a href="alloc_8h.html#a2a32fcafdda423e2a11b4130d55951b4">gpr_set_allocation_functions</a></div><div class="ttdeci">GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions)</div><div class="ttdoc">Request the family of allocation functions in functions be used. </div></div>
 <div class="ttc" id="impl_2codegen_2port__platform_8h_html"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html">port_platform.h</a></div></div>
-<div class="ttc" id="alloc_8h_html_aa15f6aa58f356420b0d955fc6e506a60"><div class="ttname"><a href="alloc_8h.html#aa15f6aa58f356420b0d955fc6e506a60">gpr_malloc</a></div><div class="ttdeci">GPRAPI void * gpr_malloc(size_t size)</div></div>
+<div class="ttc" id="alloc_8h_html_aa15f6aa58f356420b0d955fc6e506a60"><div class="ttname"><a href="alloc_8h.html#aa15f6aa58f356420b0d955fc6e506a60">gpr_malloc</a></div><div class="ttdeci">GPRAPI void * gpr_malloc(size_t size)</div><div class="ttdoc">malloc. </div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

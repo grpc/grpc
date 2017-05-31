@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -267,7 +267,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="log_8h.html#aef4961ab05362b455a3e89c06343ef74">log.h</a>
 </li>
 <li>gpr_log_severity_string()
-: <a class="el" href="log_8h.html#a3badccbc5ec4c725eadbc07b8e5706eb">log.h</a>
+: <a class="el" href="log_8h.html#ae794448965328d305d0b44417199a915">log.h</a>
 </li>
 <li>gpr_log_verbosity_init()
 : <a class="el" href="log_8h.html#a0522b8141fb0b208bd069e848382da98">log.h</a>
@@ -503,6 +503,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_byte_buffer_reader_readall()
 : <a class="el" href="byte__buffer_8h.html#a4cbf1eb762ea3c6c08bcfc46201c7691">byte_buffer.h</a>
 </li>
+<li>grpc_call_arena_alloc()
+: <a class="el" href="grpc_8h.html#ab8b0d5c78fb89f05bc43d349dae561be">grpc.h</a>
+</li>
 <li>grpc_call_auth_context()
 : <a class="el" href="grpc__security_8h.html#a3c1860cddc9edaa7f657a98a35b77e80">grpc_security.h</a>
 </li>
@@ -514,9 +517,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>grpc_call_credentials_release()
 : <a class="el" href="grpc__security_8h.html#aeb21611154f3defe05e4eac4cc25af5a">grpc_security.h</a>
-</li>
-<li>grpc_call_destroy()
-: <a class="el" href="grpc_8h.html#a9100ad0aaa8125219bd7f80527de6753">grpc.h</a>
 </li>
 <li>grpc_call_details_destroy()
 : <a class="el" href="grpc_8h.html#ad18a001bb19d54c4355875062777d21f">grpc.h</a>
@@ -530,14 +530,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_call_get_peer()
 : <a class="el" href="grpc_8h.html#a96bc6ab4dac03f512a04ea6c19733289">grpc.h</a>
 </li>
+<li>grpc_call_ref()
+: <a class="el" href="grpc_8h.html#a37a3bcb24b22addd01a9d0881c5a438c">grpc.h</a>
+</li>
 <li>grpc_call_set_credentials()
 : <a class="el" href="grpc__security_8h.html#ab065a653f78111065e91a579fd2ce2d2">grpc_security.h</a>
 </li>
-<li>grpc_call_set_load_reporting_cost_context()
-: <a class="el" href="grpc_8h.html#ad57686192158efcb53aa585a9772954d">grpc.h</a>
-</li>
 <li>grpc_call_start_batch()
 : <a class="el" href="grpc_8h.html#a693db1327a74ba933ad5e2d26e410622">grpc.h</a>
+</li>
+<li>grpc_call_unref()
+: <a class="el" href="grpc_8h.html#ad94050d59c72fadfb22962ff40110e85">grpc.h</a>
 </li>
 <li>grpc_census_call_get_context()
 : <a class="el" href="grpc_8h.html#aad6d8b3df48a43605558f86f1ad5c4fd">grpc.h</a>
@@ -566,6 +569,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_channel_get_target()
 : <a class="el" href="grpc_8h.html#aaa25111c739e1c01ae2d195a23079afd">grpc.h</a>
 </li>
+<li>grpc_channel_num_external_connectivity_watchers()
+: <a class="el" href="grpc_8h.html#ac325c84ef541bcf04697abcc5d167a51">grpc.h</a>
+</li>
 <li>grpc_channel_ping()
 : <a class="el" href="grpc_8h.html#acad1b47029ebf10f80e0db9423401c87">grpc.h</a>
 </li>
@@ -576,7 +582,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="grpc_8h.html#a568bac9fe4004c1dd790e6569b918d2f">grpc.h</a>
 </li>
 <li>grpc_completion_queue_create()
-: <a class="el" href="grpc_8h.html#ae1dc1e6cbb21d67a62db56ab8ef8c787">grpc.h</a>
+: <a class="el" href="grpc_8h.html#aa47ec388be96d8b90e5dd6812234664c">grpc.h</a>
 </li>
 <li>grpc_completion_queue_create_for_next()
 : <a class="el" href="grpc_8h.html#a687672b2c261e965286e36f66e3adbef">grpc.h</a>
@@ -737,9 +743,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_server_register_method()
 : <a class="el" href="grpc_8h.html#afdc7d1e04d9fa62641aeccfc732ea0bc">grpc.h</a>
 </li>
-<li>grpc_server_register_non_listening_completion_queue()
-: <a class="el" href="grpc_8h.html#a8be1e6025540b47bfdbbf0ae059ec65d">grpc.h</a>
-</li>
 <li>grpc_server_request_call()
 : <a class="el" href="grpc_8h.html#ad8472547ac3173e746b1e7980c1208b5">grpc.h</a>
 </li>
@@ -788,6 +791,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_slice_buffer_move_first_into_buffer()
 : <a class="el" href="slice__buffer_8h.html#ab0a50399722f66965800c42b8d5f2c9d">slice_buffer.h</a>
 </li>
+<li>grpc_slice_buffer_move_first_no_ref()
+: <a class="el" href="slice__buffer_8h.html#a7bd220a3e589556980985bef36b08d3e">slice_buffer.h</a>
+</li>
 <li>grpc_slice_buffer_move_into()
 : <a class="el" href="slice__buffer_8h.html#aa173423d301fcac2089714659333e460">slice_buffer.h</a>
 </li>
@@ -817,6 +823,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>grpc_slice_cmp()
 : <a class="el" href="slice_8h.html#a8c2a57340b8ff85c5bc17ecffe941a8d">slice.h</a>
+</li>
+<li>grpc_slice_copy()
+: <a class="el" href="slice_8h.html#a0b428779eb2f6b030f4a8bcad2c9416f">slice.h</a>
 </li>
 <li>grpc_slice_default_eq_impl()
 : <a class="el" href="slice_8h.html#acc97ac4bfd72bc3769c50ba45ab138b4">slice.h</a>
@@ -854,6 +863,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>grpc_slice_malloc()
 : <a class="el" href="slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">slice.h</a>
 </li>
+<li>grpc_slice_malloc_large()
+: <a class="el" href="slice_8h.html#ab286ea0212352a75cfaf34c32eccff17">slice.h</a>
+</li>
 <li>grpc_slice_new()
 : <a class="el" href="slice_8h.html#a85704b2e5f1c8d70e728e86ad6d1ca0a">slice.h</a>
 </li>
@@ -877,6 +889,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>grpc_slice_split_tail()
 : <a class="el" href="slice_8h.html#a5aedc925ae6e2bae484fe82383fac025">slice.h</a>
+</li>
+<li>grpc_slice_split_tail_maybe_ref()
+: <a class="el" href="slice_8h.html#adf447cd644eb32cb42c5d6da21fcaf55">slice.h</a>
 </li>
 <li>grpc_slice_str_cmp()
 : <a class="el" href="slice_8h.html#aada74a5bebd5aad23cc4028e8cc98d4e">slice.h</a>
@@ -915,7 +930,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

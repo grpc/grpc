@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>GRPC C++: include/grpc/load_reporting.h File Reference</title>
+<title>GRPC C++: std Namespace Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -40,9 +40,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
-      <li><a href="namespaces.html"><span>Namespaces</span></a></li>
+      <li class="current"><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
-      <li class="current"><a href="files.html"><span>Files</span></a></li>
+      <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -63,8 +63,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   </div>
   <div id="navrow2" class="tabs2">
     <ul class="tablist">
-      <li><a href="files.html"><span>File&#160;List</span></a></li>
-      <li><a href="globals.html"><span>Globals</span></a></li>
+      <li><a href="namespaces.html"><span>Namespace&#160;List</span></a></li>
+      <li><a href="namespacemembers.html"><span>Namespace&#160;Members</span></a></li>
     </ul>
   </div>
 <!-- window showing the filter options -->
@@ -81,79 +81,24 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
-<div id="nav-path" class="navpath">
-  <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li>  </ul>
-</div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Structures</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#nested-classes">Data Structures</a>  </div>
   <div class="headertitle">
-<div class="title">load_reporting.h File Reference</div>  </div>
+<div class="title">std Namespace Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="port__platform_8h_source.html">grpc/impl/codegen/port_platform.h</a>&gt;</code><br/>
-<code>#include &lt;<a class="el" href="grpc_2slice_8h_source.html">grpc/slice.h</a>&gt;</code><br/>
-</div>
-<p><a href="load__reporting_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__load__reporting__cost__context.html">grpc_load_reporting_cost_context</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A sequence of values for load reporting purposes.  <a href="structgrpc__load__reporting__cost__context.html#details">More...</a><br/></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classstd_1_1default__delete_3_01grpc_1_1_client_async_response_reader_3_01_r_01_4_01_4.html">default_delete&lt; grpc::ClientAsyncResponseReader&lt; R &gt; &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:aad02df8e03e2f88bf4b0f54beb904d12"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="load__reporting_8h.html#aad02df8e03e2f88bf4b0f54beb904d12">GRPC_LB_TOKEN_MD_KEY</a>&#160;&#160;&#160;&quot;lb-token&quot;</td></tr>
-<tr class="memdesc:aad02df8e03e2f88bf4b0f54beb904d12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Metadata key for the gRPC LB load balancer token.  <a href="#aad02df8e03e2f88bf4b0f54beb904d12">More...</a><br/></td></tr>
-<tr class="separator:aad02df8e03e2f88bf4b0f54beb904d12"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:ad2110f7867820dc21471987555ba3e36"><td class="memItemLeft" align="right" valign="top">typedef struct <br class="typebreak"/>
-<a class="el" href="structgrpc__load__reporting__cost__context.html">grpc_load_reporting_cost_context</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="load__reporting_8h.html#ad2110f7867820dc21471987555ba3e36">grpc_load_reporting_cost_context</a></td></tr>
-<tr class="memdesc:ad2110f7867820dc21471987555ba3e36"><td class="mdescLeft">&#160;</td><td class="mdescRight">A sequence of values for load reporting purposes.  <a href="#ad2110f7867820dc21471987555ba3e36">More...</a><br/></td></tr>
-<tr class="separator:ad2110f7867820dc21471987555ba3e36"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a class="anchor" id="aad02df8e03e2f88bf4b0f54beb904d12"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GRPC_LB_TOKEN_MD_KEY&#160;&#160;&#160;&quot;lb-token&quot;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Metadata key for the gRPC LB load balancer token. </p>
-<p>The value corresponding to this key is an opaque token that is given to the frontend as part of each pick; the frontend sends this token to the backend in each request it sends when using that pick. The token is used by the backend to verify the request and to allow the backend to report load to the gRPC LB system. </p>
-
-</div>
-</div>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a class="anchor" id="ad2110f7867820dc21471987555ba3e36"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="structgrpc__load__reporting__cost__context.html">grpc_load_reporting_cost_context</a>  <a class="el" href="structgrpc__load__reporting__cost__context.html">grpc_load_reporting_cost_context</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>A sequence of values for load reporting purposes. </p>
-
-</div>
-</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

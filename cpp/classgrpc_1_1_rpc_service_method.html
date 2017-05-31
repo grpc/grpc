@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -96,17 +96,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> side rpc method class.  
+ <a href="classgrpc_1_1_rpc_service_method.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="codegen_2rpc__service__method_8h_source.html">rpc_service_method.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a9a4a54d93c2c5d2b5b52ff50af5971da"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_service_method.html#a9a4a54d93c2c5d2b5b52ff50af5971da">RpcServiceMethod</a> (const char *<a class="el" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a>, <a class="el" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcMethod::RpcType</a> type, <a class="el" href="classgrpc_1_1_method_handler.html">MethodHandler</a> *<a class="el" href="classgrpc_1_1_rpc_service_method.html#a972ffd5505eece067968773b39aa76eb">handler</a>)</td></tr>
+<tr class="memdesc:a9a4a54d93c2c5d2b5b52ff50af5971da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Takes ownership of the handler.  <a href="#a9a4a54d93c2c5d2b5b52ff50af5971da">More...</a><br/></td></tr>
 <tr class="separator:a9a4a54d93c2c5d2b5b52ff50af5971da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adaac8ae1916d1828fd6792e88e9dc206"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_service_method.html#adaac8ae1916d1828fd6792e88e9dc206">set_server_tag</a> (void *tag)</td></tr>
 <tr class="separator:adaac8ae1916d1828fd6792e88e9dc206"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a55a18bd91dd4c800e26ea3a92b5bc64d"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_service_method.html#a55a18bd91dd4c800e26ea3a92b5bc64d">server_tag</a> () const </td></tr>
 <tr class="separator:a55a18bd91dd4c800e26ea3a92b5bc64d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a972ffd5505eece067968773b39aa76eb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_method_handler.html">MethodHandler</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_service_method.html#a972ffd5505eece067968773b39aa76eb">handler</a> () const </td></tr>
+<tr class="memdesc:a972ffd5505eece067968773b39aa76eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">if <a class="el" href="classgrpc_1_1_method_handler.html" title="Base class for running an RPC handler. ">MethodHandler</a> is nullptr, then this is an async method  <a href="#a972ffd5505eece067968773b39aa76eb">More...</a><br/></td></tr>
 <tr class="separator:a972ffd5505eece067968773b39aa76eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ee8cb024290c0be6905ca2390e5ecbd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_service_method.html#a6ee8cb024290c0be6905ca2390e5ecbd">ResetHandler</a> ()</td></tr>
 <tr class="separator:a6ee8cb024290c0be6905ca2390e5ecbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -136,7 +141,9 @@ Additional Inherited Members</h2></td></tr>
  }</td></tr>
 <tr class="separator:ace95416ed07409e43059a0dfe9e23688 inherit pub_types_classgrpc_1_1_rpc_method"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> side rpc method class. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a9a4a54d93c2c5d2b5b52ff50af5971da"></a>
 <div class="memitem">
 <div class="memproto">
@@ -175,6 +182,8 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Takes ownership of the handler. </p>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -198,6 +207,8 @@ Additional Inherited Members</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>if <a class="el" href="classgrpc_1_1_method_handler.html" title="Base class for running an RPC handler. ">MethodHandler</a> is nullptr, then this is an async method </p>
 
 </div>
 </div>
@@ -301,7 +312,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

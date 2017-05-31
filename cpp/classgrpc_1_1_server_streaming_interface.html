@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -106,7 +106,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3c4c1bb05e9a92ca9095bcb63301d8a1"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a3c4c1bb05e9a92ca9095bcb63301d8a1">~ServerStreamingInterface</a> ()</td></tr>
 <tr class="separator:a3c4c1bb05e9a92ca9095bcb63301d8a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a73c0e46258c0ef9a5c1ecd3cbe429a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a1a73c0e46258c0ef9a5c1ecd3cbe429a">SendInitialMetadata</a> ()=0</td></tr>
-<tr class="memdesc:a1a73c0e46258c0ef9a5c1ecd3cbe429a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocking send initial metadata to client.  <a href="#a1a73c0e46258c0ef9a5c1ecd3cbe429a">More...</a><br/></td></tr>
+<tr class="memdesc:a1a73c0e46258c0ef9a5c1ecd3cbe429a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block to send initial metadata to client.  <a href="#a1a73c0e46258c0ef9a5c1ecd3cbe429a">More...</a><br/></td></tr>
 <tr class="separator:a1a73c0e46258c0ef9a5c1ecd3cbe429a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -157,7 +157,9 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Blocking send initial metadata to client. </p>
+<p>Block to send initial metadata to client. </p>
+<p>This call is optional, but if it is used, it cannot be used concurrently with or after the <em>Finish</em> method.</p>
+<p>The initial metadata that will be sent to the client will be taken from the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with the call. </p>
 
 <p>Implemented in <a class="el" href="classgrpc_1_1_server_split_streamer.html#a291fd87fdf9306a75ad904120b0c59f1">grpc::ServerSplitStreamer&lt; RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc_1_1_server_unary_streamer.html#af9f549cf998f3bd879b485532275518a">grpc::ServerUnaryStreamer&lt; RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc_1_1_server_reader_writer.html#aac6b08c8e1ff71c55a95963ccbbd493a">grpc::ServerReaderWriter&lt; W, R &gt;</a>, <a class="el" href="classgrpc_1_1_server_writer.html#a29dfe2774aa23975c5372031ce4bcda1">grpc::ServerWriter&lt; W &gt;</a>, and <a class="el" href="classgrpc_1_1_server_reader.html#a9485c2aa06bad8ca0650bfeafa35e2e4">grpc::ServerReader&lt; R &gt;</a>.</p>
 
@@ -169,7 +171,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

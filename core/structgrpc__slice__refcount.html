@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,6 +90,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>Reference count container for <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a>.  
+ <a href="structgrpc__slice__refcount.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="impl_2codegen_2slice_8h_source.html">slice.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
@@ -97,9 +100,13 @@ Data Fields</h2></td></tr>
 <tr class="memitem:ab35b82d586e9ca84f9d42af591616f98"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="structgrpc__slice__refcount__vtable.html">grpc_slice_refcount_vtable</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__refcount.html#ab35b82d586e9ca84f9d42af591616f98">vtable</a></td></tr>
 <tr class="separator:ab35b82d586e9ca84f9d42af591616f98"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a113ae62eac88e4180feb9ecc80e0f2f9"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structgrpc__slice__refcount.html">grpc_slice_refcount</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__refcount.html#a113ae62eac88e4180feb9ecc80e0f2f9">sub_refcount</a></td></tr>
+<tr class="memdesc:a113ae62eac88e4180feb9ecc80e0f2f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">If a subset of this slice is taken, use this pointer for the refcount.  <a href="#a113ae62eac88e4180feb9ecc80e0f2f9">More...</a><br/></td></tr>
 <tr class="separator:a113ae62eac88e4180feb9ecc80e0f2f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Reference count container for <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a>. </p>
+<p>Contains function pointers to increment and decrement reference counts. Implementations should cleanup when the reference count drops to zero. Typically client code should not touch this, and use grpc_slice_malloc, grpc_slice_new, or grpc_slice_new_with_len instead. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a113ae62eac88e4180feb9ecc80e0f2f9"></a>
 <div class="memitem">
 <div class="memproto">
@@ -109,6 +116,9 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>If a subset of this slice is taken, use this pointer for the refcount. </p>
+<p>Typically points back to the refcount itself, however iterning implementations can use this to avoid a verification step on each hash or equality check </p>
 
 </div>
 </div>
@@ -130,7 +140,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

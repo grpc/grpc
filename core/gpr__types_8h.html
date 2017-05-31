@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_27c65f9b8b3387c47015966ca861342b.html">impl</a></li><li class="navelem"><a class="el" href="dir_2d2a7752fa77ea824010e525334e7867.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_1ccb85353bf7ad9eb207254c908f6dd2.html">impl</a></li><li class="navelem"><a class="el" href="dir_d4a1038da1ca7a38aa498ecf659a57c8.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -96,18 +96,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <div class="textblock"><code>#include &lt;<a class="el" href="impl_2codegen_2port__platform_8h_source.html">grpc/impl/codegen/port_platform.h</a>&gt;</code><br/>
 <code>#include &lt;stddef.h&gt;</code><br/>
-<code>#include &lt;stdint.h&gt;</code><br/>
 </div>
 <p><a href="gpr__types_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__timespec.html">gpr_timespec</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Analogous to struct timespec.  <a href="structgpr__timespec.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
 <tr class="memitem:a7dd12c72fcf53ebecfdfc13632914c45"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="gpr__types_8h.html#a7dd12c72fcf53ebecfdfc13632914c45">gpr_timespec</a></td></tr>
+<tr class="memdesc:a7dd12c72fcf53ebecfdfc13632914c45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Analogous to struct timespec.  <a href="#a7dd12c72fcf53ebecfdfc13632914c45">More...</a><br/></td></tr>
 <tr class="separator:a7dd12c72fcf53ebecfdfc13632914c45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
@@ -117,6 +118,7 @@ Enumerations</h2></td></tr>
 <a class="el" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">GPR_CLOCK_PRECISE</a>, 
 <a class="el" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">GPR_TIMESPAN</a>
  }</td></tr>
+<tr class="memdesc:a2441bd1fbe80e86ff741e0757725b281"><td class="mdescLeft">&#160;</td><td class="mdescRight">The clocks we support.  <a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">More...</a><br/></td></tr>
 <tr class="separator:a2441bd1fbe80e86ff741e0757725b281"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
@@ -130,6 +132,9 @@ Enumerations</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Analogous to struct timespec. </p>
+<p>On some machines, absolute times may be in local time. </p>
+
 </div>
 </div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
@@ -142,14 +147,23 @@ Enumerations</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>The clocks we support. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c"></a>GPR_CLOCK_MONOTONIC</em>&#160;</td><td class="fielddoc">
+<p>Monotonic clock. </p>
+<p>Epoch undefined. Always moves forwards. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746"></a>GPR_CLOCK_REALTIME</em>&#160;</td><td class="fielddoc">
+<p>Realtime clock. </p>
+<p>May jump forwards or backwards. Settable by the system administrator. Has its epoch at 0:00:00 UTC 1 Jan 1970. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6"></a>GPR_CLOCK_PRECISE</em>&#160;</td><td class="fielddoc">
+<p>CPU cycle time obtained by rdtsc instruction on x86 platforms. </p>
+<p>Epoch undefined. Degrades to GPR_CLOCK_REALTIME on other platforms. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741"></a>GPR_TIMESPAN</em>&#160;</td><td class="fielddoc">
+<p>Unmeasurable clock type: no base, created by taking the difference between two times. </p>
 </td></tr>
 </table>
 
@@ -158,7 +172,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

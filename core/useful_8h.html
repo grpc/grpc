@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -98,12 +98,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:a298322c952526928cf8dbc7aaba7b84d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="useful_8h.html#a298322c952526928cf8dbc7aaba7b84d">GPR_MIN</a>(a, b)&#160;&#160;&#160;((a) &lt; (b) ? (a) : (b))</td></tr>
+<tr class="memdesc:a298322c952526928cf8dbc7aaba7b84d"><td class="mdescLeft">&#160;</td><td class="mdescRight">useful macros that don't belong anywhere else  <a href="#a298322c952526928cf8dbc7aaba7b84d">More...</a><br/></td></tr>
 <tr class="separator:a298322c952526928cf8dbc7aaba7b84d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af50c518bb1183da84adb7d8a86cd568a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="useful_8h.html#af50c518bb1183da84adb7d8a86cd568a">GPR_MAX</a>(a, b)&#160;&#160;&#160;((a) &gt; (b) ? (a) : (b))</td></tr>
 <tr class="separator:af50c518bb1183da84adb7d8a86cd568a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac974b8c13ee716193e0ee30d9513672c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="useful_8h.html#ac974b8c13ee716193e0ee30d9513672c">GPR_CLAMP</a>(a, min, max)&#160;&#160;&#160;((a) &lt; (min) ? (min) : (a) &gt; (max) ? (max) : (a))</td></tr>
 <tr class="separator:ac974b8c13ee716193e0ee30d9513672c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f7a8aba8e044f6b20fc8a7560f28f85"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="useful_8h.html#a6f7a8aba8e044f6b20fc8a7560f28f85">GPR_ROTL</a>(x, n)&#160;&#160;&#160;(((x) &lt;&lt; (n)) | ((x) &gt;&gt; (sizeof(x) * 8 - (n))))</td></tr>
+<tr class="memdesc:a6f7a8aba8e044f6b20fc8a7560f28f85"><td class="mdescLeft">&#160;</td><td class="mdescRight">rotl, rotr assume x is unsigned  <a href="#a6f7a8aba8e044f6b20fc8a7560f28f85">More...</a><br/></td></tr>
 <tr class="separator:a6f7a8aba8e044f6b20fc8a7560f28f85"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ff4b278972e799dc134963a0249f316"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="useful_8h.html#a5ff4b278972e799dc134963a0249f316">GPR_ROTR</a>(x, n)&#160;&#160;&#160;(((x) &gt;&gt; (n)) | ((x) &lt;&lt; (sizeof(x) * 8 - (n))))</td></tr>
 <tr class="separator:a5ff4b278972e799dc134963a0249f316"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -406,6 +408,8 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>useful macros that don't belong anywhere else </p>
+
 </div>
 </div>
 <a class="anchor" id="a6f7a8aba8e044f6b20fc8a7560f28f85"></a>
@@ -431,6 +435,8 @@ Macros</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>rotl, rotr assume x is unsigned </p>
 
 </div>
 </div>
@@ -500,7 +506,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

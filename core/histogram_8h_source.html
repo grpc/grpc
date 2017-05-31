@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -140,9 +140,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> <a class="code" href="histogram_8h.html#a8bced3cdf59ba9c9c6da6c13be8afd77">gpr_histogram_destroy</a>(<a class="code" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *h);</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> <a class="code" href="histogram_8h.html#a1fdd2db0df7d78e170d5d2c3878bd7e3">gpr_histogram_add</a>(<a class="code" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *h, <span class="keywordtype">double</span> x);</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment">/* The following merges the second histogram into the first. It only works</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">   if they have the same buckets and resolution. Returns 0 on failure, 1</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment">   on success */</span></div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">int</span> <a class="code" href="histogram_8h.html#a199efc11a0cef2daaf27d2869cd07cce">gpr_histogram_merge</a>(<a class="code" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *dst, <span class="keyword">const</span> <a class="code" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *src);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">double</span> <a class="code" href="histogram_8h.html#acb1c9b30e0473ad37a4e0899d9bb058d">gpr_histogram_percentile</a>(<a class="code" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram,</div>
@@ -172,8 +169,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="histogram_8h_html_aff7334c462f915cb7bba90cb735a3bf5"><div class="ttname"><a href="histogram_8h.html#aff7334c462f915cb7bba90cb735a3bf5">gpr_histogram_variance</a></div><div class="ttdeci">GPRAPI double gpr_histogram_variance(gpr_histogram *histogram)</div></div>
 <div class="ttc" id="histogram_8h_html_a91ccdae54fa075df03fc12fca721ec34"><div class="ttname"><a href="histogram_8h.html#a91ccdae54fa075df03fc12fca721ec34">gpr_histogram_minimum</a></div><div class="ttdeci">GPRAPI double gpr_histogram_minimum(gpr_histogram *histogram)</div></div>
 <div class="ttc" id="histogram_8h_html_abc9e00d4f5410abaadc2a98dc95d178d"><div class="ttname"><a href="histogram_8h.html#abc9e00d4f5410abaadc2a98dc95d178d">gpr_histogram_mean</a></div><div class="ttdeci">GPRAPI double gpr_histogram_mean(gpr_histogram *histogram)</div></div>
-<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:410</div></div>
-<div class="ttc" id="histogram_8h_html_a199efc11a0cef2daaf27d2869cd07cce"><div class="ttname"><a href="histogram_8h.html#a199efc11a0cef2daaf27d2869cd07cce">gpr_histogram_merge</a></div><div class="ttdeci">GPRAPI int gpr_histogram_merge(gpr_histogram *dst, const gpr_histogram *src)</div></div>
+<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:416</div></div>
+<div class="ttc" id="histogram_8h_html_a199efc11a0cef2daaf27d2869cd07cce"><div class="ttname"><a href="histogram_8h.html#a199efc11a0cef2daaf27d2869cd07cce">gpr_histogram_merge</a></div><div class="ttdeci">GPRAPI int gpr_histogram_merge(gpr_histogram *dst, const gpr_histogram *src)</div><div class="ttdoc">The following merges the second histogram into the first. </div></div>
 <div class="ttc" id="histogram_8h_html_acb1c9b30e0473ad37a4e0899d9bb058d"><div class="ttname"><a href="histogram_8h.html#acb1c9b30e0473ad37a4e0899d9bb058d">gpr_histogram_percentile</a></div><div class="ttdeci">GPRAPI double gpr_histogram_percentile(gpr_histogram *histogram, double percentile)</div></div>
 <div class="ttc" id="histogram_8h_html_af8710eaa83e60a3210834a144af90158"><div class="ttname"><a href="histogram_8h.html#af8710eaa83e60a3210834a144af90158">gpr_histogram_stddev</a></div><div class="ttdeci">GPRAPI double gpr_histogram_stddev(gpr_histogram *histogram)</div></div>
 <div class="ttc" id="histogram_8h_html_a1fdd2db0df7d78e170d5d2c3878bd7e3"><div class="ttname"><a href="histogram_8h.html#a1fdd2db0df7d78e170d5d2c3878bd7e3">gpr_histogram_add</a></div><div class="ttdeci">GPRAPI void gpr_histogram_add(gpr_histogram *h, double x)</div></div>
@@ -190,7 +187,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

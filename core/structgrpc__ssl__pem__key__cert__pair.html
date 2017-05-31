@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,16 +90,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>Object that holds a private key / certificate chain pair in PEM format.  
+ <a href="structgrpc__ssl__pem__key__cert__pair.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="grpc__security_8h_source.html">grpc_security.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a2d4e3bdbc59d906bc9ca8b873120fd72"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__ssl__pem__key__cert__pair.html#a2d4e3bdbc59d906bc9ca8b873120fd72">private_key</a></td></tr>
+<tr class="memdesc:a2d4e3bdbc59d906bc9ca8b873120fd72"><td class="mdescLeft">&#160;</td><td class="mdescRight">private_key is the NULL-terminated string containing the PEM encoding of the client's private key.  <a href="#a2d4e3bdbc59d906bc9ca8b873120fd72">More...</a><br/></td></tr>
 <tr class="separator:a2d4e3bdbc59d906bc9ca8b873120fd72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a483c3601705853f48dfbc8ee66d5e656"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__ssl__pem__key__cert__pair.html#a483c3601705853f48dfbc8ee66d5e656">cert_chain</a></td></tr>
+<tr class="memdesc:a483c3601705853f48dfbc8ee66d5e656"><td class="mdescLeft">&#160;</td><td class="mdescRight">cert_chain is the NULL-terminated string containing the PEM encoding of the client's certificate chain.  <a href="#a483c3601705853f48dfbc8ee66d5e656">More...</a><br/></td></tr>
 <tr class="separator:a483c3601705853f48dfbc8ee66d5e656"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Object that holds a private key / certificate chain pair in PEM format. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a483c3601705853f48dfbc8ee66d5e656"></a>
 <div class="memitem">
 <div class="memproto">
@@ -109,6 +116,8 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>cert_chain is the NULL-terminated string containing the PEM encoding of the client's certificate chain. </p>
 
 </div>
 </div>
@@ -122,6 +131,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>private_key is the NULL-terminated string containing the PEM encoding of the client's private key. </p>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
@@ -130,7 +141,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

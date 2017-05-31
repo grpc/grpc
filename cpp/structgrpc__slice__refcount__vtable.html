@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -92,6 +92,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>Slice API.  
+ <a href="structgrpc__slice__refcount__vtable.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="grpc_2impl_2codegen_2slice_8h_source.html">slice.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
@@ -105,7 +108,12 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a38e78e171f83371fe401c0c349309798"><td class="memItemLeft" align="right" valign="top">uint32_t(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__refcount__vtable.html#a38e78e171f83371fe401c0c349309798">hash</a> )(<a class="el" href="structgrpc__slice.html">grpc_slice</a> slice)</td></tr>
 <tr class="separator:a38e78e171f83371fe401c0c349309798"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Slice API. </p>
+<p>A slice represents a contiguous reference counted array of bytes. It is cheap to take references to a slice, and it is cheap to create a slice pointing to a subset of another slice.</p>
+<p>The data-structure for slices is exposed here to allow non-gpr code to build slices from whatever data they have available.</p>
+<p>When defining interfaces that handle slices, care should be taken to define reference ownership semantics (who should call unref?) and mutability constraints (is the callee allowed to modify the slice?) </p>
+</div><h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a9f914a5a0b094a7343a23894b1a2de40"></a>
 <div class="memitem">
 <div class="memproto">
@@ -160,7 +168,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

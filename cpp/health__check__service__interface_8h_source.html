@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -134,43 +134,34 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="namespacegrpc.html#a7252666b30ae42dcc5336bb4a701d7ba">   41</a></span>&#160;<span class="keyword">const</span> <span class="keywordtype">char</span> <a class="code" href="namespacegrpc.html#a7252666b30ae42dcc5336bb4a701d7ba">kHealthCheckServiceInterfaceArg</a>[] =</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="stringliteral">&quot;grpc.health_check_service_interface&quot;</span>;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">// The gRPC server uses this interface to expose the health checking service</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">// without depending on protobuf.</span></div>
 <div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classgrpc_1_1_health_check_service_interface.html">   46</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_health_check_service_interface.html">HealthCheckServiceInterface</a> {</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classgrpc_1_1_health_check_service_interface.html#af72a34e5ec5cc058fd7648e235816c60">   48</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1_health_check_service_interface.html#af72a34e5ec5cc058fd7648e235816c60">~HealthCheckServiceInterface</a>() {}</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="comment">// Set or change the serving status of the given service_name.</span></div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_health_check_service_interface.html#a9d99470b4074938af24e5ae723301f80">SetServingStatus</a>(<span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&amp; service_name,</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                <span class="keywordtype">bool</span> serving) = 0;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="comment">// Apply to all registered service names.</span></div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_health_check_service_interface.html#a9d99470b4074938af24e5ae723301f80">SetServingStatus</a>(<span class="keywordtype">bool</span> serving) = 0;</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;};</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment">// Enable/disable the default health checking service. This applies to all C++</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="comment">// servers created afterwards. For each server, user can override the default</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="comment">// with a HealthCheckServiceServerBuilderOption.</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="comment">// NOT thread safe.</span></div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacegrpc.html#a892b88cf1c9b9c9a3d2438286413218c">EnableDefaultHealthCheckService</a>(<span class="keywordtype">bool</span> enable);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="comment">// NOT thread safe.</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacegrpc.html#ac6cb56443dd770ee50262a69abdb0b40">DefaultHealthCheckServiceEnabled</a>();</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor">#endif  // GRPCXX_HEALTH_CHECK_SERVICE_INTERFACE_H</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="keywordtype">bool</span> <a class="code" href="namespacegrpc.html#ac6cb56443dd770ee50262a69abdb0b40">DefaultHealthCheckServiceEnabled</a>();</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">#endif  // GRPCXX_HEALTH_CHECK_SERVICE_INTERFACE_H</span></div>
 <div class="ttc" id="support_2config_8h_html"><div class="ttname"><a href="support_2config_8h.html">config.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_health_check_service_interface_html_a9d99470b4074938af24e5ae723301f80"><div class="ttname"><a href="classgrpc_1_1_health_check_service_interface.html#a9d99470b4074938af24e5ae723301f80">grpc::HealthCheckServiceInterface::SetServingStatus</a></div><div class="ttdeci">virtual void SetServingStatus(const grpc::string &amp;service_name, bool serving)=0</div></div>
+<div class="ttc" id="classgrpc_1_1_health_check_service_interface_html_a9d99470b4074938af24e5ae723301f80"><div class="ttname"><a href="classgrpc_1_1_health_check_service_interface.html#a9d99470b4074938af24e5ae723301f80">grpc::HealthCheckServiceInterface::SetServingStatus</a></div><div class="ttdeci">virtual void SetServingStatus(const grpc::string &amp;service_name, bool serving)=0</div><div class="ttdoc">Set or change the serving status of the given service_name. </div></div>
 <div class="ttc" id="namespacegrpc_html_ab04a87625da3bf85cdaf5e7856b00203"><div class="ttname"><a href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a></div><div class="ttdeci">std::string string</div><div class="ttdef"><b>Definition:</b> config.h:50</div></div>
-<div class="ttc" id="namespacegrpc_html_ac6cb56443dd770ee50262a69abdb0b40"><div class="ttname"><a href="namespacegrpc.html#ac6cb56443dd770ee50262a69abdb0b40">grpc::DefaultHealthCheckServiceEnabled</a></div><div class="ttdeci">bool DefaultHealthCheckServiceEnabled()</div></div>
-<div class="ttc" id="classgrpc_1_1_health_check_service_interface_html"><div class="ttname"><a href="classgrpc_1_1_health_check_service_interface.html">grpc::HealthCheckServiceInterface</a></div><div class="ttdef"><b>Definition:</b> health_check_service_interface.h:46</div></div>
+<div class="ttc" id="namespacegrpc_html_ac6cb56443dd770ee50262a69abdb0b40"><div class="ttname"><a href="namespacegrpc.html#ac6cb56443dd770ee50262a69abdb0b40">grpc::DefaultHealthCheckServiceEnabled</a></div><div class="ttdeci">bool DefaultHealthCheckServiceEnabled()</div><div class="ttdoc">Returns whether the default health checking service is enabled. </div></div>
+<div class="ttc" id="classgrpc_1_1_health_check_service_interface_html"><div class="ttname"><a href="classgrpc_1_1_health_check_service_interface.html">grpc::HealthCheckServiceInterface</a></div><div class="ttdoc">The gRPC server uses this interface to expose the health checking service without depending on protob...</div><div class="ttdef"><b>Definition:</b> health_check_service_interface.h:46</div></div>
 <div class="ttc" id="namespacegrpc_html_a7252666b30ae42dcc5336bb4a701d7ba"><div class="ttname"><a href="namespacegrpc.html#a7252666b30ae42dcc5336bb4a701d7ba">grpc::kHealthCheckServiceInterfaceArg</a></div><div class="ttdeci">const char kHealthCheckServiceInterfaceArg[]</div><div class="ttdef"><b>Definition:</b> health_check_service_interface.h:41</div></div>
 <div class="ttc" id="classgrpc_1_1_health_check_service_interface_html_af72a34e5ec5cc058fd7648e235816c60"><div class="ttname"><a href="classgrpc_1_1_health_check_service_interface.html#af72a34e5ec5cc058fd7648e235816c60">grpc::HealthCheckServiceInterface::~HealthCheckServiceInterface</a></div><div class="ttdeci">virtual ~HealthCheckServiceInterface()</div><div class="ttdef"><b>Definition:</b> health_check_service_interface.h:48</div></div>
-<div class="ttc" id="namespacegrpc_html_a892b88cf1c9b9c9a3d2438286413218c"><div class="ttname"><a href="namespacegrpc.html#a892b88cf1c9b9c9a3d2438286413218c">grpc::EnableDefaultHealthCheckService</a></div><div class="ttdeci">void EnableDefaultHealthCheckService(bool enable)</div></div>
+<div class="ttc" id="namespacegrpc_html_a892b88cf1c9b9c9a3d2438286413218c"><div class="ttname"><a href="namespacegrpc.html#a892b88cf1c9b9c9a3d2438286413218c">grpc::EnableDefaultHealthCheckService</a></div><div class="ttdeci">void EnableDefaultHealthCheckService(bool enable)</div><div class="ttdoc">Enable/disable the default health checking service. </div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

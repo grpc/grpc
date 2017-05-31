@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>GRPC C++: include/grpc++/impl/codegen/status_helper.h Source File</title>
+<title>GRPC Core: include/grpc/support/workaround_list.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,8 +22,8 @@
  <tbody>
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
-   <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   <div id="projectname">GRPC Core
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -40,7 +40,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
-      <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
       <li class="current"><a href="files.html"><span>Files</span></a></li>
       <li>
@@ -72,7 +71,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(12)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -83,17 +82,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_f1b2ab2a88927c1e950e43c1cf4b634b.html">grpc++</a></li><li class="navelem"><a class="el" href="dir_ac8b245a5921095c43c106649fd7bc4b.html">impl</a></li><li class="navelem"><a class="el" href="dir_a7c29f91546e182c0f2b46e2e51819eb.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">status_helper.h</div>  </div>
+<div class="title">workaround_list.h</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="status__helper_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
+<a href="workaround__list_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2016, Google Inc.</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015, Google Inc.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * All rights reserved.</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
@@ -124,29 +123,26 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPC_SUPPORT_WORKAROUND_LIST_H</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_SUPPORT_WORKAROUND_LIST_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_09_09_2impl_2codegen_2status_8h.html">grpc++/impl/codegen/status.h</a>&gt;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keyword">namespace </span>grpc {</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;</div>
-<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="namespacegrpc.html#a7b66c0cb27ed89b0d6089db20a06280d">   41</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43b">StatusCode</a> <a class="code" href="namespacegrpc.html#a7b66c0cb27ed89b0d6089db20a06280d">GetCanonicalCode</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_status.html">Status</a>&amp; status) {</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keywordflow">return</span> status.<a class="code" href="classgrpc_1_1_status.html#a78b50cb074bcd9f1dd50e8f212f7e181">error_code</a>();</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;}</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H</span></div>
-<div class="ttc" id="grpc_09_09_2impl_2codegen_2status_8h_html"><div class="ttname"><a href="grpc_09_09_2impl_2codegen_2status_8h.html">status.h</a></div></div>
-<div class="ttc" id="namespacegrpc_html_a7b66c0cb27ed89b0d6089db20a06280d"><div class="ttname"><a href="namespacegrpc.html#a7b66c0cb27ed89b0d6089db20a06280d">grpc::GetCanonicalCode</a></div><div class="ttdeci">StatusCode GetCanonicalCode(const Status &amp;status)</div><div class="ttdef"><b>Definition:</b> status_helper.h:41</div></div>
-<div class="ttc" id="namespacegrpc_html_aff1730578c90160528f6a8d67ef5c43b"><div class="ttname"><a href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43b">grpc::StatusCode</a></div><div class="ttdeci">StatusCode</div><div class="ttdef"><b>Definition:</b> status_code_enum.h:39</div></div>
-<div class="ttc" id="classgrpc_1_1_status_html_a78b50cb074bcd9f1dd50e8f212f7e181"><div class="ttname"><a href="classgrpc_1_1_status.html#a78b50cb074bcd9f1dd50e8f212f7e181">grpc::Status::error_code</a></div><div class="ttdeci">StatusCode error_code() const </div><div class="ttdoc">Return the instance&#39;s error code. </div><div class="ttdef"><b>Definition:</b> status.h:68</div></div>
-<div class="ttc" id="classgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn&#39;t, why? </div><div class="ttdef"><b>Definition:</b> status.h:45</div></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="comment">/* The list of IDs of server workarounds currently maintained by gRPC. For</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="comment"> * explanation and detailed descriptions of workarounds, see</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="comment"> * /doc/workarounds.md</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2">   41</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">enum</span> {</div>
+<div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2ad5634536a70e6bf3b14550dd26a66033">   42</a></span>&#160;  <a class="code" href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2ad5634536a70e6bf3b14550dd26a66033">GRPC_WORKAROUND_ID_CRONET_COMPRESSION</a> = 0,</div>
+<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2ac8d0c094c010899a69f029de9b70bc3c">   43</a></span>&#160;  <a class="code" href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2ac8d0c094c010899a69f029de9b70bc3c">GRPC_MAX_WORKAROUND_ID</a></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;} <a class="code" href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2">grpc_workaround_list</a>;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="ttc" id="workaround__list_8h_html_ade8be35fce7415c7234ac22d8b9ad9d2ad5634536a70e6bf3b14550dd26a66033"><div class="ttname"><a href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2ad5634536a70e6bf3b14550dd26a66033">GRPC_WORKAROUND_ID_CRONET_COMPRESSION</a></div><div class="ttdef"><b>Definition:</b> workaround_list.h:42</div></div>
+<div class="ttc" id="workaround__list_8h_html_ade8be35fce7415c7234ac22d8b9ad9d2"><div class="ttname"><a href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2">grpc_workaround_list</a></div><div class="ttdeci">grpc_workaround_list</div><div class="ttdef"><b>Definition:</b> workaround_list.h:41</div></div>
+<div class="ttc" id="workaround__list_8h_html_ade8be35fce7415c7234ac22d8b9ad9d2ac8d0c094c010899a69f029de9b70bc3c"><div class="ttname"><a href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2ac8d0c094c010899a69f029de9b70bc3c">GRPC_MAX_WORKAROUND_ID</a></div><div class="ttdef"><b>Definition:</b> workaround_list.h:43</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

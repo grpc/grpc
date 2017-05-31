@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -128,13 +128,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a520690f499be85159a20200ddb986a96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the socket mutator for the channel.  <a href="#a520690f499be85159a20200ddb986a96">More...</a><br/></td></tr>
 <tr class="separator:a520690f499be85159a20200ddb986a96"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0d6080324cabd7ba0833b95c77c0c907"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a0d6080324cabd7ba0833b95c77c0c907">SetUserAgentPrefix</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;user_agent_prefix)</td></tr>
-<tr class="memdesc:a0d6080324cabd7ba0833b95c77c0c907"><td class="mdescLeft">&#160;</td><td class="mdescRight">The given string will be sent at the front of the user agent string.  <a href="#a0d6080324cabd7ba0833b95c77c0c907">More...</a><br/></td></tr>
+<tr class="memdesc:a0d6080324cabd7ba0833b95c77c0c907"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the string to prepend to the user agent.  <a href="#a0d6080324cabd7ba0833b95c77c0c907">More...</a><br/></td></tr>
 <tr class="separator:a0d6080324cabd7ba0833b95c77c0c907"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af569e816b047a77f08f0e8e0f585a4a5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#af569e816b047a77f08f0e8e0f585a4a5">SetResourceQuota</a> (const <a class="el" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a> &amp;resource_quota)</td></tr>
-<tr class="memdesc:af569e816b047a77f08f0e8e0f585a4a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">The given buffer pool will be attached to the constructed channel.  <a href="#af569e816b047a77f08f0e8e0f585a4a5">More...</a><br/></td></tr>
+<tr class="memdesc:af569e816b047a77f08f0e8e0f585a4a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the buffer pool to be attached to the constructed channel.  <a href="#af569e816b047a77f08f0e8e0f585a4a5">More...</a><br/></td></tr>
 <tr class="separator:af569e816b047a77f08f0e8e0f585a4a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2629f85664dd2822fe54059c4730baf8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a2629f85664dd2822fe54059c4730baf8">SetMaxReceiveMessageSize</a> (int size)</td></tr>
-<tr class="memdesc:a2629f85664dd2822fe54059c4730baf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the max receive and send message sizes.  <a href="#a2629f85664dd2822fe54059c4730baf8">More...</a><br/></td></tr>
+<tr class="memdesc:a2629f85664dd2822fe54059c4730baf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the max receive and send message sizes.  <a href="#a2629f85664dd2822fe54059c4730baf8">More...</a><br/></td></tr>
 <tr class="separator:a2629f85664dd2822fe54059c4730baf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac1fa513191e8104ec57dfd6598297ce5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#ac1fa513191e8104ec57dfd6598297ce5">SetMaxSendMessageSize</a> (int size)</td></tr>
 <tr class="separator:ac1fa513191e8104ec57dfd6598297ce5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -156,7 +156,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a852ac2fe0ac7421fa82927ddda612947"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a textual argument <em>value</em> under <em>key</em>.  <a href="#a852ac2fe0ac7421fa82927ddda612947">More...</a><br/></td></tr>
 <tr class="separator:a852ac2fe0ac7421fa82927ddda612947"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0809bc0694b2996de4fd9d15e9acaf2a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a0809bc0694b2996de4fd9d15e9acaf2a">c_channel_args</a> () const </td></tr>
-<tr class="memdesc:a0809bc0694b2996de4fd9d15e9acaf2a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return (by value) a c <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around. ">grpc_channel_args</a> structure which points to arguments owned by this <a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation. ">ChannelArguments</a> instance.  <a href="#a0809bc0694b2996de4fd9d15e9acaf2a">More...</a><br/></td></tr>
+<tr class="memdesc:a0809bc0694b2996de4fd9d15e9acaf2a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return (by value) a C <em><a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around. ">grpc_channel_args</a></em> structure which points to arguments owned by this <em><a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation. ">ChannelArguments</a></em> instance.  <a href="#a0809bc0694b2996de4fd9d15e9acaf2a">More...</a><br/></td></tr>
 <tr class="separator:a0809bc0694b2996de4fd9d15e9acaf2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
@@ -168,7 +168,7 @@ Friends</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Options for channel creation. </p>
-<p>The user can use generic setters to pass key value pairs down to c channel creation code. For grpc related options, concrete setters are provided. </p>
+<p>The user can use generic setters to pass key value pairs down to C channel creation code. For gRPC related options, concrete setters are provided. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="aecabf1ea1c78a3202544571cf857e8eb"></a>
 <div class="memitem">
@@ -238,7 +238,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Return (by value) a c <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around. ">grpc_channel_args</a> structure which points to arguments owned by this <a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation. ">ChannelArguments</a> instance. </p>
+<p>Return (by value) a C <em><a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around. ">grpc_channel_args</a></em> structure which points to arguments owned by this <em><a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation. ">ChannelArguments</a></em> instance. </p>
 
 </div>
 </div>
@@ -365,7 +365,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Sets the max receive and send message sizes. </p>
+<p>Set the max receive and send message sizes. </p>
 
 </div>
 </div>
@@ -459,7 +459,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>The given buffer pool will be attached to the constructed channel. </p>
+<p>Set the buffer pool to be attached to the constructed channel. </p>
 
 </div>
 </div>
@@ -561,7 +561,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>The given string will be sent at the front of the user agent string. </p>
+<p>Set the string to prepend to the user agent. </p>
 
 </div>
 </div>
@@ -628,7 +628,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

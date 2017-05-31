@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -92,24 +92,35 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>Represents an expandable array of slices, to be interpreted as a single item.  
+ <a href="structgrpc__slice__buffer.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="grpc_2impl_2codegen_2slice_8h_source.html">slice.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a52a8e83b31006d685d98ce4db16520d8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice.html">grpc_slice</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__buffer.html#a52a8e83b31006d685d98ce4db16520d8">base_slices</a></td></tr>
+<tr class="memdesc:a52a8e83b31006d685d98ce4db16520d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is for internal use only.  <a href="#a52a8e83b31006d685d98ce4db16520d8">More...</a><br/></td></tr>
 <tr class="separator:a52a8e83b31006d685d98ce4db16520d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac37e9d19ec31eab8f429d2b4af908256"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice.html">grpc_slice</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__buffer.html#ac37e9d19ec31eab8f429d2b4af908256">slices</a></td></tr>
+<tr class="memdesc:ac37e9d19ec31eab8f429d2b4af908256"><td class="mdescLeft">&#160;</td><td class="mdescRight">slices in the array (Points to the first valid <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> in the array)  <a href="#ac37e9d19ec31eab8f429d2b4af908256">More...</a><br/></td></tr>
 <tr class="separator:ac37e9d19ec31eab8f429d2b4af908256"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac6b9b99f100ac02280fe6ba0edc754cc"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__buffer.html#ac6b9b99f100ac02280fe6ba0edc754cc">count</a></td></tr>
+<tr class="memdesc:ac6b9b99f100ac02280fe6ba0edc754cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">the number of slices in the array  <a href="#ac6b9b99f100ac02280fe6ba0edc754cc">More...</a><br/></td></tr>
 <tr class="separator:ac6b9b99f100ac02280fe6ba0edc754cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8f35fa07c9a4d9f9a4e088a1155e5833"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833">capacity</a></td></tr>
+<tr class="memdesc:a8f35fa07c9a4d9f9a4e088a1155e5833"><td class="mdescLeft">&#160;</td><td class="mdescRight">the number of slices allocated in the array.  <a href="#a8f35fa07c9a4d9f9a4e088a1155e5833">More...</a><br/></td></tr>
 <tr class="separator:a8f35fa07c9a4d9f9a4e088a1155e5833"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad796dcdd16fbb680a7a5368228d20127"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__buffer.html#ad796dcdd16fbb680a7a5368228d20127">length</a></td></tr>
+<tr class="memdesc:ad796dcdd16fbb680a7a5368228d20127"><td class="mdescLeft">&#160;</td><td class="mdescRight">the combined length of all slices in the array  <a href="#ad796dcdd16fbb680a7a5368228d20127">More...</a><br/></td></tr>
 <tr class="separator:ad796dcdd16fbb680a7a5368228d20127"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a27c76a4e972a41ab5ac6504c4426fab9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__buffer.html#a27c76a4e972a41ab5ac6504c4426fab9">inlined</a> [8]</td></tr>
+<tr class="memdesc:a27c76a4e972a41ab5ac6504c4426fab9"><td class="mdescLeft">&#160;</td><td class="mdescRight">inlined elements to avoid allocations  <a href="#a27c76a4e972a41ab5ac6504c4426fab9">More...</a><br/></td></tr>
 <tr class="separator:a27c76a4e972a41ab5ac6504c4426fab9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Represents an expandable array of slices, to be interpreted as a single item. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a52a8e83b31006d685d98ce4db16520d8"></a>
 <div class="memitem">
 <div class="memproto">
@@ -119,6 +130,9 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>This is for internal use only. </p>
+<p>External users (i.e any code outside grpc core) MUST NOT use this field </p>
 
 </div>
 </div>
@@ -132,6 +146,9 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>the number of slices allocated in the array. </p>
+<p>External users (i.e any code outside grpc core) MUST NOT use this field </p>
+
 </div>
 </div>
 <a class="anchor" id="ac6b9b99f100ac02280fe6ba0edc754cc"></a>
@@ -143,6 +160,8 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>the number of slices in the array </p>
 
 </div>
 </div>
@@ -156,6 +175,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>inlined elements to avoid allocations </p>
+
 </div>
 </div>
 <a class="anchor" id="ad796dcdd16fbb680a7a5368228d20127"></a>
@@ -167,6 +188,8 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>the combined length of all slices in the array </p>
 
 </div>
 </div>
@@ -180,6 +203,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>slices in the array (Points to the first valid <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> in the array) </p>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
@@ -188,7 +213,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

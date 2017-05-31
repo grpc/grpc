@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -181,7 +181,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1_auth_property_iterator.html">AuthPropertyIterator</a> <a class="code" href="classgrpc_1_1_auth_context.html#a4a4a9e18e05e1a06cf25b8a77edd8c89">begin</a>() <span class="keyword">const</span> = 0;</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1_auth_property_iterator.html">AuthPropertyIterator</a> <a class="code" href="classgrpc_1_1_auth_context.html#a81d358b427e0f1096e148918cdeef991">end</a>() <span class="keyword">const</span> = 0;</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;  <span class="comment">// Mutation functions: should only be used by an AuthMetadataProcessor.</span></div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_auth_context.html#add9dbb40b1a822f683a7ebad71e774f2">AddProperty</a>(<span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&amp; key,</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                           <span class="keyword">const</span> <a class="code" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>&amp; value) = 0;</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_auth_context.html#a218158a0698137b9c5d6fff0c8054cc4">SetPeerIdentityPropertyName</a>(<span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&amp; name) = 0;</div>
@@ -210,13 +209,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="impl_2codegen_2string__ref_8h_html"><div class="ttname"><a href="impl_2codegen_2string__ref_8h.html">string_ref.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_auth_property_iterator_html_a91a3a2ce5085a948aac11d7371c13b49"><div class="ttname"><a href="classgrpc_1_1_auth_property_iterator.html#a91a3a2ce5085a948aac11d7371c13b49">grpc::AuthPropertyIterator::~AuthPropertyIterator</a></div><div class="ttdeci">~AuthPropertyIterator()</div></div>
 <div class="ttc" id="classgrpc_1_1_auth_context_html_ac32b53377f8b7e44328f791f44bd6732"><div class="ttname"><a href="classgrpc_1_1_auth_context.html#ac32b53377f8b7e44328f791f44bd6732">grpc::AuthContext::FindPropertyValues</a></div><div class="ttdeci">virtual std::vector&lt; grpc::string_ref &gt; FindPropertyValues(const grpc::string &amp;name) const =0</div><div class="ttdoc">Returns all the property values with the given name. </div></div>
-<div class="ttc" id="classgrpc_1_1_auth_context_html_add9dbb40b1a822f683a7ebad71e774f2"><div class="ttname"><a href="classgrpc_1_1_auth_context.html#add9dbb40b1a822f683a7ebad71e774f2">grpc::AuthContext::AddProperty</a></div><div class="ttdeci">virtual void AddProperty(const grpc::string &amp;key, const grpc::string_ref &amp;value)=0</div></div>
+<div class="ttc" id="classgrpc_1_1_auth_context_html_add9dbb40b1a822f683a7ebad71e774f2"><div class="ttname"><a href="classgrpc_1_1_auth_context.html#add9dbb40b1a822f683a7ebad71e774f2">grpc::AuthContext::AddProperty</a></div><div class="ttdeci">virtual void AddProperty(const grpc::string &amp;key, const grpc::string_ref &amp;value)=0</div><div class="ttdoc">Mutation functions: should only be used by an AuthMetadataProcessor. </div></div>
 <div class="ttc" id="classgrpc_1_1_auth_property_iterator_html_a18a70918b1f73cdd22cb263845b78d6d"><div class="ttname"><a href="classgrpc_1_1_auth_property_iterator.html#a18a70918b1f73cdd22cb263845b78d6d">grpc::AuthPropertyIterator::SecureAuthContext</a></div><div class="ttdeci">friend class SecureAuthContext</div><div class="ttdef"><b>Definition:</b> auth_context.h:68</div></div>
 <div class="ttc" id="classgrpc_1_1_auth_context_html_ad7b2e589590246b953decd05cdaa4465"><div class="ttname"><a href="classgrpc_1_1_auth_context.html#ad7b2e589590246b953decd05cdaa4465">grpc::AuthContext::GetPeerIdentityPropertyName</a></div><div class="ttdeci">virtual grpc::string GetPeerIdentityPropertyName() const =0</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

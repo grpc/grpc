@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,15 +90,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="grpc_8h_source.html">grpc.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="grpc__types_8h_source.html">grpc_types.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a77193c57fac60071d907ceda3be64f72"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue__attributes.html#a77193c57fac60071d907ceda3be64f72">version</a></td></tr>
+<tr class="memdesc:a77193c57fac60071d907ceda3be64f72"><td class="mdescLeft">&#160;</td><td class="mdescRight">The version number of this structure.  <a href="#a77193c57fac60071d907ceda3be64f72">More...</a><br/></td></tr>
 <tr class="separator:a77193c57fac60071d907ceda3be64f72"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a088c45a02ce2162ac11979e453939f6e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">grpc_cq_completion_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue__attributes.html#a088c45a02ce2162ac11979e453939f6e">cq_completion_type</a></td></tr>
+<tr class="memitem:a088c45a02ce2162ac11979e453939f6e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">grpc_cq_completion_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue__attributes.html#a088c45a02ce2162ac11979e453939f6e">cq_completion_type</a></td></tr>
+<tr class="memdesc:a088c45a02ce2162ac11979e453939f6e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set to GRPC_CQ_CURRENT_VERSION.  <a href="#a088c45a02ce2162ac11979e453939f6e">More...</a><br/></td></tr>
 <tr class="separator:a088c45a02ce2162ac11979e453939f6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9cfd2d6b5b395d9d8f8592b994c30575"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343">grpc_cq_polling_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue__attributes.html#a9cfd2d6b5b395d9d8f8592b994c30575">cq_polling_type</a></td></tr>
+<tr class="memitem:a9cfd2d6b5b395d9d8f8592b994c30575"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a6f3d3ec662c2a8ac669c98163d511343">grpc_cq_polling_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue__attributes.html#a9cfd2d6b5b395d9d8f8592b994c30575">cq_polling_type</a></td></tr>
 <tr class="separator:a9cfd2d6b5b395d9d8f8592b994c30575"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
@@ -107,10 +109,12 @@ Data Fields</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="grpc_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">grpc_cq_completion_type</a> grpc_completion_queue_attributes::cq_completion_type</td>
+          <td class="memname"><a class="el" href="grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">grpc_cq_completion_type</a> grpc_completion_queue_attributes::cq_completion_type</td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Set to GRPC_CQ_CURRENT_VERSION. </p>
 
 </div>
 </div>
@@ -119,7 +123,7 @@ Data Fields</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="grpc_8h.html#a6f3d3ec662c2a8ac669c98163d511343">grpc_cq_polling_type</a> grpc_completion_queue_attributes::cq_polling_type</td>
+          <td class="memname"><a class="el" href="grpc__types_8h.html#a6f3d3ec662c2a8ac669c98163d511343">grpc_cq_polling_type</a> grpc_completion_queue_attributes::cq_polling_type</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -136,15 +140,18 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>The version number of this structure. </p>
+<p>More fields might be added to this structure in future. </p>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/grpc/<a class="el" href="grpc_8h_source.html">grpc.h</a></li>
+<li>include/grpc/impl/codegen/<a class="el" href="grpc__types_8h_source.html">grpc_types.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

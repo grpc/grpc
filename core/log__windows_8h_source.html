@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -132,10 +132,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment">/* Returns a string allocated with gpr_malloc that contains a UTF-8</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment"> * formatted error message, corresponding to the error messageid.</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment"> * Use in conjunction with GetLastError() et al.</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">char</span> *<a class="code" href="log__windows_8h.html#ade349fc3117c965de259a75ea4f1e071">gpr_format_message</a>(<span class="keywordtype">int</span> messageid);</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
@@ -143,13 +139,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_LOG_WINDOWS_H */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:410</div></div>
-<div class="ttc" id="log__windows_8h_html_ade349fc3117c965de259a75ea4f1e071"><div class="ttname"><a href="log__windows_8h.html#ade349fc3117c965de259a75ea4f1e071">gpr_format_message</a></div><div class="ttdeci">GPRAPI char * gpr_format_message(int messageid)</div></div>
+<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:416</div></div>
+<div class="ttc" id="log__windows_8h_html_ade349fc3117c965de259a75ea4f1e071"><div class="ttname"><a href="log__windows_8h.html#ade349fc3117c965de259a75ea4f1e071">gpr_format_message</a></div><div class="ttdeci">GPRAPI char * gpr_format_message(int messageid)</div><div class="ttdoc">Returns a string allocated with gpr_malloc that contains a UTF-8 formatted error message, corresponding to the error messageid. </div></div>
 <div class="ttc" id="impl_2codegen_2port__platform_8h_html"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html">port_platform.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

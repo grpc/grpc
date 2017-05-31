@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -100,52 +100,76 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a989fb0f141d90a05b20425ebdc77936d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a989fb0f141d90a05b20425ebdc77936d">gpr_mu_init</a> (<a class="el" href="structgpr__mu.html">gpr_mu</a> *mu)</td></tr>
+<tr class="memdesc:a989fb0f141d90a05b20425ebdc77936d"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; Mutex interface &mdash;  <a href="#a989fb0f141d90a05b20425ebdc77936d">More...</a><br/></td></tr>
 <tr class="separator:a989fb0f141d90a05b20425ebdc77936d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a23567fcb3d8a7d5f29834ddbcbbe1d1d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a23567fcb3d8a7d5f29834ddbcbbe1d1d">gpr_mu_destroy</a> (<a class="el" href="structgpr__mu.html">gpr_mu</a> *mu)</td></tr>
+<tr class="memdesc:a23567fcb3d8a7d5f29834ddbcbbe1d1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cause *mu no longer to be initialized, freeing any memory in use.  <a href="#a23567fcb3d8a7d5f29834ddbcbbe1d1d">More...</a><br/></td></tr>
 <tr class="separator:a23567fcb3d8a7d5f29834ddbcbbe1d1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7001a8164ce893911acf26d2fb8fd2ba"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a7001a8164ce893911acf26d2fb8fd2ba">gpr_mu_lock</a> (<a class="el" href="structgpr__mu.html">gpr_mu</a> *mu)</td></tr>
+<tr class="memdesc:a7001a8164ce893911acf26d2fb8fd2ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wait until no thread has a lock on *mu, cause the calling thread to own an exclusive lock on *mu, then return.  <a href="#a7001a8164ce893911acf26d2fb8fd2ba">More...</a><br/></td></tr>
 <tr class="separator:a7001a8164ce893911acf26d2fb8fd2ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af0e6cc39401a0ee35b728f5b88135376"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#af0e6cc39401a0ee35b728f5b88135376">gpr_mu_unlock</a> (<a class="el" href="structgpr__mu.html">gpr_mu</a> *mu)</td></tr>
+<tr class="memdesc:af0e6cc39401a0ee35b728f5b88135376"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release an exclusive lock on *mu held by the calling thread.  <a href="#af0e6cc39401a0ee35b728f5b88135376">More...</a><br/></td></tr>
 <tr class="separator:af0e6cc39401a0ee35b728f5b88135376"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a18765dc6c6292b12388a68eb541419a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a18765dc6c6292b12388a68eb541419a8">gpr_mu_trylock</a> (<a class="el" href="structgpr__mu.html">gpr_mu</a> *mu)</td></tr>
+<tr class="memdesc:a18765dc6c6292b12388a68eb541419a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Without blocking, attempt to acquire an exclusive lock on *mu for the calling thread, then return non-zero iff success.  <a href="#a18765dc6c6292b12388a68eb541419a8">More...</a><br/></td></tr>
 <tr class="separator:a18765dc6c6292b12388a68eb541419a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a112715bd2e69d92010a6317c839eb36f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a112715bd2e69d92010a6317c839eb36f">gpr_cv_init</a> (<a class="el" href="impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *cv)</td></tr>
+<tr class="memdesc:a112715bd2e69d92010a6317c839eb36f"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; Condition variable interface &mdash;  <a href="#a112715bd2e69d92010a6317c839eb36f">More...</a><br/></td></tr>
 <tr class="separator:a112715bd2e69d92010a6317c839eb36f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a053788a2217043c527afc8b424568b22"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a053788a2217043c527afc8b424568b22">gpr_cv_destroy</a> (<a class="el" href="impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *cv)</td></tr>
+<tr class="memdesc:a053788a2217043c527afc8b424568b22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cause *cv no longer to be initialized, freeing any memory in use.  <a href="#a053788a2217043c527afc8b424568b22">More...</a><br/></td></tr>
 <tr class="separator:a053788a2217043c527afc8b424568b22"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adf647f6e8dede8b27ccda9e971ae4971"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#adf647f6e8dede8b27ccda9e971ae4971">gpr_cv_wait</a> (<a class="el" href="impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *cv, <a class="el" href="structgpr__mu.html">gpr_mu</a> *mu, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> abs_deadline)</td></tr>
+<tr class="memdesc:adf647f6e8dede8b27ccda9e971ae4971"><td class="mdescLeft">&#160;</td><td class="mdescRight">Atomically release *mu and wait on *cv.  <a href="#adf647f6e8dede8b27ccda9e971ae4971">More...</a><br/></td></tr>
 <tr class="separator:adf647f6e8dede8b27ccda9e971ae4971"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf066e257012246303a938350d1546a0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#abf066e257012246303a938350d1546a0">gpr_cv_signal</a> (<a class="el" href="impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *cv)</td></tr>
+<tr class="memdesc:abf066e257012246303a938350d1546a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">If any threads are waiting on *cv, wake at least one.  <a href="#abf066e257012246303a938350d1546a0">More...</a><br/></td></tr>
 <tr class="separator:abf066e257012246303a938350d1546a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a684cb215f9f840791372180a810b405d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a684cb215f9f840791372180a810b405d">gpr_cv_broadcast</a> (<a class="el" href="impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *cv)</td></tr>
+<tr class="memdesc:a684cb215f9f840791372180a810b405d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wake all threads waiting on *cv.  <a href="#a684cb215f9f840791372180a810b405d">More...</a><br/></td></tr>
 <tr class="separator:a684cb215f9f840791372180a810b405d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1157f44f131ce5f000744bea273347bc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a1157f44f131ce5f000744bea273347bc">gpr_once_init</a> (<a class="el" href="impl_2codegen_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">gpr_once</a> *once, void(*init_routine)(void))</td></tr>
+<tr class="memdesc:a1157f44f131ce5f000744bea273347bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; One-time initialization &mdash;  <a href="#a1157f44f131ce5f000744bea273347bc">More...</a><br/></td></tr>
 <tr class="separator:a1157f44f131ce5f000744bea273347bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c1e214b5ff9e8f25dfc785977d8a092"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a8c1e214b5ff9e8f25dfc785977d8a092">gpr_event_init</a> (<a class="el" href="structgpr__event.html">gpr_event</a> *ev)</td></tr>
+<tr class="memdesc:a8c1e214b5ff9e8f25dfc785977d8a092"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; One-time event notification &mdash;  <a href="#a8c1e214b5ff9e8f25dfc785977d8a092">More...</a><br/></td></tr>
 <tr class="separator:a8c1e214b5ff9e8f25dfc785977d8a092"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a39a77b09ffc2c288b097c84c4e0e29a5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a39a77b09ffc2c288b097c84c4e0e29a5">gpr_event_set</a> (<a class="el" href="structgpr__event.html">gpr_event</a> *ev, void *value)</td></tr>
+<tr class="memdesc:a39a77b09ffc2c288b097c84c4e0e29a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set *ev so that <a class="el" href="support_2sync_8h.html#afb62d3857409962718465c407f97fec3" title="Return the value set by gpr_event_set(ev, ...), or NULL if no such call has completed. ">gpr_event_get()</a> and <a class="el" href="support_2sync_8h.html#acc62f586f166d0cbd2c3ba7a707ac5a3" title="Wait until *ev is set by gpr_event_set(ev, ...), or abs_deadline is exceeded, then return gpr_event_g...">gpr_event_wait()</a> will return value.  <a href="#a39a77b09ffc2c288b097c84c4e0e29a5">More...</a><br/></td></tr>
 <tr class="separator:a39a77b09ffc2c288b097c84c4e0e29a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afb62d3857409962718465c407f97fec3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#afb62d3857409962718465c407f97fec3">gpr_event_get</a> (<a class="el" href="structgpr__event.html">gpr_event</a> *ev)</td></tr>
+<tr class="memdesc:afb62d3857409962718465c407f97fec3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the value set by gpr_event_set(ev, ...), or NULL if no such call has completed.  <a href="#afb62d3857409962718465c407f97fec3">More...</a><br/></td></tr>
 <tr class="separator:afb62d3857409962718465c407f97fec3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc62f586f166d0cbd2c3ba7a707ac5a3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#acc62f586f166d0cbd2c3ba7a707ac5a3">gpr_event_wait</a> (<a class="el" href="structgpr__event.html">gpr_event</a> *ev, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> abs_deadline)</td></tr>
+<tr class="memdesc:acc62f586f166d0cbd2c3ba7a707ac5a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wait until *ev is set by gpr_event_set(ev, ...), or abs_deadline is exceeded, then return gpr_event_get(ev).  <a href="#acc62f586f166d0cbd2c3ba7a707ac5a3">More...</a><br/></td></tr>
 <tr class="separator:acc62f586f166d0cbd2c3ba7a707ac5a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afb46be51462503426660193b7d49f599"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#afb46be51462503426660193b7d49f599">gpr_ref_init</a> (<a class="el" href="structgpr__refcount.html">gpr_refcount</a> *r, int n)</td></tr>
+<tr class="memdesc:afb46be51462503426660193b7d49f599"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; Reference counting &mdash;  <a href="#afb46be51462503426660193b7d49f599">More...</a><br/></td></tr>
 <tr class="separator:afb46be51462503426660193b7d49f599"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2653bdd931dc3e35ef24f52b4ab074ee"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a2653bdd931dc3e35ef24f52b4ab074ee">gpr_ref</a> (<a class="el" href="structgpr__refcount.html">gpr_refcount</a> *r)</td></tr>
+<tr class="memdesc:a2653bdd931dc3e35ef24f52b4ab074ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increment the reference count *r.  <a href="#a2653bdd931dc3e35ef24f52b4ab074ee">More...</a><br/></td></tr>
 <tr class="separator:a2653bdd931dc3e35ef24f52b4ab074ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad152a5820acaa9ca6163bcbe45d078d6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#ad152a5820acaa9ca6163bcbe45d078d6">gpr_ref_non_zero</a> (<a class="el" href="structgpr__refcount.html">gpr_refcount</a> *r)</td></tr>
+<tr class="memdesc:ad152a5820acaa9ca6163bcbe45d078d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increment the reference count *r.  <a href="#ad152a5820acaa9ca6163bcbe45d078d6">More...</a><br/></td></tr>
 <tr class="separator:ad152a5820acaa9ca6163bcbe45d078d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91472a0360a87654379b3b6eb0fe942e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a91472a0360a87654379b3b6eb0fe942e">gpr_refn</a> (<a class="el" href="structgpr__refcount.html">gpr_refcount</a> *r, int n)</td></tr>
+<tr class="memdesc:a91472a0360a87654379b3b6eb0fe942e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increment the reference count *r by n.  <a href="#a91472a0360a87654379b3b6eb0fe942e">More...</a><br/></td></tr>
 <tr class="separator:a91472a0360a87654379b3b6eb0fe942e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a244626eb1a00a846eb602820fc736f84"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a244626eb1a00a846eb602820fc736f84">gpr_unref</a> (<a class="el" href="structgpr__refcount.html">gpr_refcount</a> *r)</td></tr>
+<tr class="memdesc:a244626eb1a00a846eb602820fc736f84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decrement the reference count *r and return non-zero iff it has reached zero.  <a href="#a244626eb1a00a846eb602820fc736f84">More...</a><br/></td></tr>
 <tr class="separator:a244626eb1a00a846eb602820fc736f84"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a532b23d0393bf91ebcc221f5855c17fa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a532b23d0393bf91ebcc221f5855c17fa">gpr_ref_is_unique</a> (<a class="el" href="structgpr__refcount.html">gpr_refcount</a> *r)</td></tr>
+<tr class="memdesc:a532b23d0393bf91ebcc221f5855c17fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return non-zero iff the reference count of *r is one, and thus is owned by exactly one object.  <a href="#a532b23d0393bf91ebcc221f5855c17fa">More...</a><br/></td></tr>
 <tr class="separator:a532b23d0393bf91ebcc221f5855c17fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a05c0002cb69dbce4d94819f65551fca2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a05c0002cb69dbce4d94819f65551fca2">gpr_stats_init</a> (<a class="el" href="structgpr__stats__counter.html">gpr_stats_counter</a> *c, intptr_t n)</td></tr>
+<tr class="memdesc:a05c0002cb69dbce4d94819f65551fca2"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; Stats counters &mdash;  <a href="#a05c0002cb69dbce4d94819f65551fca2">More...</a><br/></td></tr>
 <tr class="separator:a05c0002cb69dbce4d94819f65551fca2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8d1f3e75040086f0da4d7fc4e94a5b2b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#a8d1f3e75040086f0da4d7fc4e94a5b2b">gpr_stats_inc</a> (<a class="el" href="structgpr__stats__counter.html">gpr_stats_counter</a> *c, intptr_t inc)</td></tr>
+<tr class="memdesc:a8d1f3e75040086f0da4d7fc4e94a5b2b"><td class="mdescLeft">&#160;</td><td class="mdescRight">*c += inc.  <a href="#a8d1f3e75040086f0da4d7fc4e94a5b2b">More...</a><br/></td></tr>
 <tr class="separator:a8d1f3e75040086f0da4d7fc4e94a5b2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab451d39b50836fcad4ed48f080b7f648"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2sync_8h.html#ab451d39b50836fcad4ed48f080b7f648">gpr_stats_read</a> (const <a class="el" href="structgpr__stats__counter.html">gpr_stats_counter</a> *c)</td></tr>
+<tr class="memdesc:ab451d39b50836fcad4ed48f080b7f648"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return *c.  <a href="#ab451d39b50836fcad4ed48f080b7f648">More...</a><br/></td></tr>
 <tr class="separator:ab451d39b50836fcad4ed48f080b7f648"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
@@ -163,6 +187,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Wake all threads waiting on *cv. </p>
+<p>Requires: *cv initialized. </p>
+
 </div>
 </div>
 <a class="anchor" id="a053788a2217043c527afc8b424568b22"></a>
@@ -178,6 +205,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Cause *cv no longer to be initialized, freeing any memory in use. </p>
+<p>Requires: cv initialized; no other concurrent operation on *cv. </p>
 
 </div>
 </div>
@@ -195,6 +225,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>&mdash; Condition variable interface &mdash; </p>
+<p>A while-loop should be used with <a class="el" href="support_2sync_8h.html#adf647f6e8dede8b27ccda9e971ae4971" title="Atomically release *mu and wait on *cv. ">gpr_cv_wait()</a> when waiting for conditions to become true. See the example below. Variables of type gpr_cv are uninitialized when first declared. Initialize *cv. Requires: *cv uninitialized. </p>
+
 </div>
 </div>
 <a class="anchor" id="abf066e257012246303a938350d1546a0"></a>
@@ -210,6 +243,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>If any threads are waiting on *cv, wake at least one. </p>
+<p>Clients may treat this as an optimization of <a class="el" href="support_2sync_8h.html#a684cb215f9f840791372180a810b405d" title="Wake all threads waiting on *cv. ">gpr_cv_broadcast()</a> for use in the case where waking more than one waiter is not useful. Requires: *cv initialized. </p>
 
 </div>
 </div>
@@ -243,6 +279,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Atomically release *mu and wait on *cv. </p>
+<p>When the calling thread is woken from *cv or the deadline abs_deadline is exceeded, execute gpr_mu_lock(mu) and return whether the deadline was exceeded. Use abs_deadline==gpr_inf_future for no deadline. abs_deadline can be either an absolute deadline, or a GPR_TIMESPAN. May return even when not woken explicitly. Requires: *mu and *cv initialized; the calling thread holds an exclusive lock on *mu. </p>
+
 </div>
 </div>
 <a class="anchor" id="afb62d3857409962718465c407f97fec3"></a>
@@ -259,6 +298,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Return the value set by gpr_event_set(ev, ...), or NULL if no such call has completed. </p>
+<p>If the result is non-NULL, all operations that occurred prior to the gpr_event_set(ev, ...) set will be visible after this call returns. Requires: *ev initialized. This operation is faster than acquiring a mutex on most platforms. </p>
+
 </div>
 </div>
 <a class="anchor" id="a8c1e214b5ff9e8f25dfc785977d8a092"></a>
@@ -274,6 +316,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>&mdash; One-time event notification &mdash; </p>
+<p>These operations act on a <a class="el" href="structgpr__event.html">gpr_event</a>, which should be initialized with gpr_ev_init(), or with GPR_EVENT_INIT if static, e.g., static <a class="el" href="structgpr__event.html">gpr_event</a> event_var = GPR_EVENT_INIT; It requires no destruction. Initialize *ev. </p>
 
 </div>
 </div>
@@ -301,6 +346,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Set *ev so that <a class="el" href="support_2sync_8h.html#afb62d3857409962718465c407f97fec3" title="Return the value set by gpr_event_set(ev, ...), or NULL if no such call has completed. ">gpr_event_get()</a> and <a class="el" href="support_2sync_8h.html#acc62f586f166d0cbd2c3ba7a707ac5a3" title="Wait until *ev is set by gpr_event_set(ev, ...), or abs_deadline is exceeded, then return gpr_event_g...">gpr_event_wait()</a> will return value. </p>
+<p>Requires: *ev initialized; value != NULL; no prior or concurrent calls to gpr_event_set(ev, ...) since initialization. </p>
+
 </div>
 </div>
 <a class="anchor" id="acc62f586f166d0cbd2c3ba7a707ac5a3"></a>
@@ -327,6 +375,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Wait until *ev is set by gpr_event_set(ev, ...), or abs_deadline is exceeded, then return gpr_event_get(ev). </p>
+<p>Requires: *ev initialized. Use abs_deadline==gpr_inf_future for no deadline. When the event has been signalled before the call, this operation is faster than acquiring a mutex on most platforms. </p>
+
 </div>
 </div>
 <a class="anchor" id="a23567fcb3d8a7d5f29834ddbcbbe1d1d"></a>
@@ -342,6 +393,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Cause *mu no longer to be initialized, freeing any memory in use. </p>
+<p>Requires: mu initialized; no other concurrent operation on *mu. </p>
 
 </div>
 </div>
@@ -359,6 +413,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>&mdash; Mutex interface &mdash; </p>
+<p>At most one thread may hold an exclusive lock on a mutex at any given time. Actions taken by a thread that holds a mutex exclusively happen after actions taken by all previous holders of the mutex. Variables of type <a class="el" href="structgpr__mu.html">gpr_mu</a> are uninitialized when first declared. Initialize *mu. Requires: *mu uninitialized. </p>
+
 </div>
 </div>
 <a class="anchor" id="a7001a8164ce893911acf26d2fb8fd2ba"></a>
@@ -374,6 +431,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Wait until no thread has a lock on *mu, cause the calling thread to own an exclusive lock on *mu, then return. </p>
+<p>May block indefinitely or crash if the calling thread has a lock on *mu. Requires: *mu initialized. </p>
 
 </div>
 </div>
@@ -391,6 +451,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Without blocking, attempt to acquire an exclusive lock on *mu for the calling thread, then return non-zero iff success. </p>
+<p>Fail, if any thread holds the lock; succeeds with high probability if no thread holds the lock. Requires: *mu initialized. </p>
+
 </div>
 </div>
 <a class="anchor" id="af0e6cc39401a0ee35b728f5b88135376"></a>
@@ -406,6 +469,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Release an exclusive lock on *mu held by the calling thread. </p>
+<p>Requires: *mu initialized; the calling thread holds an exclusive lock on *mu. </p>
 
 </div>
 </div>
@@ -433,6 +499,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>&mdash; One-time initialization &mdash; </p>
+<p>gpr_once must be declared with static storage class, and initialized with GPR_ONCE_INIT. e.g., static gpr_once once_var = GPR_ONCE_INIT; Ensure that (*init_routine)() has been called exactly once (for the specified gpr_once instance) and then return. If multiple threads call <a class="el" href="impl_2codegen_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">gpr_once()</a> on the same gpr_once instance, one of them will call (*init_routine)(), and the others will block until that call finishes. </p>
+
 </div>
 </div>
 <a class="anchor" id="a2653bdd931dc3e35ef24f52b4ab074ee"></a>
@@ -448,6 +517,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Increment the reference count *r. </p>
+<p>Requires *r initialized. </p>
 
 </div>
 </div>
@@ -475,6 +547,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>&mdash; Reference counting &mdash; </p>
+<p>These calls act on the type <a class="el" href="structgpr__refcount.html">gpr_refcount</a>. It requires no destruction. Initialize *r to value n. </p>
+
 </div>
 </div>
 <a class="anchor" id="a532b23d0393bf91ebcc221f5855c17fa"></a>
@@ -491,6 +566,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Return non-zero iff the reference count of *r is one, and thus is owned by exactly one object. </p>
+
 </div>
 </div>
 <a class="anchor" id="ad152a5820acaa9ca6163bcbe45d078d6"></a>
@@ -506,6 +583,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Increment the reference count *r. </p>
+<p>Requires *r initialized. Crashes if refcount is zero </p>
 
 </div>
 </div>
@@ -533,6 +613,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Increment the reference count *r by n. </p>
+<p>Requires *r initialized, n &gt; 0. </p>
+
 </div>
 </div>
 <a class="anchor" id="a8d1f3e75040086f0da4d7fc4e94a5b2b"></a>
@@ -558,6 +641,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>*c += inc. </p>
+<p>Requires: *c initialized. </p>
 
 </div>
 </div>
@@ -585,6 +671,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>&mdash; Stats counters &mdash; </p>
+<p>These calls act on the integral type <a class="el" href="structgpr__stats__counter.html">gpr_stats_counter</a>. It requires no destruction. Static instances may be initialized with <a class="el" href="structgpr__stats__counter.html">gpr_stats_counter</a> c = GPR_STATS_INIT; Beware: These operations do not imply memory barriers. Do not use them to synchronize other events. Initialize *c to the value n. </p>
+
 </div>
 </div>
 <a class="anchor" id="ab451d39b50836fcad4ed48f080b7f648"></a>
@@ -600,6 +689,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Return *c. </p>
+<p>Requires: *c initialized. </p>
 
 </div>
 </div>
@@ -617,12 +709,15 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Decrement the reference count *r and return non-zero iff it has reached zero. </p>
+<p>. Requires *r initialized. </p>
+
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

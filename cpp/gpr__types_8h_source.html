@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -130,55 +130,44 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="port__platform_8h.html">grpc/impl/codegen/port_platform.h</a>&gt;</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;stddef.h&gt;</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;stdint.h&gt;</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">/* The clocks we support. */</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">   47</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">enum</span> {</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="comment">/* Monotonic clock. Epoch undefined. Always moves forwards. */</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">   49</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">GPR_CLOCK_MONOTONIC</a> = 0,</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="comment">/* Realtime clock. May jump forwards or backwards. Settable by</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment">     the system administrator. Has its epoch at 0:00:00 UTC 1 Jan 1970. */</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">   52</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">GPR_CLOCK_REALTIME</a>,</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="comment">/* CPU cycle time obtained by rdtsc instruction on x86 platforms. Epoch</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment">     undefined. Degrades to GPR_CLOCK_REALTIME on other platforms. */</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">   55</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">GPR_CLOCK_PRECISE</a>,</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="comment">/* Unmeasurable clock type: no base, created by taking the difference</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment">     between two times */</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">   58</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">GPR_TIMESPAN</a></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;} <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a>;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="comment">/* Analogous to struct timespec. On some machines, absolute times may be in</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="comment"> * local time. */</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="structgpr__timespec.html">   63</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgpr__timespec.html">gpr_timespec</a> {</div>
-<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">   64</a></span>&#160;  int64_t <a class="code" href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">tv_sec</a>;</div>
-<div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">   65</a></span>&#160;  int32_t <a class="code" href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">tv_nsec</a>;</div>
-<div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">   68</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a> <a class="code" href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">clock_type</a>;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;} <a class="code" href="gpr__types_8h.html#a7dd12c72fcf53ebecfdfc13632914c45">gpr_timespec</a>;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor"></span>}</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_GPR_TYPES_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">   46</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">enum</span> {</div>
+<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">   48</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">GPR_CLOCK_MONOTONIC</a> = 0,</div>
+<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">   51</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">GPR_CLOCK_REALTIME</a>,</div>
+<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">   54</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">GPR_CLOCK_PRECISE</a>,</div>
+<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">   57</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">GPR_TIMESPAN</a></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;} <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a>;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;</div>
+<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="structgpr__timespec.html">   62</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgpr__timespec.html">gpr_timespec</a> {</div>
+<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">   63</a></span>&#160;  int64_t <a class="code" href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">tv_sec</a>;</div>
+<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">   64</a></span>&#160;  int32_t <a class="code" href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">tv_nsec</a>;</div>
+<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">   67</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a> <a class="code" href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">clock_type</a>;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;} <a class="code" href="gpr__types_8h.html#a7dd12c72fcf53ebecfdfc13632914c45">gpr_timespec</a>;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_GPR_TYPES_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="port__platform_8h_html"><div class="ttname"><a href="port__platform_8h.html">port_platform.h</a></div></div>
-<div class="ttc" id="structgpr__timespec_html_afff378cc8cba33300d81f4a406240ff0"><div class="ttname"><a href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">gpr_timespec::tv_nsec</a></div><div class="ttdeci">int32_t tv_nsec</div><div class="ttdef"><b>Definition:</b> gpr_types.h:65</div></div>
-<div class="ttc" id="gpr__types_8h_html_a7dd12c72fcf53ebecfdfc13632914c45"><div class="ttname"><a href="gpr__types_8h.html#a7dd12c72fcf53ebecfdfc13632914c45">gpr_timespec</a></div><div class="ttdeci">struct gpr_timespec gpr_timespec</div></div>
-<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">GPR_TIMESPAN</a></div><div class="ttdef"><b>Definition:</b> gpr_types.h:58</div></div>
-<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">GPR_CLOCK_MONOTONIC</a></div><div class="ttdef"><b>Definition:</b> gpr_types.h:49</div></div>
-<div class="ttc" id="structgpr__timespec_html_a6dd26976820fa71a7c5a710d4c1845ff"><div class="ttname"><a href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">gpr_timespec::clock_type</a></div><div class="ttdeci">gpr_clock_type clock_type</div><div class="ttdoc">Against which clock was this time measured? (or GPR_TIMESPAN if this is a relative time meaure) ...</div><div class="ttdef"><b>Definition:</b> gpr_types.h:68</div></div>
-<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">GPR_CLOCK_REALTIME</a></div><div class="ttdef"><b>Definition:</b> gpr_types.h:52</div></div>
-<div class="ttc" id="structgpr__timespec_html_a6c4506fc66a7ee0a6bc87a9ae73a70cb"><div class="ttname"><a href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">gpr_timespec::tv_sec</a></div><div class="ttdeci">int64_t tv_sec</div><div class="ttdef"><b>Definition:</b> gpr_types.h:64</div></div>
-<div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdef"><b>Definition:</b> gpr_types.h:63</div></div>
-<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a></div><div class="ttdeci">gpr_clock_type</div><div class="ttdef"><b>Definition:</b> gpr_types.h:47</div></div>
-<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">GPR_CLOCK_PRECISE</a></div><div class="ttdef"><b>Definition:</b> gpr_types.h:55</div></div>
+<div class="ttc" id="structgpr__timespec_html_afff378cc8cba33300d81f4a406240ff0"><div class="ttname"><a href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">gpr_timespec::tv_nsec</a></div><div class="ttdeci">int32_t tv_nsec</div><div class="ttdef"><b>Definition:</b> gpr_types.h:64</div></div>
+<div class="ttc" id="gpr__types_8h_html_a7dd12c72fcf53ebecfdfc13632914c45"><div class="ttname"><a href="gpr__types_8h.html#a7dd12c72fcf53ebecfdfc13632914c45">gpr_timespec</a></div><div class="ttdeci">struct gpr_timespec gpr_timespec</div><div class="ttdoc">Analogous to struct timespec. </div></div>
+<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">GPR_TIMESPAN</a></div><div class="ttdoc">Unmeasurable clock type: no base, created by taking the difference between two times. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:57</div></div>
+<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">GPR_CLOCK_MONOTONIC</a></div><div class="ttdoc">Monotonic clock. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:48</div></div>
+<div class="ttc" id="structgpr__timespec_html_a6dd26976820fa71a7c5a710d4c1845ff"><div class="ttname"><a href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">gpr_timespec::clock_type</a></div><div class="ttdeci">gpr_clock_type clock_type</div><div class="ttdoc">Against which clock was this time measured? (or GPR_TIMESPAN if this is a relative time meaure) ...</div><div class="ttdef"><b>Definition:</b> gpr_types.h:67</div></div>
+<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">GPR_CLOCK_REALTIME</a></div><div class="ttdoc">Realtime clock. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:51</div></div>
+<div class="ttc" id="structgpr__timespec_html_a6c4506fc66a7ee0a6bc87a9ae73a70cb"><div class="ttname"><a href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">gpr_timespec::tv_sec</a></div><div class="ttdeci">int64_t tv_sec</div><div class="ttdef"><b>Definition:</b> gpr_types.h:63</div></div>
+<div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:62</div></div>
+<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a></div><div class="ttdeci">gpr_clock_type</div><div class="ttdoc">The clocks we support. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:46</div></div>
+<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">GPR_CLOCK_PRECISE</a></div><div class="ttdoc">CPU cycle time obtained by rdtsc instruction on x86 platforms. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:54</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

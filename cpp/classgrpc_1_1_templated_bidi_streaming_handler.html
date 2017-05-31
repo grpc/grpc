@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -96,6 +96,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>A wrapper class of an application provided bidi-streaming handler.  
+ <a href="classgrpc_1_1_templated_bidi_streaming_handler.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="codegen_2method__handler__impl_8h_source.html">method_handler_impl.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -108,7 +111,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:afc792a35059d6c46b78d7d9410f9a4b0 inherit pub_methods_classgrpc_1_1_method_handler"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_method_handler.html#afc792a35059d6c46b78d7d9410f9a4b0">~MethodHandler</a> ()</td></tr>
 <tr class="separator:afc792a35059d6c46b78d7d9410f9a4b0 inherit pub_methods_classgrpc_1_1_method_handler"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><h3>template&lt;class Streamer, bool WriteNeeded&gt;<br/>
+class grpc::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &gt;</h3>
+
+<p>A wrapper class of an application provided bidi-streaming handler. </p>
+<p>This also applies to server-streamed implementation of a unary method with the additional requirement that such methods must have done a write for status to be ok Since this is used by more than 1 class, the service is not passed in. Instead, it is expected to be an implicitly-captured argument of func (through bind or something along those lines) </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="af7d6d20d1b8c703a9f91c0bde0544563"></a>
 <div class="memitem">
 <div class="memproto">
@@ -170,7 +179,7 @@ template&lt;class Streamer, bool WriteNeeded&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

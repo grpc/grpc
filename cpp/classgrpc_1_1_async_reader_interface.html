@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -176,14 +176,15 @@ template&lt;class R &gt; </div>
 </div><div class="memdoc">
 
 <p>Read a message of type <em>R</em> into <em>msg</em>. </p>
-<p>Completion will be notified by <em>tag</em> on the associated completion queue. This is thread-safe with respect to <em>Write</em> or <em>WritesDone</em> methods. It should not be called concurrently with other streaming APIs on the same stream. It is not meaningful to call it concurrently with another <em>Read</em> on the same stream since reads on the same stream are delivered in order.</p>
+<p>Completion will be notified by <em>tag</em> on the associated completion queue. This is thread-safe with respect to <em>Write</em> or <em>WritesDone</em> methods. It should not be called concurrently with other streaming APIs on the same stream. It is not meaningful to call it concurrently with another <em><a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11" title="Read a message of type R into msg. ">AsyncReaderInterface::Read</a></em> on the same stream since reads on the same stream are delivered in order.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[out]</td><td class="paramname">msg</td><td>Where to eventually store the read message. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>The tag identifying the operation. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>The tag identifying the operation.</td></tr>
   </table>
   </dd>
 </dl>
+<p>Side effect: note that this method attempt to receive initial metadata for a stream if it hasn't yet been received. </p>
 
 <p>Implemented in <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a911d41783f644e170c017bb3032ca5c8">grpc::ServerAsyncReaderWriter&lt; W, R &gt;</a>, <a class="el" href="classgrpc_1_1_server_async_reader.html#aefbe83b79433a6ae85f9f1ce913997c1">grpc::ServerAsyncReader&lt; W, R &gt;</a>, <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a2f2c91734a7de5affdd427fb88ee6167">grpc::ClientAsyncReaderWriter&lt; W, R &gt;</a>, and <a class="el" href="classgrpc_1_1_client_async_reader.html#a309d69e7e6ab1491b2e93d3716d0f680">grpc::ClientAsyncReader&lt; R &gt;</a>.</p>
 
@@ -195,7 +196,7 @@ template&lt;class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

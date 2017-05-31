@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -113,16 +113,22 @@ Typedefs</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:aa15f6aa58f356420b0d955fc6e506a60"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#aa15f6aa58f356420b0d955fc6e506a60">gpr_malloc</a> (size_t size)</td></tr>
+<tr class="memdesc:aa15f6aa58f356420b0d955fc6e506a60"><td class="mdescLeft">&#160;</td><td class="mdescRight">malloc.  <a href="#aa15f6aa58f356420b0d955fc6e506a60">More...</a><br/></td></tr>
 <tr class="separator:aa15f6aa58f356420b0d955fc6e506a60"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad9a7a782f4f00cad27d64d27ebbd1a72"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#ad9a7a782f4f00cad27d64d27ebbd1a72">gpr_zalloc</a> (size_t size)</td></tr>
+<tr class="memdesc:ad9a7a782f4f00cad27d64d27ebbd1a72"><td class="mdescLeft">&#160;</td><td class="mdescRight">like malloc, but zero all bytes before returning them  <a href="#ad9a7a782f4f00cad27d64d27ebbd1a72">More...</a><br/></td></tr>
 <tr class="separator:ad9a7a782f4f00cad27d64d27ebbd1a72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7f8641de6e80a37dd003d3100cc94bd7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#a7f8641de6e80a37dd003d3100cc94bd7">gpr_free</a> (void *ptr)</td></tr>
+<tr class="memdesc:a7f8641de6e80a37dd003d3100cc94bd7"><td class="mdescLeft">&#160;</td><td class="mdescRight">free  <a href="#a7f8641de6e80a37dd003d3100cc94bd7">More...</a><br/></td></tr>
 <tr class="separator:a7f8641de6e80a37dd003d3100cc94bd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4282437d10bb2b1a2c44d665a97984f4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#a4282437d10bb2b1a2c44d665a97984f4">gpr_realloc</a> (void *p, size_t size)</td></tr>
+<tr class="memdesc:a4282437d10bb2b1a2c44d665a97984f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">realloc, never returns NULL  <a href="#a4282437d10bb2b1a2c44d665a97984f4">More...</a><br/></td></tr>
 <tr class="separator:a4282437d10bb2b1a2c44d665a97984f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a06063f6aa3522eaed0f1eae1987c31db"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#a06063f6aa3522eaed0f1eae1987c31db">gpr_malloc_aligned</a> (size_t size, size_t alignment_log)</td></tr>
+<tr class="memdesc:a06063f6aa3522eaed0f1eae1987c31db"><td class="mdescLeft">&#160;</td><td class="mdescRight">aligned malloc, never returns NULL, will align to 1 &lt;&lt; alignment_log  <a href="#a06063f6aa3522eaed0f1eae1987c31db">More...</a><br/></td></tr>
 <tr class="separator:a06063f6aa3522eaed0f1eae1987c31db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aafbdc542e56bcd24fcb80a9cd55afef1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#aafbdc542e56bcd24fcb80a9cd55afef1">gpr_free_aligned</a> (void *ptr)</td></tr>
+<tr class="memdesc:aafbdc542e56bcd24fcb80a9cd55afef1"><td class="mdescLeft">&#160;</td><td class="mdescRight">free memory allocated by gpr_malloc_aligned  <a href="#aafbdc542e56bcd24fcb80a9cd55afef1">More...</a><br/></td></tr>
 <tr class="separator:aafbdc542e56bcd24fcb80a9cd55afef1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a32fcafdda423e2a11b4130d55951b4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#a2a32fcafdda423e2a11b4130d55951b4">gpr_set_allocation_functions</a> (<a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a> functions)</td></tr>
 <tr class="memdesc:a2a32fcafdda423e2a11b4130d55951b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the family of allocation functions in <em>functions</em> be used.  <a href="#a2a32fcafdda423e2a11b4130d55951b4">More...</a><br/></td></tr>
@@ -159,6 +165,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>free </p>
+
 </div>
 </div>
 <a class="anchor" id="aafbdc542e56bcd24fcb80a9cd55afef1"></a>
@@ -174,6 +182,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>free memory allocated by gpr_malloc_aligned </p>
 
 </div>
 </div>
@@ -208,6 +218,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>malloc. </p>
+<p>If size==0, always returns NULL. Otherwise this function never returns NULL. The pointer returned is suitably aligned for any kind of variable it could contain. </p>
+
 </div>
 </div>
 <a class="anchor" id="a06063f6aa3522eaed0f1eae1987c31db"></a>
@@ -234,6 +247,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>aligned malloc, never returns NULL, will align to 1 &lt;&lt; alignment_log </p>
+
 </div>
 </div>
 <a class="anchor" id="a4282437d10bb2b1a2c44d665a97984f4"></a>
@@ -259,6 +274,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>realloc, never returns NULL </p>
 
 </div>
 </div>
@@ -295,12 +312,14 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>like malloc, but zero all bytes before returning them </p>
+
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

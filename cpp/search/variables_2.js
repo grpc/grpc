@@ -9,7 +9,6 @@ var searchData=
   ['client_5fcertificate_5frequest',['client_certificate_request',['../structgrpc_1_1_ssl_server_credentials_options.html#a646486fd3adbacf5805ff013f5362f5c',1,'grpc::SslServerCredentialsOptions']]],
   ['clock_5ftype',['clock_type',['../structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff',1,'gpr_timespec']]],
   ['cmp',['cmp',['../structgrpc__arg__pointer__vtable.html#a1037c7866bb3f070f4689b4a8ad04c09',1,'grpc_arg_pointer_vtable']]],
-  ['collection_5f',['collection_',['../classgrpc_1_1_call_op_set_interface.html#a74088df7daa571675fd994dbe3ad8b40',1,'grpc::CallOpSetInterface']]],
   ['compression',['compression',['../structgrpc__byte__buffer.html#a3663648016e1076b82c5e731dc5b2399',1,'grpc_byte_buffer']]],
   ['context_5f',['context_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a04daf9d2fca21bc2bb78cc7823f2f118',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['copy',['copy',['../structgrpc__arg__pointer__vtable.html#a4b937861a8c7c8165fcb3bfc831dd95e',1,'grpc_arg_pointer_vtable']]],

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -143,6 +143,7 @@ Data Fields</h2></td></tr>
 <tr class="memitem:aeaec44fb8de12b8d25fae7677c3691e2"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#ae0d5a9db463391c0897914ef2d016b25">status</a></td></tr>
 <tr class="separator:aeaec44fb8de12b8d25fae7677c3691e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc50c0b13564208bf9c2a9445730175e"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="structgrpc__slice.html">grpc_slice</a> *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a8b2173ff9ae109e69441735772dcabfd">status_details</a></td></tr>
+<tr class="memdesc:acc50c0b13564208bf9c2a9445730175e"><td class="mdescLeft">&#160;</td><td class="mdescRight">optional: set to NULL if no details need sending, non-NULL if they do pointer will not be retained past the start_batch call  <a href="#acc50c0b13564208bf9c2a9445730175e">More...</a><br/></td></tr>
 <tr class="separator:acc50c0b13564208bf9c2a9445730175e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef2c1008e56e8b4ed097cbaabf878fb1"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#ae152fff532e663348b2b499ed440cdd6">send_status_from_server</a></td></tr>
 <tr class="separator:aef2c1008e56e8b4ed097cbaabf878fb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -484,6 +485,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>optional: set to NULL if no details need sending, non-NULL if they do pointer will not be retained past the start_batch call </p>
+
 </div>
 </div>
 <a class="anchor" id="a521b48faec3b3f7646a877055f118d47"></a>
@@ -531,7 +534,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

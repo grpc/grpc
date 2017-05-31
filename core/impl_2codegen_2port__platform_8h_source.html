@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_27c65f9b8b3387c47015966ca861342b.html">impl</a></li><li class="navelem"><a class="el" href="dir_2d2a7752fa77ea824010e525334e7867.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_1ccb85353bf7ad9eb207254c908f6dd2.html">impl</a></li><li class="navelem"><a class="el" href="dir_d4a1038da1ca7a38aa498ecf659a57c8.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -382,139 +382,145 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* GPR_NO_AUTODETECT_PLATFORM */</span><span class="preprocessor"></span></div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;<span class="preprocessor">#ifndef GPR_PLATFORM_STRING</span></div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#warning &quot;GPR_PLATFORM_STRING not auto-detected&quot;</span></div>
-<div class="line"><a name="l00295"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a99f34e9b119908109486e91abedc933e">  295</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_PLATFORM_STRING &quot;unknown&quot;</span></div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;<span class="preprocessor">#ifdef GPR_GCOV</span></div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#undef GPR_FORBID_UNREACHABLE_CODE</span></div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_FORBID_UNREACHABLE_CODE 1</span></div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;<span class="preprocessor">#ifdef _MSC_VER</span></div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#ifdef _PYTHON_MSVC</span></div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;<span class="preprocessor"></span><span class="comment">// The Python 3.5 Windows runtime is missing InetNtop</span></div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;<span class="preprocessor">#define GPR_WIN_INET_NTOP</span></div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif  // _PYTHON_MSVC</span></div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#if _MSC_VER &lt; 1700</span></div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;<span class="preprocessor"></span><span class="keyword">typedef</span> __int8 int8_t;</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;<span class="keyword">typedef</span> __int16 int16_t;</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;<span class="keyword">typedef</span> __int32 int32_t;</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;<span class="keyword">typedef</span> __int64 int64_t;</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> __int8 uint8_t;</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> __int16 uint16_t;</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> __int32 uint32_t;</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> __int64 uint64_t;</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;stdint.h&gt;</span></div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _MSC_VER &lt; 1700 */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;stdint.h&gt;</span></div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _MSC_VER */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;<span class="comment">/* Cache line alignment */</span></div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;<span class="preprocessor">#ifndef GPR_CACHELINE_SIZE_LOG</span></div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#if defined(__i386__) || defined(__x86_64__)</span></div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_CACHELINE_SIZE_LOG 6</span></div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#ifndef GPR_CACHELINE_SIZE_LOG</span></div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;<span class="preprocessor"></span><span class="comment">/* A reasonable default guess. Note that overestimates tend to waste more</span></div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;<span class="comment">   space, while underestimates tend to waste more time. */</span></div>
-<div class="line"><a name="l00332"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a4e8b19add0d8d0be9464f748be985576">  332</a></span>&#160;<span class="preprocessor">#define GPR_CACHELINE_SIZE_LOG 6</span></div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* GPR_CACHELINE_SIZE_LOG */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* GPR_CACHELINE_SIZE_LOG */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00336"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#ad9b7cc620233bbab0bc57cfbbe9519ad">  336</a></span>&#160;<span class="preprocessor">#define GPR_CACHELINE_SIZE (1 &lt;&lt; GPR_CACHELINE_SIZE_LOG)</span></div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;<span class="comment">/* scrub GCC_ATOMIC if it&#39;s not available on this compiler */</span></div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;<span class="preprocessor">#if defined(GPR_GCC_ATOMIC) &amp;&amp; !defined(__ATOMIC_RELAXED)</span></div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#undef GPR_GCC_ATOMIC</span></div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_GCC_SYNC 1</span></div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;<span class="preprocessor">#if defined(__has_include)</span></div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#if __has_include(&lt;atomic&gt;)</span></div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_HAS_CXX11_ATOMIC</span></div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* __has_include(&lt;atomic&gt;) */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* defined(__has_include) */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;<span class="preprocessor">#ifndef GPR_PLATFORM_STRING</span></div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#warning &quot;GPR_PLATFORM_STRING not auto-detected&quot;</span></div>
+<div class="line"><a name="l00301"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a99f34e9b119908109486e91abedc933e">  301</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_PLATFORM_STRING &quot;unknown&quot;</span></div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;<span class="preprocessor">#ifdef GPR_GCOV</span></div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#undef GPR_FORBID_UNREACHABLE_CODE</span></div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_FORBID_UNREACHABLE_CODE 1</span></div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;<span class="preprocessor">#ifdef _MSC_VER</span></div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#ifdef _PYTHON_MSVC</span></div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;<span class="preprocessor"></span><span class="comment">// The Python 3.5 Windows runtime is missing InetNtop</span></div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;<span class="preprocessor">#define GPR_WIN_INET_NTOP</span></div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif  // _PYTHON_MSVC</span></div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#if _MSC_VER &lt; 1700</span></div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;<span class="preprocessor"></span><span class="keyword">typedef</span> __int8 int8_t;</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;<span class="keyword">typedef</span> __int16 int16_t;</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;<span class="keyword">typedef</span> __int32 int32_t;</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;<span class="keyword">typedef</span> __int64 int64_t;</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> __int8 uint8_t;</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> __int16 uint16_t;</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> __int32 uint32_t;</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> __int64 uint64_t;</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;stdint.h&gt;</span></div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _MSC_VER &lt; 1700 */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;stdint.h&gt;</span></div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _MSC_VER */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;<span class="comment">/* Cache line alignment */</span></div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;<span class="preprocessor">#ifndef GPR_CACHELINE_SIZE_LOG</span></div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#if defined(__i386__) || defined(__x86_64__)</span></div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_CACHELINE_SIZE_LOG 6</span></div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#ifndef GPR_CACHELINE_SIZE_LOG</span></div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;<span class="preprocessor"></span><span class="comment">/* A reasonable default guess. Note that overestimates tend to waste more</span></div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;<span class="comment">   space, while underestimates tend to waste more time. */</span></div>
+<div class="line"><a name="l00338"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a4e8b19add0d8d0be9464f748be985576">  338</a></span>&#160;<span class="preprocessor">#define GPR_CACHELINE_SIZE_LOG 6</span></div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* GPR_CACHELINE_SIZE_LOG */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* GPR_CACHELINE_SIZE_LOG */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00342"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#ad9b7cc620233bbab0bc57cfbbe9519ad">  342</a></span>&#160;<span class="preprocessor">#define GPR_CACHELINE_SIZE (1 &lt;&lt; GPR_CACHELINE_SIZE_LOG)</span></div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;<span class="comment">/* Validate platform combinations */</span></div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;<span class="preprocessor">#if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + \</span></div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;<span class="preprocessor">        defined(GPR_WINDOWS_ATOMIC) !=                \</span></div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;<span class="preprocessor">    1</span></div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WINDOWS_ATOMIC</span></div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;<span class="preprocessor">#if defined(GPR_ARCH_32) + defined(GPR_ARCH_64) != 1</span></div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64</span></div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;<span class="preprocessor">#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WINDOWS) + \</span></div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;<span class="preprocessor">        defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=                 \</span></div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;<span class="preprocessor">    1</span></div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WINDOWS, GPR_CPU_IPHONE, GPR_CPU_CUSTOM</span></div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;<span class="comment">/* scrub GCC_ATOMIC if it&#39;s not available on this compiler */</span></div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;<span class="preprocessor">#if defined(GPR_GCC_ATOMIC) &amp;&amp; !defined(__ATOMIC_RELAXED)</span></div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#undef GPR_GCC_ATOMIC</span></div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_GCC_SYNC 1</span></div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;<span class="comment">/* Validate platform combinations */</span></div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;<span class="preprocessor">#if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + \</span></div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;<span class="preprocessor">        defined(GPR_WINDOWS_ATOMIC) !=                \</span></div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;<span class="preprocessor">    1</span></div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WINDOWS_ATOMIC</span></div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;<span class="preprocessor">#if defined(GPR_ARCH_32) + defined(GPR_ARCH_64) != 1</span></div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64</span></div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;<span class="preprocessor">#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + \</span></div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;<span class="preprocessor">        defined(GPR_CUSTOM_TLS) !=                                            \</span></div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;<span class="preprocessor">#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WINDOWS) + \</span></div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;<span class="preprocessor">        defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=                 \</span></div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;<span class="preprocessor">    1</span></div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_CUSTOM_TLS</span></div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WINDOWS, GPR_CPU_IPHONE, GPR_CPU_CUSTOM</span></div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;<span class="comment">/* maximum alignment needed for any type on this platform, rounded up to a</span></div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;<span class="comment">   power of two */</span></div>
-<div class="line"><a name="l00369"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a53c934fa255faf3f8c4f028df105c8e2">  369</a></span>&#160;<span class="preprocessor">#define GPR_MAX_ALIGNMENT 16</span></div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;<span class="preprocessor">#ifndef GRPC_ARES</span></div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#ifdef GPR_WINDOWS</span></div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_ARES 0</span></div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00375"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#ab977d82eab38f56b6234fc503f4d51c6">  375</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_ARES 1</span></div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;<span class="preprocessor">#ifndef GRPC_MUST_USE_RESULT</span></div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#if defined(__GNUC__) &amp;&amp; !defined(__MINGW32__)</span></div>
-<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))</span></div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))</span></div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00384"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#aef49047a3be38448a61332117b306686">  384</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_MUST_USE_RESULT</span></div>
-<div class="line"><a name="l00385"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#aafd38282877816cf1eea110c65fdf14b">  385</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ALIGN_STRUCT(n)</span></div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;<span class="preprocessor">#ifndef GPR_PRINT_FORMAT_CHECK</span></div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#ifdef __GNUC__</span></div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \</span></div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;<span class="preprocessor">  __attribute__((format(printf, FORMAT_STR, ARGS)))</span></div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00394"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a3364659cddcdfeae3897c3300de03d05">  394</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)</span></div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* GPR_PRINT_FORMAT_CHECK */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;<span class="preprocessor">#if GPR_FORBID_UNREACHABLE_CODE</span></div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_UNREACHABLE_CODE(STATEMENT)</span></div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00401"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#ab75d366740f8322e795ab0d44ed9d958">  401</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_UNREACHABLE_CODE(STATEMENT)             \</span></div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;<span class="preprocessor">  do {                                              \</span></div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;<span class="preprocessor">    gpr_log(GPR_ERROR, &quot;Should never reach here.&quot;); \</span></div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;<span class="preprocessor">    abort();                                        \</span></div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;<span class="preprocessor">    STATEMENT;                                      \</span></div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;<span class="preprocessor">  } while (0)</span></div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* GPR_FORBID_UNREACHABLE_CODE */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;<span class="preprocessor">#ifndef GPRAPI</span></div>
-<div class="line"><a name="l00410"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">  410</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPRAPI</span></div>
-<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;<span class="preprocessor">#ifndef GRPCAPI</span></div>
-<div class="line"><a name="l00414"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">  414</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCAPI GPRAPI</span></div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;<span class="preprocessor">#ifndef CENSUSAPI</span></div>
-<div class="line"><a name="l00418"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">  418</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define CENSUSAPI GRPCAPI</span></div>
-<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;<span class="preprocessor">#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + \</span></div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;<span class="preprocessor">        defined(GPR_CUSTOM_TLS) !=                                            \</span></div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;<span class="preprocessor">    1</span></div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_CUSTOM_TLS</span></div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;<span class="comment">/* maximum alignment needed for any type on this platform, rounded up to a</span></div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;<span class="comment">   power of two */</span></div>
+<div class="line"><a name="l00375"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a53c934fa255faf3f8c4f028df105c8e2">  375</a></span>&#160;<span class="preprocessor">#define GPR_MAX_ALIGNMENT 16</span></div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;<span class="preprocessor">#ifndef GRPC_ARES</span></div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#ifdef GPR_WINDOWS</span></div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_ARES 0</span></div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00381"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#ab977d82eab38f56b6234fc503f4d51c6">  381</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_ARES 1</span></div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;<span class="preprocessor">#ifndef GRPC_MUST_USE_RESULT</span></div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#if defined(__GNUC__) &amp;&amp; !defined(__MINGW32__)</span></div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))</span></div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))</span></div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00390"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#aef49047a3be38448a61332117b306686">  390</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_MUST_USE_RESULT</span></div>
+<div class="line"><a name="l00391"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#aafd38282877816cf1eea110c65fdf14b">  391</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ALIGN_STRUCT(n)</span></div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;<span class="preprocessor">#ifndef GPR_PRINT_FORMAT_CHECK</span></div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#ifdef __GNUC__</span></div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \</span></div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;<span class="preprocessor">  __attribute__((format(printf, FORMAT_STR, ARGS)))</span></div>
+<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00400"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a3364659cddcdfeae3897c3300de03d05">  400</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)</span></div>
+<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* GPR_PRINT_FORMAT_CHECK */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;<span class="preprocessor">#if GPR_FORBID_UNREACHABLE_CODE</span></div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_UNREACHABLE_CODE(STATEMENT)</span></div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00407"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#ab75d366740f8322e795ab0d44ed9d958">  407</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_UNREACHABLE_CODE(STATEMENT)             \</span></div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;<span class="preprocessor">  do {                                              \</span></div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;<span class="preprocessor">    gpr_log(GPR_ERROR, &quot;Should never reach here.&quot;); \</span></div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;<span class="preprocessor">    abort();                                        \</span></div>
+<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;<span class="preprocessor">    STATEMENT;                                      \</span></div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;<span class="preprocessor">  } while (0)</span></div>
+<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* GPR_FORBID_UNREACHABLE_CODE */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;<span class="preprocessor">#ifndef GPRAPI</span></div>
+<div class="line"><a name="l00416"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">  416</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPRAPI</span></div>
+<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;<span class="preprocessor">#ifndef GRPCAPI</span></div>
+<div class="line"><a name="l00420"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">  420</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCAPI GPRAPI</span></div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;<span class="preprocessor">#ifndef CENSUSAPI</span></div>
+<div class="line"><a name="l00424"></a><span class="lineno"><a class="line" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">  424</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define CENSUSAPI GRPCAPI</span></div>
+<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

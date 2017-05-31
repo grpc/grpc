@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -91,7 +91,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">byte_buffer.h</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="grpc_09_09_2support_2byte__buffer_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
+<a href="byte__buffer_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015, Google Inc.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * All rights reserved.</span></div>
@@ -131,8 +131,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2config_8h.html">grpc++/support/config.h</a>&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_09_09_2support_2slice_8h.html">grpc++/support/slice.h</a>&gt;</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_09_09_2support_2status_8h.html">grpc++/support/status.h</a>&gt;</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_2byte__buffer_8h.html">grpc/byte_buffer.h</a>&gt;</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_8h.html">grpc/grpc.h</a>&gt;</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &lt;grpc/byte_buffer.h&gt;</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &lt;grpc/grpc.h&gt;</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#include &lt;grpc/support/log.h&gt;</span></div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
@@ -185,7 +185,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  }</div>
 <div class="line"><a name="l00102"></a><span class="lineno"><a class="line" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a142e6455c0e040332f57bd3a35eebd33">  102</a></span>&#160;  <span class="keyword">static</span> <a class="code" href="classgrpc_1_1_status.html">Status</a> <a class="code" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a142e6455c0e040332f57bd3a35eebd33">Serialize</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>&amp; source, <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a>** buffer,</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                          <span class="keywordtype">bool</span>* own_buffer) {</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    *buffer = <a class="code" href="grpc_2byte__buffer_8h.html#a4ebb8f0714bee2c84fed0be62d0dc259">grpc_byte_buffer_copy</a>(source.buffer());</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    *buffer = grpc_byte_buffer_copy(source.buffer());</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    *own_buffer = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classgrpc_1_1_status.html#acbac12f241ad08f449aa1b9086ec7acc">Status::OK</a>;</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  }</div>
@@ -198,13 +198,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="support_2config_8h_html"><div class="ttname"><a href="support_2config_8h.html">config.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html"><div class="ttname"><a href="classgrpc_1_1_slice.html">grpc::Slice</a></div><div class="ttdoc">A wrapper around grpc_slice. </div><div class="ttdef"><b>Definition:</b> slice.h:47</div></div>
 <div class="ttc" id="serialization__traits_8h_html"><div class="ttname"><a href="serialization__traits_8h.html">serialization_traits.h</a></div></div>
-<div class="ttc" id="structgrpc__byte__buffer_html"><div class="ttname"><a href="structgrpc__byte__buffer.html">grpc_byte_buffer</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:55</div></div>
+<div class="ttc" id="structgrpc__byte__buffer_html"><div class="ttname"><a href="structgrpc__byte__buffer.html">grpc_byte_buffer</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:56</div></div>
 <div class="ttc" id="classgrpc_1_1_byte_buffer_html_a45b09ecb5a8529b286aba6264daade65"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#a45b09ecb5a8529b286aba6264daade65">grpc::ByteBuffer::Swap</a></div><div class="ttdeci">void Swap(ByteBuffer *other)</div><div class="ttdoc">Swap the state of *this and *other. </div></div>
 <div class="ttc" id="classgrpc_1_1_serialization_traits_html"><div class="ttname"><a href="classgrpc_1_1_serialization_traits.html">grpc::SerializationTraits</a></div><div class="ttdoc">Defines how to serialize and deserialize some type. </div><div class="ttdef"><b>Definition:</b> serialization_traits.h:64</div></div>
 <div class="ttc" id="classgrpc_1_1_byte_buffer_html_a9429e928982f8d94ff93a1a91032ad59"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#a9429e928982f8d94ff93a1a91032ad59">grpc::ByteBuffer::Length</a></div><div class="ttdeci">size_t Length() const </div><div class="ttdoc">Buffer size in bytes. </div></div>
 <div class="ttc" id="classgrpc_1_1_byte_buffer_html_ad94737cf1090a75a09de58aa112a38a4"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#ad94737cf1090a75a09de58aa112a38a4">grpc::ByteBuffer::Dump</a></div><div class="ttdeci">Status Dump(std::vector&lt; Slice &gt; *slices) const </div><div class="ttdoc">Dump (read) the buffer contents into slices. </div></div>
-<div class="ttc" id="grpc_2byte__buffer_8h_html"><div class="ttname"><a href="grpc_2byte__buffer_8h.html">byte_buffer.h</a></div></div>
-<div class="ttc" id="grpc_2byte__buffer_8h_html_a4ebb8f0714bee2c84fed0be62d0dc259"><div class="ttname"><a href="grpc_2byte__buffer_8h.html#a4ebb8f0714bee2c84fed0be62d0dc259">grpc_byte_buffer_copy</a></div><div class="ttdeci">GRPCAPI grpc_byte_buffer * grpc_byte_buffer_copy(grpc_byte_buffer *bb)</div><div class="ttdoc">Copies input byte buffer bb. </div></div>
 <div class="ttc" id="classgrpc_1_1_byte_buffer_html_ac17487e1e411f469d653e3c44c873e6d"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#ac17487e1e411f469d653e3c44c873e6d">grpc::ByteBuffer::operator=</a></div><div class="ttdeci">ByteBuffer &amp; operator=(const ByteBuffer &amp;)</div></div>
 <div class="ttc" id="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4_html_ae8fdf3f2d32f15f6895e88a55d831ccf"><div class="ttname"><a href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#ae8fdf3f2d32f15f6895e88a55d831ccf">grpc::SerializationTraits&lt; ByteBuffer, void &gt;::Deserialize</a></div><div class="ttdeci">static Status Deserialize(grpc_byte_buffer *byte_buffer, ByteBuffer *dest)</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:98</div></div>
 <div class="ttc" id="classgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn&#39;t, why? </div><div class="ttdef"><b>Definition:</b> status.h:45</div></div>
@@ -213,13 +211,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="grpc_09_09_2support_2status_8h_html"><div class="ttname"><a href="grpc_09_09_2support_2status_8h.html">status.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_status_html_acbac12f241ad08f449aa1b9086ec7acc"><div class="ttname"><a href="classgrpc_1_1_status.html#acbac12f241ad08f449aa1b9086ec7acc">grpc::Status::OK</a></div><div class="ttdeci">static const Status &amp; OK</div><div class="ttdoc">An OK pre-defined instance. </div><div class="ttdef"><b>Definition:</b> status.h:63</div></div>
 <div class="ttc" id="classgrpc_1_1_byte_buffer_html_aa3037355cbd37dce99c97e5c3700a76b"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#aa3037355cbd37dce99c97e5c3700a76b">grpc::ByteBuffer::ByteBuffer</a></div><div class="ttdeci">ByteBuffer()</div><div class="ttdoc">Constuct an empty buffer. </div><div class="ttdef"><b>Definition:</b> byte_buffer.h:53</div></div>
-<div class="ttc" id="grpc_8h_html"><div class="ttname"><a href="grpc_8h.html">grpc.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_byte_buffer_html"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a></div><div class="ttdoc">A sequence of bytes. </div><div class="ttdef"><b>Definition:</b> byte_buffer.h:50</div></div>
 <div class="ttc" id="grpc_09_09_2support_2slice_8h_html"><div class="ttname"><a href="grpc_09_09_2support_2slice_8h.html">slice.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_27c65f9b8b3387c47015966ca861342b.html">impl</a></li><li class="navelem"><a class="el" href="dir_2d2a7752fa77ea824010e525334e7867.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_1ccb85353bf7ad9eb207254c908f6dd2.html">impl</a></li><li class="navelem"><a class="el" href="dir_d4a1038da1ca7a38aa498ecf659a57c8.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -98,6 +98,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:aec9e3b59ce21312d75e3c11013f0adab"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="gpr__slice_8h.html#aec9e3b59ce21312d75e3c11013f0adab">GRPC_ALLOW_GPR_SLICE_FUNCTIONS</a>&#160;&#160;&#160;1</td></tr>
+<tr class="memdesc:aec9e3b59ce21312d75e3c11013f0adab"><td class="mdescLeft">&#160;</td><td class="mdescRight">WARNING: Please do not use this header.  <a href="#aec9e3b59ce21312d75e3c11013f0adab">More...</a><br/></td></tr>
 <tr class="separator:aec9e3b59ce21312d75e3c11013f0adab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a80821e4a998847922c99171ec1b82d8a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="gpr__slice_8h.html#a80821e4a998847922c99171ec1b82d8a">gpr_slice_refcount</a>&#160;&#160;&#160;<a class="el" href="structgrpc__slice__refcount.html">grpc_slice_refcount</a></td></tr>
 <tr class="separator:a80821e4a998847922c99171ec1b82d8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -559,12 +560,15 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>WARNING: Please do not use this header. </p>
+<p>This was added as a temporary measure to not break some of the external projects that depend on gpr_slice_* functions. We are actively working on moving all the gpr_slice_* references to grpc_slice_* and this file will be removed </p>
+
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

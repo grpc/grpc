@@ -17,7 +17,6 @@ var searchData=
   ['completion_5fqueue_2eh',['completion_queue.h',['../completion__queue_8h.html',1,'']]],
   ['completion_5fqueue_2eh',['completion_queue.h',['../impl_2codegen_2completion__queue_8h.html',1,'']]],
   ['completion_5fqueue_5ftag_2eh',['completion_queue_tag.h',['../completion__queue__tag_8h.html',1,'']]],
-  ['compression_2eh',['compression.h',['../compression_8h.html',1,'']]],
   ['compression_2emd',['compression.md',['../compression_8md.html',1,'']]],
   ['compression_5fcookbook_2emd',['compression_cookbook.md',['../compression__cookbook_8md.html',1,'']]],
   ['compression_5ftypes_2eh',['compression_types.h',['../compression__types_8h.html',1,'']]],

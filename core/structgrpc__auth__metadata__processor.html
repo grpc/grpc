@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,18 +90,24 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>Pluggable server-side metadata processor object.  
+ <a href="structgrpc__auth__metadata__processor.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="grpc__security_8h_source.html">grpc_security.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a600fce6862323bb4dc4a3a1b2f844c68"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__processor.html#a600fce6862323bb4dc4a3a1b2f844c68">process</a> )(void *<a class="el" href="structgrpc__auth__metadata__processor.html#af85de1293dfd5e846339d5ef4b7b41dc">state</a>, <a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *context, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *md, size_t num_md, <a class="el" href="grpc__security_8h.html#a54decefff49649afe0c5a3056d0734f1">grpc_process_auth_metadata_done_cb</a> cb, void *user_data)</td></tr>
+<tr class="memdesc:a600fce6862323bb4dc4a3a1b2f844c68"><td class="mdescLeft">&#160;</td><td class="mdescRight">The context object is read/write: it contains the properties of the channel peer and it is the job of the process function to augment it with properties derived from the passed-in metadata.  <a href="#a600fce6862323bb4dc4a3a1b2f844c68">More...</a><br/></td></tr>
 <tr class="separator:a600fce6862323bb4dc4a3a1b2f844c68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08bf8229b6032ddff4456596f765fdab"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__processor.html#a08bf8229b6032ddff4456596f765fdab">destroy</a> )(void *<a class="el" href="structgrpc__auth__metadata__processor.html#af85de1293dfd5e846339d5ef4b7b41dc">state</a>)</td></tr>
 <tr class="separator:a08bf8229b6032ddff4456596f765fdab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af85de1293dfd5e846339d5ef4b7b41dc"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__processor.html#af85de1293dfd5e846339d5ef4b7b41dc">state</a></td></tr>
 <tr class="separator:af85de1293dfd5e846339d5ef4b7b41dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Pluggable server-side metadata processor object. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a08bf8229b6032ddff4456596f765fdab"></a>
 <div class="memitem">
 <div class="memproto">
@@ -124,6 +130,9 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>The context object is read/write: it contains the properties of the channel peer and it is the job of the process function to augment it with properties derived from the passed-in metadata. </p>
+<p>The lifetime of these objects is guaranteed until cb is invoked. </p>
+
 </div>
 </div>
 <a class="anchor" id="af85de1293dfd5e846339d5ef4b7b41dc"></a>
@@ -144,7 +153,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

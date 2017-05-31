@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>GRPC C++: **gRPC Compression**</title>
+<title>GRPC C++: gRPC Compression</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -78,7 +78,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">**gRPC Compression** </div>  </div>
+<div class="title">gRPC Compression </div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>The keywords "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in <a href="http://www.ietf.org/rfc/rfc2119.txt">RFC 2119</a>.</p>
@@ -125,12 +125,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>A message compressed by a server in a way not supported by its client MUST fail with status <code>INTERNAL</code>, its associated description indicating the unsupported condition as well as the supported ones. The returned <code>grpc-accept-encoding</code> header MUST NOT contain the compression method (encoding) used.</li>
 </ol>
 <ol type="1">
-<li>An ill-constructed message with its <a href="PROTOCOL-HTTP2.md#compressed-flag">Compressed-Flag bit</a> set but lacking a "[grpc-encoding](PROTOCOL-HTTP2.md#message-encoding)" entry different from <em>identity</em> in its metadata MUST fail with <code>INTERNAL</code> status, its associated description indicating the invalid Compressed-Flag condition. </li>
+<li>An ill-constructed message with its <a href="PROTOCOL-HTTP2.md#compressed-flag">Compressed-Flag bit</a> set but lacking a <a href="PROTOCOL-HTTP2.md#message-encoding">grpc-encoding</a> entry different from <em>identity</em> in its metadata MUST fail with <code>INTERNAL</code> status, its associated description indicating the invalid Compressed-Flag condition. </li>
 </ol>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

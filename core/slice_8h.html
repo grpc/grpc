@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,11 +82,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#define-members">Macros</a> &#124;
+<a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">slice.h File Reference</div>  </div>
@@ -97,37 +99,73 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div>
 <p><a href="slice_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:ae0799ad659c9438e0b2cc25e1aa99a52"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ae0799ad659c9438e0b2cc25e1aa99a52">GRPC_SLICE_MALLOC</a>(len)</td></tr>
+<tr class="separator:ae0799ad659c9438e0b2cc25e1aa99a52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:a4a42e5de5c07151adf96278ea466ef4d"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a4a42e5de5c07151adf96278ea466ef4d">grpc_slice_ref_whom</a> { <a class="el" href="slice_8h.html#a4a42e5de5c07151adf96278ea466ef4dafd9b13d6de6a33193be0aeee53915f01">GRPC_SLICE_REF_TAIL</a> = 1, 
+<a class="el" href="slice_8h.html#a4a42e5de5c07151adf96278ea466ef4da66708668aef3ee159492da7c14d4e825">GRPC_SLICE_REF_HEAD</a> = 2, 
+<a class="el" href="slice_8h.html#a4a42e5de5c07151adf96278ea466ef4da45eab2ea11c1b01d8ce88fe2595475ef">GRPC_SLICE_REF_BOTH</a> = 1 + 2
+ }</td></tr>
+<tr class="separator:a4a42e5de5c07151adf96278ea466ef4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:aaf6dd367abbe7883973588f411928c6e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#aaf6dd367abbe7883973588f411928c6e">grpc_slice_ref</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> s)</td></tr>
+<tr class="memdesc:aaf6dd367abbe7883973588f411928c6e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increment the refcount of s.  <a href="#aaf6dd367abbe7883973588f411928c6e">More...</a><br/></td></tr>
 <tr class="separator:aaf6dd367abbe7883973588f411928c6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac9952d98910886ca44ac416d547d0e08"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ac9952d98910886ca44ac416d547d0e08">grpc_slice_unref</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> s)</td></tr>
+<tr class="memdesc:ac9952d98910886ca44ac416d547d0e08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decrement the ref count of s.  <a href="#ac9952d98910886ca44ac416d547d0e08">More...</a><br/></td></tr>
 <tr class="separator:ac9952d98910886ca44ac416d547d0e08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b428779eb2f6b030f4a8bcad2c9416f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a0b428779eb2f6b030f4a8bcad2c9416f">grpc_slice_copy</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> s)</td></tr>
+<tr class="memdesc:a0b428779eb2f6b030f4a8bcad2c9416f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy slice - create a new slice that contains the same data as s.  <a href="#a0b428779eb2f6b030f4a8bcad2c9416f">More...</a><br/></td></tr>
+<tr class="separator:a0b428779eb2f6b030f4a8bcad2c9416f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85704b2e5f1c8d70e728e86ad6d1ca0a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a85704b2e5f1c8d70e728e86ad6d1ca0a">grpc_slice_new</a> (void *p, size_t len, void(*destroy)(void *))</td></tr>
+<tr class="memdesc:a85704b2e5f1c8d70e728e86ad6d1ca0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a slice pointing at some data.  <a href="#a85704b2e5f1c8d70e728e86ad6d1ca0a">More...</a><br/></td></tr>
 <tr class="separator:a85704b2e5f1c8d70e728e86ad6d1ca0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2b8d182acadc3f04ebdb97e31b8aace9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a2b8d182acadc3f04ebdb97e31b8aace9">grpc_slice_new_with_user_data</a> (void *p, size_t len, void(*destroy)(void *), void *user_data)</td></tr>
+<tr class="memdesc:a2b8d182acadc3f04ebdb97e31b8aace9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Equivalent to grpc_slice_new, but with a separate pointer that is passed to the destroy function.  <a href="#a2b8d182acadc3f04ebdb97e31b8aace9">More...</a><br/></td></tr>
 <tr class="separator:a2b8d182acadc3f04ebdb97e31b8aace9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44c5429ec66267a094b4a1e63f9a31e5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a44c5429ec66267a094b4a1e63f9a31e5">grpc_slice_new_with_len</a> (void *p, size_t len, void(*destroy)(void *, size_t))</td></tr>
+<tr class="memdesc:a44c5429ec66267a094b4a1e63f9a31e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Equivalent to grpc_slice_new, but with a two argument destroy function that also takes the slice length.  <a href="#a44c5429ec66267a094b4a1e63f9a31e5">More...</a><br/></td></tr>
 <tr class="separator:a44c5429ec66267a094b4a1e63f9a31e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b714cdd6fa993b1d47eb08f2d5f8fc1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">grpc_slice_malloc</a> (size_t length)</td></tr>
+<tr class="memdesc:a0b714cdd6fa993b1d47eb08f2d5f8fc1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Equivalent to grpc_slice_new(malloc(len), len, free), but saves one malloc() call.  <a href="#a0b714cdd6fa993b1d47eb08f2d5f8fc1">More...</a><br/></td></tr>
 <tr class="separator:a0b714cdd6fa993b1d47eb08f2d5f8fc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab286ea0212352a75cfaf34c32eccff17"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ab286ea0212352a75cfaf34c32eccff17">grpc_slice_malloc_large</a> (size_t length)</td></tr>
+<tr class="separator:ab286ea0212352a75cfaf34c32eccff17"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad3fa3526b24943714f57f86386819966"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ad3fa3526b24943714f57f86386819966">grpc_slice_intern</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> slice)</td></tr>
+<tr class="memdesc:ad3fa3526b24943714f57f86386819966"><td class="mdescLeft">&#160;</td><td class="mdescRight">Intern a slice:  <a href="#ad3fa3526b24943714f57f86386819966">More...</a><br/></td></tr>
 <tr class="separator:ad3fa3526b24943714f57f86386819966"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afd48c29f9625011186d7501c1fb0cb81"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#afd48c29f9625011186d7501c1fb0cb81">grpc_slice_from_copied_string</a> (const char *source)</td></tr>
+<tr class="memdesc:afd48c29f9625011186d7501c1fb0cb81"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a slice by copying a string.  <a href="#afd48c29f9625011186d7501c1fb0cb81">More...</a><br/></td></tr>
 <tr class="separator:afd48c29f9625011186d7501c1fb0cb81"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a696e371c99b269438dc229c4e7de074b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a696e371c99b269438dc229c4e7de074b">grpc_slice_from_copied_buffer</a> (const char *source, size_t len)</td></tr>
+<tr class="memdesc:a696e371c99b269438dc229c4e7de074b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a slice by copying a buffer.  <a href="#a696e371c99b269438dc229c4e7de074b">More...</a><br/></td></tr>
 <tr class="separator:a696e371c99b269438dc229c4e7de074b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afa530f9246432b90ba07de2a0721ddce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#afa530f9246432b90ba07de2a0721ddce">grpc_slice_from_static_string</a> (const char *source)</td></tr>
+<tr class="memdesc:afa530f9246432b90ba07de2a0721ddce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a slice pointing to constant memory.  <a href="#afa530f9246432b90ba07de2a0721ddce">More...</a><br/></td></tr>
 <tr class="separator:afa530f9246432b90ba07de2a0721ddce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0156c0520f9f84dc4b76327d7fac69d6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a0156c0520f9f84dc4b76327d7fac69d6">grpc_slice_from_static_buffer</a> (const void *source, size_t len)</td></tr>
+<tr class="memdesc:a0156c0520f9f84dc4b76327d7fac69d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a slice pointing to constant memory.  <a href="#a0156c0520f9f84dc4b76327d7fac69d6">More...</a><br/></td></tr>
 <tr class="separator:a0156c0520f9f84dc4b76327d7fac69d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac334a6c6ad0a729fd4fe521df9f5ecc5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ac334a6c6ad0a729fd4fe521df9f5ecc5">grpc_slice_sub</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> s, size_t begin, size_t end)</td></tr>
+<tr class="memdesc:ac334a6c6ad0a729fd4fe521df9f5ecc5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a result slice derived from s, which shares a ref count with <em>s</em>, where result.data==s.data+begin, and result.length==end-begin.  <a href="#ac334a6c6ad0a729fd4fe521df9f5ecc5">More...</a><br/></td></tr>
 <tr class="separator:ac334a6c6ad0a729fd4fe521df9f5ecc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3812672f29793b5a30a1cacc131b38da"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a3812672f29793b5a30a1cacc131b38da">grpc_slice_sub_no_ref</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> s, size_t begin, size_t end)</td></tr>
+<tr class="memdesc:a3812672f29793b5a30a1cacc131b38da"><td class="mdescLeft">&#160;</td><td class="mdescRight">The same as grpc_slice_sub, but without altering the ref count.  <a href="#a3812672f29793b5a30a1cacc131b38da">More...</a><br/></td></tr>
 <tr class="separator:a3812672f29793b5a30a1cacc131b38da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5aedc925ae6e2bae484fe82383fac025"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a5aedc925ae6e2bae484fe82383fac025">grpc_slice_split_tail</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> *s, size_t split)</td></tr>
+<tr class="memdesc:a5aedc925ae6e2bae484fe82383fac025"><td class="mdescLeft">&#160;</td><td class="mdescRight">Splits s into two: modifies s to be s[0:split], and returns a new slice, sharing a refcount with s, that contains s[split:s.length].  <a href="#a5aedc925ae6e2bae484fe82383fac025">More...</a><br/></td></tr>
 <tr class="separator:a5aedc925ae6e2bae484fe82383fac025"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf447cd644eb32cb42c5d6da21fcaf55"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#adf447cd644eb32cb42c5d6da21fcaf55">grpc_slice_split_tail_maybe_ref</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> *s, size_t split, <a class="el" href="slice_8h.html#a4a42e5de5c07151adf96278ea466ef4d">grpc_slice_ref_whom</a> ref_whom)</td></tr>
+<tr class="memdesc:adf447cd644eb32cb42c5d6da21fcaf55"><td class="mdescLeft">&#160;</td><td class="mdescRight">The same as grpc_slice_split_tail, but with an option to skip altering refcounts (grpc_slice_split_tail_maybe_ref(..., true) is equivalent to grpc_slice_split_tail(...))  <a href="#adf447cd644eb32cb42c5d6da21fcaf55">More...</a><br/></td></tr>
+<tr class="separator:adf447cd644eb32cb42c5d6da21fcaf55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac630cdfb54ff37e0490c3ebe9efd585e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ac630cdfb54ff37e0490c3ebe9efd585e">grpc_slice_split_head</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> *s, size_t split)</td></tr>
+<tr class="memdesc:ac630cdfb54ff37e0490c3ebe9efd585e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Splits s into two: modifies s to be s[split:s.length], and returns a new slice, sharing a refcount with s, that contains s[0:split].  <a href="#ac630cdfb54ff37e0490c3ebe9efd585e">More...</a><br/></td></tr>
 <tr class="separator:ac630cdfb54ff37e0490c3ebe9efd585e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5deea1b06b3f4830c91e910cd4379004"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a5deea1b06b3f4830c91e910cd4379004">grpc_empty_slice</a> (void)</td></tr>
 <tr class="separator:a5deea1b06b3f4830c91e910cd4379004"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -138,28 +176,80 @@ Functions</h2></td></tr>
 <tr class="memitem:a70619fe975944cdf1a2e043651f82e22"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a70619fe975944cdf1a2e043651f82e22">grpc_slice_eq</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> a, <a class="el" href="structgrpc__slice.html">grpc_slice</a> b)</td></tr>
 <tr class="separator:a70619fe975944cdf1a2e043651f82e22"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c2a57340b8ff85c5bc17ecffe941a8d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a8c2a57340b8ff85c5bc17ecffe941a8d">grpc_slice_cmp</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> a, <a class="el" href="structgrpc__slice.html">grpc_slice</a> b)</td></tr>
+<tr class="memdesc:a8c2a57340b8ff85c5bc17ecffe941a8d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns &lt;0 if a &lt; b, ==0 if a == b, &gt;0 if a &gt; b The order is arbitrary, and is not guaranteed to be stable across different versions of the API.  <a href="#a8c2a57340b8ff85c5bc17ecffe941a8d">More...</a><br/></td></tr>
 <tr class="separator:a8c2a57340b8ff85c5bc17ecffe941a8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aada74a5bebd5aad23cc4028e8cc98d4e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#aada74a5bebd5aad23cc4028e8cc98d4e">grpc_slice_str_cmp</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> a, const char *b)</td></tr>
 <tr class="separator:aada74a5bebd5aad23cc4028e8cc98d4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab66e2a9f5f74e59001b5ec5fd40f0c03"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ab66e2a9f5f74e59001b5ec5fd40f0c03">grpc_slice_buf_cmp</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> a, const void *b, size_t blen)</td></tr>
 <tr class="separator:ab66e2a9f5f74e59001b5ec5fd40f0c03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ea487d89fdecd0a19b7f16beb9c8c11"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a0ea487d89fdecd0a19b7f16beb9c8c11">grpc_slice_buf_start_eq</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> a, const void *b, size_t blen)</td></tr>
+<tr class="memdesc:a0ea487d89fdecd0a19b7f16beb9c8c11"><td class="mdescLeft">&#160;</td><td class="mdescRight">return non-zero if the first blen bytes of a are equal to b  <a href="#a0ea487d89fdecd0a19b7f16beb9c8c11">More...</a><br/></td></tr>
 <tr class="separator:a0ea487d89fdecd0a19b7f16beb9c8c11"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65358088c9740be137d8185c55bae49d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a65358088c9740be137d8185c55bae49d">grpc_slice_rchr</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> s, char c)</td></tr>
+<tr class="memdesc:a65358088c9740be137d8185c55bae49d"><td class="mdescLeft">&#160;</td><td class="mdescRight">return the index of the last instance of <em>c</em> in <em>s</em>, or -1 if not found  <a href="#a65358088c9740be137d8185c55bae49d">More...</a><br/></td></tr>
 <tr class="separator:a65358088c9740be137d8185c55bae49d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a73658b48cf21aca48c3f93a6cfbf826a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a73658b48cf21aca48c3f93a6cfbf826a">grpc_slice_chr</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> s, char c)</td></tr>
 <tr class="separator:a73658b48cf21aca48c3f93a6cfbf826a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f85310018397819080c87347b69b517"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a6f85310018397819080c87347b69b517">grpc_slice_slice</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> haystack, <a class="el" href="structgrpc__slice.html">grpc_slice</a> needle)</td></tr>
+<tr class="memdesc:a6f85310018397819080c87347b69b517"><td class="mdescLeft">&#160;</td><td class="mdescRight">return the index of the first occurance of <em>needle</em> in <em>haystack</em>, or -1 if it's not found  <a href="#a6f85310018397819080c87347b69b517">More...</a><br/></td></tr>
 <tr class="separator:a6f85310018397819080c87347b69b517"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0e67b41a2542cba4e3b297572c98d128"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a0e67b41a2542cba4e3b297572c98d128">grpc_slice_hash</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> s)</td></tr>
 <tr class="separator:a0e67b41a2542cba4e3b297572c98d128"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad3265621ff8d97c638d9e75bf1d24be9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ad3265621ff8d97c638d9e75bf1d24be9">grpc_slice_is_equivalent</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> a, <a class="el" href="structgrpc__slice.html">grpc_slice</a> b)</td></tr>
+<tr class="memdesc:ad3265621ff8d97c638d9e75bf1d24be9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Do two slices point at the same memory, with the same length If a or b is inlined, actually compares data.  <a href="#ad3265621ff8d97c638d9e75bf1d24be9">More...</a><br/></td></tr>
 <tr class="separator:ad3265621ff8d97c638d9e75bf1d24be9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a42773de860145a1165110a9317f8ee0b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a42773de860145a1165110a9317f8ee0b">grpc_slice_dup</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> a)</td></tr>
+<tr class="memdesc:a42773de860145a1165110a9317f8ee0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a slice pointing to newly allocated memory that has the same contents as <em>s</em>.  <a href="#a42773de860145a1165110a9317f8ee0b">More...</a><br/></td></tr>
 <tr class="separator:a42773de860145a1165110a9317f8ee0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9b5772739f4f87de043449af582e0a5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#af9b5772739f4f87de043449af582e0a5">grpc_slice_to_c_string</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> s)</td></tr>
+<tr class="memdesc:af9b5772739f4f87de043449af582e0a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a copy of slice as a C string.  <a href="#af9b5772739f4f87de043449af582e0a5">More...</a><br/></td></tr>
 <tr class="separator:af9b5772739f4f87de043449af582e0a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a class="anchor" id="ae0799ad659c9438e0b2cc25e1aa99a52"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_SLICE_MALLOC</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">len</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">((len) &lt;= <a class="code" href="impl_2codegen_2slice_8h.html#ae65fc74cb3afbcd3299a1c93f90bae20">GRPC_SLICE_INLINED_SIZE</a>                               \</div>
+<div class="line">       ? (<a class="code" href="structgrpc__slice.html">grpc_slice</a>){.refcount = NULL,                           \</div>
+<div class="line">                      .data.inlined = {.length = (uint8_t)(len)}} \</div>
+<div class="line">       : <a class="code" href="slice_8h.html#ab286ea0212352a75cfaf34c32eccff17">grpc_slice_malloc_large</a>((len)))</div>
+<div class="ttc" id="slice_8h_html_ab286ea0212352a75cfaf34c32eccff17"><div class="ttname"><a href="slice_8h.html#ab286ea0212352a75cfaf34c32eccff17">grpc_slice_malloc_large</a></div><div class="ttdeci">GPRAPI grpc_slice grpc_slice_malloc_large(size_t length)</div></div>
+<div class="ttc" id="structgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...</div><div class="ttdef"><b>Definition:</b> slice.h:91</div></div>
+<div class="ttc" id="impl_2codegen_2slice_8h_html_ae65fc74cb3afbcd3299a1c93f90bae20"><div class="ttname"><a href="impl_2codegen_2slice_8h.html#ae65fc74cb3afbcd3299a1c93f90bae20">GRPC_SLICE_INLINED_SIZE</a></div><div class="ttdeci">#define GRPC_SLICE_INLINED_SIZE</div><div class="ttdef"><b>Definition:</b> slice.h:80</div></div>
+</div><!-- fragment -->
+</div>
+</div>
+<h2 class="groupheader">Enumeration Type Documentation</h2>
+<a class="anchor" id="a4a42e5de5c07151adf96278ea466ef4d"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="slice_8h.html#a4a42e5de5c07151adf96278ea466ef4d">grpc_slice_ref_whom</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a4a42e5de5c07151adf96278ea466ef4dafd9b13d6de6a33193be0aeee53915f01"></a>GRPC_SLICE_REF_TAIL</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a4a42e5de5c07151adf96278ea466ef4da66708668aef3ee159492da7c14d4e825"></a>GRPC_SLICE_REF_HEAD</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a4a42e5de5c07151adf96278ea466ef4da45eab2ea11c1b01d8ce88fe2595475ef"></a>GRPC_SLICE_REF_BOTH</em>&#160;</td><td class="fielddoc">
+</td></tr>
+</table>
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a class="anchor" id="a5deea1b06b3f4830c91e910cd4379004"></a>
 <div class="memitem">
@@ -239,6 +329,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>return non-zero if the first blen bytes of a are equal to b </p>
+
 </div>
 </div>
 <a class="anchor" id="a73658b48cf21aca48c3f93a6cfbf826a"></a>
@@ -290,6 +382,26 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Returns &lt;0 if a &lt; b, ==0 if a == b, &gt;0 if a &gt; b The order is arbitrary, and is not guaranteed to be stable across different versions of the API. </p>
+
+</div>
+</div>
+<a class="anchor" id="a0b428779eb2f6b030f4a8bcad2c9416f"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a> grpc_slice_copy </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td>
+          <td class="paramname"><em>s</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Copy slice - create a new slice that contains the same data as s. </p>
 
 </div>
 </div>
@@ -349,6 +461,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Return a slice pointing to newly allocated memory that has the same contents as <em>s</em>. </p>
+
 </div>
 </div>
 <a class="anchor" id="a70619fe975944cdf1a2e043651f82e22"></a>
@@ -401,6 +515,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Create a slice by copying a buffer. </p>
+<p>Equivalent to: <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> slice = grpc_slice_malloc(len); memcpy(slice-&gt;data, source, len); </p>
+
 </div>
 </div>
 <a class="anchor" id="afd48c29f9625011186d7501c1fb0cb81"></a>
@@ -416,6 +533,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Create a slice by copying a string. </p>
+<p>Does not preserve null terminators. Equivalent to: size_t len = strlen(source); <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> slice = grpc_slice_malloc(len); memcpy(slice-&gt;data, source, len); </p>
 
 </div>
 </div>
@@ -443,6 +563,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Create a slice pointing to constant memory. </p>
+
 </div>
 </div>
 <a class="anchor" id="afa530f9246432b90ba07de2a0721ddce"></a>
@@ -458,6 +580,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Create a slice pointing to constant memory. </p>
 
 </div>
 </div>
@@ -491,6 +615,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Intern a slice: </p>
+<p>The return value for two invocations of this function with the same sequence of bytes is a slice which points to the same memory. </p>
+
 </div>
 </div>
 <a class="anchor" id="ad3265621ff8d97c638d9e75bf1d24be9"></a>
@@ -517,6 +644,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Do two slices point at the same memory, with the same length If a or b is inlined, actually compares data. </p>
+
 </div>
 </div>
 <a class="anchor" id="a0b714cdd6fa993b1d47eb08f2d5f8fc1"></a>
@@ -525,6 +654,25 @@ Functions</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a> grpc_slice_malloc </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>length</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Equivalent to grpc_slice_new(malloc(len), len, free), but saves one malloc() call. </p>
+<p>Aborts if malloc() fails. </p>
+
+</div>
+</div>
+<a class="anchor" id="ab286ea0212352a75cfaf34c32eccff17"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a> grpc_slice_malloc_large </td>
           <td>(</td>
           <td class="paramtype">size_t&#160;</td>
           <td class="paramname"><em>length</em></td><td>)</td>
@@ -565,6 +713,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Create a slice pointing at some data. </p>
+<p>Calls malloc to allocate a refcount for the object, and arranges that destroy will be called with the pointer passed in at destruction. </p>
+
 </div>
 </div>
 <a class="anchor" id="a44c5429ec66267a094b4a1e63f9a31e5"></a>
@@ -596,6 +747,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Equivalent to grpc_slice_new, but with a two argument destroy function that also takes the slice length. </p>
 
 </div>
 </div>
@@ -635,6 +788,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Equivalent to grpc_slice_new, but with a separate pointer that is passed to the destroy function. </p>
+<p>This function can be useful when the data is part of a larger structure that must be destroyed when the data is no longer needed. </p>
+
 </div>
 </div>
 <a class="anchor" id="a65358088c9740be137d8185c55bae49d"></a>
@@ -661,6 +817,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>return the index of the last instance of <em>c</em> in <em>s</em>, or -1 if not found </p>
+
 </div>
 </div>
 <a class="anchor" id="aaf6dd367abbe7883973588f411928c6e"></a>
@@ -676,6 +834,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Increment the refcount of s. </p>
+<p>Requires slice is initialized. Returns s. </p>
 
 </div>
 </div>
@@ -703,6 +864,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>return the index of the first occurance of <em>needle</em> in <em>haystack</em>, or -1 if it's not found </p>
+
 </div>
 </div>
 <a class="anchor" id="ac630cdfb54ff37e0490c3ebe9efd585e"></a>
@@ -729,6 +892,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Splits s into two: modifies s to be s[split:s.length], and returns a new slice, sharing a refcount with s, that contains s[0:split]. </p>
+<p>Requires s intialized, split &lt;= s.length </p>
+
 </div>
 </div>
 <a class="anchor" id="a5aedc925ae6e2bae484fe82383fac025"></a>
@@ -754,6 +920,43 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Splits s into two: modifies s to be s[0:split], and returns a new slice, sharing a refcount with s, that contains s[split:s.length]. </p>
+<p>Requires s intialized, split &lt;= s.length </p>
+
+</div>
+</div>
+<a class="anchor" id="adf447cd644eb32cb42c5d6da21fcaf55"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a> grpc_slice_split_tail_maybe_ref </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__slice.html">grpc_slice</a> *&#160;</td>
+          <td class="paramname"><em>s</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>split</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="slice_8h.html#a4a42e5de5c07151adf96278ea466ef4d">grpc_slice_ref_whom</a>&#160;</td>
+          <td class="paramname"><em>ref_whom</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The same as grpc_slice_split_tail, but with an option to skip altering refcounts (grpc_slice_split_tail_maybe_ref(..., true) is equivalent to grpc_slice_split_tail(...)) </p>
 
 </div>
 </div>
@@ -813,6 +1016,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Return a result slice derived from s, which shares a ref count with <em>s</em>, where result.data==s.data+begin, and result.length==end-begin. </p>
+<p>The ref count of <em>s</em> is increased by one. Do not assign result back to <em>s</em>. Requires s initialized, begin &lt;= end, begin &lt;= s.length, and end &lt;= source-&gt;length. </p>
+
 </div>
 </div>
 <a class="anchor" id="a3812672f29793b5a30a1cacc131b38da"></a>
@@ -845,6 +1051,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>The same as grpc_slice_sub, but without altering the ref count. </p>
+
 </div>
 </div>
 <a class="anchor" id="af9b5772739f4f87de043449af582e0a5"></a>
@@ -860,6 +1068,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Return a copy of slice as a C string. </p>
+<p>Offers no protection against embedded NULL's. Returned string must be freed with gpr_free. </p>
 
 </div>
 </div>
@@ -877,12 +1088,15 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Decrement the ref count of s. </p>
+<p>If the ref count of s reaches zero, all slices sharing the ref count are destroyed, and considered no longer initialized. If s is ultimately derived from a call to grpc_slice_new(start, len, dest) where dest!=NULL , then (*dest)(start) is called, else if s is ultimately derived from a call to grpc_slice_new_with_len(start, len, dest) where dest!=NULL , then (*dest)(start, len). Requires s initialized. </p>
+
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

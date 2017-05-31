@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -143,7 +143,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>Serialize()
 : <a class="el" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a142e6455c0e040332f57bd3a35eebd33">grpc::SerializationTraits&lt; ByteBuffer, void &gt;</a>
-, <a class="el" href="classgrpc_1_1_serialization_traits_3_01_t_00_01typename_01std_1_1enable__if_3_01std_1_1is__base_42903f95c85f031c7724191271564901.html#a9edbdbeb88f575f9e259fdb58c6c84d6">grpc::SerializationTraits&lt; T, typename std::enable_if&lt; std::is_base_of&lt; grpc::protobuf::Message, T &gt;::value &gt;::type &gt;</a>
 </li>
 <li>server()
 : <a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">grpc::ServerInterface</a>
@@ -258,9 +257,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>SetChannelArgs()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a90ce1857947d36ff894402ad10cb6048">grpc::ChannelArguments</a>
 </li>
-<li>SetCollection()
-: <a class="el" href="classgrpc_1_1_call_op_set_interface.html#a7c0e4962b0ddc592cbc6469442c38268">grpc::CallOpSetInterface</a>
-</li>
 <li>SetCompressionAlgorithm()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#aaf332071bbdff5e4a7f3352f4ad564d5">grpc::ChannelArguments</a>
 </li>
@@ -361,16 +357,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a7aad5fe555993d8f86380e3b4c65db1c">grpc::internal::GrpcBufferReader</a>
 </li>
 <li>Slice()
-: <a class="el" href="classgrpc_1_1_slice.html#af3fece4a2e6c2be33631c295c5ea3418">grpc::Slice</a>
+: <a class="el" href="classgrpc_1_1_slice.html#a8c5179cf7a39f66d65887bf298dc548f">grpc::Slice</a>
+</li>
+<li>SliceBuffer()
+: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a31ade9a9f7d2483bd86d06850f549a1b">grpc::internal::GrpcBufferWriter</a>
 </li>
 <li>SplitServerStreamingHandler()
 : <a class="el" href="classgrpc_1_1_split_server_streaming_handler.html#a34297c5dbd6d21629f664f6cca9faa72">grpc::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>SslServerCredentialsOptions()
-: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#a00650afd8a132f271b068d17da446679">grpc::SslServerCredentialsOptions</a>
+: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#ae85661f17b0dd9f4fc27275203e5f105">grpc::SslServerCredentialsOptions</a>
 </li>
 <li>Start()
-: <a class="el" href="classgrpc_1_1_server_interface.html#aa0bd69382b7e6d35e34190d4faefa039">grpc::ServerInterface</a>
+: <a class="el" href="classgrpc_1_1_server_interface.html#aa3931522a05cd6b2783b550b4066a7d9">grpc::ServerInterface</a>
 </li>
 <li>starts_with()
 : <a class="el" href="classgrpc_1_1string__ref.html#a4d4b90bdcb6634690e989daa4234bdd6">grpc::string_ref</a>
@@ -379,13 +378,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#ab695c69b23e443f3b4fcac666a075029">grpc::internal::GrpcBufferReader</a>
 </li>
 <li>Status()
-: <a class="el" href="classgrpc_1_1_status.html#a3b224f643a5a4bb1fb4244abe3bd48ab">grpc::Status</a>
+: <a class="el" href="classgrpc_1_1_status.html#a46537b45349a95126a16dcd67b5cf54c">grpc::Status</a>
 </li>
 <li>StreamedUnaryHandler()
 : <a class="el" href="classgrpc_1_1_streamed_unary_handler.html#afb1a2351f81a4b1f3ebfbdc6f454afac">grpc::StreamedUnaryHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#a0631f7099a7fc8b1bbf16f3353074400">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#ab929e0c1cff6f7ab4f4d9e4b5734b18c">grpc::string_ref</a>
 </li>
 <li>substr()
 : <a class="el" href="classgrpc_1_1string__ref.html#a09ee02dfcf385769503beae677266a57">grpc::string_ref</a>
@@ -401,7 +400,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

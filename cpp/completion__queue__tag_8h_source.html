@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -132,10 +132,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00040"></a><span class="lineno"><a class="line" href="classgrpc_1_1_completion_queue_tag.html">   40</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_completion_queue_tag.html">CompletionQueueTag</a> {</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="classgrpc_1_1_completion_queue_tag.html#a2cbf0212ed795c79f98c3421ed0cb4ab">   42</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1_completion_queue_tag.html#a2cbf0212ed795c79f98c3421ed0cb4ab">~CompletionQueueTag</a>() {}</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  <span class="comment">// Called prior to returning from Next(), return value is the status of the</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="comment">// operation (return status is the default thing to do). If this function</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="comment">// returns false, the tag is dropped and not returned from the completion</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="comment">// queue</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_completion_queue_tag.html#af7b1abfcd9e506d118dfdcf29ce7fe8d">FinalizeResult</a>(<span class="keywordtype">void</span>** tag, <span class="keywordtype">bool</span>* status) = 0;</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;};</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
@@ -143,12 +139,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_COMPLETION_QUEUE_TAG_H</span></div>
 <div class="ttc" id="classgrpc_1_1_completion_queue_tag_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue_tag.html">grpc::CompletionQueueTag</a></div><div class="ttdoc">An interface allowing implementors to process and filter event tags. </div><div class="ttdef"><b>Definition:</b> completion_queue_tag.h:40</div></div>
-<div class="ttc" id="classgrpc_1_1_completion_queue_tag_html_af7b1abfcd9e506d118dfdcf29ce7fe8d"><div class="ttname"><a href="classgrpc_1_1_completion_queue_tag.html#af7b1abfcd9e506d118dfdcf29ce7fe8d">grpc::CompletionQueueTag::FinalizeResult</a></div><div class="ttdeci">virtual bool FinalizeResult(void **tag, bool *status)=0</div></div>
+<div class="ttc" id="classgrpc_1_1_completion_queue_tag_html_af7b1abfcd9e506d118dfdcf29ce7fe8d"><div class="ttname"><a href="classgrpc_1_1_completion_queue_tag.html#af7b1abfcd9e506d118dfdcf29ce7fe8d">grpc::CompletionQueueTag::FinalizeResult</a></div><div class="ttdeci">virtual bool FinalizeResult(void **tag, bool *status)=0</div><div class="ttdoc">Called prior to returning from Next(), return value is the status of the operation (return status is ...</div></div>
 <div class="ttc" id="classgrpc_1_1_completion_queue_tag_html_a2cbf0212ed795c79f98c3421ed0cb4ab"><div class="ttname"><a href="classgrpc_1_1_completion_queue_tag.html#a2cbf0212ed795c79f98c3421ed0cb4ab">grpc::CompletionQueueTag::~CompletionQueueTag</a></div><div class="ttdeci">virtual ~CompletionQueueTag()</div><div class="ttdef"><b>Definition:</b> completion_queue_tag.h:42</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,7 +90,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>This structure represents a timestamp as used by census to record the time at which an operation begins.  
+<p>The concept of "operation" is a fundamental concept for Census.  
  <a href="structcensus__timestamp.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="census_8h_source.html">census.h</a>&gt;</code></p>
@@ -98,10 +98,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a36ed36ffcf81f720bbdade460f957004"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__timestamp.html#a36ed36ffcf81f720bbdade460f957004">ts</a></td></tr>
+<tr class="memdesc:a36ed36ffcf81f720bbdade460f957004"><td class="mdescLeft">&#160;</td><td class="mdescRight">Use <a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec. ">gpr_timespec</a> for default implementation.  <a href="#a36ed36ffcf81f720bbdade460f957004">More...</a><br/></td></tr>
 <tr class="separator:a36ed36ffcf81f720bbdade460f957004"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This structure represents a timestamp as used by census to record the time at which an operation begins. </p>
+<div class="textblock"><p>The concept of "operation" is a fundamental concept for Census. </p>
+<p>In an RPC system, an operation typically represents a single RPC, or a significant sub-part thereof (e.g. a single logical "read" RPC to a distributed storage system might do several other actions in parallel, from looking up metadata indices to making requests of other services - each of these could be a sub-operation with the larger RPC operation). Census uses operations for the following:</p>
+<p>CPU accounting: If enabled, census will measure the thread CPU time consumed between operation start and end times.</p>
+<p>Active operations: Census will maintain information on all currently active operations.</p>
+<p>Distributed tracing: Each operation serves as a logical trace span.</p>
+<p>Stats collection: Stats are broken down by operation (e.g. latency breakdown for each unique RPC path).</p>
+<p>The following functions serve to delineate the start and stop points for each logical operation. This structure represents a timestamp as used by census to record the time at which an operation begins. </p>
 </div><h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a36ed36ffcf81f720bbdade460f957004"></a>
 <div class="memitem">
@@ -113,6 +120,9 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Use <a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec. ">gpr_timespec</a> for default implementation. </p>
+<p>High performance implementations should use a cycle-counter based timestamp. </p>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
@@ -121,7 +131,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

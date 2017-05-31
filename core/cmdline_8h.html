@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -100,27 +100,37 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
 <tr class="memitem:aaad93cd9bfc32c54fc89f7c2f3b74eb6"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a></td></tr>
+<tr class="memdesc:aaad93cd9bfc32c54fc89f7c2f3b74eb6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simple command line parser.  <a href="#aaad93cd9bfc32c54fc89f7c2f3b74eb6">More...</a><br/></td></tr>
 <tr class="separator:aaad93cd9bfc32c54fc89f7c2f3b74eb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a31fa94e5c43847c82e90bb40087f5aa9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a31fa94e5c43847c82e90bb40087f5aa9">gpr_cmdline_create</a> (const char *description)</td></tr>
+<tr class="memdesc:a31fa94e5c43847c82e90bb40087f5aa9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a command line parser: takes a short description of the tool doing the parsing.  <a href="#a31fa94e5c43847c82e90bb40087f5aa9">More...</a><br/></td></tr>
 <tr class="separator:a31fa94e5c43847c82e90bb40087f5aa9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a87c433155b5df21be39818d658cfe93f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a87c433155b5df21be39818d658cfe93f">gpr_cmdline_add_int</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, int *value)</td></tr>
+<tr class="memdesc:a87c433155b5df21be39818d658cfe93f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add an integer parameter, with a name (used on the command line) and some helpful text (used in the command usage)  <a href="#a87c433155b5df21be39818d658cfe93f">More...</a><br/></td></tr>
 <tr class="separator:a87c433155b5df21be39818d658cfe93f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea1a46a5feb84307dc9e3796ca13c481"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#aea1a46a5feb84307dc9e3796ca13c481">gpr_cmdline_add_flag</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, int *value)</td></tr>
+<tr class="memdesc:aea1a46a5feb84307dc9e3796ca13c481"><td class="mdescLeft">&#160;</td><td class="mdescRight">The same, for a boolean flag.  <a href="#aea1a46a5feb84307dc9e3796ca13c481">More...</a><br/></td></tr>
 <tr class="separator:aea1a46a5feb84307dc9e3796ca13c481"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad361141d2df046516b472df11e2712fb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#ad361141d2df046516b472df11e2712fb">gpr_cmdline_add_string</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, char **value)</td></tr>
+<tr class="memdesc:ad361141d2df046516b472df11e2712fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">And for a string.  <a href="#ad361141d2df046516b472df11e2712fb">More...</a><br/></td></tr>
 <tr class="separator:ad361141d2df046516b472df11e2712fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac3b6905c4e9c88abd4936c593b0f5b12"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#ac3b6905c4e9c88abd4936c593b0f5b12">gpr_cmdline_on_extra_arg</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, void(*on_extra_arg)(void *user_data, const char *arg), void *user_data)</td></tr>
+<tr class="memdesc:ac3b6905c4e9c88abd4936c593b0f5b12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a callback for non-named arguments.  <a href="#ac3b6905c4e9c88abd4936c593b0f5b12">More...</a><br/></td></tr>
 <tr class="separator:ac3b6905c4e9c88abd4936c593b0f5b12"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a191878e568149fffade0786592d13c37"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a191878e568149fffade0786592d13c37">gpr_cmdline_set_survive_failure</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl)</td></tr>
+<tr class="memdesc:a191878e568149fffade0786592d13c37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable surviving failure: default behavior is to exit the process.  <a href="#a191878e568149fffade0786592d13c37">More...</a><br/></td></tr>
 <tr class="separator:a191878e568149fffade0786592d13c37"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc2f66f6bcdf05c8b761419bf2d40509"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#acc2f66f6bcdf05c8b761419bf2d40509">gpr_cmdline_parse</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, int argc, char **argv)</td></tr>
+<tr class="memdesc:acc2f66f6bcdf05c8b761419bf2d40509"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse the command line; returns 1 on success, on failure either dies (by default) or returns 0 if <a class="el" href="cmdline_8h.html#a191878e568149fffade0786592d13c37" title="Enable surviving failure: default behavior is to exit the process. ">gpr_cmdline_set_survive_failure()</a> has been called.  <a href="#acc2f66f6bcdf05c8b761419bf2d40509">More...</a><br/></td></tr>
 <tr class="separator:acc2f66f6bcdf05c8b761419bf2d40509"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acfe85f2db2b17fc82e614618ce5a09a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#acfe85f2db2b17fc82e614618ce5a09a8">gpr_cmdline_destroy</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl)</td></tr>
+<tr class="memdesc:acfe85f2db2b17fc82e614618ce5a09a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the parser.  <a href="#acfe85f2db2b17fc82e614618ce5a09a8">More...</a><br/></td></tr>
 <tr class="separator:acfe85f2db2b17fc82e614618ce5a09a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9bfcaca695b8e0f84fa410f733dced5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#af9bfcaca695b8e0f84fa410f733dced5">gpr_cmdline_usage_string</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *argv0)</td></tr>
+<tr class="memdesc:af9bfcaca695b8e0f84fa410f733dced5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string describing usage.  <a href="#af9bfcaca695b8e0f84fa410f733dced5">More...</a><br/></td></tr>
 <tr class="separator:af9bfcaca695b8e0f84fa410f733dced5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
@@ -133,6 +143,15 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Simple command line parser. </p>
+<p>Supports flags that can be specified as -foo, &ndash;foo, &ndash;no-foo, -no-foo, etc And integers, strings that can be specified as -foo=4, -foo blah, etc</p>
+<p>No support for short command line options (but we may get that in the future.)</p>
+<p>Usage (for a program with a single flag argument 'foo'):</p>
+<p>int main(int argc, char **argv) { gpr_cmdline *cl; int verbose = 0;</p>
+<p>cl = gpr_cmdline_create("My cool tool"); gpr_cmdline_add_int(cl, "verbose", "Produce verbose output?", &amp;verbose); gpr_cmdline_parse(cl, argc, argv); gpr_cmdline_destroy(cl);</p>
+<p>if (verbose) { gpr_log(GPR_INFO, "Goodbye cruel world!"); }</p>
+<p>return 0; } </p>
 
 </div>
 </div>
@@ -173,6 +192,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>The same, for a boolean flag. </p>
+
 </div>
 </div>
 <a class="anchor" id="a87c433155b5df21be39818d658cfe93f"></a>
@@ -210,6 +231,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Add an integer parameter, with a name (used on the command line) and some helpful text (used in the command usage) </p>
 
 </div>
 </div>
@@ -249,6 +272,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>And for a string. </p>
+
 </div>
 </div>
 <a class="anchor" id="a31fa94e5c43847c82e90bb40087f5aa9"></a>
@@ -265,6 +290,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Construct a command line parser: takes a short description of the tool doing the parsing. </p>
+
 </div>
 </div>
 <a class="anchor" id="acfe85f2db2b17fc82e614618ce5a09a8"></a>
@@ -280,6 +307,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Destroy the parser. </p>
 
 </div>
 </div>
@@ -325,6 +354,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Set a callback for non-named arguments. </p>
+
 </div>
 </div>
 <a class="anchor" id="acc2f66f6bcdf05c8b761419bf2d40509"></a>
@@ -357,6 +388,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Parse the command line; returns 1 on success, on failure either dies (by default) or returns 0 if <a class="el" href="cmdline_8h.html#a191878e568149fffade0786592d13c37" title="Enable surviving failure: default behavior is to exit the process. ">gpr_cmdline_set_survive_failure()</a> has been called. </p>
+
 </div>
 </div>
 <a class="anchor" id="a191878e568149fffade0786592d13c37"></a>
@@ -372,6 +405,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Enable surviving failure: default behavior is to exit the process. </p>
 
 </div>
 </div>
@@ -399,12 +434,14 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Get a string describing usage. </p>
+
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,6 +90,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>A tag is a key:value pair.  
+ <a href="structcensus__tag.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="census_8h_source.html">census.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
@@ -101,7 +104,10 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a5632d4c8316fb17bbb3af5cb9b0dd4f5"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__tag.html#a5632d4c8316fb17bbb3af5cb9b0dd4f5">flags</a></td></tr>
 <tr class="separator:a5632d4c8316fb17bbb3af5cb9b0dd4f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A tag is a key:value pair. </p>
+<p>Both keys and values are nil-terminated strings, containing printable ASCII characters (decimal 32-126). Keys must be at least one character in length. Both keys and values can have at most CENSUS_MAX_TAG_KB_LEN characters (including the terminating nil). The maximum number of tags that can be propagated is CENSUS_MAX_PROPAGATED_TAGS. Users should also remember that some systems may have limits on, e.g., the number of bytes that can be transmitted as metadata, and that larger tags means more memory consumed and time in processing. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a5632d4c8316fb17bbb3af5cb9b0dd4f5"></a>
 <div class="memitem">
 <div class="memproto">
@@ -144,7 +150,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

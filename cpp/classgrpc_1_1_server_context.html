@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -97,6 +97,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>A <a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a> allows the person implementing a service handler to:  
+ <a href="classgrpc_1_1_server_context.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="impl_2codegen_2server__context_8h_source.html">server_context.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -106,43 +109,61 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:afd37847b1bdba2f82e472fed6f31cea6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#afd37847b1bdba2f82e472fed6f31cea6">~ServerContext</a> ()</td></tr>
 <tr class="separator:afd37847b1bdba2f82e472fed6f31cea6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a082dad4103d189e28531cae36e4bab90"><td class="memItemLeft" align="right" valign="top">std::chrono::system_clock::time_point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a082dad4103d189e28531cae36e4bab90">deadline</a> () const </td></tr>
+<tr class="memdesc:a082dad4103d189e28531cae36e4bab90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the deadline for the server call.  <a href="#a082dad4103d189e28531cae36e4bab90">More...</a><br/></td></tr>
 <tr class="separator:a082dad4103d189e28531cae36e4bab90"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a29f5993be0be094862abf88dde4d5dc8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a29f5993be0be094862abf88dde4d5dc8">raw_deadline</a> () const </td></tr>
+<tr class="memdesc:a29f5993be0be094862abf88dde4d5dc8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a <em><a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec. ">gpr_timespec</a></em> representation of the server call's deadline.  <a href="#a29f5993be0be094862abf88dde4d5dc8">More...</a><br/></td></tr>
 <tr class="separator:a29f5993be0be094862abf88dde4d5dc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3371f0adf8521c7097eee437fc4ca4f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ae3371f0adf8521c7097eee437fc4ca4f">AddInitialMetadata</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;value)</td></tr>
+<tr class="memdesc:ae3371f0adf8521c7097eee437fc4ca4f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the (<em>meta_key</em>, <em>meta_value</em>) pair to the initial metadata associated with a server call.  <a href="#ae3371f0adf8521c7097eee437fc4ca4f">More...</a><br/></td></tr>
 <tr class="separator:ae3371f0adf8521c7097eee437fc4ca4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac30e12c4ee3ca008522b24157f4f886c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ac30e12c4ee3ca008522b24157f4f886c">AddTrailingMetadata</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;value)</td></tr>
+<tr class="memdesc:ac30e12c4ee3ca008522b24157f4f886c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the (<em>meta_key</em>, <em>meta_value</em>) pair to the initial metadata associated with a server call.  <a href="#ac30e12c4ee3ca008522b24157f4f886c">More...</a><br/></td></tr>
 <tr class="separator:ac30e12c4ee3ca008522b24157f4f886c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae52a89bbf70c27be3325080000757864"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ae52a89bbf70c27be3325080000757864">IsCancelled</a> () const </td></tr>
+<tr class="memdesc:ae52a89bbf70c27be3325080000757864"><td class="mdescLeft">&#160;</td><td class="mdescRight">IsCancelled is always safe to call when using sync API.  <a href="#ae52a89bbf70c27be3325080000757864">More...</a><br/></td></tr>
 <tr class="separator:ae52a89bbf70c27be3325080000757864"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a63842068a68fbc886254bc3251f95155"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a63842068a68fbc886254bc3251f95155">TryCancel</a> () const </td></tr>
+<tr class="memdesc:a63842068a68fbc886254bc3251f95155"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel the <a class="el" href="classgrpc_1_1_call.html" title="Straightforward wrapping of the C call object. ">Call</a> from the server.  <a href="#a63842068a68fbc886254bc3251f95155">More...</a><br/></td></tr>
 <tr class="separator:a63842068a68fbc886254bc3251f95155"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a090072163b57931e24bc9583b478f997"><td class="memItemLeft" align="right" valign="top">const std::multimap<br class="typebreak"/>
 &lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <br class="typebreak"/>
 <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a090072163b57931e24bc9583b478f997">client_metadata</a> () const </td></tr>
+<tr class="memdesc:a090072163b57931e24bc9583b478f997"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a collection of initial metadata key-value pairs sent from the client.  <a href="#a090072163b57931e24bc9583b478f997">More...</a><br/></td></tr>
 <tr class="separator:a090072163b57931e24bc9583b478f997"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a401d5c77fde5cccb13155ccd668787e8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a401d5c77fde5cccb13155ccd668787e8">compression_level</a> () const </td></tr>
+<tr class="memdesc:a401d5c77fde5cccb13155ccd668787e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the compression algorithm to be used by the server call.  <a href="#a401d5c77fde5cccb13155ccd668787e8">More...</a><br/></td></tr>
 <tr class="separator:a401d5c77fde5cccb13155ccd668787e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:accfdf160f46aa20eda843443c3eea91d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#accfdf160f46aa20eda843443c3eea91d">set_compression_level</a> (<a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> level)</td></tr>
+<tr class="memdesc:accfdf160f46aa20eda843443c3eea91d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set <em>algorithm</em> to be the compression algorithm used for the server call.  <a href="#accfdf160f46aa20eda843443c3eea91d">More...</a><br/></td></tr>
 <tr class="separator:accfdf160f46aa20eda843443c3eea91d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e1dbc7f4e708d01f463af94127f675c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a4e1dbc7f4e708d01f463af94127f675c">compression_level_set</a> () const </td></tr>
+<tr class="memdesc:a4e1dbc7f4e708d01f463af94127f675c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a bool indicating whether the compression level for this call has been set (either implicitly or through a previous call to <em>set_compression_level</em>.  <a href="#a4e1dbc7f4e708d01f463af94127f675c">More...</a><br/></td></tr>
 <tr class="separator:a4e1dbc7f4e708d01f463af94127f675c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a825f46891cc7db6c896add746eec8171"><td class="memItemLeft" align="right" valign="top"><a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a825f46891cc7db6c896add746eec8171">compression_algorithm</a> () const </td></tr>
+<tr class="memdesc:a825f46891cc7db6c896add746eec8171"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the compression algorithm to be used by the server call.  <a href="#a825f46891cc7db6c896add746eec8171">More...</a><br/></td></tr>
 <tr class="separator:a825f46891cc7db6c896add746eec8171"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade949b886faed50627e5cbd35fe4ec72"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ade949b886faed50627e5cbd35fe4ec72">set_compression_algorithm</a> (<a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm)</td></tr>
+<tr class="memdesc:ade949b886faed50627e5cbd35fe4ec72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set <em>algorithm</em> to be the compression algorithm used for the server call.  <a href="#ade949b886faed50627e5cbd35fe4ec72">More...</a><br/></td></tr>
 <tr class="separator:ade949b886faed50627e5cbd35fe4ec72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afbc7d2c4cbd82ec7da26389b0ba648b0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#afbc7d2c4cbd82ec7da26389b0ba648b0">SetLoadReportingCosts</a> (const std::vector&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;cost_data)</td></tr>
+<tr class="memdesc:afbc7d2c4cbd82ec7da26389b0ba648b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the load reporting costs in <em>cost_data</em> for the call.  <a href="#afbc7d2c4cbd82ec7da26389b0ba648b0">More...</a><br/></td></tr>
 <tr class="separator:afbc7d2c4cbd82ec7da26389b0ba648b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a8657d382cee53d670208d640383e8e"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; const <br class="typebreak"/>
 <a class="el" href="classgrpc_1_1_auth_context.html">AuthContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a2a8657d382cee53d670208d640383e8e">auth_context</a> () const </td></tr>
+<tr class="memdesc:a2a8657d382cee53d670208d640383e8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the authentication context for this server call.  <a href="#a2a8657d382cee53d670208d640383e8e">More...</a><br/></td></tr>
 <tr class="separator:a2a8657d382cee53d670208d640383e8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ef7910ccd61514eafa7087519bb17bb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a5ef7910ccd61514eafa7087519bb17bb">peer</a> () const </td></tr>
+<tr class="memdesc:a5ef7910ccd61514eafa7087519bb17bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the peer uri in a string.  <a href="#a5ef7910ccd61514eafa7087519bb17bb">More...</a><br/></td></tr>
 <tr class="separator:a5ef7910ccd61514eafa7087519bb17bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3adc0c2dc243915f6167c6f80d2882e"><td class="memItemLeft" align="right" valign="top">const struct census_context *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#af3adc0c2dc243915f6167c6f80d2882e">census_context</a> () const </td></tr>
+<tr class="memdesc:af3adc0c2dc243915f6167c6f80d2882e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the census context associated with this server call.  <a href="#af3adc0c2dc243915f6167c6f80d2882e">More...</a><br/></td></tr>
 <tr class="separator:af3adc0c2dc243915f6167c6f80d2882e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aafcb8e430e3d81bcd3f0a88701a19fba"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#aafcb8e430e3d81bcd3f0a88701a19fba">AsyncNotifyWhenDone</a> (void *tag)</td></tr>
+<tr class="memdesc:aafcb8e430e3d81bcd3f0a88701a19fba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Async only.  <a href="#aafcb8e430e3d81bcd3f0a88701a19fba">More...</a><br/></td></tr>
 <tr class="separator:aafcb8e430e3d81bcd3f0a88701a19fba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac23879ea6fee39bbe27c6b6192989d61"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ac23879ea6fee39bbe27c6b6192989d61">c_call</a> ()</td></tr>
+<tr class="memdesc:ac23879ea6fee39bbe27c6b6192989d61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Should be used for framework-level extensions only.  <a href="#ac23879ea6fee39bbe27c6b6192989d61">More...</a><br/></td></tr>
 <tr class="separator:ac23879ea6fee39bbe27c6b6192989d61"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
@@ -193,7 +214,17 @@ Friends</h2></td></tr>
 <tr class="memitem:ad5c51aa9b375ed1597b0a57f339f59d5"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ad5c51aa9b375ed1597b0a57f339f59d5">::grpc::ClientContext</a></td></tr>
 <tr class="separator:ad5c51aa9b375ed1597b0a57f339f59d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A <a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a> allows the person implementing a service handler to: </p>
+<ul>
+<li>Add custom initial and trailing metadata key-value pairs that will propagated to the client side.</li>
+<li>Control call settings such as compression and authentication.</li>
+<li>Access metadata coming from the client.</li>
+<li>Get performance metrics (ie, census).</li>
+</ul>
+<p>Context settings are only relevant to the call handler they are supplied to, that is to say, they aren't sticky across multiple calls. Some of these settings, such as the compression options, can be made persistant at server construction time by specifying the approriate <em><a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation. ">ChannelArguments</a></em> to a <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">grpc::ServerBuilder</a></em>, via <em><a class="el" href="classgrpc_1_1_server_builder.html#aefdac3407920a99d119c946d255b100c" title="Add a channel argument (an escape hatch to tuning core library parameters directly) ...">ServerBuilder::AddChannelArgument</a></em>.</p>
+<dl class="section warning"><dt>Warning</dt><dd><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a> instances should <em>not</em> be reused across rpcs. </dd></dl>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a10f47e15934195dcaed6b756498b8fff"></a>
 <div class="memitem">
 <div class="memproto">
@@ -249,6 +280,17 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Add the (<em>meta_key</em>, <em>meta_value</em>) pair to the initial metadata associated with a server call. </p>
+<p>These are made available at the client side by the <em><a class="el" href="classgrpc_1_1_client_context.html#a0b92fe751219b482400e1ad474ae58f6" title="Return a collection of initial metadata key-value pairs. ">grpc::ClientContext::GetServerInitialMetadata()</a></em> method.</p>
+<dl class="section warning"><dt>Warning</dt><dd>This method should only be called before sending initial metadata to the client (which can happen explicitly, or implicitly when sending a a response message or status to the client).</dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">meta_key</td><td>The metadata key. If <em>meta_value</em> is binary data, it must end in "-bin". </td></tr>
+    <tr><td class="paramname">meta_value</td><td>The metadata value. If its value is binary, the key name must end in "-bin". </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <a class="anchor" id="ac30e12c4ee3ca008522b24157f4f886c"></a>
@@ -275,6 +317,17 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Add the (<em>meta_key</em>, <em>meta_value</em>) pair to the initial metadata associated with a server call. </p>
+<p>These are made available at the client side by the <em><a class="el" href="classgrpc_1_1_client_context.html#a2c4d45c3430e2657fd3eaa1d755517b2" title="Return a collection of trailing metadata key-value pairs. ">grpc::ClientContext::GetServerTrailingMetadata()</a></em> method.</p>
+<dl class="section warning"><dt>Warning</dt><dd>This method should only be called before sending trailing metadata to the client (which happens when the call is finished and a status is sent to the client).</dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">meta_key</td><td>The metadata key. If <em>meta_value</em> is binary data, it must end in "-bin". </td></tr>
+    <tr><td class="paramname">meta_value</td><td>The metadata value. If its value is binary, the key name must end in "-bin". </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <a class="anchor" id="aafcb8e430e3d81bcd3f0a88701a19fba"></a>
@@ -299,6 +352,9 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Async only. </p>
+<p>Has to be called before the rpc starts. Returns the tag in completion queue when the rpc finishes. <a class="el" href="classgrpc_1_1_server_context.html#ae52a89bbf70c27be3325080000757864" title="IsCancelled is always safe to call when using sync API. ">IsCancelled()</a> can then be called to check whether the rpc was cancelled. </p>
+
 </div>
 </div>
 <a class="anchor" id="a2a8657d382cee53d670208d640383e8e"></a>
@@ -321,6 +377,9 @@ Friends</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Return the authentication context for this server call. </p>
+<dl class="section see"><dt>See Also</dt><dd><a class="el" href="classgrpc_1_1_auth_context.html" title="Class encapsulating the Authentication Information. ">grpc::AuthContext</a>. </dd></dl>
 
 </div>
 </div>
@@ -345,6 +404,9 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Should be used for framework-level extensions only. </p>
+<p>Applications never need to call this method. </p>
+
 </div>
 </div>
 <a class="anchor" id="af3adc0c2dc243915f6167c6f80d2882e"></a>
@@ -359,6 +421,8 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Get the census context associated with this server call. </p>
 
 </div>
 </div>
@@ -383,6 +447,11 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Return a collection of initial metadata key-value pairs sent from the client. </p>
+<p>Note that keys may happen more than once (ie, a <em>std::multimap</em> is returned).</p>
+<p>It is safe to use this method after initial metadata has been received, Calls always begin with the client sending initial metadata, so this is safe to access as soon as the call has begun on the server side.</p>
+<dl class="section return"><dt>Returns</dt><dd>A multimap of initial metadata key-value pairs from the server. </dd></dl>
+
 </div>
 </div>
 <a class="anchor" id="a825f46891cc7db6c896add746eec8171"></a>
@@ -405,6 +474,8 @@ Friends</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Return the compression algorithm to be used by the server call. </p>
 
 </div>
 </div>
@@ -429,6 +500,8 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Return the compression algorithm to be used by the server call. </p>
+
 </div>
 </div>
 <a class="anchor" id="a4e1dbc7f4e708d01f463af94127f675c"></a>
@@ -451,6 +524,8 @@ Friends</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Return a bool indicating whether the compression level for this call has been set (either implicitly or through a previous call to <em>set_compression_level</em>. </p>
 
 </div>
 </div>
@@ -475,6 +550,8 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Return the deadline for the server call. </p>
+
 </div>
 </div>
 <a class="anchor" id="ae52a89bbf70c27be3325080000757864"></a>
@@ -490,6 +567,9 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>IsCancelled is always safe to call when using sync API. </p>
+<p>When using async API, it is only safe to call IsCancelled after the AsyncNotifyWhenDone tag has been delivered. </p>
+
 </div>
 </div>
 <a class="anchor" id="a5ef7910ccd61514eafa7087519bb17bb"></a>
@@ -504,6 +584,9 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Return the peer uri in a string. </p>
+<p>WARNING: this value is never authenticated or subject to any security related code. It must not be used for any authentication related functionality. Instead, use auth_context. </p>
 
 </div>
 </div>
@@ -528,6 +611,8 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Return a <em><a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec. ">gpr_timespec</a></em> representation of the server call's deadline. </p>
+
 </div>
 </div>
 <a class="anchor" id="ade949b886faed50627e5cbd35fe4ec72"></a>
@@ -543,6 +628,14 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Set <em>algorithm</em> to be the compression algorithm used for the server call. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">algorithm</td><td>The compression algorithm used for the server call. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -568,6 +661,14 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Set <em>algorithm</em> to be the compression algorithm used for the server call. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">algorithm</td><td>The compression algorithm used for the server call. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <a class="anchor" id="afbc7d2c4cbd82ec7da26389b0ba648b0"></a>
@@ -584,6 +685,8 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Set the load reporting costs in <em>cost_data</em> for the call. </p>
+
 </div>
 </div>
 <a class="anchor" id="a63842068a68fbc886254bc3251f95155"></a>
@@ -598,6 +701,10 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Cancel the <a class="el" href="classgrpc_1_1_call.html" title="Straightforward wrapping of the C call object. ">Call</a> from the server. </p>
+<p>This is a best-effort API and depending on when it is called, the RPC may still appear successful to the client. For example, if <a class="el" href="classgrpc_1_1_server_context.html#a63842068a68fbc886254bc3251f95155" title="Cancel the Call from the server. ">TryCancel()</a> is called on a separate thread, it might race with the server handler which might return success to the client before <a class="el" href="classgrpc_1_1_server_context.html#a63842068a68fbc886254bc3251f95155" title="Cancel the Call from the server. ">TryCancel()</a> was even started by the thread.</p>
+<p>It is the caller's responsibility to prevent such races and ensure that if <a class="el" href="classgrpc_1_1_server_context.html#a63842068a68fbc886254bc3251f95155" title="Cancel the Call from the server. ">TryCancel()</a> is called, the serverhandler must return <a class="el" href="classgrpc_1_1_status.html#a9994ffe95a0495915d82481c2ec594ab" title="A CANCELLED pre-defined instance. ">Status::CANCELLED</a>. The only exception is that if the serverhandler is already returning an error status code, it is ok to not return <a class="el" href="classgrpc_1_1_status.html#a9994ffe95a0495915d82481c2ec594ab" title="A CANCELLED pre-defined instance. ">Status::CANCELLED</a> even if <a class="el" href="classgrpc_1_1_server_context.html#a63842068a68fbc886254bc3251f95155" title="Cancel the Call from the server. ">TryCancel()</a> was called. </p>
 
 </div>
 </div>
@@ -970,7 +1077,7 @@ template&lt;class Streamer , bool WriteNeeded&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

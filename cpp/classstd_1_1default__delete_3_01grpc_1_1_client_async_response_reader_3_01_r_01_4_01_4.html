@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>GRPC C++: grpc::CallOpGenericRecvMessageHelper::DeserializeFunc Class Reference</title>
+<title>GRPC C++: std::default_delete&lt; grpc::ClientAsyncResponseReader&lt; R &gt; &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -85,84 +85,58 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacegrpc.html">grpc</a></li><li class="navelem"><a class="el" href="namespacegrpc_1_1_call_op_generic_recv_message_helper.html">CallOpGenericRecvMessageHelper</a></li><li class="navelem"><a class="el" href="classgrpc_1_1_call_op_generic_recv_message_helper_1_1_deserialize_func.html">DeserializeFunc</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacestd.html">std</a></li><li class="navelem"><a class="el" href="classstd_1_1default__delete_3_01grpc_1_1_client_async_response_reader_3_01_r_01_4_01_4.html">default_delete< grpc::ClientAsyncResponseReader< R > ></a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
-<div class="title">grpc::CallOpGenericRecvMessageHelper::DeserializeFunc Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
+<div class="title">std::default_delete&lt; grpc::ClientAsyncResponseReader&lt; R &gt; &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="codegen_2call_8h_source.html">call.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="impl_2codegen_2async__unary__call_8h_source.html">async_unary_call.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8fea37304c922cd8bc5e14dd0022c5ad"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_generic_recv_message_helper_1_1_deserialize_func.html#a8fea37304c922cd8bc5e14dd0022c5ad">Deserialize</a> (<a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *buf)=0</td></tr>
-<tr class="separator:a8fea37304c922cd8bc5e14dd0022c5ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5b08b2077f343e67aeb1ba2359ca50cd"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_generic_recv_message_helper_1_1_deserialize_func.html#a5b08b2077f343e67aeb1ba2359ca50cd">~DeserializeFunc</a> ()</td></tr>
-<tr class="separator:a5b08b2077f343e67aeb1ba2359ca50cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60900891d4046502b0db758b2fba089f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classstd_1_1default__delete_3_01grpc_1_1_client_async_response_reader_3_01_r_01_4_01_4.html#a60900891d4046502b0db758b2fba089f">operator()</a> (void *p)</td></tr>
+<tr class="separator:a60900891d4046502b0db758b2fba089f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a5b08b2077f343e67aeb1ba2359ca50cd"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual grpc::CallOpGenericRecvMessageHelper::DeserializeFunc::~DeserializeFunc </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a8fea37304c922cd8bc5e14dd0022c5ad"></a>
+<a class="anchor" id="a60900891d4046502b0db758b2fba089f"></a>
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class R &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::CallOpGenericRecvMessageHelper::DeserializeFunc::Deserialize </td>
+          <td class="memname">void std::default_delete&lt; <a class="el" href="classgrpc_1_1_client_async_response_reader.html">grpc::ClientAsyncResponseReader</a>&lt; R &gt; &gt;::operator() </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;</td>
-          <td class="paramname"><em>buf</em></td><td>)</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>p</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-
-<p>Implemented in <a class="el" href="classgrpc_1_1_call_op_generic_recv_message_helper_1_1_deserialize_func_type.html#acedc62bfcf8bdb72015a9b17970cde44">grpc::CallOpGenericRecvMessageHelper::DeserializeFuncType&lt; R &gt;</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/impl/codegen/<a class="el" href="codegen_2call_8h_source.html">call.h</a></li>
+<li>include/grpc++/impl/codegen/<a class="el" href="impl_2codegen_2async__unary__call_8h_source.html">async_unary_call.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

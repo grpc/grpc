@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -127,35 +127,25 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_LOAD_REPORTING_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2port__platform_8h.html">grpc/impl/codegen/port_platform.h</a>&gt;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="slice_8h.html">grpc/slice.h</a>&gt;</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="load__reporting_8h.html#aad02df8e03e2f88bf4b0f54beb904d12">   51</a></span>&#160;<span class="preprocessor">#define GRPC_LB_TOKEN_MD_KEY &quot;lb-token&quot;</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="structgrpc__load__reporting__cost__context.html">   54</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgrpc__load__reporting__cost__context.html">grpc_load_reporting_cost_context</a> {</div>
-<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="structgrpc__load__reporting__cost__context.html#a58bccfecffc68233ec834f07613a421b">   55</a></span>&#160;  <a class="code" href="structgrpc__slice.html">grpc_slice</a> *<a class="code" href="structgrpc__load__reporting__cost__context.html#a58bccfecffc68233ec834f07613a421b">values</a>;</div>
-<div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="structgrpc__load__reporting__cost__context.html#a3d52c7f1be9c65ba2b595066ecc540fa">   56</a></span>&#160;  <span class="keywordtype">size_t</span> <a class="code" href="structgrpc__load__reporting__cost__context.html#a3d52c7f1be9c65ba2b595066ecc540fa">values_count</a>;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;} <a class="code" href="load__reporting_8h.html#ad2110f7867820dc21471987555ba3e36">grpc_load_reporting_cost_context</a>;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="load__reporting_8h.html#aad02df8e03e2f88bf4b0f54beb904d12">   50</a></span>&#160;<span class="preprocessor">#define GRPC_LB_TOKEN_MD_KEY &quot;lb-token&quot;</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="load__reporting_8h.html#a26062f16fe0fc3265852717c32be532c">   57</a></span>&#160;<span class="preprocessor">#define GRPC_LB_COST_MD_KEY &quot;lb-cost-bin&quot;</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor"></span>}</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_LOAD_REPORTING_H */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="structgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdef"><b>Definition:</b> slice.h:90</div></div>
-<div class="ttc" id="structgrpc__load__reporting__cost__context_html_a3d52c7f1be9c65ba2b595066ecc540fa"><div class="ttname"><a href="structgrpc__load__reporting__cost__context.html#a3d52c7f1be9c65ba2b595066ecc540fa">grpc_load_reporting_cost_context::values_count</a></div><div class="ttdeci">size_t values_count</div><div class="ttdef"><b>Definition:</b> load_reporting.h:56</div></div>
-<div class="ttc" id="structgrpc__load__reporting__cost__context_html_a58bccfecffc68233ec834f07613a421b"><div class="ttname"><a href="structgrpc__load__reporting__cost__context.html#a58bccfecffc68233ec834f07613a421b">grpc_load_reporting_cost_context::values</a></div><div class="ttdeci">grpc_slice * values</div><div class="ttdef"><b>Definition:</b> load_reporting.h:55</div></div>
-<div class="ttc" id="structgrpc__load__reporting__cost__context_html"><div class="ttname"><a href="structgrpc__load__reporting__cost__context.html">grpc_load_reporting_cost_context</a></div><div class="ttdoc">A sequence of values for load reporting purposes. </div><div class="ttdef"><b>Definition:</b> load_reporting.h:54</div></div>
-<div class="ttc" id="load__reporting_8h_html_ad2110f7867820dc21471987555ba3e36"><div class="ttname"><a href="load__reporting_8h.html#ad2110f7867820dc21471987555ba3e36">grpc_load_reporting_cost_context</a></div><div class="ttdeci">struct grpc_load_reporting_cost_context grpc_load_reporting_cost_context</div><div class="ttdoc">A sequence of values for load reporting purposes. </div></div>
-<div class="ttc" id="slice_8h_html"><div class="ttname"><a href="slice_8h.html">slice.h</a></div></div>
 <div class="ttc" id="impl_2codegen_2port__platform_8h_html"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html">port_platform.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

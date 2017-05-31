@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -103,13 +103,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__tag.html">census_tag</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A tag is a key:value pair.  <a href="structcensus__tag.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__context__status.html">census_context_status</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An instance of this structure is kept by every context, and records the basic information associated with the creation of that context.  <a href="structcensus__context__status.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__context__iterator.html">census_context_iterator</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Structure used for iterating over the tags in a context.  <a href="structcensus__context__iterator.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__timestamp.html">census_timestamp</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This structure represents a timestamp as used by census to record the time at which an operation begins.  <a href="structcensus__timestamp.html#details">More...</a><br/></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The concept of "operation" is a fundamental concept for Census.  <a href="structcensus__timestamp.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__rpc__name__info.html">census_rpc_name_info</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represent functions to map RPC name ID to service/method names.  <a href="structcensus__rpc__name__info.html#details">More...</a><br/></td></tr>
@@ -118,21 +121,26 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Trace record.  <a href="structcensus__trace__record.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__value.html">census_value</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A single value to be recorded comprises two parts: an ID for the particular resource and the value to be recorded against it.  <a href="structcensus__value.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:ac3fa459cd0c1621953c46b07bac2faa7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac3fa459cd0c1621953c46b07bac2faa7">CENSUS_MAX_TAG_KV_LEN</a>&#160;&#160;&#160;255</td></tr>
+<tr class="memdesc:ac3fa459cd0c1621953c46b07bac2faa7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum length of a tag's key or value.  <a href="#ac3fa459cd0c1621953c46b07bac2faa7">More...</a><br/></td></tr>
 <tr class="separator:ac3fa459cd0c1621953c46b07bac2faa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a487ca94a4b349f1a7d3d28a21b154f4e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a487ca94a4b349f1a7d3d28a21b154f4e">CENSUS_MAX_PROPAGATED_TAGS</a>&#160;&#160;&#160;255</td></tr>
+<tr class="memdesc:a487ca94a4b349f1a7d3d28a21b154f4e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum number of propagatable tags.  <a href="#a487ca94a4b349f1a7d3d28a21b154f4e">More...</a><br/></td></tr>
 <tr class="separator:a487ca94a4b349f1a7d3d28a21b154f4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac116a5843bd29f43a949c56ef5ae619a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac116a5843bd29f43a949c56ef5ae619a">CENSUS_TAG_PROPAGATE</a>&#160;&#160;&#160;1 /* Tag should be propagated over RPC */</td></tr>
+<tr class="memitem:ac116a5843bd29f43a949c56ef5ae619a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac116a5843bd29f43a949c56ef5ae619a">CENSUS_TAG_PROPAGATE</a>&#160;&#160;&#160;1 /** Tag should be propagated over RPC */</td></tr>
+<tr class="memdesc:ac116a5843bd29f43a949c56ef5ae619a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tag flags.  <a href="#ac116a5843bd29f43a949c56ef5ae619a">More...</a><br/></td></tr>
 <tr class="separator:ac116a5843bd29f43a949c56ef5ae619a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab3c3a66a8c2f392d4a14e75dc44e8931"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ab3c3a66a8c2f392d4a14e75dc44e8931">CENSUS_TAG_STATS</a>&#160;&#160;&#160;2     /* Tag will be used for statistics aggregation */</td></tr>
+<tr class="memitem:ab3c3a66a8c2f392d4a14e75dc44e8931"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ab3c3a66a8c2f392d4a14e75dc44e8931">CENSUS_TAG_STATS</a>&#160;&#160;&#160;2    /** Tag will be used for statistics aggregation */</td></tr>
 <tr class="separator:ab3c3a66a8c2f392d4a14e75dc44e8931"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a070dd8c57a1a31ced0c7ead5a5910df7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a070dd8c57a1a31ced0c7ead5a5910df7">CENSUS_TAG_RESERVED</a>&#160;&#160;&#160;4  /* Reserved for internal use. */</td></tr>
+<tr class="memitem:a070dd8c57a1a31ced0c7ead5a5910df7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a070dd8c57a1a31ced0c7ead5a5910df7">CENSUS_TAG_RESERVED</a>&#160;&#160;&#160;4 /** Reserved for internal use. */</td></tr>
 <tr class="separator:a070dd8c57a1a31ced0c7ead5a5910df7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afa3a818c132d55bb1f0afb7442d8f848"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#afa3a818c132d55bb1f0afb7442d8f848">CENSUS_TAG_IS_PROPAGATED</a>(flags)&#160;&#160;&#160;(flags &amp; <a class="el" href="census_8h.html#ac116a5843bd29f43a949c56ef5ae619a">CENSUS_TAG_PROPAGATE</a>)</td></tr>
+<tr class="memdesc:afa3a818c132d55bb1f0afb7442d8f848"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag values 4,8,16,32,64,128 are reserved for future/internal use.  <a href="#afa3a818c132d55bb1f0afb7442d8f848">More...</a><br/></td></tr>
 <tr class="separator:afa3a818c132d55bb1f0afb7442d8f848"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaca94b54b685c481236dfb913fef8b4c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aaca94b54b685c481236dfb913fef8b4c">CENSUS_TAG_IS_STATS</a>(flags)&#160;&#160;&#160;(flags &amp; <a class="el" href="census_8h.html#ab3c3a66a8c2f392d4a14e75dc44e8931">CENSUS_TAG_STATS</a>)</td></tr>
 <tr class="separator:aaca94b54b685c481236dfb913fef8b4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -158,10 +166,12 @@ Enumerations</h2></td></tr>
 &#160;&#160;<a class="el" href="census_8h.html#abe92e59c22481b0de3742673cbbb1bf8aba96a94fb7af8cf1144ca14edc0b1f0c">CENSUS_FEATURE_ALL</a>
 <br/>
  }</td></tr>
+<tr class="memdesc:abe92e59c22481b0de3742673cbbb1bf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">RPC-internal Census API's.  <a href="census_8h.html#abe92e59c22481b0de3742673cbbb1bf8">More...</a><br/></td></tr>
 <tr class="separator:abe92e59c22481b0de3742673cbbb1bf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad4ff7b1db813ee5318871121bb4281cc"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ad4ff7b1db813ee5318871121bb4281cc">census_trace_mask_values</a> { <a class="el" href="census_8h.html#ad4ff7b1db813ee5318871121bb4281cca21afa23a531e5d54e70d44ec3c18cfb3">CENSUS_TRACE_MASK_NONE</a> = 0, 
 <a class="el" href="census_8h.html#ad4ff7b1db813ee5318871121bb4281ccaadcf28b76de06181051506c96996255a">CENSUS_TRACE_MASK_IS_SAMPLED</a> = 1
  }</td></tr>
+<tr class="memdesc:ad4ff7b1db813ee5318871121bb4281cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Distributed traces can have a number of options.  <a href="census_8h.html#ad4ff7b1db813ee5318871121bb4281cc">More...</a><br/></td></tr>
 <tr class="separator:ad4ff7b1db813ee5318871121bb4281cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
@@ -178,21 +188,29 @@ Functions</h2></td></tr>
 <tr class="memdesc:a6964222b3c20833883d7d05ab6b6e67e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the census features currently enabled.  <a href="#a6964222b3c20833883d7d05ab6b6e67e">More...</a><br/></td></tr>
 <tr class="separator:a6964222b3c20833883d7d05ab6b6e67e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a63289de665c241f31e9c32666310ec3a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a63289de665c241f31e9c32666310ec3a">census_context_create</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *base, const <a class="el" href="structcensus__tag.html">census_tag</a> *tags, int ntags, <a class="el" href="structcensus__context__status.html">census_context_status</a> const **status)</td></tr>
+<tr class="memdesc:a63289de665c241f31e9c32666310ec3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new context, adding and removing tags from an existing context.  <a href="#a63289de665c241f31e9c32666310ec3a">More...</a><br/></td></tr>
 <tr class="separator:a63289de665c241f31e9c32666310ec3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e29f72138aac3eac75ef13a7bd25560"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a6e29f72138aac3eac75ef13a7bd25560">census_context_destroy</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context)</td></tr>
+<tr class="memdesc:a6e29f72138aac3eac75ef13a7bd25560"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy a context.  <a href="#a6e29f72138aac3eac75ef13a7bd25560">More...</a><br/></td></tr>
 <tr class="separator:a6e29f72138aac3eac75ef13a7bd25560"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a12077dda197a10bf2198203eac1a348a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> const <br class="typebreak"/>
 <a class="el" href="structcensus__context__status.html">census_context_status</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a12077dda197a10bf2198203eac1a348a">census_context_get_status</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context)</td></tr>
+<tr class="memdesc:a12077dda197a10bf2198203eac1a348a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a pointer to the original status from the context creation.  <a href="#a12077dda197a10bf2198203eac1a348a">More...</a><br/></td></tr>
 <tr class="separator:a12077dda197a10bf2198203eac1a348a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac19f91fc3442073217752ce4abf5dfc4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac19f91fc3442073217752ce4abf5dfc4">census_context_initialize_iterator</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, <a class="el" href="structcensus__context__iterator.html">census_context_iterator</a> *iterator)</td></tr>
+<tr class="memdesc:ac19f91fc3442073217752ce4abf5dfc4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize a census_tag_iterator.  <a href="#ac19f91fc3442073217752ce4abf5dfc4">More...</a><br/></td></tr>
 <tr class="separator:ac19f91fc3442073217752ce4abf5dfc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a756d86b68b73a9ad9dacdfdaeb2a865c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a756d86b68b73a9ad9dacdfdaeb2a865c">census_context_next_tag</a> (<a class="el" href="structcensus__context__iterator.html">census_context_iterator</a> *iterator, <a class="el" href="structcensus__tag.html">census_tag</a> *tag)</td></tr>
+<tr class="memdesc:a756d86b68b73a9ad9dacdfdaeb2a865c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the contents of the "next" tag in the context.  <a href="#a756d86b68b73a9ad9dacdfdaeb2a865c">More...</a><br/></td></tr>
 <tr class="separator:a756d86b68b73a9ad9dacdfdaeb2a865c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a610c654980b00da26ed7b2becca79f94"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a610c654980b00da26ed7b2becca79f94">census_context_get_tag</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, const char *key, <a class="el" href="structcensus__tag.html">census_tag</a> *tag)</td></tr>
+<tr class="memdesc:a610c654980b00da26ed7b2becca79f94"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a context tag by key.  <a href="#a610c654980b00da26ed7b2becca79f94">More...</a><br/></td></tr>
 <tr class="separator:a610c654980b00da26ed7b2becca79f94"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a054424f7ca74d513c4dba55dd20d92f2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a054424f7ca74d513c4dba55dd20d92f2">census_context_encode</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, char *buffer, size_t buf_size)</td></tr>
+<tr class="memdesc:a054424f7ca74d513c4dba55dd20d92f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tag set encode/decode functionality.  <a href="#a054424f7ca74d513c4dba55dd20d92f2">More...</a><br/></td></tr>
 <tr class="separator:a054424f7ca74d513c4dba55dd20d92f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaccea127635aaf9200e776eff7c7ba5d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aaccea127635aaf9200e776eff7c7ba5d">census_context_decode</a> (const char *buffer, size_t size)</td></tr>
+<tr class="memdesc:aaccea127635aaf9200e776eff7c7ba5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode context buffer encoded with <a class="el" href="census_8h.html#a054424f7ca74d513c4dba55dd20d92f2" title="Tag set encode/decode functionality. ">census_context_encode()</a>.  <a href="#aaccea127635aaf9200e776eff7c7ba5d">More...</a><br/></td></tr>
 <tr class="separator:aaccea127635aaf9200e776eff7c7ba5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a2dfc973cd259d93b0901c8b32e8f34"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a2a2dfc973cd259d93b0901c8b32e8f34">census_trace_mask</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context)</td></tr>
 <tr class="memdesc:a2a2dfc973cd259d93b0901c8b32e8f34"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current trace mask associated with this context.  <a href="#a2a2dfc973cd259d93b0901c8b32e8f34">More...</a><br/></td></tr>
@@ -231,12 +249,16 @@ Functions</h2></td></tr>
 <tr class="memdesc:a22eb7df4c9b232d8962592d738007ecb"><td class="mdescLeft">&#160;</td><td class="mdescRight">End a scan previously started by <a class="el" href="census_8h.html#ad78c02761da0d8a7a70bf4add263f91f" title="Start a scan of existing trace records. ">census_trace_scan_start()</a>  <a href="#a22eb7df4c9b232d8962592d738007ecb">More...</a><br/></td></tr>
 <tr class="separator:a22eb7df4c9b232d8962592d738007ecb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a689ea02b5b0907f69ecb0baee371aa55"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a689ea02b5b0907f69ecb0baee371aa55">census_define_resource</a> (const uint8_t *resource_pb, size_t resource_pb_size)</td></tr>
+<tr class="memdesc:a689ea02b5b0907f69ecb0baee371aa55"><td class="mdescLeft">&#160;</td><td class="mdescRight">Core stats collection API's.  <a href="#a689ea02b5b0907f69ecb0baee371aa55">More...</a><br/></td></tr>
 <tr class="separator:a689ea02b5b0907f69ecb0baee371aa55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac68fd1dbb1767d8e080ec22f4767be89"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac68fd1dbb1767d8e080ec22f4767be89">census_delete_resource</a> (int32_t resource_id)</td></tr>
+<tr class="memdesc:ac68fd1dbb1767d8e080ec22f4767be89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Delete a resource created by <a class="el" href="census_8h.html#a689ea02b5b0907f69ecb0baee371aa55" title="Core stats collection API&#39;s. ">census_define_resource()</a>.  <a href="#ac68fd1dbb1767d8e080ec22f4767be89">More...</a><br/></td></tr>
 <tr class="separator:ac68fd1dbb1767d8e080ec22f4767be89"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb7f7e4f427236d00446d2eb836c5252"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aeb7f7e4f427236d00446d2eb836c5252">census_resource_id</a> (const char *name)</td></tr>
+<tr class="memdesc:aeb7f7e4f427236d00446d2eb836c5252"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine the id of a resource, given its name.  <a href="#aeb7f7e4f427236d00446d2eb836c5252">More...</a><br/></td></tr>
 <tr class="separator:aeb7f7e4f427236d00446d2eb836c5252"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a26acfcba7f6b3f2b86d0a7fdc45e32ba"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a26acfcba7f6b3f2b86d0a7fdc45e32ba">census_record_values</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, <a class="el" href="structcensus__value.html">census_value</a> *values, size_t nvalues)</td></tr>
+<tr class="memdesc:a26acfcba7f6b3f2b86d0a7fdc45e32ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Record new usage values against the given context.  <a href="#a26acfcba7f6b3f2b86d0a7fdc45e32ba">More...</a><br/></td></tr>
 <tr class="separator:a26acfcba7f6b3f2b86d0a7fdc45e32ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
@@ -250,6 +272,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Maximum number of propagatable tags. </p>
+
 </div>
 </div>
 <a class="anchor" id="ac3fa459cd0c1621953c46b07bac2faa7"></a>
@@ -261,6 +285,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Maximum length of a tag's key or value. </p>
 
 </div>
 </div>
@@ -277,6 +303,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Flag values 4,8,16,32,64,128 are reserved for future/internal use. </p>
+<p>Clients should not use or rely on their values. </p>
 
 </div>
 </div>
@@ -301,10 +330,12 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CENSUS_TAG_PROPAGATE&#160;&#160;&#160;1 /* Tag should be propagated over RPC */</td>
+          <td class="memname">#define CENSUS_TAG_PROPAGATE&#160;&#160;&#160;1 /** Tag should be propagated over RPC */</td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Tag flags. </p>
 
 </div>
 </div>
@@ -313,7 +344,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CENSUS_TAG_RESERVED&#160;&#160;&#160;4  /* Reserved for internal use. */</td>
+          <td class="memname">#define CENSUS_TAG_RESERVED&#160;&#160;&#160;4 /** Reserved for internal use. */</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -325,7 +356,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CENSUS_TAG_STATS&#160;&#160;&#160;2     /* Tag will be used for statistics aggregation */</td>
+          <td class="memname">#define CENSUS_TAG_STATS&#160;&#160;&#160;2    /** Tag will be used for statistics aggregation */</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -382,16 +413,23 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>RPC-internal Census API's. </p>
+<p>These are designed to be generic enough that they can (ultimately) be used in many different RPC systems (with differing implementations). Identify census features that can be enabled via <a class="el" href="census_8h.html#a850c1ca105245a514e76519d5edaad2c" title="Shutdown and startup census subsystem. ">census_initialize()</a>. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="abe92e59c22481b0de3742673cbbb1bf8aac1986834f37851b8d899c4a08c8e3ab"></a>CENSUS_FEATURE_NONE</em>&#160;</td><td class="fielddoc">
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="abe92e59c22481b0de3742673cbbb1bf8ab0722326e730113d5be97f643c3e6718"></a>CENSUS_FEATURE_TRACING</em>&#160;</td><td class="fielddoc">
+<p>Do not enable census. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="abe92e59c22481b0de3742673cbbb1bf8a84c772b868e53ee3487c7bfc8e8b2f1a"></a>CENSUS_FEATURE_STATS</em>&#160;</td><td class="fielddoc">
+<p>Enable census tracing. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="abe92e59c22481b0de3742673cbbb1bf8a4808bff624e2377596b86a6f58ab04b5"></a>CENSUS_FEATURE_CPU</em>&#160;</td><td class="fielddoc">
+<p>Enable Census stats collection. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="abe92e59c22481b0de3742673cbbb1bf8aba96a94fb7af8cf1144ca14edc0b1f0c"></a>CENSUS_FEATURE_ALL</em>&#160;</td><td class="fielddoc">
+<p>Enable Census CPU usage collection. </p>
 </td></tr>
 </table>
 
@@ -406,10 +444,13 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Distributed traces can have a number of options. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="ad4ff7b1db813ee5318871121bb4281cca21afa23a531e5d54e70d44ec3c18cfb3"></a>CENSUS_TRACE_MASK_NONE</em>&#160;</td><td class="fielddoc">
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="ad4ff7b1db813ee5318871121bb4281ccaadcf28b76de06181051506c96996255a"></a>CENSUS_TRACE_MASK_IS_SAMPLED</em>&#160;</td><td class="fielddoc">
+<p>Default, empty flags. </p>
 </td></tr>
 </table>
 
@@ -452,6 +493,19 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Create a new context, adding and removing tags from an existing context. </p>
+<p>This will copy all tags from the 'tags' input, so it is recommended to add as many tags in a single operation as is practical for the client. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">base</td><td>Base context to build upon. Can be NULL. </td></tr>
+    <tr><td class="paramname">tags</td><td>A set of tags to be added/changed/deleted. Tags with keys that are in 'tags', but not 'base', are added to the context. Keys that are in both 'tags' and 'base' will have their value/flags modified. Tags with keys in both, but with NULL values, will be deleted from the context. Tags with invalid (too long or short) keys or values will be ignored. If adding a tag will result in more than CENSUS_MAX_PROPAGATED_TAGS in either binary or non-binary tags, they will be ignored, as will deletions of tags that don't exist. </td></tr>
+    <tr><td class="paramname">ntags</td><td>number of tags in 'tags' </td></tr>
+    <tr><td class="paramname">status</td><td>If not NULL, will return a pointer to a <a class="el" href="structcensus__context__status.html" title="An instance of this structure is kept by every context, and records the basic information associated ...">census_context_status</a> structure containing information about the new context and status of the tags used in its creation. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A new, valid census_context. </dd></dl>
+
 </div>
 </div>
 <a class="anchor" id="aaccea127635aaf9200e776eff7c7ba5d"></a>
@@ -478,6 +532,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Decode context buffer encoded with <a class="el" href="census_8h.html#a054424f7ca74d513c4dba55dd20d92f2" title="Tag set encode/decode functionality. ">census_context_encode()</a>. </p>
+<p>Returns NULL if there is an error in parsing either buffer. </p>
+
 </div>
 </div>
 <a class="anchor" id="a6e29f72138aac3eac75ef13a7bd25560"></a>
@@ -493,6 +550,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Destroy a context. </p>
+<p>Once this function has been called, the context cannot be reused. </p>
 
 </div>
 </div>
@@ -526,6 +586,18 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Tag set encode/decode functionality. </p>
+<p>These functions are intended for use by RPC systems only, for purposes of transmitting/receiving contexts. Encode a context into a buffer. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">context</td><td>context to be encoded </td></tr>
+    <tr><td class="paramname">buffer</td><td>buffer into which the context will be encoded. </td></tr>
+    <tr><td class="paramname">buf_size</td><td>number of available bytes in buffer. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The number of buffer bytes consumed for the encoded context, or zero if the buffer was of insufficient size. </dd></dl>
+
 </div>
 </div>
 <a class="anchor" id="a12077dda197a10bf2198203eac1a348a"></a>
@@ -541,6 +613,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Get a pointer to the original status from the context creation. </p>
 
 </div>
 </div>
@@ -574,6 +648,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Get a context tag by key. </p>
+<p>Returns 0 if the key is not present. </p>
+
 </div>
 </div>
 <a class="anchor" id="ac19f91fc3442073217752ce4abf5dfc4"></a>
@@ -599,6 +676,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Initialize a census_tag_iterator. </p>
+<p>Must be called before first use. </p>
 
 </div>
 </div>
@@ -626,6 +706,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Get the contents of the "next" tag in the context. </p>
+<p>If there are no more tags, returns 0 (and 'tag' contents will be unchanged), otherwise returns 1. </p>
+
 </div>
 </div>
 <a class="anchor" id="a689ea02b5b0907f69ecb0baee371aa55"></a>
@@ -652,6 +735,10 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Core stats collection API's. </p>
+<p>The following concepts are used: Resource: Users record measurements for a single resource. Examples include RPC latency, CPU seconds consumed, and bytes transmitted. Aggregation: An aggregation of a set of measurements. Census supports the following aggregation types: Distribution - statistical distribution information, used for recording average, standard deviation etc. Can include a histogram. Interval - a count of events that happen in a rolling time window. View: A view is a combination of a Resource, a set of tag keys and an Aggregation. When a measurement for a Resource matches the View tags, it is recorded (for each unique set of tag values) using the Aggregation type. Each resource can have an arbitrary number of views by which it will be broken down.</p>
+<p>Census uses protos to define each of the above, and output results. This ensures unification across the different language and runtime implementations. The proto definitions can be found in src/proto/census. Define a new resource. <code>resource_pb</code> should contain an encoded Resource protobuf, <code>resource_pb_size</code> being the size of the buffer. Returns a -ve value on error, or a positive (&gt;= 0) resource id (for use in <a class="el" href="census_8h.html#ac68fd1dbb1767d8e080ec22f4767be89" title="Delete a resource created by census_define_resource(). ">census_delete_resource()</a> and <a class="el" href="census_8h.html#a26acfcba7f6b3f2b86d0a7fdc45e32ba" title="Record new usage values against the given context. ">census_record_values()</a>). In order to be valid, a resource must have a name, and at least one numerator in its unit type. The resource name must be unique, and an error will be returned if it is not. </p>
+
 </div>
 </div>
 <a class="anchor" id="ac68fd1dbb1767d8e080ec22f4767be89"></a>
@@ -667,6 +754,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Delete a resource created by <a class="el" href="census_8h.html#a689ea02b5b0907f69ecb0baee371aa55" title="Core stats collection API&#39;s. ">census_define_resource()</a>. </p>
 
 </div>
 </div>
@@ -799,6 +888,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Record new usage values against the given context. </p>
+
 </div>
 </div>
 <a class="anchor" id="aeb7f7e4f427236d00446d2eb836c5252"></a>
@@ -814,6 +905,9 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Determine the id of a resource, given its name. </p>
+<p>returns -1 if the resource does not exist. </p>
 
 </div>
 </div>
@@ -1224,7 +1318,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

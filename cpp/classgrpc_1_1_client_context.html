@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -99,6 +99,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>A <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> allows the person implementing a service client to:  
+ <a href="classgrpc_1_1_client_context.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="impl_2codegen_2client__context_8h_source.html">client_context.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
@@ -131,7 +134,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the deadline for the client call.  <a href="#ad4e16866fee3f6ee5a10efb5be6f4da6">More...</a><br/></td></tr>
 <tr class="separator:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afac227b0dca4705b50b0b393226d8c48"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#afac227b0dca4705b50b0b393226d8c48">set_idempotent</a> (bool idempotent)</td></tr>
-<tr class="memdesc:afac227b0dca4705b50b0b393226d8c48"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Set this request to be idempotent.  <a href="#afac227b0dca4705b50b0b393226d8c48">More...</a><br/></td></tr>
+<tr class="memdesc:afac227b0dca4705b50b0b393226d8c48"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Indicate that this request is idempotent.  <a href="#afac227b0dca4705b50b0b393226d8c48">More...</a><br/></td></tr>
 <tr class="separator:afac227b0dca4705b50b0b393226d8c48"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a09c0b94c1542706eb5a518dab8425ebc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a09c0b94c1542706eb5a518dab8425ebc">set_cacheable</a> (bool cacheable)</td></tr>
 <tr class="memdesc:a09c0b94c1542706eb5a518dab8425ebc"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Set this request to be cacheable.  <a href="#a09c0b94c1542706eb5a518dab8425ebc">More...</a><br/></td></tr>
@@ -146,7 +149,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a7dfc4e022f2f160f430f000aec402f5c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the deadline for the client call.  <a href="#a7dfc4e022f2f160f430f000aec402f5c">More...</a><br/></td></tr>
 <tr class="separator:a7dfc4e022f2f160f430f000aec402f5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70c181649672b0656e36b1373a2fc0c0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a70c181649672b0656e36b1373a2fc0c0">raw_deadline</a> () const </td></tr>
-<tr class="memdesc:a70c181649672b0656e36b1373a2fc0c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a <em><a class="el" href="structgpr__timespec.html">gpr_timespec</a></em> representation of the client call's deadline.  <a href="#a70c181649672b0656e36b1373a2fc0c0">More...</a><br/></td></tr>
+<tr class="memdesc:a70c181649672b0656e36b1373a2fc0c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a <em><a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec. ">gpr_timespec</a></em> representation of the client call's deadline.  <a href="#a70c181649672b0656e36b1373a2fc0c0">More...</a><br/></td></tr>
 <tr class="separator:a70c181649672b0656e36b1373a2fc0c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43bb17bbd6ab49face3793e8883c5682"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a43bb17bbd6ab49face3793e8883c5682">set_authority</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;authority)</td></tr>
 <tr class="memdesc:a43bb17bbd6ab49face3793e8883c5682"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the per call authority header (see <a href="https://tools.ietf.org/html/rfc7540#section-8.1.2.3">https://tools.ietf.org/html/rfc7540#section-8.1.2.3</a>).  <a href="#a43bb17bbd6ab49face3793e8883c5682">More...</a><br/></td></tr>
@@ -176,16 +179,17 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a958acd964fe9feb32bca775c96ad5117"><td class="memItemLeft" align="right" valign="top">struct census_context *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a958acd964fe9feb32bca775c96ad5117">census_context</a> () const </td></tr>
 <tr class="separator:a958acd964fe9feb32bca775c96ad5117"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abd0f6715c30287b75288015eee628984"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#abd0f6715c30287b75288015eee628984">TryCancel</a> ()</td></tr>
-<tr class="memdesc:abd0f6715c30287b75288015eee628984"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send a best-effort out-of-band cancel.  <a href="#abd0f6715c30287b75288015eee628984">More...</a><br/></td></tr>
+<tr class="memdesc:abd0f6715c30287b75288015eee628984"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send a best-effort out-of-band cancel on the call associated with this client context.  <a href="#abd0f6715c30287b75288015eee628984">More...</a><br/></td></tr>
 <tr class="separator:abd0f6715c30287b75288015eee628984"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9fba10daf95815d2e1e94fa886a00459"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a9fba10daf95815d2e1e94fa886a00459">c_call</a> ()</td></tr>
+<tr class="memdesc:a9fba10daf95815d2e1e94fa886a00459"><td class="mdescLeft">&#160;</td><td class="mdescRight">Should be used for framework-level extensions only.  <a href="#a9fba10daf95815d2e1e94fa886a00459">More...</a><br/></td></tr>
 <tr class="separator:a9fba10daf95815d2e1e94fa886a00459"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a88cbf7ae863d5fcb382c9e22160f4707"><td class="memItemLeft" align="right" valign="top">static std::unique_ptr<br class="typebreak"/>
 &lt; <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a88cbf7ae863d5fcb382c9e22160f4707">FromServerContext</a> (const <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> &amp;server_context, <a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a> options=<a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a>())</td></tr>
-<tr class="memdesc:a88cbf7ae863d5fcb382c9e22160f4707"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (.  <a href="#a88cbf7ae863d5fcb382c9e22160f4707">More...</a><br/></td></tr>
+<tr class="memdesc:a88cbf7ae863d5fcb382c9e22160f4707"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (.  <a href="#a88cbf7ae863d5fcb382c9e22160f4707">More...</a><br/></td></tr>
 <tr class="separator:a88cbf7ae863d5fcb382c9e22160f4707"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad329c9fdd77093361518ef8ace1ee1f0"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ad329c9fdd77093361518ef8ace1ee1f0">SetGlobalCallbacks</a> (<a class="el" href="classgrpc_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a> *callbacks)</td></tr>
 <tr class="separator:ad329c9fdd77093361518ef8ace1ee1f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -223,9 +227,20 @@ Friends</h2></td></tr>
 <tr class="separator:a4b00162a9bd86e07669f2af67f85c73a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4aac0a120f3498d1151460ef89ce8446"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
 <tr class="memitem:a4aac0a120f3498d1151460ef89ce8446"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a4aac0a120f3498d1151460ef89ce8446">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
+<tr class="memdesc:a4aac0a120f3498d1151460ef89ce8446"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper that performs a blocking unary call.  <a href="#a4aac0a120f3498d1151460ef89ce8446">More...</a><br/></td></tr>
 <tr class="separator:a4aac0a120f3498d1151460ef89ce8446"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> allows the person implementing a service client to: </p>
+<ul>
+<li>Add custom metadata key-value pairs that will propagated to the server side.</li>
+<li>Control call settings such as compression and authentication.</li>
+<li>Initial and trailing metadata coming from the server.</li>
+<li>Get performance metrics (ie, census).</li>
+</ul>
+<p>Context settings are only relevant to the call they are invoked with, that is to say, they aren't sticky. Some of these settings, such as the compression options, can be made persistant at channel construction time (see <em><a class="el" href="namespacegrpc.html#a4a5c8a2c77389604feaa5d38cdd7b8d3" title="Create a new custom Channel pointing to target. ">grpc::CreateCustomChannel</a></em>).</p>
+<dl class="section warning"><dt>Warning</dt><dd><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> instances should <em>not</em> be reused across rpcs. </dd></dl>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="acabbcf3c160a0628da8a9274b10f54b9"></a>
 <div class="memitem">
 <div class="memproto">
@@ -282,12 +297,12 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Add the (<em>meta_key</em>, <em>meta_value</em>) pair to the metadata associated with a client call. </p>
-<p>These are made available at the server side by the <em><a class="el" href="classgrpc_1_1_server_context.html#a090072163b57931e24bc9583b478f997">grpc::ServerContext::client_metadata()</a></em> method.</p>
+<p>These are made available at the server side by the <em><a class="el" href="classgrpc_1_1_server_context.html#a090072163b57931e24bc9583b478f997" title="Return a collection of initial metadata key-value pairs sent from the client. ">grpc::ServerContext::client_metadata()</a></em> method.</p>
 <dl class="section warning"><dt>Warning</dt><dd>This method should only be called before invoking the rpc.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">meta_key</td><td>The metadata key. If <em>meta_value</em> is binary data, it must end in "-bin". </td></tr>
-    <tr><td class="paramname">meta_value</td><td>The metadata value. If its value is binary, it must be base64-encoding (see <a href="https://tools.ietf.org/html/rfc4648#section-4">https://tools.ietf.org/html/rfc4648#section-4</a>) and <em>meta_key</em> must end in "-bin". </td></tr>
+    <tr><td class="paramname">meta_value</td><td>The metadata value. If its value is binary, the key name must end in "-bin". </td></tr>
   </table>
   </dd>
 </dl>
@@ -340,6 +355,9 @@ Friends</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Should be used for framework-level extensions only. </p>
+<p>Applications never need to call this method. </p>
 
 </div>
 </div>
@@ -448,7 +466,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Create a new <em><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (. </p>
+<p>Create a new <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (. </p>
 <dl class="section see"><dt>See Also</dt><dd><a class="el" href="classgrpc_1_1_propagation_options.html" title="Options for ClientContext::FromServerContext specifying which traits from the ServerContext to propag...">PropagationOptions</a>).</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -457,7 +475,7 @@ Friends</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A newly constructed <em><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a></em> instance based on <em>server_context</em>, with traits propagated (copied) according to <em>options</em>. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A newly constructed <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> instance based on <em>server_context</em>, with traits propagated (copied) according to <em>options</em>. </dd></dl>
 
 </div>
 </div>
@@ -484,7 +502,7 @@ Friends</h2></td></tr>
 
 <p>Return a collection of initial metadata key-value pairs. </p>
 <p>Note that keys may happen more than once (ie, a <em>std::multimap</em> is returned).</p>
-<dl class="section warning"><dt>Warning</dt><dd>This method should only be called after initial metadata has been received. For streaming calls, see <em><a class="el" href="classgrpc_1_1_client_reader_interface.html#aee87dd6e3e8a40853207ceb53b590b19" title="Blocking wait for initial metadata from server. ">ClientReaderInterface::WaitForInitialMetadata()</a></em>.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>This method should only be called after initial metadata has been received. For streaming calls, see <em><a class="el" href="classgrpc_1_1_client_reader_interface.html#aee87dd6e3e8a40853207ceb53b590b19" title="Block to wait for initial metadata from server. ">ClientReaderInterface::WaitForInitialMetadata()</a></em>.</dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>A multimap of initial metadata key-value pairs from the server. </dd></dl>
 
 </div>
@@ -557,7 +575,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Return a <em><a class="el" href="structgpr__timespec.html">gpr_timespec</a></em> representation of the client call's deadline. </p>
+<p>Return a <em><a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec. ">gpr_timespec</a></em> representation of the client call's deadline. </p>
 
 </div>
 </div>
@@ -610,6 +628,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>EXPERIMENTAL: Set this request to be cacheable. </p>
+<p>If set, grpc is free to use the HTTP GET verb for sending the request, with the possibility of receiving a cached respone. </p>
 
 </div>
 </div>
@@ -774,7 +793,9 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>EXPERIMENTAL: Set this request to be idempotent. </p>
+<p>EXPERIMENTAL: Indicate that this request is idempotent. </p>
+<p>By default, RPCs are assumed to <em>not</em> be idempotent.</p>
+<p>If true, the gRPC library assumes that it's safe to initiate this RPC multiple times. </p>
 
 </div>
 </div>
@@ -801,7 +822,7 @@ template&lt;typename T &gt; </div>
 </div><div class="memdoc">
 
 <p>Flag whether the initial metadata should be <em>corked</em>. </p>
-<p>If <em>corked</em> is true, then the initial metadata will be colasced with the write of first message in the stream.</p>
+<p>If <em>corked</em> is true, then the initial metadata will be coalesced with the write of first message in the stream.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">corked</td><td>The flag indicating whether the initial metadata is to be corked or not. </td></tr>
@@ -834,6 +855,7 @@ template&lt;typename T &gt; </div>
 </div><div class="memdoc">
 
 <p>EXPERIMENTAL: Trigger wait-for-ready or not on this request. </p>
+<p>See <a href="https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md">https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md</a>. If set, if an RPC is made when a channel's connectivity state is TRANSIENT_FAILURE or CONNECTING, the call will not "fail fast", and the channel will wait until the channel is READY before making the call. </p>
 
 </div>
 </div>
@@ -874,8 +896,8 @@ template&lt;typename T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Send a best-effort out-of-band cancel. </p>
-<p>The call could be in any stage. e.g. if it is already finished, it may still return success.</p>
+<p>Send a best-effort out-of-band cancel on the call associated with this client context. </p>
+<p>The call could be in any stage; e.g., if it is already finished, it may still return success.</p>
 <p>There is no guarantee the call will be cancelled. </p>
 
 </div>
@@ -1107,6 +1129,8 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Wrapper that performs a blocking unary call. </p>
+
 </div>
 </div>
 <a class="anchor" id="aa7c3f046b48d55b5a82cbee3fd84faa2"></a>
@@ -1175,7 +1199,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

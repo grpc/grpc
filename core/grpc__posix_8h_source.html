@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -150,17 +150,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_GRPC_POSIX_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="grpc__posix_8h_html_a0dd4f6903c0919775d45189990067d14"><div class="ttname"><a href="grpc__posix_8h.html#a0dd4f6903c0919775d45189990067d14">grpc_use_signal</a></div><div class="ttdeci">GRPCAPI void grpc_use_signal(int signum)</div><div class="ttdoc">GRPC Core POSIX library may internally use signals to optimize some work. </div></div>
 <div class="ttc" id="grpc__posix_8h_html_ae01dba904905ef6ad2298f4a85233a41"><div class="ttname"><a href="grpc__posix_8h.html#ae01dba904905ef6ad2298f4a85233a41">grpc_insecure_channel_create_from_fd</a></div><div class="ttdeci">GRPCAPI grpc_channel * grpc_insecure_channel_create_from_fd(const char *target, int fd, const grpc_channel_args *args)</div><div class="ttdoc">Create a client channel to &#39;target&#39; using file descriptor &#39;fd&#39;. </div></div>
-<div class="ttc" id="structgrpc__channel__args_html"><div class="ttname"><a href="structgrpc__channel__args.html">grpc_channel_args</a></div><div class="ttdoc">An array of arguments that can be passed around. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:142</div></div>
-<div class="ttc" id="grpc__types_8h_html_a432bfa6b9f6603643cdf9de8804c254e"><div class="ttname"><a href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a></div><div class="ttdeci">struct grpc_channel grpc_channel</div><div class="ttdoc">The Channel interface allows creation of Call objects. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:77</div></div>
-<div class="ttc" id="grpc__types_8h_html_a2bbbaad8f7a806f6c834b68c5dd916d8"><div class="ttname"><a href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a></div><div class="ttdeci">struct grpc_server grpc_server</div><div class="ttdoc">A server listens to some port and responds to request calls. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:80</div></div>
+<div class="ttc" id="structgrpc__channel__args_html"><div class="ttname"><a href="structgrpc__channel__args.html">grpc_channel_args</a></div><div class="ttdoc">An array of arguments that can be passed around. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:143</div></div>
+<div class="ttc" id="grpc__types_8h_html_a432bfa6b9f6603643cdf9de8804c254e"><div class="ttname"><a href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a></div><div class="ttdeci">struct grpc_channel grpc_channel</div><div class="ttdoc">The Channel interface allows creation of Call objects. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:78</div></div>
+<div class="ttc" id="grpc__types_8h_html_a2bbbaad8f7a806f6c834b68c5dd916d8"><div class="ttname"><a href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a></div><div class="ttdeci">struct grpc_server grpc_server</div><div class="ttdoc">A server listens to some port and responds to request calls. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:81</div></div>
 <div class="ttc" id="grpc__types_8h_html"><div class="ttname"><a href="grpc__types_8h.html">grpc_types.h</a></div></div>
 <div class="ttc" id="grpc__posix_8h_html_a9a7bbbb272a485556cf84f96905b1c78"><div class="ttname"><a href="grpc__posix_8h.html#a9a7bbbb272a485556cf84f96905b1c78">grpc_server_add_insecure_channel_from_fd</a></div><div class="ttdeci">GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server, void *reserved, int fd)</div><div class="ttdoc">Add the connected communication channel based on file descriptor &#39;fd&#39; to the &#39;server&#39;. </div></div>
-<div class="ttc" id="impl_2codegen_2port__platform_8h_html_a2865c3b28ea7db75be4c725adb1edc7d"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a></div><div class="ttdeci">#define GRPCAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:414</div></div>
+<div class="ttc" id="impl_2codegen_2port__platform_8h_html_a2865c3b28ea7db75be4c725adb1edc7d"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a></div><div class="ttdeci">#define GRPCAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:420</div></div>
 <div class="ttc" id="support_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

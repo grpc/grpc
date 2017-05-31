@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,30 +90,46 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Structures</a> &#124;
-<a href="#pub-methods">Public Member Functions</a>  </div>
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::ClientAsyncResponseReader&lt; R &gt; Class Template Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
+<p>Async API for client-side unary RPCs, where the message response received from the server is of type <em>R</em>.  
+ <a href="classgrpc_1_1_client_async_response_reader.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="impl_2codegen_2async__unary__call_8h_source.html">async_unary_call.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a4868e0f82053062c95fea7bd197acadf"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
-<tr class="memitem:a4868e0f82053062c95fea7bd197acadf"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader.html#a4868e0f82053062c95fea7bd197acadf">ClientAsyncResponseReader</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *cq, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const W &amp;request)</td></tr>
-<tr class="separator:a4868e0f82053062c95fea7bd197acadf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a963aefc43f34c9182e265647bbcdb91b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader.html#a963aefc43f34c9182e265647bbcdb91b">ReadInitialMetadata</a> (void *tag)</td></tr>
+<tr class="memdesc:a963aefc43f34c9182e265647bbcdb91b"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <em><a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a676e3a03a61c49a82b630d85bbfd366c" title="Request notification of the reading of initial metadata. ">ClientAsyncResponseReaderInterface::ReadInitialMetadata</a></em> for semantics.  <a href="#a963aefc43f34c9182e265647bbcdb91b">More...</a><br/></td></tr>
 <tr class="separator:a963aefc43f34c9182e265647bbcdb91b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a585dc15817999f82a72120a783800830"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader.html#a585dc15817999f82a72120a783800830">Finish</a> (R *msg, <a class="el" href="classgrpc_1_1_status.html">Status</a> *status, void *tag)</td></tr>
+<tr class="memdesc:a585dc15817999f82a72120a783800830"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <em>ClientAysncResponseReaderInterface::Finish</em> for semantics.  <a href="#a585dc15817999f82a72120a783800830">More...</a><br/></td></tr>
 <tr class="separator:a585dc15817999f82a72120a783800830"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_client_async_response_reader_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_client_async_response_reader_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html">grpc::ClientAsyncResponseReaderInterface&lt; R &gt;</a></td></tr>
 <tr class="memitem:aa97dc1ab6a7160a489d2e555102bf5a0 inherit pub_methods_classgrpc_1_1_client_async_response_reader_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#aa97dc1ab6a7160a489d2e555102bf5a0">~ClientAsyncResponseReaderInterface</a> ()</td></tr>
 <tr class="separator:aa97dc1ab6a7160a489d2e555102bf5a0 inherit pub_methods_classgrpc_1_1_client_async_response_reader_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ace2c5bae351f67dd7dd603fc39513e0a"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
+<tr class="memitem:ace2c5bae351f67dd7dd603fc39513e0a"><td class="memTemplItemLeft" align="right" valign="top">static <a class="el" href="classgrpc_1_1_client_async_response_reader.html">ClientAsyncResponseReader</a> *&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader.html#ace2c5bae351f67dd7dd603fc39513e0a">Create</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *cq, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const W &amp;request)</td></tr>
+<tr class="memdesc:ace2c5bae351f67dd7dd603fc39513e0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a call and write the request out.  <a href="#ace2c5bae351f67dd7dd603fc39513e0a">More...</a><br/></td></tr>
+<tr class="separator:ace2c5bae351f67dd7dd603fc39513e0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad701de69b70727dc0e02f0cc62bb441f"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader.html#ad701de69b70727dc0e02f0cc62bb441f">operator delete</a> (void *ptr, std::size_t size)</td></tr>
+<tr class="separator:ad701de69b70727dc0e02f0cc62bb441f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a4868e0f82053062c95fea7bd197acadf"></a>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><h3>template&lt;class R&gt;<br/>
+class grpc::ClientAsyncResponseReader&lt; R &gt;</h3>
+
+<p>Async API for client-side unary RPCs, where the message response received from the server is of type <em>R</em>. </p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="ace2c5bae351f67dd7dd603fc39513e0a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -125,7 +141,7 @@ template&lt;class W &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_client_async_response_reader.html">grpc::ClientAsyncResponseReader</a>&lt; R &gt;::<a class="el" href="classgrpc_1_1_client_async_response_reader.html">ClientAsyncResponseReader</a> </td>
+          <td class="memname">static <a class="el" href="classgrpc_1_1_client_async_response_reader.html">ClientAsyncResponseReader</a>* <a class="el" href="classgrpc_1_1_client_async_response_reader.html">grpc::ClientAsyncResponseReader</a>&lt; R &gt;::Create </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *&#160;</td>
           <td class="paramname"><em>channel</em>, </td>
@@ -162,14 +178,16 @@ template&lt;class W &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
+<p>Start a call and write the request out. </p>
+<p><em>tag</em> will be notified on <em>cq</em> when the call has been started (i.e. intitial metadata sent) and <em>request</em> has been written out. Note that <em>context</em> will be used to fill in custom initial metadata used to send to the server when starting the call. </p>
+
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a585dc15817999f82a72120a783800830"></a>
 <div class="memitem">
 <div class="memproto">
@@ -210,7 +228,49 @@ template&lt;class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>See <em>ClientAysncResponseReaderInterface::Finish</em> for semantics. </p>
+<p>Side effect:</p>
+<ul>
+<li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> associated with this call is updated with possible initial and trailing metadata sent from the server. </li>
+</ul>
+
 <p>Implements <a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a379b1d7477431729e01cd48cf6fc78bb">grpc::ClientAsyncResponseReaderInterface&lt; R &gt;</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="ad701de69b70727dc0e02f0cc62bb441f"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class R &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void <a class="el" href="classgrpc_1_1_client_async_response_reader.html">grpc::ClientAsyncResponseReader</a>&lt; R &gt;::operator delete </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname"><em>size</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -238,6 +298,12 @@ template&lt;class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>See <em><a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a676e3a03a61c49a82b630d85bbfd366c" title="Request notification of the reading of initial metadata. ">ClientAsyncResponseReaderInterface::ReadInitialMetadata</a></em> for semantics. </p>
+<p>Side effect:</p>
+<ul>
+<li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> associated with this call is updated with possible initial and trailing metadata sent from the serve. </li>
+</ul>
+
 <p>Implements <a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a676e3a03a61c49a82b630d85bbfd366c">grpc::ClientAsyncResponseReaderInterface&lt; R &gt;</a>.</p>
 
 </div>
@@ -248,7 +314,7 @@ template&lt;class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

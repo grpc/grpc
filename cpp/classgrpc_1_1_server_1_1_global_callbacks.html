@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -96,7 +96,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>Global Callbacks.  
+<p>Global callbacks are a set of hooks that are called when server events occur.  
  <a href="classgrpc_1_1_server_1_1_global_callbacks.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="server_8h_source.html">server.h</a>&gt;</code></p>
@@ -117,13 +117,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0700ca2be64da5a8caf318ed99dff165"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_global_callbacks.html#a0700ca2be64da5a8caf318ed99dff165">PreServerStart</a> (<a class="el" href="classgrpc_1_1_server.html">Server</a> *server)</td></tr>
 <tr class="memdesc:a0700ca2be64da5a8caf318ed99dff165"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called before server is started.  <a href="#a0700ca2be64da5a8caf318ed99dff165">More...</a><br/></td></tr>
 <tr class="separator:a0700ca2be64da5a8caf318ed99dff165"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb619af2fa2546007a5e50b441c135f0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_global_callbacks.html#aeb619af2fa2546007a5e50b441c135f0">AddPort</a> (<a class="el" href="classgrpc_1_1_server.html">Server</a> *server, int port)</td></tr>
-<tr class="memdesc:aeb619af2fa2546007a5e50b441c135f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called after a server port is added.  <a href="#aeb619af2fa2546007a5e50b441c135f0">More...</a><br/></td></tr>
-<tr class="separator:aeb619af2fa2546007a5e50b441c135f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81922613de93b0565a282daada8ec12e"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_global_callbacks.html#a81922613de93b0565a282daada8ec12e">AddPort</a> (<a class="el" href="classgrpc_1_1_server.html">Server</a> *server, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr, <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> *creds, int port)</td></tr>
+<tr class="memdesc:a81922613de93b0565a282daada8ec12e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called after a server port is added.  <a href="#a81922613de93b0565a282daada8ec12e">More...</a><br/></td></tr>
+<tr class="separator:a81922613de93b0565a282daada8ec12e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Global Callbacks. </p>
-<p>Can be set exactly once per application to install hooks whenever a server event occurs </p>
+<div class="textblock"><p>Global callbacks are a set of hooks that are called when server events occur. </p>
+<p><em>SetGlobalCallbacks</em> method is used to register the hooks with gRPC. Note that the <em><a class="el" href="classgrpc_1_1_server_1_1_global_callbacks.html" title="Global callbacks are a set of hooks that are called when server events occur. ">GlobalCallbacks</a></em> instance will be shared among all <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a></em> instances in an application and can be set exactly once per application. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a973f3f4d86d6bd0589419d0b798ed12d"></a>
 <div class="memitem">
@@ -149,7 +149,7 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="aeb619af2fa2546007a5e50b441c135f0"></a>
+<a class="anchor" id="a81922613de93b0565a282daada8ec12e"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -161,6 +161,18 @@ Public Member Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc_1_1_server.html">Server</a> *&#160;</td>
           <td class="paramname"><em>server</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramname"><em>addr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> *&#160;</td>
+          <td class="paramname"><em>creds</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -295,7 +307,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

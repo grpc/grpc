@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_27c65f9b8b3387c47015966ca861342b.html">impl</a></li><li class="navelem"><a class="el" href="dir_2d2a7752fa77ea824010e525334e7867.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_1ccb85353bf7ad9eb207254c908f6dd2.html">impl</a></li><li class="navelem"><a class="el" href="dir_d4a1038da1ca7a38aa498ecf659a57c8.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -126,52 +126,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPC_IMPL_CODEGEN_ATM_H</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_IMPL_CODEGEN_ATM_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="comment">/* This interface provides atomic operations and barriers.</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="comment">   It is internal to gpr support code and should not be used outside it.</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment">   If an operation with acquire semantics precedes another memory access by the</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="comment">   same thread, the operation will precede that other access as seen by other</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="comment">   threads.</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">   If an operation with release semantics follows another memory access by the</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">   same thread, the operation will follow that other access as seen by other</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">   threads.</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="comment">   Routines with &quot;acq&quot; or &quot;full&quot; in the name have acquire semantics.  Routines</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="comment">   with &quot;rel&quot; or &quot;full&quot; in the name have release semantics.  Routines with</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="comment">   &quot;no_barrier&quot; in the name have neither acquire not release semantics.</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">   The routines may be implemented as macros.</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment">   // Atomic operations act on an intergral_type gpr_atm that is guaranteed to</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">   // be the same size as a pointer.</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">   typedef intptr_t gpr_atm;</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="comment">   // A memory barrier, providing both acquire and release semantics, but not</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="comment">   // otherwise acting on memory.</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="comment">   void gpr_atm_full_barrier(void);</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="comment">   // Atomically return *p, with acquire semantics.</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="comment">   gpr_atm gpr_atm_acq_load(gpr_atm *p);</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">   // Atomically set *p = value, with release semantics.</span></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">   void gpr_atm_rel_store(gpr_atm *p, gpr_atm value);</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="comment">   // Atomically add delta to *p, and return the old value of *p, with</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="comment">   // the barriers specified.</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="comment">   gpr_atm gpr_atm_no_barrier_fetch_add(gpr_atm *p, gpr_atm delta);</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">   gpr_atm gpr_atm_full_fetch_add(gpr_atm *p, gpr_atm delta);</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">   // Atomically, if *p==o, set *p=n and return non-zero otherwise return 0,</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">   // with the barriers specified if the operation succeeds.</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="comment">   int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n);</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment">   int gpr_atm_acq_cas(gpr_atm *p, gpr_atm o, gpr_atm n);</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="comment">   int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n);</span></div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="comment">   // Atomically, set *p=n and return the old value of *p</span></div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="comment">   gpr_atm gpr_atm_full_xchg(gpr_atm *p, gpr_atm n);</span></div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="comment">*/</span></div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2port__platform_8h.html">grpc/impl/codegen/port_platform.h</a>&gt;</span></div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor">#if defined(GPR_GCC_ATOMIC)</span></div>
@@ -188,7 +142,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                                       <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> min, <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> max);</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_ATM_H */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="impl_2codegen_2atm_8h_html_acd924aafc13347097cc06c74c8b5a68d"><div class="ttname"><a href="impl_2codegen_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">gpr_atm_no_barrier_clamped_add</a></div><div class="ttdeci">gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm *value, gpr_atm delta, gpr_atm min, gpr_atm max)</div><div class="ttdoc">Adds delta to *value, clamping the result to the range specified by min and max. </div></div>
+<div class="ttc" id="impl_2codegen_2atm_8h_html_acd924aafc13347097cc06c74c8b5a68d"><div class="ttname"><a href="impl_2codegen_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">gpr_atm_no_barrier_clamped_add</a></div><div class="ttdeci">gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm *value, gpr_atm delta, gpr_atm min, gpr_atm max)</div><div class="ttdoc">This interface provides atomic operations and barriers. </div></div>
 <div class="ttc" id="impl_2codegen_2atm__gcc__atomic_8h_html_a0a6314f31fcae0666a93961bed98af51"><div class="ttname"><a href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a></div><div class="ttdeci">intptr_t gpr_atm</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:41</div></div>
 <div class="ttc" id="impl_2codegen_2atm__gcc__atomic_8h_html"><div class="ttname"><a href="impl_2codegen_2atm__gcc__atomic_8h.html">atm_gcc_atomic.h</a></div></div>
 <div class="ttc" id="impl_2codegen_2atm__gcc__sync_8h_html"><div class="ttname"><a href="impl_2codegen_2atm__gcc__sync_8h.html">atm_gcc_sync.h</a></div></div>
@@ -197,7 +151,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

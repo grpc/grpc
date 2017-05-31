@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -109,8 +109,10 @@ Macros</h2></td></tr>
 <tr class="memitem:ad46c3fd565d6a24eeb25d1fdc342cb28"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#ad46c3fd565d6a24eeb25d1fdc342cb28">GRPC_X509_PEM_CERT_PROPERTY_NAME</a>&#160;&#160;&#160;&quot;x509_pem_cert&quot;</td></tr>
 <tr class="separator:ad46c3fd565d6a24eeb25d1fdc342cb28"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a48565da473b7c82fa2453798f620fd59"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a48565da473b7c82fa2453798f620fd59">GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR</a>&#160;&#160;&#160;&quot;GRPC_DEFAULT_SSL_ROOTS_FILE_PATH&quot;</td></tr>
+<tr class="memdesc:a48565da473b7c82fa2453798f620fd59"><td class="mdescLeft">&#160;</td><td class="mdescRight">Environment variable that points to the default SSL roots file.  <a href="#a48565da473b7c82fa2453798f620fd59">More...</a><br/></td></tr>
 <tr class="separator:a48565da473b7c82fa2453798f620fd59"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3874f70577fc9fe15fd2c4ce68a36ecd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a3874f70577fc9fe15fd2c4ce68a36ecd">GRPC_GOOGLE_CREDENTIALS_ENV_VAR</a>&#160;&#160;&#160;&quot;GOOGLE_APPLICATION_CREDENTIALS&quot;</td></tr>
+<tr class="memdesc:a3874f70577fc9fe15fd2c4ce68a36ecd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Environment variable that points to the google default application credentials json key or refresh token.  <a href="#a3874f70577fc9fe15fd2c4ce68a36ecd">More...</a><br/></td></tr>
 <tr class="separator:a3874f70577fc9fe15fd2c4ce68a36ecd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
@@ -119,6 +121,7 @@ Enumerations</h2></td></tr>
 <a class="el" href="grpc__security__constants_8h.html#a90c47ae1d8c33145342170fe615fa68caa0fdee0e3b14865c1ee4e7d89a46cc64">GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY</a>, 
 <a class="el" href="grpc__security__constants_8h.html#a90c47ae1d8c33145342170fe615fa68ca0c132ade28f3f56729b82119fc9f8142">GRPC_SSL_ROOTS_OVERRIDE_FAIL</a>
  }</td></tr>
+<tr class="memdesc:a90c47ae1d8c33145342170fe615fa68c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Results for the SSL roots override callback.  <a href="grpc__security__constants_8h.html#a90c47ae1d8c33145342170fe615fa68c">More...</a><br/></td></tr>
 <tr class="separator:a90c47ae1d8c33145342170fe615fa68c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a29ffe63a8bb3b4945ecab42d82758f09"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09">grpc_ssl_client_certificate_request_type</a> { <br/>
 &#160;&#160;<a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09a8bced4a94b58d31fd0718d3203da376f">GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE</a>, 
@@ -142,6 +145,9 @@ Enumerations</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Environment variable that points to the default SSL roots file. </p>
+<p>This file must be a PEM encoded file with all the roots such as the one that can be downloaded from <a href="https://pki.google.com/roots.pem">https://pki.google.com/roots.pem</a>. </p>
+
 </div>
 </div>
 <a class="anchor" id="a3874f70577fc9fe15fd2c4ce68a36ecd"></a>
@@ -153,6 +159,9 @@ Enumerations</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Environment variable that points to the google default application credentials json key or refresh token. </p>
+<p>Used in the grpc_google_default_credentials_create function. </p>
 
 </div>
 </div>
@@ -228,14 +237,28 @@ Enumerations</h2></td></tr>
 </div><div class="memdoc">
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a29ffe63a8bb3b4945ecab42d82758f09a8bced4a94b58d31fd0718d3203da376f"></a>GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE</em>&#160;</td><td class="fielddoc">
+<p>Server does not request client certificate. </p>
+<p>A client can present a self signed or signed certificates if it wishes to do so and they would be accepted. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a29ffe63a8bb3b4945ecab42d82758f09af7c66a36be648bf7e396a145654d79f1"></a>GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY</em>&#160;</td><td class="fielddoc">
+<p>Server requests client certificate but does not enforce that the client presents a certificate. </p>
+<p>If the client presents a certificate, the client authentication is left to the application based on the metadata like certificate etc.</p>
+<p>The key cert pair should still be valid for the SSL connection to be established. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a29ffe63a8bb3b4945ecab42d82758f09a7390ee04c71c633589eefdad872c2048"></a>GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY</em>&#160;</td><td class="fielddoc">
+<p>Server requests client certificate but does not enforce that the client presents a certificate. </p>
+<p>If the client presents a certificate, the client authentication is done by grpc framework (The client needs to either present a signed cert or skip no certificate for a successful connection).</p>
+<p>The key cert pair should still be valid for the SSL connection to be established. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a29ffe63a8bb3b4945ecab42d82758f09a6522b7d489da328ef7c9745039a93f42"></a>GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY</em>&#160;</td><td class="fielddoc">
+<p>Server requests client certificate but enforces that the client presents a certificate. </p>
+<p>If the client presents a certificate, the client authentication is left to the application based on the metadata like certificate etc.</p>
+<p>The key cert pair should still be valid for the SSL connection to be established. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a29ffe63a8bb3b4945ecab42d82758f09a1041edab0ab12d270937f066f1e1ea0d"></a>GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY</em>&#160;</td><td class="fielddoc">
+<p>Server requests client certificate but enforces that the client presents a certificate. </p>
+<p>The cerificate presented by the client is verified by grpc framework (The client needs to present signed certs for a successful connection).</p>
+<p>The key cert pair should still be valid for the SSL connection to be established. </p>
 </td></tr>
 </table>
 
@@ -250,12 +273,15 @@ Enumerations</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Results for the SSL roots override callback. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a90c47ae1d8c33145342170fe615fa68cadc1832235a9330a02cfa9a753eab70bc"></a>GRPC_SSL_ROOTS_OVERRIDE_OK</em>&#160;</td><td class="fielddoc">
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a90c47ae1d8c33145342170fe615fa68caa0fdee0e3b14865c1ee4e7d89a46cc64"></a>GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY</em>&#160;</td><td class="fielddoc">
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a90c47ae1d8c33145342170fe615fa68ca0c132ade28f3f56729b82119fc9f8142"></a>GRPC_SSL_ROOTS_OVERRIDE_FAIL</em>&#160;</td><td class="fielddoc">
+<p>Do not try fallback options. </p>
 </td></tr>
 </table>
 
@@ -264,7 +290,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

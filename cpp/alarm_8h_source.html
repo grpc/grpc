@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -132,7 +132,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="codegen_2grpc__library_8h.html">grpc++/impl/codegen/grpc_library.h</a>&gt;</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2time_8h.html">grpc++/impl/codegen/time.h</a>&gt;</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc__library_8h.html">grpc++/impl/grpc_library.h</a>&gt;</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_8h.html">grpc/grpc.h</a>&gt;</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#include &lt;grpc/grpc.h&gt;</span></div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keyword">struct </span><a class="code" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a>;</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;</div>
@@ -145,12 +145,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
 <div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html#aa6c0bc180d800973956b13c793bbac9a">   65</a></span>&#160;  <a class="code" href="classgrpc_1_1_alarm.html#aa6c0bc180d800973956b13c793bbac9a">Alarm</a>(<a class="code" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a>* cq, <span class="keyword">const</span> T&amp; deadline, <span class="keywordtype">void</span>* tag)</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;      : tag_(tag),</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        alarm_(<a class="code" href="grpc_8h.html#a74505bb522ecd43c21cb51651788c621">grpc_alarm_create</a>(cq-&gt;cq(), <a class="code" href="classgrpc_1_1_time_point.html">TimePoint</a>&lt;T&gt;(deadline).raw_time(),</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        alarm_(grpc_alarm_create(cq-&gt;cq(), <a class="code" href="classgrpc_1_1_time_point.html">TimePoint</a>&lt;T&gt;(deadline).raw_time(),</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                                 static_cast&lt;void*&gt;(&amp;tag_))) {}</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;</div>
-<div class="line"><a name="l00071"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html#ab78846507ce33312823afcebe78a1215">   71</a></span>&#160;  <a class="code" href="classgrpc_1_1_alarm.html#ab78846507ce33312823afcebe78a1215">~Alarm</a>() { <a class="code" href="grpc_8h.html#a44294a352d5e6c2d23a213668e2a11cb">grpc_alarm_destroy</a>(alarm_); }</div>
+<div class="line"><a name="l00071"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html#ab78846507ce33312823afcebe78a1215">   71</a></span>&#160;  <a class="code" href="classgrpc_1_1_alarm.html#ab78846507ce33312823afcebe78a1215">~Alarm</a>() { grpc_alarm_destroy(alarm_); }</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;</div>
-<div class="line"><a name="l00075"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html#a57837c6b6d75f622c056b3050cf000fb">   75</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_alarm.html#a57837c6b6d75f622c056b3050cf000fb">Cancel</a>() { <a class="code" href="grpc_8h.html#aaaf4d5c77eea32e58481b81d07561ba3">grpc_alarm_cancel</a>(alarm_); }</div>
+<div class="line"><a name="l00075"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html#a57837c6b6d75f622c056b3050cf000fb">   75</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_alarm.html#a57837c6b6d75f622c056b3050cf000fb">Cancel</a>() { grpc_alarm_cancel(alarm_); }</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; <span class="keyword">private</span>:</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keyword">class </span>AlarmEntry : <span class="keyword">public</span> <a class="code" href="classgrpc_1_1_completion_queue_tag.html">CompletionQueueTag</a> {</div>
@@ -175,25 +175,21 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="classgrpc_1_1_completion_queue_tag_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue_tag.html">grpc::CompletionQueueTag</a></div><div class="ttdoc">An interface allowing implementors to process and filter event tags. </div><div class="ttdef"><b>Definition:</b> completion_queue_tag.h:40</div></div>
 <div class="ttc" id="classgrpc_1_1_alarm_html"><div class="ttname"><a href="classgrpc_1_1_alarm.html">grpc::Alarm</a></div><div class="ttdoc">A thin wrapper around grpc_alarm (see / / src/core/surface/alarm.h). </div><div class="ttdef"><b>Definition:</b> alarm.h:53</div></div>
 <div class="ttc" id="classgrpc_1_1_alarm_html_aa6c0bc180d800973956b13c793bbac9a"><div class="ttname"><a href="classgrpc_1_1_alarm.html#aa6c0bc180d800973956b13c793bbac9a">grpc::Alarm::Alarm</a></div><div class="ttdeci">Alarm(CompletionQueue *cq, const T &amp;deadline, void *tag)</div><div class="ttdoc">Create a completion queue alarm instance associated to cq. </div><div class="ttdef"><b>Definition:</b> alarm.h:65</div></div>
-<div class="ttc" id="grpc_8h_html_a44294a352d5e6c2d23a213668e2a11cb"><div class="ttname"><a href="grpc_8h.html#a44294a352d5e6c2d23a213668e2a11cb">grpc_alarm_destroy</a></div><div class="ttdeci">GRPCAPI void grpc_alarm_destroy(grpc_alarm *alarm)</div><div class="ttdoc">Destroy the given completion queue alarm, cancelling it in the process. </div></div>
 <div class="ttc" id="grpc__library_8h_html"><div class="ttname"><a href="grpc__library_8h.html">grpc_library.h</a></div></div>
-<div class="ttc" id="grpc_8h_html_aaaf4d5c77eea32e58481b81d07561ba3"><div class="ttname"><a href="grpc_8h.html#aaaf4d5c77eea32e58481b81d07561ba3">grpc_alarm_cancel</a></div><div class="ttdeci">GRPCAPI void grpc_alarm_cancel(grpc_alarm *alarm)</div><div class="ttdoc">Cancel a completion queue alarm. </div></div>
 <div class="ttc" id="classgrpc_1_1_grpc_library_codegen_html"><div class="ttname"><a href="classgrpc_1_1_grpc_library_codegen.html">grpc::GrpcLibraryCodegen</a></div><div class="ttdoc">Classes that require gRPC to be initialized should inherit from this class. </div><div class="ttdef"><b>Definition:</b> grpc_library.h:52</div></div>
-<div class="ttc" id="classgrpc_1_1_time_point_html"><div class="ttname"><a href="classgrpc_1_1_time_point.html">grpc::TimePoint</a></div><div class="ttdef"><b>Definition:</b> time.h:54</div></div>
+<div class="ttc" id="classgrpc_1_1_time_point_html"><div class="ttname"><a href="classgrpc_1_1_time_point.html">grpc::TimePoint</a></div><div class="ttdoc">If you are trying to use CompletionQueue::AsyncNext with a time class that isn&#39;t either gpr_timespec ...</div><div class="ttdef"><b>Definition:</b> time.h:53</div></div>
 <div class="ttc" id="completion__queue__tag_8h_html"><div class="ttname"><a href="completion__queue__tag_8h.html">completion_queue_tag.h</a></div></div>
 <div class="ttc" id="codegen_2grpc__library_8h_html"><div class="ttname"><a href="codegen_2grpc__library_8h.html">grpc_library.h</a></div></div>
 <div class="ttc" id="impl_2codegen_2time_8h_html"><div class="ttname"><a href="impl_2codegen_2time_8h.html">time.h</a></div></div>
 <div class="ttc" id="impl_2codegen_2completion__queue_8h_html"><div class="ttname"><a href="impl_2codegen_2completion__queue_8h.html">completion_queue.h</a></div></div>
-<div class="ttc" id="grpc__types_8h_html_a09ce3d7fa6473ac1cb39692adf257a13"><div class="ttname"><a href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a></div><div class="ttdeci">struct grpc_alarm grpc_alarm</div><div class="ttdoc">An alarm associated with a completion queue. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:74</div></div>
-<div class="ttc" id="grpc_8h_html_a74505bb522ecd43c21cb51651788c621"><div class="ttname"><a href="grpc_8h.html#a74505bb522ecd43c21cb51651788c621">grpc_alarm_create</a></div><div class="ttdeci">GRPCAPI grpc_alarm * grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline, void *tag)</div><div class="ttdoc">Create a completion queue alarm instance associated to cq. </div></div>
+<div class="ttc" id="grpc__types_8h_html_a09ce3d7fa6473ac1cb39692adf257a13"><div class="ttname"><a href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a></div><div class="ttdeci">struct grpc_alarm grpc_alarm</div><div class="ttdoc">An alarm associated with a completion queue. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:75</div></div>
 <div class="ttc" id="classgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue.h). </div><div class="ttdef"><b>Definition:</b> completion_queue.h:101</div></div>
 <div class="ttc" id="classgrpc_1_1_alarm_html_a57837c6b6d75f622c056b3050cf000fb"><div class="ttname"><a href="classgrpc_1_1_alarm.html#a57837c6b6d75f622c056b3050cf000fb">grpc::Alarm::Cancel</a></div><div class="ttdeci">void Cancel()</div><div class="ttdoc">Cancel a completion queue alarm. </div><div class="ttdef"><b>Definition:</b> alarm.h:75</div></div>
-<div class="ttc" id="grpc_8h_html"><div class="ttname"><a href="grpc_8h.html">grpc.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_alarm_html_ab78846507ce33312823afcebe78a1215"><div class="ttname"><a href="classgrpc_1_1_alarm.html#ab78846507ce33312823afcebe78a1215">grpc::Alarm::~Alarm</a></div><div class="ttdeci">~Alarm()</div><div class="ttdoc">Destroy the given completion queue alarm, cancelling it in the process. </div><div class="ttdef"><b>Definition:</b> alarm.h:71</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

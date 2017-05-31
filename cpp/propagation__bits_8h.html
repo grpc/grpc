@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -100,7 +100,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:a8d4d1f2973b2f5e4e3cdb515b7507868"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="propagation__bits_8h.html#a8d4d1f2973b2f5e4e3cdb515b7507868">GRPC_PROPAGATE_DEADLINE</a>&#160;&#160;&#160;((uint32_t)1)</td></tr>
-<tr class="memdesc:a8d4d1f2973b2f5e4e3cdb515b7507868"><td class="mdescLeft">&#160;</td><td class="mdescRight">Propagate deadline.  <a href="#a8d4d1f2973b2f5e4e3cdb515b7507868">More...</a><br/></td></tr>
+<tr class="memdesc:a8d4d1f2973b2f5e4e3cdb515b7507868"><td class="mdescLeft">&#160;</td><td class="mdescRight">Propagation bits: this can be bitwise or-ed to form propagation_mask for grpc_call.  <a href="#a8d4d1f2973b2f5e4e3cdb515b7507868">More...</a><br/></td></tr>
 <tr class="separator:a8d4d1f2973b2f5e4e3cdb515b7507868"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1729fbf455d0a10d31246086187bc9b3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="propagation__bits_8h.html#a1729fbf455d0a10d31246086187bc9b3">GRPC_PROPAGATE_CENSUS_STATS_CONTEXT</a>&#160;&#160;&#160;((uint32_t)2)</td></tr>
 <tr class="memdesc:a1729fbf455d0a10d31246086187bc9b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Propagate census context.  <a href="#a1729fbf455d0a10d31246086187bc9b3">More...</a><br/></td></tr>
@@ -111,6 +111,7 @@ Macros</h2></td></tr>
 <tr class="memdesc:aa87041a20c89c31d27217b22ef79d066"><td class="mdescLeft">&#160;</td><td class="mdescRight">Propagate cancellation.  <a href="#aa87041a20c89c31d27217b22ef79d066">More...</a><br/></td></tr>
 <tr class="separator:aa87041a20c89c31d27217b22ef79d066"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab5e717edb406d236313f70f304772cc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="propagation__bits_8h.html#aab5e717edb406d236313f70f304772cc">GRPC_PROPAGATE_DEFAULTS</a></td></tr>
+<tr class="memdesc:aab5e717edb406d236313f70f304772cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default propagation mask: clients of the core API are encouraged to encode deltas from this in their implementations...  <a href="#aab5e717edb406d236313f70f304772cc">More...</a><br/></td></tr>
 <tr class="separator:aab5e717edb406d236313f70f304772cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
@@ -164,7 +165,8 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Propagate deadline. </p>
+<p>Propagation bits: this can be bitwise or-ed to form propagation_mask for grpc_call. </p>
+<p>Propagate deadline </p>
 
 </div>
 </div>
@@ -182,15 +184,18 @@ Macros</h2></td></tr>
 <div class="line">      <a class="code" href="propagation__bits_8h.html#ab78096727057fdd2f6794df351e26243">GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT</a> | <a class="code" href="propagation__bits_8h.html#aa87041a20c89c31d27217b22ef79d066">GRPC_PROPAGATE_CANCELLATION</a>)))</div>
 <div class="ttc" id="propagation__bits_8h_html_ab78096727057fdd2f6794df351e26243"><div class="ttname"><a href="propagation__bits_8h.html#ab78096727057fdd2f6794df351e26243">GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT</a></div><div class="ttdeci">#define GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT</div><div class="ttdef"><b>Definition:</b> propagation_bits.h:49</div></div>
 <div class="ttc" id="propagation__bits_8h_html_a1729fbf455d0a10d31246086187bc9b3"><div class="ttname"><a href="propagation__bits_8h.html#a1729fbf455d0a10d31246086187bc9b3">GRPC_PROPAGATE_CENSUS_STATS_CONTEXT</a></div><div class="ttdeci">#define GRPC_PROPAGATE_CENSUS_STATS_CONTEXT</div><div class="ttdoc">Propagate census context. </div><div class="ttdef"><b>Definition:</b> propagation_bits.h:48</div></div>
-<div class="ttc" id="propagation__bits_8h_html_a8d4d1f2973b2f5e4e3cdb515b7507868"><div class="ttname"><a href="propagation__bits_8h.html#a8d4d1f2973b2f5e4e3cdb515b7507868">GRPC_PROPAGATE_DEADLINE</a></div><div class="ttdeci">#define GRPC_PROPAGATE_DEADLINE</div><div class="ttdoc">Propagate deadline. </div><div class="ttdef"><b>Definition:</b> propagation_bits.h:46</div></div>
+<div class="ttc" id="propagation__bits_8h_html_a8d4d1f2973b2f5e4e3cdb515b7507868"><div class="ttname"><a href="propagation__bits_8h.html#a8d4d1f2973b2f5e4e3cdb515b7507868">GRPC_PROPAGATE_DEADLINE</a></div><div class="ttdeci">#define GRPC_PROPAGATE_DEADLINE</div><div class="ttdoc">Propagation bits: this can be bitwise or-ed to form propagation_mask for grpc_call. </div><div class="ttdef"><b>Definition:</b> propagation_bits.h:46</div></div>
 <div class="ttc" id="propagation__bits_8h_html_aa87041a20c89c31d27217b22ef79d066"><div class="ttname"><a href="propagation__bits_8h.html#aa87041a20c89c31d27217b22ef79d066">GRPC_PROPAGATE_CANCELLATION</a></div><div class="ttdeci">#define GRPC_PROPAGATE_CANCELLATION</div><div class="ttdoc">Propagate cancellation. </div><div class="ttdef"><b>Definition:</b> propagation_bits.h:51</div></div>
 </div><!-- fragment -->
+<p>Default propagation mask: clients of the core API are encouraged to encode deltas from this in their implementations... </p>
+<p>ie write: GRPC_PROPAGATE_DEFAULTS &amp; ~GRPC_PROPAGATE_DEADLINE to disable deadline propagation. Doing so gives flexibility in the future to define new propagation types that are default inherited or not. </p>
+
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

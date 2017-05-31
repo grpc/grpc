@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,20 +90,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a>  </div>
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::ClientAsyncReaderWriter&lt; W, R &gt; Class Template Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
+<p>Async client-side interface for bi-directional streaming, where the outgoing message stream going to the server has messages of type <em>W</em>, and the incoming message stream coming from the server has messages of type <em>R</em>.  
+ <a href="classgrpc_1_1_client_async_reader_writer.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="impl_2codegen_2async__stream_8h_source.html">async_stream.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0511a6da96294a181471688be7765044"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a0511a6da96294a181471688be7765044">ClientAsyncReaderWriter</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *cq, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, void *tag)</td></tr>
-<tr class="separator:a0511a6da96294a181471688be7765044"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a169a2eb8bedfd7281b37c79fdd307eb2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a169a2eb8bedfd7281b37c79fdd307eb2">ReadInitialMetadata</a> (void *tag) override</td></tr>
-<tr class="memdesc:a169a2eb8bedfd7281b37c79fdd307eb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request notification of the reading of the initial metadata.  <a href="#a169a2eb8bedfd7281b37c79fdd307eb2">More...</a><br/></td></tr>
+<tr class="memdesc:a169a2eb8bedfd7281b37c79fdd307eb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#ad83bfe2febf4a6296b7d2646799b8174" title="Request notification of the reading of the initial metadata. ">ClientAsyncStreamingInterface.ReadInitialMetadata</a></em> method for semantics of this method.  <a href="#a169a2eb8bedfd7281b37c79fdd307eb2">More...</a><br/></td></tr>
 <tr class="separator:a169a2eb8bedfd7281b37c79fdd307eb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f2c91734a7de5affdd427fb88ee6167"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a2f2c91734a7de5affdd427fb88ee6167">Read</a> (R *msg, void *tag) override</td></tr>
 <tr class="memdesc:a2f2c91734a7de5affdd427fb88ee6167"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read a message of type <em>R</em> into <em>msg</em>.  <a href="#a2f2c91734a7de5affdd427fb88ee6167">More...</a><br/></td></tr>
@@ -115,10 +117,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:abcea1a4d9d8f6f1070940b1997fe0125"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>.  <a href="#abcea1a4d9d8f6f1070940b1997fe0125">More...</a><br/></td></tr>
 <tr class="separator:abcea1a4d9d8f6f1070940b1997fe0125"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3e090a0801f6bc524f959cd93e4cddc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#af3e090a0801f6bc524f959cd93e4cddc">WritesDone</a> (void *tag) override</td></tr>
-<tr class="memdesc:af3e090a0801f6bc524f959cd93e4cddc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Signal the client is done with the writes.  <a href="#af3e090a0801f6bc524f959cd93e4cddc">More...</a><br/></td></tr>
+<tr class="memdesc:af3e090a0801f6bc524f959cd93e4cddc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Signal the client is done with the writes (half-close the client stream).  <a href="#af3e090a0801f6bc524f959cd93e4cddc">More...</a><br/></td></tr>
 <tr class="separator:af3e090a0801f6bc524f959cd93e4cddc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a292fae35382e0f3c919840689cfb2358"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a292fae35382e0f3c919840689cfb2358">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">Status</a> *status, void *tag) override</td></tr>
-<tr class="memdesc:a292fae35382e0f3c919840689cfb2358"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished and request notification Should not be used concurrently with other operations.  <a href="#a292fae35382e0f3c919840689cfb2358">More...</a><br/></td></tr>
+<tr class="memdesc:a292fae35382e0f3c919840689cfb2358"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#afc1cfbd1514fea47088bc837bb578a24" title="Indicate that the stream is to be finished and request notification for when the call has been ended...">ClientAsyncStreamingInterface.Finish</a></em> method for semantics.  <a href="#a292fae35382e0f3c919840689cfb2358">More...</a><br/></td></tr>
 <tr class="separator:a292fae35382e0f3c919840689cfb2358"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_client_async_streaming_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_client_async_streaming_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_client_async_streaming_interface.html">grpc::ClientAsyncStreamingInterface</a></td></tr>
 <tr class="memitem:a103c33e82dbf1715749886c4249f3f28 inherit pub_methods_classgrpc_1_1_client_async_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#a103c33e82dbf1715749886c4249f3f28">~ClientAsyncStreamingInterface</a> ()</td></tr>
@@ -132,9 +134,22 @@ Public Member Functions</h2></td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_async_reader_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_async_reader_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_async_reader_interface.html">grpc::AsyncReaderInterface&lt; R &gt;</a></td></tr>
 <tr class="memitem:ac7845d2df90fb380008aadb7f5f2f379 inherit pub_methods_classgrpc_1_1_async_reader_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_reader_interface.html#ac7845d2df90fb380008aadb7f5f2f379">~AsyncReaderInterface</a> ()</td></tr>
 <tr class="separator:ac7845d2df90fb380008aadb7f5f2f379 inherit pub_methods_classgrpc_1_1_async_reader_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a6f127ad148c28447fcfd2af7101148b6"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classgrpc_1_1_client_async_reader_writer.html">ClientAsyncReaderWriter</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a6f127ad148c28447fcfd2af7101148b6">Create</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *cq, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, void *tag)</td></tr>
+<tr class="memdesc:a6f127ad148c28447fcfd2af7101148b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a stream and write the first request out.  <a href="#a6f127ad148c28447fcfd2af7101148b6">More...</a><br/></td></tr>
+<tr class="separator:a6f127ad148c28447fcfd2af7101148b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a637f06cdc945255e39223bc265bfc5a5"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a637f06cdc945255e39223bc265bfc5a5">operator delete</a> (void *ptr, std::size_t size)</td></tr>
+<tr class="separator:a637f06cdc945255e39223bc265bfc5a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a0511a6da96294a181471688be7765044"></a>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><h3>template&lt;class W, class R&gt;<br/>
+class grpc::ClientAsyncReaderWriter&lt; W, R &gt;</h3>
+
+<p>Async client-side interface for bi-directional streaming, where the outgoing message stream going to the server has messages of type <em>W</em>, and the incoming message stream coming from the server has messages of type <em>R</em>. </p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="a6f127ad148c28447fcfd2af7101148b6"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -144,7 +159,7 @@ template&lt;class W , class R &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html">grpc::ClientAsyncReaderWriter</a>&lt; W, R &gt;::<a class="el" href="classgrpc_1_1_client_async_reader_writer.html">ClientAsyncReaderWriter</a> </td>
+          <td class="memname">static <a class="el" href="classgrpc_1_1_client_async_reader_writer.html">ClientAsyncReaderWriter</a>* <a class="el" href="classgrpc_1_1_client_async_reader_writer.html">grpc::ClientAsyncReaderWriter</a>&lt; W, R &gt;::Create </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *&#160;</td>
           <td class="paramname"><em>channel</em>, </td>
@@ -181,14 +196,16 @@ template&lt;class W , class R &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
+<p>Create a stream and write the first request out. </p>
+<p><em>tag</em> will be notified on <em>cq</em> when the call has been started (i.e. intitial metadata sent). Note that <em>context</em> will be used to fill in custom initial metadata used to send to the server when starting the call. </p>
+
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a292fae35382e0f3c919840689cfb2358"></a>
 <div class="memitem">
 <div class="memproto">
@@ -223,16 +240,49 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Indicate that the stream is to be finished and request notification Should not be used concurrently with other operations. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[out]</td><td class="paramname">status</td><td>To be updated with the operation status. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>Tag identifying this request. </td></tr>
-  </table>
-  </dd>
-</dl>
+<p>See the <em><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#afc1cfbd1514fea47088bc837bb578a24" title="Indicate that the stream is to be finished and request notification for when the call has been ended...">ClientAsyncStreamingInterface.Finish</a></em> method for semantics. </p>
+<p>Side effect</p>
+<ul>
+<li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> associated with this call is updated with possible initial and trailing metadata sent from the server. </li>
+</ul>
 
 <p>Implements <a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#afc1cfbd1514fea47088bc837bb578a24">grpc::ClientAsyncStreamingInterface</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a637f06cdc945255e39223bc265bfc5a5"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class W , class R &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void <a class="el" href="classgrpc_1_1_client_async_reader_writer.html">grpc::ClientAsyncReaderWriter</a>&lt; W, R &gt;::operator delete </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname"><em>size</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -271,14 +321,15 @@ template&lt;class W , class R &gt; </div>
 </div><div class="memdoc">
 
 <p>Read a message of type <em>R</em> into <em>msg</em>. </p>
-<p>Completion will be notified by <em>tag</em> on the associated completion queue. This is thread-safe with respect to <em>Write</em> or <em>WritesDone</em> methods. It should not be called concurrently with other streaming APIs on the same stream. It is not meaningful to call it concurrently with another <em>Read</em> on the same stream since reads on the same stream are delivered in order.</p>
+<p>Completion will be notified by <em>tag</em> on the associated completion queue. This is thread-safe with respect to <em>Write</em> or <em>WritesDone</em> methods. It should not be called concurrently with other streaming APIs on the same stream. It is not meaningful to call it concurrently with another <em><a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11" title="Read a message of type R into msg. ">AsyncReaderInterface::Read</a></em> on the same stream since reads on the same stream are delivered in order.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[out]</td><td class="paramname">msg</td><td>Where to eventually store the read message. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>The tag identifying the operation. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>The tag identifying the operation.</td></tr>
   </table>
   </dd>
 </dl>
+<p>Side effect: note that this method attempt to receive initial metadata for a stream if it hasn't yet been received. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11">grpc::AsyncReaderInterface&lt; R &gt;</a>.</p>
 
@@ -308,14 +359,11 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Request notification of the reading of the initial metadata. </p>
-<p>Completion will be notified by <em>tag</em> on the associated completion queue. This call is optional, but if it is used, it cannot be used concurrently with or after the <em>Read</em> method.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>Tag identifying this request. </td></tr>
-  </table>
-  </dd>
-</dl>
+<p>See the <em><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#ad83bfe2febf4a6296b7d2646799b8174" title="Request notification of the reading of the initial metadata. ">ClientAsyncStreamingInterface.ReadInitialMetadata</a></em> method for semantics of this method. </p>
+<p>Side effect:</p>
+<ul>
+<li>upon receiving initial metadata from the server, the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> is updated with it, and then the receiving initial metadata can be accessed through this <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em>. </li>
+</ul>
 
 <p>Implements <a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#ad83bfe2febf4a6296b7d2646799b8174">grpc::ClientAsyncStreamingInterface</a>.</p>
 
@@ -356,7 +404,7 @@ template&lt;class W , class R &gt; </div>
 </div><div class="memdoc">
 
 <p>Request the writing of <em>msg</em> with identifying tag <em>tag</em>. </p>
-<p>Only one write may be outstanding at any given time. This means that after calling Write, one must wait to receive <em>tag</em> from the completion queue BEFORE calling Write again. This is thread-safe with respect to <em>Read</em> </p>
+<p>Only one write may be outstanding at any given time. This means that after calling Write, one must wait to receive <em>tag</em> from the completion queue BEFORE calling Write again. This is thread-safe with respect to <em><a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11" title="Read a message of type R into msg. ">AsyncReaderInterface::Read</a></em> </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>The message to be written. </td></tr>
@@ -410,7 +458,7 @@ template&lt;class W , class R &gt; </div>
 </div><div class="memdoc">
 
 <p>Request the writing of <em>msg</em> using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>. </p>
-<p>Only one write may be outstanding at any given time. This means that after calling Write, one must wait to receive <em>tag</em> from the completion queue BEFORE calling Write again. <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> is used to set the write options of this message. This is thread-safe with respect to <em>Read</em> </p>
+<p>Only one write may be outstanding at any given time. This means that after calling Write, one must wait to receive <em>tag</em> from the completion queue BEFORE calling Write again. <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> is used to set the write options of this message. This is thread-safe with respect to <em><a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11" title="Read a message of type R into msg. ">AsyncReaderInterface::Read</a></em> </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>The message to be written. </td></tr>
@@ -448,8 +496,8 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Signal the client is done with the writes. </p>
-<p>Thread-safe with respect to <em>Read</em> </p>
+<p>Signal the client is done with the writes (half-close the client stream). </p>
+<p>Thread-safe with respect to <em><a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11" title="Read a message of type R into msg. ">AsyncReaderInterface::Read</a></em> </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>The tag identifying the operation. </td></tr>
@@ -467,7 +515,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

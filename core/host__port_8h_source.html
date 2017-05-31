@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -132,23 +132,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment">/* Given a host and port, creates a newly-allocated string of the form</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">   &quot;host:port&quot; or &quot;[ho:st]:port&quot;, depending on whether the host contains colons</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">   like an IPv6 literal.  If the host is already bracketed, then additional</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">   brackets will not be added.</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="comment">   Usage is similar to gpr_asprintf: returns the number of bytes written</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="comment">   (excluding the final &#39;\0&#39;), and *out points to a string which must later be</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="comment">   destroyed using gpr_free().</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">   In the unlikely event of an error, returns -1 and sets *out to NULL. */</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">int</span> <a class="code" href="host__port_8h.html#a0aceae7a79506c44f063093a0a855049">gpr_join_host_port</a>(<span class="keywordtype">char</span> **out, <span class="keyword">const</span> <span class="keywordtype">char</span> *host, <span class="keywordtype">int</span> port);</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">/* Given a name in the form &quot;host:port&quot; or &quot;[ho:st]:port&quot;, split into hostname</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">   and port number, into newly allocated strings, which must later be</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment">   destroyed using gpr_free().</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="comment">   Return 1 on success, 0 on failure. Guarantees *host and *port == NULL on</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="comment">   failure. */</span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">int</span> <a class="code" href="host__port_8h.html#a86c89d6e6e9a39b310706b703f6e7cdd">gpr_split_host_port</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *name, <span class="keywordtype">char</span> **host, <span class="keywordtype">char</span> **port);</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
@@ -156,14 +141,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_HOST_PORT_H */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="host__port_8h_html_a86c89d6e6e9a39b310706b703f6e7cdd"><div class="ttname"><a href="host__port_8h.html#a86c89d6e6e9a39b310706b703f6e7cdd">gpr_split_host_port</a></div><div class="ttdeci">GPRAPI int gpr_split_host_port(const char *name, char **host, char **port)</div></div>
-<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:410</div></div>
-<div class="ttc" id="host__port_8h_html_a0aceae7a79506c44f063093a0a855049"><div class="ttname"><a href="host__port_8h.html#a0aceae7a79506c44f063093a0a855049">gpr_join_host_port</a></div><div class="ttdeci">GPRAPI int gpr_join_host_port(char **out, const char *host, int port)</div></div>
+<div class="ttc" id="host__port_8h_html_a86c89d6e6e9a39b310706b703f6e7cdd"><div class="ttname"><a href="host__port_8h.html#a86c89d6e6e9a39b310706b703f6e7cdd">gpr_split_host_port</a></div><div class="ttdeci">GPRAPI int gpr_split_host_port(const char *name, char **host, char **port)</div><div class="ttdoc">Given a name in the form &quot;host:port&quot; or &quot;[ho:st]:port&quot;, split into hostname and port number...</div></div>
+<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:416</div></div>
+<div class="ttc" id="host__port_8h_html_a0aceae7a79506c44f063093a0a855049"><div class="ttname"><a href="host__port_8h.html#a0aceae7a79506c44f063093a0a855049">gpr_join_host_port</a></div><div class="ttdeci">GPRAPI int gpr_join_host_port(char **out, const char *host, int port)</div><div class="ttdoc">Given a host and port, creates a newly-allocated string of the form &quot;host:port&quot; or &quot;[ho:st]:port&quot;...</div></div>
 <div class="ttc" id="support_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

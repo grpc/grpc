@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -110,14 +110,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad398badd3b31871dce142e9ba18b45ce"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_resource_quota.html#ad398badd3b31871dce142e9ba18b45ce">~ResourceQuota</a> ()</td></tr>
 <tr class="separator:ad398badd3b31871dce142e9ba18b45ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3e9034af4f310baa9bcc11ccfe46170f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_resource_quota.html#a3e9034af4f310baa9bcc11ccfe46170f">Resize</a> (size_t new_size)</td></tr>
-<tr class="memdesc:a3e9034af4f310baa9bcc11ccfe46170f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resize this <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> to a new size.  <a href="#a3e9034af4f310baa9bcc11ccfe46170f">More...</a><br/></td></tr>
+<tr class="memdesc:a3e9034af4f310baa9bcc11ccfe46170f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resize this <em><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a></em> to a new size.  <a href="#a3e9034af4f310baa9bcc11ccfe46170f">More...</a><br/></td></tr>
 <tr class="separator:a3e9034af4f310baa9bcc11ccfe46170f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a79e91c946f9ed0cd2baab04ec56e35d9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_resource_quota.html#a79e91c946f9ed0cd2baab04ec56e35d9">c_resource_quota</a> () const </td></tr>
 <tr class="separator:a79e91c946f9ed0cd2baab04ec56e35d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> represents a bound on memory usage by the gRPC library. </p>
-<p>A <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> can be attached to a server (via <a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a>), or a client channel (via <a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation. ">ChannelArguments</a>). gRPC will attempt to keep memory used by all attached entities below the <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> bound. </p>
+<p>A <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> can be attached to a server (via <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a></em>), or a client channel (via <em><a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation. ">ChannelArguments</a></em>). gRPC will attempt to keep memory used by all attached entities below the <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> bound. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a5014fc19c5c5e8e6cdb8eb9c21a1f170"></a>
 <div class="memitem">
@@ -140,6 +140,12 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">name</td><td>- a unique name for this <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a>. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -211,8 +217,8 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Resize this <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> to a new size. </p>
-<p>If new_size is smaller than the current size of the pool, memory usage will be monotonically decreased until it falls under new_size. No time bound is given for this to occur however. </p>
+<p>Resize this <em><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a></em> to a new size. </p>
+<p>If <em>new_size</em> is smaller than the current size of the pool, memory usage will be monotonically decreased until it falls under <em>new_size</em>. No time bound is given for this to occur however. </p>
 
 </div>
 </div>
@@ -222,7 +228,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

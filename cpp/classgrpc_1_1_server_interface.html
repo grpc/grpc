@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -146,9 +146,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:ae3716834f7d4aec1883e36e99c9c5123"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#ae3716834f7d4aec1883e36e99c9c5123">AddListeningPort</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr, <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> *creds)=0</td></tr>
 <tr class="memdesc:ae3716834f7d4aec1883e36e99c9c5123"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tries to bind <em>server</em> to the given <em>addr</em>.  <a href="#ae3716834f7d4aec1883e36e99c9c5123">More...</a><br/></td></tr>
 <tr class="separator:ae3716834f7d4aec1883e36e99c9c5123"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa0bd69382b7e6d35e34190d4faefa039"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#aa0bd69382b7e6d35e34190d4faefa039">Start</a> (<a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> **cqs, size_t num_cqs)=0</td></tr>
-<tr class="memdesc:aa0bd69382b7e6d35e34190d4faefa039"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start the server.  <a href="#aa0bd69382b7e6d35e34190d4faefa039">More...</a><br/></td></tr>
-<tr class="separator:aa0bd69382b7e6d35e34190d4faefa039"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa3931522a05cd6b2783b550b4066a7d9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#aa3931522a05cd6b2783b550b4066a7d9">Start</a> (<a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> **cqs, size_t num_cqs)=0</td></tr>
+<tr class="memdesc:aa3931522a05cd6b2783b550b4066a7d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start the server.  <a href="#aa3931522a05cd6b2783b550b4066a7d9">More...</a><br/></td></tr>
+<tr class="separator:aa3931522a05cd6b2783b550b4066a7d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a862fd9a2d64e66447d41d0aba40af2f9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a862fd9a2d64e66447d41d0aba40af2f9">ShutdownInternal</a> (<a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline)=0</td></tr>
 <tr class="separator:a862fd9a2d64e66447d41d0aba40af2f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89798a3a429531aa38a4afa4844ac7c0"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a89798a3a429531aa38a4afa4844ac7c0">max_receive_message_size</a> () const =0</td></tr>
@@ -325,7 +325,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Register a generic service. </p>
-<p>This call does not take ownership of the service. The service must exist for the lifetime of the <a class="el" href="classgrpc_1_1_server.html" title="Models a gRPC server. ">Server</a> instance. </p>
+<p>This call does not take ownership of the service. The service must exist for the lifetime of the <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> instance. </p>
 
 </div>
 </div>
@@ -362,7 +362,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Register a service. </p>
-<p>This call does not take ownership of the service. The service must exist for the lifetime of the <a class="el" href="classgrpc_1_1_server.html" title="Models a gRPC server. ">Server</a> instance. </p>
+<p>This call does not take ownership of the service. The service must exist for the lifetime of the <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> instance. </p>
 
 </div>
 </div>
@@ -651,7 +651,7 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="aa0bd69382b7e6d35e34190d4faefa039"></a>
+<a class="anchor" id="aa3931522a05cd6b2783b550b4066a7d9"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -659,7 +659,7 @@ template&lt;class T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual bool grpc::ServerInterface::Start </td>
+          <td class="memname">virtual void grpc::ServerInterface::Start </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> **&#160;</td>
           <td class="paramname"><em>cqs</em>, </td>
@@ -687,11 +687,10 @@ template&lt;class T &gt; </div>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">cqs</td><td>Completion queues for handling asynchronous services. The caller is required to keep all completion queues live until the server is destroyed. </td></tr>
-    <tr><td class="paramname">num_cqs</td><td>How many completion queues does <em>cqs</em> hold.</td></tr>
+    <tr><td class="paramname">num_cqs</td><td>How many completion queues does <em>cqs</em> hold. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>true on a successful shutdown. </dd></dl>
 
 </div>
 </div>
@@ -750,7 +749,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

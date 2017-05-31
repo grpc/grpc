@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -103,7 +103,7 @@ Data Fields</h2></td></tr>
 <tr class="memdesc:a8e7f571b759f55db4f6bebc2a4f56ad7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the completion.  <a href="#a8e7f571b759f55db4f6bebc2a4f56ad7">More...</a><br/></td></tr>
 <tr class="separator:a8e7f571b759f55db4f6bebc2a4f56ad7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a99d4215e5df50869af320b1cca5540db"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event.html#a99d4215e5df50869af320b1cca5540db">success</a></td></tr>
-<tr class="memdesc:a99d4215e5df50869af320b1cca5540db"><td class="mdescLeft">&#160;</td><td class="mdescRight">non-zero if the operation was successful, 0 upon failure.  <a href="#a99d4215e5df50869af320b1cca5540db">More...</a><br/></td></tr>
+<tr class="memdesc:a99d4215e5df50869af320b1cca5540db"><td class="mdescLeft">&#160;</td><td class="mdescRight">If the grpc_completion_type is GRPC_OP_COMPLETE, this field indicates whether the operation was successful or not; 0 in case of failure and non-zero in case of success.  <a href="#a99d4215e5df50869af320b1cca5540db">More...</a><br/></td></tr>
 <tr class="separator:a99d4215e5df50869af320b1cca5540db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a883ab15e862db582116c72cdcdc4c201"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event.html#a883ab15e862db582116c72cdcdc4c201">tag</a></td></tr>
 <tr class="memdesc:a883ab15e862db582116c72cdcdc4c201"><td class="mdescLeft">&#160;</td><td class="mdescRight">The tag passed to grpc_call_start_batch etc to start this operation.  <a href="#a883ab15e862db582116c72cdcdc4c201">More...</a><br/></td></tr>
@@ -123,8 +123,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>non-zero if the operation was successful, 0 upon failure. </p>
-<p>Only GRPC_OP_COMPLETE can succeed or fail. </p>
+<p>If the grpc_completion_type is GRPC_OP_COMPLETE, this field indicates whether the operation was successful or not; 0 in case of failure and non-zero in case of success. </p>
+<p>If grpc_completion_type is GRPC_QUEUE_SHUTDOWN or GRPC_QUEUE_TIMEOUT, this field is guaranteed to be 0 </p>
 
 </div>
 </div>
@@ -163,7 +163,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

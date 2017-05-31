@@ -1,6 +1,7 @@
 var searchData=
 [
   ['raw',['raw',['../structgrpc__byte__buffer.html#a12b5b7e06fb37cedb7428c91d9cde827',1,'grpc_byte_buffer']]],
+  ['reader_5f',['reader_',['../classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a52aae88ebfa452907a74625af1e2975e',1,'grpc::internal::GrpcBufferReader']]],
   ['recv_5fclose_5fon_5fserver',['recv_close_on_server',['../structgrpc__op.html#a917c4a09670c7d6afe0d2dedb31091bd',1,'grpc_op']]],
   ['recv_5finitial_5fmetadata',['recv_initial_metadata',['../structgrpc__op.html#a81ebfcab8db61dd485b88cafc51f2749',1,'grpc_op::recv_initial_metadata()'],['../structgrpc__op.html#a8f3d29a475fedec2acdf19f02b7747a8',1,'grpc_op::recv_initial_metadata()']]],
   ['recv_5fmessage',['recv_message',['../structgrpc__op.html#a869c863c4d9fca1277fd9c809c0318b2',1,'grpc_op::recv_message()'],['../structgrpc__op.html#a9487a5a991dcc83a29ca3ed1f6c23ac8',1,'grpc_op::recv_message()']]],

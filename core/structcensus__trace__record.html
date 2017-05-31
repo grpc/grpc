@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -100,14 +100,19 @@ Data Fields</h2></td></tr>
 <tr class="memitem:ac7f74956d51898681b8e35a8031ac9fb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcensus__timestamp.html">census_timestamp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__trace__record.html#ac7f74956d51898681b8e35a8031ac9fb">timestamp</a></td></tr>
 <tr class="separator:ac7f74956d51898681b8e35a8031ac9fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a69511d4d1ae8297580789786feb564d4"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__trace__record.html#a69511d4d1ae8297580789786feb564d4">trace_id</a></td></tr>
+<tr class="memdesc:a69511d4d1ae8297580789786feb564d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Time of record creation.  <a href="#a69511d4d1ae8297580789786feb564d4">More...</a><br/></td></tr>
 <tr class="separator:a69511d4d1ae8297580789786feb564d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a9ffdb2e91c34802e5102a1632b2e58"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__trace__record.html#a7a9ffdb2e91c34802e5102a1632b2e58">op_id</a></td></tr>
+<tr class="memdesc:a7a9ffdb2e91c34802e5102a1632b2e58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Trace ID associated with record.  <a href="#a7a9ffdb2e91c34802e5102a1632b2e58">More...</a><br/></td></tr>
 <tr class="separator:a7a9ffdb2e91c34802e5102a1632b2e58"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a76b2b8a9206a720e02c32c13a534ba78"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__trace__record.html#a76b2b8a9206a720e02c32c13a534ba78">type</a></td></tr>
+<tr class="memdesc:a76b2b8a9206a720e02c32c13a534ba78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Operation ID associated with record.  <a href="#a76b2b8a9206a720e02c32c13a534ba78">More...</a><br/></td></tr>
 <tr class="separator:a76b2b8a9206a720e02c32c13a534ba78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4ba324fb39273bf3c0c0f15852d9d130"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__trace__record.html#a4ba324fb39273bf3c0c0f15852d9d130">buffer</a></td></tr>
+<tr class="memdesc:a4ba324fb39273bf3c0c0f15852d9d130"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type (as used in <a class="el" href="census_8h.html#aacf722bf9259354d1ab7a81a6c2fd666" title="Insert a trace record into the trace stream. ">census_trace_print()</a>  <a href="#a4ba324fb39273bf3c0c0f15852d9d130">More...</a><br/></td></tr>
 <tr class="separator:a4ba324fb39273bf3c0c0f15852d9d130"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abc4f9330e28d906f90346d7fd5769d53"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__trace__record.html#abc4f9330e28d906f90346d7fd5769d53">buf_size</a></td></tr>
+<tr class="memdesc:abc4f9330e28d906f90346d7fd5769d53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Buffer (from <a class="el" href="census_8h.html#aacf722bf9259354d1ab7a81a6c2fd666" title="Insert a trace record into the trace stream. ">census_trace_print()</a>  <a href="#abc4f9330e28d906f90346d7fd5769d53">More...</a><br/></td></tr>
 <tr class="separator:abc4f9330e28d906f90346d7fd5769d53"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -123,6 +128,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Buffer (from <a class="el" href="census_8h.html#aacf722bf9259354d1ab7a81a6c2fd666" title="Insert a trace record into the trace stream. ">census_trace_print()</a> </p>
+
 </div>
 </div>
 <a class="anchor" id="a4ba324fb39273bf3c0c0f15852d9d130"></a>
@@ -135,6 +142,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Type (as used in <a class="el" href="census_8h.html#aacf722bf9259354d1ab7a81a6c2fd666" title="Insert a trace record into the trace stream. ">census_trace_print()</a> </p>
+
 </div>
 </div>
 <a class="anchor" id="a7a9ffdb2e91c34802e5102a1632b2e58"></a>
@@ -146,6 +155,8 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Trace ID associated with record. </p>
 
 </div>
 </div>
@@ -171,6 +182,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Time of record creation. </p>
+
 </div>
 </div>
 <a class="anchor" id="a76b2b8a9206a720e02c32c13a534ba78"></a>
@@ -183,6 +196,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Operation ID associated with record. </p>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
@@ -191,7 +206,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

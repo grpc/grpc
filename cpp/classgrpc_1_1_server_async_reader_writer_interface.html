@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -104,6 +104,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a1d890ac278003381d74ae8d29215f349"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#a1d890ac278003381d74ae8d29215f349">Finish</a> (const <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;status, void *tag)=0</td></tr>
+<tr class="memdesc:a1d890ac278003381d74ae8d29215f349"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished with a certain status code.  <a href="#a1d890ac278003381d74ae8d29215f349">More...</a><br/></td></tr>
 <tr class="separator:a1d890ac278003381d74ae8d29215f349"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae0c34bdc113287e1937f653b8d3c3116"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#ae0c34bdc113287e1937f653b8d3c3116">WriteAndFinish</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options, const <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;status, void *tag)=0</td></tr>
 <tr class="memdesc:ae0c34bdc113287e1937f653b8d3c3116"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> and coalesce it with trailing metadata which contains <em>status</em>, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> options with identifying tag <em>tag</em>.  <a href="#ae0c34bdc113287e1937f653b8d3c3116">More...</a><br/></td></tr>
@@ -112,6 +113,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af7c2bc176a6658e86a74a1cacd53d3bc inherit pub_methods_classgrpc_1_1_server_async_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_streaming_interface.html#af7c2bc176a6658e86a74a1cacd53d3bc">~ServerAsyncStreamingInterface</a> ()</td></tr>
 <tr class="separator:af7c2bc176a6658e86a74a1cacd53d3bc inherit pub_methods_classgrpc_1_1_server_async_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab2d5db2b2ca3032994396543a8bb044c inherit pub_methods_classgrpc_1_1_server_async_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_streaming_interface.html#ab2d5db2b2ca3032994396543a8bb044c">SendInitialMetadata</a> (void *tag)=0</td></tr>
+<tr class="memdesc:ab2d5db2b2ca3032994396543a8bb044c inherit pub_methods_classgrpc_1_1_server_async_streaming_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request notification of the sending of initial metadata to the client.  <a href="#ab2d5db2b2ca3032994396543a8bb044c">More...</a><br/></td></tr>
 <tr class="separator:ab2d5db2b2ca3032994396543a8bb044c inherit pub_methods_classgrpc_1_1_server_async_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_async_writer_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_async_writer_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_async_writer_interface.html">grpc::AsyncWriterInterface&lt; W &gt;</a></td></tr>
 <tr class="memitem:a94cc9e4ed13c8fe4a1d883d465477ddd inherit pub_methods_classgrpc_1_1_async_writer_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_writer_interface.html#a94cc9e4ed13c8fe4a1d883d465477ddd">~AsyncWriterInterface</a> ()</td></tr>
@@ -171,6 +173,22 @@ template&lt;class W , class R &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Indicate that the stream is to be finished with a certain status code. </p>
+<p>Request notification for when the server has sent the appropriate signals to the client to end the call. Should not be used concurrently with other operations.</p>
+<p>It is appropriate to call this method when either:</p>
+<ul>
+<li>all messages from the client have been received (either known implictly, or explicitly because a previous <em><a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11" title="Read a message of type R into msg. ">AsyncReaderInterface::Read</a></em> operation with a non-ok result (e.g., cq-&gt;Next(&amp;read_tag, &amp;ok) filled in 'ok' with 'false'.</li>
+<li>it is desired to end the call early with some non-OK status code.</li>
+</ul>
+<p>This operation will end when the server has finished sending out initial metadata (if not sent already), response message, and status, or if some failure occurred when trying to do so.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>Tag identifying this request. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">status</td><td>To be sent to the client as the result of this call. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 <p>Implemented in <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a75342152acd961b7fcf1317bec0b8c3a">grpc::ServerAsyncReaderWriter&lt; W, R &gt;</a>.</p>
 
@@ -244,7 +262,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

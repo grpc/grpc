@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,8 +90,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pro-attribs">Protected Attributes</a>  </div>
+<a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::CallOpSetInterface Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
@@ -104,54 +103,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ad331a10c0fd65f5a9db680e95682f000"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set_interface.html#ad331a10c0fd65f5a9db680e95682f000">CallOpSetInterface</a> ()</td></tr>
-<tr class="separator:ad331a10c0fd65f5a9db680e95682f000"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae0c95dfc28fc2a0add3e3bec1a703874"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set_interface.html#ae0c95dfc28fc2a0add3e3bec1a703874">FillOps</a> (<a class="el" href="structgrpc__op.html">grpc_op</a> *ops, size_t *nops)=0</td></tr>
-<tr class="memdesc:ae0c95dfc28fc2a0add3e3bec1a703874"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fills in <a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a>, starting from ops[*nops] and moving upwards.  <a href="#ae0c95dfc28fc2a0add3e3bec1a703874">More...</a><br/></td></tr>
-<tr class="separator:ae0c95dfc28fc2a0add3e3bec1a703874"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c0e4962b0ddc592cbc6469442c38268"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set_interface.html#a7c0e4962b0ddc592cbc6469442c38268">SetCollection</a> (std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_op_set_collection_interface.html">CallOpSetCollectionInterface</a> &gt; collection)</td></tr>
-<tr class="memdesc:a7c0e4962b0ddc592cbc6469442c38268"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mark this as belonging to a collection if needed.  <a href="#a7c0e4962b0ddc592cbc6469442c38268">More...</a><br/></td></tr>
-<tr class="separator:a7c0e4962b0ddc592cbc6469442c38268"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affd9cadf51e13644b960e7d6590934ae"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set_interface.html#affd9cadf51e13644b960e7d6590934ae">FillOps</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__op.html">grpc_op</a> *ops, size_t *nops)=0</td></tr>
+<tr class="memdesc:affd9cadf51e13644b960e7d6590934ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fills in <a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a>, starting from ops[*nops] and moving upwards.  <a href="#affd9cadf51e13644b960e7d6590934ae">More...</a><br/></td></tr>
+<tr class="separator:affd9cadf51e13644b960e7d6590934ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_completion_queue_tag"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_completion_queue_tag')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_completion_queue_tag.html">grpc::CompletionQueueTag</a></td></tr>
 <tr class="memitem:a2cbf0212ed795c79f98c3421ed0cb4ab inherit pub_methods_classgrpc_1_1_completion_queue_tag"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue_tag.html#a2cbf0212ed795c79f98c3421ed0cb4ab">~CompletionQueueTag</a> ()</td></tr>
 <tr class="separator:a2cbf0212ed795c79f98c3421ed0cb4ab inherit pub_methods_classgrpc_1_1_completion_queue_tag"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af7b1abfcd9e506d118dfdcf29ce7fe8d inherit pub_methods_classgrpc_1_1_completion_queue_tag"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue_tag.html#af7b1abfcd9e506d118dfdcf29ce7fe8d">FinalizeResult</a> (void **tag, bool *status)=0</td></tr>
+<tr class="memdesc:af7b1abfcd9e506d118dfdcf29ce7fe8d inherit pub_methods_classgrpc_1_1_completion_queue_tag"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do).  <a href="#af7b1abfcd9e506d118dfdcf29ce7fe8d">More...</a><br/></td></tr>
 <tr class="separator:af7b1abfcd9e506d118dfdcf29ce7fe8d inherit pub_methods_classgrpc_1_1_completion_queue_tag"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
-Protected Attributes</h2></td></tr>
-<tr class="memitem:a74088df7daa571675fd994dbe3ad8b40"><td class="memItemLeft" align="right" valign="top">std::shared_ptr<br class="typebreak"/>
-&lt; <a class="el" href="classgrpc_1_1_call_op_set_collection_interface.html">CallOpSetCollectionInterface</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set_interface.html#a74088df7daa571675fd994dbe3ad8b40">collection_</a></td></tr>
-<tr class="separator:a74088df7daa571675fd994dbe3ad8b40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the lower layers, and as it is-a <a class="el" href="classgrpc_1_1_completion_queue_tag.html" title="An interface allowing implementors to process and filter event tags. ">CompletionQueueTag</a>, also massages the final completion into the correct form for consumption in the C++ API. </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="ad331a10c0fd65f5a9db680e95682f000"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">grpc::CallOpSetInterface::CallOpSetInterface </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="ae0c95dfc28fc2a0add3e3bec1a703874"></a>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="affd9cadf51e13644b960e7d6590934ae"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -161,6 +126,12 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">virtual void grpc::CallOpSetInterface::FillOps </td>
           <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype"><a class="el" href="structgrpc__op.html">grpc_op</a> *&#160;</td>
           <td class="paramname"><em>ops</em>, </td>
         </tr>
@@ -185,54 +156,7 @@ Protected Attributes</h2></td></tr>
 
 <p>Fills in <a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a>, starting from ops[*nops] and moving upwards. </p>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpRecvInitialMetadata, grpc::CallOpRecvMessage&lt; R &gt;, grpc::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpSendInitialMetadata &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpSendMessage, grpc::CallOpServerSendStatus &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpServerSendStatus &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpRecvInitialMetadata &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpSendMessage, grpc::CallOpClientSendClose, CallNoOp&lt; 4 &gt;, CallNoOp&lt; 5 &gt;, CallNoOp&lt; 6 &gt; &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpRecvInitialMetadata, grpc::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpRecvMessage&lt; R &gt; &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpRecvInitialMetadata, grpc::CallOpGenericRecvMessage, grpc::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpSendMessage, grpc::CallOpClientSendClose &gt;</a>, and <a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">grpc::CallOpSet&lt; grpc::CallOpRecvInitialMetadata, grpc::CallOpRecvMessage&lt; R &gt; &gt;</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="a7c0e4962b0ddc592cbc6469442c38268"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc::CallOpSetInterface::SetCollection </td>
-          <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_op_set_collection_interface.html">CallOpSetCollectionInterface</a> &gt;&#160;</td>
-          <td class="paramname"><em>collection</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Mark this as belonging to a collection if needed. </p>
-
-</div>
-</div>
-<h2 class="groupheader">Field Documentation</h2>
-<a class="anchor" id="a74088df7daa571675fd994dbe3ad8b40"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_call_op_set_collection_interface.html">CallOpSetCollectionInterface</a>&gt; grpc::CallOpSetInterface::collection_</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
+<p>Implemented in <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpSendInitialMetadata &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpRecvInitialMetadata, grpc::CallOpRecvMessage&lt; R &gt;, grpc::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpSendMessage, grpc::CallOpServerSendStatus &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpServerSendStatus &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpRecvInitialMetadata &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpSendMessage, grpc::CallOpClientSendClose, CallNoOp&lt; 4 &gt;, CallNoOp&lt; 5 &gt;, CallNoOp&lt; 6 &gt; &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpRecvInitialMetadata, grpc::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpRecvMessage&lt; R &gt; &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpRecvInitialMetadata, grpc::CallOpGenericRecvMessage, grpc::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpSendMessage, grpc::CallOpClientSendClose &gt;</a>, and <a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">grpc::CallOpSet&lt; grpc::CallOpRecvInitialMetadata, grpc::CallOpRecvMessage&lt; R &gt; &gt;</a>.</p>
 
 </div>
 </div>
@@ -242,7 +166,7 @@ Protected Attributes</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

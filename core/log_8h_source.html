@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -136,18 +136,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment">/* GPR log API.</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="comment">   Usage (within grpc):</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment">   int argument1 = 3;</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">   char* argument2 = &quot;hello&quot;;</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment">   gpr_log(GPR_DEBUG, &quot;format string %d&quot;, argument1);</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment">   gpr_log(GPR_INFO, &quot;hello world&quot;);</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">   gpr_log(GPR_ERROR, &quot;%d %s!!&quot;, argument1, argument2); */</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment">/* The severity of a log message - use the #defines below when calling into</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="comment">   gpr_log to additionally supply file and line data */</span></div>
 <div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">   59</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">enum</span> <a class="code" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> {</div>
 <div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6">   60</a></span>&#160;  <a class="code" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6">GPR_LOG_SEVERITY_DEBUG</a>,</div>
 <div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">   61</a></span>&#160;  <a class="code" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">GPR_LOG_SEVERITY_INFO</a>,</div>
@@ -156,30 +144,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;</div>
 <div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="log_8h.html#afce870efb3d4bff38f747f79cb6c0f18">   65</a></span>&#160;<span class="preprocessor">#define GPR_LOG_VERBOSITY_UNSET -1</span></div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment">/* Returns a string representation of the log severity */</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="log_8h.html#a3badccbc5ec4c725eadbc07b8e5706eb">gpr_log_severity_string</a>(<a class="code" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="log_8h.html#ae794448965328d305d0b44417199a915">gpr_log_severity_string</a>(<a class="code" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity);</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="comment">/* Macros to build log contexts at various severity levels */</span></div>
 <div class="line"><a name="l00071"></a><span class="lineno"><a class="line" href="log_8h.html#a3e793245091f13bb7318a18b1166a773">   71</a></span>&#160;<span class="preprocessor">#define GPR_DEBUG __FILE__, __LINE__, GPR_LOG_SEVERITY_DEBUG</span></div>
 <div class="line"><a name="l00072"></a><span class="lineno"><a class="line" href="log_8h.html#af0d0d75690f79edc9294498c88f96703">   72</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_INFO __FILE__, __LINE__, GPR_LOG_SEVERITY_INFO</span></div>
 <div class="line"><a name="l00073"></a><span class="lineno"><a class="line" href="log_8h.html#a63faedb3eefd93d1c0e79974be80cc36">   73</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_ERROR __FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR</span></div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="comment">/* Log a message. It&#39;s advised to use GPR_xxx above to generate the context</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment"> * for each message */</span></div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> <a class="code" href="log_8h.html#a938a283d9a10c3ddfe46dfc22e21077f">gpr_log</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *file, <span class="keywordtype">int</span> line, <a class="code" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity,</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                    <span class="keyword">const</span> <span class="keywordtype">char</span> *format, ...) <a class="code" href="impl_2codegen_2port__platform_8h.html#a3364659cddcdfeae3897c3300de03d05">GPR_PRINT_FORMAT_CHECK</a>(4, 5);</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> <a class="code" href="log_8h.html#aef4961ab05362b455a3e89c06343ef74">gpr_log_message</a>(const <span class="keywordtype">char</span> *file, <span class="keywordtype">int</span> line,</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                            <a class="code" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity, const <span class="keywordtype">char</span> *message);</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="comment">/* Set global log verbosity */</span></div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> <a class="code" href="log_8h.html#aec0c537cb1e244060c65d9d9d153979f">gpr_set_log_verbosity</a>(<a class="code" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> min_severity_to_print);</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> <a class="code" href="log_8h.html#a0522b8141fb0b208bd069e848382da98">gpr_log_verbosity_init</a>();</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="comment">/* Log overrides: applications can use this API to intercept logging calls</span></div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="comment">   and use their own implementations */</span></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;</div>
 <div class="line"><a name="l00091"></a><span class="lineno"><a class="line" href="structgpr__log__func__args.html">   91</a></span>&#160;typedef struct {</div>
 <div class="line"><a name="l00092"></a><span class="lineno"><a class="line" href="structgpr__log__func__args.html#a7961b2303b10d4f66d1aee6b5857ef89">   92</a></span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="structgpr__log__func__args.html#a7961b2303b10d4f66d1aee6b5857ef89">file</a>;</div>
 <div class="line"><a name="l00093"></a><span class="lineno"><a class="line" href="structgpr__log__func__args.html#ae1a051bbc7e0ef6c58de0db3efda24bb">   93</a></span>&#160;  <span class="keywordtype">int</span> <a class="code" href="structgpr__log__func__args.html#ae1a051bbc7e0ef6c58de0db3efda24bb">line</a>;</div>
@@ -190,11 +170,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00098"></a><span class="lineno"><a class="line" href="log_8h.html#a23f29195676c33c61ff08a7f0a3e69b0">   98</a></span>&#160;<span class="keyword">typedef</span> void (*<a class="code" href="log_8h.html#a23f29195676c33c61ff08a7f0a3e69b0">gpr_log_func</a>)(<a class="code" href="structgpr__log__func__args.html">gpr_log_func_args</a> *args);</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">void</span> <a class="code" href="log_8h.html#ae437062e3540eeebb4c95f119fe56be5">gpr_set_log_function</a>(<a class="code" href="log_8h.html#a23f29195676c33c61ff08a7f0a3e69b0">gpr_log_func</a> func);</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="comment">/* abort() the process if x is zero, having written a line to the log.</span></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="comment">   Intended for internal invariants.  If the error can be recovered from,</span></div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="comment">   without the possibility of corruption, or might best be reflected via</span></div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="comment">   an exception in a higher-level language, consider returning error code.  */</span></div>
 <div class="line"><a name="l00106"></a><span class="lineno"><a class="line" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">  106</a></span>&#160;<span class="preprocessor">#define GPR_ASSERT(x)                                 \</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="preprocessor">  do {                                                \</span></div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="preprocessor">    if (!(x)) {                                       \</span></div>
@@ -211,26 +186,26 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="log_8h_html_aef4961ab05362b455a3e89c06343ef74"><div class="ttname"><a href="log_8h.html#aef4961ab05362b455a3e89c06343ef74">gpr_log_message</a></div><div class="ttdeci">GPRAPI void GPRAPI void gpr_log_message(const char *file, int line, gpr_log_severity severity, const char *message)</div></div>
 <div class="ttc" id="log_8h_html_af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1"><div class="ttname"><a href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">GPR_LOG_SEVERITY_INFO</a></div><div class="ttdef"><b>Definition:</b> log.h:61</div></div>
 <div class="ttc" id="structgpr__log__func__args_html_ae1a051bbc7e0ef6c58de0db3efda24bb"><div class="ttname"><a href="structgpr__log__func__args.html#ae1a051bbc7e0ef6c58de0db3efda24bb">gpr_log_func_args::line</a></div><div class="ttdeci">int line</div><div class="ttdef"><b>Definition:</b> log.h:93</div></div>
-<div class="ttc" id="structgpr__log__func__args_html"><div class="ttname"><a href="structgpr__log__func__args.html">gpr_log_func_args</a></div><div class="ttdef"><b>Definition:</b> log.h:91</div></div>
-<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:410</div></div>
+<div class="ttc" id="structgpr__log__func__args_html"><div class="ttname"><a href="structgpr__log__func__args.html">gpr_log_func_args</a></div><div class="ttdoc">Log overrides: applications can use this API to intercept logging calls and use their own implementat...</div><div class="ttdef"><b>Definition:</b> log.h:91</div></div>
+<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:416</div></div>
 <div class="ttc" id="log_8h_html_ae437062e3540eeebb4c95f119fe56be5"><div class="ttname"><a href="log_8h.html#ae437062e3540eeebb4c95f119fe56be5">gpr_set_log_function</a></div><div class="ttdeci">GPRAPI void gpr_set_log_function(gpr_log_func func)</div></div>
-<div class="ttc" id="log_8h_html_af10334b4085ac6985a2af9c08478ad48"><div class="ttname"><a href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a></div><div class="ttdeci">gpr_log_severity</div><div class="ttdef"><b>Definition:</b> log.h:59</div></div>
-<div class="ttc" id="log_8h_html_a3badccbc5ec4c725eadbc07b8e5706eb"><div class="ttname"><a href="log_8h.html#a3badccbc5ec4c725eadbc07b8e5706eb">gpr_log_severity_string</a></div><div class="ttdeci">const char * gpr_log_severity_string(gpr_log_severity severity)</div></div>
+<div class="ttc" id="log_8h_html_af10334b4085ac6985a2af9c08478ad48"><div class="ttname"><a href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a></div><div class="ttdeci">gpr_log_severity</div><div class="ttdoc">GPR log API. </div><div class="ttdef"><b>Definition:</b> log.h:59</div></div>
 <div class="ttc" id="structgpr__log__func__args_html_ad9ce882bef15e3127620a8ef47f2b74b"><div class="ttname"><a href="structgpr__log__func__args.html#ad9ce882bef15e3127620a8ef47f2b74b">gpr_log_func_args::message</a></div><div class="ttdeci">const char * message</div><div class="ttdef"><b>Definition:</b> log.h:95</div></div>
 <div class="ttc" id="structgpr__log__func__args_html_a7961b2303b10d4f66d1aee6b5857ef89"><div class="ttname"><a href="structgpr__log__func__args.html#a7961b2303b10d4f66d1aee6b5857ef89">gpr_log_func_args::file</a></div><div class="ttdeci">const char * file</div><div class="ttdef"><b>Definition:</b> log.h:92</div></div>
-<div class="ttc" id="log_8h_html_aec0c537cb1e244060c65d9d9d153979f"><div class="ttname"><a href="log_8h.html#aec0c537cb1e244060c65d9d9d153979f">gpr_set_log_verbosity</a></div><div class="ttdeci">GPRAPI void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print)</div></div>
-<div class="ttc" id="log_8h_html_a938a283d9a10c3ddfe46dfc22e21077f"><div class="ttname"><a href="log_8h.html#a938a283d9a10c3ddfe46dfc22e21077f">gpr_log</a></div><div class="ttdeci">GPRAPI void gpr_log(const char *file, int line, gpr_log_severity severity, const char *format,...) GPR_PRINT_FORMAT_CHECK(4</div></div>
+<div class="ttc" id="log_8h_html_ae794448965328d305d0b44417199a915"><div class="ttname"><a href="log_8h.html#ae794448965328d305d0b44417199a915">gpr_log_severity_string</a></div><div class="ttdeci">GPRAPI const char * gpr_log_severity_string(gpr_log_severity severity)</div><div class="ttdoc">Returns a string representation of the log severity. </div></div>
+<div class="ttc" id="log_8h_html_aec0c537cb1e244060c65d9d9d153979f"><div class="ttname"><a href="log_8h.html#aec0c537cb1e244060c65d9d9d153979f">gpr_set_log_verbosity</a></div><div class="ttdeci">GPRAPI void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print)</div><div class="ttdoc">Set global log verbosity. </div></div>
+<div class="ttc" id="log_8h_html_a938a283d9a10c3ddfe46dfc22e21077f"><div class="ttname"><a href="log_8h.html#a938a283d9a10c3ddfe46dfc22e21077f">gpr_log</a></div><div class="ttdeci">GPRAPI void gpr_log(const char *file, int line, gpr_log_severity severity, const char *format,...) GPR_PRINT_FORMAT_CHECK(4</div><div class="ttdoc">Log a message. </div></div>
 <div class="ttc" id="log_8h_html_a0522b8141fb0b208bd069e848382da98"><div class="ttname"><a href="log_8h.html#a0522b8141fb0b208bd069e848382da98">gpr_log_verbosity_init</a></div><div class="ttdeci">GPRAPI void gpr_log_verbosity_init()</div></div>
 <div class="ttc" id="log_8h_html_a23f29195676c33c61ff08a7f0a3e69b0"><div class="ttname"><a href="log_8h.html#a23f29195676c33c61ff08a7f0a3e69b0">gpr_log_func</a></div><div class="ttdeci">void(* gpr_log_func)(gpr_log_func_args *args)</div><div class="ttdef"><b>Definition:</b> log.h:98</div></div>
 <div class="ttc" id="structgpr__log__func__args_html_af0b4b9d8beace1cae0d1a24783d70ccc"><div class="ttname"><a href="structgpr__log__func__args.html#af0b4b9d8beace1cae0d1a24783d70ccc">gpr_log_func_args::severity</a></div><div class="ttdeci">gpr_log_severity severity</div><div class="ttdef"><b>Definition:</b> log.h:94</div></div>
 <div class="ttc" id="log_8h_html_af10334b4085ac6985a2af9c08478ad48a52b957eb23ac2207b5e1dcf15c2b3dd4"><div class="ttname"><a href="log_8h.html#af10334b4085ac6985a2af9c08478ad48a52b957eb23ac2207b5e1dcf15c2b3dd4">GPR_LOG_SEVERITY_ERROR</a></div><div class="ttdef"><b>Definition:</b> log.h:62</div></div>
 <div class="ttc" id="impl_2codegen_2port__platform_8h_html"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html">port_platform.h</a></div></div>
-<div class="ttc" id="impl_2codegen_2port__platform_8h_html_a3364659cddcdfeae3897c3300de03d05"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#a3364659cddcdfeae3897c3300de03d05">GPR_PRINT_FORMAT_CHECK</a></div><div class="ttdeci">#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)</div><div class="ttdef"><b>Definition:</b> port_platform.h:394</div></div>
+<div class="ttc" id="impl_2codegen_2port__platform_8h_html_a3364659cddcdfeae3897c3300de03d05"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#a3364659cddcdfeae3897c3300de03d05">GPR_PRINT_FORMAT_CHECK</a></div><div class="ttdeci">#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)</div><div class="ttdef"><b>Definition:</b> port_platform.h:400</div></div>
 <div class="ttc" id="log_8h_html_af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6"><div class="ttname"><a href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6">GPR_LOG_SEVERITY_DEBUG</a></div><div class="ttdef"><b>Definition:</b> log.h:60</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

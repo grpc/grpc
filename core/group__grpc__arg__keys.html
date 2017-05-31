@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -126,8 +126,14 @@ Macros</h2></td></tr>
 <tr class="memitem:gaf4574abe94c339c6f21163bca6e7b6b7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf4574abe94c339c6f21163bca6e7b6b7">GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS</a>&#160;&#160;&#160;&quot;grpc.max_connection_age_grace_ms&quot;</td></tr>
 <tr class="memdesc:gaf4574abe94c339c6f21163bca6e7b6b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Grace period after the chennel reaches its max age.  <a href="#gaf4574abe94c339c6f21163bca6e7b6b7">More...</a><br/></td></tr>
 <tr class="separator:gaf4574abe94c339c6f21163bca6e7b6b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab195665836ae27c45748f5c4e5dc4057"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gab195665836ae27c45748f5c4e5dc4057">GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION</a>&#160;&#160;&#160;&quot;grpc.per_message_compression&quot;</td></tr>
+<tr class="memdesc:gab195665836ae27c45748f5c4e5dc4057"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable/disable support for per-message compression.  <a href="#gab195665836ae27c45748f5c4e5dc4057">More...</a><br/></td></tr>
+<tr class="separator:gab195665836ae27c45748f5c4e5dc4057"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga405daab19c0dceb2a64d0b1a77f8fe97"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga405daab19c0dceb2a64d0b1a77f8fe97">GRPC_ARG_ENABLE_DEADLINE_CHECKS</a>&#160;&#160;&#160;&quot;grpc.enable_deadline_checking&quot;</td></tr>
+<tr class="memdesc:ga405daab19c0dceb2a64d0b1a77f8fe97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable/disable support for deadline checking.  <a href="#ga405daab19c0dceb2a64d0b1a77f8fe97">More...</a><br/></td></tr>
+<tr class="separator:ga405daab19c0dceb2a64d0b1a77f8fe97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaecc45a63163796ca1bc5453938bdfb36"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaecc45a63163796ca1bc5453938bdfb36">GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER</a>&#160;&#160;&#160;&quot;grpc.http2.initial_sequence_number&quot;</td></tr>
-<tr class="memdesc:gaecc45a63163796ca1bc5453938bdfb36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initial sequence number for http2 transports.  <a href="#gaecc45a63163796ca1bc5453938bdfb36">More...</a><br/></td></tr>
+<tr class="memdesc:gaecc45a63163796ca1bc5453938bdfb36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initial stream ID for http2 transports.  <a href="#gaecc45a63163796ca1bc5453938bdfb36">More...</a><br/></td></tr>
 <tr class="separator:gaecc45a63163796ca1bc5453938bdfb36"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac02673f790cd2e8616e03aa010be67d6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gac02673f790cd2e8616e03aa010be67d6">GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES</a>&#160;&#160;&#160;&quot;grpc.http2.lookahead_bytes&quot;</td></tr>
 <tr class="memdesc:gac02673f790cd2e8616e03aa010be67d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Amount to read ahead on individual streams.  <a href="#gac02673f790cd2e8616e03aa010be67d6">More...</a><br/></td></tr>
@@ -147,6 +153,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gacc0d0f1d3d582d39fcfb7a835b730a6c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gacc0d0f1d3d582d39fcfb7a835b730a6c">GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS</a>&#160;&#160;&#160;&quot;grpc.http2.min_time_between_pings_ms&quot;</td></tr>
 <tr class="memdesc:gacc0d0f1d3d582d39fcfb7a835b730a6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum time (in milliseconds) between successive ping frames being sent.  <a href="#gacc0d0f1d3d582d39fcfb7a835b730a6c">More...</a><br/></td></tr>
 <tr class="separator:gacc0d0f1d3d582d39fcfb7a835b730a6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">GRPC_ARG_HTTP2_SCHEME</a>&#160;&#160;&#160;&quot;grpc.http2_scheme&quot;</td></tr>
+<tr class="memdesc:ga7797da9f3f5a1381484b2cabca1920fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg to override the http2 :scheme header.  <a href="#ga7797da9f3f5a1381484b2cabca1920fc">More...</a><br/></td></tr>
+<tr class="separator:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga401cc6c0e567cbbb8b689b091f92dc7e">GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA</a>&#160;&#160;&#160;&quot;grpc.http2.max_pings_without_data&quot;</td></tr>
 <tr class="memdesc:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many pings can we send before needing to send a data frame or header frame? (0 indicates that an infinite number of pings can be sent without sending a data frame or header frame)  <a href="#ga401cc6c0e567cbbb8b689b091f92dc7e">More...</a><br/></td></tr>
 <tr class="separator:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -180,6 +189,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gaf47b4048c11e4f8f4162f12c135c2da4"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf47b4048c11e4f8f4162f12c135c2da4">GRPC_ARG_SECONDARY_USER_AGENT_STRING</a>&#160;&#160;&#160;&quot;grpc.secondary_user_agent&quot;</td></tr>
 <tr class="memdesc:gaf47b4048c11e4f8f4162f12c135c2da4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Secondary user agent: goes at the end of the user-agent metadata sent on each request.  <a href="#gaf47b4048c11e4f8f4162f12c135c2da4">More...</a><br/></td></tr>
 <tr class="separator:gaf47b4048c11e4f8f4162f12c135c2da4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad7d9d143858d8f5e138cf704b0082973"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gad7d9d143858d8f5e138cf704b0082973">GRPC_ARG_MIN_RECONNECT_BACKOFF_MS</a>&#160;&#160;&#160;&quot;grpc.min_reconnect_backoff_ms&quot;</td></tr>
+<tr class="memdesc:gad7d9d143858d8f5e138cf704b0082973"><td class="mdescLeft">&#160;</td><td class="mdescRight">The minimum time between subsequent connection attempts, in ms.  <a href="#gad7d9d143858d8f5e138cf704b0082973">More...</a><br/></td></tr>
+<tr class="separator:gad7d9d143858d8f5e138cf704b0082973"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac978e84658bcda47633c5b81a80d0052"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gac978e84658bcda47633c5b81a80d0052">GRPC_ARG_MAX_RECONNECT_BACKOFF_MS</a>&#160;&#160;&#160;&quot;grpc.max_reconnect_backoff_ms&quot;</td></tr>
 <tr class="memdesc:gac978e84658bcda47633c5b81a80d0052"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum time between subsequent connection attempts, in ms.  <a href="#gac978e84658bcda47633c5b81a80d0052">More...</a><br/></td></tr>
 <tr class="separator:gac978e84658bcda47633c5b81a80d0052"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -187,14 +199,16 @@ Macros</h2></td></tr>
 <tr class="memdesc:gaedb26c5ca7d3d279b81d12d9bf6dabc6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The time between the first and second connection attempts, in ms.  <a href="#gaedb26c5ca7d3d279b81d12d9bf6dabc6">More...</a><br/></td></tr>
 <tr class="separator:gaedb26c5ca7d3d279b81d12d9bf6dabc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga218bf55b665134a11baf07ada5980825"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga218bf55b665134a11baf07ada5980825">GRPC_SSL_TARGET_NAME_OVERRIDE_ARG</a>&#160;&#160;&#160;&quot;grpc.ssl_target_name_override&quot;</td></tr>
+<tr class="memdesc:ga218bf55b665134a11baf07ada5980825"><td class="mdescLeft">&#160;</td><td class="mdescRight">This <em>should</em> be used for testing only.  <a href="#ga218bf55b665134a11baf07ada5980825">More...</a><br/></td></tr>
 <tr class="separator:ga218bf55b665134a11baf07ada5980825"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga2a9e23d3fe81ae539ba655d2e49051c8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga2a9e23d3fe81ae539ba655d2e49051c8">GRPC_ARG_MAX_METADATA_SIZE</a>&#160;&#160;&#160;&quot;grpc.max_metadata_size&quot;</td></tr>
+<tr class="memdesc:ga2a9e23d3fe81ae539ba655d2e49051c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum metadata size, in bytes.  <a href="#ga2a9e23d3fe81ae539ba655d2e49051c8">More...</a><br/></td></tr>
 <tr class="separator:ga2a9e23d3fe81ae539ba655d2e49051c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga40e635cf00ea7a10c71ed71c03d97f23"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga40e635cf00ea7a10c71ed71c03d97f23">GRPC_ARG_ALLOW_REUSEPORT</a>&#160;&#160;&#160;&quot;grpc.so_reuseport&quot;</td></tr>
 <tr class="memdesc:ga40e635cf00ea7a10c71ed71c03d97f23"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, allow the use of SO_REUSEPORT if it's available (default 1)  <a href="#ga40e635cf00ea7a10c71ed71c03d97f23">More...</a><br/></td></tr>
 <tr class="separator:ga40e635cf00ea7a10c71ed71c03d97f23"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa8bb5c65808f9c340ba7e4dd4f9f0f39"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaa8bb5c65808f9c340ba7e4dd4f9f0f39">GRPC_ARG_RESOURCE_QUOTA</a>&#160;&#160;&#160;&quot;grpc.resource_quota&quot;</td></tr>
-<tr class="memdesc:gaa8bb5c65808f9c340ba7e4dd4f9f0f39"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable to fetch an appropriate pointer arg vtable)  <a href="#gaa8bb5c65808f9c340ba7e4dd4f9f0f39">More...</a><br/></td></tr>
+<tr class="memdesc:gaa8bb5c65808f9c340ba7e4dd4f9f0f39"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, a pointer to a buffer pool (a pointer of type grpc_resource_quota*).  <a href="#gaa8bb5c65808f9c340ba7e4dd4f9f0f39">More...</a><br/></td></tr>
 <tr class="separator:gaa8bb5c65808f9c340ba7e4dd4f9f0f39"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gab11602475264d01e0ea50f0ce376cdcd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gab11602475264d01e0ea50f0ce376cdcd">GRPC_ARG_EXPAND_WILDCARD_ADDRS</a>&#160;&#160;&#160;&quot;grpc.expand_wildcard_addrs&quot;</td></tr>
 <tr class="memdesc:gab11602475264d01e0ea50f0ce376cdcd"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, expand wildcard addresses to a list of local addresses.  <a href="#gab11602475264d01e0ea50f0ce376cdcd">More...</a><br/></td></tr>
@@ -215,13 +229,20 @@ Macros</h2></td></tr>
 <tr class="memdesc:ga3da556ec531495ace9f93b97c8c4f24b"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, Cronet transport will coalesce packets to fewer frames when possible.  <a href="#ga3da556ec531495ace9f93b97c8c4f24b">More...</a><br/></td></tr>
 <tr class="separator:ga3da556ec531495ace9f93b97c8c4f24b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga82582ed0fcd7d6b0090f9102d75c765a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga82582ed0fcd7d6b0090f9102d75c765a">GRPC_ARG_TCP_READ_CHUNK_SIZE</a>&#160;&#160;&#160;&quot;grpc.experimental.tcp_read_chunk_size&quot;</td></tr>
+<tr class="memdesc:ga82582ed0fcd7d6b0090f9102d75c765a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg (integer) setting how large a slice to try and read from the wire each time recvmsg (or equivalent) is called.  <a href="#ga82582ed0fcd7d6b0090f9102d75c765a">More...</a><br/></td></tr>
 <tr class="separator:ga82582ed0fcd7d6b0090f9102d75c765a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga1f91c3aec64a436d29051c8d415b1053"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga1f91c3aec64a436d29051c8d415b1053">GRPC_TCP_DEFAULT_READ_SLICE_SIZE</a>&#160;&#160;&#160;8192</td></tr>
+<tr class="memdesc:ga1f91c3aec64a436d29051c8d415b1053"><td class="mdescLeft">&#160;</td><td class="mdescRight">Note this is not a "channel arg" key.  <a href="#ga1f91c3aec64a436d29051c8d415b1053">More...</a><br/></td></tr>
 <tr class="separator:ga1f91c3aec64a436d29051c8d415b1053"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae55b7bd57a5344e0083eac4d06c2d51b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gae55b7bd57a5344e0083eac4d06c2d51b">GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE</a>&#160;&#160;&#160;&quot;grpc.experimental.tcp_min_read_chunk_size&quot;</td></tr>
 <tr class="separator:gae55b7bd57a5344e0083eac4d06c2d51b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gadeaad8ae5b50ee8d2fb44d289aeb223d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gadeaad8ae5b50ee8d2fb44d289aeb223d">GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE</a>&#160;&#160;&#160;&quot;grpc.experimental.tcp_max_read_chunk_size&quot;</td></tr>
 <tr class="separator:gadeaad8ae5b50ee8d2fb44d289aeb223d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1768735fceeb8108a2f1eb12ea0a894e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga1768735fceeb8108a2f1eb12ea0a894e">GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.grpclb_timeout_ms&quot;</td></tr>
+<tr class="separator:ga1768735fceeb8108a2f1eb12ea0a894e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">GRPC_ARG_WORKAROUND_CRONET_COMPRESSION</a>&#160;&#160;&#160;&quot;grpc.workaround.cronet_compression&quot;</td></tr>
+<tr class="memdesc:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, grpc server's cronet compression workaround will be enabled.  <a href="#ga618ddbf19fdd38d8f90b8f3d7cb5d481">More...</a><br/></td></tr>
+<tr class="separator:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Channel argument keys. </p>
@@ -270,6 +291,21 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ga405daab19c0dceb2a64d0b1a77f8fe97"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_ENABLE_DEADLINE_CHECKS&#160;&#160;&#160;&quot;grpc.enable_deadline_checking&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Enable/disable support for deadline checking. </p>
+<p>Defaults to 1, unless GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 </p>
+
+</div>
+</div>
 <a class="anchor" id="gaae124ed1c6d60a08d0f56884e9442044"></a>
 <div class="memitem">
 <div class="memproto">
@@ -284,6 +320,21 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="gab195665836ae27c45748f5c4e5dc4057"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION&#160;&#160;&#160;&quot;grpc.per_message_compression&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Enable/disable support for per-message compression. </p>
+<p>Defaults to 1, unless GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. </p>
+
+</div>
+</div>
 <a class="anchor" id="gab11602475264d01e0ea50f0ce376cdcd"></a>
 <div class="memitem">
 <div class="memproto">
@@ -295,6 +346,18 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>If non-zero, expand wildcard addresses to a list of local addresses. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga1768735fceeb8108a2f1eb12ea0a894e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS&#160;&#160;&#160;&quot;grpc.grpclb_timeout_ms&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -366,7 +429,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Initial sequence number for http2 transports. </p>
+<p>Initial stream ID for http2 transports. </p>
 <p>Int valued. </p>
 
 </div>
@@ -440,6 +503,20 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Minimum time (in milliseconds) between successive ping frames being sent. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga7797da9f3f5a1381484b2cabca1920fc"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_HTTP2_SCHEME&#160;&#160;&#160;&quot;grpc.http2_scheme&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Channel arg to override the http2 :scheme header. </p>
 
 </div>
 </div>
@@ -614,7 +691,8 @@ Macros</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000001">Deprecated:</a></b></dt><dd>For backward compatibility. </dd></dl>
+<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000001">Deprecated:</a></b></dt><dd>For backward compatibility.</dd></dl>
+<p>Use GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH instead. </p>
 
 </div>
 </div>
@@ -627,6 +705,9 @@ Macros</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Maximum metadata size, in bytes. </p>
+<p>Note this limit applies to the max sum of all metadata key-value entries in a batch of headers. </p>
 
 </div>
 </div>
@@ -674,6 +755,20 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="gad7d9d143858d8f5e138cf704b0082973"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_MIN_RECONNECT_BACKOFF_MS&#160;&#160;&#160;&quot;grpc.min_reconnect_backoff_ms&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The minimum time between subsequent connection attempts, in ms. </p>
+
+</div>
+</div>
 <a class="anchor" id="ga17b79aacf3bbfb0bce6d29bf9867988b"></a>
 <div class="memitem">
 <div class="memproto">
@@ -713,7 +808,8 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable to fetch an appropriate pointer arg vtable) </p>
+<p>If non-zero, a pointer to a buffer pool (a pointer of type grpc_resource_quota*). </p>
+<p>(use <a class="el" href="grpc_8h.html#a3878872e5415c8b8f7765221a8dc961d" title="Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota. ">grpc_resource_quota_arg_vtable()</a> to fetch an appropriate pointer arg vtable) </p>
 
 </div>
 </div>
@@ -811,6 +907,8 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Channel arg (integer) setting how large a slice to try and read from the wire each time recvmsg (or equivalent) is called. </p>
+
 </div>
 </div>
 <a class="anchor" id="ga3da556ec531495ace9f93b97c8c4f24b"></a>
@@ -824,6 +922,20 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>If non-zero, Cronet transport will coalesce packets to fewer frames when possible. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga618ddbf19fdd38d8f90b8f3d7cb5d481"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION&#160;&#160;&#160;&quot;grpc.workaround.cronet_compression&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If non-zero, grpc server's cronet compression workaround will be enabled. </p>
 
 </div>
 </div>
@@ -882,6 +994,9 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>This <em>should</em> be used for testing only. </p>
+<p>The caller of the secure_channel_create functions may override the target name used for SSL host name checking using this channel argument which is of type <em>GRPC_ARG_STRING</em>. If this argument is not specified, the name used for SSL host name checking will be the target parameter (assuming that the secure channel is an SSL channel). If this parameter is specified and the underlying is not an SSL channel, it will just be ignored. </p>
+
 </div>
 </div>
 <a class="anchor" id="ga1f91c3aec64a436d29051c8d415b1053"></a>
@@ -894,12 +1009,15 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Note this is not a "channel arg" key. </p>
+<p>This is the default slice size to use when trying to read from the wire if the GRPC_ARG_TCP_READ_CHUNK_SIZE channel arg is unspecified. </p>
+
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

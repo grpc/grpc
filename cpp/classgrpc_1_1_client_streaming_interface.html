@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -106,7 +106,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a312c9454c0f950e1c75b5c802bcbb00e"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_streaming_interface.html#a312c9454c0f950e1c75b5c802bcbb00e">~ClientStreamingInterface</a> ()</td></tr>
 <tr class="separator:a312c9454c0f950e1c75b5c802bcbb00e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98e2927a42c793017ce7d8c6e88539c4"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_streaming_interface.html#a98e2927a42c793017ce7d8c6e88539c4">Finish</a> ()=0</td></tr>
-<tr class="memdesc:a98e2927a42c793017ce7d8c6e88539c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wait until the stream finishes, and return the final status.  <a href="#a98e2927a42c793017ce7d8c6e88539c4">More...</a><br/></td></tr>
+<tr class="memdesc:a98e2927a42c793017ce7d8c6e88539c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block waiting until the stream finishes and a final status of the call is available.  <a href="#a98e2927a42c793017ce7d8c6e88539c4">More...</a><br/></td></tr>
 <tr class="separator:a98e2927a42c793017ce7d8c6e88539c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -157,12 +157,22 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Wait until the stream finishes, and return the final status. </p>
-<p>When the client side declares it has no more message to send, either implicitly or by calling <em>WritesDone()</em>, it needs to make sure there is no more message to be received from the server, either implicitly or by getting a false from a <em>Read()</em>.</p>
+<p>Block waiting until the stream finishes and a final status of the call is available. </p>
+<p>It is appropriate to call this method when both:</p>
+<ul>
+<li>the calling code (client-side) has no more message to send (this can be declared implicitly by calling this method, or explicitly through an earlier call to <em>WritesDone</em> method of the class in use, e.g. <em><a class="el" href="classgrpc_1_1_client_writer_interface.html#aff19574252338e9ac1b5446e82ed8ac5" title="Half close writing from the client. ">ClientWriterInterface::WritesDone</a></em> or <em><a class="el" href="classgrpc_1_1_client_reader_writer_interface.html#a52f4e5d5ac7fe0e4995cb337aa0ecfc8" title="Half close writing from the client. ">ClientReaderWriterInterface::WritesDone</a></em>).</li>
+<li>there are no more messages to be received from the server (which can be known implicitly, or explicitly from an earlier call to <em><a class="el" href="classgrpc_1_1_reader_interface.html#a04a1da8610d790ea86ecd5a14fe892b8" title="Block to read a message and parse to msg. ">ReaderInterface::Read</a></em> that returned "false").</li>
+</ul>
 <p>This function will return either:</p>
 <ul>
 <li>when all incoming messages have been read and the server has returned status.</li>
-<li>OR when the server has returned a non-OK status. </li>
+<li>when the server has returned a non-OK status.</li>
+<li>OR when the call failed for some reason and the library generated a status.</li>
+</ul>
+<p>Return values:</p>
+<ul>
+<li><em><a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a></em> contains the status code, message and details for the call</li>
+<li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> associated with this call is updated with possible trailing metadata sent from the server. </li>
 </ul>
 
 <p>Implemented in <a class="el" href="classgrpc_1_1_client_reader_writer.html#a9fe0acda29ba46726d69cedfdb043c79">grpc::ClientReaderWriter&lt; W, R &gt;</a>, <a class="el" href="classgrpc_1_1_client_writer.html#ab6c58e110c289ac0f76ae1fdb8fe24a3">grpc::ClientWriter&lt; W &gt;</a>, and <a class="el" href="classgrpc_1_1_client_reader.html#a29f6f067be74bc657486d8ab232ca809">grpc::ClientReader&lt; R &gt;</a>.</p>
@@ -175,7 +185,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

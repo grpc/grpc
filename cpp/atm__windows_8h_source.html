@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -127,7 +127,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPC_IMPL_CODEGEN_ATM_WINDOWS_H</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_IMPL_CODEGEN_ATM_WINDOWS_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="comment">/* Win32 variant of atm_platform.h */</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="port__platform_8h.html">grpc/impl/codegen/port_platform.h</a>&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
 <div class="line"><a name="l00040"></a><span class="lineno"><a class="line" href="atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51">   40</a></span>&#160;<span class="keyword">typedef</span> intptr_t <a class="code" href="atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a>;</div>
@@ -157,8 +156,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;}</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">static</span> __inline <span class="keywordtype">int</span> <a class="code" href="atm__gcc__sync_8h.html#ad39536b08912ac4a0770655ed334d260">gpr_atm_no_barrier_cas</a>(<a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> o, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> n) {</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment">/* InterlockedCompareExchangePointerNoFence() not available on vista or</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="comment">   windows7 */</span></div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">#ifdef GPR_ARCH_64</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a>)InterlockedCompareExchangeAcquire64(</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                  (<span class="keyword">volatile</span> LONGLONG *)p, (LONGLONG)n, (LONGLONG)o);</div>
@@ -200,7 +197,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="keyword">static</span> __inline <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> <a class="code" href="atm__gcc__atomic_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">gpr_atm_no_barrier_fetch_add</a>(<a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *p,</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                                                     <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> delta) {</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  <span class="comment">/* Use the CAS operation to get pointer-sized fetch and add */</span></div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> old;</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  <span class="keywordflow">do</span> {</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    old = *p;</div>
@@ -209,7 +205,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;}</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="keyword">static</span> __inline <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> <a class="code" href="atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">gpr_atm_full_fetch_add</a>(<a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> delta) {</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  <span class="comment">/* Use a CAS operation to get pointer-sized fetch and add */</span></div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;  <a class="code" href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> old;</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="preprocessor">#ifdef GPR_ARCH_64</span></div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">do</span> {</div>
@@ -234,7 +229,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="port__platform_8h_html"><div class="ttname"><a href="port__platform_8h.html">port_platform.h</a></div></div>
 <div class="ttc" id="atm__gcc__atomic_8h_html_a0a6314f31fcae0666a93961bed98af51"><div class="ttname"><a href="atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a></div><div class="ttdeci">intptr_t gpr_atm</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:41</div></div>
 <div class="ttc" id="atm__gcc__atomic_8h_html_ae337dc477a6a45ac3d91e41e8f3f2f8c"><div class="ttname"><a href="atm__gcc__atomic_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">gpr_atm_no_barrier_fetch_add</a></div><div class="ttdeci">#define gpr_atm_no_barrier_fetch_add(p, delta)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:67</div></div>
-<div class="ttc" id="atm__windows_8h_html_a0a6314f31fcae0666a93961bed98af51"><div class="ttname"><a href="atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a></div><div class="ttdeci">intptr_t gpr_atm</div><div class="ttdef"><b>Definition:</b> atm_windows.h:40</div></div>
+<div class="ttc" id="atm__windows_8h_html_a0a6314f31fcae0666a93961bed98af51"><div class="ttname"><a href="atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a></div><div class="ttdeci">intptr_t gpr_atm</div><div class="ttdoc">Win32 variant of atm_platform.h. </div><div class="ttdef"><b>Definition:</b> atm_windows.h:40</div></div>
 <div class="ttc" id="atm__gcc__atomic_8h_html_a724691b6d48f35bbd9f575c82fdfb526"><div class="ttname"><a href="atm__gcc__atomic_8h.html#a724691b6d48f35bbd9f575c82fdfb526">gpr_atm_full_xchg</a></div><div class="ttdeci">#define gpr_atm_full_xchg(p, n)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:94</div></div>
 <div class="ttc" id="atm__gcc__atomic_8h_html_a44607f95f7ee40eba592c7fe10960a06"><div class="ttname"><a href="atm__gcc__atomic_8h.html#a44607f95f7ee40eba592c7fe10960a06">gpr_atm_acq_load</a></div><div class="ttdeci">#define gpr_atm_acq_load(p)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:60</div></div>
 <div class="ttc" id="atm__gcc__sync_8h_html_a9d29f224b49d4de8bb2b0d7feae64fcb"><div class="ttname"><a href="atm__gcc__sync_8h.html#a9d29f224b49d4de8bb2b0d7feae64fcb">gpr_atm_full_cas</a></div><div class="ttdeci">#define gpr_atm_full_cas(p, o, n)</div><div class="ttdef"><b>Definition:</b> atm_gcc_sync.h:87</div></div>
@@ -249,7 +244,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

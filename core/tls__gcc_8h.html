@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -101,6 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__gcc__thread__local.html">gpr_gcc_thread_local</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread local storage based on gcc compiler primitives.  <a href="structgpr__gcc__thread__local.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
@@ -110,6 +111,7 @@ Macros</h2></td></tr>
 <tr class="memitem:a43768a42ff705cc028b4a483dc3b65c5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__gcc_8h.html#a43768a42ff705cc028b4a483dc3b65c5">gpr_tls_init</a>(tls)</td></tr>
 <tr class="separator:a43768a42ff705cc028b4a483dc3b65c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a187108e1078d2ce05388cb17bc59ce74"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__gcc_8h.html#a187108e1078d2ce05388cb17bc59ce74">gpr_tls_destroy</a>(tls)</td></tr>
+<tr class="memdesc:a187108e1078d2ce05388cb17bc59ce74"><td class="mdescLeft">&#160;</td><td class="mdescRight">It is allowed to call gpr_tls_init after gpr_tls_destroy is called.  <a href="#a187108e1078d2ce05388cb17bc59ce74">More...</a><br/></td></tr>
 <tr class="separator:a187108e1078d2ce05388cb17bc59ce74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8f01b3e40178b80d098650f42c529e7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__gcc_8h.html#aa8f01b3e40178b80d098650f42c529e7">gpr_tls_set</a>(tls, new_value)</td></tr>
 <tr class="separator:aa8f01b3e40178b80d098650f42c529e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -132,7 +134,7 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line"><span class="keyword">static</span> <span class="keywordtype">bool</span> name##_inited = <span class="keyword">false</span>; \</div>
 <div class="line">  static __thread <span class="keyword">struct </span><a class="code" href="structgpr__gcc__thread__local.html">gpr_gcc_thread_local</a> name = {0, &amp;(name##_inited)}</div>
-<div class="ttc" id="structgpr__gcc__thread__local_html"><div class="ttname"><a href="structgpr__gcc__thread__local.html">gpr_gcc_thread_local</a></div><div class="ttdef"><b>Definition:</b> tls_gcc.h:46</div></div>
+<div class="ttc" id="structgpr__gcc__thread__local_html"><div class="ttname"><a href="structgpr__gcc__thread__local.html">gpr_gcc_thread_local</a></div><div class="ttdoc">Thread local storage based on gcc compiler primitives. </div><div class="ttdef"><b>Definition:</b> tls_gcc.h:46</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -154,8 +156,10 @@ Macros</h2></td></tr>
 <div class="line">    *((tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">inited</a>) = <span class="keyword">false</span>;     \</div>
 <div class="line">  } <span class="keywordflow">while</span> (0)</div>
 <div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:48</div></div>
-<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
+<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
 </div><!-- fragment -->
+<p>It is allowed to call gpr_tls_init after gpr_tls_destroy is called. </p>
+
 </div>
 </div>
 <a class="anchor" id="a9aa9e55eddbe7fed424526c23e1b55a3"></a>
@@ -176,7 +180,7 @@ Macros</h2></td></tr>
 <div class="line">    (tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ab3d5e3ce7529dc976b72794797c25e56">value</a>;                 \</div>
 <div class="line">  })</div>
 <div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:48</div></div>
-<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
+<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
 <div class="ttc" id="structgpr__gcc__thread__local_html_ab3d5e3ce7529dc976b72794797c25e56"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ab3d5e3ce7529dc976b72794797c25e56">gpr_gcc_thread_local::value</a></div><div class="ttdeci">intptr_t value</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:47</div></div>
 </div><!-- fragment -->
 </div>
@@ -199,7 +203,7 @@ Macros</h2></td></tr>
 <div class="line">    *((tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">inited</a>) = <span class="keyword">true</span>;               \</div>
 <div class="line">  } <span class="keywordflow">while</span> (0)</div>
 <div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:48</div></div>
-<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
+<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -231,7 +235,7 @@ Macros</h2></td></tr>
 <div class="line">    (tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ab3d5e3ce7529dc976b72794797c25e56">value</a> = (new_value);     \</div>
 <div class="line">  } <span class="keywordflow">while</span> (0)</div>
 <div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:48</div></div>
-<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
+<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
 <div class="ttc" id="structgpr__gcc__thread__local_html_ab3d5e3ce7529dc976b72794797c25e56"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ab3d5e3ce7529dc976b72794797c25e56">gpr_gcc_thread_local::value</a></div><div class="ttdeci">intptr_t value</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:47</div></div>
 </div><!-- fragment -->
 </div>
@@ -239,7 +243,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

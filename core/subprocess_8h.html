@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_8e03e8f0d52209e008fae5f40ace0591.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -105,12 +105,15 @@ Typedefs</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a9f3fc27d7049e86c818e3ce0e7a1c455"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subprocess_8h.html#a9f3fc27d7049e86c818e3ce0e7a1c455">gpr_subprocess_binary_extension</a> ()</td></tr>
+<tr class="memdesc:a9f3fc27d7049e86c818e3ce0e7a1c455"><td class="mdescLeft">&#160;</td><td class="mdescRight">.exe on windows, empty on unices  <a href="#a9f3fc27d7049e86c818e3ce0e7a1c455">More...</a><br/></td></tr>
 <tr class="separator:a9f3fc27d7049e86c818e3ce0e7a1c455"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0bccee37834b2d5eb84b34cec119c7c7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="subprocess_8h.html#a1c3492c3aef738e6eef6b8cb1b435095">gpr_subprocess</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subprocess_8h.html#a0bccee37834b2d5eb84b34cec119c7c7">gpr_subprocess_create</a> (int argc, const char **argv)</td></tr>
 <tr class="separator:a0bccee37834b2d5eb84b34cec119c7c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac9d2009c919c83e4805ec5761586b794"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subprocess_8h.html#ac9d2009c919c83e4805ec5761586b794">gpr_subprocess_destroy</a> (<a class="el" href="subprocess_8h.html#a1c3492c3aef738e6eef6b8cb1b435095">gpr_subprocess</a> *p)</td></tr>
+<tr class="memdesc:ac9d2009c919c83e4805ec5761586b794"><td class="mdescLeft">&#160;</td><td class="mdescRight">if subprocess has not been joined, kill it  <a href="#ac9d2009c919c83e4805ec5761586b794">More...</a><br/></td></tr>
 <tr class="separator:ac9d2009c919c83e4805ec5761586b794"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a861d83b3b63a0e728735382c3576a503"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subprocess_8h.html#a861d83b3b63a0e728735382c3576a503">gpr_subprocess_join</a> (<a class="el" href="subprocess_8h.html#a1c3492c3aef738e6eef6b8cb1b435095">gpr_subprocess</a> *p)</td></tr>
+<tr class="memdesc:a861d83b3b63a0e728735382c3576a503"><td class="mdescLeft">&#160;</td><td class="mdescRight">returns exit status; can be called at most once  <a href="#a861d83b3b63a0e728735382c3576a503">More...</a><br/></td></tr>
 <tr class="separator:a861d83b3b63a0e728735382c3576a503"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a41807ad6060c8a58f125c7b00dc826fa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subprocess_8h.html#a41807ad6060c8a58f125c7b00dc826fa">gpr_subprocess_interrupt</a> (<a class="el" href="subprocess_8h.html#a1c3492c3aef738e6eef6b8cb1b435095">gpr_subprocess</a> *p)</td></tr>
 <tr class="separator:a41807ad6060c8a58f125c7b00dc826fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -141,6 +144,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>.exe on windows, empty on unices </p>
 
 </div>
 </div>
@@ -184,6 +189,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>if subprocess has not been joined, kill it </p>
+
 </div>
 </div>
 <a class="anchor" id="a41807ad6060c8a58f125c7b00dc826fa"></a>
@@ -216,12 +223,14 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>returns exit status; can be called at most once </p>
+
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

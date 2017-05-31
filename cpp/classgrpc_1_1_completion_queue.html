@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -92,6 +92,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#friends">Friends</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::CompletionQueue Class Reference</div>  </div>
@@ -144,6 +145,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab198302d64bdf815ece389a44fdd931f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#ab198302d64bdf815ece389a44fdd931f">CompleteAvalanching</a> ()</td></tr>
 <tr class="separator:ab198302d64bdf815ece389a44fdd931f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
+Protected Member Functions</h2></td></tr>
+<tr class="memitem:abf1d4810de32ca2cc2c14c591b41d2cd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#abf1d4810de32ca2cc2c14c591b41d2cd">CompletionQueue</a> (const <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a> &amp;attributes)</td></tr>
+<tr class="memdesc:abf1d4810de32ca2cc2c14c591b41d2cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Private constructor of <a class="el" href="classgrpc_1_1_completion_queue.html" title="A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue.h). ">CompletionQueue</a> only visible to friend classes.  <a href="#abf1d4810de32ca2cc2c14c591b41d2cd">More...</a><br/></td></tr>
+<tr class="separator:abf1d4810de32ca2cc2c14c591b41d2cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:ade499098cc91745c1c87147d7a7fb7bf"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
@@ -184,6 +191,7 @@ Friends</h2></td></tr>
 <tr class="separator:a6c5b4f4c66d254f341915982a17aac95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4aac0a120f3498d1151460ef89ce8446"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
 <tr class="memitem:a4aac0a120f3498d1151460ef89ce8446"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a4aac0a120f3498d1151460ef89ce8446">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
+<tr class="memdesc:a4aac0a120f3498d1151460ef89ce8446"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper that performs a blocking unary call.  <a href="#a4aac0a120f3498d1151460ef89ce8446">More...</a><br/></td></tr>
 <tr class="separator:a4aac0a120f3498d1151460ef89ce8446"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -296,6 +304,32 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Destructor. Destroys the owned wrapped completion queue / instance. </p>
+
+</div>
+</div>
+<a class="anchor" id="abf1d4810de32ca2cc2c14c591b41d2cd"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::CompletionQueue::CompletionQueue </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a> &amp;&#160;</td>
+          <td class="paramname"><em>attributes</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Private constructor of <a class="el" href="classgrpc_1_1_completion_queue.html" title="A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue.h). ">CompletionQueue</a> only visible to friend classes. </p>
 
 </div>
 </div>
@@ -502,7 +536,7 @@ template&lt;typename T &gt; </div>
 </div><div class="memdoc">
 
 <p>Request the shutdown of the queue. </p>
-<dl class="section warning"><dt>Warning</dt><dd>This method must be called at some point if this completion queue is accessed with Next or AsyncNext. Once invoked, <em>Next</em> will start to return false and <em>AsyncNext</em> will return <em>NextStatus::SHUTDOWN</em>. Only once either one of these methods does that (that is, once the queue has been <em>drained</em>) can an instance of this class be destroyed. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>This method must be called at some point if this completion queue is accessed with Next or AsyncNext. Once invoked, <em>Next</em> will start to return false and <em>AsyncNext</em> will return <em>NextStatus::SHUTDOWN</em>. Only once either one of these methods does that (that is, once the queue has been <em>drained</em>) can an instance of this class be destroyed. Also note that applications must ensure that no work is enqueued on this completion queue after this method is called. </dd></dl>
 
 </div>
 </div>
@@ -731,6 +765,8 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Wrapper that performs a blocking unary call. </p>
+
 </div>
 </div>
 <a class="anchor" id="ae11583f8aab976055b1feae895d7e12a"></a>
@@ -847,7 +883,7 @@ template&lt;class Streamer , bool WriteNeeded&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -96,6 +96,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>Synchronous (blocking) server-side API for doing client-streaming RPCs, where the incoming message stream coming from the client has messages of type <em>R</em>.  
+ <a href="classgrpc_1_1_server_reader.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="impl_2codegen_2completion__queue_8h_source.html">completion_queue.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -103,13 +106,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a43e6b5258cfc623fa719884fce957521"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader.html#a43e6b5258cfc623fa719884fce957521">ServerReader</a> (<a class="el" href="classgrpc_1_1_call.html">Call</a> *call, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *ctx)</td></tr>
 <tr class="separator:a43e6b5258cfc623fa719884fce957521"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9485c2aa06bad8ca0650bfeafa35e2e4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader.html#a9485c2aa06bad8ca0650bfeafa35e2e4">SendInitialMetadata</a> () override</td></tr>
-<tr class="memdesc:a9485c2aa06bad8ca0650bfeafa35e2e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocking send initial metadata to client.  <a href="#a9485c2aa06bad8ca0650bfeafa35e2e4">More...</a><br/></td></tr>
+<tr class="memdesc:a9485c2aa06bad8ca0650bfeafa35e2e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a1a73c0e46258c0ef9a5c1ecd3cbe429a" title="Block to send initial metadata to client. ">ServerStreamingInterface.SendInitialMetadata</a></em> method for semantics.  <a href="#a9485c2aa06bad8ca0650bfeafa35e2e4">More...</a><br/></td></tr>
 <tr class="separator:a9485c2aa06bad8ca0650bfeafa35e2e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba6ffb98a646c122a4b5e8a53e969d7e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader.html#aba6ffb98a646c122a4b5e8a53e969d7e">NextMessageSize</a> (uint32_t *sz) override</td></tr>
-<tr class="memdesc:aba6ffb98a646c122a4b5e8a53e969d7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Upper bound on the next message size available for reading on this stream.  <a href="#aba6ffb98a646c122a4b5e8a53e969d7e">More...</a><br/></td></tr>
+<tr class="memdesc:aba6ffb98a646c122a4b5e8a53e969d7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get an upper bound on the next message size available for reading on this stream.  <a href="#aba6ffb98a646c122a4b5e8a53e969d7e">More...</a><br/></td></tr>
 <tr class="separator:aba6ffb98a646c122a4b5e8a53e969d7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aefba84a0fc0d5cef5be843e0fb08e1d5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader.html#aefba84a0fc0d5cef5be843e0fb08e1d5">Read</a> (R *msg) override</td></tr>
-<tr class="memdesc:aefba84a0fc0d5cef5be843e0fb08e1d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocking read a message and parse to <em>msg</em>.  <a href="#aefba84a0fc0d5cef5be843e0fb08e1d5">More...</a><br/></td></tr>
+<tr class="memdesc:aefba84a0fc0d5cef5be843e0fb08e1d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block to read a message and parse to <em>msg</em>.  <a href="#aefba84a0fc0d5cef5be843e0fb08e1d5">More...</a><br/></td></tr>
 <tr class="separator:aefba84a0fc0d5cef5be843e0fb08e1d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_server_streaming_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_server_streaming_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_server_streaming_interface.html">grpc::ServerStreamingInterface</a></td></tr>
 <tr class="memitem:a3c4c1bb05e9a92ca9095bcb63301d8a1 inherit pub_methods_classgrpc_1_1_server_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a3c4c1bb05e9a92ca9095bcb63301d8a1">~ServerStreamingInterface</a> ()</td></tr>
@@ -118,7 +121,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1fbd3d6e86e2f97e5444f29b0af0a9d5 inherit pub_methods_classgrpc_1_1_reader_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_reader_interface.html#a1fbd3d6e86e2f97e5444f29b0af0a9d5">~ReaderInterface</a> ()</td></tr>
 <tr class="separator:a1fbd3d6e86e2f97e5444f29b0af0a9d5 inherit pub_methods_classgrpc_1_1_reader_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><h3>template&lt;class R&gt;<br/>
+class grpc::ServerReader&lt; R &gt;</h3>
+
+<p>Synchronous (blocking) server-side API for doing client-streaming RPCs, where the incoming message stream coming from the client has messages of type <em>R</em>. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a43e6b5258cfc623fa719884fce957521"></a>
 <div class="memitem">
 <div class="memproto">
@@ -180,7 +188,7 @@ template&lt;class R&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Upper bound on the next message size available for reading on this stream. </p>
+<p>Get an upper bound on the next message size available for reading on this stream. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1_reader_interface.html#a4ad823a3c32ec163fca5fc175dcb102f">grpc::ReaderInterface&lt; R &gt;</a>.</p>
 
@@ -210,7 +218,7 @@ template&lt;class R&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Blocking read a message and parse to <em>msg</em>. </p>
+<p>Block to read a message and parse to <em>msg</em>. </p>
 <p>Returns <em>true</em> on success. This is thread-safe with respect to <em>Write</em> or  methods on the same stream. It should not be called concurrently with another <em>Read</em> on the same stream as the order of delivery will not be defined.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -247,7 +255,8 @@ template&lt;class R&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Blocking send initial metadata to client. </p>
+<p>See the <em><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a1a73c0e46258c0ef9a5c1ecd3cbe429a" title="Block to send initial metadata to client. ">ServerStreamingInterface.SendInitialMetadata</a></em> method for semantics. </p>
+<p>Note that initial metadata will be affected by the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with this call. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1_server_streaming_interface.html#a1a73c0e46258c0ef9a5c1ecd3cbe429a">grpc::ServerStreamingInterface</a>.</p>
 
@@ -260,7 +269,7 @@ template&lt;class R&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

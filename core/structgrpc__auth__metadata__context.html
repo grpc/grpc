@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,20 +90,29 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>Context that can be used by metadata credentials plugin in order to create auth related metadata.  
+ <a href="structgrpc__auth__metadata__context.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="grpc__security_8h_source.html">grpc_security.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a67ff8c2ebf38b5511da3d3194d72e01d"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__context.html#a67ff8c2ebf38b5511da3d3194d72e01d">service_url</a></td></tr>
+<tr class="memdesc:a67ff8c2ebf38b5511da3d3194d72e01d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The fully qualifed service url.  <a href="#a67ff8c2ebf38b5511da3d3194d72e01d">More...</a><br/></td></tr>
 <tr class="separator:a67ff8c2ebf38b5511da3d3194d72e01d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad031faf41efeaae29c4f71d67a0d2cb3"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__context.html#ad031faf41efeaae29c4f71d67a0d2cb3">method_name</a></td></tr>
+<tr class="memdesc:ad031faf41efeaae29c4f71d67a0d2cb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">The method name of the RPC being called (not fully qualified).  <a href="#ad031faf41efeaae29c4f71d67a0d2cb3">More...</a><br/></td></tr>
 <tr class="separator:ad031faf41efeaae29c4f71d67a0d2cb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7cb596d3af7463816fdde64f3e18dbde"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__context.html#a7cb596d3af7463816fdde64f3e18dbde">channel_auth_context</a></td></tr>
+<tr class="memdesc:a7cb596d3af7463816fdde64f3e18dbde"><td class="mdescLeft">&#160;</td><td class="mdescRight">The auth_context of the channel which gives the server's identity.  <a href="#a7cb596d3af7463816fdde64f3e18dbde">More...</a><br/></td></tr>
 <tr class="separator:a7cb596d3af7463816fdde64f3e18dbde"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ca2d1c0da619c1e50cef8437f1ef517"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__context.html#a0ca2d1c0da619c1e50cef8437f1ef517">reserved</a></td></tr>
+<tr class="memdesc:a0ca2d1c0da619c1e50cef8437f1ef517"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserved for future use.  <a href="#a0ca2d1c0da619c1e50cef8437f1ef517">More...</a><br/></td></tr>
 <tr class="separator:a0ca2d1c0da619c1e50cef8437f1ef517"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Context that can be used by metadata credentials plugin in order to create auth related metadata. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a7cb596d3af7463816fdde64f3e18dbde"></a>
 <div class="memitem">
 <div class="memproto">
@@ -113,6 +122,8 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>The auth_context of the channel which gives the server's identity. </p>
 
 </div>
 </div>
@@ -126,6 +137,9 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>The method name of the RPC being called (not fully qualified). </p>
+<p>The fully qualified method name can be built from the service_url: full_qualified_method_name = ctx-&gt;service_url + '/' + ctx-&gt;method_name. </p>
+
 </div>
 </div>
 <a class="anchor" id="a0ca2d1c0da619c1e50cef8437f1ef517"></a>
@@ -137,6 +151,8 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Reserved for future use. </p>
 
 </div>
 </div>
@@ -150,6 +166,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>The fully qualifed service url. </p>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
@@ -158,7 +176,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

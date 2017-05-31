@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -96,6 +96,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>The gRPC server uses this interface to expose the health checking service without depending on protobuf.  
+ <a href="classgrpc_1_1_health_check_service_interface.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="health__check__service__interface_8h_source.html">health_check_service_interface.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -103,11 +106,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af72a34e5ec5cc058fd7648e235816c60"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_health_check_service_interface.html#af72a34e5ec5cc058fd7648e235816c60">~HealthCheckServiceInterface</a> ()</td></tr>
 <tr class="separator:af72a34e5ec5cc058fd7648e235816c60"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d99470b4074938af24e5ae723301f80"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_health_check_service_interface.html#a9d99470b4074938af24e5ae723301f80">SetServingStatus</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;service_name, bool serving)=0</td></tr>
+<tr class="memdesc:a9d99470b4074938af24e5ae723301f80"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set or change the serving status of the given <em>service_name</em>.  <a href="#a9d99470b4074938af24e5ae723301f80">More...</a><br/></td></tr>
 <tr class="separator:a9d99470b4074938af24e5ae723301f80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2db64a471c343d96f4e8e191efce8c08"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_health_check_service_interface.html#a2db64a471c343d96f4e8e191efce8c08">SetServingStatus</a> (bool serving)=0</td></tr>
+<tr class="memdesc:a2db64a471c343d96f4e8e191efce8c08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply to all registered service names.  <a href="#a2db64a471c343d96f4e8e191efce8c08">More...</a><br/></td></tr>
 <tr class="separator:a2db64a471c343d96f4e8e191efce8c08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>The gRPC server uses this interface to expose the health checking service without depending on protobuf. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="af72a34e5ec5cc058fd7648e235816c60"></a>
 <div class="memitem">
 <div class="memproto">
@@ -164,6 +171,8 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Set or change the serving status of the given <em>service_name</em>. </p>
+
 </div>
 </div>
 <a class="anchor" id="a2db64a471c343d96f4e8e191efce8c08"></a>
@@ -188,6 +197,8 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Apply to all registered service names. </p>
+
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
@@ -196,7 +207,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

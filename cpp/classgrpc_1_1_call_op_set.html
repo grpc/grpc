@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -105,29 +105,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ae06e1a2d051b6b404eec88c4be303bcf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set.html#ae06e1a2d051b6b404eec88c4be303bcf">CallOpSet</a> ()</td></tr>
 <tr class="separator:ae06e1a2d051b6b404eec88c4be303bcf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a511bba51e2e12ac04f62cf9d7237ef15"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set.html#a511bba51e2e12ac04f62cf9d7237ef15">FillOps</a> (<a class="el" href="structgrpc__op.html">grpc_op</a> *ops, size_t *nops) override</td></tr>
-<tr class="memdesc:a511bba51e2e12ac04f62cf9d7237ef15"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fills in <a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a>, starting from ops[*nops] and moving upwards.  <a href="#a511bba51e2e12ac04f62cf9d7237ef15">More...</a><br/></td></tr>
-<tr class="separator:a511bba51e2e12ac04f62cf9d7237ef15"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf75ef8bf9d577455123637a0ecf8e4a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set.html#acf75ef8bf9d577455123637a0ecf8e4a">FillOps</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__op.html">grpc_op</a> *ops, size_t *nops) override</td></tr>
+<tr class="memdesc:acf75ef8bf9d577455123637a0ecf8e4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fills in <a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a>, starting from ops[*nops] and moving upwards.  <a href="#acf75ef8bf9d577455123637a0ecf8e4a">More...</a><br/></td></tr>
+<tr class="separator:acf75ef8bf9d577455123637a0ecf8e4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3af136556da26df8080a419270467222"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set.html#a3af136556da26df8080a419270467222">FinalizeResult</a> (void **tag, bool *status) override</td></tr>
+<tr class="memdesc:a3af136556da26df8080a419270467222"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do).  <a href="#a3af136556da26df8080a419270467222">More...</a><br/></td></tr>
 <tr class="separator:a3af136556da26df8080a419270467222"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a798d253af317730a5b996a4a55d86274"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set.html#a798d253af317730a5b996a4a55d86274">set_output_tag</a> (void *return_tag)</td></tr>
 <tr class="separator:a798d253af317730a5b996a4a55d86274"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classgrpc_1_1_call_op_set_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_call_op_set_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_call_op_set_interface.html">grpc::CallOpSetInterface</a></td></tr>
-<tr class="memitem:ad331a10c0fd65f5a9db680e95682f000 inherit pub_methods_classgrpc_1_1_call_op_set_interface"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set_interface.html#ad331a10c0fd65f5a9db680e95682f000">CallOpSetInterface</a> ()</td></tr>
-<tr class="separator:ad331a10c0fd65f5a9db680e95682f000 inherit pub_methods_classgrpc_1_1_call_op_set_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c0e4962b0ddc592cbc6469442c38268 inherit pub_methods_classgrpc_1_1_call_op_set_interface"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set_interface.html#a7c0e4962b0ddc592cbc6469442c38268">SetCollection</a> (std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_op_set_collection_interface.html">CallOpSetCollectionInterface</a> &gt; collection)</td></tr>
-<tr class="memdesc:a7c0e4962b0ddc592cbc6469442c38268 inherit pub_methods_classgrpc_1_1_call_op_set_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mark this as belonging to a collection if needed.  <a href="#a7c0e4962b0ddc592cbc6469442c38268">More...</a><br/></td></tr>
-<tr class="separator:a7c0e4962b0ddc592cbc6469442c38268 inherit pub_methods_classgrpc_1_1_call_op_set_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_completion_queue_tag"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_completion_queue_tag')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_completion_queue_tag.html">grpc::CompletionQueueTag</a></td></tr>
 <tr class="memitem:a2cbf0212ed795c79f98c3421ed0cb4ab inherit pub_methods_classgrpc_1_1_completion_queue_tag"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue_tag.html#a2cbf0212ed795c79f98c3421ed0cb4ab">~CompletionQueueTag</a> ()</td></tr>
 <tr class="separator:a2cbf0212ed795c79f98c3421ed0cb4ab inherit pub_methods_classgrpc_1_1_completion_queue_tag"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pro_attribs_classgrpc_1_1_call_op_set_interface"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classgrpc_1_1_call_op_set_interface')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classgrpc_1_1_call_op_set_interface.html">grpc::CallOpSetInterface</a></td></tr>
-<tr class="memitem:a74088df7daa571675fd994dbe3ad8b40 inherit pro_attribs_classgrpc_1_1_call_op_set_interface"><td class="memItemLeft" align="right" valign="top">std::shared_ptr<br class="typebreak"/>
-&lt; <a class="el" href="classgrpc_1_1_call_op_set_collection_interface.html">CallOpSetCollectionInterface</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_op_set_interface.html#a74088df7daa571675fd994dbe3ad8b40">collection_</a></td></tr>
-<tr class="separator:a74088df7daa571675fd994dbe3ad8b40 inherit pro_attribs_classgrpc_1_1_call_op_set_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class Op3 = CallNoOp&lt;3&gt;, class Op4 = CallNoOp&lt;4&gt;, class Op5 = CallNoOp&lt;5&gt;, class Op6 = CallNoOp&lt;6&gt;&gt;<br/>
@@ -162,7 +150,7 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a511bba51e2e12ac04f62cf9d7237ef15"></a>
+<a class="anchor" id="acf75ef8bf9d577455123637a0ecf8e4a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -174,6 +162,12 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
         <tr>
           <td class="memname">void <a class="el" href="classgrpc_1_1_call_op_set.html">grpc::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::FillOps </td>
           <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype"><a class="el" href="structgrpc__op.html">grpc_op</a> *&#160;</td>
           <td class="paramname"><em>ops</em>, </td>
         </tr>
@@ -198,7 +192,7 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 
 <p>Fills in <a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a>, starting from ops[*nops] and moving upwards. </p>
 
-<p>Implements <a class="el" href="classgrpc_1_1_call_op_set_interface.html#ae0c95dfc28fc2a0add3e3bec1a703874">grpc::CallOpSetInterface</a>.</p>
+<p>Implements <a class="el" href="classgrpc_1_1_call_op_set_interface.html#affd9cadf51e13644b960e7d6590934ae">grpc::CallOpSetInterface</a>.</p>
 
 </div>
 </div>
@@ -235,6 +229,9 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do). </p>
+<p>If this function returns false, the tag is dropped and not returned from the completion queue </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1_completion_queue_tag.html#af7b1abfcd9e506d118dfdcf29ce7fe8d">grpc::CompletionQueueTag</a>.</p>
 
@@ -274,7 +271,7 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_27c65f9b8b3387c47015966ca861342b.html">impl</a></li><li class="navelem"><a class="el" href="dir_2d2a7752fa77ea824010e525334e7867.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_1ccb85353bf7ad9eb207254c908f6dd2.html">impl</a></li><li class="navelem"><a class="el" href="dir_d4a1038da1ca7a38aa498ecf659a57c8.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -94,8 +94,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">slice.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;stddef.h&gt;</code><br/>
-<code>#include &lt;stdint.h&gt;</code><br/>
+<div class="textblock"><code>#include &lt;<a class="el" href="impl_2codegen_2port__platform_8h_source.html">grpc/impl/codegen/port_platform.h</a>&gt;</code><br/>
+<code>#include &lt;stddef.h&gt;</code><br/>
 <code>#include &lt;<a class="el" href="exec__ctx__fwd_8h_source.html">grpc/impl/codegen/exec_ctx_fwd.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="gpr__slice_8h_source.html">grpc/impl/codegen/gpr_slice.h</a>&gt;</code><br/>
 </div>
@@ -104,12 +104,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__refcount__vtable.html">grpc_slice_refcount_vtable</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Slice API.  <a href="structgrpc__slice__refcount__vtable.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__refcount.html">grpc_slice_refcount</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reference count container for <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a>.  <a href="structgrpc__slice__refcount.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice.html">grpc_slice</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> s, if initialized, represents the byte range s.bytes[0..s.length-1].  <a href="structgrpc__slice.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents an expandable array of slices, to be interpreted as a single item.  <a href="structgrpc__slice__buffer.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
@@ -135,8 +139,10 @@ Typedefs</h2></td></tr>
 <tr class="separator:a2a5f8eaa5d8784bfec46ac983644dca2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ba9a84b74d6308678a2f53212b5b3fd"><td class="memItemLeft" align="right" valign="top">typedef struct <br class="typebreak"/>
 <a class="el" href="structgrpc__slice__refcount__vtable.html">grpc_slice_refcount_vtable</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2slice_8h.html#a0ba9a84b74d6308678a2f53212b5b3fd">grpc_slice_refcount_vtable</a></td></tr>
+<tr class="memdesc:a0ba9a84b74d6308678a2f53212b5b3fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Slice API.  <a href="#a0ba9a84b74d6308678a2f53212b5b3fd">More...</a><br/></td></tr>
 <tr class="separator:a0ba9a84b74d6308678a2f53212b5b3fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acb7fc89ea8343fde6d0c09f1ea70dbc4"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__slice__refcount.html">grpc_slice_refcount</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2slice_8h.html#acb7fc89ea8343fde6d0c09f1ea70dbc4">grpc_slice_refcount</a></td></tr>
+<tr class="memdesc:acb7fc89ea8343fde6d0c09f1ea70dbc4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reference count container for <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a>.  <a href="#acb7fc89ea8343fde6d0c09f1ea70dbc4">More...</a><br/></td></tr>
 <tr class="separator:acb7fc89ea8343fde6d0c09f1ea70dbc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
@@ -283,6 +289,9 @@ Typedefs</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Reference count container for <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a>. </p>
+<p>Contains function pointers to increment and decrement reference counts. Implementations should cleanup when the reference count drops to zero. Typically client code should not touch this, and use grpc_slice_malloc, grpc_slice_new, or grpc_slice_new_with_len instead. </p>
+
 </div>
 </div>
 <a class="anchor" id="a0ba9a84b74d6308678a2f53212b5b3fd"></a>
@@ -295,12 +304,17 @@ Typedefs</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Slice API. </p>
+<p>A slice represents a contiguous reference counted array of bytes. It is cheap to take references to a slice, and it is cheap to create a slice pointing to a subset of another slice.</p>
+<p>The data-structure for slices is exposed here to allow non-gpr code to build slices from whatever data they have available.</p>
+<p>When defining interfaces that handle slices, care should be taken to define reference ownership semantics (who should call unref?) and mutability constraints (is the callee allowed to modify the slice?) </p>
+
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

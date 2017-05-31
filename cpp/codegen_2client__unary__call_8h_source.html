@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -140,68 +140,73 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">class </span>CompletionQueue;</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">class </span>RpcMethod;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="comment">// Wrapper that performs a blocking unary call</span></div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> InputMessage, <span class="keyword">class</span> OutputMessage&gt;</div>
 <div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="namespacegrpc.html#a35d5687ea2da09f9376f2caa42a1db1b">   52</a></span>&#160;<a class="code" href="classgrpc_1_1_status.html">Status</a> <a class="code" href="namespacegrpc.html#a35d5687ea2da09f9376f2caa42a1db1b">BlockingUnaryCall</a>(<a class="code" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a>* channel, <span class="keyword">const</span> <a class="code" href="classgrpc_1_1_rpc_method.html">RpcMethod</a>&amp; method,</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;                         <a class="code" href="classgrpc_1_1_client_context.html">ClientContext</a>* context, <span class="keyword">const</span> InputMessage&amp; request,</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                         OutputMessage* result) {</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <a class="code" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> cq;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <a class="code" href="classgrpc_1_1_call.html">Call</a> call(channel-&gt;CreateCall(method, context, &amp;cq));</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <a class="code" href="classgrpc_1_1_call_op_set.html">CallOpSet</a>&lt;<a class="code" href="classgrpc_1_1_call_op_send_initial_metadata.html">CallOpSendInitialMetadata</a>, <a class="code" href="classgrpc_1_1_call_op_send_message.html">CallOpSendMessage</a>,</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;            <a class="code" href="classgrpc_1_1_call_op_recv_initial_metadata.html">CallOpRecvInitialMetadata</a>, <a class="code" href="classgrpc_1_1_call_op_recv_message.html">CallOpRecvMessage&lt;OutputMessage&gt;</a>,</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;            <a class="code" href="classgrpc_1_1_call_op_client_send_close.html">CallOpClientSendClose</a>, <a class="code" href="classgrpc_1_1_call_op_client_recv_status.html">CallOpClientRecvStatus</a>&gt;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;      ops;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <a class="code" href="classgrpc_1_1_status.html">Status</a> status = ops.SendMessage(request);</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordflow">if</span> (!status.<a class="code" href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">ok</a>()) {</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">return</span> status;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  }</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  ops.SendInitialMetadata(context-&gt;send_initial_metadata_,</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                          context-&gt;initial_metadata_flags());</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  ops.RecvInitialMetadata(context);</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  ops.RecvMessage(result);</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  ops.ClientSendClose();</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  ops.ClientRecvStatus(context, &amp;status);</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  call.PerformOps(&amp;ops);</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordflow">if</span> (cq.Pluck(&amp;ops)) {</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordflow">if</span> (!ops.got_message &amp;&amp; status.<a class="code" href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">ok</a>()) {</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="classgrpc_1_1_status.html">Status</a>(<a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba31d8b2f1f3307ed261328cb3eece163b">StatusCode::UNIMPLEMENTED</a>,</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                    <span class="stringliteral">&quot;No message returned for unary request&quot;</span>);</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    }</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <a class="code" href="core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(!status.<a class="code" href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">ok</a>());</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  }</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keywordflow">return</span> status;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;}</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <a class="code" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> cq(<a class="code" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a>{</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;      <a class="code" href="grpc__types_8h.html#a52497b2b6db8035126a8b45467a14d97">GRPC_CQ_CURRENT_VERSION</a>, <a class="code" href="grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a">GRPC_CQ_PLUCK</a>,</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;      <a class="code" href="grpc__types_8h.html#a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8">GRPC_CQ_DEFAULT_POLLING</a>});  <span class="comment">// Pluckable completion queue</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <a class="code" href="classgrpc_1_1_call.html">Call</a> call(channel-&gt;CreateCall(method, context, &amp;cq));</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <a class="code" href="classgrpc_1_1_call_op_set.html">CallOpSet</a>&lt;<a class="code" href="classgrpc_1_1_call_op_send_initial_metadata.html">CallOpSendInitialMetadata</a>, <a class="code" href="classgrpc_1_1_call_op_send_message.html">CallOpSendMessage</a>,</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;            <a class="code" href="classgrpc_1_1_call_op_recv_initial_metadata.html">CallOpRecvInitialMetadata</a>, <a class="code" href="classgrpc_1_1_call_op_recv_message.html">CallOpRecvMessage&lt;OutputMessage&gt;</a>,</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;            <a class="code" href="classgrpc_1_1_call_op_client_send_close.html">CallOpClientSendClose</a>, <a class="code" href="classgrpc_1_1_call_op_client_recv_status.html">CallOpClientRecvStatus</a>&gt;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;      ops;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <a class="code" href="classgrpc_1_1_status.html">Status</a> status = ops.SendMessage(request);</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordflow">if</span> (!status.<a class="code" href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">ok</a>()) {</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keywordflow">return</span> status;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  }</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  ops.SendInitialMetadata(context-&gt;send_initial_metadata_,</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                          context-&gt;initial_metadata_flags());</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  ops.RecvInitialMetadata(context);</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  ops.RecvMessage(result);</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  ops.ClientSendClose();</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  ops.ClientRecvStatus(context, &amp;status);</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  call.PerformOps(&amp;ops);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keywordflow">if</span> (cq.Pluck(&amp;ops)) {</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keywordflow">if</span> (!ops.got_message &amp;&amp; status.<a class="code" href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">ok</a>()) {</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="classgrpc_1_1_status.html">Status</a>(<a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba31d8b2f1f3307ed261328cb3eece163b">StatusCode::UNIMPLEMENTED</a>,</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                    <span class="stringliteral">&quot;No message returned for unary request&quot;</span>);</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    }</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <a class="code" href="core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(!status.<a class="code" href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">ok</a>());</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  }</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  <span class="keywordflow">return</span> status;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;}</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_CLIENT_UNARY_CALL_H</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_CLIENT_UNARY_CALL_H</span></div>
 <div class="ttc" id="grpc_09_09_2impl_2codegen_2status_8h_html"><div class="ttname"><a href="grpc_09_09_2impl_2codegen_2status_8h.html">status.h</a></div></div>
 <div class="ttc" id="core__codegen__interface_8h_html"><div class="ttname"><a href="core__codegen__interface_8h.html">core_codegen_interface.h</a></div></div>
-<div class="ttc" id="core__codegen__interface_8h_html_a39c1421e7081b57c503487659e2653a5"><div class="ttname"><a href="core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a></div><div class="ttdeci">#define GPR_CODEGEN_ASSERT(x)</div><div class="ttdoc">Codegen specific version of GPR_ASSERT. </div><div class="ttdef"><b>Definition:</b> core_codegen_interface.h:122</div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_client_recv_status_html"><div class="ttname"><a href="classgrpc_1_1_call_op_client_recv_status.html">grpc::CallOpClientRecvStatus</a></div><div class="ttdef"><b>Definition:</b> call.h:536</div></div>
+<div class="ttc" id="core__codegen__interface_8h_html_a39c1421e7081b57c503487659e2653a5"><div class="ttname"><a href="core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a></div><div class="ttdeci">#define GPR_CODEGEN_ASSERT(x)</div><div class="ttdoc">Codegen specific version of GPR_ASSERT. </div><div class="ttdef"><b>Definition:</b> core_codegen_interface.h:137</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_client_recv_status_html"><div class="ttname"><a href="classgrpc_1_1_call_op_client_recv_status.html">grpc::CallOpClientRecvStatus</a></div><div class="ttdef"><b>Definition:</b> call.h:516</div></div>
+<div class="ttc" id="grpc__types_8h_html_a52497b2b6db8035126a8b45467a14d97"><div class="ttname"><a href="grpc__types_8h.html#a52497b2b6db8035126a8b45467a14d97">GRPC_CQ_CURRENT_VERSION</a></div><div class="ttdeci">#define GRPC_CQ_CURRENT_VERSION</div><div class="ttdef"><b>Definition:</b> grpc_types.h:601</div></div>
 <div class="ttc" id="channel__interface_8h_html"><div class="ttname"><a href="channel__interface_8h.html">channel_interface.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdef"><b>Definition:</b> client_context.h:154</div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_send_message_html"><div class="ttname"><a href="classgrpc_1_1_call_op_send_message.html">grpc::CallOpSendMessage</a></div><div class="ttdef"><b>Definition:</b> call.h:268</div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_client_send_close_html"><div class="ttname"><a href="classgrpc_1_1_call_op_client_send_close.html">grpc::CallOpClientSendClose</a></div><div class="ttdef"><b>Definition:</b> call.h:440</div></div>
-<div class="ttc" id="classgrpc_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1_call.html">grpc::Call</a></div><div class="ttdef"><b>Definition:</b> call.h:675</div></div>
+<div class="ttc" id="structgrpc__completion__queue__attributes_html"><div class="ttname"><a href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:602</div></div>
+<div class="ttc" id="classgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdoc">A ClientContext allows the person implementing a service client to: </div><div class="ttdef"><b>Definition:</b> client_context.h:168</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_send_message_html"><div class="ttname"><a href="classgrpc_1_1_call_op_send_message.html">grpc::CallOpSendMessage</a></div><div class="ttdef"><b>Definition:</b> call.h:271</div></div>
+<div class="ttc" id="grpc__types_8h_html_a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a"><div class="ttname"><a href="grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a">GRPC_CQ_PLUCK</a></div><div class="ttdoc">Events are popped out by calling grpc_completion_queue_pluck() API ONLY. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:598</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_client_send_close_html"><div class="ttname"><a href="classgrpc_1_1_call_op_client_send_close.html">grpc::CallOpClientSendClose</a></div><div class="ttdef"><b>Definition:</b> call.h:420</div></div>
+<div class="ttc" id="classgrpc_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1_call.html">grpc::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object. </div><div class="ttdef"><b>Definition:</b> call.h:638</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_interface_html"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></div><div class="ttdoc">Codegen interface for grpc::Channel. </div><div class="ttdef"><b>Definition:</b> channel_interface.h:64</div></div>
-<div class="ttc" id="namespacegrpc_html_a35d5687ea2da09f9376f2caa42a1db1b"><div class="ttname"><a href="namespacegrpc.html#a35d5687ea2da09f9376f2caa42a1db1b">grpc::BlockingUnaryCall</a></div><div class="ttdeci">Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &amp;method, ClientContext *context, const InputMessage &amp;request, OutputMessage *result)</div><div class="ttdef"><b>Definition:</b> client_unary_call.h:52</div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_set_html"><div class="ttname"><a href="classgrpc_1_1_call_op_set.html">grpc::CallOpSet</a></div><div class="ttdoc">Primary implementaiton of CallOpSetInterface. </div><div class="ttdef"><b>Definition:</b> call.h:623</div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_recv_message_html"><div class="ttname"><a href="classgrpc_1_1_call_op_recv_message.html">grpc::CallOpRecvMessage</a></div><div class="ttdef"><b>Definition:</b> call.h:315</div></div>
+<div class="ttc" id="namespacegrpc_html_a35d5687ea2da09f9376f2caa42a1db1b"><div class="ttname"><a href="namespacegrpc.html#a35d5687ea2da09f9376f2caa42a1db1b">grpc::BlockingUnaryCall</a></div><div class="ttdeci">Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &amp;method, ClientContext *context, const InputMessage &amp;request, OutputMessage *result)</div><div class="ttdoc">Wrapper that performs a blocking unary call. </div><div class="ttdef"><b>Definition:</b> client_unary_call.h:52</div></div>
+<div class="ttc" id="grpc__types_8h_html_a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8"><div class="ttname"><a href="grpc__types_8h.html#a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8">GRPC_CQ_DEFAULT_POLLING</a></div><div class="ttdoc">The completion queue will have an associated pollset and there is no restriction on the type of file ...</div><div class="ttdef"><b>Definition:</b> grpc_types.h:578</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_set_html"><div class="ttname"><a href="classgrpc_1_1_call_op_set.html">grpc::CallOpSet</a></div><div class="ttdoc">Primary implementaiton of CallOpSetInterface. </div><div class="ttdef"><b>Definition:</b> call.h:583</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_recv_message_html"><div class="ttname"><a href="classgrpc_1_1_call_op_recv_message.html">grpc::CallOpRecvMessage</a></div><div class="ttdef"><b>Definition:</b> call.h:318</div></div>
 <div class="ttc" id="classgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue.h). </div><div class="ttdef"><b>Definition:</b> completion_queue.h:101</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html">grpc::RpcMethod</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:43</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html">grpc::RpcMethod</a></div><div class="ttdoc">Descriptor of an RPC method. </div><div class="ttdef"><b>Definition:</b> rpc_method.h:44</div></div>
 <div class="ttc" id="classgrpc_1_1_status_html_a1f5b65c54d4e6dd502897e36040714dc"><div class="ttname"><a href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">grpc::Status::ok</a></div><div class="ttdeci">bool ok() const </div><div class="ttdoc">Is the status OK? </div><div class="ttdef"><b>Definition:</b> status.h:76</div></div>
 <div class="ttc" id="classgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn&#39;t, why? </div><div class="ttdef"><b>Definition:</b> status.h:45</div></div>
 <div class="ttc" id="namespacegrpc_html_aff1730578c90160528f6a8d67ef5c43ba31d8b2f1f3307ed261328cb3eece163b"><div class="ttname"><a href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba31d8b2f1f3307ed261328cb3eece163b">grpc::UNIMPLEMENTED</a></div><div class="ttdoc">Operation is not implemented or not supported/enabled in this service. </div><div class="ttdef"><b>Definition:</b> status_code_enum.h:130</div></div>
 <div class="ttc" id="codegen_2call_8h_html"><div class="ttname"><a href="codegen_2call_8h.html">call.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_send_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1_call_op_send_initial_metadata.html">grpc::CallOpSendInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call.h:217</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_send_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1_call_op_send_initial_metadata.html">grpc::CallOpSendInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call.h:218</div></div>
 <div class="ttc" id="impl_2codegen_2config_8h_html"><div class="ttname"><a href="impl_2codegen_2config_8h.html">config.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_recv_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1_call_op_recv_initial_metadata.html">grpc::CallOpRecvInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call.h:507</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_recv_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1_call_op_recv_initial_metadata.html">grpc::CallOpRecvInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call.h:487</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

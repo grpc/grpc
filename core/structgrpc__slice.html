@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -90,6 +90,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>A <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> s, if initialized, represents the byte range s.bytes[0..s.length-1].  
+ <a href="structgrpc__slice.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="impl_2codegen_2slice_8h_source.html">slice.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
@@ -114,7 +117,11 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a32c399d6e3c813a7586c92ef1bd88030"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice.html#a32c399d6e3c813a7586c92ef1bd88030">data</a></td></tr>
 <tr class="separator:a32c399d6e3c813a7586c92ef1bd88030"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> s, if initialized, represents the byte range s.bytes[0..s.length-1]. </p>
+<p>It can have an associated ref count which has a destruction routine to be run when the ref count reaches zero (see <a class="el" href="slice_8h.html#a85704b2e5f1c8d70e728e86ad6d1ca0a" title="Create a slice pointing at some data. ">grpc_slice_new()</a> and grp_slice_unref()). Multiple <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> values may share a ref count.</p>
+<p>If the slice does not have a refcount, it represents an inlined small piece of data that is copied by value. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a2906db76ad7ddaba549ccf723f361c6d"></a>
 <div class="memitem">
 <div class="memproto">
@@ -217,7 +224,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -144,12 +144,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>This test verifies that gRPC requests marked as cacheable use GET verb instead of POST, and that server sets appropriate cache control headers for the response to be cached by a proxy. This test requires that the server is behind a caching proxy. Use of current timestamp in the request prevents accidental cache matches left over from previous tests.</p>
 <p>Server features:</p>
 <ul>
-<li>[CacheableUnaryCall][]</li>
+<li><a href="#cacheableunarycall">CacheableUnaryCall</a></li>
 </ul>
 <p>Procedure:</p>
 <ol type="1">
 <li>Client calls CacheableUnaryCall with <code>SimpleRequest</code> request with payload set to current timestamp. Timestamp format is irrelevant, and resolution is in nanoseconds. Client adds a <code>x-user-ip</code> header with value <code>1.2.3.4</code> to the request. This is done since some proxys such as GFE will not cache requests from localhost. Client marks the request as cacheable by setting the cacheable flag in the request context. Longer term this should be driven by the method option specified in the proto file itself.</li>
-<li>Client calls CacheableUnaryCall with <code>SimpleRequest</code> request again immediately with the same payload as the previous request. Cacheable flag is also set for this request's context.</li>
+<li>Client calls CacheableUnaryCall again immediately with the same request and configuration as the previous call.</li>
 </ol>
 <p>Client asserts:</p>
 <ul>
@@ -674,7 +674,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

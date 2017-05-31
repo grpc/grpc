@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -134,40 +134,40 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keyword">namespace </span>grpc {</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
-<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classgrpc_1_1_resource_quota.html">   48</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a> final : <span class="keyword">private</span> <a class="code" href="classgrpc_1_1_grpc_library_codegen.html">GrpcLibraryCodegen</a> {</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keyword">explicit</span> <a class="code" href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">ResourceQuota</a>(<span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&amp; name);</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">ResourceQuota</a>();</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html#ad398badd3b31871dce142e9ba18b45ce">~ResourceQuota</a>();</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a>&amp; <a class="code" href="classgrpc_1_1_resource_quota.html#a3e9034af4f310baa9bcc11ccfe46170f">Resize</a>(<span class="keywordtype">size_t</span> new_size);</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;</div>
-<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classgrpc_1_1_resource_quota.html#a79e91c946f9ed0cd2baab04ec56e35d9">   60</a></span>&#160;  <a class="code" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a>* <a class="code" href="classgrpc_1_1_resource_quota.html#a79e91c946f9ed0cd2baab04ec56e35d9">c_resource_quota</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> impl_; }</div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classgrpc_1_1_resource_quota.html">   49</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a> final : <span class="keyword">private</span> <a class="code" href="classgrpc_1_1_grpc_library_codegen.html">GrpcLibraryCodegen</a> {</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keyword">explicit</span> <a class="code" href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">ResourceQuota</a>(<span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&amp; name);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">ResourceQuota</a>();</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html#ad398badd3b31871dce142e9ba18b45ce">~ResourceQuota</a>();</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a>&amp; <a class="code" href="classgrpc_1_1_resource_quota.html#a3e9034af4f310baa9bcc11ccfe46170f">Resize</a>(<span class="keywordtype">size_t</span> new_size);</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">ResourceQuota</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a>&amp; rhs);</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a>&amp; operator=(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a>&amp; rhs);</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <a class="code" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a>* <span class="keyword">const</span> impl_;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;};</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="classgrpc_1_1_resource_quota.html#a79e91c946f9ed0cd2baab04ec56e35d9">   62</a></span>&#160;  <a class="code" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a>* <a class="code" href="classgrpc_1_1_resource_quota.html#a79e91c946f9ed0cd2baab04ec56e35d9">c_resource_quota</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> impl_; }</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">ResourceQuota</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a>&amp; rhs);</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a>&amp; operator=(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a>&amp; rhs);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <a class="code" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a>* <span class="keyword">const</span> impl_;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;};</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">#endif  // GRPCXX_RESOURCE_QUOTA_H</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor">#endif  // GRPCXX_RESOURCE_QUOTA_H</span></div>
 <div class="ttc" id="namespacegrpc_html_ab04a87625da3bf85cdaf5e7856b00203"><div class="ttname"><a href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a></div><div class="ttdeci">std::string string</div><div class="ttdef"><b>Definition:</b> config.h:50</div></div>
-<div class="ttc" id="classgrpc_1_1_resource_quota_html"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html">grpc::ResourceQuota</a></div><div class="ttdoc">ResourceQuota represents a bound on memory usage by the gRPC library. </div><div class="ttdef"><b>Definition:</b> resource_quota.h:48</div></div>
-<div class="ttc" id="classgrpc_1_1_resource_quota_html_a79e91c946f9ed0cd2baab04ec56e35d9"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#a79e91c946f9ed0cd2baab04ec56e35d9">grpc::ResourceQuota::c_resource_quota</a></div><div class="ttdeci">grpc_resource_quota * c_resource_quota() const </div><div class="ttdef"><b>Definition:</b> resource_quota.h:60</div></div>
+<div class="ttc" id="classgrpc_1_1_resource_quota_html"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html">grpc::ResourceQuota</a></div><div class="ttdoc">ResourceQuota represents a bound on memory usage by the gRPC library. </div><div class="ttdef"><b>Definition:</b> resource_quota.h:49</div></div>
+<div class="ttc" id="classgrpc_1_1_resource_quota_html_a79e91c946f9ed0cd2baab04ec56e35d9"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#a79e91c946f9ed0cd2baab04ec56e35d9">grpc::ResourceQuota::c_resource_quota</a></div><div class="ttdeci">grpc_resource_quota * c_resource_quota() const </div><div class="ttdef"><b>Definition:</b> resource_quota.h:62</div></div>
 <div class="ttc" id="classgrpc_1_1_grpc_library_codegen_html"><div class="ttname"><a href="classgrpc_1_1_grpc_library_codegen.html">grpc::GrpcLibraryCodegen</a></div><div class="ttdoc">Classes that require gRPC to be initialized should inherit from this class. </div><div class="ttdef"><b>Definition:</b> grpc_library.h:52</div></div>
 <div class="ttc" id="codegen_2grpc__library_8h_html"><div class="ttname"><a href="codegen_2grpc__library_8h.html">grpc_library.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_resource_quota_html_ad398badd3b31871dce142e9ba18b45ce"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#ad398badd3b31871dce142e9ba18b45ce">grpc::ResourceQuota::~ResourceQuota</a></div><div class="ttdeci">~ResourceQuota()</div></div>
-<div class="ttc" id="grpc__types_8h_html_a16d58b8d7c93609d01311b869f4a8d05"><div class="ttname"><a href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a></div><div class="ttdeci">struct grpc_resource_quota grpc_resource_quota</div><div class="ttdef"><b>Definition:</b> grpc_types.h:544</div></div>
+<div class="ttc" id="grpc__types_8h_html_a16d58b8d7c93609d01311b869f4a8d05"><div class="ttname"><a href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a></div><div class="ttdeci">struct grpc_resource_quota grpc_resource_quota</div><div class="ttdef"><b>Definition:</b> grpc_types.h:564</div></div>
 <div class="ttc" id="impl_2codegen_2config_8h_html"><div class="ttname"><a href="impl_2codegen_2config_8h.html">config.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_resource_quota_html_a3e9034af4f310baa9bcc11ccfe46170f"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#a3e9034af4f310baa9bcc11ccfe46170f">grpc::ResourceQuota::Resize</a></div><div class="ttdeci">ResourceQuota &amp; Resize(size_t new_size)</div><div class="ttdoc">Resize this ResourceQuota to a new size. </div></div>
 <div class="ttc" id="classgrpc_1_1_resource_quota_html_a452006a82860143a83aefaf42ba2fb48"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">grpc::ResourceQuota::ResourceQuota</a></div><div class="ttdeci">ResourceQuota()</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

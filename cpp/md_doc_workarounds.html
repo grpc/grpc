@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>GRPC C++: grpc_load_reporting_cost_context Struct Reference</title>
+<title>GRPC C++: gRPC Server Backward Compatibility Issues and Workarounds Manageent</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -38,10 +38,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
+      <li class="current"><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
-      <li class="current"><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
+      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
       <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
@@ -61,14 +61,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       </li>
     </ul>
   </div>
-  <div id="navrow2" class="tabs2">
-    <ul class="tablist">
-      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
-      <li><a href="classes.html"><span>Data&#160;Structure&#160;Index</span></a></li>
-      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
-      <li><a href="functions.html"><span>Data&#160;Fields</span></a></li>
-    </ul>
-  </div>
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -85,59 +77,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 </div><!-- top -->
 <div class="header">
-  <div class="summary">
-<a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
-<div class="title">grpc_load_reporting_cost_context Struct Reference</div>  </div>
+<div class="title">gRPC Server Backward Compatibility Issues and Workarounds Manageent </div>  </div>
 </div><!--header-->
 <div class="contents">
-
-<p>A sequence of values for load reporting purposes.  
- <a href="structgrpc__load__reporting__cost__context.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="load__reporting_8h_source.html">load_reporting.h</a>&gt;</code></p>
-<table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Data Fields</h2></td></tr>
-<tr class="memitem:a58bccfecffc68233ec834f07613a421b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice.html">grpc_slice</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__load__reporting__cost__context.html#a58bccfecffc68233ec834f07613a421b">values</a></td></tr>
-<tr class="separator:a58bccfecffc68233ec834f07613a421b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3d52c7f1be9c65ba2b595066ecc540fa"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__load__reporting__cost__context.html#a3d52c7f1be9c65ba2b595066ecc540fa">values_count</a></td></tr>
-<tr class="separator:a3d52c7f1be9c65ba2b595066ecc540fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table>
-<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A sequence of values for load reporting purposes. </p>
-</div><h2 class="groupheader">Field Documentation</h2>
-<a class="anchor" id="a58bccfecffc68233ec834f07613a421b"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structgrpc__slice.html">grpc_slice</a>* grpc_load_reporting_cost_context::values</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a3d52c7f1be9c65ba2b595066ecc540fa"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">size_t grpc_load_reporting_cost_context::values_count</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/grpc/<a class="el" href="load__reporting_8h_source.html">load_reporting.h</a></li>
-</ul>
-</div><!-- contents -->
+<div class="textblock"><h2>Introduction</h2>
+<p>This document lists the workarounds implemented on gRPC servers for record and reference when users need to enable a certain workaround.</p>
+<h2>Workaround List</h2>
+<h3>Cronet Compression</h3>
+<p><b>Workaround ID:</b> WORKAROUND_ID_CRONET_COMPRESSION</p>
+<p><b>Date added:</b> May 06, 2017</p>
+<p><b>Status:</b> Implemented in C core and C++</p>
+<p><b>Issue:</b> Before version v1.3.0-dev, gRPC iOS client's Cronet transport did not implement compression. However the clients still claim to support compression. As a result, a client fails to parse received message when the message is compressed. The problem above was resolved in gRPC v1.3.0-dev. For backward compatibility, a server must forcingly disable compression for gRPC clients of version lower than or equal to v1.3.0-dev.</p>
+<p><b>Workaround Description:</b> Implemented as a server channel filter in C core. The filter identifies the version of peer client with incoming <code>user-agent</code> header of each call. If the client's gRPC version is lower that or equal to v1.3.x, a flag GRPC_WRITE_NO_COMPRESS is marked for all send_message ops which prevents compression of the messages to be sent out. </p>
+</div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

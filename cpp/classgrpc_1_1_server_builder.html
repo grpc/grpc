@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -100,7 +100,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>A builder class for the creation and startup of <em><a class="el" href="classgrpc_1_1_server.html" title="Models a gRPC server. ">grpc::Server</a></em> instances.  
+<p>A builder class for the creation and startup of <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> instances.  
  <a href="classgrpc_1_1_server_builder.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="server__builder_8h_source.html">server_builder.h</a>&gt;</code></p>
@@ -112,6 +112,7 @@ Public Types</h2></td></tr>
 <a class="el" href="classgrpc_1_1_server_builder.html#aff66bd93cba7d4240a64550fe1fca88da3b9b382bb2f70cabe793e3e3fd325910">MAX_POLLERS</a>, 
 <a class="el" href="classgrpc_1_1_server_builder.html#aff66bd93cba7d4240a64550fe1fca88dad9d34ee45d9bdf2344c6463deea14f4c">CQ_TIMEOUT_MSEC</a>
  }</td></tr>
+<tr class="memdesc:aff66bd93cba7d4240a64550fe1fca88d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options for synchronous servers.  <a href="classgrpc_1_1_server_builder.html#aff66bd93cba7d4240a64550fe1fca88d">More...</a><br/></td></tr>
 <tr class="separator:aff66bd93cba7d4240a64550fe1fca88d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -159,7 +160,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:aefdac3407920a99d119c946d255b100c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a channel argument (an escape hatch to tuning core library parameters directly)  <a href="#aefdac3407920a99d119c946d255b100c">More...</a><br/></td></tr>
 <tr class="separator:aefdac3407920a99d119c946d255b100c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc75463f5d82b7774a83a4073d904f90"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#acc75463f5d82b7774a83a4073d904f90">AddListeningPort</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr, std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt; creds, int *selected_port=nullptr)</td></tr>
-<tr class="memdesc:acc75463f5d82b7774a83a4073d904f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tries to bind <em>server</em> to the given <em>addr</em>.  <a href="#acc75463f5d82b7774a83a4073d904f90">More...</a><br/></td></tr>
+<tr class="memdesc:acc75463f5d82b7774a83a4073d904f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enlists an endpoint <em>addr</em> (port with an optional IP address) to bind the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> object to be created to.  <a href="#acc75463f5d82b7774a83a4073d904f90">More...</a><br/></td></tr>
 <tr class="separator:acc75463f5d82b7774a83a4073d904f90"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a960d55977e1aef56fd7b582037a01bbd"><td class="memItemLeft" align="right" valign="top">std::unique_ptr<br class="typebreak"/>
 &lt; <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd">AddCompletionQueue</a> (bool is_frequently_polled=true)</td></tr>
@@ -168,11 +169,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af284cd39b185043e8e92405c1ae0f310"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server.html">Server</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310">BuildAndStart</a> ()</td></tr>
 <tr class="memdesc:af284cd39b185043e8e92405c1ae0f310"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a running server which is ready for processing calls.  <a href="#af284cd39b185043e8e92405c1ae0f310">More...</a><br/></td></tr>
 <tr class="separator:af284cd39b185043e8e92405c1ae0f310"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01715acec890fe4ddc91340bae5ead8c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a01715acec890fe4ddc91340bae5ead8c">EnableWorkaround</a> (grpc_workaround_list id)</td></tr>
+<tr class="memdesc:a01715acec890fe4ddc91340bae5ead8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable a server workaround.  <a href="#a01715acec890fe4ddc91340bae5ead8c">More...</a><br/></td></tr>
+<tr class="separator:a01715acec890fe4ddc91340bae5ead8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:ae37fe433154b148b9ea9ccb17ac1488a"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#ae37fe433154b148b9ea9ccb17ac1488a">InternalAddPluginFactory</a> (std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server_builder_plugin.html">ServerBuilderPlugin</a> &gt;(*CreatePlugin)())</td></tr>
-<tr class="memdesc:ae37fe433154b148b9ea9ccb17ac1488a"><td class="mdescLeft">&#160;</td><td class="mdescRight">For internal use only: Register a <a class="el" href="classgrpc_1_1_server_builder_plugin.html">ServerBuilderPlugin</a> factory function.  <a href="#ae37fe433154b148b9ea9ccb17ac1488a">More...</a><br/></td></tr>
+<tr class="memdesc:ae37fe433154b148b9ea9ccb17ac1488a"><td class="mdescLeft">&#160;</td><td class="mdescRight">For internal use only: Register a <a class="el" href="classgrpc_1_1_server_builder_plugin.html" title="This interface is meant for internal usage only. ">ServerBuilderPlugin</a> factory function.  <a href="#ae37fe433154b148b9ea9ccb17ac1488a">More...</a><br/></td></tr>
 <tr class="separator:ae37fe433154b148b9ea9ccb17ac1488a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
@@ -181,7 +185,7 @@ Friends</h2></td></tr>
 <tr class="separator:a6d051c774efa6448928d2ca4062676d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A builder class for the creation and startup of <em><a class="el" href="classgrpc_1_1_server.html" title="Models a gRPC server. ">grpc::Server</a></em> instances. </p>
+<div class="textblock"><p>A builder class for the creation and startup of <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> instances. </p>
 </div><h2 class="groupheader">Member Enumeration Documentation</h2>
 <a class="anchor" id="aff66bd93cba7d4240a64550fe1fca88d"></a>
 <div class="memitem">
@@ -192,14 +196,20 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Options for synchronous servers. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="aff66bd93cba7d4240a64550fe1fca88da9514f2add3875fc14c843f6498dc1319"></a>NUM_CQS</em>&#160;</td><td class="fielddoc">
+<p>Number of completion queues. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="aff66bd93cba7d4240a64550fe1fca88da74d9b7562f58282d93a3a0e5fb02ab02"></a>MIN_POLLERS</em>&#160;</td><td class="fielddoc">
+<p>Minimum number of polling threads. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="aff66bd93cba7d4240a64550fe1fca88da3b9b382bb2f70cabe793e3e3fd325910"></a>MAX_POLLERS</em>&#160;</td><td class="fielddoc">
+<p>Maximum number of polling threads. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="aff66bd93cba7d4240a64550fe1fca88dad9d34ee45d9bdf2344c6463deea14f4c"></a>CQ_TIMEOUT_MSEC</em>&#160;</td><td class="fielddoc">
+<p>Completion queue timeout in milliseconds. </p>
 </td></tr>
 </table>
 
@@ -295,7 +305,7 @@ template&lt;class T &gt; </div>
 <p>// While shutting down the server; server_-&gt;Shutdown(); cq_-&gt;Shutdown(); // Always <em>after</em> the associated server's Shutdown()!</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">is_frequently_polled</td><td>This is an optional parameter to inform GRPC library about whether this completion queue would be frequently polled (i.e by calling Next() or AsyncNext()). The default value is 'true' and is the recommended setting. Setting this to 'false' (i.e not polling the completion queue frequently) will have a significantly negative performance impact and hence should not be used in production use cases. </td></tr>
+    <tr><td class="paramname">is_frequently_polled</td><td>This is an optional parameter to inform gRPC library about whether this completion queue would be frequently polled (i.e. by calling <em>Next()</em> or <em>AsyncNext()</em>). The default value is 'true' and is the recommended setting. Setting this to 'false' (i.e. not polling the completion queue frequently) will have a significantly negative performance impact and hence should not be used in production use cases. </td></tr>
   </table>
   </dd>
 </dl>
@@ -332,12 +342,12 @@ template&lt;class T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Tries to bind <em>server</em> to the given <em>addr</em>. </p>
+<p>Enlists an endpoint <em>addr</em> (port with an optional IP address) to bind the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> object to be created to. </p>
 <p>It can be invoked multiple times.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">addr</td><td>The address to try to bind to the server (eg, localhost:1234, 192.168.1.1:31416, [::1]:27182, etc.).  creds The credentials associated with the server. </td></tr>
-    <tr><td class="paramname">selected_port[out]</td><td>Upon success, updated to contain the port number. <em>nullptr</em> otherwise. </td></tr>
+    <tr><td class="paramname">selected_port[out]</td><td>If not <code>nullptr</code>, gets populated with the port number bound to the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> for the corresponding endpoint after it is successfully bound, 0 otherwise. </td></tr>
   </table>
   </dd>
 </dl>
@@ -358,6 +368,25 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Return a running server which is ready for processing calls. </p>
+
+</div>
+</div>
+<a class="anchor" id="a01715acec890fe4ddc91340bae5ead8c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a>&amp; grpc::ServerBuilder::EnableWorkaround </td>
+          <td>(</td>
+          <td class="paramtype">grpc_workaround_list&#160;</td>
+          <td class="paramname"><em>id</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Enable a server workaround. </p>
+<p>Do not use unless you know what the workaround does. For explanation and detailed descriptions of workarounds, see <a class="el" href="workarounds_8md.html">doc/workarounds.md</a>. </p>
 
 </div>
 </div>
@@ -383,7 +412,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>For internal use only: Register a <a class="el" href="classgrpc_1_1_server_builder_plugin.html">ServerBuilderPlugin</a> factory function. </p>
+<p>For internal use only: Register a <a class="el" href="classgrpc_1_1_server_builder_plugin.html" title="This interface is meant for internal usage only. ">ServerBuilderPlugin</a> factory function. </p>
 
 </div>
 </div>
@@ -421,7 +450,7 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Register a service. </p>
-<p>This call does not take ownership of the service. The service must exist for the lifetime of the <em><a class="el" href="classgrpc_1_1_server.html" title="Models a gRPC server. ">Server</a></em> instance returned by <em><a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310" title="Return a running server which is ready for processing calls. ">BuildAndStart()</a></em>. Matches requests with any :authority </p>
+<p>This call does not take ownership of the service. The service must exist for the lifetime of the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a></em> instance returned by <em><a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310" title="Return a running server which is ready for processing calls. ">BuildAndStart()</a></em>. Matches requests with any :authority </p>
 
 </div>
 </div>
@@ -450,7 +479,7 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Register a service. </p>
-<p>This call does not take ownership of the service. The service must exist for the lifetime of the <em><a class="el" href="classgrpc_1_1_server.html" title="Models a gRPC server. ">Server</a></em> instance returned by <a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310" title="Return a running server which is ready for processing calls. ">BuildAndStart()</a>. Only matches requests with :authority <em>host</em> </p>
+<p>This call does not take ownership of the service. The service must exist for the lifetime of the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a></em> instance returned by <em><a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310" title="Return a running server which is ready for processing calls. ">BuildAndStart()</a></em>. Only matches requests with :authority <em>host</em> </p>
 
 </div>
 </div>
@@ -480,7 +509,7 @@ template&lt;class T &gt; </div>
 
 <p>Set the support status for compression algorithms. </p>
 <p>All algorithms are enabled by default.</p>
-<p>Incoming calls compressed with an unsupported algorithm will fail with GRPC_STATUS_UNIMPLEMENTED. </p>
+<p>Incoming calls compressed with an unsupported algorithm will fail with <em>GRPC_STATUS_UNIMPLEMENTED</em>. </p>
 
 </div>
 </div>
@@ -724,7 +753,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

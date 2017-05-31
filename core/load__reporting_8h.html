@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,43 +82,45 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Structures</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
 <div class="title">load_reporting.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;<a class="el" href="impl_2codegen_2port__platform_8h_source.html">grpc/impl/codegen/port_platform.h</a>&gt;</code><br/>
-<code>#include &lt;<a class="el" href="slice_8h_source.html">grpc/slice.h</a>&gt;</code><br/>
 </div>
 <p><a href="load__reporting_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__load__reporting__cost__context.html">grpc_load_reporting_cost_context</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A sequence of values for load reporting purposes.  <a href="structgrpc__load__reporting__cost__context.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:aad02df8e03e2f88bf4b0f54beb904d12"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="load__reporting_8h.html#aad02df8e03e2f88bf4b0f54beb904d12">GRPC_LB_TOKEN_MD_KEY</a>&#160;&#160;&#160;&quot;lb-token&quot;</td></tr>
 <tr class="memdesc:aad02df8e03e2f88bf4b0f54beb904d12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Metadata key for the gRPC LB load balancer token.  <a href="#aad02df8e03e2f88bf4b0f54beb904d12">More...</a><br/></td></tr>
 <tr class="separator:aad02df8e03e2f88bf4b0f54beb904d12"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:ad2110f7867820dc21471987555ba3e36"><td class="memItemLeft" align="right" valign="top">typedef struct <br class="typebreak"/>
-<a class="el" href="structgrpc__load__reporting__cost__context.html">grpc_load_reporting_cost_context</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="load__reporting_8h.html#ad2110f7867820dc21471987555ba3e36">grpc_load_reporting_cost_context</a></td></tr>
-<tr class="memdesc:ad2110f7867820dc21471987555ba3e36"><td class="mdescLeft">&#160;</td><td class="mdescRight">A sequence of values for load reporting purposes.  <a href="#ad2110f7867820dc21471987555ba3e36">More...</a><br/></td></tr>
-<tr class="separator:ad2110f7867820dc21471987555ba3e36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a26062f16fe0fc3265852717c32be532c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="load__reporting_8h.html#a26062f16fe0fc3265852717c32be532c">GRPC_LB_COST_MD_KEY</a>&#160;&#160;&#160;&quot;lb-cost-bin&quot;</td></tr>
+<tr class="memdesc:a26062f16fe0fc3265852717c32be532c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Metadata key for gRPC LB cost reporting.  <a href="#a26062f16fe0fc3265852717c32be532c">More...</a><br/></td></tr>
+<tr class="separator:a26062f16fe0fc3265852717c32be532c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
+<a class="anchor" id="a26062f16fe0fc3265852717c32be532c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_LB_COST_MD_KEY&#160;&#160;&#160;&quot;lb-cost-bin&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Metadata key for gRPC LB cost reporting. </p>
+<p>The value corresponding to this key is an opaque binary blob reported by the backend as part of its trailing metadata containing cost information for the call. </p>
+
+</div>
+</div>
 <a class="anchor" id="aad02df8e03e2f88bf4b0f54beb904d12"></a>
 <div class="memitem">
 <div class="memproto">
@@ -134,25 +136,10 @@ Typedefs</h2></td></tr>
 
 </div>
 </div>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a class="anchor" id="ad2110f7867820dc21471987555ba3e36"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="structgrpc__load__reporting__cost__context.html">grpc_load_reporting_cost_context</a>  <a class="el" href="structgrpc__load__reporting__cost__context.html">grpc_load_reporting_cost_context</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>A sequence of values for load reporting purposes. </p>
-
-</div>
-</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

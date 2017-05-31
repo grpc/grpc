@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -85,7 +85,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>The service config is a mechanism that allows service owners to publish parameters to be automatically used by all clients of their service.</p>
 <h1>Format</h1>
 <p>The service config is a JSON string of the following form:</p>
-<p>``` { // Load balancing policy name. // Supported values are 'round_robin' and 'grpclb'. // Optional; if unset, the default behavior is pick the first available // backend. // Note that if the resolver returns only balancer addresses and no // backend addresses, gRPC will always use the 'grpclb' policy, // regardless of what this field is set to. 'loadBalancingPolicy': string,</p>
+<p>``` { // Load balancing policy name. // Currently, the only selectable client-side policy provided with gRPC // is 'round_robin', but third parties may add their own policies. // This field is optional; if unset, the default behavior is to pick // the first available backend. // If the policy name is set via the client API, that value overrides // the value specified here. // // Note that if the resolver returns at least one balancer address (as // opposed to backend addresses), gRPC will use grpclb (see // <a href="https://github.com/grpc/grpc/blob/master/doc/load-balancing.md">https://github.com/grpc/grpc/blob/master/doc/load-balancing.md</a>), // regardless of what LB policy is requested either here or via the // client API. However, if the resolver returns at least one backend // address in addition to the balancer address(es), the client may fall // back to the requested policy if it is unable to reach any of the // grpclb load balancers. 'loadBalancingPolicy': string,</p>
 <p>// Per-method configuration. Optional. 'methodConfig': [ { // The names of the methods to which this method config applies. There // must be at least one name. Each name entry must be unique across the // entire service config. If the 'method' field is empty, then this // method config specifies the defaults for all methods for the specified // service. // // For example, let's say that the service config contains the following // method config entries: // // 'methodConfig': [ // { 'name': [ { 'service': 'MyService' } ] ... }, // { 'name': [ { 'service': 'MyService', 'method': 'Foo' } ] ... } // ] // // For a request for MyService/Foo, we will use the second entry, because // it exactly matches the service and method name. // For a request for MyService/Bar, we will use the first entry, because // it provides the default for all methods of MyService. 'name': [ { // RPC service name. Required. // If using gRPC with protobuf as the IDL, then this will be of // the form "pkg.service_name", where "pkg" is the package name // defined in the proto file. 'service': string,</p>
 <p>// RPC method name. Optional (see above). 'method': string, } ],</p>
 <p>// Whether RPCs sent to this method should wait until the connection is // ready by default. If false, the RPC will abort immediately if there // is a transient failure connecting to the server. Otherwise, gRPC will // attempt to connect until the deadline is exceeded. // // The value specified via the gRPC client API will override the value // set here. However, note that setting the value in the client API will // also affect transient errors encountered during name resolution, // which cannot be caught by the value here, since the service config // is obtained by the gRPC client via name resolution. 'waitForReady': bool,</p>
@@ -94,7 +94,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>// The maximum allowed payload size for an individual response or object // in a stream (server-&gt;client) in bytes. The size which is measured is // the serialized, uncompressed payload in bytes. This applies both // to streaming and non-streaming requests. // // The actual value used is the minimum of the value specified here and // the value set by the application via the gRPC client API. // If either one is not set, then the other will be used. // If neither is set, then the built-in default is used. // // If a server attempts to send an object larger than this value, it // will not be sent, and the client will see an error. // Note that 0 is a valid value, meaning that the response message must // be empty. 'maxResponseMessageBytes': number } ] } ```</p>
 <p>Note that new per-method parameters may be added in the future as new functionality is introduced.</p>
 <h1>Architecture</h1>
-<p>A service config is associated with a server name. The <a class="el" href="naming_8md.html">name</a>resolver" plugin, when asked to resolve a particular server name, will return both the resolved addresses and the service config.</p>
+<p>A service config is associated with a server name. The <a class="el" href="naming_8md.html">name resolver</a> plugin, when asked to resolve a particular server name, will return both the resolved addresses and the service config.</p>
 <p>TODO(roth): Design how the service config will be encoded in DNS.</p>
 <h1>APIs</h1>
 <p>The service config is used in the following APIs:</p>
@@ -106,7 +106,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

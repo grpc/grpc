@@ -29,7 +29,6 @@ var searchData=
   ['callopset_3c_20grpc_3a_3acallopsendinitialmetadata_2c_20grpc_3a_3acallopsendmessage_2c_20grpc_3a_3acallopclientsendclose_2c_20callnoop_3c_204_20_3e_2c_20callnoop_3c_205_20_3e_2c_20callnoop_3c_206_20_3e_20_3e',['CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpSendMessage, grpc::CallOpClientSendClose, CallNoOp&lt; 4 &gt;, CallNoOp&lt; 5 &gt;, CallNoOp&lt; 6 &gt; &gt;',['../classgrpc_1_1_call_op_set.html',1,'grpc']]],
   ['callopset_3c_20grpc_3a_3acallopsendinitialmetadata_2c_20grpc_3a_3acallopsendmessage_2c_20grpc_3a_3acallopserversendstatus_20_3e',['CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpSendMessage, grpc::CallOpServerSendStatus &gt;',['../classgrpc_1_1_call_op_set.html',1,'grpc']]],
   ['callopset_3c_20grpc_3a_3acallopsendinitialmetadata_2c_20grpc_3a_3acallopserversendstatus_20_3e',['CallOpSet&lt; grpc::CallOpSendInitialMetadata, grpc::CallOpServerSendStatus &gt;',['../classgrpc_1_1_call_op_set.html',1,'grpc']]],
-  ['callopsetcollectioninterface',['CallOpSetCollectionInterface',['../classgrpc_1_1_call_op_set_collection_interface.html',1,'grpc']]],
   ['callopsetinterface',['CallOpSetInterface',['../classgrpc_1_1_call_op_set_interface.html',1,'grpc']]],
   ['channel',['Channel',['../classgrpc_1_1_channel.html',1,'grpc']]],
   ['channelarguments',['ChannelArguments',['../classgrpc_1_1_channel_arguments.html',1,'grpc']]],

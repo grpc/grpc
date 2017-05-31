@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>GRPC Core: Overview</title>
+<title>GRPC Core: gRPC Web</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -77,7 +77,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">Overview </div>  </div>
+<div class="title">gRPC Web </div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>gRPC-Web provides a JS client library that supports the same API as gRPC-Node to access a gRPC service. Due to browser limitation, the Web client library implements a different protocol than the <a href="http://www.grpc.io/docs/guides/wire.html">native gRPC protocol</a>. This protocol is designed to make it easy for a proxy to translate between the protocols as this is the most likely deployment model.</p>
@@ -99,6 +99,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <ol type="1">
 <li>application/grpc-web<ul>
 <li>e.g. application/grpc-web+[proto, json, thrift]</li>
+<li>the sender should always specify the message format, e.g. +proto, +json</li>
+<li>the receiver should assume the default is "+proto" when the message format is missing in Content-Type (as "application/grpc-web")</li>
 </ul>
 </li>
 <li>application/grpc-web-text<ul>
@@ -155,7 +157,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>While the server runtime will always base64-encode and flush gRPC messages atomically the client library should not assume base64 padding always happens at the boundary of message frames. That is, the implementation may send base64-encoded "chunks" with potential padding whenever the runtime needs to flush a byte buffer.</li>
 </ul>
 </li>
-<li>For binary trailers, when the content-type is set to application/grpc-web-text, the extra base64 encoding specified in <a href="http://www.grpc.io/docs/guides/wire.html">gRPC over HTTP2</a> for binary custom metadata is skipped.</li>
 </ol>
 <h1>Other features</h1>
 <p>Compression</p>
@@ -219,7 +220,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

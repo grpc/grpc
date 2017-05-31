@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -128,14 +128,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_SUPPORT_SLICE_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2config_8h.html">grpc++/support/config.h</a>&gt;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_2slice_8h.html">grpc/slice.h</a>&gt;</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;grpc/slice.h&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">namespace </span>grpc {</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
 <div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classgrpc_1_1_slice.html">   47</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_slice.html">Slice</a> final {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <a class="code" href="classgrpc_1_1_slice.html#a8c5179cf7a39f66d65887bf298dc548f">Slice</a>();</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <span class="comment">// Destructor - drops one reference.</span></div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <a class="code" href="classgrpc_1_1_slice.html#a1f89af608ad9e5bbc2870d4ee7140c94">~Slice</a>();</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;</div>
 <div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="classgrpc_1_1_slice.html#ac1e8469bbb6dfa9ab9e646e0b48f5fe2">   54</a></span>&#160;  <span class="keyword">enum</span> <a class="code" href="classgrpc_1_1_slice.html#ac1e8469bbb6dfa9ab9e646e0b48f5fe2">AddRef</a> { <a class="code" href="classgrpc_1_1_slice.html#ac1e8469bbb6dfa9ab9e646e0b48f5fe2a2ea965f79036dea69221557ec04580b2">ADD_REF</a> };</div>
@@ -157,7 +156,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;</div>
 <div class="line"><a name="l00078"></a><span class="lineno"><a class="line" href="classgrpc_1_1_slice.html#a61a8cc0f3ccffcd6ab53dd660bdbaa79">   78</a></span>&#160;  <span class="keyword">const</span> uint8_t* <a class="code" href="classgrpc_1_1_slice.html#a61a8cc0f3ccffcd6ab53dd660bdbaa79">end</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="grpc_2impl_2codegen_2slice_8h.html#a96535019e10a540192c1f276ec049a56">GRPC_SLICE_END_PTR</a>(slice_); }</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;</div>
-<div class="line"><a name="l00081"></a><span class="lineno"><a class="line" href="classgrpc_1_1_slice.html#ad104691f0410004542b38396511b34f3">   81</a></span>&#160;  <a class="code" href="structgrpc__slice.html">grpc_slice</a> <a class="code" href="classgrpc_1_1_slice.html#ad104691f0410004542b38396511b34f3">c_slice</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code" href="grpc_2slice_8h.html#aaf6dd367abbe7883973588f411928c6e">grpc_slice_ref</a>(slice_); }</div>
+<div class="line"><a name="l00081"></a><span class="lineno"><a class="line" href="classgrpc_1_1_slice.html#ad104691f0410004542b38396511b34f3">   81</a></span>&#160;  <a class="code" href="structgrpc__slice.html">grpc_slice</a> <a class="code" href="classgrpc_1_1_slice.html#ad104691f0410004542b38396511b34f3">c_slice</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> grpc_slice_ref(slice_); }</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; <span class="keyword">private</span>:</div>
 <div class="line"><a name="l00084"></a><span class="lineno"><a class="line" href="classgrpc_1_1_slice.html#ac6c83f28f4b17ae317094a794e92e99e">   84</a></span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>;</div>
@@ -169,21 +168,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="preprocessor">#endif  // GRPCXX_SUPPORT_SLICE_H</span></div>
 <div class="ttc" id="support_2config_8h_html"><div class="ttname"><a href="support_2config_8h.html">config.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_slice_html_a1f89af608ad9e5bbc2870d4ee7140c94"><div class="ttname"><a href="classgrpc_1_1_slice.html#a1f89af608ad9e5bbc2870d4ee7140c94">grpc::Slice::~Slice</a></div><div class="ttdeci">~Slice()</div></div>
+<div class="ttc" id="classgrpc_1_1_slice_html_a1f89af608ad9e5bbc2870d4ee7140c94"><div class="ttname"><a href="classgrpc_1_1_slice.html#a1f89af608ad9e5bbc2870d4ee7140c94">grpc::Slice::~Slice</a></div><div class="ttdeci">~Slice()</div><div class="ttdoc">Destructor - drops one reference. </div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html_a13fbbec0e9121a8b948d563f9730d75a"><div class="ttname"><a href="classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75a">grpc::Slice::StealRef</a></div><div class="ttdeci">StealRef</div><div class="ttdef"><b>Definition:</b> slice.h:58</div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html_ad104691f0410004542b38396511b34f3"><div class="ttname"><a href="classgrpc_1_1_slice.html#ad104691f0410004542b38396511b34f3">grpc::Slice::c_slice</a></div><div class="ttdeci">grpc_slice c_slice() const </div><div class="ttdoc">Raw C slice. Caller needs to call grpc_slice_unref when done. </div><div class="ttdef"><b>Definition:</b> slice.h:81</div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html"><div class="ttname"><a href="classgrpc_1_1_slice.html">grpc::Slice</a></div><div class="ttdoc">A wrapper around grpc_slice. </div><div class="ttdef"><b>Definition:</b> slice.h:47</div></div>
-<div class="ttc" id="structgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdef"><b>Definition:</b> slice.h:90</div></div>
-<div class="ttc" id="grpc_2impl_2codegen_2slice_8h_html_a8a15783c251cdeb18c3f8b0ad41d0352"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">GRPC_SLICE_START_PTR</a></div><div class="ttdeci">#define GRPC_SLICE_START_PTR(slice)</div><div class="ttdef"><b>Definition:</b> slice.h:126</div></div>
-<div class="ttc" id="grpc_2impl_2codegen_2slice_8h_html_a96535019e10a540192c1f276ec049a56"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#a96535019e10a540192c1f276ec049a56">GRPC_SLICE_END_PTR</a></div><div class="ttdeci">#define GRPC_SLICE_END_PTR(slice)</div><div class="ttdef"><b>Definition:</b> slice.h:135</div></div>
+<div class="ttc" id="structgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...</div><div class="ttdef"><b>Definition:</b> slice.h:91</div></div>
+<div class="ttc" id="grpc_2impl_2codegen_2slice_8h_html_a8a15783c251cdeb18c3f8b0ad41d0352"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">GRPC_SLICE_START_PTR</a></div><div class="ttdeci">#define GRPC_SLICE_START_PTR(slice)</div><div class="ttdef"><b>Definition:</b> slice.h:127</div></div>
+<div class="ttc" id="grpc_2impl_2codegen_2slice_8h_html_a96535019e10a540192c1f276ec049a56"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#a96535019e10a540192c1f276ec049a56">GRPC_SLICE_END_PTR</a></div><div class="ttdeci">#define GRPC_SLICE_END_PTR(slice)</div><div class="ttdef"><b>Definition:</b> slice.h:136</div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html_ac1e8469bbb6dfa9ab9e646e0b48f5fe2a2ea965f79036dea69221557ec04580b2"><div class="ttname"><a href="classgrpc_1_1_slice.html#ac1e8469bbb6dfa9ab9e646e0b48f5fe2a2ea965f79036dea69221557ec04580b2">grpc::Slice::ADD_REF</a></div><div class="ttdef"><b>Definition:</b> slice.h:54</div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html_a13fbbec0e9121a8b948d563f9730d75aae0777a96d69fe69aec2acd1f0f9cefb7"><div class="ttname"><a href="classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75aae0777a96d69fe69aec2acd1f0f9cefb7">grpc::Slice::STEAL_REF</a></div><div class="ttdef"><b>Definition:</b> slice.h:58</div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html_a8c5179cf7a39f66d65887bf298dc548f"><div class="ttname"><a href="classgrpc_1_1_slice.html#a8c5179cf7a39f66d65887bf298dc548f">grpc::Slice::Slice</a></div><div class="ttdeci">Slice()</div><div class="ttdoc">Construct an empty slice. </div></div>
-<div class="ttc" id="grpc_2slice_8h_html"><div class="ttname"><a href="grpc_2slice_8h.html">slice.h</a></div></div>
-<div class="ttc" id="grpc_2slice_8h_html_aaf6dd367abbe7883973588f411928c6e"><div class="ttname"><a href="grpc_2slice_8h.html#aaf6dd367abbe7883973588f411928c6e">grpc_slice_ref</a></div><div class="ttdeci">GPRAPI grpc_slice grpc_slice_ref(grpc_slice s)</div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html_af5dff4917f91b67d7fc18ddc789cc893"><div class="ttname"><a href="classgrpc_1_1_slice.html#af5dff4917f91b67d7fc18ddc789cc893">grpc::Slice::begin</a></div><div class="ttdeci">const uint8_t * begin() const </div><div class="ttdoc">Raw pointer to the beginning (first element) of the slice. </div><div class="ttdef"><b>Definition:</b> slice.h:75</div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html_aa216fa6d6e98e5e2677b7d33fb4af724"><div class="ttname"><a href="classgrpc_1_1_slice.html#aa216fa6d6e98e5e2677b7d33fb4af724">grpc::Slice::size</a></div><div class="ttdeci">size_t size() const </div><div class="ttdoc">Byte size. </div><div class="ttdef"><b>Definition:</b> slice.h:72</div></div>
-<div class="ttc" id="grpc_2impl_2codegen_2slice_8h_html_ae965fb2ee1a646253cdbd49d82b0b6c5"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a></div><div class="ttdeci">#define GRPC_SLICE_LENGTH(slice)</div><div class="ttdef"><b>Definition:</b> slice.h:129</div></div>
+<div class="ttc" id="grpc_2impl_2codegen_2slice_8h_html_ae965fb2ee1a646253cdbd49d82b0b6c5"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a></div><div class="ttdeci">#define GRPC_SLICE_LENGTH(slice)</div><div class="ttdef"><b>Definition:</b> slice.h:130</div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html_ac5a109779239ed4d3fd58e8124abdba1"><div class="ttname"><a href="classgrpc_1_1_slice.html#ac5a109779239ed4d3fd58e8124abdba1">grpc::Slice::operator=</a></div><div class="ttdeci">Slice &amp; operator=(Slice other)</div><div class="ttdoc">Assignment, reference count is unchanged. </div><div class="ttdef"><b>Definition:</b> slice.h:66</div></div>
 <div class="ttc" id="classgrpc_1_1_slice_html_ac1e8469bbb6dfa9ab9e646e0b48f5fe2"><div class="ttname"><a href="classgrpc_1_1_slice.html#ac1e8469bbb6dfa9ab9e646e0b48f5fe2">grpc::Slice::AddRef</a></div><div class="ttdeci">AddRef</div><div class="ttdef"><b>Definition:</b> slice.h:54</div></div>
 <div class="ttc" id="classgrpc_1_1_byte_buffer_html"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a></div><div class="ttdoc">A sequence of bytes. </div><div class="ttdef"><b>Definition:</b> byte_buffer.h:50</div></div>
@@ -191,7 +188,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

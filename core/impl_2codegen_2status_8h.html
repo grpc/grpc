@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">3.0.0</span>
+   &#160;<span id="projectnumber">4.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_27c65f9b8b3387c47015966ca861342b.html">impl</a></li><li class="navelem"><a class="el" href="dir_2d2a7752fa77ea824010e525334e7867.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_629b4cc7516e55c4afb0cb8a61439852.html">include</a></li><li class="navelem"><a class="el" href="dir_d06caa71145e9b2cbe67b49b6fe69d28.html">grpc</a></li><li class="navelem"><a class="el" href="dir_1ccb85353bf7ad9eb207254c908f6dd2.html">impl</a></li><li class="navelem"><a class="el" href="dir_d4a1038da1ca7a38aa498ecf659a57c8.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -136,40 +136,72 @@ Enumerations</h2></td></tr>
 </div><div class="memdoc">
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba9da5601150b267ab5509d151fa7df201"></a>GRPC_STATUS_OK</em>&#160;</td><td class="fielddoc">
+<p>Not an error; returned on success. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba30e6e0c37df1389dd4c460a53f831038"></a>GRPC_STATUS_CANCELLED</em>&#160;</td><td class="fielddoc">
+<p>The operation was cancelled (typically by the caller). </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba5f02c0e431162618ab422d27fd39dd08"></a>GRPC_STATUS_UNKNOWN</em>&#160;</td><td class="fielddoc">
+<p>Unknown error. </p>
+<p>An example of where this error may be returned is if a Status value received from another address space belongs to an error-space that is not known in this address space. Also errors raised by APIs that do not return enough error information may be converted to this error. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba3dd64296110db7e7fafb1062b5587731"></a>GRPC_STATUS_INVALID_ARGUMENT</em>&#160;</td><td class="fielddoc">
+<p>Client specified an invalid argument. </p>
+<p>Note that this differs from FAILED_PRECONDITION. INVALID_ARGUMENT indicates arguments that are problematic regardless of the state of the system (e.g., a malformed file name). </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba5451711361db6b8d8e80be30cbb1a208"></a>GRPC_STATUS_DEADLINE_EXCEEDED</em>&#160;</td><td class="fielddoc">
+<p>Deadline expired before operation could complete. </p>
+<p>For operations that change the state of the system, this error may be returned even if the operation has completed successfully. For example, a successful response from a server could have been delayed long enough for the deadline to expire. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108ebafdf14cb6f2da868d76b209ac490c14e2"></a>GRPC_STATUS_NOT_FOUND</em>&#160;</td><td class="fielddoc">
+<p>Some requested entity (e.g., file or directory) was not found. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108ebad357565db8655b6635fae96a11c4009b"></a>GRPC_STATUS_ALREADY_EXISTS</em>&#160;</td><td class="fielddoc">
+<p>Some entity that we attempted to create (e.g., file or directory) already exists. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba4149925007957bf1a04184d88e8293f4"></a>GRPC_STATUS_PERMISSION_DENIED</em>&#160;</td><td class="fielddoc">
+<p>The caller does not have permission to execute the specified operation. </p>
+<p>PERMISSION_DENIED must not be used for rejections caused by exhausting some resource (use RESOURCE_EXHAUSTED instead for those errors). PERMISSION_DENIED must not be used if the caller can not be identified (use UNAUTHENTICATED instead for those errors). </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba1a6fd47361ad9298879dd8760ca1a0cb"></a>GRPC_STATUS_UNAUTHENTICATED</em>&#160;</td><td class="fielddoc">
+<p>The request does not have valid authentication credentials for the operation. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108ebab1a76cb91e6992f6f7a31a7fe862e0e9"></a>GRPC_STATUS_RESOURCE_EXHAUSTED</em>&#160;</td><td class="fielddoc">
+<p>Some resource has been exhausted, perhaps a per-user quota, or perhaps the entire file system is out of space. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba503abd183544b43a83bc01d999adda5f"></a>GRPC_STATUS_FAILED_PRECONDITION</em>&#160;</td><td class="fielddoc">
+<p>Operation was rejected because the system is not in a state required for the operation's execution. </p>
+<p>For example, directory to be deleted may be non-empty, an rmdir operation is applied to a non-directory, etc.</p>
+<p>A litmus test that may help a service implementor in deciding between FAILED_PRECONDITION, ABORTED, and UNAVAILABLE: (a) Use UNAVAILABLE if the client can retry just the failing call. (b) Use ABORTED if the client should retry at a higher-level (e.g., restarting a read-modify-write sequence). (c) Use FAILED_PRECONDITION if the client should not retry until the system state has been explicitly fixed. E.g., if an "rmdir" fails because the directory is non-empty, FAILED_PRECONDITION should be returned since the client should not retry unless they have first fixed up the directory by deleting files from it. (d) Use FAILED_PRECONDITION if the client performs conditional REST Get/Update/Delete on a resource and the resource on the server does not match the condition. E.g., conflicting read-modify-write on the same resource. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba3570bc43d5eb08c95a7f4c24c13010d9"></a>GRPC_STATUS_ABORTED</em>&#160;</td><td class="fielddoc">
+<p>The operation was aborted, typically due to a concurrency issue like sequencer check failures, transaction aborts, etc. </p>
+<p>See litmus test above for deciding between FAILED_PRECONDITION, ABORTED, and UNAVAILABLE. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108ebacd0d05ab2f0af48b0f535c3dd0816d9b"></a>GRPC_STATUS_OUT_OF_RANGE</em>&#160;</td><td class="fielddoc">
+<p>Operation was attempted past the valid range. </p>
+<p>E.g., seeking or reading past end of file.</p>
+<p>Unlike INVALID_ARGUMENT, this error indicates a problem that may be fixed if the system state changes. For example, a 32-bit file system will generate INVALID_ARGUMENT if asked to read at an offset that is not in the range [0,2^32-1], but it will generate OUT_OF_RANGE if asked to read from an offset past the current file size.</p>
+<p>There is a fair bit of overlap between FAILED_PRECONDITION and OUT_OF_RANGE. We recommend using OUT_OF_RANGE (the more specific error) when it applies so that callers who are iterating through a space can easily look for an OUT_OF_RANGE error to detect when they are done. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba6912537b4dfd1030f50ff2f5448f1bc2"></a>GRPC_STATUS_UNIMPLEMENTED</em>&#160;</td><td class="fielddoc">
+<p>Operation is not implemented or not supported/enabled in this service. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108ebae648dab84c58ef5b1cfeea35867c4520"></a>GRPC_STATUS_INTERNAL</em>&#160;</td><td class="fielddoc">
+<p>Internal errors. </p>
+<p>Means some invariants expected by underlying system has been broken. If you see one of these errors, something is very broken. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108ebaad91b67998cb5df7bc6821e362189e79"></a>GRPC_STATUS_UNAVAILABLE</em>&#160;</td><td class="fielddoc">
+<p>The service is currently unavailable. </p>
+<p>This is a most likely a transient condition and may be corrected by retrying with a backoff.</p>
+<p>WARNING: Although data MIGHT not have been transmitted when this status occurs, there is NOT A GUARANTEE that the server has not seen anything. So in general it is unsafe to retry on this status code if the call is non-idempotent.</p>
+<p>See litmus test above for deciding between FAILED_PRECONDITION, ABORTED, and UNAVAILABLE. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108eba275db05856f4af884c48e86440414db7"></a>GRPC_STATUS_DATA_LOSS</em>&#160;</td><td class="fielddoc">
+<p>Unrecoverable data loss or corruption. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a35ab2a68917eb836de84cb23253108ebab924d4c4c646bdb3130162b8e359dd96"></a>GRPC_STATUS__DO_NOT_USE</em>&#160;</td><td class="fielddoc">
+<p>Force users to include a default branch: </p>
 </td></tr>
 </table>
 
@@ -178,7 +210,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

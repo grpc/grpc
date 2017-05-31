@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -106,10 +106,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1fbd3d6e86e2f97e5444f29b0af0a9d5"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_reader_interface.html#a1fbd3d6e86e2f97e5444f29b0af0a9d5">~ReaderInterface</a> ()</td></tr>
 <tr class="separator:a1fbd3d6e86e2f97e5444f29b0af0a9d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4ad823a3c32ec163fca5fc175dcb102f"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_reader_interface.html#a4ad823a3c32ec163fca5fc175dcb102f">NextMessageSize</a> (uint32_t *sz)=0</td></tr>
-<tr class="memdesc:a4ad823a3c32ec163fca5fc175dcb102f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Upper bound on the next message size available for reading on this stream.  <a href="#a4ad823a3c32ec163fca5fc175dcb102f">More...</a><br/></td></tr>
+<tr class="memdesc:a4ad823a3c32ec163fca5fc175dcb102f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get an upper bound on the next message size available for reading on this stream.  <a href="#a4ad823a3c32ec163fca5fc175dcb102f">More...</a><br/></td></tr>
 <tr class="separator:a4ad823a3c32ec163fca5fc175dcb102f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a04a1da8610d790ea86ecd5a14fe892b8"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_reader_interface.html#a04a1da8610d790ea86ecd5a14fe892b8">Read</a> (R *msg)=0</td></tr>
-<tr class="memdesc:a04a1da8610d790ea86ecd5a14fe892b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocking read a message and parse to <em>msg</em>.  <a href="#a04a1da8610d790ea86ecd5a14fe892b8">More...</a><br/></td></tr>
+<tr class="memdesc:a04a1da8610d790ea86ecd5a14fe892b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block to read a message and parse to <em>msg</em>.  <a href="#a04a1da8610d790ea86ecd5a14fe892b8">More...</a><br/></td></tr>
 <tr class="separator:a04a1da8610d790ea86ecd5a14fe892b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -168,7 +168,7 @@ template&lt;class R&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Upper bound on the next message size available for reading on this stream. </p>
+<p>Get an upper bound on the next message size available for reading on this stream. </p>
 
 <p>Implemented in <a class="el" href="classgrpc_1_1_server_split_streamer.html#afd992b3d73e9da01b4267b443fe39176">grpc::ServerSplitStreamer&lt; RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc_1_1_server_unary_streamer.html#a0a7c2fec34b451dbd6f2924321b4dc51">grpc::ServerUnaryStreamer&lt; RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc_1_1_server_reader_writer.html#a647d6e58b7720113db0357d1c4b7750f">grpc::ServerReaderWriter&lt; W, R &gt;</a>, <a class="el" href="classgrpc_1_1_server_reader.html#aba6ffb98a646c122a4b5e8a53e969d7e">grpc::ServerReader&lt; R &gt;</a>, <a class="el" href="classgrpc_1_1_client_reader_writer.html#a85c3018b87b4110c98b9f7f91adbfcef">grpc::ClientReaderWriter&lt; W, R &gt;</a>, and <a class="el" href="classgrpc_1_1_client_reader.html#ae687eb92304da9fb220d95a72c0a4605">grpc::ClientReader&lt; R &gt;</a>.</p>
 
@@ -198,7 +198,7 @@ template&lt;class R&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Blocking read a message and parse to <em>msg</em>. </p>
+<p>Block to read a message and parse to <em>msg</em>. </p>
 <p>Returns <em>true</em> on success. This is thread-safe with respect to <em>Write</em> or  methods on the same stream. It should not be called concurrently with another <em>Read</em> on the same stream as the order of delivery will not be defined.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -218,7 +218,7 @@ template&lt;class R&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

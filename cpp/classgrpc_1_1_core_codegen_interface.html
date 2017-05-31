@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.3.0</span>
+   &#160;<span id="projectnumber">1.5.0-dev</span>
    </div>
   </td>
  </tr>
@@ -106,8 +106,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a15cf8da5fe356167811e101ffa1fbf2c"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a15cf8da5fe356167811e101ffa1fbf2c">assert_fail</a> (const char *failed_assertion, const char *file, int line)=0</td></tr>
 <tr class="memdesc:a15cf8da5fe356167811e101ffa1fbf2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Upon a failed assertion, log the error.  <a href="#a15cf8da5fe356167811e101ffa1fbf2c">More...</a><br/></td></tr>
 <tr class="separator:a15cf8da5fe356167811e101ffa1fbf2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa9e90ae9e296515516009948e39fb8cf"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#aa9e90ae9e296515516009948e39fb8cf">grpc_completion_queue_create</a> (void *reserved)=0</td></tr>
-<tr class="separator:aa9e90ae9e296515516009948e39fb8cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40428dbef31a00bf8c6844e17e8a9ad0"><td class="memItemLeft" align="right" valign="top">virtual const <br class="typebreak"/>
+<a class="el" href="grpc__types_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a40428dbef31a00bf8c6844e17e8a9ad0">grpc_completion_queue_factory_lookup</a> (const <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a> *attributes)=0</td></tr>
+<tr class="separator:a40428dbef31a00bf8c6844e17e8a9ad0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add504c465da7d210f7d5a5ee324994be"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#add504c465da7d210f7d5a5ee324994be">grpc_completion_queue_create</a> (const <a class="el" href="grpc__types_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a> *factory, const <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a> *attributes, void *reserved)=0</td></tr>
+<tr class="separator:add504c465da7d210f7d5a5ee324994be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff34581bb69881e3661901f9e94896ed"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#aff34581bb69881e3661901f9e94896ed">grpc_completion_queue_create_for_next</a> (void *reserved)=0</td></tr>
+<tr class="separator:aff34581bb69881e3661901f9e94896ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68c8d3d9b6468bd3209443438c4abab4"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a68c8d3d9b6468bd3209443438c4abab4">grpc_completion_queue_create_for_pluck</a> (void *reserved)=0</td></tr>
+<tr class="separator:a68c8d3d9b6468bd3209443438c4abab4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a09c4780b55009b806366d7fec6c5b6c5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a09c4780b55009b806366d7fec6c5b6c5">grpc_completion_queue_destroy</a> (<a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq)=0</td></tr>
 <tr class="separator:a09c4780b55009b806366d7fec6c5b6c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4fcba9ee61fc1cc73d0e68022d2b80ad"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event.html">grpc_event</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a4fcba9ee61fc1cc73d0e68022d2b80ad">grpc_completion_queue_pluck</a> (<a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq, void *tag, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *reserved)=0</td></tr>
@@ -144,14 +151,26 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ac5749f32c8dbd5399895a584136781fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a877281fd72eed1674efec7cd71b361e2"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a877281fd72eed1674efec7cd71b361e2">grpc_raw_byte_buffer_create</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> *slice, size_t nslices)=0</td></tr>
 <tr class="separator:a877281fd72eed1674efec7cd71b361e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8470bf32c97382ff841a05b4bee0c8c4"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a8470bf32c97382ff841a05b4bee0c8c4">grpc_slice_new_with_user_data</a> (void *p, size_t len, void(*destroy)(void *), void *user_data)=0</td></tr>
+<tr class="separator:a8470bf32c97382ff841a05b4bee0c8c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a715e4e7dfab8362f01a8199489215404"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a715e4e7dfab8362f01a8199489215404">grpc_call_ref</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call)=0</td></tr>
+<tr class="separator:a715e4e7dfab8362f01a8199489215404"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40df30e7435089121f7fa03f76031124"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a40df30e7435089121f7fa03f76031124">grpc_call_unref</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call)=0</td></tr>
+<tr class="separator:a40df30e7435089121f7fa03f76031124"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a95637f38b81aeaf75b8868a9e38423c1"><td class="memItemLeft" align="right" valign="top">virtual void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a95637f38b81aeaf75b8868a9e38423c1">grpc_call_arena_alloc</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, size_t length)=0</td></tr>
+<tr class="separator:a95637f38b81aeaf75b8868a9e38423c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a48ec1eb8637d95b2eb452db2846bf76c"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a48ec1eb8637d95b2eb452db2846bf76c">grpc_empty_slice</a> ()=0</td></tr>
 <tr class="separator:a48ec1eb8637d95b2eb452db2846bf76c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a937d192d91be97e09b9eafd51fb20cf6"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a937d192d91be97e09b9eafd51fb20cf6">grpc_slice_malloc</a> (size_t length)=0</td></tr>
 <tr class="separator:a937d192d91be97e09b9eafd51fb20cf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5586cf5238402be3fba724b28cf1da9c"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a5586cf5238402be3fba724b28cf1da9c">grpc_slice_unref</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> slice)=0</td></tr>
 <tr class="separator:a5586cf5238402be3fba724b28cf1da9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80707020fa20c36d3f65ae37c1fd74e6"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a80707020fa20c36d3f65ae37c1fd74e6">grpc_slice_ref</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> slice)=0</td></tr>
+<tr class="separator:a80707020fa20c36d3f65ae37c1fd74e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22fbbdfe33fc84ed2b0bdda90a9331c2"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a22fbbdfe33fc84ed2b0bdda90a9331c2">grpc_slice_split_tail</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> *s, size_t split)=0</td></tr>
 <tr class="separator:a22fbbdfe33fc84ed2b0bdda90a9331c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a67390c96e5aaa103d3788022d840bdff"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a67390c96e5aaa103d3788022d840bdff">grpc_slice_split_head</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> *s, size_t split)=0</td></tr>
+<tr class="separator:a67390c96e5aaa103d3788022d840bdff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aed5bbc8685a952a6bf390f804694073d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#aed5bbc8685a952a6bf390f804694073d">grpc_slice_buffer_add</a> (<a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *sb, <a class="el" href="structgrpc__slice.html">grpc_slice</a> slice)=0</td></tr>
 <tr class="separator:aed5bbc8685a952a6bf390f804694073d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3bf7bcb987209890cb897c3ca2e4050"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#ae3bf7bcb987209890cb897c3ca2e4050">grpc_slice_buffer_pop</a> (<a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *sb)=0</td></tr>
@@ -687,7 +706,89 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aa9e90ae9e296515516009948e39fb8cf"></a>
+<a class="anchor" id="a95637f38b81aeaf75b8868a9e38423c1"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void* grpc::CoreCodegenInterface::grpc_call_arena_alloc </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a715e4e7dfab8362f01a8199489215404"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void grpc::CoreCodegenInterface::grpc_call_ref </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a40df30e7435089121f7fa03f76031124"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void grpc::CoreCodegenInterface::grpc_call_unref </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="add504c465da7d210f7d5a5ee324994be"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -696,6 +797,70 @@ Public Member Functions</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">virtual <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a>* grpc::CoreCodegenInterface::grpc_completion_queue_create </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="grpc__types_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a> *&#160;</td>
+          <td class="paramname"><em>factory</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a> *&#160;</td>
+          <td class="paramname"><em>attributes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aff34581bb69881e3661901f9e94896ed"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a>* grpc::CoreCodegenInterface::grpc_completion_queue_create_for_next </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a68c8d3d9b6468bd3209443438c4abab4"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a>* grpc::CoreCodegenInterface::grpc_completion_queue_create_for_pluck </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>reserved</em></td><td>)</td>
@@ -723,6 +888,30 @@ Public Member Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td>
           <td class="paramname"><em>cq</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a40428dbef31a00bf8c6844e17e8a9ad0"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual const <a class="el" href="grpc__types_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a>* grpc::CoreCodegenInterface::grpc_completion_queue_factory_lookup </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a> *&#160;</td>
+          <td class="paramname"><em>attributes</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -1036,6 +1225,110 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a8470bf32c97382ff841a05b4bee0c8c4"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a> grpc::CoreCodegenInterface::grpc_slice_new_with_user_data </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>p</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void(*)(void *)&#160;</td>
+          <td class="paramname"><em>destroy</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>user_data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a80707020fa20c36d3f65ae37c1fd74e6"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a> grpc::CoreCodegenInterface::grpc_slice_ref </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td>
+          <td class="paramname"><em>slice</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a67390c96e5aaa103d3788022d840bdff"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a> grpc::CoreCodegenInterface::grpc_slice_split_head </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__slice.html">grpc_slice</a> *&#160;</td>
+          <td class="paramname"><em>s</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>split</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a22fbbdfe33fc84ed2b0bdda90a9331c2"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1123,7 +1416,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 27 2017 17:26:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
