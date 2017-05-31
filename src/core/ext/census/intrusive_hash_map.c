@@ -46,7 +46,7 @@ static const size_t VECTOR_CHUNK_SIZE = (1 << 20) / sizeof(void *);
 
 /* Helper functions which return buckets from the chunked vector. */
 static __inline void **get_mutable_bucket(const chunked_vector *buckets,
-                                        uint32_t index) {
+                                          uint32_t index) {
   if (index < VECTOR_CHUNK_SIZE) {
     return &buckets->first_[index];
   }
@@ -54,7 +54,8 @@ static __inline void **get_mutable_bucket(const chunked_vector *buckets,
   return &buckets->rest_[rest_index][index % VECTOR_CHUNK_SIZE];
 }
 
-static __inline void *get_bucket(const chunked_vector *buckets, uint32_t index) {
+static __inline void *get_bucket(const chunked_vector *buckets,
+                                 uint32_t index) {
   if (index < VECTOR_CHUNK_SIZE) {
     return buckets->first_[index];
   }
@@ -223,8 +224,8 @@ hm_item *intrusive_hash_map_erase(intrusive_hash_map *hash_map, uint64_t key) {
  * already existed.
  */
 static __inline bool intrusive_hash_map_internal_insert(chunked_vector *buckets,
-                                                      uint32_t hash_mask,
-                                                      hm_item *item) {
+                                                        uint32_t hash_mask,
+                                                        hm_item *item) {
   const uint64_t key = item->key;
   uint32_t index = chunked_vector_hasher(key) & hash_mask;
   hm_item **slot = (hm_item **)get_mutable_bucket(buckets, index);
