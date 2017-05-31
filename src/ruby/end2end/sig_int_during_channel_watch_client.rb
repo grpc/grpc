@@ -46,6 +46,8 @@ def main
     end
   end.parse!
 
+  trap('SIGINT') { exit 0 }
+
   thd = Thread.new do
     child_thread_channel = GRPC::Core::Channel.new("localhost:#{server_port}",
                                                    {},

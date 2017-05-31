@@ -61,6 +61,11 @@ def main
       'channel is closed while connectivity is watched'
   end
 
+  client_exit_code = $CHILD_STATUS
+  if client_exit_code != 0
+    fail "channel closing client failed, exit code #{client_exit_code}"
+  end
+
   server_runner.stop
 end
 

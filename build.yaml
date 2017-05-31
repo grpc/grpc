@@ -14,7 +14,7 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 4.0.0-dev
   g_stands_for: gregarious
-  version: 1.4.0-dev
+  version: 1.5.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -27,6 +27,8 @@ filegroups:
   - src/core/ext/census/gen/census.pb.h
   - src/core/ext/census/gen/trace_context.pb.h
   - src/core/ext/census/grpc_filter.h
+  - src/core/ext/census/intrusive_hash_map.h
+  - src/core/ext/census/intrusive_hash_map_internal.h
   - src/core/ext/census/mlog.h
   - src/core/ext/census/resource.h
   - src/core/ext/census/rpc_metric_id.h
@@ -45,6 +47,7 @@ filegroups:
   - src/core/ext/census/grpc_filter.c
   - src/core/ext/census/grpc_plugin.c
   - src/core/ext/census/initialize.c
+  - src/core/ext/census/intrusive_hash_map.c
   - src/core/ext/census/mlog.c
   - src/core/ext/census/operation.c
   - src/core/ext/census/placeholders.c
@@ -1676,6 +1679,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: census_intrusive_hash_map_test
+  build: test
+  language: c
+  src:
+  - test/core/census/intrusive_hash_map_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: census_resource_test
   build: test
   language: c
@@ -2694,6 +2707,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: num_external_connectivity_watchers_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/num_external_connectivity_watchers_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
 - name: parse_address_test
   build: test
   language: c

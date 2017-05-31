@@ -218,5 +218,16 @@ namespace Grpc.Core.Internal
         {
             return buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
         }
+
+        /// <summary>
+        /// Only for testing.
+        /// </summary>
+        public static CallSafeHandle CreateFake(IntPtr ptr, CompletionQueueSafeHandle cq)
+        {
+            var call = new CallSafeHandle();
+            call.SetHandle(ptr);
+            call.Initialize(cq);
+            return call;
+        }
     }
 }

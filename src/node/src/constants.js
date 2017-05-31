@@ -1,5 +1,5 @@
-/*
- *
+/**
+ * @license
  * Copyright 2017, Google Inc.
  * All rights reserved.
  *
@@ -31,16 +31,14 @@
  *
  */
 
-/**
- * @module
- */
-
 /* The comments about status codes are copied verbatim (with some formatting
  * modifications) from include/grpc/impl/codegen/status.h, for the purpose of
  * including them in generated documentation.
  */
 /**
  * Enum of status codes that gRPC can return
+ * @memberof grpc
+ * @alias grpc.status
  * @readonly
  * @enum {number}
  */
@@ -178,6 +176,8 @@ exports.status = {
  * Users are encouraged to write propagation masks as deltas from the default.
  * i.e. write `grpc.propagate.DEFAULTS & ~grpc.propagate.DEADLINE` to disable
  * deadline propagation.
+ * @memberof grpc
+ * @alias grpc.propagate
  * @enum {number}
  */
 exports.propagate = {
@@ -194,9 +194,11 @@ exports.propagate = {
 /**
  * Call error constants. Call errors almost always indicate bugs in the gRPC
  * library, and these error codes are mainly useful for finding those bugs.
+ * @memberof grpc
+ * @readonly
  * @enum {number}
  */
-exports.callError = {
+const callError = {
   OK: 0,
   ERROR: 1,
   NOT_ON_SERVER: 2,
@@ -213,9 +215,14 @@ exports.callError = {
   PAYLOAD_TYPE_MISMATCH: 14
 };
 
+exports.callError = callError;
+
 /**
  * Write flags: these can be bitwise or-ed to form write options that modify
  * how data is written.
+ * @memberof grpc
+ * @alias grpc.writeFlags
+ * @readonly
  * @enum {number}
  */
 exports.writeFlags = {
@@ -232,6 +239,9 @@ exports.writeFlags = {
 };
 
 /**
+ * @memberof grpc
+ * @alias grpc.logVerbosity
+ * @readonly
  * @enum {number}
  */
 exports.logVerbosity = {
