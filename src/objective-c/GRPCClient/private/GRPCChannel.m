@@ -32,6 +32,7 @@
  */
 
 #import "GRPCChannel.h"
+#import "GRPCCompletionQueue.h"
 
 #include <grpc/grpc_security.h>
 #ifdef GRPC_COMPILE_WITH_CRONET
