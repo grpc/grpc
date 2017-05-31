@@ -598,6 +598,7 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
       }
     }
   } else {
+    gpr_mu_lock(cqd->mu);
     cq_finish_shutdown(exec_ctx, cq);
     gpr_mu_unlock(cqd->mu);
   }
