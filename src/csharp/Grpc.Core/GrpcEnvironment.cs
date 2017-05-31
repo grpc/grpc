@@ -48,12 +48,14 @@ namespace Grpc.Core
     public class GrpcEnvironment
     {
         const int MinDefaultThreadPoolSize = 4;
+        const int DefaultBatchContextPoolCapacityPerThread = 1000;
 
         static object staticLock = new object();
         static GrpcEnvironment instance;
         static int refCount;
         static int? customThreadPoolSize;
         static int? customCompletionQueueCount;
+        static int batchContextPoolCapacityPerThread = DefaultBatchContextPoolCapacityPerThread;
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
@@ -200,7 +202,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Sets the number of threads in the gRPC thread pool that polls for internal RPC events.
-        /// Can be only invoke before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
         /// Setting thread pool size is an advanced setting and you should only use it if you know what you are doing.
         /// Most users should rely on the default value provided by gRPC library.
         /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
@@ -217,7 +219,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Sets the number of completion queues in the  gRPC thread pool that polls for internal RPC events.
-        /// Can be only invoke before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
         /// Setting the number of completions queues is an advanced setting and you should only use it if you know what you are doing.
         /// Most users should rely on the default value provided by gRPC library.
         /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
@@ -233,12 +235,29 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Sets the size of the batch context pool (per thread).
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// This is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public static void SetBatchContextPoolCapacityPerThread(int capacity)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcPreconditions.CheckArgument(capacity >= 0, "Capacity needs to be a non-negative number");
+                batchContextPoolCapacityPerThread = capacity;
+            }
+        }
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
         {
             GrpcNativeInit();
-            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), GetCompletionQueueCountOrDefault());
+            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), GetCompletionQueueCountOrDefault(), batchContextPoolCapacityPerThread);
             threadPool.Start();
         }
 
