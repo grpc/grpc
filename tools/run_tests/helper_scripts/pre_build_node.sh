@@ -35,10 +35,12 @@ source ~/.nvm/nvm.sh
 nvm install $NODE_VERSION
 set -ex
 
+# Update npm to at least version 5
+npm update -g npm
+
 export GRPC_CONFIG=${CONFIG:-opt}
 
-# Expire cache after 1 day
-npm update --cache-min 86400
+npm update --prefer-online
 
 npm install node-gyp-install
 ./node_modules/.bin/node-gyp-install
