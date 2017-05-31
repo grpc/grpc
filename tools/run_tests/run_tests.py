@@ -431,10 +431,11 @@ class NodeLanguage(object):
     # we should specify in the compiler argument
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         'node7', 'electron1.3', 'electron1.6'])
+                                         'node7', 'node8',
+                                         'electron1.3', 'electron1.6'])
     if self.args.compiler == 'default':
       self.runtime = 'node'
-      self.node_version = '7'
+      self.node_version = '8'
     else:
       if self.args.compiler.startswith('electron'):
         self.runtime = 'electron'
@@ -1173,7 +1174,7 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
-                           'node0.12', 'node4', 'node5', 'node6', 'node7',
+                           'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
                            'cmake'],
