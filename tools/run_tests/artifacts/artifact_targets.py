@@ -153,7 +153,7 @@ class PythonArtifact:
           timeout_seconds=60*60,
           docker_base_image='quay.io/pypa/manylinux1_i686' if self.arch == 'x86' else 'quay.io/pypa/manylinux1_x86_64')
     elif self.platform == 'windows':
-      if 'Python27' in self.py_version or 'Python34' in self.py_version:
+      if 'Python2' in self.py_version or 'Python3' in self.py_version:
         environ['EXT_COMPILER'] = 'mingw32'
       else:
         environ['EXT_COMPILER'] = 'msvc'
