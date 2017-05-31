@@ -282,11 +282,11 @@ static void on_srv_query_done_cb(void *arg, int status, int timeouts,
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void grpc_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
-                          const char *name, const char *default_port,
-                          grpc_pollset_set *interested_parties,
-                          grpc_closure *on_done, grpc_lb_addresses **addrs,
-                          bool check_grpclb) {
+void grpc_dns_lookup_ares_impl(grpc_exec_ctx *exec_ctx, const char *dns_server,
+                               const char *name, const char *default_port,
+                               grpc_pollset_set *interested_parties,
+                               grpc_closure *on_done, grpc_lb_addresses **addrs,
+                               bool check_grpclb) {
   grpc_error *error = GRPC_ERROR_NONE;
   /* TODO(zyc): Enable tracing after #9603 is checked in */
   /* if (grpc_dns_trace) {
@@ -391,6 +391,12 @@ error_cleanup:
   gpr_free(host);
   gpr_free(port);
 }
+
+void (*grpc_dns_lookup_ares)(grpc_exec_ctx *exec_ctx, const char *dns_server,
+                             const char *name, const char *default_port,
+                             grpc_pollset_set *interested_parties,
+                             grpc_closure *on_done, grpc_lb_addresses **addrs,
+                             bool check_grpclb) = grpc_dns_lookup_ares_impl;
 
 grpc_error *grpc_ares_init(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
