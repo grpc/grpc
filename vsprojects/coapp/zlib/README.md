@@ -8,7 +8,6 @@ Prerequisites
 Multiple versions of VS installed to be able to build all the targets:
 * Visual Studio 2015
 * Visual Studio 2013
-* Visual Studio 2010 (you might need SP1 to prevent LNK1123 error)
 
 CoApp toolkit: http://coapp.org/files/CoApp.Tools.Powershell.msi
 
