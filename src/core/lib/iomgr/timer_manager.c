@@ -143,7 +143,10 @@ static bool wait_until(gpr_timespec next) {
   const gpr_timespec inf_future = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   gpr_mu_lock(&g_mu);
   // if we're not threaded anymore, leave
-  if (!g_threaded) return false;
+  if (!g_threaded) {
+    gpr_mu_unlock(&g_mu);
+    return false;
+  }
   // if there's no timed waiter, we should become one: that waiter waits
   // only until the next timer should expire
   // all other timers wait forever
