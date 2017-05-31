@@ -63,6 +63,11 @@ def main
       'SIGINT is sent while there is an active connectivity_state call'
   end
 
+  client_exit_code = $CHILD_STATUS
+  if client_exit_code != 0
+    fail "sig_int_during_channel_watch_client failed: #{client_exit_code}"
+  end
+
   server_runner.stop
 end
 

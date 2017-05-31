@@ -1,17 +1,34 @@
 /*
- * Copyright 2017 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Copyright 2017, Google Inc.
+ * All rights reserved.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #include "src/core/ext/census/intrusive_hash_map.h"
@@ -20,7 +37,7 @@
 extern bool hm_index_compare(const hm_index *A, const hm_index *B);
 
 /* Simple hashing function that takes lower 32 bits. */
-static inline uint32_t chunked_vector_hasher(uint64_t key) {
+static __inline uint32_t chunked_vector_hasher(uint64_t key) {
   return (uint32_t)key;
 }
 
@@ -28,8 +45,8 @@ static inline uint32_t chunked_vector_hasher(uint64_t key) {
 static const size_t VECTOR_CHUNK_SIZE = (1 << 20) / sizeof(void *);
 
 /* Helper functions which return buckets from the chunked vector. */
-static inline void **get_mutable_bucket(const chunked_vector *buckets,
-                                        uint32_t index) {
+static __inline void **get_mutable_bucket(const chunked_vector *buckets,
+                                          uint32_t index) {
   if (index < VECTOR_CHUNK_SIZE) {
     return &buckets->first_[index];
   }
@@ -37,7 +54,8 @@ static inline void **get_mutable_bucket(const chunked_vector *buckets,
   return &buckets->rest_[rest_index][index % VECTOR_CHUNK_SIZE];
 }
 
-static inline void *get_bucket(const chunked_vector *buckets, uint32_t index) {
+static __inline void *get_bucket(const chunked_vector *buckets,
+                                 uint32_t index) {
   if (index < VECTOR_CHUNK_SIZE) {
     return buckets->first_[index];
   }
@@ -46,7 +64,7 @@ static inline void *get_bucket(const chunked_vector *buckets, uint32_t index) {
 }
 
 /* Helper function. */
-static inline size_t RestSize(const chunked_vector *vec) {
+static __inline size_t RestSize(const chunked_vector *vec) {
   return (vec->size_ <= VECTOR_CHUNK_SIZE)
              ? 0
              : (vec->size_ - VECTOR_CHUNK_SIZE - 1) / VECTOR_CHUNK_SIZE + 1;
@@ -205,9 +223,9 @@ hm_item *intrusive_hash_map_erase(intrusive_hash_map *hash_map, uint64_t key) {
  * array_size-1. Returns true if it is a new hm_item and false if the hm_item
  * already existed.
  */
-static inline bool intrusive_hash_map_internal_insert(chunked_vector *buckets,
-                                                      uint32_t hash_mask,
-                                                      hm_item *item) {
+static __inline bool intrusive_hash_map_internal_insert(chunked_vector *buckets,
+                                                        uint32_t hash_mask,
+                                                        hm_item *item) {
   const uint64_t key = item->key;
   uint32_t index = chunked_vector_hasher(key) & hash_mask;
   hm_item **slot = (hm_item **)get_mutable_bucket(buckets, index);
