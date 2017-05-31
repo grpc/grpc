@@ -58,6 +58,9 @@ def main
            'It likely hangs when ended abruptly'
   end
 
+  # The interrupt in the child process should cause it to
+  # exit a non-zero status, so don't check it here.
+  # This test mainly tries to catch deadlock.
   server_runner.stop
 end
 

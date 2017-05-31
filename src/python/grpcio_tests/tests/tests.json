@@ -32,6 +32,7 @@
   "unit._invocation_defects_test.InvocationDefectsTest",
   "unit._metadata_code_details_test.MetadataCodeDetailsTest",
   "unit._metadata_test.MetadataTest",
+  "unit._reconnect_test.ReconnectTest",
   "unit._resource_exhausted_test.ResourceExhaustedTest",
   "unit._rpc_test.RPCTest",
   "unit._sanity._sanity_test.Sanity",
