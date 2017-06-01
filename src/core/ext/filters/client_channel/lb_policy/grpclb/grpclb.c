@@ -1730,6 +1730,8 @@ static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
               (void *)glb_policy);
     }
     if (glb_policy->pending_update_args != NULL) {
+      grpc_channel_args_destroy(exec_ctx,
+                                glb_policy->pending_update_args->args);
       gpr_free(glb_policy->pending_update_args);
     }
     glb_policy->pending_update_args =
@@ -1818,8 +1820,9 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
         // lb_on_server_status_received will pick up the cancel and reinit
         // lb_call.
         if (glb_policy->pending_update_args != NULL) {
-          glb_update_locked(exec_ctx, &glb_policy->base,
-                            glb_policy->pending_update_args);
+          const grpc_lb_policy_args *args = glb_policy->pending_update_args;
+          glb_policy->pending_update_args = NULL;
+          glb_update_locked(exec_ctx, &glb_policy->base, args);
         }
       } else if (glb_policy->started_picking && !glb_policy->shutting_down) {
         if (glb_policy->retry_timer_active) {

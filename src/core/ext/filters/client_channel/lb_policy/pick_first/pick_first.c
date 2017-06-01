@@ -363,6 +363,7 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
               (void *)p);
     }
     if (p->pending_update_args != NULL) {
+      grpc_channel_args_destroy(exec_ctx, p->pending_update_args->args);
       gpr_free(p->pending_update_args);
     }
     p->pending_update_args = gpr_zalloc(sizeof(*p->pending_update_args));
@@ -486,9 +487,9 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
           &p->connectivity_changed);
     }
     if (p->pending_update_args != NULL) {
-      // TODO(dgq): this discards the returned value. Change once LB updates
-      // report over a closure instead.
-      pf_update_locked(exec_ctx, &p->base, p->pending_update_args);
+      const grpc_lb_policy_args *args = p->pending_update_args;
+      p->pending_update_args = NULL;
+      pf_update_locked(exec_ctx, &p->base, args);
     }
     return;
   }
