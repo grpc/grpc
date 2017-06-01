@@ -33,6 +33,7 @@
 import bm_constants
 
 import argparse
+import subprocess
 import multiprocessing
 import random
 import itertools
@@ -88,30 +89,31 @@ def _args():
 
 
 def _collect_bm_data(bm, cfg, name, reps, idx, loops):
-    cmd = [
-        'bm_diff_%s/%s/%s' % (name, cfg, bm),
-        '--benchmark_out=%s.%s.%s.%d.json' % (bm, cfg, name, idx),
-        '--benchmark_out_format=json', '--benchmark_repetitions=%d' % (reps)
-    ]
-    return jobset.JobSpec(
-        cmd,
-        shortname='%s %s %s %d/%d' % (bm, cfg, name, idx + 1, loops),
-        verbose_success=True,
-        timeout_seconds=None)
+    jobs_list = []
+    for line in subprocess.check_output(['bm_diff_%s/%s/%s' % (name, cfg, bm),
+                                       '--benchmark_list_tests']).splitlines():
+        stripped_line = line.strip().replace("/","_").replace("<","_").replace(">","_")
+        cmd = [
+            'bm_diff_%s/%s/%s' % (name, cfg, bm),
+            '--benchmark_filter=^%s$' % line,
+            '--benchmark_out=%s.%s.%s.%s.%d.json' % (bm, stripped_line, cfg, name, idx),
+            '--benchmark_out_format=json', '--benchmark_repetitions=%d' % (reps)
+        ]
+        jobs_list.append(jobset.JobSpec(
+            cmd,
+            shortname='%s %s %s %s %d/%d' % (bm, line, cfg, name, idx + 1, loops),
+            verbose_success=True,
+            timeout_seconds=None))
+    return jobs_list
 
 
 def run(name, benchmarks, jobs, loops, reps):
     jobs_list = []
     for loop in range(0, loops):
-        jobs_list.extend(
-            x
-            for x in itertools.chain(
-                (_collect_bm_data(bm, 'opt', name, reps, loop, loops)
-                 for bm in benchmarks),
-                (_collect_bm_data(bm, 'counters', name, reps, loop, loops)
-                 for bm in benchmarks),))
+        for bm in benchmarks:
+            jobs_list += _collect_bm_data(bm, 'opt', name, reps, loop, loops)
+            jobs_list += _collect_bm_data(bm, 'counters', name, reps, loop, loops)
     random.shuffle(jobs_list, random.SystemRandom().random)
-
     jobset.run(jobs_list, maxjobs=jobs)
 
 

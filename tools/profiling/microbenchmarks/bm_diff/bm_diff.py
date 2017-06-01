@@ -42,6 +42,7 @@ import json
 import tabulate
 import argparse
 import collections
+import subprocess
 
 verbose = False
 
@@ -142,23 +143,26 @@ def diff(bms, loops, track, old, new):
 
     for bm in bms:
         for loop in range(0, loops):
-            js_new_ctr = _read_json('%s.counters.%s.%d.json' % (bm, new, loop))
-            js_new_opt = _read_json('%s.opt.%s.%d.json' % (bm, new, loop))
-            js_old_ctr = _read_json('%s.counters.%s.%d.json' % (bm, old, loop))
-            js_old_opt = _read_json('%s.opt.%s.%d.json' % (bm, old, loop))
+            for line in subprocess.check_output(['bm_diff_%s/opt/%s' % (old, bm),
+                                       '--benchmark_list_tests']).splitlines():
+                stripped_line = line.strip().replace("/","_").replace("<","_").replace(">","_")
+                js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' % (bm, stripped_line, new, loop))
+                js_new_opt = _read_json('%s.%s.opt.%s.%d.json' % (bm, stripped_line, new, loop))
+                js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' % (bm, stripped_line, old, loop))
+                js_old_opt = _read_json('%s.%s.opt.%s.%d.json' % (bm, stripped_line, old, loop))
 
-            if js_new_ctr:
-                for row in bm_json.expand_json(js_new_ctr, js_new_opt):
-                    name = row['cpp_name']
-                    if name.endswith('_mean') or name.endswith('_stddev'):
-                        continue
-                    benchmarks[name].add_sample(track, row, True)
-            if js_old_ctr:
-                for row in bm_json.expand_json(js_old_ctr, js_old_opt):
-                    name = row['cpp_name']
-                    if name.endswith('_mean') or name.endswith('_stddev'):
-                        continue
-                    benchmarks[name].add_sample(track, row, False)
+                if js_new_ctr:
+                    for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+                        name = row['cpp_name']
+                        if name.endswith('_mean') or name.endswith('_stddev'):
+                            continue
+                        benchmarks[name].add_sample(track, row, True)
+                if js_old_ctr:
+                    for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+                        name = row['cpp_name']
+                        if name.endswith('_mean') or name.endswith('_stddev'):
+                            continue
+                        benchmarks[name].add_sample(track, row, False)
 
     really_interesting = set()
     for name, bm in benchmarks.items():
