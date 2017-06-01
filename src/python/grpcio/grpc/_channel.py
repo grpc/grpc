@@ -365,6 +365,32 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
     def next(self):
         return self._next()
 
+    def next_nowait(self, timeout):
+        with self._state.condition:
+            if self._state.code is None:
+                event_handler = _event_handler(self._state, self._call,
+                                               self._response_deserializer)
+                self._call.start_client_batch(
+                    cygrpc.Operations(
+                        (cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
+                    event_handler)
+                self._state.due.add(cygrpc.OperationType.receive_message)
+            elif self._state.code is grpc.StatusCode.OK:
+                return None
+            else:
+                raise self
+
+            self._state.condition.wait(timeout)
+            if self._state.response is not None:
+                response = self._state.response
+                self._state.response = None
+                return response
+            elif cygrpc.OperationType.receive_message not in self._state.due:
+                if self._state.code is grpc.StatusCode.OK:
+                    return None
+                elif self._state.code is not None:
+                    raise self
+
     def is_active(self):
         with self._state.condition:
             return self._state.code is None
