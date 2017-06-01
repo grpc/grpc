@@ -32,18 +32,18 @@
  */
 
 
-#ifndef PHP_GRPC_H
-#define PHP_GRPC_H
+#ifndef HHVM_GRPC_H
+#define HHVM_GRPC_H
 
 #include <stdbool.h>
 
 #include "grpc/grpc.h"
 #include "version.h"
 
-/* These are all function declarations */
-/* Code that runs at module initialization */
-PHP_MINIT_FUNCTION(grpc);
-/* Code that runs at module shutdown */
-PHP_MSHUTDOWN_FUNCTION(grpc);
+class GrpcExtension : public Extension {
+  public:
+    GrpcExtension();
+    virtual void moduleInit();
+}
 
-#endif /* PHP_GRPC_H */
+#endif /* HHVM_GRPC_H */
