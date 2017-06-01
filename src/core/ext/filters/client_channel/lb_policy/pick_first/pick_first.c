@@ -191,13 +191,16 @@ static void pf_cancel_picks_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 static void start_picking_locked(grpc_exec_ctx *exec_ctx,
                                  pick_first_lb_policy *p) {
   p->started_picking = true;
-  p->checking_subchannel = 0;
-  p->checking_connectivity = GRPC_CHANNEL_IDLE;
-  GRPC_LB_POLICY_WEAK_REF(&p->base, "pick_first_connectivity");
-  grpc_subchannel_notify_on_state_change(
-      exec_ctx, p->subchannels[p->checking_subchannel],
-      p->base.interested_parties, &p->checking_connectivity,
-      &p->connectivity_changed);
+  if (p->subchannels != NULL) {
+    GPR_ASSERT(p->num_subchannels > 0);
+    p->checking_subchannel = 0;
+    p->checking_connectivity = GRPC_CHANNEL_IDLE;
+    GRPC_LB_POLICY_WEAK_REF(&p->base, "pick_first_connectivity");
+    grpc_subchannel_notify_on_state_change(
+        exec_ctx, p->subchannels[p->checking_subchannel],
+        p->base.interested_parties, &p->checking_connectivity,
+        &p->connectivity_changed);
+  }
 }
 
 static void pf_exit_idle_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
