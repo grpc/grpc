@@ -79,13 +79,13 @@ static void destroy_string(grpc_exec_ctx* exec_ctx, void* value) {
 
 static grpc_slice_hash_table* create_table_from_entries(
     const test_entry* test_entries, size_t num_test_entries,
-    bool (*value_eq_fn)(void*, void*)) {
+    int (*value_cmp_fn)(void*, void*)) {
   // Construct table.
   grpc_slice_hash_table_entry* entries =
       gpr_zalloc(sizeof(*entries) * num_test_entries);
   populate_entries(test_entries, num_test_entries, entries);
   grpc_slice_hash_table* table = grpc_slice_hash_table_create(
-      num_test_entries, entries, destroy_string, value_eq_fn);
+      num_test_entries, entries, destroy_string, value_cmp_fn);
   gpr_free(entries);
   return table;
 }
@@ -139,84 +139,94 @@ static void test_slice_hash_table() {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static bool value_eq_fn(void* a, void* b) {
+static int value_cmp_fn(void* a, void* b) {
   const char* a_str = a;
   const char* b_str = b;
-  return strcmp(a_str, b_str) == 0;
+  return strcmp(a_str, b_str);
 }
 
-static bool pointer_eq_fn(void* a, void* b) { return GPR_ICMP(a, b) == 0; }
+static int pointer_cmp_fn(void* a, void* b) { return GPR_ICMP(a, b); }
 
-static void test_slice_hash_table_eq_success() {
+static void test_slice_hash_table_eq() {
   const test_entry test_entries_a[] = {
       {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
   const size_t num_entries_a = GPR_ARRAY_SIZE(test_entries_a);
   grpc_slice_hash_table* table_a =
-      create_table_from_entries(test_entries_a, num_entries_a, value_eq_fn);
-  GPR_ASSERT(grpc_slice_hash_table_equals(table_a, table_a));
+      create_table_from_entries(test_entries_a, num_entries_a, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_a) == 0);
 
   const test_entry test_entries_b[] = {
       {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
   const size_t num_entries_b = GPR_ARRAY_SIZE(test_entries_b);
   grpc_slice_hash_table* table_b =
-      create_table_from_entries(test_entries_b, num_entries_b, value_eq_fn);
+      create_table_from_entries(test_entries_b, num_entries_b, value_cmp_fn);
 
-  GPR_ASSERT(grpc_slice_hash_table_equals(table_a, table_b));
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b) == 0);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_slice_hash_table_unref(&exec_ctx, table_a);
   grpc_slice_hash_table_unref(&exec_ctx, table_b);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void test_slice_hash_table_eq_failure() {
+static void test_slice_hash_table_not_eq() {
   const test_entry test_entries_a[] = {
       {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
   const size_t num_entries_a = GPR_ARRAY_SIZE(test_entries_a);
   grpc_slice_hash_table* table_a =
-      create_table_from_entries(test_entries_a, num_entries_a, value_eq_fn);
-  GPR_ASSERT(grpc_slice_hash_table_equals(table_a, table_a));
+      create_table_from_entries(test_entries_a, num_entries_a, value_cmp_fn);
 
   // Different sizes.
-  const test_entry test_entries_b[] = {{"key_0", "value_0"},
-                                       {"key_1", "value_1"}};
-  const size_t num_entries_b = GPR_ARRAY_SIZE(test_entries_b);
-  grpc_slice_hash_table* table_b =
-      create_table_from_entries(test_entries_b, num_entries_b, value_eq_fn);
+  const test_entry test_entries_b_smaller[] = {{"key_0", "value_0"},
+                                               {"key_1", "value_1"}};
+  const size_t num_entries_b_smaller = GPR_ARRAY_SIZE(test_entries_b_smaller);
+  grpc_slice_hash_table* table_b_smaller = create_table_from_entries(
+      test_entries_b_smaller, num_entries_b_smaller, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b_smaller) > 0);
 
-  GPR_ASSERT(!grpc_slice_hash_table_equals(table_a, table_b));
+  const test_entry test_entries_b_larger[] = {{"key_0", "value_0"},
+                                              {"key_1", "value_1"},
+                                              {"key_2", "value_2"},
+                                              {"key_3", "value_3"}};
+  const size_t num_entries_b_larger = GPR_ARRAY_SIZE(test_entries_b_larger);
+  grpc_slice_hash_table* table_b_larger = create_table_from_entries(
+      test_entries_b_larger, num_entries_b_larger, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b_larger) < 0);
 
-  // One key doesn't match.
+  // One key doesn't match and is lexicographically "smaller".
   const test_entry test_entries_c[] = {
-      {"key_00", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+      {"key_zz", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
   const size_t num_entries_c = GPR_ARRAY_SIZE(test_entries_c);
   grpc_slice_hash_table* table_c =
-      create_table_from_entries(test_entries_c, num_entries_c, value_eq_fn);
-  GPR_ASSERT(!grpc_slice_hash_table_equals(table_a, table_c));
+      create_table_from_entries(test_entries_c, num_entries_c, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_c) > 0);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_c, table_a) < 0);
 
   // One value doesn't match.
   const test_entry test_entries_d[] = {
-      {"key_0", "value_00"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+      {"key_0", "value_z"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
   const size_t num_entries_d = GPR_ARRAY_SIZE(test_entries_d);
   grpc_slice_hash_table* table_d =
-      create_table_from_entries(test_entries_d, num_entries_d, value_eq_fn);
-  GPR_ASSERT(!grpc_slice_hash_table_equals(table_a, table_d));
+      create_table_from_entries(test_entries_d, num_entries_d, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_d) < 0);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_d, table_a) > 0);
 
   // Same values but different "equals" functions.
   const test_entry test_entries_e[] = {
       {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
   const size_t num_entries_e = GPR_ARRAY_SIZE(test_entries_a);
   grpc_slice_hash_table* table_e =
-      create_table_from_entries(test_entries_e, num_entries_e, value_eq_fn);
+      create_table_from_entries(test_entries_e, num_entries_e, value_cmp_fn);
   const test_entry test_entries_f[] = {
       {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
   const size_t num_entries_f = GPR_ARRAY_SIZE(test_entries_a);
   grpc_slice_hash_table* table_f =
-      create_table_from_entries(test_entries_f, num_entries_f, pointer_eq_fn);
-  GPR_ASSERT(!grpc_slice_hash_table_equals(table_e, table_f));
+      create_table_from_entries(test_entries_f, num_entries_f, pointer_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_e, table_f) != 0);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_slice_hash_table_unref(&exec_ctx, table_a);
-  grpc_slice_hash_table_unref(&exec_ctx, table_b);
+  grpc_slice_hash_table_unref(&exec_ctx, table_b_larger);
+  grpc_slice_hash_table_unref(&exec_ctx, table_b_smaller);
   grpc_slice_hash_table_unref(&exec_ctx, table_c);
   grpc_slice_hash_table_unref(&exec_ctx, table_d);
   grpc_slice_hash_table_unref(&exec_ctx, table_e);
@@ -227,7 +237,7 @@ static void test_slice_hash_table_eq_failure() {
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_slice_hash_table();
-  test_slice_hash_table_eq_success();
-  test_slice_hash_table_eq_failure();
+  test_slice_hash_table_eq();
+  test_slice_hash_table_not_eq();
   return 0;
 }
