@@ -94,7 +94,7 @@ def _collect_bm_data(bm, cfg, name, reps, idx, loops):
         ['bm_diff_%s/%s/%s' % (name, cfg, bm),
          '--benchmark_list_tests']).splitlines():
         stripped_line = line.strip().replace("/", "_").replace(
-            "<", "_").replace(">", "_")
+            "<", "_").replace(">", "_").replace(", ", "_")
         cmd = [
             'bm_diff_%s/%s/%s' % (name, cfg, bm), '--benchmark_filter=^%s$' %
             line, '--benchmark_out=%s.%s.%s.%s.%d.json' %

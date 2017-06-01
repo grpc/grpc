@@ -152,7 +152,7 @@ def diff(bms, loops, track, old, new):
                 ['bm_diff_%s/opt/%s' % (old, bm),
                  '--benchmark_list_tests']).splitlines():
                 stripped_line = line.strip().replace("/", "_").replace(
-                    "<", "_").replace(">", "_")
+                    "<", "_").replace(">", "_").replace(", ", "_")
                 js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' %
                                         (bm, stripped_line, new, loop), badfiles)
                 js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
