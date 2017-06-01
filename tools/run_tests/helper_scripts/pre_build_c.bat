@@ -34,12 +34,16 @@ setlocal
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
-@rem Location of nuget.exe
-set NUGET=C:\nuget\nuget.exe
+@rem Default location of nuget.exe (on Jenkins)
+set NUGET=C:\nuget\nuget.exes
 
-if exist %NUGET% (
-  %NUGET% restore vsprojects/grpc.sln || goto :error
+if NOT exist %NUGET% (
+  set NUGET=nuget
+  @rem Download nuget if not on path
+  %NUGET% || wget https://dist.nuget.org/win-x86-commandline/v2.8.6/nuget.exe
 )
+
+%NUGET% restore vsprojects/grpc.sln || goto :error
 
 endlocal
 
