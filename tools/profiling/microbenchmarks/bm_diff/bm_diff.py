@@ -129,9 +129,9 @@ class Benchmark:
     def row(self, flds):
         return [self.final[f] if f in self.final else '' for f in flds]
 
-
 def _read_json(filename):
     try:
+
         with open(filename) as f:
             return json.loads(f.read())
     except ValueError, e:

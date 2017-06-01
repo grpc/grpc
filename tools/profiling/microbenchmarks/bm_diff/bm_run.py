@@ -107,7 +107,8 @@ def _collect_bm_data(bm, cfg, name, reps, idx, loops):
                 shortname='%s %s %s %s %d/%d' % (bm, line, cfg, name, idx + 1,
                                                  loops),
                 verbose_success=True,
-                timeout_seconds=None))
+                timeout_seconds=60*10,
+                timeout_retries=3))
     return jobs_list
 
 
