@@ -505,6 +505,34 @@
 # define _DARWIN_USE_64_BIT_INODE 1
 #endif
 
+#ifdef GPR_BACKWARDS_COMPATIBILITY_MODE
+  /* Redefine the fd_set macros for GLIBC < 2.15 support.
+   * This is a backwards compatibility hack. At version 2.15, GLIBC introduces
+   * the __fdelt_chk function, and starts using it within its fd_set macros
+   * (which c-ares uses). For compatibility with GLIBC < 2.15, we need to redefine
+   * the fd_set macros to not use __fdelt_chk. */
+  #include <sys/select.h>
+  #undef FD_SET
+  #undef FD_CLR
+  #undef FD_ISSET
+  /* 'FD_ZERO' doesn't use __fdelt_chk, no need to redefine. */
+
+  #ifdef __FDS_BITS
+    #define GRPC_CARES_FDS_BITS(set) __FDS_BITS(set)
+  #else
+    #define GRPC_CARES_FDS_BITS(set) ((set)->fds_bits)
+  #endif
+
+  #define GRPC_CARES_FD_MASK(d) ((long int)(1UL << (d) % NFDBITS))
+
+  #define FD_SET(d, set) \
+      ((void) (GRPC_CARES_FDS_BITS (set)[ (d) / NFDBITS ] |= GRPC_CARES_FD_MASK(d)))
+  #define FD_CLR(d, set) \
+      ((void) (GRPC_CARES_FDS_BITS (set)[ (d) / NFDBITS ] &= ~GRPC_CARES_FD_MASK(d)))
+  #define FD_ISSET(d, set) \
+      ((GRPC_CARES_FDS_BITS (set)[ (d) / NFDBITS ] & GRPC_CARES_FD_MASK(d)) != 0)
+#endif /* GPR_BACKWARDS_COMPATIBILITY_MODE */
+
 /* Number of bits in a file offset, on hosts where this is settable. */
 /* #undef _FILE_OFFSET_BITS */
 
