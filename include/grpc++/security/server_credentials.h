@@ -70,7 +70,7 @@ class ServerCredentials {
 
 /// Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
-  /// Deprecated
+  /// \warning Deprecated
   SslServerCredentialsOptions()
       : force_client_auth(false),
         client_certificate_request(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
@@ -84,12 +84,13 @@ struct SslServerCredentialsOptions {
   };
   grpc::string pem_root_certs;
   std::vector<PemKeyCertPair> pem_key_cert_pairs;
-  /// Deprecated
+  /// \warning Deprecated
   bool force_client_auth;
 
-  /// If both force_client_auth and client_certificate_request fields are set,
-  /// force_client_auth takes effect i.e
-  /// REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY will be enforced.
+  /// If both \a force_client_auth and \a client_certificate_request
+  /// fields are set, \a force_client_auth takes effect, i.e.
+  /// \a REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+  /// will be enforced.
   grpc_ssl_client_certificate_request_type client_certificate_request;
 };
 

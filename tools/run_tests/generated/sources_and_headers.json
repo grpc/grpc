@@ -191,6 +191,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "census_intrusive_hash_map_test", 
+    "src": [
+      "test/core/census/intrusive_hash_map_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "census_resource_test", 
     "src": [
       "test/core/census/resource_test.c"
@@ -1734,6 +1751,23 @@
     "name": "no_server_test", 
     "src": [
       "test/core/end2end/no_server_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "num_external_connectivity_watchers_test", 
+    "src": [
+      "test/core/surface/num_external_connectivity_watchers_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5965,7 +5999,6 @@
   }, 
   {
     "deps": [
-      "gpr", 
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
@@ -6002,6 +6035,7 @@
     "deps": [
       "census", 
       "gpr", 
+      "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
@@ -6149,6 +6183,7 @@
   {
     "deps": [
       "gpr", 
+      "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
@@ -7540,6 +7575,8 @@
       "src/core/ext/census/gen/census.pb.h", 
       "src/core/ext/census/gen/trace_context.pb.h", 
       "src/core/ext/census/grpc_filter.h", 
+      "src/core/ext/census/intrusive_hash_map.h", 
+      "src/core/ext/census/intrusive_hash_map_internal.h", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/resource.h", 
       "src/core/ext/census/rpc_metric_id.h", 
@@ -7570,6 +7607,9 @@
       "src/core/ext/census/grpc_filter.h", 
       "src/core/ext/census/grpc_plugin.c", 
       "src/core/ext/census/initialize.c", 
+      "src/core/ext/census/intrusive_hash_map.c", 
+      "src/core/ext/census/intrusive_hash_map.h", 
+      "src/core/ext/census/intrusive_hash_map_internal.h", 
       "src/core/ext/census/mlog.c", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/operation.c", 
@@ -8996,9 +9036,8 @@
   }, 
   {
     "deps": [
-      "gpr", 
+      "grpc", 
       "grpc++_codegen_base", 
-      "grpc_base", 
       "nanopb"
     ], 
     "headers": [

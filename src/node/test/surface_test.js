@@ -1110,6 +1110,18 @@ describe('Other conditions', function() {
         done();
       });
     });
+    it('after the call has fully completed', function(done) {
+      var peer;
+      var call = client.unary({error: false}, function(err, data) {
+        assert.ifError(err);
+        setImmediate(function() {
+          assert.strictEqual(peer, call.getPeer());
+          done();
+        });
+      });
+      peer = call.getPeer();
+      assert.strictEqual(typeof peer, 'string');
+    });
   });
 });
 describe('Call propagation', function() {
@@ -1322,14 +1334,14 @@ describe('Cancelling surface client', function() {
   });
   it('Should correctly cancel a unary call', function(done) {
     var call = client.div({'divisor': 0, 'dividend': 0}, function(err, resp) {
-      assert.strictEqual(err.code, surface_client.status.CANCELLED);
+      assert.strictEqual(err.code, grpc.status.CANCELLED);
       done();
     });
     call.cancel();
   });
   it('Should correctly cancel a client stream call', function(done) {
     var call = client.sum(function(err, resp) {
-      assert.strictEqual(err.code, surface_client.status.CANCELLED);
+      assert.strictEqual(err.code, grpc.status.CANCELLED);
       done();
     });
     call.cancel();
@@ -1338,7 +1350,7 @@ describe('Cancelling surface client', function() {
     var call = client.fib({'limit': 5});
     call.on('data', function() {});
     call.on('error', function(error) {
-      assert.strictEqual(error.code, surface_client.status.CANCELLED);
+      assert.strictEqual(error.code, grpc.status.CANCELLED);
       done();
     });
     call.cancel();
@@ -1347,8 +1359,21 @@ describe('Cancelling surface client', function() {
     var call = client.divMany();
     call.on('data', function() {});
     call.on('error', function(error) {
-      assert.strictEqual(error.code, surface_client.status.CANCELLED);
+      assert.strictEqual(error.code, grpc.status.CANCELLED);
       done();
+    });
+    call.cancel();
+  });
+  it('Should be idempotent', function(done) {
+    var call = client.div({'divisor': 0, 'dividend': 0}, function(err, resp) {
+      assert.strictEqual(err.code, grpc.status.CANCELLED);
+      // Call asynchronously to try cancelling after call is fully completed
+      setImmediate(function() {
+        assert.doesNotThrow(function() {
+          call.cancel();
+        });
+        done();
+      });
     });
     call.cancel();
   });

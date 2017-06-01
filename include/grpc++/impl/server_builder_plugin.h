@@ -40,6 +40,7 @@
 
 namespace grpc {
 
+class ServerBuilder;
 class ServerInitializer;
 class ChannelArguments;
 
@@ -50,6 +51,10 @@ class ServerBuilderPlugin {
  public:
   virtual ~ServerBuilderPlugin() {}
   virtual grpc::string name() = 0;
+
+  /// UpdateServerBuilder will be called at the beginning of
+  /// \a ServerBuilder::BuildAndStart().
+  virtual void UpdateServerBuilder(ServerBuilder* builder) {}
 
   /// InitServer will be called in ServerBuilder::BuildAndStart(), after the
   /// Server instance is created.

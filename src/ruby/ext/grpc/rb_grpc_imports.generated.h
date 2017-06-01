@@ -260,6 +260,9 @@ extern grpc_alarm_destroy_type grpc_alarm_destroy_import;
 typedef grpc_connectivity_state(*grpc_channel_check_connectivity_state_type)(grpc_channel *channel, int try_to_connect);
 extern grpc_channel_check_connectivity_state_type grpc_channel_check_connectivity_state_import;
 #define grpc_channel_check_connectivity_state grpc_channel_check_connectivity_state_import
+typedef int(*grpc_channel_num_external_connectivity_watchers_type)(grpc_channel *channel);
+extern grpc_channel_num_external_connectivity_watchers_type grpc_channel_num_external_connectivity_watchers_import;
+#define grpc_channel_num_external_connectivity_watchers grpc_channel_num_external_connectivity_watchers_import
 typedef void(*grpc_channel_watch_connectivity_state_type)(grpc_channel *channel, grpc_connectivity_state last_observed_state, gpr_timespec deadline, grpc_completion_queue *cq, void *tag);
 extern grpc_channel_watch_connectivity_state_type grpc_channel_watch_connectivity_state_import;
 #define grpc_channel_watch_connectivity_state grpc_channel_watch_connectivity_state_import
@@ -761,6 +764,9 @@ extern gpr_join_host_port_type gpr_join_host_port_import;
 typedef int(*gpr_split_host_port_type)(const char *name, char **host, char **port);
 extern gpr_split_host_port_type gpr_split_host_port_import;
 #define gpr_split_host_port gpr_split_host_port_import
+typedef const char *(*gpr_log_severity_string_type)(gpr_log_severity severity);
+extern gpr_log_severity_string_type gpr_log_severity_string_import;
+#define gpr_log_severity_string gpr_log_severity_string_import
 typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import

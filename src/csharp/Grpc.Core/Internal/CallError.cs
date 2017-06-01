@@ -72,7 +72,10 @@ namespace Grpc.Core.Internal
         /// </summary>
         public static void CheckOk(this CallError callError)
         {
-            GrpcPreconditions.CheckState(callError == CallError.OK, "Call error: " + callError);
+            if (callError != CallError.OK)
+            {
+                throw new InvalidOperationException("Call error: " + callError);
+            }
         }
     }
 }

@@ -127,6 +127,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   gpr_mu_lock(&state->mu);
   if (state->shutdown) {
     gpr_mu_unlock(&state->mu);
+    grpc_endpoint_shutdown(exec_ctx, tcp, GRPC_ERROR_NONE);
     grpc_endpoint_destroy(exec_ctx, tcp);
     gpr_free(acceptor);
     return;

@@ -42,6 +42,9 @@
 
 namespace grpc {
 
+/// Interface allowing custom server-side authorization based on credentials
+/// encoded in metadata.  Objects of this type can be passed to
+/// \a ServerCredentials::SetAuthMetadataProcessor().
 class AuthMetadataProcessor {
  public:
   typedef std::multimap<grpc::string_ref, grpc::string_ref> InputMetadata;
@@ -49,7 +52,7 @@ class AuthMetadataProcessor {
 
   virtual ~AuthMetadataProcessor() {}
 
-  /// If this method returns true, the Process function will be scheduled in
+  /// If this method returns true, the \a Process function will be scheduled in
   /// a different thread from the one processing the call.
   virtual bool IsBlocking() const { return true; }
 
