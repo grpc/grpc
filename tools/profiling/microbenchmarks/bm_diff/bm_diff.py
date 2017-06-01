@@ -143,13 +143,19 @@ def diff(bms, loops, track, old, new):
 
     for bm in bms:
         for loop in range(0, loops):
-            for line in subprocess.check_output(['bm_diff_%s/opt/%s' % (old, bm),
-                                       '--benchmark_list_tests']).splitlines():
-                stripped_line = line.strip().replace("/","_").replace("<","_").replace(">","_")
-                js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' % (bm, stripped_line, new, loop))
-                js_new_opt = _read_json('%s.%s.opt.%s.%d.json' % (bm, stripped_line, new, loop))
-                js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' % (bm, stripped_line, old, loop))
-                js_old_opt = _read_json('%s.%s.opt.%s.%d.json' % (bm, stripped_line, old, loop))
+            for line in subprocess.check_output(
+                ['bm_diff_%s/opt/%s' % (old, bm),
+                 '--benchmark_list_tests']).splitlines():
+                stripped_line = line.strip().replace("/", "_").replace(
+                    "<", "_").replace(">", "_")
+                js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' %
+                                        (bm, stripped_line, new, loop))
+                js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
+                                        (bm, stripped_line, new, loop))
+                js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' %
+                                        (bm, stripped_line, old, loop))
+                js_old_opt = _read_json('%s.%s.opt.%s.%d.json' %
+                                        (bm, stripped_line, old, loop))
 
                 if js_new_ctr:
                     for row in bm_json.expand_json(js_new_ctr, js_new_opt):
