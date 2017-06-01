@@ -1719,7 +1719,7 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
                             "lb_on_server_status_received");
 }
 
-static bool glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                               const grpc_lb_policy_args *args) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
 
@@ -1738,14 +1738,19 @@ static bool glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
         args->client_channel_factory;
     glb_policy->pending_update_args->args = grpc_channel_args_copy(args->args);
     glb_policy->pending_update_args->combiner = args->combiner;
-    return true;
+    return;
   }
 
   glb_policy->updating_lb_channel = true;
   // Propagate update to lb_channel (pick first).
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
-  if (arg == NULL || arg->type != GRPC_ARG_POINTER) return false;
+  if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
+    grpc_connectivity_state_set(
+        exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
+        "glb_update_missing");
+  }
   const grpc_lb_addresses *addresses = arg->value.pointer.p;
   GPR_ASSERT(glb_policy->lb_channel != NULL);
   grpc_channel_args *lb_channel_args = build_lb_channel_args(
@@ -1770,7 +1775,6 @@ static bool glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
         &glb_policy->lb_channel_connectivity,
         &glb_policy->lb_channel_on_connectivity_changed);
   }
-  return true;
 }
 
 // Invoked as part of the update process. It continues watching the LB channel

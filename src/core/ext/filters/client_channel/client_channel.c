@@ -392,7 +392,6 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   service_config_parsing_state parsing_state;
   memset(&parsing_state, 0, sizeof(parsing_state));
 
-  bool lb_policy_update_ok = false;
   bool lb_policy_updated = false;
   if (chand->resolver_result != NULL) {
     // Find LB policy name.
@@ -440,13 +439,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     if (chand->lb_policy != NULL && !lb_policy_type_changed) {
       // update
       lb_policy_updated = true;
-      lb_policy_update_ok = grpc_lb_policy_update_locked(
-          exec_ctx, chand->lb_policy, &lb_policy_args);
-      if (lb_policy_update_ok) {
-        GRPC_ERROR_UNREF(state_error);
-        state = grpc_lb_policy_check_connectivity_locked(
-            exec_ctx, chand->lb_policy, &state_error);
-      }
+      grpc_lb_policy_update_locked(exec_ctx, chand->lb_policy, &lb_policy_args);
     } else {
       lb_policy =
           grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
@@ -536,11 +529,13 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   }
 
   if (error == GRPC_ERROR_NONE && chand->resolver) {
-    set_channel_connectivity_state_locked(
-        exec_ctx, chand, state, GRPC_ERROR_REF(state_error),
-        lb_policy_updated ? "updated_lb+resolver" : "new_lb+resolver");
-    if (lb_policy != NULL) {
-      watch_lb_policy_locked(exec_ctx, chand, lb_policy, state);
+    if (!lb_policy_updated) {
+      set_channel_connectivity_state_locked(exec_ctx, chand, state,
+                                            GRPC_ERROR_REF(state_error),
+                                            "new_lb+resolver");
+      if (lb_policy != NULL) {
+        watch_lb_policy_locked(exec_ctx, chand, lb_policy, state);
+      }
     }
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
     grpc_resolver_next_locked(exec_ctx, chand->resolver,

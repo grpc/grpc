@@ -107,7 +107,7 @@ struct grpc_lb_policy_vtable {
                                         grpc_connectivity_state *state,
                                         grpc_closure *closure);
 
-  bool (*update_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+  void (*update_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                         const grpc_lb_policy_args *args);
 };
 
@@ -211,13 +211,8 @@ grpc_connectivity_state grpc_lb_policy_check_connectivity_locked(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     grpc_error **connectivity_error);
 
-/** Update \a policy with \a lb_policy_args. Returns true upon success. */
-/* TODO(dgq): instead of returning a bool, add an \a on_complete closure to be
- * invoked once the update has been processed. Note that only the last update
- * of a sequence arriving while still processing a previous update will take
- * effect. All others will be discarded and their associated \a on_complete
- * invoked with their error set to GRPC_ERROR_CANCELLED */
-bool grpc_lb_policy_update_locked(grpc_exec_ctx *exec_ctx,
+/** Update \a policy with \a lb_policy_args. */
+void grpc_lb_policy_update_locked(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy *policy,
                                   const grpc_lb_policy_args *lb_policy_args);
 

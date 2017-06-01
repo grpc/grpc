@@ -276,20 +276,31 @@ static void pf_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 }
 
 /* true upon success */
-static bool pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                              const grpc_lb_policy_args *args) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)policy;
   /* Find the number of backend addresses. We ignore balancer
    * addresses, since we don't know how to handle them. */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
-  if (arg == NULL || arg->type != GRPC_ARG_POINTER) return false;
+  if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
+    grpc_connectivity_state_set(
+        exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
+        "pf_update_missing");
+  }
   const grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_addrs = 0;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     if (!addresses->addresses[i].is_balancer) ++num_addrs;
   }
-  if (num_addrs == 0) return false;
+  if (num_addrs == 0) {
+    grpc_connectivity_state_set(
+        exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
+        "pf_update_empty");
+    return;
+  }
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Pick First %p received update with %lu addresses",
             (void *)p, (unsigned long)num_addrs);
@@ -338,7 +349,7 @@ static bool pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                                     (grpc_channel_args *)sc_args[j].args);
         }
         gpr_free(sc_args);
-        return true;
+        return;
       }
     }
   }
@@ -359,7 +370,7 @@ static bool pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
         args->client_channel_factory;
     p->pending_update_args->args = grpc_channel_args_copy(args->args);
     p->pending_update_args->combiner = args->combiner;
-    return true;
+    return;
   }
   /* Create the subchannels for the new subchannel args/addresses. */
   grpc_subchannel **new_subchannels =
@@ -382,7 +393,11 @@ static bool pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   gpr_free(sc_args);
   if (num_new_subchannels == 0) {
     gpr_free(new_subchannels);
-    return false;
+    grpc_connectivity_state_set(
+        exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid addresses in update"),
+        "pf_update_no_valid_addresses");
+    return;
   }
 
   /* Destroy the current subchannels. Repurpose pf_shutdown/destroy. */
@@ -418,7 +433,6 @@ static bool pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
           &p->connectivity_changed);
     }
   }
-  return true;
 }
 
 static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -623,11 +637,7 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
                                          grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
   pick_first_lb_policy *p = gpr_zalloc(sizeof(*p));
-  if (!pf_update_locked(exec_ctx, &p->base, args) || p->num_subchannels == 0) {
-    gpr_free(p->subchannels);
-    gpr_free(p);
-    return NULL;
-  }
+  pf_update_locked(exec_ctx, &p->base, args);
   grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner);
   grpc_closure_init(&p->connectivity_changed, pf_connectivity_changed_locked, p,
                     grpc_combiner_scheduler(args->combiner, false));
