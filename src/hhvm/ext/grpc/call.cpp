@@ -41,7 +41,32 @@
 
 #include "hhvm_grpc.h"
 
-namespace HPHP {
+class CallWrapper {
+  private:
+    grpc_call* wrapped{nullptr};
+    bool owned = false;
+  public:
+    CallWrapper() {}
+    ~CallWrapper() { sweep(); }
+
+    void new(grpc_call* call) {
+      memcpy(wrapped, call, sizeof(grpc_call));
+    }
+
+    void sweep() {
+      if (wrapped) {
+        if (owned) {
+          grpc_call_unref(wrapped);
+        }
+        req::free(wrapped);
+        wrapped = nullptr;
+      }
+    }
+
+    grpc_call* getWrapped() {
+      return wrapped;
+    }
+}
 
 /**
  * Constructs a new instance of the Call class.
@@ -96,4 +121,43 @@ int HHVM_METHOD(Call, setCredentials,
   ...
 }
 
+/* Creates and returns a PHP array object with the data in a
+ * grpc_metadata_array. Returns NULL on failure */
+Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
+  int count = metadata_array->count;
+  grpc_metadata *elements = metadata_array->metadata;
+
+  auto array = Array::CreateDict();
+
+  grpc_metadata *elem;
+  for (int i = 0; i < count; i++) {
+    elem = &elements[i];
+
+    key_len = GRPC_SLICE_LENGTH(elem->key);
+    str_key = req::calloc(key_len + 1, sizeof(char));
+    memcpy(str_key, GRPC_SLICE_START_PTR(elem->key), key_len);
+
+    str_val = req::calloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
+    memcpy(str_val, GRPC_SLICE_START_PTR(elem->value), GRPC_SLICE_LENGTH(elem->value));
+
+    auto key = String(str_key, ken_len, CopyString);
+    auto val = String(str_val, GRPC_SLICE_LENGTH(elem->value), CopyString);
+
+    req::free(str_key);
+    req::free(str_val);
+
+    if (!array.exists(key, true)) {
+      array.set(key, Array::Create(), true);
+    }
+
+    auto current = array[key];
+    if (!current.isArray()) {
+      throw_invalid_argument("Metadata hash somehow contains wrong types.");
+      return Variant::NullInit();
+    }
+
+    current.append(Variant(val));
+  }
+
+  return Variant(array);
 }

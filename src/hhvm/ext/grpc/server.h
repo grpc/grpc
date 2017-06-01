@@ -42,4 +42,30 @@
 
 #include <grpc/grpc.h>
 
+class ServerWrapper {
+  private:
+    grpc_server* wrapped;
+  public:
+    ServerWrapper();
+    ~ServerWrapper();
+
+    void new(grpc_server* server);
+    void sweep();
+    grpc_server* getWrapped();
+}
+
+void HHVM_METHOD(Server, __construct,
+  const Variant& args_array_or_null /* = null */);
+
+void HHVM_METHOD(Server, requestCall);
+
+bool HHVM_METHOD(Server, addHttp2Port,
+  const String& addr);
+
+bool HHVM_METHOD(Server, addSecureHttp2Port,
+  const String& addr,
+  const Object& server_credentials);
+
+void HHVM_METHOD(Server, start);
+
 #endif /* NET_GRPC_HHVM_GRPC_SERVER_H_ */

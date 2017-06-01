@@ -40,61 +40,68 @@
 
 #include "hhvm_grpc.h"
 
-#include <grpc/support/alloc.h>
+#include "call.h"
+
+#include <zend_exceptions.h>
+#include <zend_hash.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-/**
- * Set default roots pem.
- * @param string $pem_roots PEM encoding of the server root certificates
- * @return void
- */
-void HHVM_METHOD(ChannelCredentials, setDefaultRootsPem,
-  const String& pem_roots) {
-  ...
-}
+class CallCredentialsWrapper {
+  private:
+    grpc_call_credentials* wrapped{nullptr};
+  public:
+    CallCredentialsWrapper() {}
+    ~CallCredentialsWrapper() { sweep(); }
 
-/**
- * Create a default channel credentials object.
- * @return ChannelCredentials The new default channel credentials object
- */
-ChannelCredentials& HHVM_METHOD(ChannelCredentials, createDefault) {
-  ...
-}
+    void new(grpc_call_credentials* call_credentials) {
+      memcpy(wrapped, call_credentials, sizeof(grpc_call_credentials));
+    }
 
-/**
- * Create SSL credentials.
- * @param string $pem_root_certs PEM encoding of the server root certificates
- * @param string $pem_key_cert_pair.private_key PEM encoding of the client's
- *                                              private key (optional)
- * @param string $pem_key_cert_pair.cert_chain PEM encoding of the client's
- *                                             certificate chain (optional)
- * @return ChannelCredentials The new SSL credentials object
- */
-ChannelCredentials& HHVM_METHOD(ChannelCredentials, createSsl,
-  const String& pem_root_certs,
-  const String& pem_key_cert_pair_private_key /*= null*/,
-  const String& pem_key_cert_pair_cert_chain /*=null*/
-  ) {
-  ...
+    void sweep() {
+      if (wrapped) {
+        grpc_call_credentials_release(wrapped);
+        req::free(wrapped);
+        wrapped = nullptr;
+      }
+    }
+
+    grpc_call_credentials* getWrapped() {
+      return wrapped;
+    }
 }
 
 /**
  * Create composite credentials from two existing credentials.
- * @param ChannelCredentials $cred1_obj The first credential
+ * @param CallCredentials $cred1_obj The first credential
  * @param CallCredentials $cred2_obj The second credential
- * @return ChannelCredentials The new composite credentials object
+ * @return CallCredentials The new composite credentials object
  */
-ChannelCredentials& HHVM_METHOD(ChannelCredentials, createComposite,
-  ChannelCredentials& cred1_obj,
-  CallCredentials& cred2_obj) {
-  ...
+Object HHVM_METHOD(CallCredentials, createComposite,
+  const Object& cred1_obj,
+  const Object& cred2_obj) {
+  auto callCredentialsWrapper1 = Native::data<CallCredentialsWrapper>(cred1_obj);
+  auto callCredentialsWrapper2 = Native::data<CallCredentialsWrapper>(cred2_obj);
+
+  grpc_call_credentials *call_credentials =
+        grpc_composite_call_credentials_create(callCredentialsWrapper1->getWrapped(),
+                                               callCredentialsWrapper2->getWrapped(),
+                                               NULL);
+
+  auto newCallCredentialsWrapper = req::make<CallCredentialsWrapper>(call_credentials);
+
+  return Object(std::move(newCallCredentialsWrapper));
 }
 
 /**
- * Create insecure channel credentials
- * @return null
+ * Create a call credentials object from the plugin API
+ * @param function $fci The callback function
+ * @return CallCredentials The new call credentials object
  */
-void HHVM_METHOD(ChannelCredentials, createInsecure) {
+Object HHVM_METHOD(CallCredentials, createFromPlugin,
+  const Variant& callback) {
   ...
 }
+
+

@@ -43,4 +43,44 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
+class TimevalWrapper {
+  private:
+    grpc_timespec* wrapped;
+  public:
+    TimevalWrapper();
+    ~TimevalWrapper();
+
+    void new(gpr_timespec time);
+    void sweep();
+    grpc_timespec* getWrapped();
+}
+
+void HHVM_METHOD(Timeval, __construct,
+  int64_t microseconds);
+
+Object HHVM_METHOD(Timeval, add,
+  const Object& other_obj);
+
+Object HHVM_METHOD(Timeval, subtract,
+  const Object& other_obj);
+
+int64_t HHVM_STATIC_METHOD(Timeval, compare,
+  const Object& a_obj,
+  const Object& b_obj);
+
+bool HHVM_STATIC_METHOD(Timeval, similar,
+  const Object& a_obj,
+  const Object& b_obj,
+  const Object& thresh_obj);
+
+Object HHVM_STATIC_METHOD(Timeval, now);
+
+Object HHVM_STATIC_METHOD(Timeval, zero);
+
+Timeval HHVM_STATIC_METHOD(Timeval, infFuture);
+
+Timeval HHVM_STATIC_METHOD(Timeval, infPast);
+
+void HHVM_METHOD(Timeval, sleepUntil);
+
 #endif /* NET_GRPC_HHVM_GRPC_TIMEVAL_H_ */

@@ -43,4 +43,21 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+class ServerCredentialsWrapper {
+  private:
+    grpc_server_credentials* wrapped;
+  public:
+    ServerCredentialsWrapper();
+    ~ServerCredentialsWrapper();
+
+    void new(grpc_server_credentials* server_credentials);
+    void sweep();
+    grpc_timespec* getWrapped();
+}
+
+Object HHVM_METHOD(ServerCredentials, createSsl,
+  const String& pem_root_certs,
+  const String& pem_private_key,
+  const String& pem_cert_chain);
+
 #endif /* NET_GRPC_HHVM_GRPC_SERVER_CREDENTIALS_H_ */

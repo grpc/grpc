@@ -31,8 +31,7 @@
  *
  */
 
-#include "channel_credentials.h"
-#include "call_credentials.h"
+#include "server_credentials.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -40,34 +39,52 @@
 
 #include "hhvm_grpc.h"
 
-#include "call.h"
-
-#include <zend_exceptions.h>
-#include <zend_hash.h>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-/**
- * Create composite credentials from two existing credentials.
- * @param CallCredentials $cred1_obj The first credential
- * @param CallCredentials $cred2_obj The second credential
- * @return CallCredentials The new composite credentials object
- */
-CallCredentials& HHVM_METHOD(CallCredentials, createComposite,
-  CallCredentials& cred1_obj,
-  CallCredentials& cred2_obj) {
-  ...
+const StaticString s_ServerCredentialsWrapper("ServerCredentialsWrapper");
+
+class ServerCredentialsWrapper {
+  private:
+    grpc_server_credentials* wrapped{nullptr};
+  public:
+    ServerCredentialsWrapper() {}
+    ~ServerCredentialsWrapper() { sweep(); }
+
+    void new(grpc_server_credentials* server_credentials) {
+      memcpy(wrapped, server_credentials, sizeof(grpc_server_credentials));
+    }
+
+    void sweep() {
+      if (wrapped) {
+        grpc_server_credentials_release(wrapped);
+        req::free(wrapped);
+        wrapped = nullptr;
+      }
+    }
+
+    grpc_timespec* getWrapped() {
+      return wrapped;
+    }
 }
 
-/**
- * Create a call credentials object from the plugin API
- * @param function $fci The callback function
- * @return CallCredentials The new call credentials object
- */
-CallCredentials& HHVM_METHOD(CallCredentials, createFromPlugin,
-  const Variant& callback) {
-  ...
+Object HHVM_METHOD(ServerCredentials, createSsl,
+  const String& pem_root_certs,
+  const String& pem_private_key,
+  const String& pem_cert_chain) {
+  auto serverCredentialsWrapper = Native::data<ServerCredentialsWrapper>(this_);
+
+  /* TODO: add a client_certificate_request field in ServerCredentials and pass
+   * it as the last parameter. */
+  grpc_server_credentials *server_credentials = grpc_ssl_server_credentials_create_ex(
+    pem_root_certs.toCppString(),
+    &pem_key_cert_pair.toCppString(),
+    1,
+    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+    NULL
+  );
+
+  serverCredentialsWrapper->new(server_credentials);
+
+  return Object(std::move(serverCredentialsWrapper));
 }
-
-

@@ -42,5 +42,33 @@
 
 #include <grpc/grpc.h>
 
+class ChannelWrapper {
+  private:
+    grpc_channel* wrapped;
+  public:
+    ChannelWrapper();
+    ~ChannelWrapper();
+
+    void new(grpc_channel* channel);
+    void sweep();
+    grpc_channel* getWrapped();
+}
+
+void HHVM_METHOD(Channel, __construct,
+  const String& target,
+  const Array& args_array);
+
+String HHVM_METHOD(Channel, getTarget);
+
+int64_t HHVM_METHOD(Channel, getConnectivityState,
+  bool try_to_connect /* = false */);
+
+bool HHVM_METHOD(Channel, watchConnectivityState,
+  int64_t last_state,
+  const Object& deadlineWrapper);
+
+void HHVM_METHOD(Channel, close);
+
+void hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args);
 
 #endif /* NET_GRPC_HHVM_GRPC_CHANNEL_H_ */

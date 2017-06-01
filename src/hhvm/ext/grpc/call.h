@@ -38,5 +38,6 @@
 
 #include "hhvm_grpc.h"
 
+Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array);
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_H_ */

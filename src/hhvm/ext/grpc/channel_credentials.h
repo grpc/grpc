@@ -43,4 +43,35 @@
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 
+static char *default_pem_root_certs;
+
+class ChannelCredentials {
+  private:
+    grpc_channel_credentials* wrapped;
+  public:
+    ChannelCredentials();
+    ~ChannelCredentials();
+
+    void new(grpc_channel_credentials* channel_credentials);
+    void sweep();
+    grpc_channel_credentials* getWrapped();
+}
+
+void HHVM_METHOD(ChannelCredentials, setDefaultRootsPem,
+  const String& pem_roots);
+
+Object HHVM_METHOD(ChannelCredentials, createDefault);
+
+Object HHVM_METHOD(ChannelCredentials, createSsl,
+  const String& pem_root_certs,
+  const Variant& pem_key_cert_pair__private_key /*= null*/,
+  const Variant& pem_key_cert_pair__cert_chain /*=null*/
+  );
+
+Object HHVM_METHOD(ChannelCredentials, createComposite,
+  const Object& cred1_obj,
+  const Object& cred2_obj);
+
+void HHVM_METHOD(ChannelCredentials, createInsecure);
+
 #endif /* NET_GRPC_HHVM_GRPC_CHANNEL_CREDENTIALS_H_ */
