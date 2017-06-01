@@ -29,8 +29,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef GRPC_TEST_CORE_END2END_FAKE_RESOLVER_H
-#define GRPC_TEST_CORE_END2END_FAKE_RESOLVER_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
@@ -71,4 +71,5 @@ grpc_fake_resolver_response_generator_ref(
 void grpc_fake_resolver_response_generator_unref(
     grpc_fake_resolver_response_generator* generator);
 
-#endif /* GRPC_TEST_CORE_END2END_FAKE_RESOLVER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H \
+          */
