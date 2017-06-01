@@ -575,8 +575,8 @@ class NodeLanguage:
         unconstrained_client='async')
 
     yield _ping_pong_scenario(
-        'node_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        'node_to_cpp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         server_language='c++', async_server_threads=1)
 
     yield _ping_pong_scenario(
