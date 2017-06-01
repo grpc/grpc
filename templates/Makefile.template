@@ -352,7 +352,7 @@
   CORE_PC_TEMPLATE = prefix=$(prefix),\
   exec_prefix=${'\$${prefix}'},\
   includedir=${'\$${prefix}'}/include,\
-  libdir=${'\$${exec_prefix}'}/lib,\
+  libdir=${'\$${exec_prefix}'}/$(PC_LIBDIR_SUFFIX),\
   ,\
   Name: $(PC_NAME),\
   Description: $(PC_DESCRIPTION),\
@@ -365,7 +365,7 @@
   CPP_PC_TEMPLATE = prefix=$(prefix),\
   exec_prefix=${'\$${prefix}'},\
   includedir=${'\$${prefix}'}/include,\
-  libdir=${'\$${exec_prefix}'}/lib,\
+  libdir=${'\$${exec_prefix}'}/$(PC_LIBDIR_SUFFIX),\
   ,\
   Name: $(PC_NAME),\
   Description: $(PC_DESCRIPTION),\
@@ -378,7 +378,7 @@
   CSHARP_PC_TEMPLATE = prefix=$(prefix),\
   exec_prefix=${'\$${prefix}'},\
   includedir=${'\$${prefix}'}/include,\
-  libdir=${'\$${exec_prefix}'}/lib,\
+  libdir=${'\$${exec_prefix}'}/$(PC_LIBDIR_SUFFIX),\
   ,\
   Name: $(PC_NAME),\
   Description: $(PC_DESCRIPTION),\
@@ -688,6 +688,7 @@
 
   # grpc .pc file
   PC_NAME = gRPC
+  PC_LIBDIR_SUFFIX = $(subst $(prefix)/,,$(prefix_libdir))
   PC_DESCRIPTION = high performance general RPC framework
   PC_CFLAGS =
   PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
@@ -697,6 +698,7 @@
 
   # grpc_unsecure .pc file
   PC_NAME = gRPC unsecure
+  PC_LIBDIR_SUFFIX = $(subst $(prefix)/,,$(prefix_libdir))
   PC_DESCRIPTION = high performance general RPC framework without SSL
   PC_CFLAGS =
   PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
