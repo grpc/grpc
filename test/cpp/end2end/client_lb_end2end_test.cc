@@ -208,12 +208,15 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   };
 
-  int WaitForServer(size_t server_idx) {
+  void ResetCounters() {
+    for (const auto& server : servers_) server->service_.ResetCounters();
+  }
+
+  void WaitForServer(size_t server_idx) {
     do {
       SendRpc();
     } while (servers_[server_idx]->service_.request_count() == 0);
-    servers_[server_idx]->service_.ResetCounters();
-    return servers_[server_idx]->service_.request_count();
+    ResetCounters();
   }
 
   const grpc::string server_host_;
