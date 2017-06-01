@@ -661,6 +661,9 @@
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
       <Filter>third_party\nanopb</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\fake</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\pick_first\pick_first.c">
       <Filter>src\core\ext\filters\client_channel\lb_policy\pick_first</Filter>
     </ClCompile>
@@ -681,9 +684,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\sockaddr\sockaddr_resolver.c">
       <Filter>src\core\ext\filters\client_channel\resolver\sockaddr</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.c">
-      <Filter>src\core\ext\filters\client_channel\resolver\fake</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting.c">
       <Filter>src\core\ext\filters\load_reporting</Filter>
@@ -1427,14 +1427,14 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
       <Filter>third_party\nanopb</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.h">
+      <Filter>src\core\ext\filters\client_channel\resolver\fake</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver.h">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.h">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.h">
-      <Filter>src\core\ext\filters\client_channel\resolver\fake</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting.h">
       <Filter>src\core\ext\filters\load_reporting</Filter>

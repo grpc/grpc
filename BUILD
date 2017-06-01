@@ -921,6 +921,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_fake",
     ],
 )
 
@@ -950,6 +951,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_secure",
+        "grpc_resolver_fake",
     ],
 )
 

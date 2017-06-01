@@ -523,6 +523,7 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - nanopb
+  - grpc_resolver_fake
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
@@ -544,6 +545,7 @@ filegroups:
   - grpc_secure
   - grpc_client_channel
   - nanopb
+  - grpc_resolver_fake
 - name: grpc_lb_policy_pick_first
   src:
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c

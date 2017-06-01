@@ -8351,6 +8351,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_resolver_fake", 
       "nanopb"
     ], 
     "headers": [
@@ -8386,6 +8387,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_resolver_fake", 
       "grpc_secure", 
       "nanopb"
     ], 
