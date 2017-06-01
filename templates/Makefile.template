@@ -143,6 +143,7 @@
   # You may want to change these depending on your system.
 
   prefix ?= /usr/local
+  prefix_libdir ?= $(prefix)/lib
 
   PROTOC ?= protoc
   DTRACE ?= dtrace
@@ -1316,8 +1317,8 @@
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
   	$(E) "[INSTALL] Installing lib${lib.name}.a"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+  	$(Q) $(INSTALL) -d $(prefix_libdir)
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix_libdir)/lib${lib.name}.a
   % endif
   % endif
   % endif
@@ -1330,8 +1331,8 @@
   % if lib.language == "c++":
   % if lib.build == "all":
   	$(E) "[INSTALL] Installing lib${lib.name}.a"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+  	$(Q) $(INSTALL) -d $(prefix_libdir)
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix_libdir)/lib${lib.name}.a
   % endif
   % endif
   % endif
@@ -1344,13 +1345,13 @@
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
   	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})
+  	$(Q) $(INSTALL) -d $(prefix_libdir)
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix_libdir)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})
   ifeq ($(SYSTEM),MINGW32)
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]})-dll.a $(prefix)/lib/lib${lib.name}.a
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]})-dll.a $(prefix_libdir)/lib${lib.name}.a
   else ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix_libdir)/lib${lib.name}.so.${settings.core_version.major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix_libdir)/lib${lib.name}.so
   endif
   % endif
   % endif
@@ -1384,15 +1385,15 @@
 
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
-  	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+  	$(Q) $(INSTALL) -d $(prefix_libdir)/pkgconfig
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix_libdir)/pkgconfig/grpc.pc
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix_libdir)/pkgconfig/grpc_unsecure.pc
 
   install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
   	$(E) "[INSTALL] Installing C++ pkg-config files"
-  	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
+  	$(Q) $(INSTALL) -d $(prefix_libdir)/pkgconfig
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix_libdir)/pkgconfig/grpc++.pc
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix_libdir)/pkgconfig/grpc++_unsecure.pc
 
   install-certs: etc/roots.pem
   	$(E) "[INSTALL] Installing root certificates"
