@@ -35,6 +35,8 @@ set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
 
 del /f /q BUILD || rmdir build /s /q
 
+call npm update -g npm
+
 call npm update || goto :error
 
 mkdir -p %ARTIFACTS_OUT%
