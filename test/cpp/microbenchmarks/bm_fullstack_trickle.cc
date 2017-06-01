@@ -57,6 +57,15 @@ DEFINE_int32(
 DEFINE_int32(warmup_max_time_seconds, 10,
              "Maximum number of seconds to run warmup loop");
 
+static gpr_timespec g_now;
+
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+
+static gpr_timespec now_impl(gpr_clock_type clock_type) {
+  GPR_ASSERT(clock_type != GPR_TIMESPAN);
+  return g_now;
+}
+
 namespace grpc {
 namespace testing {
 
@@ -229,9 +238,7 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
                           int64_t iteration) {
   while (true) {
     fixture->Log(iteration);
-    switch (fixture->cq()->AsyncNext(
-        t, ok, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                            gpr_time_from_micros(100, GPR_TIMESPAN)))) {
+    switch (fixture->cq()->AsyncNext(t, ok, gpr_now(GPR_CLOCK_MONOTONIC))) {
       case CompletionQueue::TIMEOUT:
         fixture->Step(iteration != -1);
         break;
@@ -241,6 +248,7 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
       case CompletionQueue::GOT_EVENT:
         return;
     }
+    g_now = gpr_time_add(g_now, gpr_time_from_micros(100, GPR_TIMESPAN));
   }
 }
 
@@ -440,5 +448,6 @@ BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
   ::google::ParseCommandLineFlags(&argc, &argv, false);
+  gpr_now_impl = now_impl;
   ::benchmark::RunSpecifiedBenchmarks();
 }
