@@ -133,13 +133,13 @@ def main(args):
     bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.repetitions)
     bm_run.run(old, args.benchmarks, args.jobs, args.loops, args.repetitions)
 
-    diff = bm_diff.diff(args.benchmarks, args.loops, args.track, old, 'new')
+    diff, note = bm_diff.diff(args.benchmarks, args.loops, args.track, old, 'new')
     if diff:
         text = 'Performance differences noted:\n' + diff
     else:
         text = 'No significant performance differences'
     print text
-    comment_on_pr.comment_on_pr('```\n%s\n```' % text)
+    comment_on_pr.comment_on_pr('```\n%s\n\n%s\n```' % (note, text))
 
 
 if __name__ == '__main__':
