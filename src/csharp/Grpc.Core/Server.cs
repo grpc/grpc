@@ -326,9 +326,11 @@ namespace Grpc.Core
         {
             lock (myLock)
             {
-                if (!ports.All((port) => port.BoundPort != 0))
+                var unboundPort = ports.FirstOrDefault(port => port.BoundPort == 0);
+                if (unboundPort != null)
                 {
-                    throw new IOException("Failed to bind some of ports exposed by the server.");
+                    throw new IOException(
+                        string.Format("Failed to bind port \"{0}:{1}\"", unboundPort.Host, unboundPort.Port));
                 }
             }
         }
