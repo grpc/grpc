@@ -786,7 +786,7 @@ def _channel_managed_call_management(state):
 class _ChannelConnectivityState(object):
 
     def __init__(self, channel):
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.channel = channel
         self.polling = False
         self.connectivity = None
@@ -925,6 +925,11 @@ class Channel(grpc.Channel):
             _common.channel_args(_options(options)), credentials)
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
+
+        # TODO(https://github.com/grpc/grpc/issues/9884)
+        # Temporary work around UNAVAILABLE issues
+        # Remove this once c-core has retry support
+        _subscribe(self._connectivity_state, lambda *args: None, None)
 
     def subscribe(self, callback, try_to_connect=None):
         _subscribe(self._connectivity_state, callback, try_to_connect)

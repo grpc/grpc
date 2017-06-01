@@ -1775,7 +1775,7 @@ static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
         grpc_polling_entity_create_from_pollset_set(
             glb_policy->base.interested_parties),
         &glb_policy->lb_channel_connectivity,
-        &glb_policy->lb_channel_on_connectivity_changed);
+        &glb_policy->lb_channel_on_connectivity_changed, NULL);
   }
 }
 
@@ -1804,7 +1804,7 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
           grpc_polling_entity_create_from_pollset_set(
               glb_policy->base.interested_parties),
           &glb_policy->lb_channel_connectivity,
-          &glb_policy->lb_channel_on_connectivity_changed);
+          &glb_policy->lb_channel_on_connectivity_changed, NULL);
       break;
     }
     case GRPC_CHANNEL_IDLE:

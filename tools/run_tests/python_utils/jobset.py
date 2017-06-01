@@ -41,6 +41,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import errno
 
 
 # cpu cost measurement
@@ -132,29 +133,44 @@ _TAG_COLOR = {
 _FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(level=logging.INFO, format=_FORMAT)
 
+
+def eintr_be_gone(fn):
+  """Run fn until it doesn't stop because of EINTR"""
+  while True:
+    try:
+      return fn()
+    except IOError, e:
+      if e.errno != errno.EINTR:
+        raise
+
+
+
 def message(tag, msg, explanatory_text=None, do_newline=False):
   if message.old_tag == tag and message.old_msg == msg and not explanatory_text:
     return
   message.old_tag = tag
   message.old_msg = msg
-  try:
-    if platform_string() == 'windows' or not sys.stdout.isatty():
-      if explanatory_text:
-        logging.info(explanatory_text)
-      logging.info('%s: %s', tag, msg)
-    else:
-      sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
-          _BEGINNING_OF_LINE,
-          _CLEAR_LINE,
-          '\n%s' % explanatory_text if explanatory_text is not None else '',
-          _COLORS[_TAG_COLOR[tag]][1],
-          _COLORS[_TAG_COLOR[tag]][0],
-          tag,
-          msg,
-          '\n' if do_newline or explanatory_text is not None else ''))
-    sys.stdout.flush()
-  except:
-    pass
+  while True:
+    try:
+      if platform_string() == 'windows' or not sys.stdout.isatty():
+        if explanatory_text:
+          logging.info(explanatory_text)
+        logging.info('%s: %s', tag, msg)
+      else:
+        sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
+            _BEGINNING_OF_LINE,
+            _CLEAR_LINE,
+            '\n%s' % explanatory_text if explanatory_text is not None else '',
+            _COLORS[_TAG_COLOR[tag]][1],
+            _COLORS[_TAG_COLOR[tag]][0],
+            tag,
+            msg,
+            '\n' if do_newline or explanatory_text is not None else ''))
+      sys.stdout.flush()
+      return
+    except IOError, e:
+      if e.errno != errno.EINTR:
+        raise
 
 message.old_tag = ''
 message.old_msg = ''
@@ -226,16 +242,6 @@ class JobResult(object):
     self.cpu_measured = 0
 
 
-def eintr_be_gone(fn):
-  """Run fn until it doesn't stop because of EINTR"""
-  while True:
-    try:
-      return fn()
-    except IOError, e:
-      if e.errno != errno.EINTR:
-        raise
-
-
 def read_from_start(f):
   f.seek(0)
   return f.read()
@@ -270,8 +276,13 @@ class Job(object):
     env = sanitized_environment(env)
     self._start = time.time()
     cmdline = self._spec.cmdline
-    if measure_cpu_costs:
+    # The Unix time command is finicky when used with MSBuild, so we don't use it
+    # with jobs that run MSBuild.
+    global measure_cpu_costs
+    if measure_cpu_costs and not 'vsprojects\\build' in cmdline[0]:
       cmdline = ['time', '-p'] + cmdline
+    else:
+      measure_cpu_costs = False
     try_start = lambda: subprocess.Popen(args=cmdline,
                                          stderr=subprocess.STDOUT,
                                          stdout=self._tempfile,

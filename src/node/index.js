@@ -1,5 +1,5 @@
-/*
- *
+/**
+ * @license
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -31,10 +31,6 @@
  *
  */
 
-/**
- * @module
- */
-
 'use strict';
 
 var path = require('path');
@@ -64,24 +60,30 @@ var constants = require('./src/constants.js');
 grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
 
 /**
- * Load a ProtoBuf.js object as a gRPC object. The options object can provide
- * the following options:
- * - binaryAsBase64: deserialize bytes values as base64 strings instead of
- *   Buffers. Defaults to false
- * - longsAsStrings: deserialize long values as strings instead of objects.
- *   Defaults to true
- * - deprecatedArgumentOrder: Use the beta method argument order for client
- *   methods, with optional arguments after the callback. Defaults to false.
- *   This option is only a temporary stopgap measure to smooth an API breakage.
- *   It is deprecated, and new code should not use it.
- * - protobufjsVersion: Available values are 5, 6, and 'detect'. 5 and 6
- *   respectively indicate that an object from the corresponding version of
- *   ProtoBuf.js is provided in the value argument. If the option is 'detect',
- *   gRPC will guess what the version is based on the structure of the value.
- *   Defaults to 'detect'.
+ * @namespace grpc
+ */
+
+/**
+ * Load a ProtoBuf.js object as a gRPC object.
+ * @memberof grpc
+ * @alias grpc.loadObject
  * @param {Object} value The ProtoBuf.js reflection object to load
  * @param {Object=} options Options to apply to the loaded file
- * @return {Object<string, *>} The resulting gRPC object
+ * @param {bool=} [options.binaryAsBase64=false] deserialize bytes values as
+ *     base64 strings instead of Buffers
+ * @param {bool=} [options.longsAsStrings=true] deserialize long values as
+ *     strings instead of objects
+ * @param {bool=} [options.enumsAsStrings=true] deserialize enum values as
+ *     strings instead of numbers. Only works with Protobuf.js 6 values.
+ * @param {bool=} [options.deprecatedArgumentOrder=false] use the beta method
+ *     argument order for client methods, with optional arguments after the
+ *     callback. This option is only a temporary stopgap measure to smooth an
+ *     API breakage. It is deprecated, and new code should not use it.
+ * @param {(number|string)=} [options.protobufjsVersion='detect'] 5 and 6
+ *     respectively indicate that an object from the corresponding version of
+ *     Protobuf.js is provided in the value argument. If the option is 'detect',
+ *     gRPC wll guess what the version is based on the structure of the value.
+ * @return {Object<string, *>} The resulting gRPC object.
  */
 exports.loadObject = function loadObject(value, options) {
   options = _.defaults(options, common.defaultGrpcOptions);
@@ -112,22 +114,23 @@ exports.loadObject = function loadObject(value, options) {
 var loadObject = exports.loadObject;
 
 /**
- * Load a gRPC object from a .proto file. The options object can provide the
- * following options:
- * - convertFieldsToCamelCase: Load this file with field names in camel case
- *   instead of their original case
- * - binaryAsBase64: deserialize bytes values as base64 strings instead of
- *   Buffers. Defaults to false
- * - longsAsStrings: deserialize long values as strings instead of objects.
- *   Defaults to true
- * - deprecatedArgumentOrder: Use the beta method argument order for client
- *   methods, with optional arguments after the callback. Defaults to false.
- *   This option is only a temporary stopgap measure to smooth an API breakage.
- *   It is deprecated, and new code should not use it.
+ * Load a gRPC object from a .proto file.
+ * @memberof grpc
+ * @alias grpc.load
  * @param {string|{root: string, file: string}} filename The file to load
  * @param {string=} format The file format to expect. Must be either 'proto' or
  *     'json'. Defaults to 'proto'
  * @param {Object=} options Options to apply to the loaded file
+ * @param {bool=} [options.convertFieldsToCamelCase=false] Load this file with
+ *     field names in camel case instead of their original case
+ * @param {bool=} [options.binaryAsBase64=false] deserialize bytes values as
+ *     base64 strings instead of Buffers
+ * @param {bool=} [options.longsAsStrings=true] deserialize long values as
+ *     strings instead of objects
+ * @param {bool=} [options.deprecatedArgumentOrder=false] use the beta method
+ *     argument order for client methods, with optional arguments after the
+ *     callback. This option is only a temporary stopgap measure to smooth an
+ *     API breakage. It is deprecated, and new code should not use it.
  * @return {Object<string, *>} The resulting gRPC object
  */
 exports.load = function load(filename, format, options) {
@@ -168,6 +171,8 @@ var log_template = _.template(
  * called. Note: the output format here is intended to be informational, and
  * is not guaranteed to stay the same in the future.
  * Logs will be directed to logger.error.
+ * @memberof grpc
+ * @alias grpc.setLogger
  * @param {Console} logger A Console-like object.
  */
 exports.setLogger = function setLogger(logger) {
@@ -187,6 +192,8 @@ exports.setLogger = function setLogger(logger) {
 /**
  * Sets the logger verbosity for gRPC module logging. The options are members
  * of the grpc.logVerbosity map.
+ * @memberof grpc
+ * @alias grpc.setLogVerbosity
  * @param {Number} verbosity The minimum severity to log
  */
 exports.setLogVerbosity = function setLogVerbosity(verbosity) {
@@ -194,71 +201,70 @@ exports.setLogVerbosity = function setLogVerbosity(verbosity) {
   grpc.setLogVerbosity(verbosity);
 };
 
-/**
- * @see module:src/server.Server
- */
 exports.Server = server.Server;
 
-/**
- * @see module:src/metadata
- */
 exports.Metadata = Metadata;
 
-/**
- * Status name to code number mapping
- */
 exports.status = constants.status;
 
-/**
- * Propagate flag name to number mapping
- */
 exports.propagate = constants.propagate;
 
-/**
- * Call error name to code number mapping
- */
 exports.callError = constants.callError;
 
-/**
- * Write flag name to code number mapping
- */
 exports.writeFlags = constants.writeFlags;
 
-/**
- * Log verbosity setting name to code number mapping
- */
 exports.logVerbosity = constants.logVerbosity;
 
-/**
- * Credentials factories
- */
 exports.credentials = require('./src/credentials.js');
 
 /**
  * ServerCredentials factories
+ * @constructor ServerCredentials
+ * @memberof grpc
  */
 exports.ServerCredentials = grpc.ServerCredentials;
 
 /**
- * @see module:src/client.makeClientConstructor
+ * Create insecure server credentials
+ * @name grpc.ServerCredentials.createInsecure
+ * @kind function
+ * @return grpc.ServerCredentials
  */
+
+/**
+ * A private key and certificate pair
+ * @typedef {Object} grpc.ServerCredentials~keyCertPair
+ * @property {Buffer} privateKey The server's private key
+ * @property {Buffer} certChain The server's certificate chain
+ */
+
+/**
+ * Create SSL server credentials
+ * @name grpc.ServerCredentials.createInsecure
+ * @kind function
+ * @param {?Buffer} rootCerts Root CA certificates for validating client
+ *     certificates
+ * @param {Array<grpc.ServerCredentials~keyCertPair>} keyCertPairs A list of
+ *     private key and certificate chain pairs to be used for authenticating
+ *     the server
+ * @param {boolean} [checkClientCertificate=false] Indicates that the server
+ *     should request and verify the client's certificates
+ * @return grpc.ServerCredentials
+ */
+
 exports.makeGenericClientConstructor = client.makeClientConstructor;
 
-/**
- * @see module:src/client.getClientChannel
- */
 exports.getClientChannel = client.getClientChannel;
 
-/**
- * @see module:src/client.waitForClientReady
- */
 exports.waitForClientReady = client.waitForClientReady;
 
+/**
+ * @memberof grpc
+ * @alias grpc.closeClient
+ * @param {grpc.Client} client_obj The client to close
+ */
 exports.closeClient = function closeClient(client_obj) {
   client.Client.prototype.close.apply(client_obj);
 };
 
-/**
- * @see module:src/client.Client
- */
 exports.Client = client.Client;

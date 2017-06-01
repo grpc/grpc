@@ -323,6 +323,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
     src/core/ext/census/initialize.c \
+    src/core/ext/census/intrusive_hash_map.c \
     src/core/ext/census/mlog.c \
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \

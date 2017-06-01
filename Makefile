@@ -423,8 +423,8 @@ Q = @
 endif
 
 CORE_VERSION = 4.0.0-dev
-CPP_VERSION = 1.4.0-dev
-CSHARP_VERSION = 1.4.0-dev
+CPP_VERSION = 1.5.0-dev
+CSHARP_VERSION = 1.5.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -967,6 +967,7 @@ bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
+census_intrusive_hash_map_test: $(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test
 census_resource_test: $(BINDIR)/$(CONFIG)/census_resource_test
 census_trace_context_test: $(BINDIR)/$(CONFIG)/census_trace_context_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
@@ -1062,6 +1063,7 @@ murmur_hash_test: $(BINDIR)/$(CONFIG)/murmur_hash_test
 nanopb_fuzzer_response_test: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test
 nanopb_fuzzer_serverlist_test: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test
 no_server_test: $(BINDIR)/$(CONFIG)/no_server_test
+num_external_connectivity_watchers_test: $(BINDIR)/$(CONFIG)/num_external_connectivity_watchers_test
 parse_address_test: $(BINDIR)/$(CONFIG)/parse_address_test
 percent_decode_fuzzer: $(BINDIR)/$(CONFIG)/percent_decode_fuzzer
 percent_encode_fuzzer: $(BINDIR)/$(CONFIG)/percent_encode_fuzzer
@@ -1360,6 +1362,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/census_context_test \
+  $(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test \
   $(BINDIR)/$(CONFIG)/census_resource_test \
   $(BINDIR)/$(CONFIG)/census_trace_context_test \
   $(BINDIR)/$(CONFIG)/channel_create_test \
@@ -1440,6 +1443,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
   $(BINDIR)/$(CONFIG)/no_server_test \
+  $(BINDIR)/$(CONFIG)/num_external_connectivity_watchers_test \
   $(BINDIR)/$(CONFIG)/parse_address_test \
   $(BINDIR)/$(CONFIG)/percent_encoding_test \
   $(BINDIR)/$(CONFIG)/pollset_set_test \
@@ -1763,6 +1767,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/census_context_test || ( echo test census_context_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_intrusive_hash_map_test"
+	$(Q) $(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test || ( echo test census_intrusive_hash_map_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_resource_test"
 	$(Q) $(BINDIR)/$(CONFIG)/census_resource_test || ( echo test census_resource_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_trace_context_test"
@@ -1907,6 +1913,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/murmur_hash_test || ( echo test murmur_hash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing no_server_test"
 	$(Q) $(BINDIR)/$(CONFIG)/no_server_test || ( echo test no_server_test failed ; exit 1 )
+	$(E) "[RUN]     Testing num_external_connectivity_watchers_test"
+	$(Q) $(BINDIR)/$(CONFIG)/num_external_connectivity_watchers_test || ( echo test num_external_connectivity_watchers_test failed ; exit 1 )
 	$(E) "[RUN]     Testing parse_address_test"
 	$(Q) $(BINDIR)/$(CONFIG)/parse_address_test || ( echo test parse_address_test failed ; exit 1 )
 	$(E) "[RUN]     Testing percent_encoding_test"
@@ -3135,6 +3143,7 @@ LIBGRPC_SRC = \
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
     src/core/ext/census/initialize.c \
+    src/core/ext/census/intrusive_hash_map.c \
     src/core/ext/census/mlog.c \
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
@@ -3996,6 +4005,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
     src/core/ext/census/initialize.c \
+    src/core/ext/census/intrusive_hash_map.c \
     src/core/ext/census/mlog.c \
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
@@ -4593,6 +4603,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
     src/core/ext/census/initialize.c \
+    src/core/ext/census/intrusive_hash_map.c \
     src/core/ext/census/mlog.c \
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
@@ -8689,6 +8700,38 @@ endif
 endif
 
 
+CENSUS_INTRUSIVE_HASH_MAP_TEST_SRC = \
+    test/core/census/intrusive_hash_map_test.c \
+
+CENSUS_INTRUSIVE_HASH_MAP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_INTRUSIVE_HASH_MAP_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test: $(CENSUS_INTRUSIVE_HASH_MAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_INTRUSIVE_HASH_MAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/census/intrusive_hash_map_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_census_intrusive_hash_map_test: $(CENSUS_INTRUSIVE_HASH_MAP_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CENSUS_INTRUSIVE_HASH_MAP_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CENSUS_RESOURCE_TEST_SRC = \
     test/core/census/resource_test.c \
 
@@ -11725,6 +11768,38 @@ deps_no_server_test: $(NO_SERVER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(NO_SERVER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_SRC = \
+    test/core/surface/num_external_connectivity_watchers_test.c \
+
+NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/num_external_connectivity_watchers_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/num_external_connectivity_watchers_test: $(NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/num_external_connectivity_watchers_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/surface/num_external_connectivity_watchers_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_num_external_connectivity_watchers_test: $(NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_OBJS:.o=.dep)
 endif
 endif
 
