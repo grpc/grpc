@@ -133,7 +133,8 @@ def main(args):
     bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.repetitions)
     bm_run.run(old, args.benchmarks, args.jobs, args.loops, args.repetitions)
 
-    diff, note = bm_diff.diff(args.benchmarks, args.loops, args.track, old, 'new')
+    diff, note = bm_diff.diff(args.benchmarks, args.loops, args.track, old,
+                              'new')
     if diff:
         text = 'Performance differences noted:\n' + diff
     else:

@@ -129,6 +129,7 @@ class Benchmark:
     def row(self, flds):
         return [self.final[f] if f in self.final else '' for f in flds]
 
+
 def _read_json(filename, badfiles):
     stripped = ".".join(filename.split(".")[:-2])
     try:
@@ -154,13 +155,17 @@ def diff(bms, loops, track, old, new):
                 stripped_line = line.strip().replace("/", "_").replace(
                     "<", "_").replace(">", "_").replace(", ", "_")
                 js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' %
-                                        (bm, stripped_line, new, loop), badfiles)
+                                        (bm, stripped_line, new, loop),
+                                        badfiles)
                 js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
-                                        (bm, stripped_line, new, loop), badfiles)
+                                        (bm, stripped_line, new, loop),
+                                        badfiles)
                 js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' %
-                                        (bm, stripped_line, old, loop), badfiles)
+                                        (bm, stripped_line, old, loop),
+                                        badfiles)
                 js_old_opt = _read_json('%s.%s.opt.%s.%d.json' %
-                                        (bm, stripped_line, old, loop), badfiles)
+                                        (bm, stripped_line, old, loop),
+                                        badfiles)
 
                 if js_new_ctr:
                     for row in bm_json.expand_json(js_new_ctr, js_new_opt):
@@ -186,7 +191,7 @@ def diff(bms, loops, track, old, new):
     for name in sorted(benchmarks.keys()):
         if benchmarks[name].skip(): continue
         rows.append([name] + benchmarks[name].row(fields))
-    note += 'flakiness data = %s' % str(badfiles)
+    note = 'flakiness data = %s' % str(badfiles)
     if rows:
         return tabulate.tabulate(rows, headers=headers, floatfmt='+.2f'), note
     else:
@@ -195,7 +200,8 @@ def diff(bms, loops, track, old, new):
 
 if __name__ == '__main__':
     args = _args()
-    diff, note = diff(args.benchmarks, args.loops, args.track, args.old, args.new)
+    diff, note = diff(args.benchmarks, args.loops, args.track, args.old,
+                      args.new)
     print note
     print ""
     print diff
