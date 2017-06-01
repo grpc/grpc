@@ -20,7 +20,7 @@ class Call {
    * @return object Object with results of all actions
    */
   <<__Native>>
-  public function startBatch(array $actions): object;
+  public function startBatch(array<int, mixed> $actions): object;
 
   /**
    * Get the endpoint this call/stream is connected to

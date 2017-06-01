@@ -38,6 +38,23 @@
 
 #include "hhvm_grpc.h"
 
+void HHVM_METHOD(Call, __construct,
+  const Object& channel_obj,
+  const String& method,
+  const Object& deadline_obj,
+  const Variant& host_override /* = null */);
+
+Object HHVM_METHOD(Call, startBatch,
+  const Array& actions) 
+
+String HHVM_METHOD(Call, getPeer);
+
+void HHVM_METHOD(Call, cancel);
+
+int64_t HHVM_METHOD(Call, setCredentials,
+  const Object& creds_obj);
+
 Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array);
+bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadata);
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_H_ */

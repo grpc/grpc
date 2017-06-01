@@ -100,8 +100,67 @@ Object HHVM_METHOD(CallCredentials, createComposite,
  * @return CallCredentials The new call credentials object
  */
 Object HHVM_METHOD(CallCredentials, createFromPlugin,
-  const Variant& callback) {
-  ...
+  const Variant& function) {
+
+  Object callbackFunc = Object{callback.getObjectDataOrNull()};
+
+  plugin_state *state;
+  state = (plugin_state *)emalloc(sizeof(plugin_state));
+  memset(state, 0, sizeof(plugin_state));
+
+  state->function = function;
+
+  grpc_metadata_credentials_plugin plugin;
+  plugin.get_metadata = plugin_get_metadata;
+  plugin.destroy = plugin_destroy_state;
+  plugin.state = (void *)state;
+  plugin.type = "";
+
+  auto newCallCredentialsWrapper = req::make<CallCredentialsWrapper>();
+  newCallCredentialsWrapper->new(grpc_metadata_credentials_create_from_plugin(plugin, NULL));
+
+  return Object(std::move(newCallCredentialsWrapper));
+}
+
+void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
+                         grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data) {
+  Object returnObj = Object();
+  returnObj.o_set("service_url", Variant(String(context.service_url, CopyString)));
+  returnObj.o_set("method_name", Variant(String(context.method_name, CopyString)));
+
+  Array params = Array();
+  params.append(Object());
+
+  plugin_state *state = (plugin_state *)ptr;
+
+
+  Variant retval = vm_call_user_func(state->function, params);
+
+  grpc_status_code code = GRPC_STATUS_OK;
+  grpc_metadata_array metadata;
+  bool cleanup = true;
+
+  if (!retval.isArray()) {
+    cleanup = false;
+    code = GRPC_STATUS_INVALID_ARGUMENT;
+  } else if (!hhvm_create_metadata_array(retval.toArray(), &metadata)) {
+    code = GRPC_STATUS_INVALID_ARGUMENT;
+  }
+
+  /* Pass control back to core */
+  cb(user_data, metadata.metadata, metadata.count, code, NULL);
+  if (cleanup) {
+    for (int i = 0; i < metadata.count; i++) {
+      grpc_slice_unref(metadata.metadata[i].value);
+    }
+    grpc_metadata_array_destroy(&metadata);
+  }
 }
 
 
+void plugin_destroy_state(void *ptr) {
+  plugin_state *state = (plugin_state *)ptr;
+  req::free(state->fci);
+  req::free(state);
+}

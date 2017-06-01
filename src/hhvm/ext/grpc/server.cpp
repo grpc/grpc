@@ -97,13 +97,13 @@ void HHVM_METHOD(Server, __construct,
   grpc_server_register_completion_queue(serverWrapper->getWrapped(), completion_queue, NULL);
 }
 
-void HHVM_METHOD(Server, requestCall) {
+Object HHVM_METHOD(Server, requestCall) {
   grpc_call_error error_code;
   grpc_call *call;
   grpc_call_details details;
   grpc_metadata_array metadata;
   grpc_event event;
-  Object* resultObj;
+  Object resultObj = Object();
 
   auto serverWrapper = Native::data<ServerWrapper>(this_);
 

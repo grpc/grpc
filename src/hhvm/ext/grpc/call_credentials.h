@@ -43,5 +43,32 @@
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 
+class CallCredentialsWrapper {
+  private:
+    grpc_call_credentials* wrapped;
+  public:
+    CallCredentialsWrapper();
+    ~CallCredentialsWrapper();
+
+    void new(grpc_call_credentials* call_credentials);
+    void sweep();
+    grpc_call_credentials* getWrapped();
+}
+
+typedef struct plugin_state {
+  const Variant& function;
+} plugin_state;
+
+Object HHVM_METHOD(CallCredentials, createComposite,
+  const Object& cred1_obj,
+  const Object& cred2_obj);
+
+Object HHVM_METHOD(CallCredentials, createFromPlugin,
+  const Variant& function);
+
+void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
+                         grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data);
+void plugin_destroy_state(void *ptr);
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_ */
