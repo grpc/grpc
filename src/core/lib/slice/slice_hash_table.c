@@ -43,7 +43,7 @@
 struct grpc_slice_hash_table {
   gpr_refcount refs;
   void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value);
-  bool (*value_equals)(void* a, void* b);
+  int (*value_cmp)(void* a, void* b);
   size_t size;
   size_t max_num_probes;
   grpc_slice_hash_table_entry* entries;
@@ -74,11 +74,11 @@ static void grpc_slice_hash_table_add(grpc_slice_hash_table* table,
 grpc_slice_hash_table* grpc_slice_hash_table_create(
     size_t num_entries, grpc_slice_hash_table_entry* entries,
     void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value),
-    bool (*value_equals)(void* a, void* b)) {
+    int (*value_cmp)(void* a, void* b)) {
   grpc_slice_hash_table* table = gpr_zalloc(sizeof(*table));
   gpr_ref_init(&table->refs, 1);
   table->destroy_value = destroy_value;
-  table->value_equals = value_equals;
+  table->value_cmp = value_cmp;
   // Keep load factor low to improve performance of lookups.
   table->size = num_entries * 2;
   const size_t entry_size = sizeof(grpc_slice_hash_table_entry) * table->size;
@@ -125,21 +125,34 @@ void* grpc_slice_hash_table_get(const grpc_slice_hash_table* table,
   return NULL;  // Not found.
 }
 
-static bool pointer_equals(void* a, void* b) { return GPR_ICMP(a, b) == 0; }
-bool grpc_slice_hash_table_equals(const grpc_slice_hash_table* a,
-                                  const grpc_slice_hash_table* b) {
-  bool (*const value_equals_fn_a)(void* a, void* b) =
-      a->value_equals != NULL ? a->value_equals : pointer_equals;
-  bool (*const value_equals_fn_b)(void* a, void* b) =
-      b->value_equals != NULL ? b->value_equals : pointer_equals;
-  if (value_equals_fn_a != value_equals_fn_b) return false;
-  if (a->size != b->size) return false;
+static int pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+int grpc_slice_hash_table_cmp(const grpc_slice_hash_table* a,
+                              const grpc_slice_hash_table* b) {
+  int (*const value_cmp_fn_a)(void* a, void* b) =
+      a->value_cmp != NULL ? a->value_cmp : pointer_cmp;
+  int (*const value_cmp_fn_b)(void* a, void* b) =
+      b->value_cmp != NULL ? b->value_cmp : pointer_cmp;
+  // Compare value_fns
+  const int value_fns_cmp =
+      GPR_ICMP((void*)value_cmp_fn_a, (void*)value_cmp_fn_b);
+  if (value_fns_cmp != 0) return value_fns_cmp;
+  // Compare sizes
+  if (a->size < b->size) return -1;
+  if (a->size > b->size) return 1;
+  // Compare rows.
   for (size_t i = 0; i < a->size; ++i) {
-    if (is_empty(&a->entries[i]) != is_empty(&b->entries[i])) return false;
-    if (is_empty(&a->entries[i])) continue;
-    if (!grpc_slice_eq(a->entries[i].key, b->entries[i].key)) return false;
-    if (!value_equals_fn_a(a->entries[i].value, b->entries[i].value))
-      return false;
+    const gpr_slice a_key =
+        is_empty(&a->entries[i]) ? grpc_empty_slice() : a->entries[i].key;
+    const gpr_slice b_key =
+        is_empty(&b->entries[i]) ? grpc_empty_slice() : b->entries[i].key;
+    const int key_cmp = grpc_slice_cmp(a_key, b_key);
+    if (key_cmp != 0) return key_cmp;
+    // keys can be equal because both entries are empty. In that case, continue
+    // (no values for empty entries).
+    if (GRPC_SLICE_IS_EMPTY(a_key) && GRPC_SLICE_IS_EMPTY(b_key)) continue;
+    const int value_cmp =
+        value_cmp_fn_a(a->entries[i].value, b->entries[i].value);
+    if (value_cmp != 0) return value_cmp;
   }
-  return true;
+  return 0;
 }

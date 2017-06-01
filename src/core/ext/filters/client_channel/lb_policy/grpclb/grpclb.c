@@ -868,10 +868,10 @@ static grpc_slice_hash_table_entry targets_info_entry_create(
   return entry;
 }
 
-static bool balancer_name_cmp_fn(void *a, void *b) {
+static int balancer_name_cmp_fn(void *a, void *b) {
   const char *a_str = a;
   const char *b_str = b;
-  return strcmp(a_str, b_str) == 0;
+  return strcmp(a_str, b_str);
 }
 
 /* Returns the channel args for the LB channel, used to create a bidirectional
