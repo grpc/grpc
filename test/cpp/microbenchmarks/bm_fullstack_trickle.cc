@@ -427,7 +427,7 @@ static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
   const int svr_64M = 64 * 1024 * 1024;
   for (int bw = 64; bw <= 128 * 1024 * 1024; bw *= 16) {
     for (auto svr : {svr_256k, svr_4M, svr_64M}) {
-      for (auto cli: {cli_1024k, cli_32M}) {
+      for (auto cli : {cli_1024k, cli_32M}) {
         b->Args({cli, svr, bw});
       }
     }
