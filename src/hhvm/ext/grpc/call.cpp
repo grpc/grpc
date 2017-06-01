@@ -41,6 +41,8 @@
 
 #include "hhvm_grpc.h"
 
+const StaticString s_CallWrapper("CallWrapper");
+
 class CallWrapper {
   private:
     grpc_call* wrapped{nullptr};

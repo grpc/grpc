@@ -49,6 +49,8 @@
 #include "server.h"
 #include "timeval.h"
 
+const StaticString s_ChannelWrapper("ChannelWrapper");
+
 class ChannelWrapper {
   private:
     grpc_channel* wrapped{nullptr};

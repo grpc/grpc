@@ -144,6 +144,8 @@ class GrpcExtension : public Extension {
       Native::registerNativeDataInfo<ServerCredentials>(s_ServerCredentialsWrapper.get());
       Native::registerNativeDataInfo<Server>(s_ServerWrapper.get());
       Native::registerNativeDataInfo<ChannelCredentials>(s_ChannelCredentialsWrapper.get());
+      Native::registerNativeDataInfo<Channel>(s_ChannelWrapper.get());
+      Native::registerNativeDataInfo<Call>(s_CallWrapper.get());
 
       loadSystemlib()
 

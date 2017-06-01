@@ -48,6 +48,8 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+const StaticString s_CallCredentialsWrapper("CallCredentialsWrapper");
+
 class CallCredentialsWrapper {
   private:
     grpc_call_credentials* wrapped{nullptr};
