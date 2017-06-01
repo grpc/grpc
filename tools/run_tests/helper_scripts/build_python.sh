@@ -146,6 +146,7 @@ fi
 ############################
 # Perform build operations #
 ############################
+$PYTHON -m pip install virtualenv
 
 # Instnatiate the virtualenv, preferring to do so from the relevant python
 # version. Even if these commands fail (e.g. on Windows due to name conflicts)
