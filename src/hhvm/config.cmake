@@ -1,0 +1,41 @@
+HHVM_DEFINE_EXTENSION("grpc"
+  PRETTY_NAME "gRPC"
+  SOURCES
+    ext/grpc/byte_buffer.cpp
+    ext/grpc/call.cpp
+    ext/grpc/call_credentials.cpp
+    ext/grpc/channel.cpp
+    ext/grpc/channel_credentials.cpp
+    ext/grpc/completion_queue.cpp
+    ext/grpc/hhvm_grpc.cpp
+    ext/grpc/server.cpp
+    ext/grpc/server_credentials.cpp
+    ext/grpc/timeval.cpp
+  HEADERS
+    ext/grpc/byte_buffer.h
+    ext/grpc/call.h
+    ext/grpc/call_credentials.h
+    ext/grpc/channel.h
+    ext/grpc/channel_credentials.h
+    ext/grpc/completion_queue.h
+    ext/grpc/hhvm_grpc.h
+    ext/grpc/server.h
+    ext/grpc/server_credentials.h
+    ext/grpc/timeval.h
+    ext/grpc/version.h
+  SYSTEMLIB
+    ext/grpc/call.php
+    ext/grpc/call_credentials.php
+    ext/grpc/channel.php
+    ext/grpc/channel_credentials.php
+    ext/grpc/server.php
+    ext/grpc/server_credentials.php
+    ext/grpc/timeval.php
+    lib/Grpc/AbstractCall.php
+    lib/Grpc/BaseStub.php
+    lib/Grpc/BidiStreamingCall.php
+    lib/Grpc/ClientStreamingCall.php
+    lib/Grpc/ServerStreamingCall.php
+    lib/Grpc/UnaryCall.php
+  DEPENDS
+)
