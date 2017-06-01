@@ -334,7 +334,8 @@ static void cq_destroy_pluck(void *data);
 /* Completion queue vtables based on the completion-type */
 static const cq_vtable g_cq_vtable[] = {
     /* GRPC_CQ_NEXT */
-    {.cq_completion_type = GRPC_CQ_NEXT,
+    {.data_size = sizeof(cq_next_data),
+     .cq_completion_type = GRPC_CQ_NEXT,
      .init = cq_init_next,
      .shutdown = cq_shutdown_next,
      .destroy = cq_destroy_next,
@@ -343,7 +344,8 @@ static const cq_vtable g_cq_vtable[] = {
      .next = cq_next,
      .pluck = NULL},
     /* GRPC_CQ_PLUCK */
-    {.cq_completion_type = GRPC_CQ_PLUCK,
+    {.data_size = sizeof(cq_pluck_data),
+     .cq_completion_type = GRPC_CQ_PLUCK,
      .init = cq_init_pluck,
      .shutdown = cq_shutdown_pluck,
      .destroy = cq_destroy_pluck,
