@@ -294,7 +294,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   do {
     GPR_ASSERT(addr->len < ~(socklen_t)0);
     err =
-        connect(fd, (const struct sockaddr *)addr->addr, (socklen_t)addr->len);
+        connect(fd, (const struct sockaddr *)addr->addr, addr->len);
   } while (err < 0 && errno == EINTR);
 
   addr_str = grpc_sockaddr_to_uri(addr);
