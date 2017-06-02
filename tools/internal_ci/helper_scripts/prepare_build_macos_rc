@@ -56,9 +56,14 @@ sudo installer -pkg dotnet-dev-osx-x64.1.0.1.pkg -target /
 ln -s /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet
 dotnet --version  # bootstrap dotnet SDK
 
-# Node
+# nvm
 wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.30.2/install.sh | bash
-. ~/.nvm/nvm.sh
+# bootstrap nvm silently & without terminating this script
+set +ex
+source ~/.nvm/nvm.sh
+set -ex
+
+# node
 nvm install 4
 nvm alias default 4
 npm update npm -g
