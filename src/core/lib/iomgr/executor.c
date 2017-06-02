@@ -192,8 +192,6 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
     gpr_mu_unlock(&ts->mu);
     cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
     if (cur_thread_count < g_max_threads) {
-      gpr_log(GPR_DEBUG, "Creating internal grpc thread #%" PRIdPTR,
-              cur_thread_count + 1);
       gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
 
       gpr_thd_options opt = gpr_thd_options_default();

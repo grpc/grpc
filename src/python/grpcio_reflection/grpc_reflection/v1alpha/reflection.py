@@ -28,8 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Reference implementation for reflection in gRPC Python."""
 
-import threading
-
 import grpc
 from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
@@ -120,6 +118,7 @@ class ReflectionServicer(reflection_pb2_grpc.ServerReflectionServicer):
             ]))
 
     def ServerReflectionInfo(self, request_iterator, context):
+        # pylint: disable=unused-argument
         for request in request_iterator:
             if request.HasField('file_by_filename'):
                 yield self._file_by_filename(request.file_by_filename)
@@ -152,4 +151,4 @@ def enable_server_reflection(service_names, server, pool=None):
       pool: DescriptorPool object to use (descriptor_pool.Default() if None).
     """
     reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
-        ReflectionServicer(service_names, pool), server)
+        ReflectionServicer(service_names, pool=pool), server)

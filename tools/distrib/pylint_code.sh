@@ -31,18 +31,22 @@
 set -ex
 
 # change to root directory
-cd $(dirname $0)/../..
+cd "$(dirname "$0")/../.."
 
-DIRS=src/python/grpcio/grpc
+DIRS=(
+  'src/python/grpcio/grpc'
+  'src/python/grpcio_reflection/grpc_reflection'
+  'src/python/grpcio_health_checking/grpc_health'
+)
 
 VIRTUALENV=python_pylint_venv
 
 virtualenv $VIRTUALENV
-PYTHON=`realpath $VIRTUALENV/bin/python`
+PYTHON=$(realpath $VIRTUALENV/bin/python)
 $PYTHON -m pip install pylint==1.6.5
 
-for dir in $DIRS; do
-  $PYTHON -m pylint --rcfile=.pylintrc -rn $dir || exit $?
+for dir in "${DIRS[@]}"; do
+  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" || exit $?
 done
 
 exit 0
