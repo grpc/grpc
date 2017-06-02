@@ -9,16 +9,18 @@ def generate_cc_impl(ctx):
   protos = [f for src in ctx.attr.srcs for f in src.proto.direct_sources]
   includes = [f for src in ctx.attr.srcs for f in src.proto.transitive_imports]
   outs = []
-  # label_len is length of the path from WORKSPACE root to the location of this build file
+  # label_len is length of the package name rooted in the local repository.  It
+  # does not include the external prefix if being built as an external target.
   label_len = len(ctx.label.package) + 1
-  if ctx.executable.plugin:
-    outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.h" for proto in protos]
-    outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
-    if ctx.attr.generate_mock:
-      outs += [proto.path[label_len:-len(".proto")] + "_mock.grpc.pb.h" for proto in protos]
-  else:
-    outs += [proto.path[label_len:-len(".proto")] + ".pb.h" for proto in protos]
-    outs += [proto.path[label_len:-len(".proto")] + ".pb.cc" for proto in protos]
+  for proto in protos:
+    label_offset = proto.path.index(ctx.label.package)
+    path = proto.path[label_offset + label_len:-len(".proto")]
+    if ctx.executable.plugin:
+      outs += [path + ".grpc.pb.h", path + ".grpc.pb.cc"]
+      if ctx.attr.generate_mock:
+        outs += [path + "_mock.grpc.pb.h"]
+    else:
+      outs += [path + ".pb.h", path + ".pb.cc"]
   out_files = [ctx.new_file(out) for out in outs]
   dir_out = str(ctx.genfiles_dir.path)
 
