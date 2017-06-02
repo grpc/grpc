@@ -1,0 +1,72 @@
+#!/bin/bash
+# Copyright 2017, Google Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following disclaimer
+# in the documentation and/or other materials provided with the
+# distribution.
+#     * Neither the name of Google Inc. nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Source this rc script to prepare the environment for macos builds
+
+# TODO(jtattermusch): remove all deps once installed on MacOS workers
+
+# brew and C++ deps
+yes | ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install autoconf automake libtool ccache cmake gflags gpg wget
+
+# TODO(jtattermusch): install rvm & ruby
+# TODO(jtattermusch): install cocoapods 
+
+# python
+wget https://bootstrap.pypa.io/get-pip.py
+sudo python get-pip.py
+sudo pip install virtualenv
+
+# TODO(jtattermusch): install python3
+
+# mono
+wget https://download.mono-project.com/archive/5.0.1/macos-10-universal/MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg 
+sudo installer -pkg MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg -target /
+ 
+# dotnet SDK
+wget https://go.microsoft.com/fwlink/?linkid=843444 -O dotnet-dev-osx-x64.1.0.1.pkg
+sudo installer -pkg dotnet-dev-osx-x64.1.0.1.pkg -target /
+ln -s /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet
+dotnet --version  # bootstrap dotnet SDK
+
+# nvm
+wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.30.2/install.sh | bash
+# bootstrap nvm silently & without terminating this script
+set +ex
+source ~/.nvm/nvm.sh
+set -ex
+
+# node
+nvm install 4
+nvm alias default 4
+npm update npm -g
+npm install -g node-pre-gyp
+
+git submodule update --init

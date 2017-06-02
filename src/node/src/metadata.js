@@ -1,5 +1,5 @@
-/*
- *
+/**
+ * @license
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -31,15 +31,6 @@
  *
  */
 
-/**
- * Metadata module
- *
- * This module defines the Metadata class, which represents header and trailer
- * metadata for gRPC calls.
- *
- * @module
- */
-
 'use strict';
 
 var _ = require('lodash');
@@ -48,8 +39,8 @@ var grpc = require('./grpc_extension');
 
 /**
  * Class for storing metadata. Keys are normalized to lowercase ASCII.
+ * @memberof grpc
  * @constructor
- * @alias module:src/metadata.Metadata
  * @example
  * var metadata = new metadata_module.Metadata();
  * metadata.set('key1', 'value1');

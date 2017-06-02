@@ -56,6 +56,7 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security_adapter.h"
 
 /* -- Constants. -- */
 
@@ -390,7 +391,8 @@ static void fake_channel_add_handshakers(
   grpc_handshake_manager_add(
       handshake_mgr,
       grpc_security_handshaker_create(
-          exec_ctx, tsi_create_fake_handshaker(true /* is_client */),
+          exec_ctx, tsi_create_adapter_handshaker(
+                        tsi_create_fake_handshaker(true /* is_client */)),
           &sc->base));
 }
 
@@ -400,7 +402,8 @@ static void fake_server_add_handshakers(grpc_exec_ctx *exec_ctx,
   grpc_handshake_manager_add(
       handshake_mgr,
       grpc_security_handshaker_create(
-          exec_ctx, tsi_create_fake_handshaker(false /* is_client */),
+          exec_ctx, tsi_create_adapter_handshaker(
+                        tsi_create_fake_handshaker(false /* is_client */)),
           &sc->base));
 }
 
@@ -495,8 +498,10 @@ static void ssl_channel_add_handshakers(grpc_exec_ctx *exec_ctx,
   }
 
   // Create handshakers.
-  grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
-                                                exec_ctx, tsi_hs, &sc->base));
+  grpc_handshake_manager_add(
+      handshake_mgr,
+      grpc_security_handshaker_create(
+          exec_ctx, tsi_create_adapter_handshaker(tsi_hs), &sc->base));
 }
 
 static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
@@ -515,8 +520,10 @@ static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
   }
 
   // Create handshakers.
-  grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
-                                                exec_ctx, tsi_hs, &sc->base));
+  grpc_handshake_manager_add(
+      handshake_mgr,
+      grpc_security_handshaker_create(
+          exec_ctx, tsi_create_adapter_handshaker(tsi_hs), &sc->base));
 }
 
 static int ssl_host_matches_name(const tsi_peer *peer, const char *peer_name) {

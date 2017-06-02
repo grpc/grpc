@@ -129,6 +129,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "census_context_test", "vcxp
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "census_intrusive_hash_map_test", "vcxproj\test\census_intrusive_hash_map_test\census_intrusive_hash_map_test.vcxproj", "{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}"
+	ProjectSection(myProperties) = preProject
+        	lib = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B} = {17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}
+		{29D16885-7228-4C31-81ED-5F9187C7F2A9} = {29D16885-7228-4C31-81ED-5F9187C7F2A9}
+		{EAB0A629-17A9-44DB-B5FF-E91A721FE037} = {EAB0A629-17A9-44DB-B5FF-E91A721FE037}
+		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "census_resource_test", "vcxproj\test\census_resource_test\census_resource_test.vcxproj", "{18CF99B5-3C61-EC3D-9509-3C95334C3B88}"
 	ProjectSection(myProperties) = preProject
         	lib = "False"
@@ -1339,6 +1350,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "no_server_test", "vcxproj\t
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "num_external_connectivity_watchers_test", "vcxproj\test\num_external_connectivity_watchers_test\num_external_connectivity_watchers_test.vcxproj", "{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}"
+	ProjectSection(myProperties) = preProject
+        	lib = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B} = {17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}
+		{29D16885-7228-4C31-81ED-5F9187C7F2A9} = {29D16885-7228-4C31-81ED-5F9187C7F2A9}
+		{EAB0A629-17A9-44DB-B5FF-E91A721FE037} = {EAB0A629-17A9-44DB-B5FF-E91A721FE037}
+		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "parse_address_test", "vcxproj\test\parse_address_test\parse_address_test.vcxproj", "{EDEA8257-AEA8-1B0A-F95B-8D6CD7286463}"
 	ProjectSection(myProperties) = preProject
         	lib = "False"
@@ -1899,6 +1921,22 @@ Global
 		{5C1CFC2D-AF3C-D7CB-BA74-D267E91CBC73}.Release-DLL|Win32.Build.0 = Release|Win32
 		{5C1CFC2D-AF3C-D7CB-BA74-D267E91CBC73}.Release-DLL|x64.ActiveCfg = Release|x64
 		{5C1CFC2D-AF3C-D7CB-BA74-D267E91CBC73}.Release-DLL|x64.Build.0 = Release|x64
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Debug|x64.ActiveCfg = Debug|x64
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Release|Win32.ActiveCfg = Release|Win32
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Release|x64.ActiveCfg = Release|x64
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Debug|Win32.Build.0 = Debug|Win32
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Debug|x64.Build.0 = Debug|x64
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Release|Win32.Build.0 = Release|Win32
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Release|x64.Build.0 = Release|x64
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Debug-DLL|Win32.ActiveCfg = Debug|Win32
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Debug-DLL|Win32.Build.0 = Debug|Win32
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Debug-DLL|x64.ActiveCfg = Debug|x64
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Debug-DLL|x64.Build.0 = Debug|x64
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Release-DLL|Win32.ActiveCfg = Release|Win32
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Release-DLL|Win32.Build.0 = Release|Win32
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Release-DLL|x64.ActiveCfg = Release|x64
+		{BD364959-BDBF-ABD2-C6D1-FC838EBEBB60}.Release-DLL|x64.Build.0 = Release|x64
 		{18CF99B5-3C61-EC3D-9509-3C95334C3B88}.Debug|Win32.ActiveCfg = Debug|Win32
 		{18CF99B5-3C61-EC3D-9509-3C95334C3B88}.Debug|x64.ActiveCfg = Debug|x64
 		{18CF99B5-3C61-EC3D-9509-3C95334C3B88}.Release|Win32.ActiveCfg = Release|Win32
@@ -3723,6 +3761,22 @@ Global
 		{A66AC548-E2B9-74CD-293C-43526EE51DCE}.Release-DLL|Win32.Build.0 = Release|Win32
 		{A66AC548-E2B9-74CD-293C-43526EE51DCE}.Release-DLL|x64.ActiveCfg = Release|x64
 		{A66AC548-E2B9-74CD-293C-43526EE51DCE}.Release-DLL|x64.Build.0 = Release|x64
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Debug|x64.ActiveCfg = Debug|x64
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Release|Win32.ActiveCfg = Release|Win32
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Release|x64.ActiveCfg = Release|x64
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Debug|Win32.Build.0 = Debug|Win32
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Debug|x64.Build.0 = Debug|x64
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Release|Win32.Build.0 = Release|Win32
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Release|x64.Build.0 = Release|x64
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Debug-DLL|Win32.ActiveCfg = Debug|Win32
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Debug-DLL|Win32.Build.0 = Debug|Win32
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Debug-DLL|x64.ActiveCfg = Debug|x64
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Debug-DLL|x64.Build.0 = Debug|x64
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Release-DLL|Win32.ActiveCfg = Release|Win32
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Release-DLL|Win32.Build.0 = Release|Win32
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Release-DLL|x64.ActiveCfg = Release|x64
+		{4E856E4A-7497-1B1A-1AED-D4C01E5D873A}.Release-DLL|x64.Build.0 = Release|x64
 		{EDEA8257-AEA8-1B0A-F95B-8D6CD7286463}.Debug|Win32.ActiveCfg = Debug|Win32
 		{EDEA8257-AEA8-1B0A-F95B-8D6CD7286463}.Debug|x64.ActiveCfg = Debug|x64
 		{EDEA8257-AEA8-1B0A-F95B-8D6CD7286463}.Release|Win32.ActiveCfg = Release|Win32

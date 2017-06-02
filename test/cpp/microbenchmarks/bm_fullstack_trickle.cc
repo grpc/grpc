@@ -419,18 +419,18 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
 }
 
 static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
+  // A selection of interesting numbers
   const int cli_1024k = 1024 * 1024;
   const int cli_32M = 32 * 1024 * 1024;
   const int svr_256k = 256 * 1024;
   const int svr_4M = 4 * 1024 * 1024;
   const int svr_64M = 64 * 1024 * 1024;
   for (int bw = 64; bw <= 128 * 1024 * 1024; bw *= 16) {
-    b->Args({bw, cli_1024k, svr_256k});
-    b->Args({bw, cli_1024k, svr_4M});
-    b->Args({bw, cli_1024k, svr_64M});
-    b->Args({bw, cli_32M, svr_256k});
-    b->Args({bw, cli_32M, svr_4M});
-    b->Args({bw, cli_32M, svr_64M});
+    for (auto svr : {svr_256k, svr_4M, svr_64M}) {
+      for (auto cli : {cli_1024k, cli_32M}) {
+        b->Args({cli, svr, bw});
+      }
+    }
   }
 }
 BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
