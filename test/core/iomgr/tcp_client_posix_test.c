@@ -110,7 +110,7 @@ void test_succeeds(void) {
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(svr_fd >= 0);
   GPR_ASSERT(
-      0 == bind(svr_fd, (struct sockaddr *)addr, (socklen_t)resolved_addr.len));
+      0 == bind(svr_fd, (struct sockaddr *)addr, resolved_addr.len));
   GPR_ASSERT(0 == listen(svr_fd, 1));
 
   gpr_mu_lock(g_mu);
@@ -119,7 +119,7 @@ void test_succeeds(void) {
 
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)addr,
-                         (socklen_t *)&resolved_addr.len) == 0);
+                         &resolved_addr.len) == 0);
   grpc_closure_init(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
                           &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
@@ -127,8 +127,7 @@ void test_succeeds(void) {
   /* await the connection */
   do {
     resolved_addr.len = sizeof(addr);
-    r = accept(svr_fd, (struct sockaddr *)addr,
-               (socklen_t *)&resolved_addr.len);
+    r = accept(svr_fd, (struct sockaddr *)addr, &resolved_addr.len);
   } while (r == -1 && errno == EINTR);
   GPR_ASSERT(r >= 0);
   close(r);

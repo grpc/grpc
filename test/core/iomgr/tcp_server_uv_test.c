@@ -278,7 +278,7 @@ static void test_connect(unsigned n) {
     on_connect_result result;
     on_connect_result_init(&result);
     tcp_connect(&exec_ctx, (struct sockaddr *)addr,
-                (socklen_t)resolved_addr.len, &result);
+                resolved_addr.len, &result);
     GPR_ASSERT(result.port_index == 0);
     GPR_ASSERT(result.server == s);
     if (weak_ref.server == NULL) {
@@ -288,7 +288,7 @@ static void test_connect(unsigned n) {
 
     on_connect_result_init(&result);
     tcp_connect(&exec_ctx, (struct sockaddr *)addr1,
-                (socklen_t)resolved_addr1.len, &result);
+                resolved_addr1.len, &result);
     GPR_ASSERT(result.port_index == 1);
     GPR_ASSERT(result.server == s);
     grpc_tcp_server_unref(&exec_ctx, result.server);

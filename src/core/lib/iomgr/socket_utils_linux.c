@@ -51,7 +51,7 @@ int grpc_accept4(int sockfd, grpc_resolved_address *resolved_addr, int nonblock,
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
   return accept4(sockfd, (struct sockaddr *)resolved_addr->addr,
-                 (socklen_t *)&resolved_addr->len, flags);
+                 &resolved_addr->len, flags);
 }
 
 #endif

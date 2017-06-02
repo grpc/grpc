@@ -81,12 +81,12 @@ static grpc_error *get_unused_port(int *port) {
   if (dsmode == GRPC_DSMODE_IPV4) {
     grpc_sockaddr_make_wildcard4(0, &wild);
   }
-  if (bind(fd, (const struct sockaddr *)wild.addr, (socklen_t)wild.len) != 0) {
+  if (bind(fd, (const struct sockaddr *)wild.addr, wild.len) != 0) {
     err = GRPC_OS_ERROR(errno, "bind");
     close(fd);
     return err;
   }
-  if (getsockname(fd, (struct sockaddr *)wild.addr, (socklen_t *)&wild.len) !=
+  if (getsockname(fd, (struct sockaddr *)wild.addr, &wild.len) !=
       0) {
     err = GRPC_OS_ERROR(errno, "getsockname");
     close(fd);
