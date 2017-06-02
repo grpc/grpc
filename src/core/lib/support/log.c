@@ -43,7 +43,7 @@
 #include <string.h>
 
 extern void gpr_default_log(gpr_log_func_args *args);
-static gpr_log_func g_log_func = gpr_default_log;
+static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
 static gpr_atm g_min_severity_to_print = GPR_LOG_VERBOSITY_UNSET;
 
 const char *gpr_log_severity_string(gpr_log_severity severity) {
@@ -70,7 +70,7 @@ void gpr_log_message(const char *file, int line, gpr_log_severity severity,
   lfargs.line = line;
   lfargs.severity = severity;
   lfargs.message = message;
-  g_log_func(&lfargs);
+  ((gpr_log_func)gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
 }
 
 void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
@@ -99,5 +99,5 @@ void gpr_log_verbosity_init() {
 }
 
 void gpr_set_log_function(gpr_log_func f) {
-  g_log_func = f ? f : gpr_default_log;
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)(f ? f : gpr_default_log));
 }

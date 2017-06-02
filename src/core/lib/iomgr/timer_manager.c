@@ -158,7 +158,8 @@ static bool wait_until(gpr_timespec next) {
     // figure stuff out instead of incurring a wakeup)
     my_timed_waiter_generation = ++g_timed_waiter_generation;
     if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
-      gpr_log(GPR_DEBUG, "sleep for a while");
+      gpr_timespec wait_time = gpr_time_sub(next, gpr_now(GPR_CLOCK_MONOTONIC));
+      gpr_log(GPR_DEBUG, "sleep for a %" PRId64 ".%09d seconds", wait_time.tv_sec, wait_time.tv_nsec);
     }
   } else {
     next = inf_future;
@@ -207,6 +208,9 @@ static void timer_main_loop(grpc_exec_ctx *exec_ctx) {
 
            Consequently, we can just sleep forever here and be happy at some
            saved wakeup cycles. */
+        if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+          gpr_log(GPR_DEBUG, "timers not checked: expect another thread to");
+        }
         next = inf_future;
       /* fall through */
       case GRPC_TIMERS_CHECKED_AND_EMPTY:

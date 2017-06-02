@@ -433,7 +433,7 @@ static grpc_timer_check_result run_some_expired_timers(grpc_exec_ctx *exec_ctx,
   gpr_tls_set(&g_last_seen_min_timer, min_timer);
   if (now < min_timer) {
     if (next != NULL) *next = GPR_MIN(*next, min_timer);
-    return 0;
+    return GRPC_TIMERS_CHECKED_AND_EMPTY;
   }
 
   if (gpr_spinlock_trylock(&g_shared_mutables.checker_mu)) {
@@ -553,7 +553,7 @@ grpc_timer_check_result grpc_timer_check(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&next_str, "%" PRId64 ".%09d [%" PRIdPTR "]", next->tv_sec,
                    next->tv_nsec, next_atm);
     }
-    gpr_log(GPR_DEBUG, "TIMER CHECK END: %d timers triggered; next=%s", r,
+    gpr_log(GPR_DEBUG, "TIMER CHECK END: r=%d; next=%s", r,
             next_str);
     gpr_free(next_str);
   }
