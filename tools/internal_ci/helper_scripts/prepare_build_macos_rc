@@ -28,19 +28,40 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Source this rc script to prepare the environment for macos builds
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+# TODO(jtattermusch): remove all deps once installed on MacOS workers
 
-source tools/internal_ci/helper_scripts/prepare_build_macos_rc
+# brew and C++ deps
+yes | ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install autoconf automake libtool ccache cmake gflags gpg wget
 
-tools/run_tests/run_tests_matrix.py -f basictests macos --internal_ci || FAILED="true"
+# TODO(jtattermusch): install rvm & ruby
+# TODO(jtattermusch): install cocoapods 
 
-# kill port_server.py to prevent the build from hanging
-ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+# python
+wget https://bootstrap.pypa.io/get-pip.py
+sudo python get-pip.py
+sudo pip install virtualenv
 
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+# TODO(jtattermusch): install python3
+
+# mono
+wget https://download.mono-project.com/archive/5.0.1/macos-10-universal/MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg 
+sudo installer -pkg MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg -target /
+ 
+# dotnet SDK
+wget https://go.microsoft.com/fwlink/?linkid=843444 -O dotnet-dev-osx-x64.1.0.1.pkg
+sudo installer -pkg dotnet-dev-osx-x64.1.0.1.pkg -target /
+ln -s /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet
+dotnet --version  # bootstrap dotnet SDK
+
+# Node
+wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.30.2/install.sh | bash
+. ~/.nvm/nvm.sh
+nvm install 4
+nvm alias default 4
+npm update npm -g
+npm install -g node-pre-gyp
+
+git submodule update --init
