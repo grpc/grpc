@@ -159,7 +159,8 @@ static bool wait_until(gpr_timespec next) {
     my_timed_waiter_generation = ++g_timed_waiter_generation;
     if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
       gpr_timespec wait_time = gpr_time_sub(next, gpr_now(GPR_CLOCK_MONOTONIC));
-      gpr_log(GPR_DEBUG, "sleep for a %" PRId64 ".%09d seconds", wait_time.tv_sec, wait_time.tv_nsec);
+      gpr_log(GPR_DEBUG, "sleep for a %" PRId64 ".%09d seconds",
+              wait_time.tv_sec, wait_time.tv_nsec);
     }
   } else {
     next = inf_future;

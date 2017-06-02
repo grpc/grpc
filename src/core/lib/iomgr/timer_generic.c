@@ -553,8 +553,7 @@ grpc_timer_check_result grpc_timer_check(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&next_str, "%" PRId64 ".%09d [%" PRIdPTR "]", next->tv_sec,
                    next->tv_nsec, next_atm);
     }
-    gpr_log(GPR_DEBUG, "TIMER CHECK END: r=%d; next=%s", r,
-            next_str);
+    gpr_log(GPR_DEBUG, "TIMER CHECK END: r=%d; next=%s", r, next_str);
     gpr_free(next_str);
   }
   return r;
