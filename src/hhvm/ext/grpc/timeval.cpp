@@ -37,10 +37,7 @@
 #include "config.h"
 #endif
 
-#include "hhvm_grpc.h"
-
 #include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/vm/native-data.h"
 
 #include <stdbool.h>
 

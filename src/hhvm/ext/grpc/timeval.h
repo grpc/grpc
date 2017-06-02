@@ -38,10 +38,10 @@
 #include "config.h"
 #endif
 
-#include "hhvm_grpc.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
+
+namespace HPHP {
 
 class TimevalWrapper {
   private:
@@ -82,5 +82,7 @@ Timeval HHVM_STATIC_METHOD(Timeval, infFuture);
 Timeval HHVM_STATIC_METHOD(Timeval, infPast);
 
 void HHVM_METHOD(Timeval, sleepUntil);
+
+}
 
 #endif /* NET_GRPC_HHVM_GRPC_TIMEVAL_H_ */

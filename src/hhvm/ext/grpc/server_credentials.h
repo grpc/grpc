@@ -38,10 +38,10 @@
 #include "config.h"
 #endif
 
-#include "hhvm_grpc.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+
+namespace HPHP {
 
 class ServerCredentialsWrapper {
   private:
@@ -59,5 +59,7 @@ Object HHVM_METHOD(ServerCredentials, createSsl,
   const String& pem_root_certs,
   const String& pem_private_key,
   const String& pem_cert_chain);
+
+}
 
 #endif /* NET_GRPC_HHVM_GRPC_SERVER_CREDENTIALS_H_ */

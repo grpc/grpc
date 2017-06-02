@@ -39,9 +39,6 @@
 #endif
 
 #include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/vm/native-data.h"
-
-#include "hhvm_grpc.h"
 
 #include "call.h"
 

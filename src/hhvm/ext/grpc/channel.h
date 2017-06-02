@@ -38,9 +38,9 @@
 #include "config.h"
 #endif
 
-#include "hhvm_grpc.h"
-
 #include <grpc/grpc.h>
+
+namespace HPHP {
 
 class ChannelWrapper {
   private:
@@ -70,5 +70,7 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
 void HHVM_METHOD(Channel, close);
 
 void hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args);
+
+}
 
 #endif /* NET_GRPC_HHVM_GRPC_CHANNEL_H_ */

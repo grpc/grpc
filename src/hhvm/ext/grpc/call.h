@@ -35,8 +35,28 @@
 #define NET_GRPC_HHVM_GRPC_CALL_H_
 
 #include "hphp/runtime/ext/extension.h"
+#include "channel.h"
 
-#include "hhvm_grpc.h"
+namespace HPHP {
+
+const StaticString s_CallWrapper;
+
+class CallWrapper {
+  private:
+    grpc_call* wrapped;
+    bool owned;
+    ChannelWrapper* channelWrapped;
+  public:
+    CallWrapper();
+    ~CallWrapper();
+
+    void new(grpc_call* call);
+    void sweep();
+    grpc_call* getWrapped();
+    bool getOwned();
+    void setChannelWrapper(ChannelWrapper* channelWrapped_);
+    void setOwned(bool owned_);
+}
 
 void HHVM_METHOD(Call, __construct,
   const Object& channel_obj,
@@ -56,5 +76,7 @@ int64_t HHVM_METHOD(Call, setCredentials,
 
 Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array);
 bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadata);
+
+}
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_H_ */

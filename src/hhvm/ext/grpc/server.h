@@ -38,9 +38,9 @@
 #include "config.h"
 #endif
 
-#include "hhvm_grpc.h"
-
 #include <grpc/grpc.h>
+
+namespace HPHP {
 
 class ServerWrapper {
   private:
@@ -67,5 +67,7 @@ bool HHVM_METHOD(Server, addSecureHttp2Port,
   const Object& server_credentials);
 
 void HHVM_METHOD(Server, start);
+
+}
 
 #endif /* NET_GRPC_HHVM_GRPC_SERVER_H_ */

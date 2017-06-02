@@ -38,10 +38,10 @@
 #include "config.h"
 #endif
 
-#include "hhvm_grpc.h"
-
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
+
+namespace HPHP {
 
 static char *default_pem_root_certs;
 
@@ -73,5 +73,7 @@ Object HHVM_METHOD(ChannelCredentials, createComposite,
   const Object& cred2_obj);
 
 void HHVM_METHOD(ChannelCredentials, createInsecure);
+
+}
 
 #endif /* NET_GRPC_HHVM_GRPC_CHANNEL_CREDENTIALS_H_ */

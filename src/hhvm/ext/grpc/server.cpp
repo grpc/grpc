@@ -37,7 +37,7 @@
 #include "config.h"
 #endif
 
-#include "hhvm_grpc.h"
+#include "server.h"
 
 #include <stdbool.h>
 
@@ -53,7 +53,6 @@
 #include "timeval.h"
 
 #include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/vm/native-data.h"
 
 namespace HPHP {
 

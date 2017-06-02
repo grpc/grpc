@@ -46,8 +46,6 @@
 #include "config.h"
 #endif
 
-#include "hhvm_grpc.h"
-
 namespace HPHP {
 
 class GrpcExtension : public Extension {
