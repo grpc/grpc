@@ -39,10 +39,15 @@
 
 #include "hhvm_grpc.h"
 
+#include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/vm/native-data.h"
+
 #include <stdbool.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
+
+namespace HPHP {
 
 const StaticString s_TimevalWrapper("TimevalWrapper");
 
@@ -153,3 +158,5 @@ void HHVM_METHOD(Timeval, sleepUntil) {
   auto timevalWrapper = Native::data<Timeval>(this_);
   gpr_sleep_until(timevalWrapper->getWrapped());
 }
+
+} // namespace HPHP

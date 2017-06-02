@@ -38,8 +38,11 @@
 #include "call.h"
 
 #include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/vm/native-data.h"
 
 #include "hhvm_grpc.h"
+
+namespace HPHP {
 
 const StaticString s_CallWrapper("CallWrapper");
 
@@ -464,3 +467,5 @@ bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadat
 
   return true;
 }
+
+} // namespace HPHP

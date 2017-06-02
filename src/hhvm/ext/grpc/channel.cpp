@@ -49,6 +49,11 @@
 #include "server.h"
 #include "timeval.h"
 
+#include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/vm/native-data.h"
+
+namespace HPHP {
+
 const StaticString s_ChannelWrapper("ChannelWrapper");
 
 class ChannelWrapper {
@@ -201,3 +206,5 @@ void hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args)
     }
   }
 }
+
+} // namespace HPHP

@@ -40,9 +40,14 @@
 
 #include "hhvm_grpc.h"
 
+#include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/vm/native-data.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+
+namespace HPHP {
 
 static char *default_pem_root_certs = NULL;
 
@@ -135,3 +140,5 @@ Object HHVM_METHOD(ChannelCredentials, createComposite,
 void HHVM_METHOD(ChannelCredentials, createInsecure) {
   return;
 }
+
+} // namespace HPHP

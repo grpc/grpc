@@ -147,8 +147,6 @@ class GrpcExtension : public Extension {
       Native::registerNativeDataInfo<Channel>(s_ChannelWrapper.get());
       Native::registerNativeDataInfo<Call>(s_CallWrapper.get());
 
-      loadSystemlib()
-
       /* Register call error constants */
       grpc_init();
 
@@ -160,10 +158,12 @@ class GrpcExtension : public Extension {
       grpc_init_call_credentials();
       grpc_init_server_credentials();
       grpc_php_init_completion_queue();
+
+      loadSystemlib()
     }
 
 } s_grpc_extension;
 
 HHVM_GET_MODULE(grpc);
 
-}
+} // namespace HPHP

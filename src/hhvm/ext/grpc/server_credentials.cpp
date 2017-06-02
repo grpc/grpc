@@ -39,8 +39,13 @@
 
 #include "hhvm_grpc.h"
 
+#include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/vm/native-data.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+
+namespace HPHP {
 
 const StaticString s_ServerCredentialsWrapper("ServerCredentialsWrapper");
 
@@ -88,3 +93,5 @@ Object HHVM_METHOD(ServerCredentials, createSsl,
 
   return Object(std::move(serverCredentialsWrapper));
 }
+
+} // namespace HPHP

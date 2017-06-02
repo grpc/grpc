@@ -38,6 +38,9 @@
 #include "config.h"
 #endif
 
+#include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/vm/native-data.h"
+
 #include "hhvm_grpc.h"
 
 #include "call.h"
@@ -47,6 +50,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+
+namespace HPHP {
 
 const StaticString s_CallCredentialsWrapper("CallCredentialsWrapper");
 
@@ -166,3 +171,5 @@ void plugin_destroy_state(void *ptr) {
   req::free(state->fci);
   req::free(state);
 }
+
+} // namespace HPHP

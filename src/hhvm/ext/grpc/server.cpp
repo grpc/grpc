@@ -52,6 +52,11 @@
 #include "server_credentials.h"
 #include "timeval.h"
 
+#include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/vm/native-data.h"
+
+namespace HPHP {
+
 const StaticString s_ServerWrapper("ServerWrapper");
 
 class ServerWrapper {
@@ -169,3 +174,5 @@ void HHVM_METHOD(Server, start) {
   auto serverWrapper = Native::data<ServerWrapper>(this_);
   grpc_server_start(serverWrapper->getWrapped());
 }
+
+} // namespace HPHP
