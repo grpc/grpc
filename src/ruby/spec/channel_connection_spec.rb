@@ -28,6 +28,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
+require 'timeout'
+
+include Timeout
+include GRPC::Core
 
 # A test message
 class EchoMsg
@@ -62,7 +66,7 @@ end
 EchoStub = EchoService.rpc_stub_class
 
 def start_server(port = 0)
-  @srv = GRPC::RpcServer.new
+  @srv = GRPC::RpcServer.new(pool_size: 1)
   server_port = @srv.add_http2_port("localhost:#{port}", :this_port_is_insecure)
   @srv.handle(EchoService)
   @server_thd = Thread.new { @srv.run }
@@ -137,5 +141,33 @@ describe 'channel connection behavior' do
     expect(state).to be(GRPC::Core::ConnectivityStates::READY)
 
     stop_server
+  end
+
+  it 'concurrent watches on the same channel' do
+    timeout(180) do
+      port = start_server
+      ch = GRPC::Core::Channel.new("localhost:#{port}", {},
+                                   :this_channel_is_insecure)
+      stop_server
+
+      thds = []
+      50.times do
+        thds << Thread.new do
+          while ch.connectivity_state(true) != ConnectivityStates::READY
+            ch.watch_connectivity_state(
+              ConnectivityStates::READY, Time.now + 60)
+            break
+          end
+        end
+      end
+
+      sleep 0.01
+
+      start_server(port)
+
+      thds.each(&:join)
+
+      stop_server
+    end
   end
 end

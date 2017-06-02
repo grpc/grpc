@@ -59,6 +59,8 @@ namespace Grpc.Core
         readonly ChannelSafeHandle handle;
         readonly Dictionary<string, ChannelOption> options;
 
+        readonly Task connectivityWatcherTask;
+
         bool shutdownRequested;
 
         /// <summary>
@@ -99,6 +101,9 @@ namespace Grpc.Core
                     this.handle = ChannelSafeHandle.CreateInsecure(target, nativeChannelArgs);
                 }
             }
+            // TODO(jtattermusch): Workaround for https://github.com/GoogleCloudPlatform/google-cloud-dotnet/issues/822.
+            // Remove once retries are supported in C core
+            this.connectivityWatcherTask = RunConnectivityWatcherAsync();
             GrpcEnvironment.RegisterChannel(this);
         }
 
@@ -244,7 +249,7 @@ namespace Grpc.Core
 
             handle.Dispose();
 
-            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
+            await Task.WhenAll(GrpcEnvironment.ReleaseAsync(), connectivityWatcherTask).ConfigureAwait(false);
         }
 
         internal ChannelSafeHandle Handle
@@ -296,6 +301,40 @@ namespace Grpc.Core
             catch (ObjectDisposedException)
             {
                 return ChannelState.Shutdown;
+            }
+        }
+
+        /// <summary>
+        /// Constantly Watches channel connectivity status to work around https://github.com/GoogleCloudPlatform/google-cloud-dotnet/issues/822
+        /// </summary>
+        private async Task RunConnectivityWatcherAsync()
+        {
+            try
+            {
+                var lastState = State;
+                while (lastState != ChannelState.Shutdown)
+                {
+                    lock (myLock)
+                    {
+                        if (shutdownRequested)
+                        {
+                            break;
+                        }
+                    }
+
+                    try
+                    {
+                        await WaitForStateChangedAsync(lastState, DateTime.UtcNow.AddSeconds(1)).ConfigureAwait(false);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        // ignore timeout
+                    }
+                    lastState = State;
+                }
+            }
+            catch (ObjectDisposedException) {
+                // during shutdown, channel is going to be disposed.
             }
         }
 
