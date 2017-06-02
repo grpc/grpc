@@ -55,61 +55,52 @@ core_version = "3.0.0-dev"
 
 version = "1.4.0-dev"
 
-grpc_cc_library(
-    name = "gpr",
-    language = "c",
-    standalone = True,
-    deps = [
-        "gpr_base",
-    ],
-)
+GPR_PUBLIC_HDRS = [
+    "include/grpc/support/alloc.h",
+    "include/grpc/support/atm.h",
+    "include/grpc/support/atm_gcc_atomic.h",
+    "include/grpc/support/atm_gcc_sync.h",
+    "include/grpc/support/atm_windows.h",
+    "include/grpc/support/avl.h",
+    "include/grpc/support/cmdline.h",
+    "include/grpc/support/cpu.h",
+    "include/grpc/support/histogram.h",
+    "include/grpc/support/host_port.h",
+    "include/grpc/support/log.h",
+    "include/grpc/support/log_windows.h",
+    "include/grpc/support/port_platform.h",
+    "include/grpc/support/string_util.h",
+    "include/grpc/support/subprocess.h",
+    "include/grpc/support/sync.h",
+    "include/grpc/support/sync_generic.h",
+    "include/grpc/support/sync_posix.h",
+    "include/grpc/support/sync_windows.h",
+    "include/grpc/support/thd.h",
+    "include/grpc/support/time.h",
+    "include/grpc/support/tls.h",
+    "include/grpc/support/tls_gcc.h",
+    "include/grpc/support/tls_msvc.h",
+    "include/grpc/support/tls_pthread.h",
+    "include/grpc/support/useful.h",
+]
 
-grpc_cc_library(
-    name = "grpc_unsecure",
-    srcs = [
-        "src/core/lib/surface/init.c",
-        "src/core/lib/surface/init_unsecure.c",
-        "src/core/plugin_registry/grpc_unsecure_plugin_registry.c",
-    ],
-    language = "c",
-    standalone = True,
-    deps = [
-        "grpc_common",
-    ],
-)
+GRPC_PUBLIC_HDRS = [
+    "include/grpc/byte_buffer.h",
+    "include/grpc/byte_buffer_reader.h",
+    "include/grpc/compression.h",
+    "include/grpc/load_reporting.h",
+    "include/grpc/grpc.h",
+    "include/grpc/grpc_posix.h",
+    "include/grpc/grpc_security_constants.h",
+    "include/grpc/slice.h",
+    "include/grpc/slice_buffer.h",
+    "include/grpc/status.h",
+    "include/grpc/support/workaround_list.h",
+]
 
-grpc_cc_library(
-    name = "grpc",
-    srcs = [
-        "src/core/lib/surface/init.c",
-        "src/core/plugin_registry/grpc_plugin_registry.c",
-    ],
-    language = "c",
-    standalone = True,
-    deps = [
-        "grpc_common",
-        "grpc_lb_policy_grpclb_secure",
-        "grpc_resolver_dns_ares",
-        "grpc_secure",
-        "grpc_transport_chttp2_client_secure",
-        "grpc_transport_chttp2_server_secure",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_cronet",
-    srcs = [
-        "src/core/lib/surface/init.c",
-        "src/core/plugin_registry/grpc_cronet_plugin_registry.c",
-    ],
-    language = "c",
-    deps = [
-        "grpc_base",
-        "grpc_http_filters",
-        "grpc_transport_chttp2_client_secure",
-        "grpc_transport_cronet_client_secure",
-    ],
-)
+GRPC_SECURE_PUBLIC_HDRS = [
+    "include/grpc/grpc_security.h",
+]
 
 # TODO(ctiller): layer grpc atop grpc_unsecure, layer grpc++ atop grpc++_unsecure
 GRPCXX_SRCS = [
@@ -207,6 +198,65 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/support/sync_stream.h",
     "include/grpc++/support/time.h",
 ]
+
+grpc_cc_library(
+    name = "gpr",
+    language = "c",
+    public_hdrs = GPR_PUBLIC_HDRS,
+    standalone = True,
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_unsecure",
+    srcs = [
+        "src/core/lib/surface/init.c",
+        "src/core/lib/surface/init_unsecure.c",
+        "src/core/plugin_registry/grpc_unsecure_plugin_registry.c",
+    ],
+    language = "c",
+    public_hdrs = GRPC_PUBLIC_HDRS,
+    standalone = True,
+    deps = [
+        "grpc_common",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc",
+    srcs = [
+        "src/core/lib/surface/init.c",
+        "src/core/plugin_registry/grpc_plugin_registry.c",
+    ],
+    language = "c",
+    public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
+    standalone = True,
+    deps = [
+        "grpc_common",
+        "grpc_lb_policy_grpclb_secure",
+        "grpc_resolver_dns_ares",
+        "grpc_secure",
+        "grpc_transport_chttp2_client_secure",
+        "grpc_transport_chttp2_server_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_cronet",
+    srcs = [
+        "src/core/lib/surface/init.c",
+        "src/core/plugin_registry/grpc_cronet_plugin_registry.c",
+    ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_http_filters",
+        "grpc_transport_chttp2_client_secure",
+        "grpc_transport_cronet_client_secure",
+    ],
+)
 
 grpc_cc_library(
     name = "grpc++",
@@ -492,34 +542,7 @@ grpc_cc_library(
         "src/core/lib/support/tmpfile.h",
     ],
     language = "c",
-    public_hdrs = [
-        "include/grpc/support/alloc.h",
-        "include/grpc/support/atm.h",
-        "include/grpc/support/atm_gcc_atomic.h",
-        "include/grpc/support/atm_gcc_sync.h",
-        "include/grpc/support/atm_windows.h",
-        "include/grpc/support/avl.h",
-        "include/grpc/support/cmdline.h",
-        "include/grpc/support/cpu.h",
-        "include/grpc/support/histogram.h",
-        "include/grpc/support/host_port.h",
-        "include/grpc/support/log.h",
-        "include/grpc/support/log_windows.h",
-        "include/grpc/support/port_platform.h",
-        "include/grpc/support/string_util.h",
-        "include/grpc/support/subprocess.h",
-        "include/grpc/support/sync.h",
-        "include/grpc/support/sync_generic.h",
-        "include/grpc/support/sync_posix.h",
-        "include/grpc/support/sync_windows.h",
-        "include/grpc/support/thd.h",
-        "include/grpc/support/time.h",
-        "include/grpc/support/tls.h",
-        "include/grpc/support/tls_gcc.h",
-        "include/grpc/support/tls_msvc.h",
-        "include/grpc/support/tls_pthread.h",
-        "include/grpc/support/useful.h",
-    ],
+    public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
         "gpr_codegen",
     ],
@@ -798,19 +821,7 @@ grpc_cc_library(
         "zlib",
     ],
     language = "c",
-    public_hdrs = [
-        "include/grpc/byte_buffer.h",
-        "include/grpc/byte_buffer_reader.h",
-        "include/grpc/compression.h",
-        "include/grpc/load_reporting.h",
-        "include/grpc/grpc.h",
-        "include/grpc/grpc_posix.h",
-        "include/grpc/grpc_security_constants.h",
-        "include/grpc/slice.h",
-        "include/grpc/slice_buffer.h",
-        "include/grpc/status.h",
-        "include/grpc/support/workaround_list.h",
-    ],
+    public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
         "gpr_base",
         "grpc_codegen",
@@ -1188,9 +1199,7 @@ grpc_cc_library(
         "src/core/lib/security/util/json_util.h",
     ],
     language = "c",
-    public_hdrs = [
-        "include/grpc/grpc_security.h",
-    ],
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "grpc_base",
         "grpc_transport_chttp2_alpn",
