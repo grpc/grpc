@@ -227,18 +227,22 @@ BenchmarkClient.prototype.startClosedLoop = function(
     makeCall = function(client) {
       if (self.running) {
         self.pending_calls++;
-        var start_time = process.hrtime();
         var call = client.streamingCall();
+        var start_time = process.hrtime();
         call.write(argument);
         call.on('data', function() {
-        });
-        call.on('end', function() {
           var time_diff = process.hrtime(start_time);
           self.histogram.add(timeDiffToNanos(time_diff));
-          makeCall(client);
           self.pending_calls--;
-          if ((!self.running) && self.pending_calls == 0) {
-            self.emit('finished');
+          if (self.running) {
+            self.pending_calls++;
+            start_time = process.hrtime();
+            call.write(argument);
+          } else {
+            call.end();
+            if (self.pending_calls == 0) {
+              self.emit('finished');
+            }
           }
         });
         call.on('error', function(error) {
@@ -317,30 +321,8 @@ BenchmarkClient.prototype.startPoisson = function(
       }
     };
   } else {
-    makeCall = function(client, poisson) {
-      if (self.running) {
-        self.pending_calls++;
-        var start_time = process.hrtime();
-        var call = client.streamingCall();
-        call.write(argument);
-        call.on('data', function() {
-        });
-        call.on('end', function() {
-          var time_diff = process.hrtime(start_time);
-          self.histogram.add(timeDiffToNanos(time_diff));
-          self.pending_calls--;
-          if ((!self.running) && self.pending_calls == 0) {
-            self.emit('finished');
-          }
-        });
-        call.on('error', function(error) {
-          self.emit('error', new Error('Client error: ' + error.message));
-          self.running = false;
-        });
-      } else {
-        poisson.stop();
-      }
-    };
+    self.emit('error', new Error('Streaming Poisson benchmarks not supported'));
+    return;
   }
 
   var averageIntervalMs = (1 / offered_load) * 1000;
