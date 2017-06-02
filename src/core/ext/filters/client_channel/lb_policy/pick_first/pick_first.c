@@ -291,6 +291,7 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
         exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
         "pf_update_missing");
+    return;
   }
   const grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_addrs = 0;
