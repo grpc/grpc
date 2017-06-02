@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,42 +31,33 @@
 
 require_relative './end2end_common'
 
-# Start polling the channel state in both the main thread
-# and a child thread. Try to get the driver to send process-ending
-# interrupt while both a child thread and the main thread are in the
-# middle of a blocking connectivity_state call.
-def main
-  server_port = ''
-  OptionParser.new do |opts|
-    opts.on('--client_control_port=P', String) do
-      STDERR.puts 'client_control_port not used'
-    end
-    opts.on('--server_port=P', String) do |p|
-      server_port = p
-    end
-  end.parse!
+Thread.abort_on_exception = true
 
-  trap('SIGINT') { exit 0 }
+include GRPC::Core::ConnectivityStates
 
+def watch_state(ch)
   thd = Thread.new do
-    child_thread_channel = GRPC::Core::Channel.new("localhost:#{server_port}",
-                                                   {},
-                                                   :this_channel_is_insecure)
-    loop do
-      state = child_thread_channel.connectivity_state(false)
-      child_thread_channel.watch_connectivity_state(state, Time.now + 360)
-    end
+    state = ch.connectivity_state(false)
+    fail "non-idle state: #{state}" unless state == IDLE
+    ch.watch_connectivity_state(IDLE, Time.now + 360)
+  end
+  sleep 0.1
+  thd.kill
+end
+
+def main
+  channels = []
+  10.times do
+    ch = GRPC::Core::Channel.new('dummy_host',
+                                 nil, :this_channel_is_insecure)
+    watch_state(ch)
+    channels << ch
   end
 
-  main_channel = GRPC::Core::Channel.new("localhost:#{server_port}",
-                                         {},
-                                         :this_channel_is_insecure)
-  loop do
-    state = main_channel.connectivity_state(false)
-    main_channel.watch_connectivity_state(state, Time.now + 360)
+  # checking state should still be safe to call
+  channels.each do |c|
+    fail unless c.connectivity_state(false) == FATAL_FAILURE
   end
-
-  thd.join
 end
 
 main
