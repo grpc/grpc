@@ -43,17 +43,19 @@
 
 namespace HPHP {
 
-class ServerCredentialsWrapper {
-  private:
-    grpc_server_credentials* wrapped;
-  public:
-    ServerCredentialsWrapper();
-    ~ServerCredentialsWrapper();
+const StaticString s_ServerCredentials("ServerCredentials");
 
-    void new(grpc_server_credentials* server_credentials);
+class ServerCredentials {
+  private:
+    grpc_server_credentials* wrapped{nullptr};
+  public:
+    ServerCredentials();
+    ~ServerCredentials();
+
+    void init(grpc_server_credentials* server_credentials);
     void sweep();
-    grpc_timespec* getWrapped();
-}
+    grpc_server_credentials* getWrapped();
+};
 
 Object HHVM_METHOD(ServerCredentials, createSsl,
   const String& pem_root_certs,

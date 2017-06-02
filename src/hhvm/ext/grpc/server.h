@@ -42,17 +42,19 @@
 
 namespace HPHP {
 
-class ServerWrapper {
-  private:
-    grpc_server* wrapped;
-  public:
-    ServerWrapper();
-    ~ServerWrapper();
+const StaticString s_Server("Server");
 
-    void new(grpc_server* server);
+class Server {
+  private:
+    grpc_server* wrapped{nullptr};
+  public:
+    Server();
+    ~Server();
+
+    void init(grpc_server* server);
     void sweep();
     grpc_server* getWrapped();
-}
+};
 
 void HHVM_METHOD(Server, __construct,
   const Variant& args_array_or_null /* = null */);

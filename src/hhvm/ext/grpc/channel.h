@@ -42,17 +42,19 @@
 
 namespace HPHP {
 
-class ChannelWrapper {
-  private:
-    grpc_channel* wrapped;
-  public:
-    ChannelWrapper();
-    ~ChannelWrapper();
+const StaticString s_Channel("Channel");
 
-    void new(grpc_channel* channel);
+class Channel {
+  private:
+    grpc_channel* wrapped{nullptr};
+  public:
+    Channel();
+    ~Channel();
+
+    void init(grpc_channel* channel);
     void sweep();
     grpc_channel* getWrapped();
-}
+};
 
 void HHVM_METHOD(Channel, __construct,
   const String& target,
@@ -65,7 +67,7 @@ int64_t HHVM_METHOD(Channel, getConnectivityState,
 
 bool HHVM_METHOD(Channel, watchConnectivityState,
   int64_t last_state,
-  const Object& deadlineWrapper);
+  const Object& deadline);
 
 void HHVM_METHOD(Channel, close);
 

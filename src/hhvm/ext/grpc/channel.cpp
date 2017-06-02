@@ -48,33 +48,33 @@
 #include "timeval.h"
 
 #include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/base/req-containers.h"
+#include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/base/builtin-functions.h"
 
 namespace HPHP {
 
-const StaticString s_ChannelWrapper("ChannelWrapper");
-
-class ChannelWrapper {
+class Channel {
   private:
     grpc_channel* wrapped{nullptr};
   public:
-    ChannelWrapper() {}
-    ~ChannelWrapper() { sweep(); }
+Channel::Channel() {}
+Channel::~Channel() { sweep(); }
 
-    void new(grpc_channel* channel) {
-      memcpy(wrapped, channel, sizeof(grpc_channel));
-    }
+void Channel::init(grpc_channel* channel) {
+  memcpy(wrapped, channel, sizeof(grpc_channel));
+}
 
-    void sweep() {
-      if (wrapped) {
-        grpc_channel_destroy(wrapped);
-        req::free(wrapped);
-        wrapped = nullptr;
-      }
-    }
+void Channel::sweep() {
+  if (wrapped) {
+    grpc_channel_destroy(wrapped);
+    req::free(wrapped);
+    wrapped = nullptr;
+  }
+}
 
-    grpc_channel* getWrapped() {
-      return wrapped;
-    }
+grpc_channel* Channel::getWrapped() {
+  return wrapped;
 }
 
 /**
@@ -87,10 +87,10 @@ class ChannelWrapper {
 void HHVM_METHOD(Channel, __construct,
   const String& target,
   const Array& args_array) {
-  auto channelWrapper = Native::data<ChannelWrapper>(this_);
+  auto channel = Native::data<Channel>(this_);
   auto credentials_key = String("credentials");
 
-  ChannelCredentialsWrapper* channel_credentials_wrapper = NULL;
+  ChannelCredentials* channel_credentials_ = NULL;
 
   if (args_array.exists(credentials_key, true)) {
     Variant* value = args_array[credentials_key];
@@ -103,7 +103,7 @@ void HHVM_METHOD(Channel, __construct,
         goto cleanup;
       }
     } else {
-      channel_credentials_wrapper = Native::data<ChannelCredentialsWrapper>(obj);
+      channel_credentials_ = Native::data<ChannelCredentials>(obj);
       args_array.remove(credentials_key, true);
     }
   }
@@ -111,10 +111,10 @@ void HHVM_METHOD(Channel, __construct,
   grpc_channel_args args;
   hhvm_grpc_read_args_array(args_array, &args);
 
-  if (channel_credentials_wrapper == NULL) {
-    channelWrapper->new(grpc_insecure_channel_create(target.toCppString(), &args, NULL));
+  if (channel_credentials_ == NULL) {
+    channel->init(grpc_insecure_channel_create(target.toCppString(), &args, NULL));
   } else {
-    channelWrapper->new(grpc_secure_channel_create(channel_credentials_wrapper->getWrapped(), &args, NULL));
+    channel->init(grpc_secure_channel_create(channel_credentials_->getWrapped(), &args, NULL));
   }
 
   cleanup:
@@ -127,8 +127,8 @@ void HHVM_METHOD(Channel, __construct,
  * @return string The URI of the endpoint
  */
 String HHVM_METHOD(Channel, getTarget) {
-  auto channelWrapper = Native::data<ChannelWrapper>(this_);
-  return String(grpc_channel_get_target(channelWrapper->getWrapped()), CopyString);
+  auto channel = Native::data<Channel>(this_);
+  return String(grpc_channel_get_target(channel->getWrapped()), CopyString);
 }
 
 /**
@@ -138,8 +138,8 @@ String HHVM_METHOD(Channel, getTarget) {
  */
 int64_t HHVM_METHOD(Channel, getConnectivityState,
   bool try_to_connect /* = false */) {
-  auto channelWrapper = Native::data<ChannelWrapper>(this_);
-  return (int64_t) grpc_channel_check_connectivity_state(channelWrapper->getWrapped(),
+  auto channel = Native::data<Channel>(this_);
+  return (int64_t) grpc_channel_check_connectivity_state(channel->getWrapped(),
                                                       (int)try_to_connect);
 }
 
@@ -152,12 +152,12 @@ int64_t HHVM_METHOD(Channel, getConnectivityState,
  */
 bool HHVM_METHOD(Channel, watchConnectivityState,
   int64_t last_state,
-  const Object& deadlineWrapper) {
-  auto channelWrapper = Native::data<ChannelWrapper>(this_);
+  const Object& deadline) {
+  auto channel = Native::data<Channel>(this_);
 
-  grpc_channel_watch_connectivity_state(channelWrapper->getWrapped(),
+  grpc_channel_watch_connectivity_state(channel->getWrapped(),
                                           (grpc_connectivity_state)last_state,
-                                          deadlineWrapper->getWrapped(), completion_queue,
+                                          deadline->getWrapped(), completion_queue,
                                           NULL);
 
   grpc_event event = grpc_completion_queue_pluck(completion_queue, NULL,
@@ -171,8 +171,8 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
  * @return void
  */
 void HHVM_METHOD(Channel, close) {
- auto channelWrapper = Native::data<ChannelWrapper>(this_);
- delete channelWrapper;
+ auto channel = Native::data<Channel>(this_);
+ delete channel;
 }
 
 

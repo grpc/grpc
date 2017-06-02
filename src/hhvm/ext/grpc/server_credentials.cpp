@@ -38,57 +38,50 @@
 #endif
 
 #include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/base/req-containers.h"
+#include "hphp/runtime/vm/native-data.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
 namespace HPHP {
 
-const StaticString s_ServerCredentialsWrapper("ServerCredentialsWrapper");
+ServerCredentials::ServerCredentials() {}
+ServerCredentials::~ServerCredentials() { sweep(); }
 
-class ServerCredentialsWrapper {
-  private:
-    grpc_server_credentials* wrapped{nullptr};
-  public:
-    ServerCredentialsWrapper() {}
-    ~ServerCredentialsWrapper() { sweep(); }
+void ServerCredentials::init(grpc_server_credentials* server_credentials) {
+  memcpy(wrapped, server_credentials, sizeof(grpc_server_credentials));
+}
 
-    void new(grpc_server_credentials* server_credentials) {
-      memcpy(wrapped, server_credentials, sizeof(grpc_server_credentials));
-    }
+void ServerCredentials::sweep() {
+  if (wrapped) {
+    grpc_server_credentials_release(wrapped);
+    req::free(wrapped);
+    wrapped = nullptr;
+  }
+}
 
-    void sweep() {
-      if (wrapped) {
-        grpc_server_credentials_release(wrapped);
-        req::free(wrapped);
-        wrapped = nullptr;
-      }
-    }
-
-    grpc_timespec* getWrapped() {
-      return wrapped;
-    }
+grpc_server_credentials* ServerCredentials::getWrapped() {
+  return wrapped;
 }
 
 Object HHVM_METHOD(ServerCredentials, createSsl,
   const String& pem_root_certs,
   const String& pem_private_key,
   const String& pem_cert_chain) {
-  auto serverCredentialsWrapper = Native::data<ServerCredentialsWrapper>(this_);
+  auto serverCredentials = Native::data<ServerCredentials>(this_);
 
   /* TODO: add a client_certificate_request field in ServerCredentials and pass
    * it as the last parameter. */
-  grpc_server_credentials *server_credentials = grpc_ssl_server_credentials_create_ex(
+  serverCredentials->init(grpc_ssl_server_credentials_create_ex(
     pem_root_certs.toCppString(),
     &pem_key_cert_pair.toCppString(),
     1,
     GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
     NULL
-  );
+  ));
 
-  serverCredentialsWrapper->new(server_credentials);
-
-  return Object(std::move(serverCredentialsWrapper));
+  return Object(std::move(serverCredentials));
 }
 
 } // namespace HPHP

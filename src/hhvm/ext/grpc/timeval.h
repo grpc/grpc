@@ -43,17 +43,19 @@
 
 namespace HPHP {
 
-class TimevalWrapper {
-  private:
-    grpc_timespec* wrapped;
-  public:
-    TimevalWrapper();
-    ~TimevalWrapper();
+const StaticString s_Timeval("Timeval");
 
-    void new(gpr_timespec time);
+class Timeval {
+  private:
+    gpr_timespec* wrapped{nullptr};
+  public:
+    Timeval();
+    ~Timeval();
+
+    void init(gpr_timespec time);
     void sweep();
-    grpc_timespec* getWrapped();
-}
+    gpr_timespec* getWrapped();
+};
 
 void HHVM_METHOD(Timeval, __construct,
   int64_t microseconds);
@@ -77,9 +79,9 @@ Object HHVM_STATIC_METHOD(Timeval, now);
 
 Object HHVM_STATIC_METHOD(Timeval, zero);
 
-Timeval HHVM_STATIC_METHOD(Timeval, infFuture);
+Object HHVM_STATIC_METHOD(Timeval, infFuture);
 
-Timeval HHVM_STATIC_METHOD(Timeval, infPast);
+Object HHVM_STATIC_METHOD(Timeval, infPast);
 
 void HHVM_METHOD(Timeval, sleepUntil);
 

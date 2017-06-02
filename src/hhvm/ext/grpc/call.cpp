@@ -36,55 +36,51 @@
 #endif
 
 #include "call.h"
+#include "timeval.h"
+#include "completion_queue.h"
 
 #include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/base/req-containers.h"
+#include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/base/builtin-functions.h"
 
 namespace HPHP {
 
-const StaticString s_CallWrapper("CallWrapper");
+Call::Call() {}
+Call::~Call() { sweep(); }
 
-class CallWrapper {
-  private:
-    grpc_call* wrapped{nullptr};
-    bool owned = false;
-    ChannelWrapper* channelWrapped{nullptr};
-  public:
-    CallWrapper() {}
-    ~CallWrapper() { sweep(); }
+void Call::init(grpc_call* call) {
+  memcpy(wrapped, call, sizeof(grpc_call));
+}
 
-    void new(grpc_call* call) {
-      memcpy(wrapped, call, sizeof(grpc_call));
+void Call::sweep() {
+  if (wrapped) {
+    if (owned) {
+      grpc_call_unref(wrapped);
     }
+    req::free(wrapped);
+    wrapped = nullptr;
+  }
+  if (channel) {
+    req::free(channel);
+    channel = nullptr;
+  }
+}
 
-    void sweep() {
-      if (wrapped) {
-        if (owned) {
-          grpc_call_unref(wrapped);
-        }
-        req::free(wrapped);
-        wrapped = nullptr;
-      }
-      if (channelWrapped) {
-        req::free(channelWrapped);
-        channelWrapped = nullptr;
-      }
-    }
+grpc_call* Call::getWrapped() {
+  return wrapped;
+}
 
-    grpc_call* getWrapped() {
-      return wrapped;
-    }
+bool Call::getOwned() {
+  return owned;
+}
 
-    bool getOwned() {
-      return owned;
-    }
+void Call::setChannel(Channel* channel_) {
+  channel = channel_;
+}
 
-    void setChannelWrapper(ChannelWrapper* channelWrapped_) {
-      channelWrapped = channelWrapped_;
-    }
-
-    void setOwned(bool owned_) {
-      owned = owned_;
-    }
+void Call::setOwned(bool owned_) {
+  owned = owned_;
 }
 
 void HHVM_METHOD(Call, __construct,
@@ -92,34 +88,34 @@ void HHVM_METHOD(Call, __construct,
   const String& method,
   const Object& deadline_obj,
   const Variant& host_override /* = null */) {
-  auto callWrapper = Native::data<CallWrapper>(this_);
-  auto channelWrapper = Native::data<ChannelWrapper>(channel_obj);
-  if (channelWrapper->getWrapped() == NULL) {
+  auto call = Native::data<Call>(this_);
+  auto channel = Native::data<Channel>(channel_obj);
+  if (channel->getWrapped() == NULL) {
     throw_invalid_argument("Call cannot be constructed from a closed Channel");
     return;
   }
 
-  callWrapper->setChannelWrapper(channelWrapper);
+  call->setChannel(channel);
 
-  auto deadlineTimevalWrapper = Native::data<TimevalWrapper>(deadline_obj);
-  grpc_slice method_slice = grpc_slice_from_copied_string(method);
-  grpc_slice host_slice = host_override != NULL ?
-        grpc_slice_from_copied_string(host_override) : grpc_empty_slice();
-  callWrapper->new(grpc_channel_create_call(channelWrapper->getWrapped(), NULL, GRPC_PROPAGATE_DEFAULTS,
+  auto deadlineTimeval = Native::data<Timeval>(deadline_obj);
+  grpc_slice method_slice = grpc_slice_from_copied_string(method.toCppString());
+  grpc_slice host_slice = host_override.isNull() ? grpc_empty_slice() :
+        grpc_slice_from_copied_string(host_override);
+  call->init(grpc_channel_create_call(channel->getWrapped(), NULL, GRPC_PROPAGATE_DEFAULTS,
                              completion_queue, method_slice,
                              host_override != NULL ? &host_slice : NULL,
-                             deadlineTimevalWrapper->getWrapped(), NULL));
+                             deadlineTimeval->getWrapped(), NULL));
 
   grpc_slice_unref(method_slice);
   grpc_slice_unref(host_slice);
 
-  callWrapper->setOwned(true);
+  call->setOwned(true);
 }
 
 Object HHVM_METHOD(Call, startBatch,
   const Array& actions) { // array<int, mixed>
   const Object& resultObj = Object();
-  auto callWrapper = Native::data<CallWrapper>(this_);
+  auto call = Native::data<Call>(this_);
 
   size_t op_num = 0;
   grpc_op ops[8];
@@ -275,14 +271,14 @@ Object HHVM_METHOD(Call, startBatch,
     op_num++;
   }
 
-  error = grpc_call_start_batch(callWrapper->getWrapped(), ops, op_num, callWrapper->getWrapped(), NULL);
+  error = grpc_call_start_batch(call->getWrapped(), ops, op_num, call->getWrapped(), NULL);
 
   if (error != GRPC_CALL_OK) {
     throw_invalid_argument("start_batch was called incorrectly", (int64_t)error);
     goto cleanup;
   }
 
-  grpc_completion_queue_pluck(completion_queue, callWrapper->getWrapped),
+  grpc_completion_queue_pluck(completion_queue, call->getWrapped),
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
   for (int i = 0; i < op_num; i++) {
@@ -324,6 +320,7 @@ Object HHVM_METHOD(Call, startBatch,
         break;
       default:
         break;
+    }
   }
 
   cleanup:
@@ -346,22 +343,22 @@ Object HHVM_METHOD(Call, startBatch,
 }
 
 String HHVM_METHOD(Call, getPeer) {
-  auto callWrapper = Native::data<CallWrapper>(this_);
-  return String(grpc_call_get_peer(callWrapper->getWrapped()), CopyString);
+  auto call = Native::data<Call>(this_);
+  return String(grpc_call_get_peer(call->getWrapped()), CopyString);
 }
 
 void HHVM_METHOD(Call, cancel) {
-  auto callWrapper = Native::data<CallWrapper>(this_);
-  grpc_call_cancel(callWrapper->getWrapped(), NULL);
+  auto call = Native::data<Call>(this_);
+  grpc_call_cancel(call->getWrapped(), NULL);
 }
 
 int64_t HHVM_METHOD(Call, setCredentials,
   const Object& creds_obj) {
-  auto callCredentialsWrapper = Native::data<CallCredentialsWrapper>(creds_obj);
-  auto callWrapper = Native::data<CallWrapper>(this_);
+  auto callCredentials = Native::data<CallCredentials>(creds_obj);
+  auto call = Native::data<Call>(this_);
 
   grpc_call_error error = GRPC_CALL_ERROR;
-  error = grpc_call_set_credentials(callWrapper->getWrapped(), callCredentialsWrapper->getWrapped());
+  error = grpc_call_set_credentials(call->getWrapped(), callCredentials->getWrapped());
 
   return (int64_t)error;
 }
@@ -385,7 +382,7 @@ Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
     str_val = req::calloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
     memcpy(str_val, GRPC_SLICE_START_PTR(elem->value), GRPC_SLICE_LENGTH(elem->value));
 
-    auto key = String(str_key, ken_len, CopyString);
+    auto key = String(str_key, key_len, CopyString);
     auto val = String(str_val, GRPC_SLICE_LENGTH(elem->value), CopyString);
 
     req::free(str_key);

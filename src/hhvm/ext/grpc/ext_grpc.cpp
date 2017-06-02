@@ -32,6 +32,7 @@
  */
 
 #include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/vm/native-data.h"
 
 #include "call.h"
 #include "channel.h"
@@ -41,12 +42,24 @@
 #include "call_credentials.h"
 #include "server_credentials.h"
 #include "completion_queue.h"
+#include "version.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+using namespace HPHP;
+
 namespace HPHP {
+
+const StaticString s_Grpc("Grpc");
+class Grpc {
+ public:
+  Grpc() { }
+  ~Grpc() { sweep(); }
+
+  void sweep() { }
+};
 
 class GrpcExtension : public Extension {
   public:
@@ -96,7 +109,7 @@ class GrpcExtension : public Extension {
       HHVM_RCC_INT(Grpc, CHANNEL_CONNECTING, GRPC_CHANNEL_CONNECTING);
       HHVM_RCC_INT(Grpc, CHANNEL_READY, GRPC_CHANNEL_READY);
       HHVM_RCC_INT(Grpc, CHANNEL_TRANSIENT_FAILURE, GRPC_CHANNEL_TRANSIENT_FAILURE);
-      HHVM_RCC_INT(Grpc, CHANNEL_FATAL_FAILURE, GRPC_CHANNEL_FATAL_FAILURE);
+      HHVM_RCC_INT(Grpc, CHANNEL_FATAL_FAILURE, GRPC_CHANNEL_SHUTDOWN);
 
       HHVM_ME(Call, __construct);
       HHVM_ME(Call, startBatch);
@@ -138,26 +151,19 @@ class GrpcExtension : public Extension {
       HHVM_STATIC_ME(Timeval, infPast);
       HHVM_ME(Timeval, sleepUntil);
 
-      Native::registerNativeDataInfo<Timeval>(s_TimevalWrapper.get());
-      Native::registerNativeDataInfo<ServerCredentials>(s_ServerCredentialsWrapper.get());
-      Native::registerNativeDataInfo<Server>(s_ServerWrapper.get());
-      Native::registerNativeDataInfo<ChannelCredentials>(s_ChannelCredentialsWrapper.get());
-      Native::registerNativeDataInfo<Channel>(s_ChannelWrapper.get());
-      Native::registerNativeDataInfo<Call>(s_CallWrapper.get());
+      Native::registerNativeDataInfo<Timeval>(s_Timeval.get());
+      Native::registerNativeDataInfo<ServerCredentials>(s_ServerCredentials.get());
+      Native::registerNativeDataInfo<Server>(s_Server.get());
+      Native::registerNativeDataInfo<ChannelCredentials>(s_ChannelCredentials.get());
+      Native::registerNativeDataInfo<Channel>(s_Channel.get());
+      Native::registerNativeDataInfo<Call>(s_Call.get());
 
       /* Register call error constants */
       grpc_init();
 
-      grpc_init_call();
-      grpc_init_channel();
-      grpc_init_server();
-      grpc_init_timeval();
-      grpc_init_channel_credentials();
-      grpc_init_call_credentials();
-      grpc_init_server_credentials();
-      grpc_php_init_completion_queue();
+      grpc_hhvm_init_completion_queue();
 
-      loadSystemlib()
+      loadSystemlib();
     }
 
 } s_grpc_extension;

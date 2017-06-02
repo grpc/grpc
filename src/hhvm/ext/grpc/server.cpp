@@ -53,52 +53,48 @@
 #include "timeval.h"
 
 #include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/base/req-containers.h"
+#include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/base/builtin-functions.h"
 
 namespace HPHP {
 
-const StaticString s_ServerWrapper("ServerWrapper");
+Server::Server() {}
+Server::~Server() { sweep(); }
 
-class ServerWrapper {
-  private:
-    grpc_server* wrapped{nullptr};
-  public:
-    ServerWrapper() {}
-    ~ServerWrapper() { sweep(); }
+void Server::init(grpc_server* server) {
+  memcpy(wrapped, server, sizeof(grpc_server));
+}
 
-    void new(grpc_server* server) {
-      memcpy(wrapped, server, sizeof(grpc_server));
-    }
+void Server::sweep() {
+  if (wrapped) {
+    grpc_server_shutdown_and_notify(wrapped, completion_queue, NULL);
+    grpc_server_cancel_all_calls(wrapped);
+    grpc_completion_queue_pluck(completion_queue, NULL,
+                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    grpc_server_destroy(wrapped);
+    req::free(wrapped);
+    wrapped = nullptr;
+  }
+}
 
-    void sweep() {
-      if (wrapped) {
-        grpc_server_shutdown_and_notify(wrapped, completion_queue, NULL);
-        grpc_server_cancel_all_calls(wrapped);
-        grpc_completion_queue_pluck(completion_queue, NULL,
-                                    gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-        grpc_server_destroy(wrapped);
-        req::free(wrapped);
-        wrapped = nullptr;
-      }
-    }
-
-    grpc_server* getWrapped() {
-      return wrapped;
-    }
+grpc_server* Server::getWrapped() {
+  return wrapped;
 }
 
 void HHVM_METHOD(Server, __construct,
   const Variant& args_array_or_null /* = null */) {
-  auto serverWrapper = Native::data<ServerWrapper>(this_);
+  auto server = Native::data<Server>(this_);
   if (args_array_or_null.isNull()) {
-    serverWrapper->new(grpc_server_create(NULL, NULL));
+    server->init(grpc_server_create(NULL, NULL));
   } else {
     grpc_channel_args args;
     hhvm_grpc_read_args_array(args_array_or_null.toArray(), &args);
-    serverWrapper->new(grpc_server_create(&args, NULL));
+    server->init(grpc_server_create(&args, NULL));
     req::free(args);
   }
 
-  grpc_server_register_completion_queue(serverWrapper->getWrapped(), completion_queue, NULL);
+  grpc_server_register_completion_queue(server->getWrapped(), completion_queue, NULL);
 }
 
 Object HHVM_METHOD(Server, requestCall) {
@@ -109,7 +105,7 @@ Object HHVM_METHOD(Server, requestCall) {
   grpc_event event;
   Object resultObj = Object();
 
-  auto serverWrapper = Native::data<ServerWrapper>(this_);
+  auto server = Native::data<Server>(this_);
 
   grpc_call_details_init(&details);
   grpc_metadata_array_init(&metadata);
@@ -139,14 +135,14 @@ Object HHVM_METHOD(Server, requestCall) {
   gpr_free(method_text);
   gpr_free(host_text);
 
-  auto callWrapper = req::make<CallWrapper>();
-  callWrapper->new(call);
+  auto call = req::make<Call>();
+  call->init(call);
 
-  auto timevalWrapper = req::make<TimevalWrapper>();
-  timevalWrapper->new(details.deadline);
+  auto timeval = req::make<Timeval>();
+  timeval->init(details.deadline);
 
-  resultObj.o_set("call", Object(std::move(callWrapper)));
-  resultObj.o_set("absolute_deadline", Object(std::move(timevalWrapper)));
+  resultObj.o_set("call", Object(std::move(call)));
+  resultObj.o_set("absolute_deadline", Object(std::move(timeval)));
   resultObj.o_set("metadata", grpc_parse_metadata_array(&metadata));
 
   cleanup:
@@ -157,21 +153,21 @@ Object HHVM_METHOD(Server, requestCall) {
 
 bool HHVM_METHOD(Server, addHttp2Port,
   const String& addr) {
-  auto serverWrapper = Native::data<ServerWrapper>(this_);
-  grpc_server_add_secure_http2_port(serverWrapper->getWrapped(), addr.toCppString());
+  auto server = Native::data<Server>(this_);
+  grpc_server_add_secure_http2_port(server->getWrapped(), addr.toCppString());
 }
 
 bool HHVM_METHOD(Server, addSecureHttp2Port,
   const String& addr,
   const Object& server_credentials) {
-  auto serverWrapper = Native::data<ServerWrapper>(this_);
-  auto serverCredentialsWrapper = Native::data<ServerCredentialsWrapper>(server_credentials);
-  return (bool)grpc_server_add_secure_http2_port(serverWrapper->getWrapped(), addr.toCppString(), serverCredentialsWrapper->getWrapped())
+  auto server = Native::data<Server>(this_);
+  auto serverCredentials = Native::data<ServerCredentials>(server_credentials);
+  return (bool)grpc_server_add_secure_http2_port(server->getWrapped(), addr.toCppString(), serverCredentials->getWrapped())
 }
 
 void HHVM_METHOD(Server, start) {
-  auto serverWrapper = Native::data<ServerWrapper>(this_);
-  grpc_server_start(serverWrapper->getWrapped());
+  auto server = Native::data<Server>(this_);
+  grpc_server_start(server->getWrapped());
 }
 
 } // namespace HPHP

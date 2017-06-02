@@ -43,17 +43,19 @@
 
 namespace HPHP {
 
-class CallCredentialsWrapper {
-  private:
-    grpc_call_credentials* wrapped;
-  public:
-    CallCredentialsWrapper();
-    ~CallCredentialsWrapper();
+const StaticString s_CallCredentials("CallCredentials");
 
-    void new(grpc_call_credentials* call_credentials);
+class CallCredentials {
+  private:
+    grpc_call_credentials* wrapped{nullptr};
+  public:
+    CallCredentials();
+    ~CallCredentials();
+
+    void init(grpc_call_credentials* call_credentials);
     void sweep();
     grpc_call_credentials* getWrapped();
-}
+};
 
 typedef struct plugin_state {
   const Variant& function;

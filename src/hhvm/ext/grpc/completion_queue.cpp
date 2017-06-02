@@ -35,11 +35,11 @@
 
 grpc_completion_queue *completion_queue;
 
-void grpc_php_init_completion_queue(TSRMLS_D) {
+void grpc_hhvm_init_completion_queue() {
   completion_queue = grpc_completion_queue_create_for_pluck(NULL);
 }
 
-void grpc_php_shutdown_completion_queue(TSRMLS_D) {
+void grpc_hhvm_shutdown_completion_queue() {
   grpc_completion_queue_shutdown(completion_queue);
   grpc_completion_queue_destroy(completion_queue);
 }

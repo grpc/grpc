@@ -39,41 +39,33 @@
 #endif
 
 #include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/base/req-containers.h"
+#include "hphp/runtime/vm/native-data.h"
 
 #include "call.h"
-
-#include <zend_exceptions.h>
-#include <zend_hash.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
 namespace HPHP {
 
-const StaticString s_CallCredentialsWrapper("CallCredentialsWrapper");
+CallCredentials::CallCredentials() {}
+CallCredentials::~CallCredentials() { sweep(); }
 
-class CallCredentialsWrapper {
-  private:
-    grpc_call_credentials* wrapped{nullptr};
-  public:
-    CallCredentialsWrapper() {}
-    ~CallCredentialsWrapper() { sweep(); }
+void CallCredentials::init(grpc_call_credentials* call_credentials) {
+  memcpy(wrapped, call_credentials, sizeof(grpc_call_credentials));
+}
 
-    void new(grpc_call_credentials* call_credentials) {
-      memcpy(wrapped, call_credentials, sizeof(grpc_call_credentials));
-    }
+void CallCredentials::sweep() {
+  if (wrapped) {
+    grpc_call_credentials_release(wrapped);
+    req::free(wrapped);
+    wrapped = nullptr;
+  }
+}
 
-    void sweep() {
-      if (wrapped) {
-        grpc_call_credentials_release(wrapped);
-        req::free(wrapped);
-        wrapped = nullptr;
-      }
-    }
-
-    grpc_call_credentials* getWrapped() {
-      return wrapped;
-    }
+grpc_call_credentials* CallCredentials::getWrapped() {
+  return wrapped;
 }
 
 /**
@@ -85,17 +77,17 @@ class CallCredentialsWrapper {
 Object HHVM_METHOD(CallCredentials, createComposite,
   const Object& cred1_obj,
   const Object& cred2_obj) {
-  auto callCredentialsWrapper1 = Native::data<CallCredentialsWrapper>(cred1_obj);
-  auto callCredentialsWrapper2 = Native::data<CallCredentialsWrapper>(cred2_obj);
+  auto callCredentials1 = Native::data<CallCredentials>(cred1_obj);
+  auto callCredentials2 = Native::data<CallCredentials>(cred2_obj);
 
   grpc_call_credentials *call_credentials =
-        grpc_composite_call_credentials_create(callCredentialsWrapper1->getWrapped(),
-                                               callCredentialsWrapper2->getWrapped(),
+        grpc_composite_call_credentials_create(callCredentials1->getWrapped(),
+                                               callCredentials2->getWrapped(),
                                                NULL);
 
-  auto newCallCredentialsWrapper = req::make<CallCredentialsWrapper>(call_credentials);
+  auto newCallCredentials = req::make<CallCredentials>(call_credentials);
 
-  return Object(std::move(newCallCredentialsWrapper));
+  return Object(std::move(newCallCredentials));
 }
 
 /**
@@ -120,10 +112,10 @@ Object HHVM_METHOD(CallCredentials, createFromPlugin,
   plugin.state = (void *)state;
   plugin.type = "";
 
-  auto newCallCredentialsWrapper = req::make<CallCredentialsWrapper>();
-  newCallCredentialsWrapper->new(grpc_metadata_credentials_create_from_plugin(plugin, NULL));
+  auto newCallCredentials = req::make<CallCredentials>();
+  newCallCredentials->init(grpc_metadata_credentials_create_from_plugin(plugin, NULL));
 
-  return Object(std::move(newCallCredentialsWrapper));
+  return Object(std::move(newCallCredentials));
 }
 
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,

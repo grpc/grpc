@@ -40,9 +40,9 @@
 extern grpc_completion_queue *completion_queue;
 
 /* Initializes the completion queue */
-void grpc_php_init_completion_queue(TSRMLS_D);
+void grpc_hhvm_init_completion_queue();
 
 /* Shut down the completion queue */
-void grpc_php_shutdown_completion_queue(TSRMLS_D);
+void grpc_hhvm_shutdown_completion_queue();
 
 #endif /* GRPC_HHVM_GRPC_COMPLETION_QUEUE_H_ */

@@ -43,19 +43,19 @@
 
 namespace HPHP {
 
-static char *default_pem_root_certs;
+const StaticString s_ChannelCredentials("ChannelCredentials");
 
 class ChannelCredentials {
   private:
-    grpc_channel_credentials* wrapped;
+    grpc_channel_credentials* wrapped{nullptr};
   public:
     ChannelCredentials();
     ~ChannelCredentials();
 
-    void new(grpc_channel_credentials* channel_credentials);
+    void init(grpc_channel_credentials* channel_credentials);
     void sweep();
     grpc_channel_credentials* getWrapped();
-}
+};
 
 void HHVM_METHOD(ChannelCredentials, setDefaultRootsPem,
   const String& pem_roots);

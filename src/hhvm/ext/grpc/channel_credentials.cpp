@@ -39,6 +39,8 @@
 #endif
 
 #include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/base/req-containers.h"
+#include "hphp/runtime/vm/native-data.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/grpc.h>
@@ -48,30 +50,23 @@ namespace HPHP {
 
 static char *default_pem_root_certs = NULL;
 
-const StaticString s_ChannelCredentials("ChannelCredentialsWrapper");
+ChannelCredentials::ChannelCredentials() {}
+ChannelCredentials::~ChannelCredentials() { sweep(); }
 
-class ChannelCredentialsWrapper {
-  private:
-    grpc_channel_credentials* wrapped{nullptr};
-  public:
-    ChannelCredentialsWrapper() {}
-    ~ChannelCredentialsWrapper() { sweep(); }
+void ChannelCredentials::init(grpc_channel_credentials* channel_credentials) {
+  memcpy(wrapped, channel_credentials, sizeof(grpc_channel_credentials));
+}
 
-    void new(grpc_channel_credentials* channel_credentials) {
-      memcpy(wrapped, channel_credentials, sizeof(grpc_channel_credentials));
-    }
+void ChannelCredentials::sweep() {
+  if (wrapped) {
+    grpc_channel_credentials_release(wrapped);
+    req::free(wrapped);
+    wrapped = nullptr;
+  }
+}
 
-    void sweep() {
-      if (wrapped) {
-        grpc_channel_credentials_release(wrapped);
-        req::free(wrapped);
-        wrapped = nullptr;
-      }
-    }
-
-    grpc_channel_credentials* getWrapped() {
-      return wrapped;
-    }
+grpc_channel_credentials* ChannelCredentials::getWrapped() {
+  return wrapped;
 }
 
 void HHVM_METHOD(ChannelCredentials, setDefaultRootsPem,
@@ -81,11 +76,11 @@ void HHVM_METHOD(ChannelCredentials, setDefaultRootsPem,
 }
 
 Object HHVM_METHOD(ChannelCredentials, createDefault) {
-  auto channelCredentialsWrapper = Native::data<ChannelCredentialsWrapper>(this_);
+  auto channelCredentials = Native::data<ChannelCredentials>(this_);
   grpc_channel_credentials *channel_credentials = grpc_google_default_credentials_create();
-  channelCredentialsWrapper->new(channel_credentials);
+  channelCredentials->init(channel_credentials);
 
-  return Object(std::move(channelCredentialsWrapper));
+  return Object(std::move(channelCredentials));
 }
 
 Object HHVM_METHOD(ChannelCredentials, createSsl,
@@ -94,7 +89,7 @@ Object HHVM_METHOD(ChannelCredentials, createSsl,
   const Variant& pem_key_cert_pair__cert_chain /*=null*/
   ) {
 
-  auto channelCredentialsWrapper = Native::data<ChannelCredentialsWrapper>(this_);
+  auto channelCredentials = Native::data<ChannelCredentials>(this_);
 
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
@@ -107,31 +102,30 @@ Object HHVM_METHOD(ChannelCredentials, createSsl,
     pem_key_cert_pair.cert_chain = pem_key_cert_pair__cert_chain.toString().toCppString();
   }
 
-  grpc_channel_credentials *channel_credentials = grpc_ssl_credentials_create(
-        pem_root_certs.toCppString(),
-        pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL);
+  channelCredentials->init(grpc_ssl_credentials_create(
+    pem_root_certs.toCppString(),
+    pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL)
+  );
 
-  channelCredentialsWrapper->new(channel_credentials);
-
-  return Object(std::move(channelCredentialsWrapper));
+  return Object(std::move(channelCredentials));
 }
 
 Object HHVM_METHOD(ChannelCredentials, createComposite,
   const Object& cred1_obj,
   const Object& cred2_obj) {
-  auto channelCredentialsWrapper1 = Native::data<ChannelCredentialsWrapper>(cred1_obj);
-  auto callCredentialsWrapper2 = Native::data<CallCredentialsWrapper>(cred2_obj);
+  auto channelCredentials1 = Native::data<ChannelCredentials>(cred1_obj);
+  auto callCredentials2 = Native::data<CallCredentials>(cred2_obj);
 
   grpc_channel_credentials* channel_credentials = grpc_composite_channel_credentials_create(
-    channelCredentialsWrapper1->getWrapped(),
-    calllCredentialsWrapper2->getWrapped(),
+    channelCredentials1->getWrapped(),
+    calllCredentials2->getWrapped(),
     NULL
   );
 
-  auto newChannelCredentialsWrapper = req::make<ChannelCredentialsWrapper>();
-  newChannelCredentialsWrapper->new(channel_credentials);
+  auto newChannelCredentials = req::make<ChannelCredentials>();
+  newChannelCredentials->init(channel_credentials);
 
-  return newChannelCredentialsWrapper;
+  return newChannelCredentials;
 }
 
 void HHVM_METHOD(ChannelCredentials, createInsecure) {
