@@ -276,8 +276,13 @@ class Job(object):
     env = sanitized_environment(env)
     self._start = time.time()
     cmdline = self._spec.cmdline
-    if measure_cpu_costs:
+    # The Unix time command is finicky when used with MSBuild, so we don't use it
+    # with jobs that run MSBuild.
+    global measure_cpu_costs
+    if measure_cpu_costs and not 'vsprojects\\build' in cmdline[0]:
       cmdline = ['time', '-p'] + cmdline
+    else:
+      measure_cpu_costs = False
     try_start = lambda: subprocess.Popen(args=cmdline,
                                          stderr=subprocess.STDOUT,
                                          stdout=self._tempfile,
