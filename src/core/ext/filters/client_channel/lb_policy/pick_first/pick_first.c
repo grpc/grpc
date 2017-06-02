@@ -278,6 +278,22 @@ static void pf_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   }
 }
 
+/* unsubscribe all subchannels */
+static void stop_connectivity_watchers(grpc_exec_ctx *exec_ctx,
+                                       pick_first_lb_policy *p) {
+  if (p->num_subchannels > 0) {
+    GPR_ASSERT(p->selected == NULL);
+    grpc_subchannel_notify_on_state_change(
+        exec_ctx, p->subchannels[p->checking_subchannel], NULL, NULL,
+        &p->connectivity_changed);
+    p->updating_subchannels = true;
+  } else if (p->selected != NULL) {
+    grpc_connected_subchannel_notify_on_state_change(
+        exec_ctx, p->selected, NULL, NULL, &p->connectivity_changed);
+    p->updating_selected = true;
+  }
+}
+
 /* true upon success */
 static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                              const grpc_lb_policy_args *args) {
@@ -287,10 +303,19 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
-    grpc_connectivity_state_set(
-        exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
-        "pf_update_missing");
+    if (p->subchannels == NULL) {
+      // If we don't have a current subchannel list, go into TRANSIENT FAILURE.
+      grpc_connectivity_state_set(
+          exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
+          "pf_update_missing");
+    } else {
+      // otherwise, keep using the current subchannel list (ignore this update).
+      gpr_log(GPR_ERROR,
+              "No valid LB addresses channel arg for Pick First %p update, "
+              "ignoring.",
+              (void *)p);
+    }
     return;
   }
   const grpc_lb_addresses *addresses = arg->value.pointer.p;
@@ -299,10 +324,13 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     if (!addresses->addresses[i].is_balancer) ++num_addrs;
   }
   if (num_addrs == 0) {
+    // Empty update. Unsubscribe from all current subchannels and put the
+    // channel in TRANSIENT_FAILURE.
     grpc_connectivity_state_set(
         exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
         "pf_update_empty");
+    stop_connectivity_watchers(exec_ctx, p);
     return;
   }
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
@@ -398,26 +426,18 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   gpr_free(sc_args);
   if (num_new_subchannels == 0) {
     gpr_free(new_subchannels);
+    // Empty update. Unsubscribe from all current subchannels and put the
+    // channel in TRANSIENT_FAILURE.
     grpc_connectivity_state_set(
         exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid addresses in update"),
         "pf_update_no_valid_addresses");
+    stop_connectivity_watchers(exec_ctx, p);
     return;
   }
 
   /* Destroy the current subchannels. Repurpose pf_shutdown/destroy. */
-  if (p->num_subchannels > 0) {
-    GPR_ASSERT(p->selected == NULL);
-    /* cancel subscriptions */
-    grpc_subchannel_notify_on_state_change(
-        exec_ctx, p->subchannels[p->checking_subchannel], NULL, NULL,
-        &p->connectivity_changed);
-    p->updating_subchannels = true;
-  } else if (p->selected != NULL) {
-    grpc_connected_subchannel_notify_on_state_change(
-        exec_ctx, p->selected, NULL, NULL, &p->connectivity_changed);
-    p->updating_selected = true;
-  }
+  stop_connectivity_watchers(exec_ctx, p);
 
   /* Save new subchannels. The switch over will happen in
    * pf_connectivity_changed_locked */
@@ -453,6 +473,10 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, p->selected,
                                     "pf_update_connectivity");
     p->updating_selected = false;
+    if (p->num_new_subchannels == 0) {
+      p->selected = NULL;
+      return;
+    }
     restart = true;
   }
   if (p->updating_subchannels && error == GRPC_ERROR_CANCELLED) {
@@ -466,6 +490,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     p->subchannels = NULL;
     p->num_subchannels = 0;
     p->updating_subchannels = false;
+    if (p->num_new_subchannels == 0) return;
     restart = true;
   }
   if (restart) {

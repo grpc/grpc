@@ -1748,10 +1748,20 @@ static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
-    grpc_connectivity_state_set(
-        exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
-        "glb_update_missing");
+    if (glb_policy->lb_channel == NULL) {
+      // If we don't have a current channel to the LB, go into TRANSIENT
+      // FAILURE.
+      grpc_connectivity_state_set(
+          exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
+          "glb_update_missing");
+    } else {
+      // otherwise, keep using the current LB channel (ignore this update).
+      gpr_log(GPR_ERROR,
+              "No valid LB addresses channel arg for grpclb %p update, "
+              "ignoring.",
+              (void *)glb_policy);
+    }
   }
   const grpc_lb_addresses *addresses = arg->value.pointer.p;
   GPR_ASSERT(glb_policy->lb_channel != NULL);

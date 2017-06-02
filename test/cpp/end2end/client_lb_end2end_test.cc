@@ -272,7 +272,6 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   ports.clear();
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET none *******");
-  SendRpc();
   grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
   do {
     channel_state = channel_->GetState(true /* try to connect */);

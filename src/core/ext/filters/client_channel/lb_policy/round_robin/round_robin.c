@@ -52,8 +52,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-typedef struct round_robin_lb_policy round_robin_lb_policy;
-
 grpc_tracer_flag grpc_lb_round_robin_trace = GRPC_TRACER_INITIALIZER(false);
 
 /** List of entities waiting for a pick.
@@ -80,7 +78,7 @@ typedef struct pending_pick {
 } pending_pick;
 
 typedef struct rr_subchannel_list rr_subchannel_list;
-struct round_robin_lb_policy {
+typedef struct round_robin_lb_policy {
   /** base policy: must be first */
   grpc_lb_policy base;
 
@@ -98,7 +96,13 @@ struct round_robin_lb_policy {
 
   /** Index into subchannels for last pick. */
   size_t last_ready_subchannel_index;
-};
+
+  /** Latest version of the subchannel list.
+   * Subchannel connectivity callbacks will only promote updated subchannel
+   * lists if they equal \a latest_subchannel_list. In other words, racing
+   * callbacks that reference outdated subchannel lists will be dropped. */
+  rr_subchannel_list *latest_subchannel_list;
+} round_robin_lb_policy;
 
 typedef struct {
   /** backpointer to owning subchannel list */
@@ -196,7 +200,6 @@ static void rr_subchannel_list_unref(grpc_exec_ctx *exec_ctx,
   if (done) {
     rr_subchannel_list_destroy(exec_ctx, subchannel_list);
   }
-  return;
 }
 
 /** Mark \a subchannel_list as discarded. Unsubscribes all its subchannels. The
@@ -512,7 +515,6 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "pol_shutdown");
     return;
   }
-
   if (sd->subchannel_list->shutting_down) {
     // the subchannel list associated with sd has been discarded. This callback
     // corresponds to the unsubscription.
@@ -521,7 +523,6 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "sl_shutdown");
     return;
   }
-
   // Now that we're inside the combiner, copy the pending connectivity
   // state (which was set by the connectivity state watcher) to
   // curr_connectivity_state, which is what we use inside of the combiner.
@@ -564,7 +565,8 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   } else {  // sd not in SHUTDOWN
     if (sd->curr_connectivity_state == GRPC_CHANNEL_READY) {
       // promote sd->subchannel_list to p->subchannel_list
-      if (sd->subchannel_list != p->subchannel_list) {
+      if (sd->subchannel_list == p->latest_subchannel_list &&
+          sd->subchannel_list != p->subchannel_list) {
         GPR_ASSERT(!sd->subchannel_list->shutting_down);
         if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
           gpr_log(GPR_DEBUG,
@@ -577,12 +579,11 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         }
         // dispose of the current subchannel_list
         rr_subchannel_list_shutdown(exec_ctx, p->subchannel_list,
-                                    "sl_shutdown_rr_update");
+                                    "sl_shutdown_rr_update_connectivity");
         rr_subchannel_list_unref(exec_ctx, p->subchannel_list,
-                                 "sl_shutdown_rr_update");
+                                 "sl_shutdown_rr_update_connectivity");
         p->subchannel_list = sd->subchannel_list;
       }
-
       /* at this point we know there's at least one suitable subchannel. Go
        * ahead and pick one and notify the pending suitors in
        * p->pending_picks. This preemtively replicates rr_pick()'s actions. */
@@ -664,10 +665,19 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
-    grpc_connectivity_state_set(
-        exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
-        "rr_update_missing");
+    if (p->subchannel_list == NULL) {
+      // If we don't have a current subchannel list, go into TRANSIENT FAILURE.
+      grpc_connectivity_state_set(
+          exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
+          "rr_update_missing");
+    } else {
+      // otherwise, keep using the current subchannel list (ignore this update).
+      gpr_log(GPR_ERROR,
+              "No valid LB addresses channel arg for Round Robin %p update, "
+              "ignoring.",
+              (void *)p);
+    }
     return;
   }
   grpc_lb_addresses *addresses = arg->value.pointer.p;
@@ -680,6 +690,8 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
         exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
         "rr_update_empty");
+    rr_subchannel_list_shutdown(exec_ctx, p->subchannel_list,
+                                "sl_shutdown_rr_update");
     return;
   }
   size_t subchannel_index = 0;
@@ -689,6 +701,7 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
       gpr_zalloc(sizeof(subchannel_data) * num_addrs);
   subchannel_list->num_subchannels = num_addrs;
   gpr_ref_init(&subchannel_list->refcount, 1);
+  p->latest_subchannel_list = subchannel_list;
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "Created subchannel list %p for %lu subchannels",
             (void *)subchannel_list, num_addrs);

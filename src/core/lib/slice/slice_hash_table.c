@@ -141,15 +141,17 @@ int grpc_slice_hash_table_cmp(const grpc_slice_hash_table* a,
   if (a->size > b->size) return 1;
   // Compare rows.
   for (size_t i = 0; i < a->size; ++i) {
-    const gpr_slice a_key =
-        is_empty(&a->entries[i]) ? grpc_empty_slice() : a->entries[i].key;
-    const gpr_slice b_key =
-        is_empty(&b->entries[i]) ? grpc_empty_slice() : b->entries[i].key;
-    const int key_cmp = grpc_slice_cmp(a_key, b_key);
+    if (is_empty(&a->entries[i])) {
+      if (!is_empty(&b->entries[i])) {
+        return -1;  // a empty but b non-empty
+      }
+      continue;  // both empty, no need to check key or value
+    } else if (is_empty(&b->entries[i])) {
+      return 1;  // a non-empty but b empty
+    }
+    // neither entry is empty
+    const int key_cmp = grpc_slice_cmp(a->entries[i].key, b->entries[i].key);
     if (key_cmp != 0) return key_cmp;
-    // keys can be equal because both entries are empty. In that case, continue
-    // (no values for empty entries).
-    if (GRPC_SLICE_IS_EMPTY(a_key) && GRPC_SLICE_IS_EMPTY(b_key)) continue;
     const int value_cmp =
         value_cmp_fn_a(a->entries[i].value, b->entries[i].value);
     if (value_cmp != 0) return value_cmp;

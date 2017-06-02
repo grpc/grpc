@@ -77,8 +77,7 @@ void *grpc_slice_hash_table_get(const grpc_slice_hash_table *table,
  * A table is considered "smaller" (resp. "greater") if:
  *  - GPR_ICMP(a->value_cmp, b->value_cmp) < 1 (resp. > 1),
  *  - else, it contains fewer (resp. more) entries,
- *  - else, if (a_key, a_value) < (b_key, b_value) (resp >), which is defined as
- *    strcmp(a_key, b_key) < 1 (resp. > 1),
+ *  - else, if strcmp(a_key, b_key) < 1 (resp. > 1),
  *  - else, if value_cmp(a_value, b_value) < 1 (resp. > 1). */
 int grpc_slice_hash_table_cmp(const grpc_slice_hash_table *a,
                               const grpc_slice_hash_table *b);
