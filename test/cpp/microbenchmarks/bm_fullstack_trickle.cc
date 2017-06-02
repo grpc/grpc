@@ -378,7 +378,8 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
-      TrickleCQNext(fixture.get(), &t, &ok, in_warmup ? -1 : state.iterations());
+      TrickleCQNext(fixture.get(), &t, &ok,
+                    in_warmup ? -1 : state.iterations());
       GPR_ASSERT(ok);
       int tagnum = (int)reinterpret_cast<intptr_t>(t);
       GPR_ASSERT(i & (1 << tagnum));
