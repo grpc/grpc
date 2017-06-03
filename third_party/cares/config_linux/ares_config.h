@@ -70,8 +70,14 @@
 /* Define to 1 if bool is an available type. */
 #define HAVE_BOOL_T 1
 
-/* Define to 1 if you have the clock_gettime function and monotonic timer. */
-#define HAVE_CLOCK_GETTIME_MONOTONIC 1
+/* Define HAVE_CLOCK_GETTIME_MONOTONIC to 1 if you have the clock_gettime
+ * function and monotonic timer.
+ *
+ * Note: setting HAVE_CLOCK_GETTIME_MONOTONIC causes use of the clock_gettime
+ * function from glibc, don't set it to support glibc < 2.17 */
+#ifndef GPR_BACKWARDS_COMPATIBILITY_MODE
+  #define HAVE_CLOCK_GETTIME_MONOTONIC 1
+#endif
 
 /* Define to 1 if you have the closesocket function. */
 /* #undef HAVE_CLOSESOCKET */
