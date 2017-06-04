@@ -72,12 +72,10 @@ static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   grpc_closure_sched(exec_ctx, on_done, error);
 }
 
-static void my_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
-                               const char *addr, const char *default_port,
-                               grpc_pollset_set *interested_parties,
-                               grpc_closure *on_done,
-                               grpc_lb_addresses **lb_addrs,
-                               bool check_grpclb) {
+static grpc_ares_request *my_dns_lookup_ares(
+    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
+    const char *default_port, grpc_pollset_set *interested_parties,
+    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error *error = GRPC_ERROR_NONE;
@@ -91,6 +89,7 @@ static void my_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
     grpc_lb_addresses_set_address(*lb_addrs, 0, NULL, 0, NULL, NULL, NULL);
   }
   grpc_closure_sched(exec_ctx, on_done, error);
+  return NULL;
 }
 
 static grpc_resolver *create_resolver(grpc_exec_ctx *exec_ctx,

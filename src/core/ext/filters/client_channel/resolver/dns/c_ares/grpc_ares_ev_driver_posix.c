@@ -155,6 +155,20 @@ void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver *ev_driver) {
   grpc_ares_ev_driver_unref(ev_driver);
 }
 
+void grpc_ares_ev_driver_shutdown(grpc_exec_ctx *exec_ctx,
+                                  grpc_ares_ev_driver *ev_driver) {
+  gpr_mu_lock(&ev_driver->mu);
+  ev_driver->shutting_down = true;
+  fd_node *fn = ev_driver->fds;
+  while (fn != NULL) {
+    grpc_fd_shutdown(
+        exec_ctx, fn->grpc_fd,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("grpc_ares_ev_driver_shutdown"));
+    fn = fn->next;
+  }
+  gpr_mu_unlock(&ev_driver->mu);
+}
+
 // Search fd in the fd_node list head. This is an O(n) search, the max possible
 // value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2 in our tests.
 static fd_node *pop_fd_node(fd_node **head, int fd) {

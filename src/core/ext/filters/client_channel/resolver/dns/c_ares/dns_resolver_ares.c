@@ -80,6 +80,8 @@ typedef struct {
   grpc_combiner *combiner;
   /** are we currently resolving? */
   bool resolving;
+  /** the pending resolving request */
+  grpc_ares_request *pending_request;
   /** which version of the result have we published? */
   int published_version;
   /** which version of the result is current? */
@@ -124,6 +126,9 @@ static void dns_ares_shutdown_locked(grpc_exec_ctx *exec_ctx,
   if (r->have_retry_timer) {
     grpc_timer_cancel(exec_ctx, &r->retry_timer);
   }
+  if (r->pending_request != NULL) {
+    grpc_cancel_ares_request(exec_ctx, r->pending_request);
+  }
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
     grpc_closure_sched(
@@ -160,6 +165,7 @@ static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_channel_args *result = NULL;
   GPR_ASSERT(r->resolving);
   r->resolving = false;
+  r->pending_request = NULL;
   if (r->lb_addresses != NULL) {
     grpc_arg new_arg = grpc_lb_addresses_create_channel_arg(r->lb_addresses);
     result = grpc_channel_args_copy_and_add(r->channel_args, &new_arg, 1);
@@ -216,10 +222,10 @@ static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!r->resolving);
   r->resolving = true;
   r->lb_addresses = NULL;
-  grpc_dns_lookup_ares(exec_ctx, r->dns_server, r->name_to_resolve,
-                       r->default_port, r->interested_parties,
-                       &r->dns_ares_on_resolved_locked, &r->lb_addresses,
-                       true /* check_grpclb */);
+  r->pending_request = grpc_dns_lookup_ares(
+      exec_ctx, r->dns_server, r->name_to_resolve, r->default_port,
+      r->interested_parties, &r->dns_ares_on_resolved_locked, &r->lb_addresses,
+      true /* check_grpclb */);
 }
 
 static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
