@@ -33,10 +33,13 @@
 
 #import "GRXBufferedPipe.h"
 
+@interface GRXBufferedPipe ()
+@property(atomic) NSError *errorOrNil;
+@end
+
 @implementation GRXBufferedPipe {
   id<GRXWriteable> _writeable;
   BOOL _inputIsFinished;
-  NSError *_errorOrNil;
   dispatch_queue_t _writeQueue;
 }
 
@@ -90,7 +93,7 @@
     dispatch_async(_writeQueue, ^{
       GRXBufferedPipe *strongSelf = weakSelf;
       if (strongSelf) {
-        [strongSelf finishWithError:_errorOrNil];
+        [strongSelf finishWithError:nil];
       }
     });
   }
@@ -123,7 +126,7 @@
         return;
       case GRXWriterStateStarted:
         if (_state == GRXWriterStatePaused) {
-        _state = newState;
+          _state = newState;
           dispatch_resume(_writeQueue);
         }
         return;
@@ -134,9 +137,6 @@
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
-  if (_state != GRXWriterStateNotStarted) {
-    return;
-  }
   _state = GRXWriterStateStarted;
   _writeable = writeable;
   dispatch_resume(_writeQueue);
