@@ -73,7 +73,7 @@
   __weak GRXBufferedPipe *weakSelf = self;
   dispatch_async(_writeQueue, ^(void) {
     GRXBufferedPipe *strongSelf = weakSelf;
-    if (strongSelf && !strongSelf->_errorOrNil) {
+    if (strongSelf && !strongSelf.errorOrNil) {
       [strongSelf->_writeable writeValue:value];
     }
   });
@@ -84,7 +84,7 @@
     return;
   }
   _inputIsFinished = YES;
-  _errorOrNil = errorOrNil;
+  self.errorOrNil = errorOrNil;
   if (errorOrNil) {
     // No need to write pending values.
     [self finishWithError:_errorOrNil];
