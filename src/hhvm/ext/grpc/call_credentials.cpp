@@ -40,7 +40,10 @@
 
 #include "hphp/runtime/ext/extension.h"
 #include "hphp/runtime/base/req-containers.h"
+#include "hphp/runtime/base/type-resource.h"
+#include "hphp/runtime/base/object-data.h"
 #include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/base/builtin-functions.h"
 
 #include "call.h"
 
@@ -53,7 +56,7 @@ CallCredentials::CallCredentials() {}
 CallCredentials::~CallCredentials() { sweep(); }
 
 void CallCredentials::init(grpc_call_credentials* call_credentials) {
-  memcpy(wrapped, call_credentials, sizeof(grpc_call_credentials));
+  wrapped = call_credentials;
 }
 
 void CallCredentials::sweep() {
@@ -85,9 +88,11 @@ Object HHVM_METHOD(CallCredentials, createComposite,
                                                callCredentials2->getWrapped(),
                                                NULL);
 
-  auto newCallCredentials = req::make<CallCredentials>(call_credentials);
+  auto newCallCredentialsObj = create_object("CallCredentials", Array());
+  auto newCallCredentials = Native::data<CallCredentials>(newCallCredentialsObj);
+  newCallCredentials->init(call_credentials);
 
-  return Object(std::move(newCallCredentials));
+  return newCallCredentialsObj;
 }
 
 /**
@@ -98,13 +103,12 @@ Object HHVM_METHOD(CallCredentials, createComposite,
 Object HHVM_METHOD(CallCredentials, createFromPlugin,
   const Variant& function) {
 
-  Object callbackFunc = Object{callback.getObjectDataOrNull()};
+  Object callbackFunc = Object{function.getObjectDataOrNull()};
 
   plugin_state *state;
-  state = (plugin_state *)emalloc(sizeof(plugin_state));
-  memset(state, 0, sizeof(plugin_state));
+  state = (plugin_state *)req::calloc(1, sizeof(plugin_state));
 
-  state->function = function;
+  state->function = callbackFunc;
 
   grpc_metadata_credentials_plugin plugin;
   plugin.get_metadata = plugin_get_metadata;
@@ -112,16 +116,17 @@ Object HHVM_METHOD(CallCredentials, createFromPlugin,
   plugin.state = (void *)state;
   plugin.type = "";
 
-  auto newCallCredentials = req::make<CallCredentials>();
+  auto newCallCredentialsObj = create_object("CallCredentials", Array());
+  auto newCallCredentials = Native::data<CallCredentials>(newCallCredentialsObj);
   newCallCredentials->init(grpc_metadata_credentials_create_from_plugin(plugin, NULL));
 
-  return Object(std::move(newCallCredentials));
+  return newCallCredentialsObj;
 }
 
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data) {
-  Object returnObj = Object();
+  Object returnObj = SystemLib::AllocStdClassObject();
   returnObj.o_set("service_url", Variant(String(context.service_url, CopyString)));
   returnObj.o_set("method_name", Variant(String(context.method_name, CopyString)));
 
@@ -129,7 +134,6 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   params.append(Object());
 
   plugin_state *state = (plugin_state *)ptr;
-
 
   Variant retval = vm_call_user_func(state->function, params);
 
@@ -157,7 +161,6 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
 void plugin_destroy_state(void *ptr) {
   plugin_state *state = (plugin_state *)ptr;
-  req::free(state->fci);
   req::free(state);
 }
 

@@ -41,6 +41,7 @@
 #include "hphp/runtime/ext/extension.h"
 #include "hphp/runtime/base/req-containers.h"
 #include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/base/builtin-functions.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/grpc.h>
@@ -54,7 +55,7 @@ ChannelCredentials::ChannelCredentials() {}
 ChannelCredentials::~ChannelCredentials() { sweep(); }
 
 void ChannelCredentials::init(grpc_channel_credentials* channel_credentials) {
-  memcpy(wrapped, channel_credentials, sizeof(grpc_channel_credentials));
+  wrapped = channel_credentials;
 }
 
 void ChannelCredentials::sweep() {
@@ -71,16 +72,17 @@ grpc_channel_credentials* ChannelCredentials::getWrapped() {
 
 void HHVM_METHOD(ChannelCredentials, setDefaultRootsPem,
   const String& pem_roots) {
-  default_pem_root_certs = gpr_malloc((pem_roots.length() + 1) * sizeof(char));
-  memcpy(default_pem_root_certs, pem_roots.toCppString(), pem_roots.length() + 1);
+  default_pem_root_certs = (char *) gpr_malloc((pem_roots.length() + 1) * sizeof(char));
+  memcpy(default_pem_root_certs, pem_roots.c_str(), pem_roots.length() + 1);
 }
 
 Object HHVM_METHOD(ChannelCredentials, createDefault) {
-  auto channelCredentials = Native::data<ChannelCredentials>(this_);
+  auto newChannelCredentialsObj = create_object("ChannelCredentials", Array());
+  auto channelCredentials = Native::data<ChannelCredentials>(newChannelCredentialsObj);
   grpc_channel_credentials *channel_credentials = grpc_google_default_credentials_create();
   channelCredentials->init(channel_credentials);
 
-  return Object(std::move(channelCredentials));
+  return newChannelCredentialsObj;
 }
 
 Object HHVM_METHOD(ChannelCredentials, createSsl,
@@ -89,25 +91,26 @@ Object HHVM_METHOD(ChannelCredentials, createSsl,
   const Variant& pem_key_cert_pair__cert_chain /*=null*/
   ) {
 
-  auto channelCredentials = Native::data<ChannelCredentials>(this_);
+  auto newChannelCredentialsObj = create_object("ChannelCredentials", Array());
+  auto channelCredentials = Native::data<ChannelCredentials>(newChannelCredentialsObj);
 
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
 
   if (pem_key_cert_pair__private_key.isString()) {
-    pem_key_cert_pair.private_key = pem_key_cert_pair__private_key.toString().toCppString();
+    pem_key_cert_pair.private_key = pem_key_cert_pair__private_key.toString().c_str();
   }
 
   if (pem_key_cert_pair__cert_chain.isString()) {
-    pem_key_cert_pair.cert_chain = pem_key_cert_pair__cert_chain.toString().toCppString();
+    pem_key_cert_pair.cert_chain = pem_key_cert_pair__cert_chain.toString().c_str();
   }
 
   channelCredentials->init(grpc_ssl_credentials_create(
-    pem_root_certs.toCppString(),
+    pem_root_certs.c_str(),
     pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL)
   );
 
-  return Object(std::move(channelCredentials));
+  return newChannelCredentialsObj;
 }
 
 Object HHVM_METHOD(ChannelCredentials, createComposite,
@@ -118,14 +121,15 @@ Object HHVM_METHOD(ChannelCredentials, createComposite,
 
   grpc_channel_credentials* channel_credentials = grpc_composite_channel_credentials_create(
     channelCredentials1->getWrapped(),
-    calllCredentials2->getWrapped(),
+    callCredentials2->getWrapped(),
     NULL
   );
 
-  auto newChannelCredentials = req::make<ChannelCredentials>();
+  auto newChannelCredentialsObj = create_object("ChannelCredentials", Array());
+  auto newChannelCredentials = Native::data<ChannelCredentials>(newChannelCredentialsObj);
   newChannelCredentials->init(channel_credentials);
 
-  return newChannelCredentials;
+  return newChannelCredentialsObj;
 }
 
 void HHVM_METHOD(ChannelCredentials, createInsecure) {

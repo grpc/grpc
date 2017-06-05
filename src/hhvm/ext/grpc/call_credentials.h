@@ -38,6 +38,8 @@
 #include "config.h"
 #endif
 
+#include "hphp/runtime/ext/extension.h"
+
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 
@@ -58,7 +60,7 @@ class CallCredentials {
 };
 
 typedef struct plugin_state {
-  const Variant& function;
+  Object& function;
 } plugin_state;
 
 Object HHVM_METHOD(CallCredentials, createComposite,

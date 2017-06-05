@@ -40,6 +40,7 @@
 #include "hphp/runtime/ext/extension.h"
 #include "hphp/runtime/base/req-containers.h"
 #include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/base/builtin-functions.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -50,7 +51,7 @@ ServerCredentials::ServerCredentials() {}
 ServerCredentials::~ServerCredentials() { sweep(); }
 
 void ServerCredentials::init(grpc_server_credentials* server_credentials) {
-  memcpy(wrapped, server_credentials, sizeof(grpc_server_credentials));
+  wrapped = server_credentials;
 }
 
 void ServerCredentials::sweep() {
@@ -69,19 +70,25 @@ Object HHVM_METHOD(ServerCredentials, createSsl,
   const String& pem_root_certs,
   const String& pem_private_key,
   const String& pem_cert_chain) {
-  auto serverCredentials = Native::data<ServerCredentials>(this_);
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
+
+  pem_key_cert_pair.private_key = pem_private_key.c_str();
+  pem_key_cert_pair.cert_chain = pem_cert_chain.c_str();
+
+  auto newServerCredentialsObj = create_object("ServerCredentials", Array());
+  auto serverCredentials = Native::data<ServerCredentials>(newServerCredentialsObj);
 
   /* TODO: add a client_certificate_request field in ServerCredentials and pass
    * it as the last parameter. */
   serverCredentials->init(grpc_ssl_server_credentials_create_ex(
-    pem_root_certs.toCppString(),
-    &pem_key_cert_pair.toCppString(),
+    pem_root_certs.c_str(),
+    &pem_key_cert_pair,
     1,
     GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
     NULL
   ));
 
-  return Object(std::move(serverCredentials));
+  return newServerCredentialsObj;
 }
 
 } // namespace HPHP

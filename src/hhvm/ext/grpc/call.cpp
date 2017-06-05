@@ -38,11 +38,18 @@
 #include "call.h"
 #include "timeval.h"
 #include "completion_queue.h"
+#include "byte_buffer.h"
+#include "call_credentials.h"
 
 #include "hphp/runtime/ext/extension.h"
 #include "hphp/runtime/base/req-containers.h"
 #include "hphp/runtime/vm/native-data.h"
 #include "hphp/runtime/base/builtin-functions.h"
+#include "hphp/runtime/base/type-variant.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc.h>
 
 namespace HPHP {
 
@@ -50,7 +57,7 @@ Call::Call() {}
 Call::~Call() { sweep(); }
 
 void Call::init(grpc_call* call) {
-  memcpy(wrapped, call, sizeof(grpc_call));
+  wrapped = call;
 }
 
 void Call::sweep() {
@@ -98,12 +105,12 @@ void HHVM_METHOD(Call, __construct,
   call->setChannel(channel);
 
   auto deadlineTimeval = Native::data<Timeval>(deadline_obj);
-  grpc_slice method_slice = grpc_slice_from_copied_string(method.toCppString());
+  grpc_slice method_slice = grpc_slice_from_copied_string(method.c_str());
   grpc_slice host_slice = host_override.isNull() ? grpc_empty_slice() :
-        grpc_slice_from_copied_string(host_override);
+        grpc_slice_from_copied_string(host_override.toString().c_str());
   call->init(grpc_channel_create_call(channel->getWrapped(), NULL, GRPC_PROPAGATE_DEFAULTS,
                              completion_queue, method_slice,
-                             host_override != NULL ? &host_slice : NULL,
+                             !host_override.isNull() ? &host_slice : NULL,
                              deadlineTimeval->getWrapped(), NULL));
 
   grpc_slice_unref(method_slice);
@@ -114,7 +121,7 @@ void HHVM_METHOD(Call, __construct,
 
 Object HHVM_METHOD(Call, startBatch,
   const Array& actions) { // array<int, mixed>
-  const Object& resultObj = Object();
+  auto resultObj = SystemLib::AllocStdClassObject();
   auto call = Native::data<Call>(this_);
 
   size_t op_num = 0;
@@ -139,11 +146,11 @@ Object HHVM_METHOD(Call, startBatch,
   grpc_metadata_array_init(&recv_trailing_metadata);
   memset(ops, 0, sizeof(ops));
 
-  for (ArrayIter iter(valuesArr); iter; ++iter) {
+  for (ArrayIter iter(actions); iter; ++iter) {
     Variant key = iter.first();
     if (!key.isInteger()) {
       throw_invalid_argument("batch keys must be integers");
-      return;
+      goto cleanup;
     }
 
     int index = key.toInt32();
@@ -163,88 +170,92 @@ Object HHVM_METHOD(Call, startBatch,
         }
 
         ops[op_num].data.send_initial_metadata.count = metadata.count;
-        ops[op_num].data.send_initial_metadata.metadata = metadata.metadata;ops[op_num]
+        ops[op_num].data.send_initial_metadata.metadata = metadata.metadata;
         break;
       case GRPC_OP_SEND_MESSAGE:
-        if (!value.isDict()) {
-          throw_invalid_argument("Expected an array dictionary for send message");
-          goto cleanup;
-        }
-
-        auto messageDict = value.toDict();
-        if (messageDict.exists(String("flags"), true)) {
-          auto messageFlags = messageDict[String("flags")];
-          if (!messageFlags.isInteger()) {
-            throw_invalid_argument("Expected an int for message flags");
+        {
+          if (!value.isDict()) {
+            throw_invalid_argument("Expected an array dictionary for send message");
             goto cleanup;
           }
-          ops[op_num].flags = messageFlags.toInt32() & GRPC_WRITE_USED_MASK;
-        }
 
-        if (messageDict.exists(String("message"), true)) {
-          auto messageValue = messageDict[String("message")];
-          if (!messageValue.isString()) {
-            throw_invalid_argument("Expected a string for send message");
-            goto cleanup;
+          auto messageDict = value.toArray().toDict();
+          if (messageDict.exists(String("flags"), true)) {
+            auto messageFlags = messageDict[String("flags")];
+            if (!messageFlags.isInteger()) {
+              throw_invalid_argument("Expected an int for message flags");
+              goto cleanup;
+            }
+            ops[op_num].flags = messageFlags.toInt32() & GRPC_WRITE_USED_MASK;
           }
-          String messageValueString = messageValue.toString();
-          ops[op_num].data.send_message.send_message = string_to_byte_buffer(messageValueString.toCppString(),
-                                                            messageValueString.size());
+
+          if (messageDict.exists(String("message"), true)) {
+            auto messageValue = messageDict[String("message")];
+            if (!messageValue.isString()) {
+              throw_invalid_argument("Expected a string for send message");
+              goto cleanup;
+            }
+            String messageValueString = messageValue.toString();
+            ops[op_num].data.send_message.send_message = string_to_byte_buffer(messageValueString.c_str(),
+                                                              messageValueString.size());
+          }
         }
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
-        if (!value.isDict()) {
-          throw_invalid_argument("Expected an array dictionary for server status");
-          goto cleanup;
-        }
-
-        auto statusDict = value.toDict();
-        if (statusDict.exists(String("metadata"), true)) {
-          auto innerValue = statusDict[String("metadata")];
-          if (!innerValue.isArray()) {
-            throw_invalid_argument("Expected an array for server status metadata value");
+        {
+          if (!value.isDict()) {
+            throw_invalid_argument("Expected an array dictionary for server status");
             goto cleanup;
           }
 
-          if (!hhvm_create_metadata_array(innerValue, &trailing_metadata)) {
-            throw_invalid_argument("Bad trailing metadata value given");
+          auto statusDict = value.toArray().toDict();
+          if (statusDict.exists(String("metadata"), true)) {
+            auto innerMetadata = statusDict[String("metadata")];
+            if (!innerMetadata.isArray()) {
+              throw_invalid_argument("Expected an array for server status metadata value");
+              goto cleanup;
+            }
+
+            if (!hhvm_create_metadata_array(innerMetadata.toArray(), &trailing_metadata)) {
+              throw_invalid_argument("Bad trailing metadata value given");
+              goto cleanup;
+            }
+
+            ops[op_num].data.send_status_from_server.trailing_metadata =
+                trailing_metadata.metadata;
+            ops[op_num].data.send_status_from_server.trailing_metadata_count =
+                trailing_metadata.count;
+          }
+
+          if (!statusDict.exists(String("code"), true)) {
+            throw_invalid_argument("Integer status code is required");
+          }
+
+          auto innerCode = statusDict[String("code")];
+
+          if (!innerCode.isInteger()) {
+            throw_invalid_argument("Status code must be an integer");
             goto cleanup;
           }
 
-          ops[op_num].data.send_status_from_server.trailing_metadata =
-              trailing_metadata.metadata;
-          ops[op_num].data.send_status_from_server.trailing_metadata_count =
-              trailing_metadata.count;
+          ops[op_num].data.send_status_from_server.status = (grpc_status_code)innerCode.toInt32();
+
+          if (!statusDict.exists(String("details"), true)) {
+            throw_invalid_argument("String status details is required");
+            goto cleanup;
+          }
+
+          auto innerDetails = statusDict[String("details")];
+          if (!innerDetails.isString()) {
+            throw_invalid_argument("Status details must be a string");
+            goto cleanup;
+          }
+
+          send_status_details = grpc_slice_from_copied_string(innerDetails.toString().c_str());
+          ops[op_num].data.send_status_from_server.status_details = &send_status_details;
         }
-
-        if (!statusDict.exists(String("code"), true)) {
-          throw_invalid_argument("Integer status code is required");
-        }
-
-        auto innerValue = statusDict[String("code")];
-
-        if (!innerValue.isInteger()) {
-          throw_invalid_argument("Status code must be an integer");
-          goto cleanup;
-        }
-
-        ops[op_num].data.send_status_from_server.status = innerValue.toInt32();
-
-        if (!statusDict.exists(String("details"), true)) {
-          throw_invalid_argument("String status details is required");
-          goto cleanup;
-        }
-
-        auto innerValue = statusDict[String("details")];
-        if (!innerValue.isString()) {
-          throw_invalid_argument("Status details must be a string");
-          goto cleanup;
-        }
-
-        send_status_details = grpc_slice_from_copied_string(innerValue.toString().toCppString());
-        ops[op_num].data.send_status_from_server.status_details = &send_status_details;
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
         ops[op_num].data.recv_initial_metadata.recv_initial_metadata = &recv_metadata;
@@ -274,11 +285,11 @@ Object HHVM_METHOD(Call, startBatch,
   error = grpc_call_start_batch(call->getWrapped(), ops, op_num, call->getWrapped(), NULL);
 
   if (error != GRPC_CALL_OK) {
-    throw_invalid_argument("start_batch was called incorrectly", (int64_t)error);
+    throw_invalid_argument("start_batch was called incorrectly: %d" PRId64, (int)error);
     goto cleanup;
   }
 
-  grpc_completion_queue_pluck(completion_queue, call->getWrapped),
+  grpc_completion_queue_pluck(completion_queue, call->getWrapped(),
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
   for (int i = 0; i < op_num; i++) {
@@ -301,19 +312,21 @@ Object HHVM_METHOD(Call, startBatch,
       case GRPC_OP_RECV_MESSAGE:
         byte_buffer_to_string(message, &message_str, &message_len);
         if (message_str == NULL) {
-          resultObj.o_set("message", Variant::nullInit());
+          resultObj.o_set("message", Variant());
         } else {
-          resultObj.o_set("message", Variant(String(message_str, message_len)));
+          resultObj.o_set("message", Variant(String(message_str, message_len, CopyString)));
         }
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
-        Object recvStatusObj = Object();
-        recvStatusObj.o_set("metadata", grpc_parse_metadata_array(&recv_trailing_metadata));
-        recvStatusObj.o_set("code", Variant((int64_t)status));
-        char *status_details_text = grpc_slice_to_c_string(recv_status_details);
-        recvStatusObj.o_set("details", Variant(String(status_details_text, CopyString)));
-        gpr_free(status_details_text);
-        resultObj.o_set("status", Variant(recvStatusObj));
+        {
+          auto recvStatusObj = SystemLib::AllocStdClassObject();
+          recvStatusObj.o_set("metadata", grpc_parse_metadata_array(&recv_trailing_metadata));
+          recvStatusObj.o_set("code", Variant((int64_t)status));
+          char *status_details_text = grpc_slice_to_c_string(recv_status_details);
+          recvStatusObj.o_set("details", Variant(String(status_details_text, CopyString)));
+          gpr_free(status_details_text);
+          resultObj.o_set("status", Variant(recvStatusObj));
+        }
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         resultObj.o_set("cancelled", (bool)cancelled);
@@ -336,7 +349,7 @@ Object HHVM_METHOD(Call, startBatch,
       }
       if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
         grpc_byte_buffer_destroy(message);
-        PHP_GRPC_FREE_STD_ZVAL(message_str);
+        req::free(message_str);
       }
     }
     return resultObj;
@@ -366,6 +379,10 @@ int64_t HHVM_METHOD(Call, setCredentials,
 /* Creates and returns a PHP array object with the data in a
  * grpc_metadata_array. Returns NULL on failure */
 Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
+  char *str_key;
+  char *str_val;
+  size_t key_len;
+
   int count = metadata_array->count;
   grpc_metadata *elements = metadata_array->metadata;
 
@@ -376,10 +393,10 @@ Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
     elem = &elements[i];
 
     key_len = GRPC_SLICE_LENGTH(elem->key);
-    str_key = req::calloc(key_len + 1, sizeof(char));
+    str_key = (char *) req::calloc(key_len + 1, sizeof(char));
     memcpy(str_key, GRPC_SLICE_START_PTR(elem->key), key_len);
 
-    str_val = req::calloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
+    str_val = (char *) req::calloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
     memcpy(str_val, GRPC_SLICE_START_PTR(elem->value), GRPC_SLICE_LENGTH(elem->value));
 
     auto key = String(str_key, key_len, CopyString);
@@ -392,13 +409,15 @@ Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
       array.set(key, Array::Create(), true);
     }
 
-    auto current = array[key];
+    Variant current = array[key];
     if (!current.isArray()) {
       throw_invalid_argument("Metadata hash somehow contains wrong types.");
-      return Variant::NullInit();
+      return Variant();
     }
 
-    current.append(Variant(val));
+    Array currArray = current.toArray();
+
+    currArray.append(Variant(val));
   }
 
   return Variant(array);
@@ -409,7 +428,7 @@ Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
 bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadata) {
   grpc_metadata_array_init(metadata);
 
-  for (ArrayIter iter(valuesArr); iter; ++iter) {
+  for (ArrayIter iter(array); iter; ++iter) {
     Variant key = iter.first();
     if (!key.isString() || key.isNull()) {
       return false;
@@ -423,25 +442,25 @@ bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadat
     metadata->capacity += value.toArray().size();
   }
 
-  metadata->metadata = gpr_malloc(metadata->capacity * sizeof(grpc_metadata));
+  metadata->metadata = (grpc_metadata *)gpr_malloc(metadata->capacity * sizeof(grpc_metadata));
 
-  for (ArrayIter iter(valuesArr); iter; ++iter) {
+  for (ArrayIter iter(array); iter; ++iter) {
     Variant key = iter.first();
     if (!key.isString()) {
       return false;
     }
 
-    if (!grpc_header_key_is_legal(grpc_slice_from_static_string(key.toString().toCppString()))) {
+    if (!grpc_header_key_is_legal(grpc_slice_from_static_string(key.toString().c_str()))) {
       return false;
     }
 
     Variant value = iter.second();
-    if (!value.isArray()) {
+    if (!value.isDict()) {
       return false;
     }
 
-    Array innerArray = value.toDict();
-    for (ArrayIter iter2(valuesArr); iter2; ++iter2) {
+    Array innerArray = value.toArray().toDict();
+    for (ArrayIter iter2(innerArray); iter2; ++iter2) {
       Variant key2 = iter2.first();
       if (!key2.isString()) {
         return false;
@@ -453,8 +472,8 @@ bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadat
 
       String value2String = value2.toString();
 
-      metadata->metadata[metadata->count].key = grpc_slice_from_copied_string(key2.toString().toCppString());
-      metadata->metadata[metadata->count].value = grpc_slice_from_copied_buffer(value2String.toCppString(), value2String.length());
+      metadata->metadata[metadata->count].key = grpc_slice_from_copied_string(key2.toString().c_str());
+      metadata->metadata[metadata->count].value = grpc_slice_from_copied_buffer(value2String.c_str(), value2String.length());
       metadata->count += 1;
     }
   }

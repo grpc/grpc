@@ -54,15 +54,11 @@
 
 namespace HPHP {
 
-class Channel {
-  private:
-    grpc_channel* wrapped{nullptr};
-  public:
 Channel::Channel() {}
 Channel::~Channel() { sweep(); }
 
 void Channel::init(grpc_channel* channel) {
-  memcpy(wrapped, channel, sizeof(grpc_channel));
+  wrapped = channel;
 }
 
 void Channel::sweep() {
@@ -87,38 +83,39 @@ grpc_channel* Channel::getWrapped() {
 void HHVM_METHOD(Channel, __construct,
   const String& target,
   const Array& args_array) {
+  auto args_array_ = args_array.copy();
+
   auto channel = Native::data<Channel>(this_);
   auto credentials_key = String("credentials");
 
   ChannelCredentials* channel_credentials_ = NULL;
 
-  if (args_array.exists(credentials_key, true)) {
-    Variant* value = args_array[credentials_key];
-    if (value.isNull()) {
-      args_array.remove(credentials_key, true);
-    } else if (value.isObject()) {
+  if (args_array_.exists(credentials_key, true)) {
+    Variant value = args_array_[credentials_key];
+    if (value.isNull() || !value.isObject()) {
+      args_array_.remove(credentials_key, true);
+    } else {
       ObjectData* obj = value.getObjectData();
-      if (!obj.instanceof(String("ChannelCredentials"))) {
+      if (!obj->instanceof(String("ChannelCredentials"))) {
         throw_invalid_argument("credentials must be a ChannelCredentials object");
         goto cleanup;
       }
-    } else {
       channel_credentials_ = Native::data<ChannelCredentials>(obj);
-      args_array.remove(credentials_key, true);
+      args_array_.remove(credentials_key, true);
     }
   }
 
   grpc_channel_args args;
-  hhvm_grpc_read_args_array(args_array, &args);
+  hhvm_grpc_read_args_array(args_array_, &args);
 
   if (channel_credentials_ == NULL) {
-    channel->init(grpc_insecure_channel_create(target.toCppString(), &args, NULL));
+    channel->init(grpc_insecure_channel_create(target.c_str(), &args, NULL));
   } else {
-    channel->init(grpc_secure_channel_create(channel_credentials_->getWrapped(), &args, NULL));
+    channel->init(grpc_secure_channel_create(channel_credentials_->getWrapped(), target.c_str(), &args, NULL));
   }
 
   cleanup:
-    req::free(args);
+    req::free(args.args);
     return;
 }
 
@@ -155,9 +152,11 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
   const Object& deadline) {
   auto channel = Native::data<Channel>(this_);
 
+  auto timevalDeadline = Native::data<Timeval>(deadline);
+
   grpc_channel_watch_connectivity_state(channel->getWrapped(),
                                           (grpc_connectivity_state)last_state,
-                                          deadline->getWrapped(), completion_queue,
+                                          timevalDeadline->getWrapped(), completion_queue,
                                           NULL);
 
   grpc_event event = grpc_completion_queue_pluck(completion_queue, NULL,
@@ -178,29 +177,31 @@ void HHVM_METHOD(Channel, close) {
 
 void hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args) {
   args->num_args = args_array.size();
-  args->args = req::calloc_untyped(args->num_args, sizeof(grpc_arg));
+  args->args = (grpc_arg *) req::calloc(args->num_args, sizeof(grpc_arg));
 
-  for (ArrayIter iter(valuesArr); iter; ++iter) {
-    int args_index = iter - 1;
+  int i = 0;
+  for (ArrayIter iter(args_array); iter; ++iter) {
     Variant key = iter.first();
     if (!key.isString()) {
       throw_invalid_argument("args keys must be strings");
       return;
     }
-    args->args[args_index].key = key.toString().toCppString();
+    args->args[i].key = (char *)key.toString().c_str();
 
     Variant v = iter.second();
     
     if (key.isInteger()) {
-      args->args[args_index].value.integer = v.toInt32();
-      args->args[args_index].type = GRPC_ARG_INTEGER;
+      args->args[i].value.integer = v.toInt32();
+      args->args[i].type = GRPC_ARG_INTEGER;
     } else if (key.isString()) {
-      args->args[args_index].value.string = data.toString().toCppString();
-      args->args[args_index].type = GRPC_ARG_STRING;
+      args->args[i].value.string = (char *)v.toString().c_str();
+      args->args[i].type = GRPC_ARG_STRING;
     } else {
       throw_invalid_argument("args values must be int or string");
       return;
     }
+
+    i++;
   }
 }
 

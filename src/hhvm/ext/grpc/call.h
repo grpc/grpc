@@ -34,6 +34,10 @@
 #ifndef NET_GRPC_HHVM_GRPC_CALL_H_
 #define NET_GRPC_HHVM_GRPC_CALL_H_
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "hphp/runtime/ext/extension.h"
 #include "channel.h"
 

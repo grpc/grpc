@@ -59,7 +59,7 @@ class Server {
 void HHVM_METHOD(Server, __construct,
   const Variant& args_array_or_null /* = null */);
 
-void HHVM_METHOD(Server, requestCall);
+Object HHVM_METHOD(Server, requestCall);
 
 bool HHVM_METHOD(Server, addHttp2Port,
   const String& addr);

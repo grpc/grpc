@@ -63,7 +63,7 @@ Server::Server() {}
 Server::~Server() { sweep(); }
 
 void Server::init(grpc_server* server) {
-  memcpy(wrapped, server, sizeof(grpc_server));
+  wrapped = server;
 }
 
 void Server::sweep() {
@@ -91,29 +91,36 @@ void HHVM_METHOD(Server, __construct,
     grpc_channel_args args;
     hhvm_grpc_read_args_array(args_array_or_null.toArray(), &args);
     server->init(grpc_server_create(&args, NULL));
-    req::free(args);
+    req::free(args.args);
   }
 
   grpc_server_register_completion_queue(server->getWrapped(), completion_queue, NULL);
 }
 
 Object HHVM_METHOD(Server, requestCall) {
+  char *method_text;
+  char *host_text;
+  Object callObj;
+  Call *call;
+  Object timevalObj;
+  Timeval *timeval;
+
   grpc_call_error error_code;
-  grpc_call *call;
+  grpc_call *call_;
   grpc_call_details details;
   grpc_metadata_array metadata;
   grpc_event event;
-  Object resultObj = Object();
+  Object resultObj = SystemLib::AllocStdClassObject();;
 
   auto server = Native::data<Server>(this_);
 
   grpc_call_details_init(&details);
   grpc_metadata_array_init(&metadata);
-  error_code = grpc_server_request_call(server->wrapped, &call, &details, &metadata,
+  error_code = grpc_server_request_call(server->getWrapped(), &call_, &details, &metadata,
                                  completion_queue, completion_queue, NULL);
 
   if (error_code != GRPC_CALL_OK) {
-    throw_invalid_argument("request_call failed", error_code);
+    throw_invalid_argument("request_call failed: %d", error_code);
     goto cleanup;
   }
 
@@ -122,12 +129,12 @@ Object HHVM_METHOD(Server, requestCall) {
                                         NULL);
 
   if (!event.success) {
-    throw_invalid_argument("Failed to request a call for some reason")
+    throw_invalid_argument("Failed to request a call for some reason");
     goto cleanup;
   }
 
-  char *method_text = grpc_slice_to_c_string(details.method);
-  char *host_text = grpc_slice_to_c_string(details.host);
+  method_text = grpc_slice_to_c_string(details.method);
+  host_text = grpc_slice_to_c_string(details.host);
 
   resultObj.o_set("method_text", String(method_text));
   resultObj.o_set("host_text", String(host_text));
@@ -135,17 +142,19 @@ Object HHVM_METHOD(Server, requestCall) {
   gpr_free(method_text);
   gpr_free(host_text);
 
-  auto call = req::make<Call>();
-  call->init(call);
+  callObj = create_object("Call", Array());
+  call = Native::data<Call>(callObj);
+  call->init(call_);
 
-  auto timeval = req::make<Timeval>();
+  timevalObj = create_object("Timeval", Array());
+  timeval = Native::data<Timeval>(timevalObj);
   timeval->init(details.deadline);
 
-  resultObj.o_set("call", Object(std::move(call)));
-  resultObj.o_set("absolute_deadline", Object(std::move(timeval)));
+  resultObj.o_set("call", callObj);
+  resultObj.o_set("absolute_deadline", timevalObj);
   resultObj.o_set("metadata", grpc_parse_metadata_array(&metadata));
 
-  cleanup:
+cleanup:
     grpc_call_details_destroy(&details);
     grpc_metadata_array_destroy(&metadata);
     return resultObj;
@@ -154,7 +163,7 @@ Object HHVM_METHOD(Server, requestCall) {
 bool HHVM_METHOD(Server, addHttp2Port,
   const String& addr) {
   auto server = Native::data<Server>(this_);
-  grpc_server_add_secure_http2_port(server->getWrapped(), addr.toCppString());
+  return (bool)grpc_server_add_insecure_http2_port(server->getWrapped(), addr.c_str());
 }
 
 bool HHVM_METHOD(Server, addSecureHttp2Port,
@@ -162,7 +171,7 @@ bool HHVM_METHOD(Server, addSecureHttp2Port,
   const Object& server_credentials) {
   auto server = Native::data<Server>(this_);
   auto serverCredentials = Native::data<ServerCredentials>(server_credentials);
-  return (bool)grpc_server_add_secure_http2_port(server->getWrapped(), addr.toCppString(), serverCredentials->getWrapped())
+  return (bool)grpc_server_add_secure_http2_port(server->getWrapped(), addr.c_str(), serverCredentials->getWrapped());
 }
 
 void HHVM_METHOD(Server, start) {

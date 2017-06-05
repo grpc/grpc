@@ -38,6 +38,8 @@
 #include "config.h"
 #endif
 
+#include "hphp/runtime/ext/extension.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
@@ -54,7 +56,7 @@ class Timeval {
 
     void init(gpr_timespec time);
     void sweep();
-    gpr_timespec* getWrapped();
+    gpr_timespec getWrapped();
 };
 
 void HHVM_METHOD(Timeval, __construct,
