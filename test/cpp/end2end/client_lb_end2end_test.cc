@@ -431,6 +431,24 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   EXPECT_EQ(1, servers_[1]->service_.request_count());
   EXPECT_EQ(1, servers_[2]->service_.request_count());
 
+  // An empty update will result in the channel going into TRANSIENT_FAILURE.
+  ports.clear();
+  SetNextResolution(ports);
+  grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
+  do {
+    channel_state = channel_->GetState(true /* try to connect */);
+  } while (channel_state == GRPC_CHANNEL_READY);
+  GPR_ASSERT(channel_state != GRPC_CHANNEL_READY);
+  servers_[0]->service_.ResetCounters();
+
+  // Next update introduces servers_[1], making the channel recover.
+  ports.clear();
+  ports.emplace_back(servers_[1]->port_);
+  SetNextResolution(ports);
+  WaitForServer(1);
+  channel_state = channel_->GetState(false /* try to connect */);
+  GPR_ASSERT(channel_state == GRPC_CHANNEL_READY);
+
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
 }
