@@ -63,7 +63,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
     // Simple parameter parsing as we have only one parameter.
     // TODO(mxyan): Complete parameter parsing.
-    bool dash_as_separator = (0 == parameter.compare("--filename-dash-as-separator"));
+    bool dash_as_separator = (0 == parameter.compare("filename-dash-as-separator"));
     if (dash_as_separator) {
       file_name = google::protobuf::compiler::objectivec::FilePath(file);
     } else {
