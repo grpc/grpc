@@ -114,9 +114,12 @@ static void fd_node_destroy(grpc_exec_ctx *exec_ctx, fd_node *fdn) {
   GPR_ASSERT(!fdn->writable_registered);
   gpr_mu_destroy(&fdn->mu);
   grpc_pollset_set_del_fd(exec_ctx, fdn->ev_driver->pollset_set, fdn->grpc_fd);
-  grpc_fd_shutdown(exec_ctx, fdn->grpc_fd,
-                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("fd node destroyed"));
-  grpc_fd_orphan(exec_ctx, fdn->grpc_fd, NULL, NULL, "c-ares query finished");
+  /* c-ares library has closed the fd inside grpc_fd. This fd may be picked up
+     immediately by another thread, and should not be closed by the following
+     grpc_fd_orphan. To prevent this fd from being closed by grpc_fd_orphan,
+     a fd pointer is provided. */
+  int fd;
+  grpc_fd_orphan(exec_ctx, fdn->grpc_fd, NULL, &fd, "c-ares query finished");
   gpr_free(fdn);
 }
 
