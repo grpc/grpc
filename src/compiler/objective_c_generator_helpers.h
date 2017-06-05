@@ -46,7 +46,8 @@ using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
 using ::grpc::string;
 
-inline string MessageHeaderName(const FileDescriptor *file, bool dash_as_separator) {
+inline string MessageHeaderName(const FileDescriptor *file,
+                                bool dash_as_separator) {
   if (dash_as_separator) {
     return google::protobuf::compiler::objectivec::FilePath(file) + ".pbobjc.h";
   } else {

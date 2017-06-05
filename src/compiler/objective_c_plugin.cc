@@ -63,7 +63,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
     // Simple parameter parsing as we have only one parameter.
     // TODO(mxyan): Complete parameter parsing.
-    bool dash_as_separator = (0 == parameter.compare("filename-dash-as-separator"));
+    bool dash_as_separator =
+        (0 == parameter.compare("filename-dash-as-separator"));
     if (dash_as_separator) {
       file_name = google::protobuf::compiler::objectivec::FilePath(file);
     } else {
@@ -85,8 +86,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       // and import the files in the .pbrpc.m
       ::grpc::string proto_imports;
       for (int i = 0; i < file->dependency_count(); i++) {
-        ::grpc::string header =
-            grpc_objective_c_generator::MessageHeaderName(file->dependency(i), dash_as_separator);
+        ::grpc::string header = grpc_objective_c_generator::MessageHeaderName(
+            file->dependency(i), dash_as_separator);
         const grpc::protobuf::FileDescriptor *dependency = file->dependency(i);
         if (IsProtobufLibraryBundledProtoFile(dependency)) {
           ::grpc::string base_name = header;
