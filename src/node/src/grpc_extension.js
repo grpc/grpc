@@ -31,6 +31,13 @@
  *
  */
 
+/**
+ * @module
+ * @private
+ */
+
+'use strict';
+
 var binary = require('node-pre-gyp/lib/pre-binding');
 var path = require('path');
 var binding_path =
