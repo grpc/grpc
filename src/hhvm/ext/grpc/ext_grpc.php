@@ -231,7 +231,7 @@ class Timeval {
    * @param long $microseconds The number of microseconds in the interval
    */
   <<__Native>>
-  public function __construct(int $micrseconds): void;
+  public function __construct(int $microseconds): void;
 
   /**
    * Adds another Timeval to this one and returns the sum. Calculations saturate

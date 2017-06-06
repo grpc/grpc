@@ -151,7 +151,7 @@ class GrpcExtension : public Extension {
       HHVM_STATIC_ME(Timeval, infPast);
       HHVM_ME(Timeval, sleepUntil);
 
-      Native::registerNativeDataInfo<Timeval>(s_Timeval.get());
+      Native::registerNativeDataInfo<TimevalData>(TimevalData::s_className.get());
       Native::registerNativeDataInfo<ServerCredentials>(s_ServerCredentials.get());
       Native::registerNativeDataInfo<Server>(s_Server.get());
       Native::registerNativeDataInfo<ChannelCredentials>(s_ChannelCredentials.get());

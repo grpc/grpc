@@ -64,7 +64,6 @@ void Channel::init(grpc_channel* channel) {
 void Channel::sweep() {
   if (wrapped) {
     grpc_channel_destroy(wrapped);
-    req::free(wrapped);
     wrapped = nullptr;
   }
 }
@@ -152,7 +151,7 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
   const Object& deadline) {
   auto channel = Native::data<Channel>(this_);
 
-  auto timevalDeadline = Native::data<Timeval>(deadline);
+  auto timevalDeadline = Native::data<TimevalData>(deadline);
 
   grpc_channel_watch_connectivity_state(channel->getWrapped(),
                                           (grpc_connectivity_state)last_state,

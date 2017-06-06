@@ -49,37 +49,44 @@
 
 namespace HPHP {
 
-Timeval::Timeval() {}
-Timeval::~Timeval() { sweep(); }
+Class* TimevalData::s_class = nullptr;
+const StaticString TimevalData::s_className("Timeval");
 
-void Timeval::init(gpr_timespec time) {
-  memcpy(wrapped, &time, sizeof(gpr_timespec));
+TimevalData::TimevalData() {}
+TimevalData::~TimevalData() { sweep(); }
+
+IMPLEMENT_GET_CLASS(TimevalData);
+
+void TimevalData::init(gpr_timespec time) {
+  gpr_timespec time_copied;
+  memcpy(&time_copied, &time, sizeof(gpr_timespec));
+  wrapped = &time_copied;
 }
 
-void Timeval::sweep() {
+void TimevalData::sweep() {
   if (wrapped) {
-    req::free(wrapped);
+    //free(wrapped);
     wrapped = nullptr;
   }
 }
 
-gpr_timespec Timeval::getWrapped() {
+gpr_timespec TimevalData::getWrapped() {
   return *wrapped;
 }
 
 void HHVM_METHOD(Timeval, __construct,
   int64_t microseconds) {
-  auto timeval = Native::data<Timeval>(this_);
+  auto timeval = Native::data<TimevalData>(this_);
   timeval->init(gpr_time_from_micros(microseconds, GPR_TIMESPAN));
 }
 
 Object HHVM_METHOD(Timeval, add,
   const Object& other_obj) {
-  auto timeval = Native::data<Timeval>(this_);
-  auto otherTimeval = Native::data<Timeval>(other_obj);
+  auto timeval = Native::data<TimevalData>(this_);
+  auto otherTimeval = Native::data<TimevalData>(other_obj);
 
-  auto newTimevalObj = create_object("Timeval", Array());
-  auto newTimeval = Native::data<Timeval>(newTimevalObj);
+  auto newTimevalObj = Object{Unit::lookupClass(TimevalData::s_className.get())};
+  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
 
   newTimeval->init(gpr_time_add(timeval->getWrapped(), otherTimeval->getWrapped()));
 
@@ -88,12 +95,12 @@ Object HHVM_METHOD(Timeval, add,
 
 Object HHVM_METHOD(Timeval, subtract,
   const Object& other_obj) {
-  auto timeval = Native::data<Timeval>(this_);
-  auto otherTimeval = Native::data<Timeval>(other_obj);
-  auto newTimevalObj = create_object("Timeval", Array());
-  auto newTimeval = Native::data<Timeval>(newTimevalObj);
+  auto timeval = Native::data<TimevalData>(this_);
+  auto otherTimeval = Native::data<TimevalData>(other_obj);
+  auto newTimevalObj = Object{Unit::lookupClass(TimevalData::s_className.get())};
+  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
   
-  newTimeval->init(gpr_time_add(timeval->getWrapped(), otherTimeval->getWrapped()));
+  newTimeval->init(gpr_time_sub(timeval->getWrapped(), otherTimeval->getWrapped()));
 
   return newTimevalObj;
 }
@@ -101,8 +108,8 @@ Object HHVM_METHOD(Timeval, subtract,
 int64_t HHVM_STATIC_METHOD(Timeval, compare,
   const Object& a_obj,
   const Object& b_obj) {
-  auto aTimeval = Native::data<Timeval>(a_obj);
-  auto bTimeval = Native::data<Timeval>(b_obj);
+  auto aTimeval = Native::data<TimevalData>(a_obj);
+  auto bTimeval = Native::data<TimevalData>(b_obj);
 
   long result = gpr_time_cmp(aTimeval->getWrapped(), bTimeval->getWrapped());
 
@@ -113,9 +120,9 @@ bool HHVM_STATIC_METHOD(Timeval, similar,
   const Object& a_obj,
   const Object& b_obj,
   const Object& thresh_obj) {
-  auto aTimeval = Native::data<Timeval>(a_obj);
-  auto bTimeval = Native::data<Timeval>(b_obj);
-  auto thresholdTimeval = Native::data<Timeval>(thresh_obj);
+  auto aTimeval = Native::data<TimevalData>(a_obj);
+  auto bTimeval = Native::data<TimevalData>(b_obj);
+  auto thresholdTimeval = Native::data<TimevalData>(thresh_obj);
 
   int result = gpr_time_similar(aTimeval->getWrapped(), bTimeval->getWrapped(), thresholdTimeval->getWrapped());
 
@@ -123,39 +130,39 @@ bool HHVM_STATIC_METHOD(Timeval, similar,
 }
 
 Object HHVM_STATIC_METHOD(Timeval, now) {
-  auto newTimevalObj = create_object("Timeval", Array());
-  auto newTimeval = Native::data<Timeval>(newTimevalObj);
+  auto newTimevalObj = Object{Unit::lookupClass(TimevalData::s_className.get())};
+  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
   newTimeval->init(gpr_now(GPR_CLOCK_REALTIME));
 
   return newTimevalObj;
 }
 
 Object HHVM_STATIC_METHOD(Timeval, zero) {
-  auto newTimevalObj = create_object("Timeval", Array());
-  auto newTimeval = Native::data<Timeval>(newTimevalObj);
+  auto newTimevalObj = Object{Unit::lookupClass(TimevalData::s_className.get())};
+  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
   newTimeval->init(gpr_time_0(GPR_CLOCK_REALTIME));
 
   return newTimevalObj;
 }
 
 Object HHVM_STATIC_METHOD(Timeval, infFuture) {
-  auto newTimevalObj = create_object("Timeval", Array());
-  auto newTimeval = Native::data<Timeval>(newTimevalObj);
+  auto newTimevalObj = Object{Unit::lookupClass(TimevalData::s_className.get())};
+  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
   newTimeval->init(gpr_inf_future(GPR_CLOCK_REALTIME));
 
   return newTimevalObj;
 }
 
 Object HHVM_STATIC_METHOD(Timeval, infPast) {
-  auto newTimevalObj = create_object("Timeval", Array());
-  auto newTimeval = Native::data<Timeval>(newTimevalObj);
+  auto newTimevalObj = Object{Unit::lookupClass(TimevalData::s_className.get())};
+  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
   newTimeval->init(gpr_inf_past(GPR_CLOCK_REALTIME));
 
   return newTimevalObj;
 }
 
 void HHVM_METHOD(Timeval, sleepUntil) {
-  auto timeval = Native::data<Timeval>(this_);
+  auto timeval = Native::data<TimevalData>(this_);
   gpr_sleep_until(timeval->getWrapped());
 }
 

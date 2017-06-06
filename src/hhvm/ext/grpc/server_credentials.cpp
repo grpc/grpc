@@ -57,7 +57,6 @@ void ServerCredentials::init(grpc_server_credentials* server_credentials) {
 void ServerCredentials::sweep() {
   if (wrapped) {
     grpc_server_credentials_release(wrapped);
-    req::free(wrapped);
     wrapped = nullptr;
   }
 }

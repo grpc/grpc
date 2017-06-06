@@ -45,14 +45,25 @@
 
 namespace HPHP {
 
-const StaticString s_Timeval("Timeval");
+#define IMPLEMENT_GET_CLASS(cls) \
+  Class* cls::getClass() { \
+    if (s_class == nullptr) { \
+        s_class = Unit::lookupClass(s_className.get()); \
+        assert(s_class); \
+    } \
+    return s_class; \
+  }
 
-class Timeval {
+class TimevalData {
   private:
-    gpr_timespec* wrapped{nullptr};
+    gpr_timespec *wrapped{nullptr};
   public:
-    Timeval();
-    ~Timeval();
+    static Class* s_class;
+    static const StaticString s_className;
+
+    static Class* getClass();
+    TimevalData();
+    ~TimevalData();
 
     void init(gpr_timespec time);
     void sweep();

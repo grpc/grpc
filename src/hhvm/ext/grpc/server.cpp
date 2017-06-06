@@ -73,7 +73,6 @@ void Server::sweep() {
     grpc_completion_queue_pluck(completion_queue, NULL,
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     grpc_server_destroy(wrapped);
-    req::free(wrapped);
     wrapped = nullptr;
   }
 }
@@ -103,7 +102,7 @@ Object HHVM_METHOD(Server, requestCall) {
   Object callObj;
   Call *call;
   Object timevalObj;
-  Timeval *timeval;
+  TimevalData *timeval;
 
   grpc_call_error error_code;
   grpc_call *call_;
@@ -146,8 +145,8 @@ Object HHVM_METHOD(Server, requestCall) {
   call = Native::data<Call>(callObj);
   call->init(call_);
 
-  timevalObj = create_object("Timeval", Array());
-  timeval = Native::data<Timeval>(timevalObj);
+  timevalObj = Object{Unit::lookupClass(TimevalData::s_className.get())};
+  timeval = Native::data<TimevalData>(timevalObj);
   timeval->init(details.deadline);
 
   resultObj.o_set("call", callObj);

@@ -62,7 +62,6 @@ void CallCredentials::init(grpc_call_credentials* call_credentials) {
 void CallCredentials::sweep() {
   if (wrapped) {
     grpc_call_credentials_release(wrapped);
-    req::free(wrapped);
     wrapped = nullptr;
   }
 }

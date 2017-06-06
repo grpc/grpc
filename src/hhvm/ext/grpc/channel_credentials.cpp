@@ -61,7 +61,6 @@ void ChannelCredentials::init(grpc_channel_credentials* channel_credentials) {
 void ChannelCredentials::sweep() {
   if (wrapped) {
     grpc_channel_credentials_release(wrapped);
-    req::free(wrapped);
     wrapped = nullptr;
   }
 }

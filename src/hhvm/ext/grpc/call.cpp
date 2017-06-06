@@ -65,11 +65,9 @@ void Call::sweep() {
     if (owned) {
       grpc_call_unref(wrapped);
     }
-    req::free(wrapped);
     wrapped = nullptr;
   }
   if (channel) {
-    req::free(channel);
     channel = nullptr;
   }
 }
@@ -104,7 +102,7 @@ void HHVM_METHOD(Call, __construct,
 
   call->setChannel(channel);
 
-  auto deadlineTimeval = Native::data<Timeval>(deadline_obj);
+  auto deadlineTimeval = Native::data<TimevalData>(deadline_obj);
   grpc_slice method_slice = grpc_slice_from_copied_string(method.c_str());
   grpc_slice host_slice = host_override.isNull() ? grpc_empty_slice() :
         grpc_slice_from_copied_string(host_override.toString().c_str());
