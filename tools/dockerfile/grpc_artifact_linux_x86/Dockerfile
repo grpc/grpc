@@ -61,6 +61,10 @@ RUN apt-get update && apt-key update && apt-get install -y \
   wget \
   zip && apt-get clean
 
+RUN ln -s /usr/lib64/libstdc++.so.6 /usr/lib64/libstdc++.so
+ENV CPATH=${CPATH}:/usr/include/i386-linux-gnu/c++/4.9
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib64
+
 # Install Node dependencies
 RUN touch .profile
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
