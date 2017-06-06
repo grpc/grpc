@@ -108,7 +108,7 @@ static void test_pollset_conversion(void) {
       attr.cq_polling_type = polling_types[j];
       cq = grpc_completion_queue_create(
           grpc_completion_queue_factory_lookup(&attr), &attr, NULL);
-      GPR_ASSERT(grpc_cq_from_pollset(grpc_cq_pollset(cq)) == cq);
+      GPR_ASSERT(grpc_cq_pollset(cq) != NULL);
       shutdown_and_destroy(cq);
     }
   }
