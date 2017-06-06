@@ -453,6 +453,24 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
 }
 
+TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
+  // Start servers and send one RPC per server.
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  ResetStub("round_robin");
+  std::vector<int> ports;
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    ports.emplace_back(servers_[i]->port_);
+  }
+  for (size_t i = 0; i < 1000; ++i) {
+    std::random_shuffle(ports.begin(), ports.end());
+    SetNextResolution(ports);
+    if (i % 10 == 0) SendRpc();
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

@@ -530,6 +530,13 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "sl_shutdown");
     return;
   }
+  // Dispose of outdated subchannel lists.
+  if (sd->subchannel_list != p->subchannel_list &&
+      sd->subchannel_list != p->latest_pending_subchannel_list) {
+    // sd belongs to an outdated subchannel_list: get rid of it.
+    rr_subchannel_list_shutdown(exec_ctx, sd->subchannel_list, "sl_oudated");
+    return;
+  }
   // Now that we're inside the combiner, copy the pending connectivity
   // state (which was set by the connectivity state watcher) to
   // curr_connectivity_state, which is what we use inside of the combiner.
@@ -571,9 +578,12 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                               "rr_connectivity_sd_shutdown");
   } else {  // sd not in SHUTDOWN
     if (sd->curr_connectivity_state == GRPC_CHANNEL_READY) {
-      // promote sd->subchannel_list to p->subchannel_list
-      if (sd->subchannel_list == p->latest_pending_subchannel_list &&
-          sd->subchannel_list != p->subchannel_list) {
+      if (sd->subchannel_list != p->subchannel_list) {
+        // promote sd->subchannel_list to p->subchannel_list.
+        // sd->subchannel_list must be equal to
+        // p->latest_pending_subchannel_list because we have already filtered
+        // for sds belonging to outdated subchannel lists.
+        GPR_ASSERT(sd->subchannel_list == p->latest_pending_subchannel_list);
         GPR_ASSERT(!sd->subchannel_list->shutting_down);
         if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
           gpr_log(GPR_DEBUG,
@@ -660,8 +670,9 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     grpc_connected_subchannel_ping(exec_ctx, target, closure);
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, target, "rr_picked");
   } else {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                              "Round Robin not connected"));
+    grpc_closure_sched(
+        exec_ctx, closure,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Round Robin not connected"));
   }
 }
 
@@ -722,7 +733,7 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
    * subchannel keys of subchannels from a different batch of addresses. */
   static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
                                          GRPC_ARG_LB_ADDRESSES};
-  /* 1. Create subchannels for addresses in the update. */
+  /* Create subchannels for addresses in the update. */
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     /* Skip balancer addresses, since we only know how to handle backends. */
     if (addresses->addresses[i].is_balancer) continue;
@@ -777,10 +788,16 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
           exec_ctx, sd->subchannel, p->base.interested_parties,
           &sd->pending_connectivity_state_unsafe,
           &sd->connectivity_changed_closure);
-    } else if (p->subchannel_list == NULL) {
-      // creation
-      p->subchannel_list = subchannel_list;
     }
+  }
+  if (!p->started_picking) {
+    // The policy isn't picking yet. Save the update for later, disposing of
+    // previous version if any.
+    if (p->subchannel_list != NULL) {
+      rr_subchannel_list_shutdown(exec_ctx, p->subchannel_list,
+                                  "rr_update_before_started_picking");
+    }
+    p->subchannel_list = subchannel_list;
   }
 }
 
