@@ -222,14 +222,18 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
     return false;
   }
 
+  bool contended = gpr_atm_no_barrier_load(&lock->initiating_exec_ctx_or_null) == 0;
+
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
                               "C:%p grpc_combiner_continue_exec_ctx "
+                              "contended=%d "
                               "exec_ctx_ready_to_finish=%d "
                               "time_to_execute_final_list=%d",
-                              lock, grpc_exec_ctx_ready_to_finish(exec_ctx),
+                              lock, contended, grpc_exec_ctx_ready_to_finish(exec_ctx),
                               lock->time_to_execute_final_list));
 
-  if (grpc_exec_ctx_ready_to_finish(exec_ctx) && grpc_executor_is_threaded()) {
+  if (contended &&
+      grpc_exec_ctx_ready_to_finish(exec_ctx) && grpc_executor_is_threaded()) {
     GPR_TIMER_MARK("offload_from_finished_exec_ctx", 0);
     // this execution context wants to move on, and we have a workqueue (and
     // so can help the execution context out): schedule remaining work to be
