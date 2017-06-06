@@ -92,11 +92,6 @@ def get_flaky_tests(limit=None):
       test_name,
       SUM(result != 'PASSED'
         AND result != 'SKIPPED') AS count_failed,
-      SUM(result != 'SKIPPED') AS count_total,
-      100 * SUM(result != 'PASSED'
-        AND result != 'SKIPPED') / SUM(result != 'SKIPPED') AS pct_failed,
-      MIN((TIMESTAMP_TO_SEC(CURRENT_TIMESTAMP()) -
-        TIMESTAMP_TO_SEC(timestamp))/60/60) AS age_in_hours
     FROM
       [grpc-testing:jenkins_test_results.aggregate_results]
     WHERE
@@ -106,9 +101,7 @@ def get_flaky_tests(limit=None):
     GROUP BY
       test_name
     HAVING
-      pct_failed > 0
-    ORDER BY
-      pct_failed DESC"""
+      count_failed > 0"""
   if limit:
     query += " limit {}".format(limit)
   query_job = bqu.sync_query_job(bq, 'grpc-testing', query)
