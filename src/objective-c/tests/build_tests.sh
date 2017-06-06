@@ -52,3 +52,26 @@ rm -f RemoteTestClient/*.{h,m}
 
 echo "TIME:  $(date)"
 pod install
+
+# Verify the output proto name
+[ -e ./RemoteTestClient/Test-dash-filename.pbrpc.h ] || {
+    echo >&2 "protoc outputs wrong filename."
+    exit 1
+}
+
+# Verify the output proto name when dash is treated as separator
+PROTOC=../../../bins/$CONFIG/protobuf/protoc
+PLUGIN=../../../bins/$CONFIG/grpc_objective_c_plugin
+
+eval $PROTOC \
+    --plugin=protoc-gen-grpc=$PLUGIN \
+    --objc_out=RemoteTestClient \
+    --grpc_out=filename-dash-as-separator:RemoteTestClient \
+    -I RemoteTestClient \
+    -I ../../../third_party/protobuf/src \
+    RemoteTestClient/*.proto
+
+[ -e ./RemoteTestClient/TestDashFilename.pbrpc.h ] || {
+    echo >&2 "protoc outputs wring filename. 2"
+    exit 1
+}
