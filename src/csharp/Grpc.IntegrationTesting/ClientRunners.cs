@@ -186,8 +186,8 @@ namespace Grpc.IntegrationTesting
                 statsResetCount.Increment();
             }
 
-            GrpcEnvironment.Logger.Info("[ClientRunnerImpl.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, gen3 {3} (histogram reset count:{4}, seconds since reset: {5})",
-                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), GC.CollectionCount(3), statsResetCount.Count, secondsElapsed);
+            GrpcEnvironment.Logger.Info("[ClientRunnerImpl.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, (histogram reset count:{3}, seconds since reset: {4})",
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), statsResetCount.Count, secondsElapsed);
 
             // TODO: populate user time and system time
             return new ClientStats

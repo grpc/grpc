@@ -154,8 +154,8 @@ namespace Grpc.IntegrationTesting
         {
             var secondsElapsed = wallClockStopwatch.GetElapsedSnapshot(reset).TotalSeconds;
 
-            GrpcEnvironment.Logger.Info("[ServerRunner.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, gen3 {3} (seconds since last reset {4})",
-                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), GC.CollectionCount(3), secondsElapsed);
+            GrpcEnvironment.Logger.Info("[ServerRunner.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, (seconds since last reset {3})",
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), secondsElapsed);
 
             // TODO: populate user time and system time
             return new ServerStats

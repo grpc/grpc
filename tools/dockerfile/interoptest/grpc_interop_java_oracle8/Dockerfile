@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -28,15 +27,47 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+FROM debian:jessie
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+# Install JDK 8 and Git
+#
+RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \
+  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+RUN apt-get update && apt-get -y install \
+      git \
+      libapr1 \
+      oracle-java8-installer \
+      && \
+    apt-get clean && rm -r /var/cache/oracle-jdk8-installer/
 
-# TODO(jtattermusch): install ruby on the internal_ci worker
-gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-curl -sSL https://get.rvm.io | bash -s stable --ruby
+ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
+ENV PATH $PATH:$JAVA_HOME/bin
 
-tools/run_tests/task_runner.py -f artifact linux
+
+#====================
+# Python dependencies
+
+# Install dependencies
+
+RUN apt-get update && apt-get install -y \
+    python-all-dev \
+    python3-all-dev \
+    python-pip
+
+# Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
+
+
+# Trigger download of as many Gradle artifacts as possible.
+RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git && \
+  cd grpc-java && \
+  ./gradlew :grpc-interop-testing:installDist -PskipCodegen=true && \
+  rm -r "$(pwd)"
+
+# Define the default command.
+CMD ["bash"]
