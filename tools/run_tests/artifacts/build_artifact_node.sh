@@ -34,8 +34,6 @@ source ~/.nvm/nvm.sh
 nvm use 4
 set -ex
 
-npm update -g npm
-
 cd $(dirname $0)/../../..
 
 rm -rf build || true
