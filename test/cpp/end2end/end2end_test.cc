@@ -1062,7 +1062,9 @@ TEST_P(End2endTest, ChannelState) {
   EXPECT_TRUE(channel_->WaitForStateChange(GRPC_CHANNEL_IDLE,
                                            gpr_inf_future(GPR_CLOCK_REALTIME)));
   auto state = channel_->GetState(false);
-  EXPECT_TRUE(state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_READY);
+  // Note that state will never be READY because there's no call going on in the
+  // channel.
+  EXPECT_TRUE(state == GRPC_CHANNEL_CONNECTING);
 }
 
 // Takes 10s.
