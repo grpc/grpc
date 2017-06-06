@@ -100,8 +100,8 @@ namespace Grpc.IntegrationTesting
             await tcs.Task;
             await server.ShutdownAsync();
 
-            GrpcEnvironment.Logger.Info("GC collection counts (after shutdown): gen0 {0}, gen1 {1}, gen2 {2}, gen3 {3}",
-                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), GC.CollectionCount(3));
+            GrpcEnvironment.Logger.Info("GC collection counts (after shutdown): gen0 {0}, gen1 {1}, gen2 {2}",
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
         }
     }
 }
