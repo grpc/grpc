@@ -223,7 +223,7 @@
         set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
       endif()
       if(TARGET protoc)
-        set(_gRPC_PROTOBUF_PROTOC protoc)
+        set(_gRPC_PROTOBUF_PROTOC $<TARGET_FILE:protoc>)
       endif()
     else()
         message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
