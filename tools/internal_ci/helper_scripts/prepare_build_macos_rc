@@ -40,33 +40,27 @@ brew install autoconf automake libtool ccache cmake gflags gpg wget
 # TODO(jtattermusch): install cocoapods 
 
 # python
-wget https://bootstrap.pypa.io/get-pip.py
+wget -q https://bootstrap.pypa.io/get-pip.py
 sudo python get-pip.py
 sudo pip install virtualenv
 
 # TODO(jtattermusch): install python3
 
 # mono
-wget https://download.mono-project.com/archive/5.0.1/macos-10-universal/MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg 
+wget -q https://download.mono-project.com/archive/5.0.1/macos-10-universal/MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg
 sudo installer -pkg MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg -target /
+ln -s /Library/Frameworks/Mono.framework/Versions/Current/bin/mono /usr/local/bin/mono
  
 # dotnet SDK
-wget https://go.microsoft.com/fwlink/?linkid=843444 -O dotnet-dev-osx-x64.1.0.1.pkg
+brew install openssl
+wget -q https://go.microsoft.com/fwlink/?linkid=843444 -O dotnet-dev-osx-x64.1.0.1.pkg
 sudo installer -pkg dotnet-dev-osx-x64.1.0.1.pkg -target /
 ln -s /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet
 dotnet --version  # bootstrap dotnet SDK
 
 # nvm
 wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.30.2/install.sh | bash
-# bootstrap nvm silently & without terminating this script
-set +ex
-source ~/.nvm/nvm.sh
-set -ex
 
-# node
-nvm install 4
-nvm alias default 4
-npm update npm -g
-npm install -g node-pre-gyp
+# TODO(jtattermusch): install node if needed
 
 git submodule update --init
