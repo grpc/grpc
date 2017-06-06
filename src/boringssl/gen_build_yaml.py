@@ -164,5 +164,10 @@ try:
 
   print yaml.dump(g.yaml)
 
+except OSError as err:
+  type, value, traceback = sys.exc_info()
+  raise RuntimeError, (
+      "Verify that you have go in your PATH", type, value), traceback
+
 finally:
   shutil.rmtree('src')
