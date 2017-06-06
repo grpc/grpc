@@ -32,6 +32,10 @@
  */
 
 // Generates Objective C gRPC service interface out of Protobuf IDL.
+// For legacy reason, output filename of this plugin is by default in uppercamel
+// case with dash "-" treated as character and preserved in the output file
+// name. If normal upper camel case (dash treated as word separator) is desired,
+// use plugin option "filename-dash-as-separator".
 
 #include <memory>
 
