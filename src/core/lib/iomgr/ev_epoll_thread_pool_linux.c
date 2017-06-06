@@ -649,13 +649,6 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   GRPC_ERROR_UNREF(error);
 }
 
-/* This polling engine doesn't really need the read notifier functionality. So
- * it just returns a dummy read notifier pollset */
-static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
-                                                  grpc_fd *fd) {
-  return &g_read_notifier;
-}
-
 static bool fd_is_shutdown(grpc_fd *fd) {
   return grpc_lfev_is_shutdown(&fd->read_closure);
 }
@@ -1119,7 +1112,6 @@ static const grpc_event_engine_vtable vtable = {
     .fd_is_shutdown = fd_is_shutdown,
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
-    .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
     .fd_get_workqueue = fd_get_workqueue,
 
     .pollset_init = pollset_init,
