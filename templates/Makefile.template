@@ -922,7 +922,7 @@
 
   static: static_c static_cxx
 
-  static_c: pc_c pc_c_unsecure cache.mk \
+  static_c: pc_c pc_c_unsecure pc_c_reflection cache.mk \
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
@@ -932,7 +932,7 @@
   % endfor
 
 
-  static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
+  static_cxx: pc_cxx pc_cxx_unsecure pc_cxx_reflection cache.mk \
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
@@ -944,7 +944,7 @@
 
   shared: shared_c shared_cxx
 
-  shared_c: pc_c pc_c_unsecure cache.mk\
+  shared_c: pc_c pc_c_unsecure pc_c_reflection cache.mk\
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
@@ -953,7 +953,7 @@
   % endif
   % endfor
 
-  shared_cxx: pc_cxx pc_cxx_unsecure cache.mk\
+  shared_cxx: pc_cxx pc_cxx_unsecure pc_cxx_reflection cache.mk\
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
@@ -991,9 +991,13 @@
 
   pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
 
+  pc_c_reflection: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_reflection.pc
+
   pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
   pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
+
+  pc_cxx_reflection: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_reflection.pc
 
   ifeq ($(EMBED_OPENSSL),true)
   privatelibs_cxx: \
@@ -1385,17 +1389,19 @@
   % endif
   % endfor
 
-  install-pkg-config_c: pc_c pc_c_unsecure
+  install-pkg-config_c: pc_c pc_c_unsecure pc_c_reflection
   	$(E) "[INSTALL] Installing C pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix_libdir)/pkgconfig
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix_libdir)/pkgconfig/grpc.pc
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix_libdir)/pkgconfig/grpc_unsecure.pc
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_reflection.pc $(prefix_libdir)/pkgconfig/grpc_reflection.pc
 
-  install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
+  install-pkg-config_cxx: pc_cxx pc_cxx_unsecure pc_cxx_reflection
   	$(E) "[INSTALL] Installing C++ pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix_libdir)/pkgconfig
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix_libdir)/pkgconfig/grpc++.pc
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix_libdir)/pkgconfig/grpc++_unsecure.pc
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_reflection.pc $(prefix_libdir)/pkgconfig/grpc++_reflection.pc
 
   install-certs: etc/roots.pem
   	$(E) "[INSTALL] Installing root certificates"
