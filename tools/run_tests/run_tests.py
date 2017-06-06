@@ -157,6 +157,9 @@ class Config(object):
     actual_environ = self.environ.copy()
     for k, v in environ.items():
       actual_environ[k] = v
+    if not flaky and shortname and shortname in flaky_tests:
+      print('Setting %s to flaky' % shortname)
+      flaky = True
     return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
@@ -1251,8 +1254,14 @@ argp.add_argument('--bq_result_table',
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
 # XXX Remove the following line. Only used for proof-of-concept-ing
-argp.add_argument('--show_flakes', default=False, type=bool);
+argp.add_argument('--show_flakes', default=False, action='store_const', const=True);
 args = argp.parse_args()
+
+try:
+  flaky_tests = set(get_flaky_tests())
+except:
+  print("Unexpected error getting flaky tests:", sys.exc_info()[0])
+  flaky_tests = set()
 
 if args.show_flakes:
   import pprint
