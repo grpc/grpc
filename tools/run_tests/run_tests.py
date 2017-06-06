@@ -65,6 +65,11 @@ try:
 except (ImportError):
   pass # It's ok to not import because this is only necessary to upload results to BQ.
 
+gcp_utils_dir = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '../gcp/utils'))
+sys.path.append(gcp_utils_dir)
+import big_query_utils as bqu
+
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
@@ -73,12 +78,45 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
   'GRPC_VERBOSITY': 'DEBUG',
 }
 
-
 _POLLING_STRATEGIES = {
   'linux': ['epollsig', 'poll', 'poll-cv'],
 # TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
   'mac': ['poll'],
 }
+
+
+def get_flaky_tests(limit=None):
+  bq = bqu.create_big_query()
+  query = """
+    SELECT
+      test_name,
+      SUM(result != 'PASSED'
+        AND result != 'SKIPPED') AS count_failed,
+      SUM(result != 'SKIPPED') AS count_total,
+      100 * SUM(result != 'PASSED'
+        AND result != 'SKIPPED') / SUM(result != 'SKIPPED') AS pct_failed,
+      MIN((TIMESTAMP_TO_SEC(CURRENT_TIMESTAMP()) -
+        TIMESTAMP_TO_SEC(timestamp))/60/60) AS age_in_hours
+    FROM
+      [grpc-testing:jenkins_test_results.aggregate_results]
+    WHERE
+      timestamp >= DATE_ADD(DATE(CURRENT_TIMESTAMP()), -1, "WEEK")
+      AND NOT REGEXP_MATCH(job_name, '.*portability.*')
+      AND REGEXP_MATCH(job_name, '.*master.*')
+    GROUP BY
+      test_name
+    HAVING
+      pct_failed > 0
+    ORDER BY
+      pct_failed DESC"""
+  if limit:
+    query += " limit {}".format(limit)
+  query_job = bqu.sync_query_job(bq, 'grpc-testing', query)
+  page = bq.jobs().getQueryResults(
+      pageToken=None,
+      **query_job['jobReference']).execute(num_retries=3)
+  flake_names = [row['f'][0]['v'] for row in page['rows']]
+  return flake_names
 
 
 def platform_string():
@@ -1212,7 +1250,14 @@ argp.add_argument('--bq_result_table',
                   type=str,
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
+# XXX Remove the following line. Only used for proof-of-concept-ing
+argp.add_argument('--show_flakes', default=False, type=bool);
 args = argp.parse_args()
+
+if args.show_flakes:
+  import pprint
+  pprint.pprint (get_flaky_tests())
+  sys.exit(0)
 
 if args.force_default_poller:
   _POLLING_STRATEGIES = {}
