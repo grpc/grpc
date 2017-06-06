@@ -182,9 +182,13 @@
 }
 
 - (void)testBufferedPipePropagatesError {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Response received"];
   // Given:
   CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
-  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+    handler.block(value, errorOrNil);
+    [expectation fulfill];
+  }];
   NSError *anyError = [NSError errorWithDomain:@"domain" code:7 userInfo:nil];
 
   // If:
@@ -193,6 +197,7 @@
   [pipe writesFinishedWithError:anyError];
 
   // Then:
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   XCTAssertEqual(handler.timesCalled, 1);
   XCTAssertEqualObjects(handler.value, nil);
   XCTAssertEqualObjects(handler.errorOrNil, anyError);
