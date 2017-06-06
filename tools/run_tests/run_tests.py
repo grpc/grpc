@@ -1265,7 +1265,7 @@ except:
 
 if args.show_flakes:
   import pprint
-  pprint.pprint (get_flaky_tests())
+  pprint.pprint(flaky_tests)
   sys.exit(0)
 
 if args.force_default_poller:
