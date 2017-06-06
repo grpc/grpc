@@ -307,7 +307,7 @@ Procedure:
     If the call fails with `INVALID_ARGUMENT`, the test fails. Otherwise, we
     continue.
 
- 1. Client calls `StreamingInputCall` again, sending the *compressed* message
+ 2. Client calls `StreamingInputCall` again, sending the *compressed* message
 
     ```
     {
@@ -320,7 +320,7 @@ Procedure:
     }
     ```
 
- 1. And finally, the *uncompressed* message
+ 3. And finally, the *uncompressed* message
     ```
     {
       expect_compressed:{
@@ -332,7 +332,7 @@ Procedure:
     }
     ```
 
- 1. Client half-closes
+ 4. Client half-closes
 
 Client asserts:
 * First call fails with `INVALID_ARGUMENT`.
@@ -484,6 +484,60 @@ Client asserts:
 * response payload bodies are sized (in order): 31415, 9, 2653, 58979
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response messages against golden responses
+
+
+### half_duplex
+
+This test verifies that half duplex bidi streaming is supported.
+
+Server features:
+* [HalfDuplexCall][]
+
+Procedure:
+ 1. Client calls HalfDuplexCall:
+
+ 2. Client sends:
+    ```
+    {
+      response_parameters:{
+        size: 31415
+      }
+    }
+    ```
+ 
+ 3. Client then sends:
+
+    ```
+    {
+      response_parameters:{
+        size: 9
+      }
+    }
+    ```
+
+ 4. Client then sends:
+    ```
+    {
+      response_parameters:{
+        size: 2653
+      }
+    }
+    ```
+ 
+ 5. Cient then sends:
+    ```
+    {
+      response_parameters:{
+        size: 58979
+      }
+    }
+    ```
+
+Client asserts:
+* call was successful
+* exactly four responses
+* response payload bodies are sized (in order): 31415, 9, 2653, 58979
+
 
 ### empty_stream
 
