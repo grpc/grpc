@@ -35,4 +35,8 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+# TODO(jtattermusch): install ruby on the internal_ci worker
+gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+curl -sSL https://get.rvm.io | bash -s stable --ruby
+
 tools/run_tests/task_runner.py -f artifact linux

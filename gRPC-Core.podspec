@@ -37,7 +37,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.4.0-dev'
+  version = '1.5.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -463,6 +463,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/gen/census.pb.h',
                       'src/core/ext/census/gen/trace_context.pb.h',
                       'src/core/ext/census/grpc_filter.h',
+                      'src/core/ext/census/intrusive_hash_map.h',
+                      'src/core/ext/census/intrusive_hash_map_internal.h',
                       'src/core/ext/census/mlog.h',
                       'src/core/ext/census/resource.h',
                       'src/core/ext/census/rpc_metric_id.h',
@@ -714,6 +716,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/grpc_filter.c',
                       'src/core/ext/census/grpc_plugin.c',
                       'src/core/ext/census/initialize.c',
+                      'src/core/ext/census/intrusive_hash_map.c',
                       'src/core/ext/census/mlog.c',
                       'src/core/ext/census/operation.c',
                       'src/core/ext/census/placeholders.c',
@@ -947,6 +950,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/gen/census.pb.h',
                               'src/core/ext/census/gen/trace_context.pb.h',
                               'src/core/ext/census/grpc_filter.h',
+                              'src/core/ext/census/intrusive_hash_map.h',
+                              'src/core/ext/census/intrusive_hash_map_internal.h',
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/resource.h',
                               'src/core/ext/census/rpc_metric_id.h',

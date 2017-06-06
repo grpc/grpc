@@ -673,7 +673,7 @@ class PythonLanguage(object):
 
     if args.compiler == 'default':
       if os.name == 'nt':
-        return (python27_config,)
+        return (python35_config,)
       else:
         return (python27_config, python34_config,)
     elif args.compiler == 'python2.7':

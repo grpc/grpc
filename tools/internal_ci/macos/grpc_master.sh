@@ -33,7 +33,7 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-git submodule update --init
+source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 tools/run_tests/run_tests_matrix.py -f basictests macos --internal_ci || FAILED="true"
 

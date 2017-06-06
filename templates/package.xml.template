@@ -12,7 +12,7 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2017-05-05</date>
+   <date>2017-05-22</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
@@ -25,13 +25,18 @@
    <license>BSD</license>
    <notes>
   - Fixed some memory leaks #9559, #10996
+  - Disabled cares dependency from gRPC C Core #10940
+  - De-coupled protobuf dependency #11112
+  - Fixed extension reported version #10842
+  - Added config.w32 for Windows support #8161
+  - Fixed PHP distrib test after cc files were added #11193
+  - Fixed protoc plugin comment escape bug #11025
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
       <file baseinstalldir="/" name="config.m4" role="src" />
+      <file baseinstalldir="/" name="config.w32" role="src" />
       <file baseinstalldir="/" name="src/php/README.md" role="src" />
-      <file baseinstalldir="/" name="src/php/ext/grpc/CREDITS" role="src" />
-      <file baseinstalldir="/" name="src/php/ext/grpc/LICENSE" role="src" />
       % for source in php_config_m4.src + php_config_m4.headers:
       <file baseinstalldir="/" name="${source}" role="src" />
       % endfor

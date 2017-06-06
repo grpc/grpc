@@ -105,7 +105,7 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
                    grpc_error *error) {
   grpc_polling_entity_del_from_pollset_set(exec_ctx, req->pollent,
                                            req->context->pollset_set);
-  grpc_closure_sched(exec_ctx, req->on_done, GRPC_ERROR_REF(error));
+  grpc_closure_sched(exec_ctx, req->on_done, error);
   grpc_http_parser_destroy(&req->parser);
   if (req->addresses != NULL) {
     grpc_resolved_addresses_destroy(req->addresses);
@@ -244,7 +244,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   internal_request *req = arg;
   if (error != GRPC_ERROR_NONE) {
-    finish(exec_ctx, req, error);
+    finish(exec_ctx, req, GRPC_ERROR_REF(error));
     return;
   }
   req->next_address = 0;

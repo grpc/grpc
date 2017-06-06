@@ -140,7 +140,8 @@ namespace Grpc.IntegrationTesting
         readonly ClientType clientType;
         readonly RpcType rpcType;
         readonly PayloadConfig payloadConfig;
-        readonly Histogram histogram;
+        readonly Lazy<byte[]> cachedByteBufferRequest;
+        readonly ThreadLocal<Histogram> threadLocalHistogram;
 
         readonly List<Task> runnerTasks;
         readonly CancellationTokenSource stoppedCts = new CancellationTokenSource();
@@ -155,7 +156,8 @@ namespace Grpc.IntegrationTesting
             this.clientType = clientType;
             this.rpcType = rpcType;
             this.payloadConfig = payloadConfig;
-            this.histogram = new Histogram(histogramParams.Resolution, histogramParams.MaxPossible);
+            this.cachedByteBufferRequest = new Lazy<byte[]>(() => new byte[payloadConfig.BytebufParams.ReqSize]);
+            this.threadLocalHistogram = new ThreadLocal<Histogram>(() => new Histogram(histogramParams.Resolution, histogramParams.MaxPossible), true);
 
             this.runnerTasks = new List<Task>();
             foreach (var channel in this.channels)
@@ -171,7 +173,12 @@ namespace Grpc.IntegrationTesting
 
         public ClientStats GetStats(bool reset)
         {
-            var histogramData = histogram.GetSnapshot(reset);
+            var histogramData = new HistogramData();
+            foreach (var hist in threadLocalHistogram.Values)
+            {
+                hist.GetSnapshot(histogramData, reset);
+            }
+
             var secondsElapsed = wallClockStopwatch.GetElapsedSnapshot(reset).TotalSeconds;
 
             if (reset)
@@ -179,8 +186,8 @@ namespace Grpc.IntegrationTesting
                 statsResetCount.Increment();
             }
 
-            GrpcEnvironment.Logger.Info("[ClientRunnerImpl.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, gen3 {3} (histogram reset count:{4}, seconds since reset: {5})",
-                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), GC.CollectionCount(3), statsResetCount.Count, secondsElapsed);
+            GrpcEnvironment.Logger.Info("[ClientRunnerImpl.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, (histogram reset count:{3}, seconds since reset: {4})",
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), statsResetCount.Count, secondsElapsed);
 
             // TODO: populate user time and system time
             return new ClientStats
@@ -232,7 +239,7 @@ namespace Grpc.IntegrationTesting
                 stopwatch.Stop();
 
                 // spec requires data point in nanoseconds.
-                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                 timer.WaitForNext();
             }
@@ -251,7 +258,7 @@ namespace Grpc.IntegrationTesting
                 stopwatch.Stop();
 
                 // spec requires data point in nanoseconds.
-                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                 await timer.WaitForNextAsync();
             }
@@ -273,7 +280,7 @@ namespace Grpc.IntegrationTesting
                     stopwatch.Stop();
 
                     // spec requires data point in nanoseconds.
-                    histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                    threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                     await timer.WaitForNextAsync();
                 }
@@ -286,7 +293,7 @@ namespace Grpc.IntegrationTesting
 
         private async Task RunGenericStreamingAsync(Channel channel, IInterarrivalTimer timer)
         {
-            var request = CreateByteBufferRequest();
+            var request = cachedByteBufferRequest.Value;
             var stopwatch = new Stopwatch();
 
             var callDetails = new CallInvocationDetails<byte[], byte[]>(channel, GenericService.StreamingCallMethod, new CallOptions());
@@ -301,7 +308,7 @@ namespace Grpc.IntegrationTesting
                     stopwatch.Stop();
 
                     // spec requires data point in nanoseconds.
-                    histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                    threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                     await timer.WaitForNextAsync();
                 }
@@ -349,11 +356,6 @@ namespace Grpc.IntegrationTesting
                 Payload = CreateZerosPayload(payloadConfig.SimpleParams.ReqSize),
                 ResponseSize = payloadConfig.SimpleParams.RespSize
             };
-        }
-
-        private byte[] CreateByteBufferRequest()
-        {
-            return new byte[payloadConfig.BytebufParams.ReqSize];
         }
 
         private static Payload CreateZerosPayload(int size)

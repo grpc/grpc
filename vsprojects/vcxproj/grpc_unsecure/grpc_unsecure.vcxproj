@@ -469,6 +469,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\trace_context.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\intrusive_hash_map.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\intrusive_hash_map_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\mlog.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\resource.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
@@ -901,6 +903,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_plugin.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\initialize.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\intrusive_hash_map.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\mlog.c">
     </ClCompile>

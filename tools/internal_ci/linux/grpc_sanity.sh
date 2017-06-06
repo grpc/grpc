@@ -35,4 +35,4 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-tools/run_tests/run_tests.py -l sanity -c opt -t -x sponge_log.xml --use_docker --report_suite_name sanity_linux_opt
+tools/run_tests/run_tests_matrix.py -f basictests linux sanity opt --inner_jobs 16 -j 1 --internal_ci

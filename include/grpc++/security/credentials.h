@@ -151,7 +151,7 @@ std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
 /// json_key is the JSON key string containing the client's private key.
 /// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 /// (JWT) created with this credentials. It should not exceed
-/// grpc_max_auth_token_lifetime or will be cropped to this value.
+/// \a grpc_max_auth_token_lifetime or will be cropped to this value.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key, long token_lifetime_seconds);
 

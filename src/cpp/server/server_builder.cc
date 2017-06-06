@@ -172,14 +172,25 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(
-    const grpc::string& addr, std::shared_ptr<ServerCredentials> creds,
+    const grpc::string& addr_uri, std::shared_ptr<ServerCredentials> creds,
     int* selected_port) {
+  const grpc::string uri_scheme = "dns:";
+  grpc::string addr = addr_uri;
+  if (addr_uri.compare(0, uri_scheme.size(), uri_scheme) == 0) {
+    size_t pos = uri_scheme.size();
+    while (addr_uri[pos] == '/') ++pos;  // Skip slashes.
+    addr = addr_uri.substr(pos);
+  }
   Port port = {addr, creds, selected_port};
   ports_.push_back(port);
   return *this;
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
+  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    (*plugin)->UpdateServerBuilder(this);
+  }
+
   ChannelArguments args;
   for (auto option = options_.begin(); option != options_.end(); ++option) {
     (*option)->UpdateArguments(&args);
