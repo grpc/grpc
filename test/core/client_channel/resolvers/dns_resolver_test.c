@@ -35,6 +35,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "test/core/util/test_config.h"
@@ -88,7 +89,11 @@ int main(int argc, char **argv) {
   test_succeeds(dns, "dns:10.2.1.1");
   test_succeeds(dns, "dns:10.2.1.1:1234");
   test_succeeds(dns, "ipv4:www.google.com");
-  test_fails(dns, "ipv4://8.8.8.8/8.8.8.8:8888");
+  if (grpc_resolve_address == grpc_resolve_address_ares) {
+    test_succeeds(dns, "ipv4://8.8.8.8/8.8.8.8:8888");
+  } else {
+    test_fails(dns, "ipv4://8.8.8.8/8.8.8.8:8888");
+  }
 
   grpc_resolver_factory_unref(dns);
   {

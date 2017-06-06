@@ -878,6 +878,7 @@
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c',
+        'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c',
         'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c',
         'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c',
         'src/core/ext/filters/load_reporting/load_reporting.c',

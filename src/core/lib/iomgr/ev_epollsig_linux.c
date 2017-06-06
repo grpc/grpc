@@ -1047,7 +1047,10 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
        unhappy. */
     PI_UNREF(exec_ctx, unref_pi, "fd_orphan");
   }
-  GRPC_LOG_IF_ERROR("fd_orphan", GRPC_ERROR_REF(error));
+  if (error != GRPC_ERROR_NONE) {
+    const char *msg = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "fd_orphan: %s", msg);
+  }
   GRPC_ERROR_UNREF(error);
 }
 
