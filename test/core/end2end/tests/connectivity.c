@@ -130,7 +130,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
 
   /* now let's bring up a server to connect to */
   config.init_server(&f, NULL);
-
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+    gpr_time_from_millis(10, GPR_TIMESPAN)));
   gpr_log(GPR_DEBUG, "*** STARTED SERVER ***");
 
   /* we'll go through some set of transitions (some might be missed), until
@@ -155,7 +156,6 @@ static void test_connectivity(grpc_end2end_test_config config) {
                                         f.cq, tag(5));
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-
   CQ_EXPECT_COMPLETION(cqv, tag(5), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
   cq_verify(cqv);
