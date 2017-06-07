@@ -34,17 +34,14 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INDEX_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INDEX_H
 
-#include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 
 /** \file Provides an index of active subchannels so that they can be
     shared amongst channels */
 
-typedef struct grpc_subchannel_key grpc_subchannel_key;
-
 /** Create a key that can be used to uniquely identify a subchannel */
 grpc_subchannel_key *grpc_subchannel_key_create(
-    grpc_connector *con, const grpc_subchannel_args *args);
+    const grpc_subchannel_args *args);
 
 /** Destroy a subchannel key */
 void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
@@ -68,6 +65,9 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
 void grpc_subchannel_index_unregister(grpc_exec_ctx *exec_ctx,
                                       grpc_subchannel_key *key,
                                       grpc_subchannel *constructed);
+
+int grpc_subchannel_key_compare(const grpc_subchannel_key *a,
+                                const grpc_subchannel_key *b);
 
 /** Initialize the subchannel index (global) */
 void grpc_subchannel_index_init(void);

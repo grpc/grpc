@@ -65,6 +65,10 @@ try:
 except (ImportError):
   pass # It's ok to not import because this is only necessary to upload results to BQ.
 
+gcp_utils_dir = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '../gcp/utils'))
+sys.path.append(gcp_utils_dir)
+
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
@@ -73,12 +77,40 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
   'GRPC_VERBOSITY': 'DEBUG',
 }
 
-
 _POLLING_STRATEGIES = {
   'linux': ['epollsig', 'poll', 'poll-cv'],
 # TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
   'mac': ['poll'],
 }
+
+
+def get_flaky_tests(limit=None):
+  import big_query_utils
+
+  bq = big_query_utils.create_big_query()
+  query = """
+    SELECT
+      test_name,
+      SUM(result != 'PASSED'
+        AND result != 'SKIPPED') AS count_failed,
+    FROM
+      [grpc-testing:jenkins_test_results.aggregate_results]
+    WHERE
+      timestamp >= DATE_ADD(DATE(CURRENT_TIMESTAMP()), -1, "WEEK")
+      AND NOT REGEXP_MATCH(job_name, '.*portability.*')
+      AND REGEXP_MATCH(job_name, '.*master.*')
+    GROUP BY
+      test_name
+    HAVING
+      count_failed > 0"""
+  if limit:
+    query += " limit {}".format(limit)
+  query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
+  page = bq.jobs().getQueryResults(
+      pageToken=None,
+      **query_job['jobReference']).execute(num_retries=3)
+  flake_names = [row['f'][0]['v'] for row in page['rows']]
+  return flake_names
 
 
 def platform_string():
@@ -119,6 +151,9 @@ class Config(object):
     actual_environ = self.environ.copy()
     for k, v in environ.items():
       actual_environ[k] = v
+    if not flaky and shortname and shortname in flaky_tests:
+      print('Setting %s to flaky' % shortname)
+      flaky = True
     return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
@@ -1212,7 +1247,16 @@ argp.add_argument('--bq_result_table',
                   type=str,
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
+argp.add_argument('--auto_set_flakes', default=True, type=bool,
+                  help='Set flakiness data from historic data')
 args = argp.parse_args()
+
+flaky_tests = set()
+if args.auto_set_flakes:
+  try:
+    flaky_tests = set(get_flaky_tests())
+  except:
+    print("Unexpected error getting flaky tests:", sys.exc_info()[0])
 
 if args.force_default_poller:
   _POLLING_STRATEGIES = {}

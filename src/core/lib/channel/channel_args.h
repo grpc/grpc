@@ -63,8 +63,8 @@ grpc_channel_args *grpc_channel_args_copy_and_add_and_remove(
     const grpc_channel_args *src, const char **to_remove, size_t num_to_remove,
     const grpc_arg *to_add, size_t num_to_add);
 
-/** Concatenate args from \a a and \a b into a new instance */
-grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
+/** Perform the union of \a a and \a b, prioritizing \a a entries */
+grpc_channel_args *grpc_channel_args_union(const grpc_channel_args *a,
                                            const grpc_channel_args *b);
 
 /** Destroy arguments created by \a grpc_channel_args_copy */
