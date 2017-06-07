@@ -16,10 +16,10 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\security\oauth2_utils.c">
       <Filter>test\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.c">
-      <Filter>test\core\end2end</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\fake</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.c">
       <Filter>test\core\end2end</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.c">
@@ -542,10 +542,10 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\security\oauth2_utils.h">
       <Filter>test\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h">
-      <Filter>test\core\end2end</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.h">
+      <Filter>src\core\ext\filters\client_channel\resolver\fake</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h">
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h">
       <Filter>test\core\end2end</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy_fixture.h">
@@ -949,6 +949,21 @@
     </Filter>
     <Filter Include="src\core">
       <UniqueIdentifier>{f7bfac91-5eb2-dea7-4601-6c63edbbf997}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext">
+      <UniqueIdentifier>{5db70e06-741d-708c-bf0a-b59f8ca1f8bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters">
+      <UniqueIdentifier>{f0f88514-c2d8-c4c9-c3bd-591682207751}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\client_channel">
+      <UniqueIdentifier>{5bb60a9e-156f-e1c8-3b9c-1b23e7992d7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\client_channel\resolver">
+      <UniqueIdentifier>{24a50975-435e-20a5-b0f2-71bc330d0378}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\client_channel\resolver\fake">
+      <UniqueIdentifier>{9e94ffec-fe00-d132-db50-c4a3c218f102}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{f4e8c61e-1ca6-0fdd-7b5e-b7f9a30c9a21}</UniqueIdentifier>

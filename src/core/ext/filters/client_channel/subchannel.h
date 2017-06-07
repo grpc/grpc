@@ -50,6 +50,7 @@ typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_connected_subchannel grpc_connected_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
 typedef struct grpc_subchannel_args grpc_subchannel_args;
+typedef struct grpc_subchannel_key grpc_subchannel_key;
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
@@ -154,6 +155,10 @@ void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
     the subchannel becomes connected */
 grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
     grpc_subchannel *subchannel);
+
+/** return the subchannel index key for \a subchannel */
+const grpc_subchannel_key *grpc_subchannel_get_key(
+    const grpc_subchannel *subchannel);
 
 /** continue processing a transport op */
 void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
