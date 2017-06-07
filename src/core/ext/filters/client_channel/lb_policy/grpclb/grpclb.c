@@ -1021,7 +1021,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
 
   grpc_closure_init(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
-                    grpc_combiner_scheduler(args->combiner, false));
+                    grpc_combiner_scheduler(args->combiner));
   grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable, args->combiner);
   grpc_connectivity_state_init(&glb_policy->state_tracker, GRPC_CHANNEL_IDLE,
                                "grpclb");
