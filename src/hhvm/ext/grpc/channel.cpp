@@ -57,7 +57,7 @@
 namespace HPHP {
 
 Class* ChannelData::s_class = nullptr;
-const StaticString ChannelData::s_className("Channel");
+const StaticString ChannelData::s_className("Grpc\\Channel");
 
 IMPLEMENT_GET_CLASS(ChannelData);
 
@@ -102,8 +102,8 @@ void HHVM_METHOD(Channel, __construct,
       argsArrayCopy.remove(credentialsKey, true);
     } else {
       ObjectData* obj = value.getObjectData();
-      if (!obj->instanceof(String("ChannelCredentials"))) {
-        throw_invalid_argument("credentials must be a ChannelCredentials object");
+      if (!obj->instanceof(String("Grpc\\ChannelCredentials"))) {
+        throw_invalid_argument("credentials must be a Grpc\\ChannelCredentials object");
         goto cleanup;
       }
       channelCredentialsData = Native::data<ChannelCredentialsData>(obj);

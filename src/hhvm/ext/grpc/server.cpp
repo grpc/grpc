@@ -60,7 +60,7 @@
 namespace HPHP {
 
 Class* ServerData::s_class = nullptr;
-const StaticString ServerData::s_className("Server");
+const StaticString ServerData::s_className("Grpc\\Server");
 
 IMPLEMENT_GET_CLASS(ServerData);
 

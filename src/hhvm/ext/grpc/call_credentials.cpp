@@ -55,7 +55,7 @@
 namespace HPHP {
 
 Class* CallCredentialsData::s_class = nullptr;
-const StaticString CallCredentialsData::s_className("Channel");
+const StaticString CallCredentialsData::s_className("Grpc\\Channel");
 
 IMPLEMENT_GET_CLASS(CallCredentialsData);
 

@@ -56,7 +56,7 @@
 namespace HPHP {
 
 Class* CallData::s_class = nullptr;
-const StaticString CallData::s_className("Call");
+const StaticString CallData::s_className("Grpc\\Call");
 
 IMPLEMENT_GET_CLASS(CallData);
 
@@ -102,7 +102,7 @@ void HHVM_METHOD(Call, __construct,
   const Variant& host_override /* = null */) {
   auto callData = Native::data<CallData>(this_);
   auto channelData = Native::data<ChannelData>(channel_obj);
-  if (channelData->getWrapped() == NULL) {
+  if (channelData->getWrapped() == nullptr) {
     throw_invalid_argument("Call cannot be constructed from a closed Channel");
     return;
   }
@@ -111,8 +111,8 @@ void HHVM_METHOD(Call, __construct,
 
   auto deadlineTimevalData = Native::data<TimevalData>(deadline_obj);
   grpc_slice method_slice = grpc_slice_from_copied_string(method.c_str());
-  grpc_slice host_slice = host_override.isNull() ? grpc_empty_slice() :
-        grpc_slice_from_copied_string(host_override.toString().c_str());
+  grpc_slice host_slice = !host_override.isNull() ? grpc_slice_from_copied_string(host_override.toString().c_str())
+                              : grpc_empty_slice();
   callData->init(grpc_channel_create_call(channelData->getWrapped(), NULL, GRPC_PROPAGATE_DEFAULTS,
                              completion_queue, method_slice,
                              !host_override.isNull() ? &host_slice : NULL,

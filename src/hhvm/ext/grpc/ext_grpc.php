@@ -1,6 +1,6 @@
 <?hh
 
-namespace Grpc;
+namespace Grpc {
 
 <<__NativeData("Call")>>
 class Call {
@@ -307,4 +307,6 @@ class Timeval {
    */
   <<__Native>>
   public function sleepUntil(): void;
+}
+
 }

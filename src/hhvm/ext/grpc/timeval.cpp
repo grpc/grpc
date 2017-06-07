@@ -51,11 +51,11 @@
 namespace HPHP {
 
 Class* TimevalData::s_class = nullptr;
-const StaticString TimevalData::s_className("Timeval");
+const StaticString TimevalData::s_className("Grpc\\Timeval");
 
 IMPLEMENT_GET_CLASS(TimevalData);
 
-TimevalData::TimevalData() {}
+TimevalData::TimevalData() { }
 TimevalData::~TimevalData() { sweep(); }
 
 void TimevalData::init(gpr_timespec time) {
@@ -63,17 +63,14 @@ void TimevalData::init(gpr_timespec time) {
 }
 
 void TimevalData::sweep() {
-  /*if (wrapped) {
+  //if (&wrapped) {
     //free(wrapped);
-    wrapped = nullptr;
-  }*/
+    //&wrapped = nullptr;
+  //}
 }
 
 gpr_timespec TimevalData::getWrapped() {
   return wrapped;
-  //gpr_timespec time;
-  //memcpy(&time, wrapped, sizeof(gpr_timespec));
-  //return time;
 }
 
 void HHVM_METHOD(Timeval, __construct,

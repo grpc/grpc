@@ -48,7 +48,7 @@
 namespace HPHP {
 
 Class* ServerCredentialsData::s_class = nullptr;
-const StaticString ServerCredentialsData::s_className("ServerCredentials");
+const StaticString ServerCredentialsData::s_className("Grpc\\ServerCredentials");
 
 IMPLEMENT_GET_CLASS(ServerCredentialsData);
 

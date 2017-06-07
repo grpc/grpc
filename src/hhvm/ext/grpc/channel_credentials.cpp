@@ -52,7 +52,7 @@ namespace HPHP {
 static char *default_pem_root_certs = NULL;
 
 Class* ChannelCredentialsData::s_class = nullptr;
-const StaticString ChannelCredentialsData::s_className("ChannelCredentials");
+const StaticString ChannelCredentialsData::s_className("Grpc\\ChannelCredentials");
 
 IMPLEMENT_GET_CLASS(ChannelCredentialsData);
 
