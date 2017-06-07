@@ -38,18 +38,23 @@
 #include "config.h"
 #endif
 
+#include "common.h"
+
 #include <grpc/grpc.h>
 
 namespace HPHP {
 
-const StaticString s_Server("Server");
-
-class Server {
+class ServerData {
   private:
     grpc_server* wrapped{nullptr};
   public:
-    Server();
-    ~Server();
+    static Class* s_class;
+    static const StaticString s_className;
+
+    static Class* getClass();
+
+    ServerData();
+    ~ServerData();
 
     void init(grpc_server* server);
     void sweep();

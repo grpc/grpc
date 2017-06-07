@@ -31,44 +31,26 @@
  *
  */
 
-#ifndef NET_GRPC_HHVM_GRPC_SERVER_CREDENTIALS_H_
-#define NET_GRPC_HHVM_GRPC_SERVER_CREDENTIALS_H_
+#ifndef NET_GRPC_HHVM_GRPC_COMMON_H_
+#define NET_GRPC_HHVM_GRPC_COMMON_H_
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include "common.h"
-
 #include "hphp/runtime/ext/extension.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
 
 namespace HPHP {
 
-class ServerCredentialsData {
-  private:
-    grpc_server_credentials* wrapped{nullptr};
-  public:
-    static Class* s_class;
-    static const StaticString s_className;
-
-    static Class* getClass();
-
-    ServerCredentialsData();
-    ~ServerCredentialsData();
-
-    void init(grpc_server_credentials* server_credentials);
-    void sweep();
-    grpc_server_credentials* getWrapped();
-};
-
-Object HHVM_METHOD(ServerCredentials, createSsl,
-  const String& pem_root_certs,
-  const String& pem_private_key,
-  const String& pem_cert_chain);
+#define IMPLEMENT_GET_CLASS(cls) \
+  Class* cls::getClass() { \
+    if (s_class == nullptr) { \
+        s_class = Unit::lookupClass(s_className.get()); \
+        assert(s_class); \
+    } \
+    return s_class; \
+  }
 
 }
 
-#endif /* NET_GRPC_HHVM_GRPC_SERVER_CREDENTIALS_H_ */
+#endif /* NET_GRPC_HHVM_GRPC_COMMON_H_ */

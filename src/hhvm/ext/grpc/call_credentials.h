@@ -45,14 +45,17 @@
 
 namespace HPHP {
 
-const StaticString s_CallCredentials("CallCredentials");
-
-class CallCredentials {
+class CallCredentialsData {
   private:
     grpc_call_credentials* wrapped{nullptr};
   public:
-    CallCredentials();
-    ~CallCredentials();
+    static Class* s_class;
+    static const StaticString s_className;
+
+    static Class* getClass();
+
+    CallCredentialsData();
+    ~CallCredentialsData();
 
     void init(grpc_call_credentials* call_credentials);
     void sweep();

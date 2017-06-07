@@ -37,6 +37,8 @@
 #include "config.h"
 #endif
 
+#include "common.h"
+
 #include <stdbool.h>
 
 #include <grpc/grpc.h>
@@ -54,21 +56,26 @@
 
 namespace HPHP {
 
-Channel::Channel() {}
-Channel::~Channel() { sweep(); }
+Class* ChannelData::s_class = nullptr;
+const StaticString ChannelData::s_className("Channel");
 
-void Channel::init(grpc_channel* channel) {
+IMPLEMENT_GET_CLASS(ChannelData);
+
+ChannelData::ChannelData() {}
+ChannelData::~ChannelData() { sweep(); }
+
+void ChannelData::init(grpc_channel* channel) {
   wrapped = channel;
 }
 
-void Channel::sweep() {
+void ChannelData::sweep() {
   if (wrapped) {
     grpc_channel_destroy(wrapped);
     wrapped = nullptr;
   }
 }
 
-grpc_channel* Channel::getWrapped() {
+grpc_channel* ChannelData::getWrapped() {
   return wrapped;
 }
 
@@ -82,35 +89,35 @@ grpc_channel* Channel::getWrapped() {
 void HHVM_METHOD(Channel, __construct,
   const String& target,
   const Array& args_array) {
-  auto args_array_ = args_array.copy();
+  auto argsArrayCopy = args_array.copy();
 
-  auto channel = Native::data<Channel>(this_);
-  auto credentials_key = String("credentials");
+  auto channelData = Native::data<ChannelData>(this_);
+  auto credentialsKey = String("credentials");
 
-  ChannelCredentials* channel_credentials_ = NULL;
+  ChannelCredentialsData* channelCredentialsData = NULL;
 
-  if (args_array_.exists(credentials_key, true)) {
-    Variant value = args_array_[credentials_key];
+  if (argsArrayCopy.exists(credentialsKey, true)) {
+    Variant value = argsArrayCopy[credentialsKey];
     if (value.isNull() || !value.isObject()) {
-      args_array_.remove(credentials_key, true);
+      argsArrayCopy.remove(credentialsKey, true);
     } else {
       ObjectData* obj = value.getObjectData();
       if (!obj->instanceof(String("ChannelCredentials"))) {
         throw_invalid_argument("credentials must be a ChannelCredentials object");
         goto cleanup;
       }
-      channel_credentials_ = Native::data<ChannelCredentials>(obj);
-      args_array_.remove(credentials_key, true);
+      channelCredentialsData = Native::data<ChannelCredentialsData>(obj);
+      argsArrayCopy.remove(credentialsKey, true);
     }
   }
 
   grpc_channel_args args;
-  hhvm_grpc_read_args_array(args_array_, &args);
+  hhvm_grpc_read_args_array(argsArrayCopy, &args);
 
-  if (channel_credentials_ == NULL) {
-    channel->init(grpc_insecure_channel_create(target.c_str(), &args, NULL));
+  if (channelCredentialsData == NULL) {
+    channelData->init(grpc_insecure_channel_create(target.c_str(), &args, NULL));
   } else {
-    channel->init(grpc_secure_channel_create(channel_credentials_->getWrapped(), target.c_str(), &args, NULL));
+    channelData->init(grpc_secure_channel_create(channelCredentialsData->getWrapped(), target.c_str(), &args, NULL));
   }
 
   cleanup:
@@ -123,8 +130,8 @@ void HHVM_METHOD(Channel, __construct,
  * @return string The URI of the endpoint
  */
 String HHVM_METHOD(Channel, getTarget) {
-  auto channel = Native::data<Channel>(this_);
-  return String(grpc_channel_get_target(channel->getWrapped()), CopyString);
+  auto channelData = Native::data<ChannelData>(this_);
+  return String(grpc_channel_get_target(channelData->getWrapped()), CopyString);
 }
 
 /**
@@ -134,8 +141,8 @@ String HHVM_METHOD(Channel, getTarget) {
  */
 int64_t HHVM_METHOD(Channel, getConnectivityState,
   bool try_to_connect /* = false */) {
-  auto channel = Native::data<Channel>(this_);
-  return (int64_t) grpc_channel_check_connectivity_state(channel->getWrapped(),
+  auto channelData = Native::data<ChannelData>(this_);
+  return (int64_t) grpc_channel_check_connectivity_state(channelData->getWrapped(),
                                                       (int)try_to_connect);
 }
 
@@ -149,13 +156,13 @@ int64_t HHVM_METHOD(Channel, getConnectivityState,
 bool HHVM_METHOD(Channel, watchConnectivityState,
   int64_t last_state,
   const Object& deadline) {
-  auto channel = Native::data<Channel>(this_);
+  auto channelData = Native::data<ChannelData>(this_);
 
-  auto timevalDeadline = Native::data<TimevalData>(deadline);
+  auto timevalDataDeadline = Native::data<TimevalData>(deadline);
 
-  grpc_channel_watch_connectivity_state(channel->getWrapped(),
+  grpc_channel_watch_connectivity_state(channelData->getWrapped(),
                                           (grpc_connectivity_state)last_state,
-                                          timevalDeadline->getWrapped(), completion_queue,
+                                          timevalDataDeadline->getWrapped(), completion_queue,
                                           NULL);
 
   grpc_event event = grpc_completion_queue_pluck(completion_queue, NULL,
@@ -169,8 +176,8 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
  * @return void
  */
 void HHVM_METHOD(Channel, close) {
- auto channel = Native::data<Channel>(this_);
- delete channel;
+ auto channelData = Native::data<ChannelData>(this_);
+ delete channelData;
 }
 
 

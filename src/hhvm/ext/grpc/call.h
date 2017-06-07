@@ -45,22 +45,25 @@
 
 namespace HPHP {
 
-const StaticString s_Call("Call");
-
-class Call {
+class CallData {
   private:
     grpc_call* wrapped{nullptr};
     bool owned = false;
-    Channel* channel{nullptr};
+    ChannelData* channelData{nullptr};
   public:
-    Call();
-    ~Call();
+    static Class* s_class;
+    static const StaticString s_className;
+
+    static Class* getClass();
+
+    CallData();
+    ~CallData();
 
     void init(grpc_call* call);
     void sweep();
     grpc_call* getWrapped();
     bool getOwned();
-    void setChannel(Channel* channel_);
+    void setChannelData(ChannelData* channelData_);
     void setOwned(bool owned_);
 };
 

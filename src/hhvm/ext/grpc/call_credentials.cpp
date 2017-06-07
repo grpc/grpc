@@ -38,6 +38,8 @@
 #include "config.h"
 #endif
 
+#include "common.h"
+
 #include "hphp/runtime/ext/extension.h"
 #include "hphp/runtime/base/req-containers.h"
 #include "hphp/runtime/base/type-resource.h"
@@ -52,21 +54,26 @@
 
 namespace HPHP {
 
-CallCredentials::CallCredentials() {}
-CallCredentials::~CallCredentials() { sweep(); }
+Class* CallCredentialsData::s_class = nullptr;
+const StaticString CallCredentialsData::s_className("Channel");
 
-void CallCredentials::init(grpc_call_credentials* call_credentials) {
+IMPLEMENT_GET_CLASS(CallCredentialsData);
+
+CallCredentialsData::CallCredentialsData() {}
+CallCredentialsData::~CallCredentialsData() { sweep(); }
+
+void CallCredentialsData::init(grpc_call_credentials* call_credentials) {
   wrapped = call_credentials;
 }
 
-void CallCredentials::sweep() {
+void CallCredentialsData::sweep() {
   if (wrapped) {
     grpc_call_credentials_release(wrapped);
     wrapped = nullptr;
   }
 }
 
-grpc_call_credentials* CallCredentials::getWrapped() {
+grpc_call_credentials* CallCredentialsData::getWrapped() {
   return wrapped;
 }
 
@@ -79,17 +86,17 @@ grpc_call_credentials* CallCredentials::getWrapped() {
 Object HHVM_METHOD(CallCredentials, createComposite,
   const Object& cred1_obj,
   const Object& cred2_obj) {
-  auto callCredentials1 = Native::data<CallCredentials>(cred1_obj);
-  auto callCredentials2 = Native::data<CallCredentials>(cred2_obj);
+  auto callCredentialsData1 = Native::data<CallCredentialsData>(cred1_obj);
+  auto callCredentialsData2 = Native::data<CallCredentialsData>(cred2_obj);
 
   grpc_call_credentials *call_credentials =
-        grpc_composite_call_credentials_create(callCredentials1->getWrapped(),
-                                               callCredentials2->getWrapped(),
+        grpc_composite_call_credentials_create(callCredentialsData1->getWrapped(),
+                                               callCredentialsData2->getWrapped(),
                                                NULL);
 
-  auto newCallCredentialsObj = create_object("CallCredentials", Array());
-  auto newCallCredentials = Native::data<CallCredentials>(newCallCredentialsObj);
-  newCallCredentials->init(call_credentials);
+  auto newCallCredentialsObj = Object{CallCredentialsData::getClass()};
+  auto newCallCredentialsData = Native::data<CallCredentialsData>(newCallCredentialsObj);
+  newCallCredentialsData->init(call_credentials);
 
   return newCallCredentialsObj;
 }
@@ -115,9 +122,9 @@ Object HHVM_METHOD(CallCredentials, createFromPlugin,
   plugin.state = (void *)state;
   plugin.type = "";
 
-  auto newCallCredentialsObj = create_object("CallCredentials", Array());
-  auto newCallCredentials = Native::data<CallCredentials>(newCallCredentialsObj);
-  newCallCredentials->init(grpc_metadata_credentials_create_from_plugin(plugin, NULL));
+  auto newCallCredentialsObj = Object{CallCredentialsData::getClass()};
+  auto newCallCredentialsData = Native::data<CallCredentialsData>(newCallCredentialsObj);
+  newCallCredentialsData->init(grpc_metadata_credentials_create_from_plugin(plugin, NULL));
 
   return newCallCredentialsObj;
 }

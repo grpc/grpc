@@ -38,6 +38,8 @@
 #include "config.h"
 #endif
 
+#include "common.h"
+
 #include "hphp/runtime/ext/extension.h"
 
 #include "grpc/grpc.h"
@@ -45,14 +47,17 @@
 
 namespace HPHP {
 
-const StaticString s_ChannelCredentials("ChannelCredentials");
-
-class ChannelCredentials {
+class ChannelCredentialsData {
   private:
     grpc_channel_credentials* wrapped{nullptr};
   public:
-    ChannelCredentials();
-    ~ChannelCredentials();
+    static Class* s_class;
+    static const StaticString s_className;
+
+    static Class* getClass();
+
+    ChannelCredentialsData();
+    ~ChannelCredentialsData();
 
     void init(grpc_channel_credentials* channel_credentials);
     void sweep();

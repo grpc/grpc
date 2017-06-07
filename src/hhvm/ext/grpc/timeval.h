@@ -38,6 +38,8 @@
 #include "config.h"
 #endif
 
+#include "common.h"
+
 #include "hphp/runtime/ext/extension.h"
 
 #include <grpc/grpc.h>
@@ -45,23 +47,16 @@
 
 namespace HPHP {
 
-#define IMPLEMENT_GET_CLASS(cls) \
-  Class* cls::getClass() { \
-    if (s_class == nullptr) { \
-        s_class = Unit::lookupClass(s_className.get()); \
-        assert(s_class); \
-    } \
-    return s_class; \
-  }
 
 class TimevalData {
   private:
-    gpr_timespec *wrapped{nullptr};
+    gpr_timespec wrapped;
   public:
     static Class* s_class;
     static const StaticString s_className;
 
     static Class* getClass();
+
     TimevalData();
     ~TimevalData();
 

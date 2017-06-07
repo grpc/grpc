@@ -44,14 +44,17 @@
 
 namespace HPHP {
 
-const StaticString s_Channel("Channel");
-
-class Channel {
+class ChannelData {
   private:
     grpc_channel* wrapped{nullptr};
   public:
-    Channel();
-    ~Channel();
+    static Class* s_class;
+    static const StaticString s_className;
+
+    static Class* getClass();
+
+    ChannelData();
+    ~ChannelData();
 
     void init(grpc_channel* channel);
     void sweep();

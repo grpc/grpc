@@ -47,21 +47,26 @@
 
 namespace HPHP {
 
-ServerCredentials::ServerCredentials() {}
-ServerCredentials::~ServerCredentials() { sweep(); }
+Class* ServerCredentialsData::s_class = nullptr;
+const StaticString ServerCredentialsData::s_className("ServerCredentials");
 
-void ServerCredentials::init(grpc_server_credentials* server_credentials) {
+IMPLEMENT_GET_CLASS(ServerCredentialsData);
+
+ServerCredentialsData::ServerCredentialsData() {}
+ServerCredentialsData::~ServerCredentialsData() { sweep(); }
+
+void ServerCredentialsData::init(grpc_server_credentials* server_credentials) {
   wrapped = server_credentials;
 }
 
-void ServerCredentials::sweep() {
+void ServerCredentialsData::sweep() {
   if (wrapped) {
     grpc_server_credentials_release(wrapped);
     wrapped = nullptr;
   }
 }
 
-grpc_server_credentials* ServerCredentials::getWrapped() {
+grpc_server_credentials* ServerCredentialsData::getWrapped() {
   return wrapped;
 }
 
@@ -74,12 +79,12 @@ Object HHVM_METHOD(ServerCredentials, createSsl,
   pem_key_cert_pair.private_key = pem_private_key.c_str();
   pem_key_cert_pair.cert_chain = pem_cert_chain.c_str();
 
-  auto newServerCredentialsObj = create_object("ServerCredentials", Array());
-  auto serverCredentials = Native::data<ServerCredentials>(newServerCredentialsObj);
+  auto newServerCredentialsObj = Object{ServerCredentialsData::getClass()};
+  auto serverCredentialsData = Native::data<ServerCredentialsData>(newServerCredentialsObj);
 
   /* TODO: add a client_certificate_request field in ServerCredentials and pass
    * it as the last parameter. */
-  serverCredentials->init(grpc_ssl_server_credentials_create_ex(
+  serverCredentialsData->init(grpc_ssl_server_credentials_create_ex(
     pem_root_certs.c_str(),
     &pem_key_cert_pair,
     1,

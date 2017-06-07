@@ -152,11 +152,11 @@ class GrpcExtension : public Extension {
       HHVM_ME(Timeval, sleepUntil);
 
       Native::registerNativeDataInfo<TimevalData>(TimevalData::s_className.get());
-      Native::registerNativeDataInfo<ServerCredentials>(s_ServerCredentials.get());
-      Native::registerNativeDataInfo<Server>(s_Server.get());
-      Native::registerNativeDataInfo<ChannelCredentials>(s_ChannelCredentials.get());
-      Native::registerNativeDataInfo<Channel>(s_Channel.get());
-      Native::registerNativeDataInfo<Call>(s_Call.get());
+      Native::registerNativeDataInfo<ServerCredentialsData>(ServerCredentialsData::s_className.get());
+      Native::registerNativeDataInfo<ServerData>(ServerData::s_className.get());
+      Native::registerNativeDataInfo<ChannelCredentialsData>(ChannelCredentialsData::s_className.get());
+      Native::registerNativeDataInfo<ChannelData>(ChannelData::s_className.get());
+      Native::registerNativeDataInfo<CallData>(CallData::s_className.get());
 
       /* Register call error constants */
       grpc_init();

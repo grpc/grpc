@@ -35,6 +35,8 @@
 #include "config.h"
 #endif
 
+#include "common.h"
+
 #include "call.h"
 #include "timeval.h"
 #include "completion_queue.h"
@@ -53,38 +55,43 @@
 
 namespace HPHP {
 
-Call::Call() {}
-Call::~Call() { sweep(); }
+Class* CallData::s_class = nullptr;
+const StaticString CallData::s_className("Call");
 
-void Call::init(grpc_call* call) {
+IMPLEMENT_GET_CLASS(CallData);
+
+CallData::CallData() {}
+CallData::~CallData() { sweep(); }
+
+void CallData::init(grpc_call* call) {
   wrapped = call;
 }
 
-void Call::sweep() {
+void CallData::sweep() {
   if (wrapped) {
     if (owned) {
       grpc_call_unref(wrapped);
     }
     wrapped = nullptr;
   }
-  if (channel) {
-    channel = nullptr;
+  if (channelData) {
+    channelData = nullptr;
   }
 }
 
-grpc_call* Call::getWrapped() {
+grpc_call* CallData::getWrapped() {
   return wrapped;
 }
 
-bool Call::getOwned() {
+bool CallData::getOwned() {
   return owned;
 }
 
-void Call::setChannel(Channel* channel_) {
-  channel = channel_;
+void CallData::setChannelData(ChannelData* channelData_) {
+  channelData = channelData_;
 }
 
-void Call::setOwned(bool owned_) {
+void CallData::setOwned(bool owned_) {
   owned = owned_;
 }
 
@@ -93,34 +100,34 @@ void HHVM_METHOD(Call, __construct,
   const String& method,
   const Object& deadline_obj,
   const Variant& host_override /* = null */) {
-  auto call = Native::data<Call>(this_);
-  auto channel = Native::data<Channel>(channel_obj);
-  if (channel->getWrapped() == NULL) {
+  auto callData = Native::data<CallData>(this_);
+  auto channelData = Native::data<ChannelData>(channel_obj);
+  if (channelData->getWrapped() == NULL) {
     throw_invalid_argument("Call cannot be constructed from a closed Channel");
     return;
   }
 
-  call->setChannel(channel);
+  callData->setChannelData(channelData);
 
-  auto deadlineTimeval = Native::data<TimevalData>(deadline_obj);
+  auto deadlineTimevalData = Native::data<TimevalData>(deadline_obj);
   grpc_slice method_slice = grpc_slice_from_copied_string(method.c_str());
   grpc_slice host_slice = host_override.isNull() ? grpc_empty_slice() :
         grpc_slice_from_copied_string(host_override.toString().c_str());
-  call->init(grpc_channel_create_call(channel->getWrapped(), NULL, GRPC_PROPAGATE_DEFAULTS,
+  callData->init(grpc_channel_create_call(channelData->getWrapped(), NULL, GRPC_PROPAGATE_DEFAULTS,
                              completion_queue, method_slice,
                              !host_override.isNull() ? &host_slice : NULL,
-                             deadlineTimeval->getWrapped(), NULL));
+                             deadlineTimevalData->getWrapped(), NULL));
 
   grpc_slice_unref(method_slice);
   grpc_slice_unref(host_slice);
 
-  call->setOwned(true);
+  callData->setOwned(true);
 }
 
 Object HHVM_METHOD(Call, startBatch,
   const Array& actions) { // array<int, mixed>
   auto resultObj = SystemLib::AllocStdClassObject();
-  auto call = Native::data<Call>(this_);
+  auto callData = Native::data<CallData>(this_);
 
   size_t op_num = 0;
   grpc_op ops[8];
@@ -280,14 +287,14 @@ Object HHVM_METHOD(Call, startBatch,
     op_num++;
   }
 
-  error = grpc_call_start_batch(call->getWrapped(), ops, op_num, call->getWrapped(), NULL);
+  error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
 
   if (error != GRPC_CALL_OK) {
     throw_invalid_argument("start_batch was called incorrectly: %d" PRId64, (int)error);
     goto cleanup;
   }
 
-  grpc_completion_queue_pluck(completion_queue, call->getWrapped(),
+  grpc_completion_queue_pluck(completion_queue, callData->getWrapped(),
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
   for (int i = 0; i < op_num; i++) {
@@ -354,22 +361,22 @@ Object HHVM_METHOD(Call, startBatch,
 }
 
 String HHVM_METHOD(Call, getPeer) {
-  auto call = Native::data<Call>(this_);
-  return String(grpc_call_get_peer(call->getWrapped()), CopyString);
+  auto callData = Native::data<CallData>(this_);
+  return String(grpc_call_get_peer(callData->getWrapped()), CopyString);
 }
 
 void HHVM_METHOD(Call, cancel) {
-  auto call = Native::data<Call>(this_);
-  grpc_call_cancel(call->getWrapped(), NULL);
+  auto callData = Native::data<CallData>(this_);
+  grpc_call_cancel(callData->getWrapped(), NULL);
 }
 
 int64_t HHVM_METHOD(Call, setCredentials,
   const Object& creds_obj) {
-  auto callCredentials = Native::data<CallCredentials>(creds_obj);
-  auto call = Native::data<Call>(this_);
+  auto callCredentialsData = Native::data<CallCredentialsData>(creds_obj);
+  auto callData = Native::data<CallData>(this_);
 
   grpc_call_error error = GRPC_CALL_ERROR;
-  error = grpc_call_set_credentials(call->getWrapped(), callCredentials->getWrapped());
+  error = grpc_call_set_credentials(callData->getWrapped(), callCredentialsData->getWrapped());
 
   return (int64_t)error;
 }

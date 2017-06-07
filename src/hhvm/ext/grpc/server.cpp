@@ -59,14 +59,19 @@
 
 namespace HPHP {
 
-Server::Server() {}
-Server::~Server() { sweep(); }
+Class* ServerData::s_class = nullptr;
+const StaticString ServerData::s_className("Server");
 
-void Server::init(grpc_server* server) {
+IMPLEMENT_GET_CLASS(ServerData);
+
+ServerData::ServerData() {}
+ServerData::~ServerData() { sweep(); }
+
+void ServerData::init(grpc_server* server) {
   wrapped = server;
 }
 
-void Server::sweep() {
+void ServerData::sweep() {
   if (wrapped) {
     grpc_server_shutdown_and_notify(wrapped, completion_queue, NULL);
     grpc_server_cancel_all_calls(wrapped);
@@ -77,45 +82,45 @@ void Server::sweep() {
   }
 }
 
-grpc_server* Server::getWrapped() {
+grpc_server* ServerData::getWrapped() {
   return wrapped;
 }
 
 void HHVM_METHOD(Server, __construct,
   const Variant& args_array_or_null /* = null */) {
-  auto server = Native::data<Server>(this_);
+  auto serverData = Native::data<ServerData>(this_);
   if (args_array_or_null.isNull()) {
-    server->init(grpc_server_create(NULL, NULL));
+    serverData->init(grpc_server_create(NULL, NULL));
   } else {
     grpc_channel_args args;
     hhvm_grpc_read_args_array(args_array_or_null.toArray(), &args);
-    server->init(grpc_server_create(&args, NULL));
+    serverData->init(grpc_server_create(&args, NULL));
     req::free(args.args);
   }
 
-  grpc_server_register_completion_queue(server->getWrapped(), completion_queue, NULL);
+  grpc_server_register_completion_queue(serverData->getWrapped(), completion_queue, NULL);
 }
 
 Object HHVM_METHOD(Server, requestCall) {
   char *method_text;
   char *host_text;
   Object callObj;
-  Call *call;
+  CallData *callData;
   Object timevalObj;
-  TimevalData *timeval;
+  TimevalData *timevalData;
 
   grpc_call_error error_code;
-  grpc_call *call_;
+  grpc_call *call;
   grpc_call_details details;
   grpc_metadata_array metadata;
   grpc_event event;
   Object resultObj = SystemLib::AllocStdClassObject();;
 
-  auto server = Native::data<Server>(this_);
+  auto serverData = Native::data<ServerData>(this_);
 
   grpc_call_details_init(&details);
   grpc_metadata_array_init(&metadata);
-  error_code = grpc_server_request_call(server->getWrapped(), &call_, &details, &metadata,
+  error_code = grpc_server_request_call(serverData->getWrapped(), &call, &details, &metadata,
                                  completion_queue, completion_queue, NULL);
 
   if (error_code != GRPC_CALL_OK) {
@@ -141,13 +146,13 @@ Object HHVM_METHOD(Server, requestCall) {
   gpr_free(method_text);
   gpr_free(host_text);
 
-  callObj = create_object("Call", Array());
-  call = Native::data<Call>(callObj);
-  call->init(call_);
+  callObj = Object{CallData::getClass()};
+  callData = Native::data<CallData>(callObj);
+  callData->init(call);
 
-  timevalObj = Object{Unit::lookupClass(TimevalData::s_className.get())};
-  timeval = Native::data<TimevalData>(timevalObj);
-  timeval->init(details.deadline);
+  timevalObj = Object{TimevalData::getClass()};
+  timevalData = Native::data<TimevalData>(timevalObj);
+  timevalData->init(details.deadline);
 
   resultObj.o_set("call", callObj);
   resultObj.o_set("absolute_deadline", timevalObj);
@@ -161,21 +166,21 @@ cleanup:
 
 bool HHVM_METHOD(Server, addHttp2Port,
   const String& addr) {
-  auto server = Native::data<Server>(this_);
-  return (bool)grpc_server_add_insecure_http2_port(server->getWrapped(), addr.c_str());
+  auto serverData = Native::data<ServerData>(this_);
+  return (bool)grpc_server_add_insecure_http2_port(serverData->getWrapped(), addr.c_str());
 }
 
 bool HHVM_METHOD(Server, addSecureHttp2Port,
   const String& addr,
   const Object& server_credentials) {
-  auto server = Native::data<Server>(this_);
-  auto serverCredentials = Native::data<ServerCredentials>(server_credentials);
-  return (bool)grpc_server_add_secure_http2_port(server->getWrapped(), addr.c_str(), serverCredentials->getWrapped());
+  auto serverData = Native::data<ServerData>(this_);
+  auto serverCredentialsData = Native::data<ServerCredentialsData>(server_credentials);
+  return (bool)grpc_server_add_secure_http2_port(serverData->getWrapped(), addr.c_str(), serverCredentialsData->getWrapped());
 }
 
 void HHVM_METHOD(Server, start) {
-  auto server = Native::data<Server>(this_);
-  grpc_server_start(server->getWrapped());
+  auto serverData = Native::data<ServerData>(this_);
+  grpc_server_start(serverData->getWrapped());
 }
 
 } // namespace HPHP
