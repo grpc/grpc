@@ -182,7 +182,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   void RegisterAvalanching() {
     gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
                                  static_cast<gpr_atm>(1));
-  };
+  }
   void CompleteAvalanching();
 
  protected:
