@@ -47,11 +47,14 @@ class Status {
   /// Construct an OK instance.
   Status() : code_(StatusCode::OK) {}
 
-  /// Construct an instance with associated \a code and \a error_message
+  /// Construct an instance with associated \a code and \a error_message.
+  /// It is an error to construct an OK status with non-empty \a error_message.
   Status(StatusCode code, const grpc::string& error_message)
       : code_(code), error_message_(error_message) {}
 
-  /// Construct an instance with \a code,  \a error_message and \a error_details
+  /// Construct an instance with \a code,  \a error_message and
+  /// \a error_details. It is an error to construct an OK status with non-empty
+  /// \a error_message and/or \a error_details.
   Status(StatusCode code, const grpc::string& error_message,
          const grpc::string& error_details)
       : code_(code),
