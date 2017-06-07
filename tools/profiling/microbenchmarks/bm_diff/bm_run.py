@@ -28,7 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-### Python utility to run opt and counters benchmarks and save json output """
+""" Python utility to run opt and counters benchmarks and save json output """
 
 import bm_constants
 
@@ -84,7 +84,7 @@ def _args():
     args = argp.parse_args()
     assert args.name
     if args.loops < 3:
-        print "WARNING: This run will likely be noisy. Increase loops."
+        print "WARNING: This run will likely be noisy. Increase loops to at least 3."
     return args
 
 

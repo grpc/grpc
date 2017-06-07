@@ -48,6 +48,7 @@ verbose = False
 
 
 def _median(ary):
+    assert(len(ary))
     ary = sorted(ary)
     n = len(ary)
     if n % 2 == 0:
@@ -83,7 +84,7 @@ def _args():
     argp.add_argument('-n', '--new', type=str, help='New benchmark name')
     argp.add_argument('-o', '--old', type=str, help='Old benchmark name')
     argp.add_argument(
-        '-v', '--verbose', type=bool, help='print details of before/after')
+        '-v', '--verbose', type=bool, help='Print details of before/after')
     args = argp.parse_args()
     global verbose
     if args.verbose: verbose = True
@@ -210,6 +211,4 @@ if __name__ == '__main__':
     args = _args()
     diff, note = diff(args.benchmarks, args.loops, args.track, args.old,
                       args.new)
-    print note
-    print ""
-    print diff if diff else "No performance differences"
+    print('%s\n%s' % (note, diff if diff else "No performance differences"))

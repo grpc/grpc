@@ -28,7 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-### Configurable constants for the bm_*.py family """
+""" Configurable constants for the bm_*.py family """
 
 _AVAILABLE_BENCHMARK_TESTS = [
     'bm_fullstack_unary_ping_pong', 'bm_fullstack_streaming_ping_pong',
