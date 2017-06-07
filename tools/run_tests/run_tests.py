@@ -68,7 +68,6 @@ except (ImportError):
 gcp_utils_dir = os.path.abspath(os.path.join(
         os.path.dirname(__file__), '../gcp/utils'))
 sys.path.append(gcp_utils_dir)
-import big_query_utils as bqu
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
@@ -86,7 +85,9 @@ _POLLING_STRATEGIES = {
 
 
 def get_flaky_tests(limit=None):
-  bq = bqu.create_big_query()
+  import big_query_utils
+
+  bq = big_query_utils.create_big_query()
   query = """
     SELECT
       test_name,
@@ -104,7 +105,7 @@ def get_flaky_tests(limit=None):
       count_failed > 0"""
   if limit:
     query += " limit {}".format(limit)
-  query_job = bqu.sync_query_job(bq, 'grpc-testing', query)
+  query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
   page = bq.jobs().getQueryResults(
       pageToken=None,
       **query_job['jobReference']).execute(num_retries=3)
@@ -1246,20 +1247,17 @@ argp.add_argument('--bq_result_table',
                   type=str,
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
-# XXX Remove the following line. Only used for proof-of-concept-ing
-argp.add_argument('--show_flakes', default=False, action='store_const', const=True);
+argp.add_argument('--auto_set_flakes', dest='auto_set_flakes', action='store_true')
+argp.add_argument('--no-auto_set_flakes', dest='auto_set_flakes', action='store_false')
+argp.set_defaults('auto_set_flakes', True)
 args = argp.parse_args()
 
-try:
-  flaky_tests = set(get_flaky_tests())
-except:
-  print("Unexpected error getting flaky tests:", sys.exc_info()[0])
-  flaky_tests = set()
-
-if args.show_flakes:
-  import pprint
-  pprint.pprint(flaky_tests)
-  sys.exit(0)
+flaky_tests = set()
+if args.auto_set_flakes:
+  try:
+    flaky_tests = set(get_flaky_tests())
+  except:
+    print("Unexpected error getting flaky tests:", sys.exc_info()[0])
 
 if args.force_default_poller:
   _POLLING_STRATEGIES = {}
