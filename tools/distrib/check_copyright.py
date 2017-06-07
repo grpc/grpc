@@ -54,9 +54,6 @@ argp.add_argument('-a', '--ancient',
                   default=0,
                   action='store_const',
                   const=1)
-argp.add_argument('-f', '--fix',
-                  default=False,
-                  action='store_true');
 argp.add_argument('--precommit',
                   default=False,
                   action='store_true')
