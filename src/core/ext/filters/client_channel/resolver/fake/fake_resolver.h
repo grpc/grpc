@@ -29,19 +29,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef GRPC_TEST_CORE_END2END_FAKE_RESOLVER_H
-#define GRPC_TEST_CORE_END2END_FAKE_RESOLVER_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 
-#include "test/core/util/test_config.h"
-
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.fake_resolver.response_generator"
 
-void grpc_fake_resolver_init();
+void grpc_resolver_fake_init();
 
 // Instances of \a grpc_fake_resolver_response_generator are passed to the
 // fake resolver in a channel argument (see \a
@@ -73,4 +71,5 @@ grpc_fake_resolver_response_generator_ref(
 void grpc_fake_resolver_response_generator_unref(
     grpc_fake_resolver_response_generator* generator);
 
-#endif /* GRPC_TEST_CORE_END2END_FAKE_RESOLVER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H \
+          */

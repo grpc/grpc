@@ -49,4 +49,4 @@ typedef bool (*user_agent_parser)(grpc_mdelem);
 
 void grpc_register_workaround(uint32_t id, user_agent_parser parser);
 
-#endif
+#endif /* GRPC_CORE_EXT_FILTERS_WORKAROUNDS_WORKAROUND_UTILS_H */

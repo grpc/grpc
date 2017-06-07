@@ -294,6 +294,7 @@ CORE_SOURCE_FILES = [
   'third_party/nanopb/pb_common.c',
   'third_party/nanopb/pb_decode.c',
   'third_party/nanopb/pb_encode.c',
+  'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c',
   'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c',
   'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c',
   'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c',

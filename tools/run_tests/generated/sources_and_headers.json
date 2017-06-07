@@ -2913,6 +2913,25 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "client_lb_end2end_test", 
+    "src": [
+      "test/cpp/end2end/client_lb_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_codegen_base"
@@ -3766,25 +3785,6 @@
     "name": "reconnect_interop_server", 
     "src": [
       "test/cpp/interop/reconnect_interop_server.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "round_robin_end2end_test", 
-    "src": [
-      "test/cpp/end2end/round_robin_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5832,6 +5832,7 @@
       "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
+      "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
       "grpc_server_backward_compatibility", 
@@ -5939,6 +5940,7 @@
       "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
+      "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
       "grpc_server_backward_compatibility", 
       "grpc_transport_chttp2_client_insecure", 
@@ -8341,6 +8343,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_resolver_fake", 
       "nanopb"
     ], 
     "headers": [
@@ -8376,6 +8379,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_resolver_fake", 
       "grpc_secure", 
       "nanopb"
     ], 
@@ -8541,6 +8545,25 @@
       "grpc_base", 
       "grpc_client_channel"
     ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_resolver_fake", 
+    "src": [
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c", 
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel"
+    ], 
     "headers": [], 
     "is_filegroup": true, 
     "language": "c", 
@@ -8656,8 +8679,8 @@
       "grpc"
     ], 
     "headers": [
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
       "test/core/end2end/cq_verifier.h", 
-      "test/core/end2end/fake_resolver.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
@@ -8676,10 +8699,10 @@
     "language": "c", 
     "name": "grpc_test_util_base", 
     "src": [
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c", 
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
       "test/core/end2end/cq_verifier.c", 
       "test/core/end2end/cq_verifier.h", 
-      "test/core/end2end/fake_resolver.c", 
-      "test/core/end2end/fake_resolver.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.c", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.c", 

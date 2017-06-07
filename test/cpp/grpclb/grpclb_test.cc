@@ -52,6 +52,7 @@
 #include <grpc++/impl/codegen/config.h>
 extern "C" {
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -61,7 +62,6 @@ extern "C" {
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 }
@@ -591,7 +591,7 @@ static void setup_client(const server_fixture *lb_server,
   grpc_uri_destroy(lb_uri);
   gpr_free(lb_uri_str);
 
-  gpr_asprintf(&cf->server_uri, "test:///%s", lb_server->servers_hostport);
+  gpr_asprintf(&cf->server_uri, "fake:///%s", lb_server->servers_hostport);
   const grpc_arg fake_addresses =
       grpc_lb_addresses_create_channel_arg(addresses);
   grpc_channel_args *fake_result =
@@ -804,7 +804,6 @@ TEST(GrpclbTest, InvalidAddressInServerlist) {}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_fake_resolver_init();
   grpc_test_init(argc, argv);
   grpc_init();
   const auto result = RUN_ALL_TESTS();
