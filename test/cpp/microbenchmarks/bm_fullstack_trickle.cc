@@ -237,6 +237,7 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
     switch (fixture->cq()->AsyncNext(t, ok, gpr_now(GPR_CLOCK_MONOTONIC))) {
       case CompletionQueue::TIMEOUT:
         fixture->Step(iteration != -1);
+        g_now = gpr_time_add(g_now, gpr_time_from_millis(5, GPR_TIMESPAN));
         break;
       case CompletionQueue::SHUTDOWN:
         GPR_ASSERT(false);
@@ -244,7 +245,6 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
       case CompletionQueue::GOT_EVENT:
         return;
     }
-    g_now = gpr_time_add(g_now, gpr_time_from_micros(100, GPR_TIMESPAN));
   }
 }
 
