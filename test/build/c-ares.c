@@ -33,6 +33,10 @@
 
 #include <ares.h>
 
+#if (ARES_VERSION < 0x010b00)
+  ARES_VERSION should not be smaller than 1.11.0
+#endif
+
 int main(void) {
   ares_channel channelptr;
 
