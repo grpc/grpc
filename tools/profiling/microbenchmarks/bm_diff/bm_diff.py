@@ -51,7 +51,7 @@ def _median(ary):
     ary = sorted(ary)
     n = len(ary)
     if n % 2 == 0:
-        return (ary[n / 2] + ary[n / 2 + 1]) / 2.0
+        return (ary[(n - 1) / 2] + ary[(n - 1) / 2 + 1]) / 2.0
     else:
         return ary[n / 2]
 
@@ -130,23 +130,30 @@ class Benchmark:
         return [self.final[f] if f in self.final else '' for f in flds]
 
 
-def _read_json(filename, badfiles):
+def _read_json(filename, badjson_files, nonexistant_files):
     stripped = ".".join(filename.split(".")[:-2])
     try:
         with open(filename) as f:
             return json.loads(f.read())
-    except ValueError, e:
-        if stripped in badfiles:
-            badfiles[stripped] += 1
+    except IOError, e:
+        if stripped in nonexistant_files:
+            nonexistant_files[stripped] += 1
         else:
-            badfiles[stripped] = 1
+            nonexistant_files[stripped] = 1
+        return None        
+    except ValueError, e:
+        if stripped in badjson_files:
+            badjson_files[stripped] += 1
+        else:
+            badjson_files[stripped] = 1
         return None
 
 
 def diff(bms, loops, track, old, new):
     benchmarks = collections.defaultdict(Benchmark)
 
-    badfiles = {}
+    badjson_files = {}
+    nonexistant_files = {}
     for bm in bms:
         for loop in range(0, loops):
             for line in subprocess.check_output(
@@ -156,16 +163,16 @@ def diff(bms, loops, track, old, new):
                     "<", "_").replace(">", "_").replace(", ", "_")
                 js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' %
                                         (bm, stripped_line, new, loop),
-                                        badfiles)
+                                        badjson_files, nonexistant_files)
                 js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
                                         (bm, stripped_line, new, loop),
-                                        badfiles)
+                                        badjson_files, nonexistant_files)
                 js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' %
                                         (bm, stripped_line, old, loop),
-                                        badfiles)
+                                        badjson_files, nonexistant_files)
                 js_old_opt = _read_json('%s.%s.opt.%s.%d.json' %
                                         (bm, stripped_line, old, loop),
-                                        badfiles)
+                                        badjson_files, nonexistant_files)
 
                 if js_new_ctr:
                     for row in bm_json.expand_json(js_new_ctr, js_new_opt):
@@ -191,7 +198,8 @@ def diff(bms, loops, track, old, new):
     for name in sorted(benchmarks.keys()):
         if benchmarks[name].skip(): continue
         rows.append([name] + benchmarks[name].row(fields))
-    note = 'flakiness data = %s' % str(badfiles)
+    note = 'Corrupt JSON data (indicates timeout or crash) = %s' % str(badjson_files)
+    note += '\n\nMissing files (new benchmark) = %s' % str(nonexistant_files)
     if rows:
         return tabulate.tabulate(rows, headers=headers, floatfmt='+.2f'), note
     else:
@@ -204,4 +212,4 @@ if __name__ == '__main__':
                       args.new)
     print note
     print ""
-    print diff
+    print diff if diff else "No performance differences"

@@ -139,6 +139,8 @@ def main(args):
         text = 'Performance differences noted:\n' + diff
     else:
         text = 'No significant performance differences'
+    print note
+    print ""
     print text
     comment_on_pr.comment_on_pr('```\n%s\n\n%s\n```' % (note, text))
 
