@@ -417,7 +417,8 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
 
 static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
   for (int bw = 64; bw <= 128 * 1024 * 1024; bw *= 16) {
-    for (int i = 1; i <= 128 * 1024 * 1024; i *= 64) {
+    b->Args({1, 1, bw});
+    for (int i = 64; i <= 128 * 1024 * 1024; i *= 64) {
       double expected_time =
           static_cast<double>(14 + i) / (125.0 * static_cast<double>(bw));
       if (expected_time > 2.0) continue;
