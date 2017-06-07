@@ -40,3 +40,4 @@ cp -r /var/local/jenkins/service_account $HOME || true
 cd /var/local/git/grpc-java
 
 ./gradlew :grpc-interop-testing:installDist -PskipCodegen=true
+

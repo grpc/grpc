@@ -59,18 +59,6 @@ grpc_cc_library(
     visibility = ["//test:__subpackages__"],
 )
 
-grpc_cc_library(
-    name = "fake_resolver",
-    srcs = ["fake_resolver.c"],
-    hdrs = ["fake_resolver.h"],
-    language = "C",
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
 
 grpc_cc_library(
     name = "http_proxy",

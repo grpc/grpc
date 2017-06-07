@@ -150,15 +150,16 @@ class ServerBuilder {
   ///
   /// It can be invoked multiple times.
   ///
-  /// \param addr The address to try to bind to the server (eg, localhost:1234,
-  /// 192.168.1.1:31416, [::1]:27182, etc.).
+  /// \param addr_uri The address to try to bind to the server in URI form. If
+  /// the scheme name is omitted, "dns:///" is assumed. Valid values include
+  /// dns:///localhost:1234, / 192.168.1.1:31416, dns:///[::1]:27182, etc.).
   /// \params creds The credentials associated with the server.
   /// \param selected_port[out] If not `nullptr`, gets populated with the port
   /// number bound to the \a grpc::Server for the corresponding endpoint after
   /// it is successfully bound, 0 otherwise.
   ///
   // TODO(dgq): the "port" part seems to be a misnomer.
-  ServerBuilder& AddListeningPort(const grpc::string& addr,
+  ServerBuilder& AddListeningPort(const grpc::string& addr_uri,
                                   std::shared_ptr<ServerCredentials> creds,
                                   int* selected_port = nullptr);
 

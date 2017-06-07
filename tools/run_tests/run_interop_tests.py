@@ -202,6 +202,28 @@ class JavaLanguage:
     return 'java'
 
 
+class JavaOkHttpClient:
+
+  def __init__(self):
+    self.client_cwd = '../grpc-java'
+    self.safename = 'java'
+
+  def client_cmd(self, args):
+    return ['./run-test-client.sh', '--use_okhttp=true'] + args
+
+  def cloud_to_prod_env(self):
+    return {}
+
+  def global_env(self):
+    return {}
+
+  def unimplemented_test_cases(self):
+    return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+
+  def __str__(self):
+    return 'javaokhttp'
+
+
 class GoLanguage:
 
   def __init__(self):
@@ -489,6 +511,7 @@ _LANGUAGES = {
     'csharpcoreclr' : CSharpCoreCLRLanguage(),
     'go' : GoLanguage(),
     'java' : JavaLanguage(),
+    'javaokhttp' : JavaOkHttpClient(),
     'node' : NodeLanguage(),
     'php' :  PHPLanguage(),
     'php7' :  PHP7Language(),

@@ -74,7 +74,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/end2end:fake_resolver",
+        "//:grpc_resolver_fake",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
