@@ -110,8 +110,6 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   }
 
   void AddToLabel(std::ostream& out, benchmark::State& state) {
-    grpc_chttp2_transport* client =
-        reinterpret_cast<grpc_chttp2_transport*>(client_transport_);
     out << " writes/iter:"
         << ((double)stats_.num_writes / (double)state.iterations())
         << " cli_transport_stalls/iter:"
@@ -127,8 +125,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
             (double)state.iterations())
         << " svr_stream_stalls/iter:"
         << ((double)server_stats_.streams_stalled_due_to_stream_flow_control /
-            (double)state.iterations())
-        << " cli_bw_est:" << (double)client->bdp_estimator.bw_est;
+            (double)state.iterations());
   }
 
   void Log(int64_t iteration) {
@@ -189,7 +186,6 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     size_t server_backlog =
         grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.server);
     grpc_exec_ctx_finish(&exec_ctx);
-
     if (update_stats) {
       UpdateStats((grpc_chttp2_transport*)client_transport_, &client_stats_,
                   client_backlog);
@@ -382,7 +378,7 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
         stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
     void* t;
     bool ok;
-    TrickleCQNext(fixture.get(), &t, &ok, state.iterations());
+    TrickleCQNext(fixture.get(), &t, &ok, in_warmup ? -1 : state.iterations());
     GPR_ASSERT(ok);
     GPR_ASSERT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
@@ -390,7 +386,8 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
-      TrickleCQNext(fixture.get(), &t, &ok, state.iterations());
+      TrickleCQNext(fixture.get(), &t, &ok,
+                    in_warmup ? -1 : state.iterations());
       GPR_ASSERT(ok);
       int tagnum = (int)reinterpret_cast<intptr_t>(t);
       GPR_ASSERT(i & (1 << tagnum));
@@ -427,17 +424,15 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
 }
 
 static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
-  // A selection of interesting numbers
-  const int cli_1024k = 1024 * 1024;
-  const int cli_32M = 32 * 1024 * 1024;
-  const int svr_256k = 256 * 1024;
-  const int svr_4M = 4 * 1024 * 1024;
-  const int svr_64M = 64 * 1024 * 1024;
   for (int bw = 64; bw <= 128 * 1024 * 1024; bw *= 16) {
-    for (auto svr : {svr_256k, svr_4M, svr_64M}) {
-      for (auto cli: {cli_1024k, cli_32M}) {
-        b->Args({cli, svr, bw});
-      }
+    b->Args({1, 1, bw});
+    for (int i = 64; i <= 128 * 1024 * 1024; i *= 64) {
+      double expected_time =
+          static_cast<double>(14 + i) / (125.0 * static_cast<double>(bw));
+      if (expected_time > 2.0) continue;
+      b->Args({i, 1, bw});
+      b->Args({1, i, bw});
+      b->Args({i, i, bw});
     }
   }
 }
