@@ -48,7 +48,7 @@ verbose = False
 
 
 def _median(ary):
-    assert(len(ary))
+    assert (len(ary))
     ary = sorted(ary)
     n = len(ary)
     if n % 2 == 0:
@@ -141,7 +141,7 @@ def _read_json(filename, badjson_files, nonexistant_files):
             nonexistant_files[stripped] += 1
         else:
             nonexistant_files[stripped] = 1
-        return None        
+        return None
     except ValueError, e:
         if stripped in badjson_files:
             badjson_files[stripped] += 1
@@ -199,7 +199,8 @@ def diff(bms, loops, track, old, new):
     for name in sorted(benchmarks.keys()):
         if benchmarks[name].skip(): continue
         rows.append([name] + benchmarks[name].row(fields))
-    note = 'Corrupt JSON data (indicates timeout or crash) = %s' % str(badjson_files)
+    note = 'Corrupt JSON data (indicates timeout or crash) = %s' % str(
+        badjson_files)
     note += '\n\nMissing files (new benchmark) = %s' % str(nonexistant_files)
     if rows:
         return tabulate.tabulate(rows, headers=headers, floatfmt='+.2f'), note
