@@ -9,3 +9,4 @@ future), and the corresponding version numbers that used them:
 - 1.2 'g' stands for 'green'
 - 1.3 'g' stands for 'gentle'
 - 1.4 'g' stands for 'gregarious'
+- 1.5 'g' stands for 'covfefe'
