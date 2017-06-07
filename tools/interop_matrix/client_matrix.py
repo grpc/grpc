@@ -39,10 +39,12 @@ def get_github_repo(lang):
 # Dictionary of runtimes per language
 LANG_RUNTIME_MATRIX = {
     'go': ['go1.7', 'go1.8'],
+    'java': ['java_oracle8'],
 }
 
 # Dictionary of releases per language.  For each language, we need to provide
 # a tuple of release tag (used as the tag for the GCR image) and also github hash.
 LANG_RELEASE_MATRIX = {
     'go': ['v1.0.1-GA', 'v1.3.0'],
+    'java': ['v1.0.3', 'v1.1.2'],
 }
