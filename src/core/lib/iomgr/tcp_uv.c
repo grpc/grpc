@@ -333,8 +333,6 @@ static grpc_resource_user *uv_get_resource_user(grpc_endpoint *ep) {
   return tcp->resource_user;
 }
 
-static grpc_workqueue *uv_get_workqueue(grpc_endpoint *ep) { return NULL; }
-
 static int uv_get_fd(grpc_endpoint *ep) { return -1; }
 
 static grpc_endpoint_vtable vtable = {
