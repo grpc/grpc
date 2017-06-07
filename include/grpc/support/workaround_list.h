@@ -43,4 +43,4 @@ typedef enum {
   GRPC_MAX_WORKAROUND_ID
 } grpc_workaround_list;
 
-#endif
+#endif /* GRPC_SUPPORT_WORKAROUND_LIST_H */

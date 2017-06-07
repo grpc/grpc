@@ -173,7 +173,6 @@ def grpc_end2end_tests():
     deps = [
       ':cq_verifier',
       ':ssl_test_data',
-      ':fake_resolver',
       ':http_proxy',
       ':proxy',
     ]

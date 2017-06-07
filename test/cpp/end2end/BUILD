@@ -212,8 +212,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "round_robin_end2end_test",
-    srcs = ["round_robin_end2end_test.cc"],
+    name = "client_lb_end2end_test",
+    srcs = ["client_lb_end2end_test.cc"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -243,7 +243,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/end2end:fake_resolver",
+        "//:grpc_resolver_fake",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",

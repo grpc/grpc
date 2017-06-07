@@ -921,6 +921,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_fake",
     ],
 )
 
@@ -950,6 +951,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_secure",
+        "grpc_resolver_fake",
     ],
 )
 
@@ -1031,6 +1033,18 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c",
     ],
+    language = "c",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_fake",
+    srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c"],
+    hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
+    visibility = ["//test:__subpackages__"],
     language = "c",
     deps = [
         "grpc_base",
