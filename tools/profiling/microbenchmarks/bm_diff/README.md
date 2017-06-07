@@ -6,7 +6,7 @@ different performance tweaks. The tools allow you to save performance data from
 a baseline commit, then quickly compare data from your working branch to that
 baseline data to see if you have made any performance wins.
 
-The tools operates with three concrete steps, which can be invoked separately,
+The tools operate with three concrete steps, which can be invoked separately,
 or all together via the driver script, bm_main.py. This readme will describe 
 the typical workflow for these scripts, then it will include sections on the
 details of every script for advanced usage.
@@ -39,7 +39,7 @@ the output to the saved runs from master.
 If you have a deeper knowledge of these scripts, you can use them to do more
 fine tuned benchmark comparisons. For example, you could build, run, and save
 the benchmark output from two different base branches. Then you could diff both
-of these baselines against you working branch to see how the different metrics
+of these baselines against your working branch to see how the different metrics
 change. The rest of this doc goes over the details of what each of the
 individual modules accomplishes.
 
