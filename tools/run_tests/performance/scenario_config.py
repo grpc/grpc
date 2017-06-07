@@ -523,15 +523,14 @@ class NodeLanguage:
 
   def scenarios(self):
     # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'node_generic_async_streaming_ping_pong', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-    #    use_generic_payload=True)
+    yield _ping_pong_scenario(
+        'node_generic_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        use_generic_payload=True)
 
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'node_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
+    yield _ping_pong_scenario(
+        'node_protobuf_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
 
     yield _ping_pong_scenario(
         'node_protobuf_unary_ping_pong', rpc_type='UNARY',
@@ -564,29 +563,26 @@ class NodeLanguage:
             secure=secure,
             categories=[SCALABLE])
 
-    # TODO(murgatroid99): fix bugs with this scenario and re-enable it
-    # yield _ping_pong_scenario(
-    #     'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
-    #     client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-    #     unconstrained_client='async',
-    #     categories=[SCALABLE, SMOKETEST])
+    yield _ping_pong_scenario(
+        'node_protobuf_unary_qps_unconstrained', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        unconstrained_client='async',
+        categories=[SCALABLE, SMOKETEST])
 
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'node_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-    #    unconstrained_client='async')
+    yield _ping_pong_scenario(
+        'node_protobuf_streaming_qps_unconstrained', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        unconstrained_client='async')
 
     yield _ping_pong_scenario(
         'node_to_cpp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         server_language='c++', async_server_threads=1)
 
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'node_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-    #    server_language='c++', async_server_threads=1)
+    yield _ping_pong_scenario(
+        'node_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        server_language='c++', async_server_threads=1)
 
   def __str__(self):
     return 'node'
