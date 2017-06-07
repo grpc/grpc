@@ -316,8 +316,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->last_pid_update = gpr_now(GPR_CLOCK_MONOTONIC);
   grpc_pid_controller_init(
       &t->pid_controller,
-      (grpc_pid_controller_args){.gain_p = 4,
-                                 .gain_i = 8,
+      (grpc_pid_controller_args){.gain_p = 12,
+                                 .gain_i = 6,
                                  .gain_d = 0,
                                  .initial_control_value = log2(DEFAULT_WINDOW),
                                  .min_control_value = -1,
@@ -2145,7 +2145,7 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       (int64_t)bdp -
       (int64_t)t->settings[GRPC_LOCAL_SETTINGS]
                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  if (delta == 0 || (delta > -bdp / 10 && delta < bdp / 10)) {
+  if (delta == 0 || (delta > -bdp / 15 && delta < bdp / 15)) {
     return;
   }
   if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
