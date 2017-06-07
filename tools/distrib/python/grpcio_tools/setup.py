@@ -192,7 +192,7 @@ setuptools.setup(
   author='The gRPC Authors',
   author_email='grpc-io@googlegroups.com',
   url='http://www.grpc.io',
-  license='3-clause BSD',
+  license='Apache License 2.0',
   ext_modules=extension_modules(),
   packages=setuptools.find_packages('.'),
   install_requires=[

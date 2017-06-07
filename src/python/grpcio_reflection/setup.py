@@ -44,7 +44,7 @@ COMMAND_CLASS = {
 setuptools.setup(
     name='grpcio-reflection',
     version=grpc_version.VERSION,
-    license='3-clause BSD',
+    license='Apache License 2.0',
     description='Standard Protobuf Reflection Service for gRPC',
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',

@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
 
-licenses(["notice"])  # 3-clause BSD
+licenses(["notice"])  # Apache v2
 
 grpc_cc_test(
     name = "alloc_test",

@@ -58,7 +58,7 @@ import grpc_version
 
 _spawn_patch.monkeypatch_spawn()
 
-LICENSE = '3-clause BSD'
+LICENSE = 'Apache License 2.0'
 
 # Environment variable to determine whether or not the Cython extension should
 # *use* Cython or use the generated C files. Note that this requires the C files

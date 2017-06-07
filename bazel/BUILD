@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # 3-clause BSD
+licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//:__subpackages__"])
 

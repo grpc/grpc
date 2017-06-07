@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.homepage      = 'https://github.com/google/grpc/tree/master/src/ruby'
   s.summary       = 'GRPC system in Ruby'
   s.description   = 'Send RPCs from Ruby using GRPC'
-  s.license       = 'BSD-3-Clause'
+  s.license       = 'Apache-2.0'
 
   s.required_ruby_version = '>= 2.0.0'
 

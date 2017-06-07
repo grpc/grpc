@@ -30,7 +30,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import commands
 import grpc_version
 
-LICENSE = '3-clause BSD'
+LICENSE = 'Apache License 2.0'
 
 PACKAGE_DIRECTORIES = {
     '': '.',
