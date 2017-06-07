@@ -63,8 +63,9 @@ argp.add_argument('--precommit',
 args = argp.parse_args()
 
 # open the license text
-with open('LICENSE') as f:
-  LICENSE = f.read().splitlines()
+with open('NOTICE.txt') as f:
+  LICENSE_NOTICE = f.read().splitlines()
+
 
 # license format by file extension
 # key is the file extension, value is a format string
@@ -89,7 +90,7 @@ LICENSE_PREFIX = {
   '.mak':       r'#\s*',
   'Makefile':   r'#\s*',
   'Dockerfile': r'#\s*',
-  'LICENSE':    '',
+  'LICENSE':    r'\s*',
   'BUILD':      r'#\s*',
 }
 
@@ -118,12 +119,12 @@ _EXEMPT = frozenset((
 ))
 
 
-RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+), Google Inc\.'
+RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) gRPC authors.'
 RE_LICENSE = dict(
     (k, r'\n'.join(
         LICENSE_PREFIX[k] +
         (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
-        for line in LICENSE))
+        for line in LICENSE_NOTICE))
      for k, v in LICENSE_PREFIX.iteritems())
 
 if args.precommit:
