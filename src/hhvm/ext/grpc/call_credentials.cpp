@@ -83,7 +83,7 @@ grpc_call_credentials* CallCredentialsData::getWrapped() {
  * @param CallCredentials $cred2_obj The second credential
  * @return CallCredentials The new composite credentials object
  */
-Object HHVM_METHOD(CallCredentials, createComposite,
+Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
   const Object& cred1_obj,
   const Object& cred2_obj) {
   auto callCredentialsData1 = Native::data<CallCredentialsData>(cred1_obj);
@@ -106,7 +106,7 @@ Object HHVM_METHOD(CallCredentials, createComposite,
  * @param function $fci The callback function
  * @return CallCredentials The new call credentials object
  */
-Object HHVM_METHOD(CallCredentials, createFromPlugin,
+Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
   const Variant& function) {
 
   Object callbackFunc = Object{function.getObjectDataOrNull()};

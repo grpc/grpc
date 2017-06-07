@@ -1,5 +1,7 @@
 <?hh
 
+namespace Grpc;
+
 <<__NativeData("Call")>>
 class Call {
 
@@ -56,7 +58,7 @@ class CallCredentials {
    * @return CallCredentials The new composite credentials object
    */
   <<__Native>>
-  public function createComposite(CallCredentials $cred1, CallCredentials $cred2): CallCredentials;
+  public static function createComposite(CallCredentials $cred1, CallCredentials $cred2): CallCredentials;
 
   /**
    * Create a call credentials object from the plugin API
@@ -64,7 +66,7 @@ class CallCredentials {
    * @return CallCredentials The new call credentials object
    */
   <<__Native>>
-  public function createFromPlugin((function(string, string): array) $callback): CallCredentials;
+  public static function createFromPlugin((function(string, string): array) $callback): CallCredentials;
 
 }
 
@@ -124,14 +126,14 @@ class ChannelCredentials {
    * @return void
    */
   <<__Native>>
-  public function setDefaultRootsPem(string $pem_roots): void;
+  public static function setDefaultRootsPem(string $pem_roots): void;
 
   /**
    * Create a default channel credentials object.
    * @return ChannelCredentials The new default channel credentials object
    */
   <<__Native>>
-  public function createDefault(): ChannelCredentials;
+  public static function createDefault(): ChannelCredentials;
 
   /**
    * Create SSL credentials.
@@ -143,7 +145,7 @@ class ChannelCredentials {
    * @return ChannelCredentials The new SSL credentials object
    */
   <<__Native>>
-  public function createSsl(string $pem_root_certs,
+  public static function createSsl(?string $pem_root_certs = null,
     ?string $pem_key_cert_pair__private_key = null,
     ?string $pem_key_cert_pair__cert_chain = null): ChannelCredentials;
 
@@ -154,14 +156,14 @@ class ChannelCredentials {
    * @return ChannelCredentials The new composite credentials object
    */
   <<__Native>>
-  public function createComposite(ChannelCredentials $cred1_obj, CallCredentials $cred2_obj): ChannelCredentials;
+  public static function createComposite(ChannelCredentials $cred1_obj, CallCredentials $cred2_obj): ChannelCredentials;
 
   /**
    * Create insecure channel credentials
    * @return null
    */
   <<__Native>>
-  public function createInsecure(): void;
+  public static function createInsecure(): ?mixed;
 
 }
 
@@ -219,7 +221,7 @@ class ServerCredentials {
    * @return Credentials The new SSL credentials object
    */
   <<__Native>>
-  public function createSsl(string $pem_root_certs, string $pem_private_key, string $pem_cert_chain): object;
+  public static function createSsl(string $pem_root_certs, string $pem_private_key, string $pem_cert_chain): object;
 
 }
 

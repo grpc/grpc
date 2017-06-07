@@ -111,45 +111,45 @@ class GrpcExtension : public Extension {
       HHVM_RC_INT(Grpc\\CHANNEL_TRANSIENT_FAILURE, GRPC_CHANNEL_TRANSIENT_FAILURE);
       HHVM_RC_INT(Grpc\\CHANNEL_FATAL_FAILURE, GRPC_CHANNEL_SHUTDOWN);
 
-      HHVM_ME(Call, __construct);
-      HHVM_ME(Call, startBatch);
-      HHVM_ME(Call, getPeer);
-      HHVM_ME(Call, cancel);
-      HHVM_ME(Call, setCredentials);
+      HHVM_MALIAS(Grpc\\Call, __construct, Call, __construct);
+      HHVM_MALIAS(Grpc\\Call, startBatch, Call, startBatch);
+      HHVM_MALIAS(Grpc\\Call, getPeer, Call, getPeer);
+      HHVM_MALIAS(Grpc\\Call, cancel, Call, cancel);
+      HHVM_MALIAS(Grpc\\Call, setCredentials, Call, setCredentials);
 
-      HHVM_ME(CallCredentials, createComposite);
-      HHVM_ME(CallCredentials, createFromPlugin);
+      HHVM_STATIC_MALIAS(Grpc\\CallCredentials, createComposite, CallCredentials, createComposite);
+      HHVM_STATIC_MALIAS(Grpc\\CallCredentials, createFromPlugin, CallCredentials, createFromPlugin);
 
-      HHVM_ME(Channel, __construct);
-      HHVM_ME(Channel, getTarget);
-      HHVM_ME(Channel, getConnectivityState);
-      HHVM_ME(Channel, watchConnectivityState);
-      HHVM_ME(Channel, close);
+      HHVM_MALIAS(Grpc\\Channel, __construct, Channel, __construct);
+      HHVM_MALIAS(Grpc\\Channel, getTarget, Channel, getTarget);
+      HHVM_MALIAS(Grpc\\Channel, getConnectivityState, Channel, getConnectivityState);
+      HHVM_MALIAS(Grpc\\Channel, watchConnectivityState, Channel, watchConnectivityState);
+      HHVM_MALIAS(Grpc\\Channel, close, Channel, close);
 
-      HHVM_ME(ChannelCredentials, setDefaultRootsPem);
-      HHVM_ME(ChannelCredentials, createDefault);
-      HHVM_ME(ChannelCredentials, createSsl);
-      HHVM_ME(ChannelCredentials, createComposite);
-      HHVM_ME(ChannelCredentials, createInsecure);
+      HHVM_STATIC_MALIAS(Grpc\\ChannelCredentials, setDefaultRootsPem, ChannelCredentials, setDefaultRootsPem);
+      HHVM_STATIC_MALIAS(Grpc\\ChannelCredentials, createDefault, ChannelCredentials, createDefault);
+      HHVM_STATIC_MALIAS(Grpc\\ChannelCredentials, createSsl, ChannelCredentials, createSsl);
+      HHVM_STATIC_MALIAS(Grpc\\ChannelCredentials, createComposite, ChannelCredentials, createComposite);
+      HHVM_STATIC_MALIAS(Grpc\\ChannelCredentials, createInsecure, ChannelCredentials, createInsecure);
 
-      HHVM_ME(Server, __construct);
-      HHVM_ME(Server, requestCall);
-      HHVM_ME(Server, addHttp2Port);
-      HHVM_ME(Server, addSecureHttp2Port);
-      HHVM_ME(Server, start);
+      HHVM_MALIAS(Grpc\\Server, __construct, Server, __construct);
+      HHVM_MALIAS(Grpc\\Server, requestCall, Server, requestCall);
+      HHVM_MALIAS(Grpc\\Server, addHttp2Port, Server, addHttp2Port);
+      HHVM_MALIAS(Grpc\\Server, addSecureHttp2Port, Server, addSecureHttp2Port);
+      HHVM_MALIAS(Grpc\\Server, start, Server, start);
 
-      HHVM_ME(ServerCredentials, createSsl);
+      HHVM_STATIC_MALIAS(Grpc\\ServerCredentials, createSsl, ServerCredentials, createSsl);
 
-      HHVM_ME(Timeval, __construct);
-      HHVM_ME(Timeval, add);
-      HHVM_ME(Timeval, subtract);
-      HHVM_STATIC_ME(Timeval, compare);
-      HHVM_STATIC_ME(Timeval, similar);
-      HHVM_STATIC_ME(Timeval, now);
-      HHVM_STATIC_ME(Timeval, zero);
-      HHVM_STATIC_ME(Timeval, infFuture);
-      HHVM_STATIC_ME(Timeval, infPast);
-      HHVM_ME(Timeval, sleepUntil);
+      HHVM_MALIAS(Grpc\\Timeval, __construct, Timeval, __construct);
+      HHVM_MALIAS(Grpc\\Timeval, add, Timeval, add);
+      HHVM_MALIAS(Grpc\\Timeval, subtract, Timeval, subtract);
+      HHVM_STATIC_MALIAS(Grpc\\Timeval, compare, Timeval, compare);
+      HHVM_STATIC_MALIAS(Grpc\\Timeval, similar, Timeval, similar);
+      HHVM_STATIC_MALIAS(Grpc\\Timeval, now, Timeval, now);
+      HHVM_STATIC_MALIAS(Grpc\\Timeval, zero, Timeval, zero);
+      HHVM_STATIC_MALIAS(Grpc\\Timeval, infFuture, Timeval, infFuture);
+      HHVM_STATIC_MALIAS(Grpc\\Timeval, infPast, Timeval, infPast);
+      HHVM_MALIAS(Grpc\\Timeval, sleepUntil, Timeval, sleepUntil);
 
       Native::registerNativeDataInfo<TimevalData>(TimevalData::s_className.get());
       Native::registerNativeDataInfo<ServerCredentialsData>(ServerCredentialsData::s_className.get());

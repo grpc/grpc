@@ -70,7 +70,7 @@ grpc_server_credentials* ServerCredentialsData::getWrapped() {
   return wrapped;
 }
 
-Object HHVM_METHOD(ServerCredentials, createSsl,
+Object HHVM_STATIC_METHOD(ServerCredentials, createSsl,
   const String& pem_root_certs,
   const String& pem_private_key,
   const String& pem_cert_chain) {

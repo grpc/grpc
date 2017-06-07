@@ -66,11 +66,11 @@ typedef struct plugin_state {
   Object& function;
 } plugin_state;
 
-Object HHVM_METHOD(CallCredentials, createComposite,
+Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
   const Object& cred1_obj,
   const Object& cred2_obj);
 
-Object HHVM_METHOD(CallCredentials, createFromPlugin,
+Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
   const Variant& function);
 
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,

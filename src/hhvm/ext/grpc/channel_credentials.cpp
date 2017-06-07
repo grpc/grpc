@@ -74,13 +74,13 @@ grpc_channel_credentials* ChannelCredentialsData::getWrapped() {
   return wrapped;
 }
 
-void HHVM_METHOD(ChannelCredentials, setDefaultRootsPem,
+void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
   const String& pem_roots) {
   default_pem_root_certs = (char *) gpr_malloc((pem_roots.length() + 1) * sizeof(char));
   memcpy(default_pem_root_certs, pem_roots.c_str(), pem_roots.length() + 1);
 }
 
-Object HHVM_METHOD(ChannelCredentials, createDefault) {
+Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault) {
   auto newChannelCredentialsObj = Object{ChannelCredentialsData::getClass()};
   auto channelCredentialsData = Native::data<ChannelCredentialsData>(newChannelCredentialsObj);
   grpc_channel_credentials *channel_credentials = grpc_google_default_credentials_create();
@@ -89,11 +89,16 @@ Object HHVM_METHOD(ChannelCredentials, createDefault) {
   return newChannelCredentialsObj;
 }
 
-Object HHVM_METHOD(ChannelCredentials, createSsl,
-  const String& pem_root_certs,
+Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
+  const Variant& pem_root_certs /*=null*/,
   const Variant& pem_key_cert_pair__private_key /*= null*/,
   const Variant& pem_key_cert_pair__cert_chain /*=null*/
   ) {
+  const char *pem_root_certs_ = NULL;
+
+  if (pem_root_certs.isString()) {
+    pem_root_certs_ = pem_root_certs.toString().c_str();
+  }
 
   auto newChannelCredentialsObj = Object{ChannelCredentialsData::getClass()};
   auto channelCredentialsData = Native::data<ChannelCredentialsData>(newChannelCredentialsObj);
@@ -110,14 +115,14 @@ Object HHVM_METHOD(ChannelCredentials, createSsl,
   }
 
   channelCredentialsData->init(grpc_ssl_credentials_create(
-    pem_root_certs.c_str(),
+    pem_root_certs_,
     pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL)
   );
 
   return newChannelCredentialsObj;
 }
 
-Object HHVM_METHOD(ChannelCredentials, createComposite,
+Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
   const Object& cred1_obj,
   const Object& cred2_obj) {
   auto channelCredentialsData = Native::data<ChannelCredentialsData>(cred1_obj);
@@ -136,8 +141,8 @@ Object HHVM_METHOD(ChannelCredentials, createComposite,
   return newChannelCredentialsObj;
 }
 
-void HHVM_METHOD(ChannelCredentials, createInsecure) {
-  return;
+Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure) {
+  return Variant();
 }
 
 } // namespace HPHP

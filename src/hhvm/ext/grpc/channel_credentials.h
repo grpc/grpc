@@ -64,22 +64,22 @@ class ChannelCredentialsData {
     grpc_channel_credentials* getWrapped();
 };
 
-void HHVM_METHOD(ChannelCredentials, setDefaultRootsPem,
+void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
   const String& pem_roots);
 
-Object HHVM_METHOD(ChannelCredentials, createDefault);
+Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault);
 
-Object HHVM_METHOD(ChannelCredentials, createSsl,
-  const String& pem_root_certs,
+Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
+  const Variant& pem_root_certs,
   const Variant& pem_key_cert_pair__private_key /*= null*/,
   const Variant& pem_key_cert_pair__cert_chain /*=null*/
   );
 
-Object HHVM_METHOD(ChannelCredentials, createComposite,
+Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
   const Object& cred1_obj,
   const Object& cred2_obj);
 
-void HHVM_METHOD(ChannelCredentials, createInsecure);
+Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure);
 
 }
 
