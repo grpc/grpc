@@ -251,15 +251,6 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               configs=['dbg'],
                               platforms=['linux'],
                               arch='default',
-                              compiler='python3.4',
-                              labels=['portability'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
-
-  test_jobs += _generate_jobs(languages=['python'],
-                              configs=['dbg'],
-                              platforms=['linux'],
-                              arch='default',
                               compiler='python_alpine',
                               labels=['portability'],
                               extra_args=extra_args,
