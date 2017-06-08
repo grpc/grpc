@@ -57,7 +57,7 @@ def _args():
     '-b',
     '--benchmarks',
     nargs='+',
-    choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+    choices=bm_constants._AVAILABLE_BENCHMARK_TESTS + bm_constants._TIME_INTENSIVE_BENCHMARK_TESTS,
     default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
     help='Which benchmarks to run')
   argp.add_argument(
@@ -142,21 +142,25 @@ def diff(bms, loops, track, old, new):
   badjson_files = {}
   nonexistant_files = {}
   for bm in bms:
-    for loop in range(0, loops):
+    for loop in range(0, loops) if bm not in bm_constants._TIME_INTENSIVE_BENCHMARK_TESTS else range(0, min(loops, 2)):
       for line in subprocess.check_output(
         ['bm_diff_%s/opt/%s' % (old, bm),
          '--benchmark_list_tests']).splitlines():
         stripped_line = line.strip().replace("/", "_").replace(
           "<", "_").replace(">", "_").replace(", ", "_")
-        js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' %
-                    (bm, stripped_line, new, loop),
-                    badjson_files, nonexistant_files)
+        js_new_ctr = None
+        if bm not in bm_constants._TIME_INTENSIVE_BENCHMARK_TESTS:
+          js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' %
+                      (bm, stripped_line, new, loop),
+                      badjson_files, nonexistant_files)
         js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
                     (bm, stripped_line, new, loop),
                     badjson_files, nonexistant_files)
-        js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' %
-                    (bm, stripped_line, old, loop),
-                    badjson_files, nonexistant_files)
+        js_old_ctr = None
+        if bm not in bm_constants._TIME_INTENSIVE_BENCHMARK_TESTS:
+          js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' %
+                      (bm, stripped_line, old, loop),
+                      badjson_files, nonexistant_files)
         js_old_opt = _read_json('%s.%s.opt.%s.%d.json' %
                     (bm, stripped_line, old, loop),
                     badjson_files, nonexistant_files)
@@ -198,4 +202,4 @@ if __name__ == '__main__':
   args = _args()
   diff, note = diff(args.benchmarks, args.loops, args.track, args.old,
             args.new)
-  print('%s\n%s' % (note, diff if diff else "No performance differences"))
+  print('%s\n\n%s' % (note, diff if diff else "No performance differences"))

@@ -39,7 +39,7 @@ def _args():
     '-b',
     '--benchmarks',
     nargs='+',
-    choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+    choices=bm_constants._AVAILABLE_BENCHMARK_TESTS + bm_constants._TIME_INTENSIVE_BENCHMARK_TESTS,
     default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
     help='Benchmarks to run')
   argp.add_argument(
@@ -91,19 +91,20 @@ def _collect_bm_data(bm, cfg, name, reps, idx, loops):
       jobset.JobSpec(
         cmd,
         shortname='%s %s %s %s %d/%d' % (bm, line, cfg, name, idx + 1,
-                         loops),
+            loops if bm not in bm_constants._TIME_INTENSIVE_BENCHMARK_TESTS else min(loops, bm_constants._TIME_INTENSIVE_BENCHMARK_LOOP_CAP)),
         verbose_success=True,
-        timeout_seconds=60 * 2))
+        timeout_seconds=60 * 3))
   return jobs_list
 
 
 def run(name, benchmarks, jobs, loops, reps):
   jobs_list = []
-  for loop in range(0, loops):
-    for bm in benchmarks:
+  for bm in benchmarks:
+    for loop in range(0, loops) if bm not in bm_constants._TIME_INTENSIVE_BENCHMARK_TESTS else range(0, min(loops, bm_constants._TIME_INTENSIVE_BENCHMARK_LOOP_CAP)):
       jobs_list += _collect_bm_data(bm, 'opt', name, reps, loop, loops)
-      jobs_list += _collect_bm_data(bm, 'counters', name, reps, loop,
-                      loops)
+      if bm not in bm_constants._TIME_INTENSIVE_BENCHMARK_TESTS:
+        jobs_list += _collect_bm_data(bm, 'counters', name, reps, loop,
+                        loops)
   random.shuffle(jobs_list, random.SystemRandom().random)
   jobset.run(jobs_list, maxjobs=jobs)
 

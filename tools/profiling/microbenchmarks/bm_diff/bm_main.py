@@ -47,7 +47,7 @@ def _args():
     '-b',
     '--benchmarks',
     nargs='+',
-    choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+    choices=bm_constants._AVAILABLE_BENCHMARK_TESTS + bm_constants._TIME_INTENSIVE_BENCHMARK_TESTS,
     default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
     help='Which benchmarks to run')
   argp.add_argument(
