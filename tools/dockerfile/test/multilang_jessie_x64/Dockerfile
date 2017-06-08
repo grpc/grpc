@@ -116,7 +116,8 @@ RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 RUN apt-get update && apt-get install -y \
     python-all-dev \
     python3-all-dev \
-    python-pip
+    python-pip \
+    python3-pip
 
 # Install Python packages from PyPI
 RUN pip install pip --upgrade
