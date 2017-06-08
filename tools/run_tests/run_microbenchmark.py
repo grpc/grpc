@@ -23,18 +23,8 @@ import argparse
 import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
 
-_AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
-                              'bm_fullstack_streaming_ping_pong',
-                              'bm_fullstack_streaming_pump',
-                              'bm_closure',
-                              'bm_cq',
-                              'bm_call_create',
-                              'bm_error',
-                              'bm_chttp2_hpack',
-                              'bm_chttp2_transport',
-                              'bm_pollset',
-                              'bm_metadata',
-                              'bm_fullstack_trickle']
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', 'profiling', 'microbenchmarks', 'bm_diff'))
+import bm_constants
 
 flamegraph_dir = os.path.join(os.path.expanduser('~'), 'FlameGraph')
 
@@ -199,8 +189,8 @@ argp.add_argument('-c', '--collect',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  choices=_AVAILABLE_BENCHMARK_TESTS,
-                  default=_AVAILABLE_BENCHMARK_TESTS,
+                  choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                  default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')

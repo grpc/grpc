@@ -139,7 +139,7 @@ class ClientAsyncResponseReader final
 
   // disable operator new
   static void* operator new(std::size_t size);
-  static void* operator new(std::size_t size, void* p) { return p; };
+  static void* operator new(std::size_t size, void* p) { return p; }
 
   SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
                   CallOpClientSendClose>
