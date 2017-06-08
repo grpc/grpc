@@ -295,7 +295,7 @@ grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
     GPR_ASSERT(s->frame_storage.length == 0);
     grpc_slice_ref_internal(slice);
     grpc_slice_buffer_add(&s->unprocessed_incoming_frames_buffer, slice);
-    grpc_closure_sched(exec_ctx, s->on_next, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, s->on_next, GRPC_ERROR_NONE);
     s->on_next = NULL;
   } else {
     grpc_slice_ref_internal(slice);

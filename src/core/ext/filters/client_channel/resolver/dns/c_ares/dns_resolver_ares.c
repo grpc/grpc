@@ -116,7 +116,7 @@ static void dns_ares_shutdown_locked(grpc_exec_ctx *exec_ctx,
   }
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, r->next_completion,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     r->next_completion = NULL;
@@ -221,7 +221,7 @@ static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
                             ? NULL
                             : grpc_channel_args_copy(r->resolved_result);
     gpr_log(GPR_DEBUG, "dns_ares_maybe_finish_next_locked");
-    grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }
@@ -266,10 +266,10 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
                    GRPC_DNS_RECONNECT_JITTER,
                    GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
                    GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
-  grpc_closure_init(&r->dns_ares_on_retry_timer_locked,
+  GRPC_CLOSURE_INIT(&r->dns_ares_on_retry_timer_locked,
                     dns_ares_on_retry_timer_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
-  grpc_closure_init(&r->dns_ares_on_resolved_locked,
+  GRPC_CLOSURE_INIT(&r->dns_ares_on_resolved_locked,
                     dns_ares_on_resolved_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
   return &r->base;

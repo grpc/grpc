@@ -184,7 +184,7 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
   wrapped_rr_closure_arg *wc_arg = arg;
 
   GPR_ASSERT(wc_arg->wrapped_closure != NULL);
-  grpc_closure_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_SCHED(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error));
 
   if (wc_arg->rr_policy != NULL) {
     /* if *target is NULL, no pick has been made by the RR policy (eg, all
@@ -256,7 +256,7 @@ static void add_pending_pick(pending_pick **root,
   pp->wrapped_on_complete_arg.lb_token_mdelem_storage =
       pick_args->lb_token_mdelem_storage;
   pp->wrapped_on_complete_arg.free_when_done = pp;
-  grpc_closure_init(&pp->wrapped_on_complete_arg.wrapper_closure,
+  GRPC_CLOSURE_INIT(&pp->wrapped_on_complete_arg.wrapper_closure,
                     wrapped_rr_closure, &pp->wrapped_on_complete_arg,
                     grpc_schedule_on_exec_ctx);
   *root = pp;
@@ -275,7 +275,7 @@ static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
   pping->wrapped_notify_arg.wrapped_closure = notify;
   pping->wrapped_notify_arg.free_when_done = pping;
   pping->next = *root;
-  grpc_closure_init(&pping->wrapped_notify_arg.wrapper_closure,
+  GRPC_CLOSURE_INIT(&pping->wrapped_notify_arg.wrapper_closure,
                     wrapped_rr_closure, &pping->wrapped_notify_arg,
                     grpc_schedule_on_exec_ctx);
   *root = pping;
@@ -635,7 +635,7 @@ static bool pick_from_internal_rr_locked(
     grpc_grpclb_client_stats_unref(wc_arg->client_stats);
     if (force_async) {
       GPR_ASSERT(wc_arg->wrapped_closure != NULL);
-      grpc_closure_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_SCHED(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_NONE);
       gpr_free(wc_arg->free_when_done);
       return false;
     }
@@ -663,7 +663,7 @@ static bool pick_from_internal_rr_locked(
     wc_arg->context[GRPC_GRPCLB_CLIENT_STATS].destroy = destroy_client_stats;
     if (force_async) {
       GPR_ASSERT(wc_arg->wrapped_closure != NULL);
-      grpc_closure_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_SCHED(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_NONE);
       gpr_free(wc_arg->free_when_done);
       return false;
     }
@@ -739,7 +739,7 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
    * It'll be deallocated in glb_rr_connectivity_changed() */
   rr_connectivity_data *rr_connectivity =
       gpr_zalloc(sizeof(rr_connectivity_data));
-  grpc_closure_init(&rr_connectivity->on_change,
+  GRPC_CLOSURE_INIT(&rr_connectivity->on_change,
                     glb_rr_connectivity_changed_locked, rr_connectivity,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
   rr_connectivity->glb_policy = glb_policy;
@@ -1004,7 +1004,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     return NULL;
   }
 
-  grpc_closure_init(&glb_policy->lb_channel_on_connectivity_changed,
+  GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
   grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable, args->combiner);
@@ -1078,14 +1078,14 @@ static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
-    grpc_closure_sched(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
+    GRPC_CLOSURE_SCHED(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
                        GRPC_ERROR_NONE);
     pp = next;
   }
 
   while (pping != NULL) {
     pending_ping *next = pping->next;
-    grpc_closure_sched(exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
+    GRPC_CLOSURE_SCHED(exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
                        GRPC_ERROR_NONE);
     pping = next;
   }
@@ -1101,7 +1101,7 @@ static void glb_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       *target = NULL;
-      grpc_closure_sched(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
+      GRPC_CLOSURE_SCHED(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick Cancelled", &error, 1));
     } else {
@@ -1125,7 +1125,7 @@ static void glb_cancel_picks_locked(grpc_exec_ctx *exec_ctx,
     pending_pick *next = pp->next;
     if ((pp->pick_args.initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      grpc_closure_sched(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
+      GRPC_CLOSURE_SCHED(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick Cancelled", &error, 1));
     } else {
@@ -1160,7 +1160,7 @@ static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                            grpc_closure *on_complete) {
   if (pick_args->lb_token_mdelem_storage == NULL) {
     *target = NULL;
-    grpc_closure_sched(exec_ctx, on_complete,
+    GRPC_CLOSURE_SCHED(exec_ctx, on_complete,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "No mdelem storage for the LB token. Load reporting "
                            "won't work without it. Failing"));
@@ -1179,7 +1179,7 @@ static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 
     wrapped_rr_closure_arg *wc_arg = gpr_zalloc(sizeof(wrapped_rr_closure_arg));
 
-    grpc_closure_init(&wc_arg->wrapper_closure, wrapped_rr_closure, wc_arg,
+    GRPC_CLOSURE_INIT(&wc_arg->wrapper_closure, wrapped_rr_closure, wc_arg,
                       grpc_schedule_on_exec_ctx);
     wc_arg->rr_policy = glb_policy->rr_policy;
     wc_arg->target = target;
@@ -1250,7 +1250,7 @@ static void schedule_next_client_load_report(grpc_exec_ctx *exec_ctx,
   const gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   const gpr_timespec next_client_load_report_time =
       gpr_time_add(now, glb_policy->client_stats_report_interval);
-  grpc_closure_init(&glb_policy->client_load_report_closure,
+  GRPC_CLOSURE_INIT(&glb_policy->client_load_report_closure,
                     send_client_load_report_locked, glb_policy,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
   grpc_timer_init(exec_ctx, &glb_policy->client_load_report_timer,
@@ -1278,7 +1278,7 @@ static void do_send_client_load_report_locked(grpc_exec_ctx *exec_ctx,
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_MESSAGE;
   op.data.send_message.send_message = glb_policy->client_load_report_payload;
-  grpc_closure_init(&glb_policy->client_load_report_closure,
+  GRPC_CLOSURE_INIT(&glb_policy->client_load_report_closure,
                     client_load_report_done_locked, glb_policy,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
@@ -1384,13 +1384,13 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
   grpc_slice_unref_internal(exec_ctx, request_payload_slice);
   grpc_grpclb_request_destroy(request);
 
-  grpc_closure_init(&glb_policy->lb_on_sent_initial_request,
+  GRPC_CLOSURE_INIT(&glb_policy->lb_on_sent_initial_request,
                     lb_on_sent_initial_request_locked, glb_policy,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
-  grpc_closure_init(&glb_policy->lb_on_server_status_received,
+  GRPC_CLOSURE_INIT(&glb_policy->lb_on_server_status_received,
                     lb_on_server_status_received_locked, glb_policy,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
-  grpc_closure_init(&glb_policy->lb_on_response_received,
+  GRPC_CLOSURE_INIT(&glb_policy->lb_on_response_received,
                     lb_on_response_received_locked, glb_policy,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
 
@@ -1693,7 +1693,7 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
       }
     }
     GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "grpclb_retry_timer");
-    grpc_closure_init(&glb_policy->lb_on_call_retry,
+    GRPC_CLOSURE_INIT(&glb_policy->lb_on_call_retry,
                       lb_call_on_retry_timer_locked, glb_policy,
                       grpc_combiner_scheduler(glb_policy->base.combiner));
     glb_policy->retry_timer_active = true;

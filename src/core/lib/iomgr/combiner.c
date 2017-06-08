@@ -81,7 +81,7 @@ grpc_combiner *grpc_combiner_create(void) {
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
-  grpc_closure_init(&lock->offload, offload, lock, grpc_executor_scheduler);
+  GRPC_CLOSURE_INIT(&lock->offload, offload, lock, grpc_executor_scheduler);
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p create", lock));
   return lock;
 }
@@ -196,7 +196,7 @@ static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void queue_offload(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   move_next(exec_ctx);
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p queue_offload", lock));
-  grpc_closure_sched(exec_ctx, &lock->offload, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, &lock->offload, GRPC_ERROR_NONE);
 }
 
 bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
@@ -247,7 +247,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
     GPR_TIMER_BEGIN("combiner.exec1", 0);
     grpc_closure *cl = (grpc_closure *)n;
     grpc_error *cl_err = cl->error_data.error;
-#ifndef NDEBUG
+#ifdef GRPC_CLOSURE_RICH_DEBUG
     cl->scheduled = false;
 #endif
     cl->cb(exec_ctx, cl->cb_arg, cl_err);
@@ -264,7 +264,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
           gpr_log(GPR_DEBUG, "C:%p execute_final[%d] c=%p", lock, loops, c));
       grpc_closure *next = c->next_data.next;
       grpc_error *error = c->error_data.error;
-#ifndef NDEBUG
+#ifdef GRPC_CLOSURE_RICH_DEBUG
       c->scheduled = false;
 #endif
       c->cb(exec_ctx, c->cb_arg, error);
@@ -332,8 +332,8 @@ static void combiner_finally_exec(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_BEGIN("combiner.execute_finally", 0);
   if (exec_ctx->active_combiner != lock) {
     GPR_TIMER_MARK("slowpath", 0);
-    grpc_closure_sched(exec_ctx,
-                       grpc_closure_create(enqueue_finally, closure,
+    GRPC_CLOSURE_SCHED(exec_ctx,
+                       GRPC_CLOSURE_CREATE(enqueue_finally, closure,
                                            grpc_combiner_scheduler(lock)),
                        error);
     GPR_TIMER_END("combiner.execute_finally", 0);
