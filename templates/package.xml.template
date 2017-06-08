@@ -22,7 +22,7 @@
     <release>beta</release>
     <api>beta</api>
    </stability>
-   <license>BSD</license>
+   <license>Apache 2.0</license>
    <notes>
   - Fixed some memory leaks #9559, #10996
   - Disabled cares dependency from gRPC C Core #10940
