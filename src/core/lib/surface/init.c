@@ -173,12 +173,12 @@ void grpc_shutdown(void) {
       GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
+    grpc_executor_shutdown(&exec_ctx);
     for (i = g_number_of_plugins; i >= 0; i--) {
       if (g_all_of_the_plugins[i].destroy != NULL) {
         g_all_of_the_plugins[i].destroy();
       }
     }
-    grpc_executor_shutdown(&exec_ctx);
     grpc_iomgr_shutdown(&exec_ctx);
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
