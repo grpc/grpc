@@ -20,7 +20,7 @@
   <release>beta</release>
   <api>beta</api>
  </stability>
- <license>BSD</license>
+ <license>Apache 2.0</license>
  <notes>
 - Fixed some memory leaks #9559, #10996
 - Disabled cares dependency from gRPC C Core #10940
@@ -382,6 +382,7 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting.h" role="src" />
@@ -628,6 +629,7 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c" role="src" />

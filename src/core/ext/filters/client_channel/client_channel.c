@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -389,7 +374,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   channel_data *chand = arg;
   char *lb_policy_name = NULL;
   grpc_lb_policy *lb_policy = NULL;
-  grpc_lb_policy *old_lb_policy;
+  grpc_lb_policy *old_lb_policy = NULL;
   grpc_slice_hash_table *method_params_table = NULL;
   grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   bool exit_idle = false;
@@ -399,6 +384,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   service_config_parsing_state parsing_state;
   memset(&parsing_state, 0, sizeof(parsing_state));
 
+  bool lb_policy_updated = false;
   if (chand->resolver_result != NULL) {
     // Find LB policy name.
     const grpc_arg *channel_arg =
@@ -438,14 +424,27 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     lb_policy_args.args = chand->resolver_result;
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
     lb_policy_args.combiner = chand->combiner;
-    lb_policy =
-        grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
-    if (lb_policy != NULL) {
-      GRPC_LB_POLICY_REF(lb_policy, "config_change");
-      GRPC_ERROR_UNREF(state_error);
-      state = grpc_lb_policy_check_connectivity_locked(exec_ctx, lb_policy,
-                                                       &state_error);
+
+    const bool lb_policy_type_changed =
+        (chand->info_lb_policy_name == NULL) ||
+        (strcmp(chand->info_lb_policy_name, lb_policy_name) != 0);
+    if (chand->lb_policy != NULL && !lb_policy_type_changed) {
+      // update
+      lb_policy_updated = true;
+      grpc_lb_policy_update_locked(exec_ctx, chand->lb_policy, &lb_policy_args);
+    } else {
+      lb_policy =
+          grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
+      if (lb_policy != NULL) {
+        GRPC_LB_POLICY_REF(lb_policy, "config_change");
+        GRPC_ERROR_UNREF(state_error);
+        state = grpc_lb_policy_check_connectivity_locked(exec_ctx, lb_policy,
+                                                         &state_error);
+        old_lb_policy = chand->lb_policy;
+        chand->lb_policy = lb_policy;
+      }
     }
+
     // Find service config.
     channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVICE_CONFIG);
@@ -492,8 +491,6 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     gpr_free(chand->info_lb_policy_name);
     chand->info_lb_policy_name = lb_policy_name;
   }
-  old_lb_policy = chand->lb_policy;
-  chand->lb_policy = lb_policy;
   if (service_config_json != NULL) {
     gpr_free(chand->info_service_config_json);
     chand->info_service_config_json = service_config_json;
@@ -516,17 +513,21 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
                                    "Channel disconnected", &error, 1));
     grpc_closure_list_sched(exec_ctx, &chand->waiting_for_config_closures);
   }
-  if (lb_policy != NULL && chand->exit_idle_when_lb_policy_arrives) {
+  if (!lb_policy_updated && lb_policy != NULL &&
+      chand->exit_idle_when_lb_policy_arrives) {
     GRPC_LB_POLICY_REF(lb_policy, "exit_idle");
     exit_idle = true;
     chand->exit_idle_when_lb_policy_arrives = false;
   }
 
   if (error == GRPC_ERROR_NONE && chand->resolver) {
-    set_channel_connectivity_state_locked(
-        exec_ctx, chand, state, GRPC_ERROR_REF(state_error), "new_lb+resolver");
-    if (lb_policy != NULL) {
-      watch_lb_policy_locked(exec_ctx, chand, lb_policy, state);
+    if (!lb_policy_updated) {
+      set_channel_connectivity_state_locked(exec_ctx, chand, state,
+                                            GRPC_ERROR_REF(state_error),
+                                            "new_lb+resolver");
+      if (lb_policy != NULL) {
+        watch_lb_policy_locked(exec_ctx, chand, lb_policy, state);
+      }
     }
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
     grpc_resolver_next_locked(exec_ctx, chand->resolver,
@@ -546,7 +547,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         "resolver_gone");
   }
 
-  if (exit_idle) {
+  if (!lb_policy_updated && lb_policy != NULL && exit_idle) {
     grpc_lb_policy_exit_idle_locked(exec_ctx, lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "exit_idle");
   }
@@ -555,9 +556,10 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     grpc_pollset_set_del_pollset_set(
         exec_ctx, old_lb_policy->interested_parties, chand->interested_parties);
     GRPC_LB_POLICY_UNREF(exec_ctx, old_lb_policy, "channel");
+    old_lb_policy = NULL;
   }
 
-  if (lb_policy != NULL) {
+  if (!lb_policy_updated && lb_policy != NULL) {
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "config_change");
   }
 
@@ -1447,7 +1449,7 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
 
 typedef struct external_connectivity_watcher {
   channel_data *chand;
-  grpc_pollset *pollset;
+  grpc_polling_entity pollent;
   grpc_closure *on_complete;
   grpc_closure *watcher_timer_init;
   grpc_connectivity_state *state;
@@ -1522,8 +1524,8 @@ static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
                                        grpc_error *error) {
   external_connectivity_watcher *w = arg;
   grpc_closure *follow_up = w->on_complete;
-  grpc_pollset_set_del_pollset(exec_ctx, w->chand->interested_parties,
-                               w->pollset);
+  grpc_polling_entity_del_from_pollset_set(exec_ctx, &w->pollent,
+                                           w->chand->interested_parties);
   GRPC_CHANNEL_STACK_UNREF(exec_ctx, w->chand->owning_stack,
                            "external_connectivity_watcher");
   external_connectivity_watcher_list_remove(w->chand, w);
@@ -1550,8 +1552,8 @@ static void watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_connectivity_state_notify_on_state_change(
           exec_ctx, &found->chand->state_tracker, NULL, &found->my_closure);
     }
-    grpc_pollset_set_del_pollset(exec_ctx, w->chand->interested_parties,
-                                 w->pollset);
+    grpc_polling_entity_del_from_pollset_set(exec_ctx, &w->pollent,
+                                             w->chand->interested_parties);
     GRPC_CHANNEL_STACK_UNREF(exec_ctx, w->chand->owning_stack,
                              "external_connectivity_watcher");
     gpr_free(w);
@@ -1559,18 +1561,18 @@ static void watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void grpc_client_channel_watch_connectivity_state(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
-    grpc_connectivity_state *state, grpc_closure *closure,
-    grpc_closure *watcher_timer_init) {
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+    grpc_polling_entity pollent, grpc_connectivity_state *state,
+    grpc_closure *closure, grpc_closure *watcher_timer_init) {
   channel_data *chand = elem->channel_data;
   external_connectivity_watcher *w = gpr_zalloc(sizeof(*w));
   w->chand = chand;
-  w->pollset = pollset;
+  w->pollent = pollent;
   w->on_complete = closure;
   w->state = state;
   w->watcher_timer_init = watcher_timer_init;
-
-  grpc_pollset_set_add_pollset(exec_ctx, chand->interested_parties, pollset);
+  grpc_polling_entity_add_to_pollset_set(exec_ctx, &w->pollent,
+                                         chand->interested_parties);
   GRPC_CHANNEL_STACK_REF(w->chand->owning_stack,
                          "external_connectivity_watcher");
   grpc_closure_sched(

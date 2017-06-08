@@ -53,7 +53,7 @@ Pod::Spec.new do |s|
   DESC
   s.homepage = 'http://www.grpc.io'
   s.license  = {
-    :type => 'New BSD',
+    :type => 'Apache License, Version 2.0',
     :text => <<-LICENSE
       Copyright 2015, Google Inc.
       All rights reserved.

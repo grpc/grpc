@@ -5,34 +5,19 @@
 # This file can be regenerated from the template by running
 # tools/buildgen/generate_projects.sh
 #
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 
@@ -666,6 +651,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx client_crash_test)
 endif()
 add_dependencies(buildtests_cxx client_crash_test_server)
+add_dependencies(buildtests_cxx client_lb_end2end_test)
 add_dependencies(buildtests_cxx codegen_test_full)
 add_dependencies(buildtests_cxx codegen_test_minimal)
 add_dependencies(buildtests_cxx credentials_test)
@@ -716,7 +702,6 @@ endif()
 add_dependencies(buildtests_cxx qps_worker)
 add_dependencies(buildtests_cxx reconnect_interop_client)
 add_dependencies(buildtests_cxx reconnect_interop_server)
-add_dependencies(buildtests_cxx round_robin_end2end_test)
 add_dependencies(buildtests_cxx secure_auth_context_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx secure_sync_unary_ping_pong_test)
@@ -1142,6 +1127,7 @@ add_library(grpc
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
+  src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
@@ -1566,8 +1552,8 @@ add_library(grpc_test_util
   test/core/end2end/data/server1_key.c
   test/core/end2end/data/test_root_cert.c
   test/core/security/oauth2_utils.c
+  src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c
   test/core/end2end/cq_verifier.c
-  test/core/end2end/fake_resolver.c
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
@@ -1787,8 +1773,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
+  src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c
   test/core/end2end/cq_verifier.c
-  test/core/end2end/fake_resolver.c
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
@@ -2030,6 +2016,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
+  src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c
   src/core/ext/filters/load_reporting/load_reporting.c
   src/core/ext/filters/load_reporting/load_reporting_filter.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
@@ -9666,6 +9653,48 @@ target_link_libraries(client_crash_test_server
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(client_lb_end2end_test
+  test/cpp/end2end/client_lb_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(client_lb_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_lb_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(codegen_test_full
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.cc
@@ -11602,48 +11631,6 @@ target_link_libraries(reconnect_interop_server
   gpr_test_util
   gpr
   grpc++_test_config
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(round_robin_end2end_test
-  test/cpp/end2end/round_robin_end2end_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(round_robin_end2end_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(round_robin_end2end_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr_test_util
-  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
