@@ -19,7 +19,9 @@
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/iomgr/combiner.h"
 
+#ifndef NDEBUG
 grpc_tracer_flag grpc_trace_resolver_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
 
 void grpc_resolver_init(grpc_resolver *resolver,
                         const grpc_resolver_vtable *vtable,

@@ -161,20 +161,18 @@ static void fd_global_shutdown(void);
  * Polling island Declarations
  */
 
-//#define PI_REFCOUNT_DEBUG
-
-#ifdef PI_REFCOUNT_DEBUG
+#ifndef NDEBUG
 
 #define PI_ADD_REF(p, r) pi_add_ref_dbg((p), (r), __FILE__, __LINE__)
 #define PI_UNREF(exec_ctx, p, r) \
   pi_unref_dbg((exec_ctx), (p), (r), __FILE__, __LINE__)
 
-#else /* defined(GRPC_WORKQUEUE_REFCOUNT_DEBUG) */
+#else 
 
 #define PI_ADD_REF(p, r) pi_add_ref((p))
 #define PI_UNREF(exec_ctx, p, r) pi_unref((exec_ctx), (p))
 
-#endif /* !defined(GRPC_PI_REF_COUNT_DEBUG) */
+#endif
 
 /* This is also used as grpc_workqueue (by directly casing it) */
 typedef struct polling_island {
@@ -287,21 +285,26 @@ gpr_atm g_epoll_sync;
 static void pi_add_ref(polling_island *pi);
 static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);
 
-#ifdef PI_REFCOUNT_DEBUG
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_workqueue_refcount = GRPC_TRACER_INITIALIZER(false);
 static void pi_add_ref_dbg(polling_island *pi, const char *reason,
                            const char *file, int line) {
-  long old_cnt = gpr_atm_acq_load(&pi->ref_count);
-  pi_add_ref(pi);
-  gpr_log(GPR_DEBUG, "Add ref pi: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
+  if (GRPC_TRACER_ON(grpc_trace_workqueue_refcount)) {
+    long old_cnt = gpr_atm_acq_load(&pi->ref_count);
+    gpr_log(GPR_DEBUG, "Add ref pi: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
           (void *)pi, old_cnt, old_cnt + 1, reason, file, line);
+  }
+  pi_add_ref(pi);
 }
 
 static void pi_unref_dbg(grpc_exec_ctx *exec_ctx, polling_island *pi,
                          const char *reason, const char *file, int line) {
-  long old_cnt = gpr_atm_acq_load(&pi->ref_count);
-  pi_unref(exec_ctx, pi);
-  gpr_log(GPR_DEBUG, "Unref pi: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
+  if (GRPC_TRACER_ON(grpc_trace_workqueue_refcount)) {
+    long old_cnt = gpr_atm_acq_load(&pi->ref_count);
+    gpr_log(GPR_DEBUG, "Unref pi: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
           (void *)pi, old_cnt, (old_cnt - 1), reason, file, line);
+  }
+  pi_unref(exec_ctx, pi);
 }
 #endif
 

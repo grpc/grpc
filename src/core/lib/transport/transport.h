@@ -42,7 +42,9 @@ typedef struct grpc_transport grpc_transport;
    for a stream. */
 typedef struct grpc_stream grpc_stream;
 
+#ifndef NDEBUG
 extern grpc_tracer_flag grpc_trace_stream_refcount;
+#endif
 
 typedef struct grpc_stream_refcount {
   gpr_refcount refs;

@@ -29,7 +29,9 @@ typedef struct grpc_lb_policy grpc_lb_policy;
 typedef struct grpc_lb_policy_vtable grpc_lb_policy_vtable;
 typedef struct grpc_lb_policy_args grpc_lb_policy_args;
 
+#ifndef NDEBUG
 extern grpc_tracer_flag grpc_trace_lb_policy_refcount;
+#endif
 
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable *vtable;

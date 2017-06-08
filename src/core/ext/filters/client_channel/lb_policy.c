@@ -21,7 +21,10 @@
 
 #define WEAK_REF_BITS 16
 
+#ifndef NDEBUG
 grpc_tracer_flag grpc_trace_lb_policy_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
+
 
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable,

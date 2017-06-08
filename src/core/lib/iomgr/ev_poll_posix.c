@@ -1272,6 +1272,7 @@ static void pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 }
 
 /*******************************************************************************
+
  * Condition Variable polling extensions
  */
 
