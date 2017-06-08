@@ -457,7 +457,7 @@ void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
       exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
 }
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define REF_REASON reason
 #define REF_ARG , const char *reason
 #else

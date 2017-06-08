@@ -748,7 +748,7 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_start_writing(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_CHTTP2_STREAM_REF(stream, reason) \
   grpc_chttp2_stream_ref(stream, reason)
 #define GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream, reason) \

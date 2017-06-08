@@ -25,6 +25,8 @@
 typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;
 
+extern grpc_tracer_flag grpc_trace_resolver_refcount;
+
 /** \a grpc_resolver provides \a grpc_channel_args objects to its caller */
 struct grpc_resolver {
   const grpc_resolver_vtable *vtable;
@@ -41,17 +43,17 @@ struct grpc_resolver_vtable {
                       grpc_channel_args **result, grpc_closure *on_complete);
 };
 
-#ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_RESOLVER_UNREF(cl, p, r) \
-  grpc_resolver_unref((cl), (p), __FILE__, __LINE__, (r))
+#define GRPC_RESOLVER_UNREF(e, p, r) \
+  grpc_resolver_unref((e), (p), __FILE__, __LINE__, (r))
 void grpc_resolver_ref(grpc_resolver *policy, const char *file, int line,
                        const char *reason);
-void grpc_resolver_unref(grpc_resolver *policy, grpc_closure_list *closure_list,
+void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *policy,
                          const char *file, int line, const char *reason);
 #else
 #define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p))
-#define GRPC_RESOLVER_UNREF(cl, p, r) grpc_resolver_unref((cl), (p))
+#define GRPC_RESOLVER_UNREF(e, p, r) grpc_resolver_unref((e), (p))
 void grpc_resolver_ref(grpc_resolver *policy);
 void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *policy);
 #endif

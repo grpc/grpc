@@ -29,6 +29,8 @@ typedef struct grpc_lb_policy grpc_lb_policy;
 typedef struct grpc_lb_policy_vtable grpc_lb_policy_vtable;
 typedef struct grpc_lb_policy_args grpc_lb_policy_args;
 
+extern grpc_tracer_flag grpc_trace_lb_policy_refcount;
+
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable *vtable;
   gpr_atm ref_pair;
@@ -96,8 +98,7 @@ struct grpc_lb_policy_vtable {
                         const grpc_lb_policy_args *args);
 };
 
-//#define GRPC_LB_POLICY_REFCOUNT_DEBUG
-#ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
+#ifndef NDEBUG
 
 /* Strong references: the policy will shutdown when they reach zero */
 #define GRPC_LB_POLICY_REF(p, r) \

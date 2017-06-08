@@ -31,25 +31,31 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+grpc_tracer_flag grpc_trace_stream_refcount = GRPC_TRACER_INITIALIZER(false);
+
+#ifndef NDEBUG
 void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason) {
-  gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
-  gpr_log(GPR_DEBUG, "%s %p:%p   REF %" PRIdPTR "->%" PRIdPTR " %s",
-          refcount->object_type, refcount, refcount->destroy.cb_arg, val,
-          val + 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
+    gpr_log(GPR_DEBUG, "%s %p:%p   REF %" PRIdPTR "->%" PRIdPTR " %s",
+            refcount->object_type, refcount, refcount->destroy.cb_arg, val,
+            val + 1, reason);
+  }
 #else
 void grpc_stream_ref(grpc_stream_refcount *refcount) {
 #endif
   gpr_ref_non_zero(&refcount->refs);
 }
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount,
                        const char *reason) {
-  gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
-  gpr_log(GPR_DEBUG, "%s %p:%p UNREF %" PRIdPTR "->%" PRIdPTR " %s",
-          refcount->object_type, refcount, refcount->destroy.cb_arg, val,
-          val - 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
+    gpr_log(GPR_DEBUG, "%s %p:%p UNREF %" PRIdPTR "->%" PRIdPTR " %s",
+            refcount->object_type, refcount, refcount->destroy.cb_arg, val,
+            val - 1, reason);
+  }
 #else
 void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
@@ -74,7 +80,7 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                             offsetof(grpc_stream_refcount, slice_refcount)))
 
 static void slice_stream_ref(void *p) {
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
   grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(p), "slice");
 #else
   grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(p));
@@ -82,7 +88,7 @@ static void slice_stream_ref(void *p) {
 }
 
 static void slice_stream_unref(grpc_exec_ctx *exec_ctx, void *p) {
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
   grpc_stream_unref(exec_ctx, STREAM_REF_FROM_SLICE_REF(p), "slice");
 #else
   grpc_stream_unref(exec_ctx, STREAM_REF_FROM_SLICE_REF(p));
@@ -102,7 +108,7 @@ static const grpc_slice_refcount_vtable stream_ref_slice_vtable = {
     .eq = grpc_slice_default_eq_impl,
     .hash = grpc_slice_default_hash_impl};
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg,
                           const char *object_type) {

@@ -620,7 +620,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(error);
 }
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_chttp2_stream_ref(grpc_chttp2_stream *s, const char *reason) {
   grpc_stream_ref(s->refcount, reason);
 }

@@ -42,18 +42,18 @@ typedef struct grpc_transport grpc_transport;
    for a stream. */
 typedef struct grpc_stream grpc_stream;
 
-//#define GRPC_STREAM_REFCOUNT_DEBUG
+extern grpc_tracer_flag grpc_trace_stream_refcount;
 
 typedef struct grpc_stream_refcount {
   gpr_refcount refs;
   grpc_closure destroy;
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
   const char *object_type;
 #endif
   grpc_slice_refcount slice_refcount;
 } grpc_stream_refcount;
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg,
                           const char *object_type);

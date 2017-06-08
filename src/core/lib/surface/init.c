@@ -47,6 +47,11 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
+#ifndef NDEBUG
+#include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/resolver.h"
+#endif
+
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
 
@@ -140,6 +145,9 @@ void grpc_init(void) {
     grpc_register_tracer("pending_tags", &grpc_trace_pending_tags);
     grpc_register_tracer("closure", &grpc_trace_closure);
     grpc_register_tracer("error_refcount", &grpc_trace_error_refcount);
+    grpc_register_tracer("lb_policy_refcount", &grpc_trace_lb_policy_refcount);
+    grpc_register_tracer("resolver_refcount", &grpc_trace_resolver_refcount);
+    grpc_register_tracer("stream_refcount", &grpc_trace_stream_refcount);
 #endif
     grpc_security_pre_init();
     grpc_iomgr_init(&exec_ctx);
