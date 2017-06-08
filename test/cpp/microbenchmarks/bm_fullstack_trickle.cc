@@ -36,6 +36,7 @@
 #include <benchmark/benchmark.h>
 #include <gflags/gflags.h>
 #include <fstream>
+#include <math.h>
 #include "src/core/lib/profiling/timers.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -88,8 +89,11 @@ class TrickledCHTTP2 : public EndpointPairFixture {
  public:
   TrickledCHTTP2(Service* service, bool streaming, size_t req_size,
                  size_t resp_size, size_t kilobits_per_second)
-      : EndpointPairFixture(service, MakeEndpoints(kilobits_per_second),
+      : EndpointPairFixture(service, MakeEndpoints(kilobits_per_second), 
                             FixtureConfiguration()) {
+    req_size_ = req_size;
+    resp_size_ = resp_size;
+    kilobits_per_second_ = kilobits_per_second;
     if (FLAGS_log) {
       std::ostringstream fn;
       fn << "trickle." << (streaming ? "streaming" : "unary") << "." << req_size
@@ -194,6 +198,10 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     }
   }
 
+  size_t ReqSize() { return req_size_; }
+  size_t RespSize() { return resp_size_; }
+  size_t KilobitsPerSecond() { return kilobits_per_second_; }
+
  private:
   grpc_passthru_endpoint_stats stats_;
   struct Stats {
@@ -204,6 +212,11 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   Stats server_stats_;
   std::unique_ptr<std::ofstream> log_;
   gpr_timespec start_ = gpr_now(GPR_CLOCK_MONOTONIC);
+
+  // benchmark scenario data
+  size_t req_size_;
+  size_t resp_size_;
+  size_t kilobits_per_second_;
 
   grpc_endpoint_pair MakeEndpoints(size_t kilobits) {
     grpc_endpoint_pair p;
@@ -237,7 +250,7 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
     switch (fixture->cq()->AsyncNext(t, ok, gpr_now(GPR_CLOCK_MONOTONIC))) {
       case CompletionQueue::TIMEOUT:
         fixture->Step(iteration != -1);
-        g_now = gpr_time_add(g_now, gpr_time_from_millis(5, GPR_TIMESPAN));
+        g_now = gpr_time_add(g_now, gpr_time_from_millis(sqrt(fixture->ReqSize() + fixture->RespSize()), GPR_TIMESPAN));
         break;
       case CompletionQueue::SHUTDOWN:
         GPR_ASSERT(false);
