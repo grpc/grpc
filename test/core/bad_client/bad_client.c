@@ -169,8 +169,11 @@ void grpc_run_bad_client_test(
       grpc_endpoint_read(&exec_ctx, sfd.client, &args.incoming,
                          &read_done_closure);
       grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(
-          gpr_event_wait(&args.read_done, grpc_timeout_seconds_to_deadline(5)));
+      gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+      while (!gpr_event_get(&args.read_done)) {
+        GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
+        GPR_ASSERT(grpc_completion_queue_next(a.cq, grpc_timeout_milliseconds_to_deadline(100), NULL).type == GRPC_QUEUE_TIMEOUT);
+      }
       grpc_slice_buffer_destroy_internal(&exec_ctx, &args.incoming);
     }
     // Shutdown.
