@@ -64,6 +64,7 @@ static size_t run_closures(grpc_exec_ctx *exec_ctx, grpc_closure_list list) {
     c->cb(exec_ctx, c->cb_arg, error);
     GRPC_ERROR_UNREF(error);
     c = next;
+    n++;
   }
 
   return n;
