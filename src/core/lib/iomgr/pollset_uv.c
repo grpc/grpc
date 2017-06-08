@@ -88,7 +88,7 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     // kick the loop once
     uv_timer_start(dummy_uv_handle, dummy_timer_cb, 0, 0);
   }
-  grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
 }
 
 void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {

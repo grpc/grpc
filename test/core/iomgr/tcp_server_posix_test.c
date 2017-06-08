@@ -118,7 +118,7 @@ static void server_weak_ref_shutdown(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void server_weak_ref_init(server_weak_ref *weak_ref) {
   weak_ref->server = NULL;
-  grpc_closure_init(&weak_ref->server_shutdown, server_weak_ref_shutdown,
+  GRPC_CLOSURE_INIT(&weak_ref->server_shutdown, server_weak_ref_shutdown,
                     weak_ref, grpc_schedule_on_exec_ctx);
 }
 
@@ -492,7 +492,7 @@ int main(int argc, char **argv) {
   /* Test connect(2) with dst_addrs. */
   test_connect(10, &channel_args, dst_addrs, false);
 
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);

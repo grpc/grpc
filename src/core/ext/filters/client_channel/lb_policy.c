@@ -74,7 +74,7 @@ void grpc_lb_policy_unref(grpc_exec_ctx *exec_ctx,
   gpr_atm mask = ~(gpr_atm)((1 << WEAK_REF_BITS) - 1);
   gpr_atm check = 1 << WEAK_REF_BITS;
   if ((old_val & mask) == check) {
-    grpc_closure_sched(exec_ctx, grpc_closure_create(
+    GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(
                                      shutdown_locked, policy,
                                      grpc_combiner_scheduler(policy->combiner)),
                        GRPC_ERROR_NONE);

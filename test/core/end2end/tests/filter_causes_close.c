@@ -197,7 +197,7 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_error *error) {
   grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
-  grpc_closure_sched(
+  GRPC_CLOSURE_SCHED(
       exec_ctx, calld->recv_im_ready,
       grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failure that's not preventable.", &error, 1),
@@ -213,7 +213,7 @@ static void start_transport_stream_op_batch(
     calld->recv_im_ready =
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        grpc_closure_create(recv_im_ready, elem, grpc_schedule_on_exec_ctx);
+        GRPC_CLOSURE_CREATE(recv_im_ready, elem, grpc_schedule_on_exec_ctx);
   }
   grpc_call_next_op(exec_ctx, elem, op);
 }

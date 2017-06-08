@@ -44,7 +44,7 @@ static grpc_event_engine_vtable g_vtable;
 
 static void pollset_shutdown(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
                              grpc_closure* closure) {
-  grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
 }
 
 static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {

@@ -156,7 +156,7 @@ static void dummy_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -201,13 +201,13 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
     for (sp = s->head; sp; sp = sp->next) {
       grpc_unlink_if_unix_domain_socket(&sp->addr);
 
-      grpc_closure_init(&sp->destroyed_closure, destroyed_port, s,
+      GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
                         grpc_schedule_on_exec_ctx);
       if (!sp->orphan_notified) {
         /* Call the orphan_cb to signal that the FD is about to be closed and
          * should no longer be used. Because at this point, all listening ports
          * have been shutdown already, no need to shutdown again.*/
-        grpc_closure_init(&sp->orphan_fd_closure, dummy_cb, sp->emfd,
+        GRPC_CLOSURE_INIT(&sp->orphan_fd_closure, dummy_cb, sp->emfd,
                           grpc_schedule_on_exec_ctx);
         GPR_ASSERT(sp->orphan_cb);
         sp->orphan_cb(exec_ctx, sp->emfd, &sp->orphan_fd_closure,
@@ -240,7 +240,7 @@ void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
       struct shutdown_fd_args *args = gpr_malloc(sizeof(*args));
       args->fd = sp->emfd;
       args->server_mu = &s->mu;
-      grpc_closure_init(&sp->orphan_fd_closure, shutdown_fd, args,
+      GRPC_CLOSURE_INIT(&sp->orphan_fd_closure, shutdown_fd, args,
                         grpc_schedule_on_exec_ctx);
       sp->orphan_cb(exec_ctx, sp->emfd, &sp->orphan_fd_closure,
                     sp->server->user_data);
@@ -525,11 +525,11 @@ void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
     for (i = 0; i < pollset_count; i++) {
       grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
     }
-    grpc_closure_init(&sp->read_closure, on_read, sp,
+    GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
                       grpc_schedule_on_exec_ctx);
     grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
 
-    grpc_closure_init(&sp->write_closure, on_write, sp,
+    GRPC_CLOSURE_INIT(&sp->write_closure, on_write, sp,
                       grpc_schedule_on_exec_ctx);
     grpc_fd_notify_on_write(exec_ctx, sp->emfd, &sp->write_closure);
 

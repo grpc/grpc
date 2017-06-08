@@ -83,12 +83,12 @@ c->cb(exec_ctx, c->cb_arg, err);
 The caller is still responsible for unref-ing the error.
 
 However, the above line is currently being phased out! It is safer to invoke
-callbacks with `grpc_closure_run` and `grpc_closure_sched`. These functions are
+callbacks with `GRPC_CLOSURE_RUN` and `GRPC_CLOSURE_SCHED`. These functions are
 not callbacks, so they will take ownership of the error passed to them.
 
 ```C
 grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occured");
-grpc_closure_run(exec_ctx, cb, error);
+GRPC_CLOSURE_RUN(exec_ctx, cb, error);
 // current function no longer has ownership of the error
 ```
 
@@ -97,7 +97,7 @@ you must explicitly take a reference.
 
 ```C
 grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occured");
-grpc_closure_run(exec_ctx, cb, GRPC_ERROR_REF(error));
+GRPC_CLOSURE_RUN(exec_ctx, cb, GRPC_ERROR_REF(error));
 // do some other things with the error
 GRPC_ERROR_UNREF(error);
 ```

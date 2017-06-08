@@ -67,7 +67,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx,
   }
 
   // Invoke the next callback.
-  grpc_closure_run(exec_ctx, calld->next_recv_initial_metadata_ready,
+  GRPC_CLOSURE_RUN(exec_ctx, calld->next_recv_initial_metadata_ready,
                    GRPC_ERROR_REF(error));
 }
 
@@ -106,7 +106,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
   call_data* calld = elem->call_data;
   calld->next_recv_initial_metadata_ready = NULL;
   calld->workaround_active = false;
-  grpc_closure_init(&calld->recv_initial_metadata_ready,
+  GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
