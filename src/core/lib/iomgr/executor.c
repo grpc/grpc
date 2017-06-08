@@ -173,8 +173,8 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   ts->depth++;
   bool try_new_thread = ts->depth > MAX_DEPTH &&
                         cur_thread_count < g_max_threads && !ts->shutdown;
+  gpr_mu_unlock(&ts->mu);
   if (try_new_thread && gpr_spinlock_trylock(&g_adding_thread_lock)) {
-    gpr_mu_unlock(&ts->mu);
     cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
     if (cur_thread_count < g_max_threads) {
       gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
@@ -185,8 +185,6 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                   &g_thread_state[cur_thread_count], &opt);
     }
     gpr_spinlock_unlock(&g_adding_thread_lock);
-  } else {
-    gpr_mu_unlock(&ts->mu);
   }
 }
 
