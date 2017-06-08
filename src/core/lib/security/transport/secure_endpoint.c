@@ -75,18 +75,20 @@ static void destroy(grpc_exec_ctx *exec_ctx, secure_endpoint *secure_ep) {
   gpr_free(ep);
 }
 
-/*#define GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG*/
-#ifdef GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define SECURE_ENDPOINT_UNREF(exec_ctx, ep, reason) \
   secure_endpoint_unref((exec_ctx), (ep), (reason), __FILE__, __LINE__)
 #define SECURE_ENDPOINT_REF(ep, reason) \
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
-static void secure_endpoint_unref(secure_endpoint *ep,
-                                  grpc_closure_list *closure_list,
+static void secure_endpoint_unref(grpc_exec_ctx *exec_ctx,
+                                  secure_endpoint *ep,
                                   const char *reason, const char *file,
                                   int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SECENDP unref %p : %s %d -> %d",
-          ep, reason, ep->ref.count, ep->ref.count - 1);
+  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR,
+            ep, reason, val, val - 1);
+  }
   if (gpr_unref(&ep->ref)) {
     destroy(exec_ctx, ep);
   }
@@ -94,8 +96,11 @@ static void secure_endpoint_unref(secure_endpoint *ep,
 
 static void secure_endpoint_ref(secure_endpoint *ep, const char *reason,
                                 const char *file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SECENDP   ref %p : %s %d -> %d",
-          ep, reason, ep->ref.count, ep->ref.count + 1);
+  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR,
+            ep, reason, val, val + 1);
+  }
   gpr_ref(&ep->ref);
 }
 #else
