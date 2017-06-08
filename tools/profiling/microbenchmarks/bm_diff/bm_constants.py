@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# Copyright 2015, Google Inc.
+#!/usr/bin/env python2.7
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,17 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and runs performance smoke test.
-set -ex
 
-# List of benchmarks that provide good signal for analyzing performance changes in pull requests
-BENCHMARKS_TO_RUN="bm_fullstack_unary_ping_pong bm_fullstack_streaming_ping_pong bm_fullstack_streaming_pump bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_chttp2_transport bm_pollset bm_metadata"
+### Configurable constants for the bm_*.py family """
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../..
+_AVAILABLE_BENCHMARK_TESTS = [
+    'bm_fullstack_unary_ping_pong', 'bm_fullstack_streaming_ping_pong',
+    'bm_fullstack_streaming_pump', 'bm_closure', 'bm_cq', 'bm_call_create',
+    'bm_error', 'bm_chttp2_hpack', 'bm_chttp2_transport', 'bm_pollset',
+    'bm_metadata', 'bm_fullstack_trickle'
+]
 
-tools/run_tests/start_port_server.py
-tools/profiling/microbenchmarks/bm_diff/bm_main.py -d origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN
+_INTERESTING = ('cpu_time', 'real_time', 'locks_per_iteration',
+                'allocs_per_iteration', 'writes_per_iteration',
+                'atm_cas_per_iteration', 'atm_add_per_iteration',
+                'nows_per_iteration',)
