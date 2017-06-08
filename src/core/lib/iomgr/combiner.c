@@ -85,6 +85,7 @@ static const grpc_closure_scheduler_vtable finally_scheduler = {
     combiner_finally_exec, combiner_finally_exec, "combiner:finally"};
 
 static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
+static void queue_offload(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
 
 grpc_combiner *grpc_combiner_create(void) {
   grpc_combiner *lock = gpr_malloc(sizeof(*lock));
@@ -178,7 +179,9 @@ static void combiner_exec(grpc_exec_ctx *exec_ctx, grpc_closure *cl,
                              (gpr_atm)exec_ctx);
     // first element on this list: add it to the list of combiner locks
     // executing within this exec_ctx
-    push_last_on_exec_ctx(exec_ctx, lock);
+    if (exec_ctx->active_combiner == NULL) {
+      push_last_on_exec_ctx(exec_ctx, lock);
+    }
   } else {
     // there may be a race with setting here: if that happens, we may delay
     // offload for one or two actions, and that's fine
@@ -192,6 +195,20 @@ static void combiner_exec(grpc_exec_ctx *exec_ctx, grpc_closure *cl,
   assert(cl->cb);
   cl->error_data.error = error;
   gpr_mpscq_push(&lock->queue, &cl->next_data.atm_next);
+
+  // If this is the first closure in this combiner, it means that the combiner
+  // is currently not attached to any exec_ctx. Try to add it to the current
+  // exec_ctx. However, if the current exec_ctx already has an active combiner,
+  // we want to increase the paralellism and therefore offload this combiner to
+  // the executor instead (where a separate thread can pick this up)
+  if (last == 1) {
+    if (exec_ctx->active_combiner !=NULL && grpc_executor_is_threaded()) {
+      queue_offload(exec_ctx, lock);
+    } else {
+      push_last_on_exec_ctx(exec_ctx, lock);
+    }
+  }
+
   GPR_TIMER_END("combiner.execute", 0);
 }
 
@@ -209,8 +226,12 @@ static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 static void queue_offload(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
-  move_next(exec_ctx);
-  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p queue_offload", lock));
+  if (exec_ctx->active_combiner == lock) {
+    move_next(exec_ctx);
+  }
+
+  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p queue_offload is_active?: %d",
+                              lock, exec_ctx->active_combiner == lock));
   grpc_closure_sched(exec_ctx, &lock->offload, GRPC_ERROR_NONE);
 }
 
