@@ -46,6 +46,24 @@ int grpc_compression_algorithm_parse(grpc_slice name,
   }
 }
 
+int grpc_compression_level_parse(const char *name,
+                                 grpc_compression_level *level) {
+  if (strcmp(name, "none") == 0) {
+    *level = GRPC_COMPRESS_LEVEL_NONE;
+    return 1;
+  } else if (strcmp(name, "low") == 0) {
+    *level = GRPC_COMPRESS_LEVEL_LOW;
+    return 1;
+  } else if (strcmp(name, "medium") == 0) {
+    *level = GRPC_COMPRESS_LEVEL_MED;
+    return 1;
+  } else if (strcmp(name, "high") == 0) {
+    *level = GRPC_COMPRESS_LEVEL_HIGH;
+    return 1;
+  }
+  return 0;
+}
+
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                     char **name) {
   GRPC_API_TRACE("grpc_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
@@ -61,6 +79,28 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
       *name = "gzip";
       return 1;
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
+      return 0;
+  }
+  return 0;
+}
+
+int grpc_compression_level_name(grpc_compression_level level, char **name) {
+  GRPC_API_TRACE("grpc_compression_level_parse(level=%d, name=%p)", 2,
+                 ((int)level, name));
+  switch (level) {
+    case GRPC_COMPRESS_LEVEL_NONE:
+      *name = "none";
+      return 1;
+    case GRPC_COMPRESS_LEVEL_LOW:
+      *name = "low";
+      return 1;
+    case GRPC_COMPRESS_LEVEL_MED:
+      *name = "medium";
+      return 1;
+    case GRPC_COMPRESS_LEVEL_HIGH:
+      *name = "high";
+      return 1;
+    case GRPC_COMPRESS_LEVEL_COUNT:
       return 0;
   }
   return 0;
