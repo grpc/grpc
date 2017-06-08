@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -756,7 +741,7 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
       gpr_zalloc(sizeof(rr_connectivity_data));
   grpc_closure_init(&rr_connectivity->on_change,
                     glb_rr_connectivity_changed_locked, rr_connectivity,
-                    grpc_combiner_scheduler(glb_policy->base.combiner, false));
+                    grpc_combiner_scheduler(glb_policy->base.combiner));
   rr_connectivity->glb_policy = glb_policy;
   rr_connectivity->state = rr_state;
 
@@ -1021,7 +1006,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
 
   grpc_closure_init(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
-                    grpc_combiner_scheduler(args->combiner, false));
+                    grpc_combiner_scheduler(args->combiner));
   grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable, args->combiner);
   grpc_connectivity_state_init(&glb_policy->state_tracker, GRPC_CHANNEL_IDLE,
                                "grpclb");
@@ -1267,7 +1252,7 @@ static void schedule_next_client_load_report(grpc_exec_ctx *exec_ctx,
       gpr_time_add(now, glb_policy->client_stats_report_interval);
   grpc_closure_init(&glb_policy->client_load_report_closure,
                     send_client_load_report_locked, glb_policy,
-                    grpc_combiner_scheduler(glb_policy->base.combiner, false));
+                    grpc_combiner_scheduler(glb_policy->base.combiner));
   grpc_timer_init(exec_ctx, &glb_policy->client_load_report_timer,
                   next_client_load_report_time,
                   &glb_policy->client_load_report_closure, now);
@@ -1295,7 +1280,7 @@ static void do_send_client_load_report_locked(grpc_exec_ctx *exec_ctx,
   op.data.send_message.send_message = glb_policy->client_load_report_payload;
   grpc_closure_init(&glb_policy->client_load_report_closure,
                     client_load_report_done_locked, glb_policy,
-                    grpc_combiner_scheduler(glb_policy->base.combiner, false));
+                    grpc_combiner_scheduler(glb_policy->base.combiner));
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
       exec_ctx, glb_policy->lb_call, &op, 1,
       &glb_policy->client_load_report_closure);
@@ -1401,13 +1386,13 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
 
   grpc_closure_init(&glb_policy->lb_on_sent_initial_request,
                     lb_on_sent_initial_request_locked, glb_policy,
-                    grpc_combiner_scheduler(glb_policy->base.combiner, false));
+                    grpc_combiner_scheduler(glb_policy->base.combiner));
   grpc_closure_init(&glb_policy->lb_on_server_status_received,
                     lb_on_server_status_received_locked, glb_policy,
-                    grpc_combiner_scheduler(glb_policy->base.combiner, false));
+                    grpc_combiner_scheduler(glb_policy->base.combiner));
   grpc_closure_init(&glb_policy->lb_on_response_received,
                     lb_on_response_received_locked, glb_policy,
-                    grpc_combiner_scheduler(glb_policy->base.combiner, false));
+                    grpc_combiner_scheduler(glb_policy->base.combiner));
 
   gpr_backoff_init(&glb_policy->lb_call_backoff_state,
                    GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS,
@@ -1708,9 +1693,9 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
       }
     }
     GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "grpclb_retry_timer");
-    grpc_closure_init(
-        &glb_policy->lb_on_call_retry, lb_call_on_retry_timer_locked,
-        glb_policy, grpc_combiner_scheduler(glb_policy->base.combiner, false));
+    grpc_closure_init(&glb_policy->lb_on_call_retry,
+                      lb_call_on_retry_timer_locked, glb_policy,
+                      grpc_combiner_scheduler(glb_policy->base.combiner));
     glb_policy->retry_timer_active = true;
     grpc_timer_init(exec_ctx, &glb_policy->lb_call_retry_timer, next_try,
                     &glb_policy->lb_on_call_retry, now);
