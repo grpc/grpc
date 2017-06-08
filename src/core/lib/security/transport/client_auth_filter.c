@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -65,7 +50,8 @@ typedef struct {
   */
   grpc_polling_entity *pollent;
   grpc_transport_stream_op_batch op;
-  uint8_t security_context_set;
+  gpr_atm security_context_set;
+  gpr_mu security_context_mu;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   grpc_auth_metadata_context auth_md_context;
 } call_data;
@@ -253,19 +239,26 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
   grpc_linked_mdelem *l;
   grpc_client_security_context *sec_ctx = NULL;
 
-  if (!op->cancel_stream && calld->security_context_set == 0) {
-    calld->security_context_set = 1;
-    GPR_ASSERT(op->payload->context != NULL);
-    if (op->payload->context[GRPC_CONTEXT_SECURITY].value == NULL) {
-      op->payload->context[GRPC_CONTEXT_SECURITY].value =
-          grpc_client_security_context_create();
-      op->payload->context[GRPC_CONTEXT_SECURITY].destroy =
-          grpc_client_security_context_destroy;
+  if (!op->cancel_stream) {
+    /* double checked lock over security context to ensure it's set once */
+    if (gpr_atm_acq_load(&calld->security_context_set) == 0) {
+      gpr_mu_lock(&calld->security_context_mu);
+      if (gpr_atm_acq_load(&calld->security_context_set) == 0) {
+        GPR_ASSERT(op->payload->context != NULL);
+        if (op->payload->context[GRPC_CONTEXT_SECURITY].value == NULL) {
+          op->payload->context[GRPC_CONTEXT_SECURITY].value =
+              grpc_client_security_context_create();
+          op->payload->context[GRPC_CONTEXT_SECURITY].destroy =
+              grpc_client_security_context_destroy;
+        }
+        sec_ctx = op->payload->context[GRPC_CONTEXT_SECURITY].value;
+        GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
+        sec_ctx->auth_context =
+            GRPC_AUTH_CONTEXT_REF(chand->auth_context, "client_auth_filter");
+        gpr_atm_rel_store(&calld->security_context_set, 1);
+      }
+      gpr_mu_unlock(&calld->security_context_mu);
     }
-    sec_ctx = op->payload->context[GRPC_CONTEXT_SECURITY].value;
-    GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
-    sec_ctx->auth_context =
-        GRPC_AUTH_CONTEXT_REF(chand->auth_context, "client_auth_filter");
   }
 
   if (op->send_initial_metadata) {
@@ -312,6 +305,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(*calld));
+  gpr_mu_init(&calld->security_context_mu);
   return GRPC_ERROR_NONE;
 }
 
@@ -335,6 +329,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_slice_unref_internal(exec_ctx, calld->method);
   }
   reset_auth_metadata_context(&calld->auth_md_context);
+  gpr_mu_destroy(&calld->security_context_mu);
 }
 
 /* Constructor for channel_data */

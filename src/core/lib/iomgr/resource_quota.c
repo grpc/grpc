@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -581,7 +566,7 @@ static void rq_reclamation_done(grpc_exec_ctx *exec_ctx, void *rq,
 grpc_resource_quota *grpc_resource_quota_create(const char *name) {
   grpc_resource_quota *resource_quota = gpr_malloc(sizeof(*resource_quota));
   gpr_ref_init(&resource_quota->refs, 1);
-  resource_quota->combiner = grpc_combiner_create(NULL);
+  resource_quota->combiner = grpc_combiner_create();
   resource_quota->free_pool = INT64_MAX;
   resource_quota->size = INT64_MAX;
   gpr_atm_no_barrier_store(&resource_quota->last_size, GPR_ATM_MAX);
@@ -594,12 +579,11 @@ grpc_resource_quota *grpc_resource_quota_create(const char *name) {
     gpr_asprintf(&resource_quota->name, "anonymous_pool_%" PRIxPTR,
                  (intptr_t)resource_quota);
   }
-  grpc_closure_init(
-      &resource_quota->rq_step_closure, rq_step, resource_quota,
-      grpc_combiner_finally_scheduler(resource_quota->combiner, true));
+  grpc_closure_init(&resource_quota->rq_step_closure, rq_step, resource_quota,
+                    grpc_combiner_finally_scheduler(resource_quota->combiner));
   grpc_closure_init(&resource_quota->rq_reclamation_done_closure,
                     rq_reclamation_done, resource_quota,
-                    grpc_combiner_scheduler(resource_quota->combiner, false));
+                    grpc_combiner_scheduler(resource_quota->combiner));
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     resource_quota->roots[i] = NULL;
   }
@@ -704,18 +688,18 @@ grpc_resource_user *grpc_resource_user_create(
       grpc_resource_quota_ref_internal(resource_quota);
   grpc_closure_init(&resource_user->allocate_closure, &ru_allocate,
                     resource_user,
-                    grpc_combiner_scheduler(resource_quota->combiner, false));
+                    grpc_combiner_scheduler(resource_quota->combiner));
   grpc_closure_init(&resource_user->add_to_free_pool_closure,
                     &ru_add_to_free_pool, resource_user,
-                    grpc_combiner_scheduler(resource_quota->combiner, false));
+                    grpc_combiner_scheduler(resource_quota->combiner));
   grpc_closure_init(&resource_user->post_reclaimer_closure[0],
                     &ru_post_benign_reclaimer, resource_user,
-                    grpc_combiner_scheduler(resource_quota->combiner, false));
+                    grpc_combiner_scheduler(resource_quota->combiner));
   grpc_closure_init(&resource_user->post_reclaimer_closure[1],
                     &ru_post_destructive_reclaimer, resource_user,
-                    grpc_combiner_scheduler(resource_quota->combiner, false));
+                    grpc_combiner_scheduler(resource_quota->combiner));
   grpc_closure_init(&resource_user->destroy_closure, &ru_destroy, resource_user,
-                    grpc_combiner_scheduler(resource_quota->combiner, false));
+                    grpc_combiner_scheduler(resource_quota->combiner));
   gpr_mu_init(&resource_user->mu);
   gpr_atm_rel_store(&resource_user->refs, 1);
   gpr_atm_rel_store(&resource_user->shutdown, 0);
@@ -772,12 +756,12 @@ void grpc_resource_user_unref(grpc_exec_ctx *exec_ctx,
 void grpc_resource_user_shutdown(grpc_exec_ctx *exec_ctx,
                                  grpc_resource_user *resource_user) {
   if (gpr_atm_full_fetch_add(&resource_user->shutdown, 1) == 0) {
-    grpc_closure_sched(exec_ctx,
-                       grpc_closure_create(
-                           ru_shutdown, resource_user,
-                           grpc_combiner_scheduler(
-                               resource_user->resource_quota->combiner, false)),
-                       GRPC_ERROR_NONE);
+    grpc_closure_sched(
+        exec_ctx,
+        grpc_closure_create(
+            ru_shutdown, resource_user,
+            grpc_combiner_scheduler(resource_user->resource_quota->combiner)),
+        GRPC_ERROR_NONE);
   }
 }
 

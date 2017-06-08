@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.homepage      = 'https://github.com/google/grpc/tree/master/src/ruby'
   s.summary       = 'GRPC system in Ruby'
   s.description   = 'Send RPCs from Ruby using GRPC'
-  s.license       = 'BSD-3-Clause'
+  s.license       = 'Apache-2.0'
 
   s.required_ruby_version = '>= 2.0.0'
 
@@ -249,9 +249,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/wakeup_fd_cv.h )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_pipe.h )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_posix.h )
-  s.files += %w( src/core/lib/iomgr/workqueue.h )
-  s.files += %w( src/core/lib/iomgr/workqueue_uv.h )
-  s.files += %w( src/core/lib/iomgr/workqueue_windows.h )
   s.files += %w( src/core/lib/json/json.h )
   s.files += %w( src/core/lib/json/json_common.h )
   s.files += %w( src/core/lib/json/json_reader.h )
@@ -477,8 +474,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/wakeup_fd_nospecial.c )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_pipe.c )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_posix.c )
-  s.files += %w( src/core/lib/iomgr/workqueue_uv.c )
-  s.files += %w( src/core/lib/iomgr/workqueue_windows.c )
   s.files += %w( src/core/lib/json/json.c )
   s.files += %w( src/core/lib/json/json_reader.c )
   s.files += %w( src/core/lib/json/json_string.c )
@@ -621,6 +616,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c )
   s.files += %w( src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c )
   s.files += %w( src/core/ext/filters/load_reporting/load_reporting.c )
