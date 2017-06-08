@@ -35,8 +35,8 @@
 
 #include <benchmark/benchmark.h>
 #include <gflags/gflags.h>
-#include <fstream>
 #include <math.h>
+#include <fstream>
 #include "src/core/lib/profiling/timers.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -89,7 +89,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
  public:
   TrickledCHTTP2(Service* service, bool streaming, size_t req_size,
                  size_t resp_size, size_t kilobits_per_second)
-      : EndpointPairFixture(service, MakeEndpoints(kilobits_per_second), 
+      : EndpointPairFixture(service, MakeEndpoints(kilobits_per_second),
                             FixtureConfiguration()) {
     req_size_ = req_size;
     resp_size_ = resp_size;
@@ -250,7 +250,10 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
     switch (fixture->cq()->AsyncNext(t, ok, gpr_now(GPR_CLOCK_MONOTONIC))) {
       case CompletionQueue::TIMEOUT:
         fixture->Step(iteration != -1);
-        g_now = gpr_time_add(g_now, gpr_time_from_millis(sqrt(fixture->ReqSize() + fixture->RespSize()), GPR_TIMESPAN));
+        g_now = gpr_time_add(
+            g_now,
+            gpr_time_from_millis(sqrt(fixture->ReqSize() + fixture->RespSize()),
+                                 GPR_TIMESPAN));
         break;
       case CompletionQueue::SHUTDOWN:
         GPR_ASSERT(false);
