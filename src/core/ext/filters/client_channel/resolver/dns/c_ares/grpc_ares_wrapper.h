@@ -19,10 +19,13 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+
+typedef struct grpc_ares_request grpc_ares_request;
 
 /* Asynchronously resolve addr. Use \a default_port if a port isn't designated
    in addr, otherwise use the port in addr. grpc_ares_init() must be called at
@@ -36,11 +39,21 @@ extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
                                          grpc_closure *on_done,
                                          grpc_resolved_addresses **addresses);
 
-void grpc_dns_lookup_ares(grpc_exec_ctx *exec_ctx, const char *dns_server,
-                          const char *addr, const char *default_port,
-                          grpc_pollset_set *interested_parties,
-                          grpc_closure *on_done,
-                          grpc_resolved_addresses **addresses);
+/* Asynchronously resolve addr. It will try to resolve grpclb SRV records in
+  addition to the normal address records. For normal address records, it uses
+  \a default_port if a port isn't designated in \a addr, otherwise it uses the
+  port in \a addr. grpc_ares_init() must be called at least once before this
+  function. \a on_done may be called directly in this function without being
+  scheduled with \a exec_ctx, it must not try to acquire locks that are being
+  held by the caller. */
+extern grpc_ares_request *(*grpc_dns_lookup_ares)(
+    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
+    const char *default_port, grpc_pollset_set *interested_parties,
+    grpc_closure *on_done, grpc_lb_addresses **addresses, bool check_grpclb);
+
+/* Cancel the pending grpc_ares_request \a request */
+void grpc_cancel_ares_request(grpc_exec_ctx *exec_ctx,
+                              grpc_ares_request *request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */

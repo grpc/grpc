@@ -92,6 +92,7 @@ void grpc_free_port_using_server(int port) {
                                        grpc_schedule_on_exec_ctx),
                    &rsp);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
+  grpc_exec_ctx_flush(&exec_ctx);
   gpr_mu_lock(pr.mu);
   while (!pr.done) {
     grpc_pollset_worker *worker = NULL;
@@ -224,6 +225,7 @@ int grpc_pick_port_using_server(void) {
       grpc_closure_create(got_port_from_server, &pr, grpc_schedule_on_exec_ctx),
       &pr.response);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
+  grpc_exec_ctx_flush(&exec_ctx);
   gpr_mu_lock(pr.mu);
   while (pr.port == -1) {
     grpc_pollset_worker *worker = NULL;

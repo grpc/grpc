@@ -27,6 +27,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <string.h>
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -42,6 +44,11 @@ static void (*iomgr_resolve_address)(grpc_exec_ctx *exec_ctx, const char *addr,
                                      grpc_pollset_set *interested_parties,
                                      grpc_closure *on_done,
                                      grpc_resolved_addresses **addresses);
+
+static grpc_ares_request *(*iomgr_dns_lookup_ares)(
+    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
+    const char *default_port, grpc_pollset_set *interested_parties,
+    grpc_closure *on_done, grpc_lb_addresses **addresses, bool check_grpclb);
 
 static void set_resolve_port(int port) {
   gpr_mu_lock(&g_mu);
@@ -80,6 +87,36 @@ static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   grpc_closure_sched(exec_ctx, on_done, error);
 }
 
+static grpc_ares_request *my_dns_lookup_ares(
+    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
+    const char *default_port, grpc_pollset_set *interested_parties,
+    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb) {
+  if (0 != strcmp(addr, "test")) {
+    return iomgr_dns_lookup_ares(exec_ctx, dns_server, addr, default_port,
+                                 interested_parties, on_done, lb_addrs,
+                                 check_grpclb);
+  }
+
+  grpc_error *error = GRPC_ERROR_NONE;
+  gpr_mu_lock(&g_mu);
+  if (g_resolve_port < 0) {
+    gpr_mu_unlock(&g_mu);
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
+  } else {
+    *lb_addrs = grpc_lb_addresses_create(1, NULL);
+    struct sockaddr_in *sa = gpr_zalloc(sizeof(struct sockaddr_in));
+    sa->sin_family = AF_INET;
+    sa->sin_addr.s_addr = htonl(0x7f000001);
+    sa->sin_port = htons((uint16_t)g_resolve_port);
+    grpc_lb_addresses_set_address(*lb_addrs, 0, sa, sizeof(*sa), false, NULL,
+                                  NULL);
+    gpr_free(sa);
+    gpr_mu_unlock(&g_mu);
+  }
+  grpc_closure_sched(exec_ctx, on_done, error);
+  return NULL;
+}
+
 int main(int argc, char **argv) {
   grpc_completion_queue *cq;
   cq_verifier *cqv;
@@ -91,7 +128,9 @@ int main(int argc, char **argv) {
   gpr_mu_init(&g_mu);
   grpc_init();
   iomgr_resolve_address = grpc_resolve_address;
+  iomgr_dns_lookup_ares = grpc_dns_lookup_ares;
   grpc_resolve_address = my_resolve_address;
+  grpc_dns_lookup_ares = my_dns_lookup_ares;
 
   int was_cancelled1;
   int was_cancelled2;
