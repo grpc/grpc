@@ -62,10 +62,6 @@ struct grpc_fd {
 
   struct grpc_fd *freelist_next;
 
-  /* The pollset that last noticed that the fd is readable. The actual type
-   * stored in this is (grpc_pollset *) */
-  gpr_atm read_notifier_pollset;
-
   grpc_iomgr_object iomgr_object;
 };
 
@@ -186,7 +182,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
   new_fd->fd = fd;
   grpc_lfev_init(&new_fd->read_closure);
   grpc_lfev_init(&new_fd->write_closure);
-  gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = NULL;
 
@@ -248,12 +243,6 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   gpr_mu_unlock(&fd_freelist_mu);
 }
 
-static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
-                                                  grpc_fd *fd) {
-  gpr_atm notifier = gpr_atm_acq_load(&fd->read_notifier_pollset);
-  return (grpc_pollset *)notifier;
-}
-
 static bool fd_is_shutdown(grpc_fd *fd) {
   return grpc_lfev_is_shutdown(&fd->read_closure);
 }
@@ -272,17 +261,8 @@ static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) {
   return (grpc_workqueue *)0xb0b51ed;
 }
 
-static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
-                               grpc_pollset *notifier) {
+static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
-
-  /* Note, it is possible that fd_become_readable might be called twice with
-     different 'notifier's when an fd becomes readable and it is in two epoll
-     sets (This can happen briefly during polling island merges). In such cases
-     it does not really matter which notifer is set as the read_notifier_pollset
-     (They would both point to the same polling island anyway) */
-  /* Use release store to match with acquire load in fd_get_read_notifier */
-  gpr_atm_rel_store(&fd->read_notifier_pollset, (gpr_atm)notifier);
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
@@ -503,7 +483,7 @@ static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       bool read_ev = (events[i].events & (EPOLLIN | EPOLLPRI)) != 0;
       bool write_ev = (events[i].events & EPOLLOUT) != 0;
       if (read_ev || cancel) {
-        fd_become_readable(exec_ctx, fd, pollset);
+        fd_become_readable(exec_ctx, fd);
       }
       if (write_ev || cancel) {
         fd_become_writable(exec_ctx, fd);
@@ -904,7 +884,6 @@ static const grpc_event_engine_vtable vtable = {
     .fd_is_shutdown = fd_is_shutdown,
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
-    .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
     .fd_get_workqueue = fd_get_workqueue,
 
     .pollset_init = pollset_init,
