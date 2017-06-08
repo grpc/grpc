@@ -1222,8 +1222,7 @@ static void start_transport_stream_op_batch_locked_inner(
         set_call_or_error(calld,
                           (call_or_error){.error = GRPC_ERROR_REF(error)});
         fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
-        grpc_transport_stream_op_batch_finish_with_failure(
-            exec_ctx, op, error);
+        grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
         return;  // Early out.
       }
     } else {
