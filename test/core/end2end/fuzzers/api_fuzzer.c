@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -39,8 +24,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -377,6 +365,7 @@ typedef struct addr_req {
   char *addr;
   grpc_closure *on_done;
   grpc_resolved_addresses **addrs;
+  grpc_lb_addresses **lb_addrs;
 } addr_req;
 
 static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
@@ -384,11 +373,17 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
   addr_req *r = arg;
 
   if (error == GRPC_ERROR_NONE && 0 == strcmp(r->addr, "server")) {
-    grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
-    addrs->naddrs = 1;
-    addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
-    addrs->addrs[0].len = 0;
-    *r->addrs = addrs;
+    if (r->addrs != NULL) {
+      grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
+      addrs->naddrs = 1;
+      addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
+      addrs->addrs[0].len = 0;
+      *r->addrs = addrs;
+    } else if (r->lb_addrs != NULL) {
+      grpc_lb_addresses *lb_addrs = grpc_lb_addresses_create(1, NULL);
+      grpc_lb_addresses_set_address(lb_addrs, 0, NULL, 0, NULL, NULL, NULL);
+      *r->lb_addrs = lb_addrs;
+    }
     grpc_closure_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE);
   } else {
     grpc_closure_sched(exec_ctx, r->on_done,
@@ -409,11 +404,29 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
   r->addrs = addresses;
+  r->lb_addrs = NULL;
   grpc_timer_init(
       exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                         gpr_time_from_seconds(1, GPR_TIMESPAN)),
       grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
       gpr_now(GPR_CLOCK_MONOTONIC));
+}
+
+grpc_ares_request *my_dns_lookup_ares(
+    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
+    const char *default_port, grpc_pollset_set *interested_parties,
+    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb) {
+  addr_req *r = gpr_malloc(sizeof(*r));
+  r->addr = gpr_strdup(addr);
+  r->on_done = on_done;
+  r->addrs = NULL;
+  r->lb_addrs = lb_addrs;
+  grpc_timer_init(
+      exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                        gpr_time_from_seconds(1, GPR_TIMESPAN)),
+      grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
+      gpr_now(GPR_CLOCK_MONOTONIC));
+  return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -724,7 +737,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   gpr_now_impl = now_impl;
   grpc_init();
   grpc_timer_manager_set_threading(false);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_executor_set_threading(&exec_ctx, false);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   grpc_resolve_address = my_resolve_address;
+  grpc_dns_lookup_ares = my_dns_lookup_ares;
 
   GPR_ASSERT(g_channel == NULL);
   GPR_ASSERT(g_server == NULL);

@@ -1839,6 +1839,30 @@
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "num_external_connectivity_watchers_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
     "gtest": false, 
@@ -3118,6 +3142,32 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
+    "excluded_poll_engines": [
+      "poll", 
+      "poll-cv"
+    ], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "client_lb_end2end_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
@@ -3428,6 +3478,10 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
+    "excluded_poll_engines": [
+      "poll", 
+      "poll-cv"
+    ], 
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
@@ -3450,6 +3504,10 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
+    "excluded_poll_engines": [
+      "poll", 
+      "poll-cv"
+    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
@@ -3653,28 +3711,6 @@
       "linux", 
       "mac", 
       "posix"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": true, 
-    "language": "c++", 
-    "name": "round_robin_end2end_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
     ]
   }, 
   {

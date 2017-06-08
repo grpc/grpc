@@ -1,32 +1,17 @@
 #!/usr/bin/env python
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Run tests in parallel."""
 
@@ -65,6 +50,10 @@ try:
 except (ImportError):
   pass # It's ok to not import because this is only necessary to upload results to BQ.
 
+gcp_utils_dir = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '../gcp/utils'))
+sys.path.append(gcp_utils_dir)
+
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
@@ -73,12 +62,40 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
   'GRPC_VERBOSITY': 'DEBUG',
 }
 
-
 _POLLING_STRATEGIES = {
   'linux': ['epollex', 'epollsig', 'poll', 'poll-cv'],
 # TODO(ctiller, sreecha): enable epoll1, epoll-thread-pool
   'mac': ['poll'],
 }
+
+
+def get_flaky_tests(limit=None):
+  import big_query_utils
+
+  bq = big_query_utils.create_big_query()
+  query = """
+    SELECT
+      test_name,
+      SUM(result != 'PASSED'
+        AND result != 'SKIPPED') AS count_failed,
+    FROM
+      [grpc-testing:jenkins_test_results.aggregate_results]
+    WHERE
+      timestamp >= DATE_ADD(DATE(CURRENT_TIMESTAMP()), -1, "WEEK")
+      AND NOT REGEXP_MATCH(job_name, '.*portability.*')
+      AND REGEXP_MATCH(job_name, '.*master.*')
+    GROUP BY
+      test_name
+    HAVING
+      count_failed > 0"""
+  if limit:
+    query += " limit {}".format(limit)
+  query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
+  page = bq.jobs().getQueryResults(
+      pageToken=None,
+      **query_job['jobReference']).execute(num_retries=3)
+  flake_names = [row['f'][0]['v'] for row in page['rows']]
+  return flake_names
 
 
 def platform_string():
@@ -119,6 +136,9 @@ class Config(object):
     actual_environ = self.environ.copy()
     for k, v in environ.items():
       actual_environ[k] = v
+    if not flaky and shortname and shortname in flaky_tests:
+      print('Setting %s to flaky' % shortname)
+      flaky = True
     return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
@@ -672,7 +692,7 @@ class PythonLanguage(object):
 
     if args.compiler == 'default':
       if os.name == 'nt':
-        return (python27_config,)
+        return (python35_config,)
       else:
         return (python27_config, python34_config,)
     elif args.compiler == 'python2.7':
@@ -1212,7 +1232,16 @@ argp.add_argument('--bq_result_table',
                   type=str,
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
+argp.add_argument('--auto_set_flakes', default=True, type=bool,
+                  help='Set flakiness data from historic data')
 args = argp.parse_args()
+
+flaky_tests = set()
+if args.auto_set_flakes:
+  try:
+    flaky_tests = set(get_flaky_tests())
+  except:
+    print("Unexpected error getting flaky tests:", sys.exc_info()[0])
 
 if args.force_default_poller:
   _POLLING_STRATEGIES = {}

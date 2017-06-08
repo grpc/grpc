@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -67,9 +52,8 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
 
 typedef enum {
   WAITING,
-  CALLING_BACK,
+  READY_TO_CALL_BACK,
   CALLING_BACK_AND_FINISHED,
-  CALLED_BACK
 } callback_phase;
 
 typedef struct {
@@ -77,11 +61,13 @@ typedef struct {
   callback_phase phase;
   grpc_closure on_complete;
   grpc_closure on_timeout;
+  grpc_closure watcher_timer_init;
   grpc_timer alarm;
   grpc_connectivity_state state;
   grpc_completion_queue *cq;
   grpc_cq_completion completion_storage;
   grpc_channel *channel;
+  grpc_error *error;
   void *tag;
 } state_watcher;
 
@@ -105,11 +91,8 @@ static void finished_completion(grpc_exec_ctx *exec_ctx, void *pw,
   gpr_mu_lock(&w->mu);
   switch (w->phase) {
     case WAITING:
-    case CALLED_BACK:
+    case READY_TO_CALL_BACK:
       GPR_UNREACHABLE_CODE(return );
-    case CALLING_BACK:
-      w->phase = CALLED_BACK;
-      break;
     case CALLING_BACK_AND_FINISHED:
       delete = 1;
       break;
@@ -123,10 +106,15 @@ static void finished_completion(grpc_exec_ctx *exec_ctx, void *pw,
 
 static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
                         bool due_to_completion, grpc_error *error) {
-  int delete = 0;
-
   if (due_to_completion) {
     grpc_timer_cancel(exec_ctx, &w->alarm);
+  } else {
+    grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
+        grpc_channel_get_channel_stack(w->channel));
+    grpc_client_channel_watch_connectivity_state(
+        exec_ctx, client_channel_elem,
+        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(w->cq)), NULL,
+        &w->on_complete, NULL);
   }
 
   gpr_mu_lock(&w->mu);
@@ -147,24 +135,26 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
   }
   switch (w->phase) {
     case WAITING:
-      w->phase = CALLING_BACK;
-      grpc_cq_end_op(exec_ctx, w->cq, w->tag, GRPC_ERROR_REF(error),
-                     finished_completion, w, &w->completion_storage);
+      GRPC_ERROR_REF(error);
+      w->error = error;
+      w->phase = READY_TO_CALL_BACK;
       break;
-    case CALLING_BACK:
+    case READY_TO_CALL_BACK:
+      if (error != GRPC_ERROR_NONE) {
+        GPR_ASSERT(!due_to_completion);
+        GRPC_ERROR_UNREF(w->error);
+        GRPC_ERROR_REF(error);
+        w->error = error;
+      }
       w->phase = CALLING_BACK_AND_FINISHED;
+      grpc_cq_end_op(exec_ctx, w->cq, w->tag, w->error, finished_completion, w,
+                     &w->completion_storage);
       break;
     case CALLING_BACK_AND_FINISHED:
       GPR_UNREACHABLE_CODE(return );
-    case CALLED_BACK:
-      delete = 1;
       break;
   }
   gpr_mu_unlock(&w->mu);
-
-  if (delete) {
-    delete_state_watcher(exec_ctx, w);
-  }
 
   GRPC_ERROR_UNREF(error);
 }
@@ -177,6 +167,28 @@ static void watch_complete(grpc_exec_ctx *exec_ctx, void *pw,
 static void timeout_complete(grpc_exec_ctx *exec_ctx, void *pw,
                              grpc_error *error) {
   partly_done(exec_ctx, pw, false, GRPC_ERROR_REF(error));
+}
+
+int grpc_channel_num_external_connectivity_watchers(grpc_channel *channel) {
+  grpc_channel_element *client_channel_elem =
+      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+  return grpc_client_channel_num_external_connectivity_watchers(
+      client_channel_elem);
+}
+
+typedef struct watcher_timer_init_arg {
+  state_watcher *w;
+  gpr_timespec deadline;
+} watcher_timer_init_arg;
+
+static void watcher_timer_init(grpc_exec_ctx *exec_ctx, void *arg,
+                               grpc_error *error_ignored) {
+  watcher_timer_init_arg *wa = (watcher_timer_init_arg *)arg;
+
+  grpc_timer_init(exec_ctx, &wa->w->alarm,
+                  gpr_convert_clock_type(wa->deadline, GPR_CLOCK_MONOTONIC),
+                  &wa->w->on_timeout, gpr_now(GPR_CLOCK_MONOTONIC));
+  gpr_free(wa);
 }
 
 void grpc_channel_watch_connectivity_state(
@@ -208,16 +220,20 @@ void grpc_channel_watch_connectivity_state(
   w->cq = cq;
   w->tag = tag;
   w->channel = channel;
+  w->error = NULL;
 
-  grpc_timer_init(&exec_ctx, &w->alarm,
-                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  &w->on_timeout, gpr_now(GPR_CLOCK_MONOTONIC));
+  watcher_timer_init_arg *wa = gpr_malloc(sizeof(watcher_timer_init_arg));
+  wa->w = w;
+  wa->deadline = deadline;
+  grpc_closure_init(&w->watcher_timer_init, watcher_timer_init, wa,
+                    grpc_schedule_on_exec_ctx);
 
   if (client_channel_elem->filter == &grpc_client_channel_filter) {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");
-    grpc_client_channel_watch_connectivity_state(&exec_ctx, client_channel_elem,
-                                                 grpc_cq_pollset(cq), &w->state,
-                                                 &w->on_complete);
+    grpc_client_channel_watch_connectivity_state(
+        &exec_ctx, client_channel_elem,
+        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &w->state,
+        &w->on_complete, &w->watcher_timer_init);
   } else {
     abort();
   }

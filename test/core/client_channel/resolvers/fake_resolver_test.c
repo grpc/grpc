@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2017, Google Inc.
- * All rights reserved.
+ * Copyright 2017 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -39,18 +24,18 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 
-#include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/test_config.h"
 
 static grpc_resolver *build_fake_resolver(
     grpc_exec_ctx *exec_ctx, grpc_combiner *combiner,
     grpc_fake_resolver_response_generator *response_generator) {
-  grpc_resolver_factory *factory = grpc_resolver_factory_lookup("test");
+  grpc_resolver_factory *factory = grpc_resolver_factory_lookup("fake");
   grpc_arg generator_arg =
       grpc_fake_resolver_response_generator_arg(response_generator);
   grpc_resolver_args args;
@@ -67,12 +52,11 @@ static grpc_resolver *build_fake_resolver(
 typedef struct on_resolution_arg {
   grpc_channel_args *resolver_result;
   grpc_channel_args *expected_resolver_result;
-  bool was_called;
+  gpr_event ev;
 } on_resolution_arg;
 
 void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   on_resolution_arg *res = arg;
-  res->was_called = true;
   // We only check the addresses channel arg because that's the only one
   // explicitly set by the test via
   // grpc_fake_resolver_response_generator_set_response.
@@ -84,11 +68,12 @@ void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       grpc_lb_addresses_cmp(actual_lb_addresses, expected_lb_addresses) == 0);
   grpc_channel_args_destroy(exec_ctx, res->resolver_result);
   grpc_channel_args_destroy(exec_ctx, res->expected_resolver_result);
+  gpr_event_set(&res->ev, (void *)1);
 }
 
 static void test_fake_resolver() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_combiner *combiner = grpc_combiner_create(NULL);
+  grpc_combiner *combiner = grpc_combiner_create();
   // Create resolver.
   grpc_fake_resolver_response_generator *response_generator =
       grpc_fake_resolver_response_generator_create();
@@ -115,8 +100,9 @@ static void test_fake_resolver() {
   on_resolution_arg on_res_arg;
   memset(&on_res_arg, 0, sizeof(on_res_arg));
   on_res_arg.expected_resolver_result = results;
+  gpr_event_init(&on_res_arg.ev);
   grpc_closure *on_resolution = grpc_closure_create(
-      on_resolution_cb, &on_res_arg, grpc_combiner_scheduler(combiner, false));
+      on_resolution_cb, &on_res_arg, grpc_combiner_scheduler(combiner));
 
   // Set resolver results and trigger first resolution. on_resolution_cb
   // performs the checks.
@@ -125,7 +111,8 @@ static void test_fake_resolver() {
   grpc_resolver_next_locked(&exec_ctx, resolver, &on_res_arg.resolver_result,
                             on_resolution);
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(on_res_arg.was_called);
+  GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
+                            grpc_timeout_seconds_to_deadline(5)) != NULL);
 
   // Setup update.
   grpc_uri *uris_update[] = {
@@ -150,8 +137,9 @@ static void test_fake_resolver() {
   on_resolution_arg on_res_arg_update;
   memset(&on_res_arg_update, 0, sizeof(on_res_arg_update));
   on_res_arg_update.expected_resolver_result = results_update;
+  gpr_event_init(&on_res_arg_update.ev);
   on_resolution = grpc_closure_create(on_resolution_cb, &on_res_arg_update,
-                                      grpc_combiner_scheduler(combiner, false));
+                                      grpc_combiner_scheduler(combiner));
 
   // Set updated resolver results and trigger a second resolution.
   grpc_fake_resolver_response_generator_set_response(
@@ -159,7 +147,8 @@ static void test_fake_resolver() {
   grpc_resolver_next_locked(&exec_ctx, resolver,
                             &on_res_arg_update.resolver_result, on_resolution);
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(on_res_arg.was_called);
+  GPR_ASSERT(gpr_event_wait(&on_res_arg_update.ev,
+                            grpc_timeout_seconds_to_deadline(5)) != NULL);
 
   // Requesting a new resolution without re-senting the response shouldn't
   // trigger the resolution callback.
@@ -167,7 +156,9 @@ static void test_fake_resolver() {
   grpc_resolver_next_locked(&exec_ctx, resolver, &on_res_arg.resolver_result,
                             on_resolution);
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(!on_res_arg.was_called);
+  GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
+                            grpc_timeout_milliseconds_to_deadline(100)) ==
+             NULL);
 
   GRPC_COMBINER_UNREF(&exec_ctx, combiner, "test_fake_resolver");
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_fake_resolver");
@@ -177,7 +168,6 @@ static void test_fake_resolver() {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  grpc_fake_resolver_init();  // Registers the "test" scheme.
   grpc_init();
 
   test_fake_resolver();

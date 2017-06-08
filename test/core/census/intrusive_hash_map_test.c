@@ -1,17 +1,19 @@
 /*
- * Copyright 2017 Google Inc.
+ *
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 #include "src/core/ext/census/intrusive_hash_map.h"
@@ -32,7 +34,7 @@ static const uint32_t kInitialLog2Size = 4;
 typedef struct object { uint64_t val; } object;
 
 /* Helper function to allocate and initialize object. */
-static inline object *make_new_object(uint64_t val) {
+static __inline object *make_new_object(uint64_t val) {
   object *obj = (object *)gpr_malloc(sizeof(object));
   obj->val = val;
   return obj;
@@ -46,7 +48,7 @@ typedef struct ptr_item {
 
 /* Helper function that creates a new hash map item.  It is up to the user to
  * free the item that was allocated. */
-static inline ptr_item *make_ptr_item(uint64_t key, uint64_t value) {
+static __inline ptr_item *make_ptr_item(uint64_t key, uint64_t value) {
   ptr_item *new_item = (ptr_item *)gpr_malloc(sizeof(ptr_item));
   new_item->IHM_key = key;
   new_item->IHM_hash_link = NULL;
