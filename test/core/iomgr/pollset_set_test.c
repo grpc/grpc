@@ -432,8 +432,8 @@ int main(int argc, char **argv) {
   const char *poll_strategy = grpc_get_poll_strategy_name();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
-  grpc_iomgr_start();
+  grpc_iomgr_init(&exec_ctx);
+  grpc_iomgr_start(&exec_ctx);
 
   if (poll_strategy != NULL &&
       (strcmp(poll_strategy, "epoll") == 0 ||

@@ -109,8 +109,7 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
                                         received_update);
       bool is_zero = t->outgoing_window <= 0;
       if (was_zero && !is_zero) {
-        grpc_chttp2_initiate_write(exec_ctx, t, false,
-                                   "new_global_flow_control");
+        grpc_chttp2_initiate_write(exec_ctx, t, "new_global_flow_control");
       }
     }
   }

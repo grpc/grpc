@@ -633,8 +633,6 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
   GRPC_FD_UNREF(fd, "poll");
 }
 
-static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { return NULL; }
-
 /*******************************************************************************
  * pollset_posix.c
  */
@@ -1274,30 +1272,6 @@ static void pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 }
 
 /*******************************************************************************
- * workqueue stubs
- */
-
-#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
-                                     const char *file, int line,
-                                     const char *reason) {
-  return workqueue;
-}
-static void workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            const char *file, int line, const char *reason) {}
-#else
-static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue) {
-  return workqueue;
-}
-static void workqueue_unref(grpc_exec_ctx *exec_ctx,
-                            grpc_workqueue *workqueue) {}
-#endif
-
-static grpc_closure_scheduler *workqueue_scheduler(grpc_workqueue *workqueue) {
-  return grpc_schedule_on_exec_ctx;
-}
-
-/*******************************************************************************
  * Condition Variable polling extensions
  */
 
@@ -1514,7 +1488,6 @@ static const grpc_event_engine_vtable vtable = {
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
     .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
-    .fd_get_workqueue = fd_get_workqueue,
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,
@@ -1531,10 +1504,6 @@ static const grpc_event_engine_vtable vtable = {
     .pollset_set_del_pollset_set = pollset_set_del_pollset_set,
     .pollset_set_add_fd = pollset_set_add_fd,
     .pollset_set_del_fd = pollset_set_del_fd,
-
-    .workqueue_ref = workqueue_ref,
-    .workqueue_unref = workqueue_unref,
-    .workqueue_scheduler = workqueue_scheduler,
 
     .shutdown_engine = shutdown_engine,
 };

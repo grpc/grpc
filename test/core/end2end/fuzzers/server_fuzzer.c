@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/memory_counters.h"
@@ -41,6 +42,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (leak_check) grpc_memory_counters_init();
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_executor_set_threading(&exec_ctx, false);
 
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("server_fuzzer");

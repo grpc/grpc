@@ -30,8 +30,9 @@ int main(int argc, char **argv) {
   grpc_endpoint_pair p;
 
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
-  grpc_iomgr_start();
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_iomgr_init(&exec_ctx);
+  grpc_iomgr_start(&exec_ctx);
 
   /* set max # of file descriptors to a low value, and
      verify we can create and destroy many more than this number
@@ -42,19 +43,15 @@ int main(int argc, char **argv) {
       grpc_resource_quota_create("fd_conservation_posix_test");
 
   for (i = 0; i < 100; i++) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     p = grpc_iomgr_create_endpoint_pair("test", NULL);
     grpc_endpoint_destroy(&exec_ctx, p.client);
     grpc_endpoint_destroy(&exec_ctx, p.server);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_exec_ctx_flush(&exec_ctx);
   }
 
   grpc_resource_quota_unref(resource_quota);
 
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_iomgr_shutdown(&exec_ctx);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+  grpc_iomgr_shutdown(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   return 0;
 }

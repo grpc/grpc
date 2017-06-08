@@ -64,9 +64,6 @@ char *grpc_transport_stream_op_batch_string(
   gpr_strvec b;
   gpr_strvec_init(&b);
 
-  gpr_strvec_add(
-      &b, gpr_strdup(op->covered_by_poller ? "[COVERED]" : "[UNCOVERED]"));
-
   if (op->send_initial_metadata) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("SEND_INITIAL_METADATA{"));

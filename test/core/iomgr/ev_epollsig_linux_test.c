@@ -32,7 +32,6 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/workqueue.h"
 #include "test/core/util/test_config.h"
 
 typedef struct test_pollset {
@@ -115,86 +114,6 @@ static void test_pollset_cleanup(grpc_exec_ctx *exec_ctx,
     gpr_free(pollsets[i].pollset);
   }
 }
-
-static void increment(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  ++*(int *)arg;
-}
-
-/*
- * Validate that merging two workqueues preserves the closures in each queue.
- * This is a regression test for a bug in
- * polling_island_merge()[ev_epoll_linux.c], where the parent relationship was
- * inverted.
- */
-
-#define NUM_FDS 2
-#define NUM_POLLSETS 2
-#define NUM_CLOSURES 4
-
-static void test_pollset_queue_merge_items() {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  test_fd tfds[NUM_FDS];
-  int fds[NUM_FDS];
-  test_pollset pollsets[NUM_POLLSETS];
-  grpc_closure closures[NUM_CLOSURES];
-  int i;
-  int result = 0;
-
-  test_fd_init(tfds, fds, NUM_FDS);
-  test_pollset_init(pollsets, NUM_POLLSETS);
-
-  /* Two distinct polling islands, each with their own FD and pollset. */
-  for (i = 0; i < NUM_FDS; i++) {
-    grpc_pollset_add_fd(&exec_ctx, pollsets[i].pollset, tfds[i].fd);
-    grpc_exec_ctx_flush(&exec_ctx);
-  }
-
-  /* Enqeue the closures, 3 to polling island 0 and 1 to polling island 1. */
-  grpc_closure_init(
-      closures, increment, &result,
-      grpc_workqueue_scheduler(grpc_fd_get_polling_island(tfds[0].fd)));
-  grpc_closure_init(
-      closures + 1, increment, &result,
-      grpc_workqueue_scheduler(grpc_fd_get_polling_island(tfds[0].fd)));
-  grpc_closure_init(
-      closures + 2, increment, &result,
-      grpc_workqueue_scheduler(grpc_fd_get_polling_island(tfds[0].fd)));
-  grpc_closure_init(
-      closures + 3, increment, &result,
-      grpc_workqueue_scheduler(grpc_fd_get_polling_island(tfds[1].fd)));
-  for (i = 0; i < NUM_CLOSURES; ++i) {
-    grpc_closure_sched(&exec_ctx, closures + i, GRPC_ERROR_NONE);
-  }
-
-  /* Merge the two polling islands. */
-  grpc_pollset_add_fd(&exec_ctx, pollsets[0].pollset, tfds[1].fd);
-  grpc_exec_ctx_flush(&exec_ctx);
-
-  /*
-   * Execute the closures, verify we see each one execute when executing work on
-   * the merged polling island.
-   */
-  grpc_pollset_worker *worker = NULL;
-  for (i = 0; i < NUM_CLOSURES; ++i) {
-    const gpr_timespec deadline = gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(2, GPR_TIMESPAN));
-    gpr_mu_lock(pollsets[1].mu);
-    GRPC_LOG_IF_ERROR(
-        "grpc_pollset_work",
-        grpc_pollset_work(&exec_ctx, pollsets[1].pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline));
-    gpr_mu_unlock(pollsets[1].mu);
-  }
-  GPR_ASSERT(result == NUM_CLOSURES);
-
-  test_fd_cleanup(&exec_ctx, tfds, NUM_FDS);
-  test_pollset_cleanup(&exec_ctx, pollsets, NUM_POLLSETS);
-  grpc_exec_ctx_finish(&exec_ctx);
-}
-
-#undef NUM_FDS
-#undef NUM_POLLSETS
-#undef NUM_CLOSURES
 
 /*
  * Cases to test:
@@ -387,13 +306,13 @@ static void test_threading(void) {
 int main(int argc, char **argv) {
   const char *poll_strategy = NULL;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
-  grpc_iomgr_start();
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_iomgr_init(&exec_ctx);
+  grpc_iomgr_start(&exec_ctx);
 
   poll_strategy = grpc_get_poll_strategy_name();
   if (poll_strategy != NULL && strcmp(poll_strategy, "epollsig") == 0) {
     test_add_fd_to_pollset();
-    test_pollset_queue_merge_items();
     test_threading();
   } else {
     gpr_log(GPR_INFO,
@@ -402,11 +321,8 @@ int main(int argc, char **argv) {
             poll_strategy);
   }
 
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_iomgr_shutdown(&exec_ctx);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+  grpc_iomgr_shutdown(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL) */

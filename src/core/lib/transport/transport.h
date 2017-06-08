@@ -112,10 +112,6 @@ typedef struct grpc_transport_stream_op_batch {
   /** Values for the stream op (fields set are determined by flags above) */
   grpc_transport_stream_op_batch_payload *payload;
 
-  /** Is the completion of this op covered by a poller (if false: the op should
-      complete independently of some pollset being polled) */
-  bool covered_by_poller : 1;
-
   /** Send initial metadata to the peer, from the provided metadata batch. */
   bool send_initial_metadata : 1;
 

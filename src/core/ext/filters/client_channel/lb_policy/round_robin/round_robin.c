@@ -749,7 +749,7 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     sd->subchannel = subchannel;
     grpc_closure_init(&sd->connectivity_changed_closure,
                       rr_connectivity_changed_locked, sd,
-                      grpc_combiner_scheduler(args->combiner, false));
+                      grpc_combiner_scheduler(args->combiner));
     /* use some sentinel value outside of the range of
      * grpc_connectivity_state to signal an undefined previous state. We
      * won't be referring to this value again and it'll be overwritten after

@@ -250,12 +250,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_uv.c">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.c">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json.c">
       <Filter>src\core\lib\json</Filter>
     </ClCompile>
@@ -981,15 +975,6 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_uv.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json.h">

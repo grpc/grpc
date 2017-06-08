@@ -147,6 +147,7 @@ static void read_cb(grpc_exec_ctx *exec_ctx, void *user_data,
   gpr_log(GPR_INFO, "Read %" PRIuPTR " bytes of %" PRIuPTR, read_bytes,
           state->target_read_bytes);
   if (state->read_bytes >= state->target_read_bytes) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, NULL)));
     gpr_mu_unlock(g_mu);
   } else {
     grpc_endpoint_read(exec_ctx, state->ep, &state->incoming, &state->read_cb);

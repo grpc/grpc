@@ -655,7 +655,7 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   pf_update_locked(exec_ctx, &p->base, args);
   grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner);
   grpc_closure_init(&p->connectivity_changed, pf_connectivity_changed_locked, p,
-                    grpc_combiner_scheduler(args->combiner, false));
+                    grpc_combiner_scheduler(args->combiner));
   return &p->base;
 }
 

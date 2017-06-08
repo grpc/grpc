@@ -250,25 +250,30 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 
 static void inc_on_failure(grpc_exec_ctx *exec_ctx, void *arg,
                            grpc_error *error) {
+  gpr_mu_lock(g_mu);
   *(int *)arg += (error != GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, NULL)));
+  gpr_mu_unlock(g_mu);
 }
 
 static void wait_for_fail_count(grpc_exec_ctx *exec_ctx, int *fail_count,
                                 int want_fail_count) {
   grpc_exec_ctx_flush(exec_ctx);
-  for (int i = 0; i < 5 && *fail_count < want_fail_count; i++) {
+  gpr_mu_lock(g_mu);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  while (gpr_time_cmp(gpr_now(deadline.clock_type), deadline) < 0 &&
+         *fail_count < want_fail_count) {
     grpc_pollset_worker *worker = NULL;
-    gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-    gpr_timespec deadline =
-        gpr_time_add(now, gpr_time_from_seconds(1, GPR_TIMESPAN));
-    gpr_mu_lock(g_mu);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(exec_ctx, g_pollset, &worker, now, deadline)));
+        grpc_pollset_work(exec_ctx, g_pollset, &worker,
+                          gpr_now(deadline.clock_type), deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(exec_ctx);
+    gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(*fail_count == want_fail_count);
+  gpr_mu_unlock(g_mu);
 }
 
 static void multiple_shutdown_test(grpc_endpoint_test_config config) {

@@ -77,11 +77,6 @@ static void te_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_unlock(&te->mu);
 }
 
-static grpc_workqueue *te_get_workqueue(grpc_endpoint *ep) {
-  trickle_endpoint *te = (trickle_endpoint *)ep;
-  return grpc_endpoint_get_workqueue(te->wrapped);
-}
-
 static void te_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                               grpc_pollset *pollset) {
   trickle_endpoint *te = (trickle_endpoint *)ep;
@@ -140,16 +135,10 @@ static void te_finish_write(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&te->mu);
 }
 
-static const grpc_endpoint_vtable vtable = {te_read,
-                                            te_write,
-                                            te_get_workqueue,
-                                            te_add_to_pollset,
-                                            te_add_to_pollset_set,
-                                            te_shutdown,
-                                            te_destroy,
-                                            te_get_resource_user,
-                                            te_get_peer,
-                                            te_get_fd};
+static const grpc_endpoint_vtable vtable = {
+    te_read,     te_write,   te_add_to_pollset,    te_add_to_pollset_set,
+    te_shutdown, te_destroy, te_get_resource_user, te_get_peer,
+    te_get_fd};
 
 grpc_endpoint *grpc_trickle_endpoint_create(grpc_endpoint *wrap,
                                             double bytes_per_second) {

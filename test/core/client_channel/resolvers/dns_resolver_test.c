@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
 
-  g_combiner = grpc_combiner_create(NULL);
+  g_combiner = grpc_combiner_create();
 
   dns = grpc_resolver_factory_lookup("dns");
 

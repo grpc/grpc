@@ -133,11 +133,10 @@ static void call_resolver_next_after_locking(grpc_exec_ctx *exec_ctx,
   a->resolver = resolver;
   a->result = result;
   a->on_complete = on_complete;
-  grpc_closure_sched(
-      exec_ctx,
-      grpc_closure_create(call_resolver_next_now_lock_taken, a,
-                          grpc_combiner_scheduler(resolver->combiner, false)),
-      GRPC_ERROR_NONE);
+  grpc_closure_sched(exec_ctx, grpc_closure_create(
+                                   call_resolver_next_now_lock_taken, a,
+                                   grpc_combiner_scheduler(resolver->combiner)),
+                     GRPC_ERROR_NONE);
 }
 
 int main(int argc, char **argv) {
@@ -145,7 +144,7 @@ int main(int argc, char **argv) {
 
   grpc_init();
   gpr_mu_init(&g_mu);
-  g_combiner = grpc_combiner_create(NULL);
+  g_combiner = grpc_combiner_create();
   grpc_resolve_address = my_resolve_address;
   grpc_dns_lookup_ares = my_dns_lookup_ares;
   grpc_channel_args *result = (grpc_channel_args *)1;

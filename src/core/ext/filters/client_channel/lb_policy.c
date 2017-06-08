@@ -74,11 +74,10 @@ void grpc_lb_policy_unref(grpc_exec_ctx *exec_ctx,
   gpr_atm mask = ~(gpr_atm)((1 << WEAK_REF_BITS) - 1);
   gpr_atm check = 1 << WEAK_REF_BITS;
   if ((old_val & mask) == check) {
-    grpc_closure_sched(
-        exec_ctx,
-        grpc_closure_create(shutdown_locked, policy,
-                            grpc_combiner_scheduler(policy->combiner, false)),
-        GRPC_ERROR_NONE);
+    grpc_closure_sched(exec_ctx, grpc_closure_create(
+                                     shutdown_locked, policy,
+                                     grpc_combiner_scheduler(policy->combiner)),
+                       GRPC_ERROR_NONE);
   } else {
     grpc_lb_policy_weak_unref(exec_ctx,
                               policy REF_FUNC_PASS_ARGS("strong-unref"));
