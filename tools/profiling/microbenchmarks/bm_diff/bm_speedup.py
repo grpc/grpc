@@ -36,39 +36,39 @@ _THRESHOLD = 1e-10
 
 
 def scale(a, mul):
-    return [x * mul for x in a]
+  return [x * mul for x in a]
 
 
 def cmp(a, b):
-    return stats.ttest_ind(a, b)
+  return stats.ttest_ind(a, b)
 
 
 def speedup(new, old):
-    if (len(set(new))) == 1 and new == old: return 0
-    s0, p0 = cmp(new, old)
-    if math.isnan(p0): return 0
-    if s0 == 0: return 0
-    if p0 > _THRESHOLD: return 0
-    if s0 < 0:
-        pct = 1
-        while pct < 101:
-            sp, pp = cmp(new, scale(old, 1 - pct / 100.0))
-            if sp > 0: break
-            if pp > _THRESHOLD: break
-            pct += 1
-        return -(pct - 1)
-    else:
-        pct = 1
-        while pct < 100000:
-            sp, pp = cmp(new, scale(old, 1 + pct / 100.0))
-            if sp < 0: break
-            if pp > _THRESHOLD: break
-            pct += 1
-        return pct - 1
+  if (len(set(new))) == 1 and new == old: return 0
+  s0, p0 = cmp(new, old)
+  if math.isnan(p0): return 0
+  if s0 == 0: return 0
+  if p0 > _THRESHOLD: return 0
+  if s0 < 0:
+    pct = 1
+    while pct < 101:
+      sp, pp = cmp(new, scale(old, 1 - pct / 100.0))
+      if sp > 0: break
+      if pp > _THRESHOLD: break
+      pct += 1
+    return -(pct - 1)
+  else:
+    pct = 1
+    while pct < 100000:
+      sp, pp = cmp(new, scale(old, 1 + pct / 100.0))
+      if sp < 0: break
+      if pp > _THRESHOLD: break
+      pct += 1
+    return pct - 1
 
 
 if __name__ == "__main__":
-    new = [1.0, 1.0, 1.0, 1.0]
-    old = [2.0, 2.0, 2.0, 2.0]
-    print speedup(new, old)
-    print speedup(old, new)
+  new = [1.0, 1.0, 1.0, 1.0]
+  old = [2.0, 2.0, 2.0, 2.0]
+  print speedup(new, old)
+  print speedup(old, new)
