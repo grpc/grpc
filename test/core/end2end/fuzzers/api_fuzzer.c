@@ -24,6 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -362,6 +364,7 @@ typedef struct addr_req {
   char *addr;
   grpc_closure *on_done;
   grpc_resolved_addresses **addrs;
+  grpc_lb_addresses **lb_addrs;
 } addr_req;
 
 static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
@@ -369,11 +372,17 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
   addr_req *r = arg;
 
   if (error == GRPC_ERROR_NONE && 0 == strcmp(r->addr, "server")) {
-    grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
-    addrs->naddrs = 1;
-    addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
-    addrs->addrs[0].len = 0;
-    *r->addrs = addrs;
+    if (r->addrs != NULL) {
+      grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
+      addrs->naddrs = 1;
+      addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
+      addrs->addrs[0].len = 0;
+      *r->addrs = addrs;
+    } else if (r->lb_addrs != NULL) {
+      grpc_lb_addresses *lb_addrs = grpc_lb_addresses_create(1, NULL);
+      grpc_lb_addresses_set_address(lb_addrs, 0, NULL, 0, NULL, NULL, NULL);
+      *r->lb_addrs = lb_addrs;
+    }
     grpc_closure_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE);
   } else {
     grpc_closure_sched(exec_ctx, r->on_done,
@@ -394,11 +403,29 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
   r->addrs = addresses;
+  r->lb_addrs = NULL;
   grpc_timer_init(
       exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                         gpr_time_from_seconds(1, GPR_TIMESPAN)),
       grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
       gpr_now(GPR_CLOCK_MONOTONIC));
+}
+
+grpc_ares_request *my_dns_lookup_ares(
+    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
+    const char *default_port, grpc_pollset_set *interested_parties,
+    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb) {
+  addr_req *r = gpr_malloc(sizeof(*r));
+  r->addr = gpr_strdup(addr);
+  r->on_done = on_done;
+  r->addrs = NULL;
+  r->lb_addrs = lb_addrs;
+  grpc_timer_init(
+      exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                        gpr_time_from_seconds(1, GPR_TIMESPAN)),
+      grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
+      gpr_now(GPR_CLOCK_MONOTONIC));
+  return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -710,6 +737,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_init();
   grpc_timer_manager_set_threading(false);
   grpc_resolve_address = my_resolve_address;
+  grpc_dns_lookup_ares = my_dns_lookup_ares;
 
   GPR_ASSERT(g_channel == NULL);
   GPR_ASSERT(g_server == NULL);

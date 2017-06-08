@@ -556,6 +556,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.c">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper_fallback.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\native\dns_resolver.c">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\native</Filter>
     </ClCompile>
