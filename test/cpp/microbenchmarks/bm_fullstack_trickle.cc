@@ -413,7 +413,8 @@ static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
     }
   }
 }
-BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
+// TODO(ncteisen): reeneable once you solve timeout problem
+// BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
 }
 }
 
