@@ -68,27 +68,11 @@ static void verifier_succeeds(grpc_server *server, grpc_completion_queue *cq,
 
 static void verifier_fails(grpc_server *server, grpc_completion_queue *cq,
                            void *registered_method) {
-  grpc_call_error error;
-  grpc_call *s;
-  cq_verifier *cqv = cq_verifier_create(cq);
-  grpc_metadata_array request_metadata_recv;
-  gpr_timespec deadline;
-  grpc_byte_buffer *payload = NULL;
-
-  grpc_metadata_array_init(&request_metadata_recv);
-
-  error = grpc_server_request_registered_call(server, registered_method, &s,
-                                              &deadline, &request_metadata_recv,
-                                              &payload, cq, cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
-
-  GPR_ASSERT(payload == NULL);
-
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_unref(s);
-  cq_verifier_destroy(cqv);
+  while (grpc_server_has_open_connections(server)) {
+    GPR_ASSERT(grpc_completion_queue_next(
+                   cq, grpc_timeout_milliseconds_to_deadline(20), NULL)
+                   .type == GRPC_QUEUE_TIMEOUT);
+  }
 }
 
 int main(int argc, char **argv) {
