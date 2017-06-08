@@ -34,6 +34,8 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 
+grpc_tracer_flag grpc_trace_error_refcount = GRPC_TRACER_INITIALIZER(false);
+
 static const char *error_int_name(grpc_error_ints key) {
   switch (key) {
     case GRPC_ERROR_INT_ERRNO:
@@ -119,14 +121,16 @@ bool grpc_error_is_special(grpc_error *err) {
          err == GRPC_ERROR_CANCELLED;
 }
 
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
+#ifndef NDEBUG
 grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func) {
   if (grpc_error_is_special(err)) return err;
-  gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
+  if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
           gpr_atm_no_barrier_load(&err->atomics.refs.count),
           gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line,
           func);
+  }
   gpr_ref(&err->atomics.refs);
   return err;
 }
@@ -172,14 +176,16 @@ static void error_destroy(grpc_error *err) {
   gpr_free(err);
 }
 
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func) {
   if (grpc_error_is_special(err)) return;
-  gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          gpr_atm_no_barrier_load(&err->atomics.refs.count),
-          gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line,
-          func);
+  if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+    gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
+            gpr_atm_no_barrier_load(&err->atomics.refs.count),
+            gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line,
+            func);
+  }
   if (gpr_unref(&err->atomics.refs)) {
     error_destroy(err);
   }
@@ -202,13 +208,17 @@ static uint8_t get_placement(grpc_error **err, size_t size) {
     if ((*err)->arena_size + slots > (*err)->arena_capacity) {
       return UINT8_MAX;
     }
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
+#ifndef NDEBUG
     grpc_error *orig = *err;
 #endif
     *err = gpr_realloc(
         *err, sizeof(grpc_error) + (*err)->arena_capacity * sizeof(intptr_t));
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
-    if (*err != orig) gpr_log(GPR_DEBUG, "realloc %p -> %p", orig, *err);
+#ifndef NDEBUG
+    if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+      if (*err != orig) {
+        gpr_log(GPR_DEBUG, "realloc %p -> %p", orig, *err);
+      }
+    }
 #endif
   }
   uint8_t placement = (*err)->arena_size;
@@ -316,8 +326,10 @@ grpc_error *grpc_error_create(const char *file, int line, grpc_slice desc,
   if (err == NULL) {  // TODO(ctiller): make gpr_malloc return NULL
     return GRPC_ERROR_OOM;
   }
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
-  gpr_log(GPR_DEBUG, "%p create [%s:%d]", err, file, line);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+    gpr_log(GPR_DEBUG, "%p create [%s:%d]", err, file, line);
+  }
 #endif
 
   err->arena_size = 0;
@@ -395,8 +407,10 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
       new_arena_capacity = (uint8_t)(3 * new_arena_capacity / 2);
     }
     out = gpr_malloc(sizeof(*in) + new_arena_capacity * sizeof(intptr_t));
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
-    gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
+#ifndef NDEBUG
+    if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+      gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
+    }
 #endif
     // bulk memcpy of the rest of the struct.
     size_t skip = sizeof(&out->atomics);

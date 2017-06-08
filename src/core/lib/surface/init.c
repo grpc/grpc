@@ -138,6 +138,8 @@ void grpc_init(void) {
     grpc_register_tracer("call_error", &grpc_call_error_trace);
 #ifndef NDEBUG
     grpc_register_tracer("pending_tags", &grpc_trace_pending_tags);
+    grpc_register_tracer("closure", &grpc_trace_closure);
+    grpc_register_tracer("error_refcount", &grpc_trace_error_refcount);
 #endif
     grpc_security_pre_init();
     grpc_iomgr_init(&exec_ctx);
