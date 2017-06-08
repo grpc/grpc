@@ -246,7 +246,7 @@ static grpc_error *tcp_connect(grpc_exec_ctx *exec_ctx, const test_addr *remote,
     return GRPC_OS_ERROR(errno, "Failed to create socket");
   }
   gpr_log(GPR_DEBUG, "start connect to %s", remote->str);
-  if (connect(clifd, remote_addr, (socklen_t)remote->addr.len) != 0) {
+  if (connect(clifd, remote_addr, remote->addr.len) != 0) {
     gpr_mu_unlock(g_mu);
     close(clifd);
     return GRPC_OS_ERROR(errno, "connect");
@@ -395,7 +395,7 @@ static void test_connect(size_t num_connects,
         GPR_ASSERT(fd >= 0);
         dst.addr.len = sizeof(dst.addr.addr);
         GPR_ASSERT(getsockname(fd, (struct sockaddr *)dst.addr.addr,
-                               (socklen_t *)&dst.addr.len) == 0);
+                               &dst.addr.len) == 0);
         GPR_ASSERT(dst.addr.len <= sizeof(dst.addr.addr));
         test_addr_init_str(&dst);
         gpr_log(GPR_INFO, "(%d, %d) fd %d family %s listening on %s", port_num,

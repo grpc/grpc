@@ -257,8 +257,7 @@ static int bind_socket(grpc_socket_factory *socket_factory, int sockfd,
                        const grpc_resolved_address *addr) {
   return (socket_factory != NULL)
              ? grpc_socket_factory_bind(socket_factory, sockfd, addr)
-             : bind(sockfd, (struct sockaddr *)addr->addr,
-                    (socklen_t)addr->len);
+             : bind(sockfd, (struct sockaddr *)addr->addr, addr->len);
 }
 
 /* Prepare a recently-created socket for listening. */
@@ -304,7 +303,7 @@ static int prepare_socket(grpc_socket_factory *socket_factory, int fd,
   sockname_temp.len = sizeof(struct sockaddr_storage);
 
   if (getsockname(fd, (struct sockaddr *)sockname_temp.addr,
-                  (socklen_t *)&sockname_temp.len) < 0) {
+                  &sockname_temp.len) < 0) {
     goto error;
   }
 
@@ -441,7 +440,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s,
     for (sp = s->head; sp; sp = sp->next) {
       sockname_temp.len = sizeof(struct sockaddr_storage);
       if (0 == getsockname(sp->fd, (struct sockaddr *)sockname_temp.addr,
-                           (socklen_t *)&sockname_temp.len)) {
+                           &sockname_temp.len)) {
         port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
           allocated_addr = gpr_malloc(sizeof(grpc_resolved_address));

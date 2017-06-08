@@ -62,7 +62,7 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
   if (user_data != NULL) GPR_ASSERT(addresses->user_data_vtable != NULL);
   grpc_lb_address* target = &addresses->addresses[index];
   memcpy(target->address.addr, address, address_len);
-  target->address.len = address_len;
+  target->address.len = (socklen_t)address_len;
   target->is_balancer = is_balancer;
   target->balancer_name = gpr_strdup(balancer_name);
   target->user_data = user_data;

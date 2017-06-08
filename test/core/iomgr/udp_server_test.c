@@ -100,7 +100,7 @@ static int test_socket_factory_bind(grpc_socket_factory *factory, int sockfd,
                                     const grpc_resolved_address *addr) {
   test_socket_factory *f = (test_socket_factory *)factory;
   f->number_of_bind_calls++;
-  return bind(sockfd, (struct sockaddr *)addr->addr, (socklen_t)addr->len);
+  return bind(sockfd, (struct sockaddr *)addr->addr, addr->len);
 }
 
 static int test_socket_factory_compare(grpc_socket_factory *a,
@@ -243,7 +243,7 @@ static void test_receive(int number_of_clients) {
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);
   GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)addr,
-                         (socklen_t *)&resolved_addr.len) == 0);
+                         &resolved_addr.len) == 0);
   GPR_ASSERT(resolved_addr.len <= sizeof(struct sockaddr_storage));
 
   pollsets[0] = g_pollset;
@@ -259,7 +259,7 @@ static void test_receive(int number_of_clients) {
     clifd = socket(addr->ss_family, SOCK_DGRAM, 0);
     GPR_ASSERT(clifd >= 0);
     GPR_ASSERT(connect(clifd, (struct sockaddr *)addr,
-                       (socklen_t)resolved_addr.len) == 0);
+                       resolved_addr.len) == 0);
     GPR_ASSERT(5 == write(clifd, "hello", 5));
     while (g_number_of_reads == number_of_reads_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
