@@ -101,7 +101,7 @@ static void test_fake_resolver() {
   memset(&on_res_arg, 0, sizeof(on_res_arg));
   on_res_arg.expected_resolver_result = results;
   gpr_event_init(&on_res_arg.ev);
-  grpc_closure *on_resolution = grpc_closure_create(
+  grpc_closure *on_resolution = GRPC_CLOSURE_CREATE(
       on_resolution_cb, &on_res_arg, grpc_combiner_scheduler(combiner));
 
   // Set resolver results and trigger first resolution. on_resolution_cb
@@ -138,7 +138,7 @@ static void test_fake_resolver() {
   memset(&on_res_arg_update, 0, sizeof(on_res_arg_update));
   on_res_arg_update.expected_resolver_result = results_update;
   gpr_event_init(&on_res_arg_update.ev);
-  on_resolution = grpc_closure_create(on_resolution_cb, &on_res_arg_update,
+  on_resolution = GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg_update,
                                       grpc_combiner_scheduler(combiner));
 
   // Set updated resolver results and trigger a second resolution.

@@ -105,17 +105,17 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
   if (op->on_connectivity_state_change) {
     GPR_ASSERT(*op->connectivity_state != GRPC_CHANNEL_SHUTDOWN);
     *op->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
-    grpc_closure_sched(exec_ctx, op->on_connectivity_state_change,
+    GRPC_CLOSURE_SCHED(exec_ctx, op->on_connectivity_state_change,
                        GRPC_ERROR_NONE);
   }
   if (op->send_ping != NULL) {
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, op->send_ping,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
   GRPC_ERROR_UNREF(op->disconnect_with_error);
   if (op->on_consumed != NULL) {
-    grpc_closure_sched(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
   }
 }
 
@@ -128,7 +128,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               grpc_closure *then_schedule_closure) {
-  grpc_closure_sched(exec_ctx, then_schedule_closure, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,

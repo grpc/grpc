@@ -62,7 +62,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
         grpc_closure *next = c->next_data.next;
         grpc_error *error = c->error_data.error;
         did_something = true;
-#ifndef NDEBUG
+#ifdef GRPC_CLOSURE_RICH_DEBUG
         c->scheduled = false;
 #endif
         c->cb(exec_ctx, c->cb_arg, error);
@@ -85,7 +85,7 @@ void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
 
 static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                          grpc_error *error) {
-#ifndef NDEBUG
+#ifdef GRPC_CLOSURE_RICH_DEBUG
   closure->scheduled = false;
 #endif
   closure->cb(exec_ctx, closure->cb_arg, error);

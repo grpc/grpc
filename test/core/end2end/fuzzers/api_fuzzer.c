@@ -384,9 +384,9 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_lb_addresses_set_address(lb_addrs, 0, NULL, 0, NULL, NULL, NULL);
       *r->lb_addrs = lb_addrs;
     }
-    grpc_closure_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, r->on_done, GRPC_ERROR_NONE);
   } else {
-    grpc_closure_sched(exec_ctx, r->on_done,
+    GRPC_CLOSURE_SCHED(exec_ctx, r->on_done,
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "Resolution failed", &error, 1));
   }
@@ -408,7 +408,7 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   grpc_timer_init(
       exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                         gpr_time_from_seconds(1, GPR_TIMESPAN)),
-      grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx),
       gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
@@ -424,7 +424,7 @@ grpc_ares_request *my_dns_lookup_ares(
   grpc_timer_init(
       exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                         gpr_time_from_seconds(1, GPR_TIMESPAN)),
-      grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx),
       gpr_now(GPR_CLOCK_MONOTONIC));
   return NULL;
 }
@@ -452,7 +452,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   future_connect *fc = arg;
   if (error != GRPC_ERROR_NONE) {
     *fc->ep = NULL;
-    grpc_closure_sched(exec_ctx, fc->closure, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(exec_ctx, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
@@ -464,7 +464,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_server_setup_transport(exec_ctx, g_server, transport, NULL, NULL);
     grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL);
 
-    grpc_closure_sched(exec_ctx, fc->closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, fc->closure, GRPC_ERROR_NONE);
   } else {
     sched_connect(exec_ctx, fc->closure, fc->ep, fc->deadline);
   }
@@ -475,7 +475,7 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = NULL;
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                               "Connect deadline exceeded"));
     return;
   }
@@ -487,7 +487,7 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   grpc_timer_init(
       exec_ctx, &fc->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                          gpr_time_from_millis(1, GPR_TIMESPAN)),
-      grpc_closure_create(do_connect, fc, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx),
       gpr_now(GPR_CLOCK_MONOTONIC));
 }
 

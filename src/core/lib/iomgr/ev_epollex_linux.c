@@ -269,7 +269,7 @@ static void unref_by(grpc_exec_ctx *exec_ctx, grpc_fd *fd, int n) {
 #endif
   old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
-    grpc_closure_sched(exec_ctx, grpc_closure_create(fd_destroy, fd,
+    GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(fd_destroy, fd,
                                                      grpc_schedule_on_exec_ctx),
                        GRPC_ERROR_NONE);
   } else {
@@ -367,7 +367,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
      to be alive (and not added to freelist) until the end of this function */
   REF_BY(fd, 1, reason);
 
-  grpc_closure_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_SCHED(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
 
   gpr_mu_unlock(&fd->orphaned_mu);
   gpr_mu_unlock(&fd->pollable.po.mu);
@@ -667,7 +667,7 @@ static grpc_error *fd_become_pollable_locked(grpc_fd *fd) {
 static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
                                           grpc_pollset *pollset) {
   if (pollset->shutdown_closure != NULL && pollset->root_worker == NULL) {
-    grpc_closure_sched(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
     pollset->shutdown_closure = NULL;
   }
 }
@@ -966,8 +966,8 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
       pollable_add_fd(&pollset->pollable, had_fd);
       pollable_add_fd(&pollset->pollable, fd);
     }
-    grpc_closure_sched(exec_ctx,
-                       grpc_closure_create(unref_fd_no_longer_poller, had_fd,
+    GRPC_CLOSURE_SCHED(exec_ctx,
+                       GRPC_CLOSURE_CREATE(unref_fd_no_longer_poller, had_fd,
                                            grpc_schedule_on_exec_ctx),
                        GRPC_ERROR_NONE);
   }
