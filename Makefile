@@ -23,6 +23,10 @@
 
 comma := ,
 
+# Check that CDPATH is undefined
+ifneq ($(CDPATH),)
+$(error CDPATH should be undefined)
+endif
 
 # Basic platform detection
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
