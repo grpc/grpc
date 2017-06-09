@@ -191,12 +191,8 @@ static const grpc_arg_pointer_vtable connector_pointer_vtable = {
     connector_pointer_cmp};
 
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc) {
-  grpc_arg result;
-  result.type = GRPC_ARG_POINTER;
-  result.key = GRPC_ARG_SECURITY_CONNECTOR;
-  result.value.pointer.vtable = &connector_pointer_vtable;
-  result.value.pointer.p = sc;
-  return result;
+  return grpc_channel_arg_pointer_create(GRPC_ARG_SECURITY_CONNECTOR, sc,
+                                         &connector_pointer_vtable);
 }
 
 grpc_security_connector *grpc_security_connector_from_arg(const grpc_arg *arg) {

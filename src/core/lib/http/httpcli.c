@@ -25,6 +25,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -215,11 +216,9 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   addr = &req->addresses->addrs[req->next_address++];
   grpc_closure_init(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
-  grpc_arg arg;
-  arg.key = GRPC_ARG_RESOURCE_QUOTA;
-  arg.type = GRPC_ARG_POINTER;
-  arg.value.pointer.p = req->resource_quota;
-  arg.value.pointer.vtable = grpc_resource_quota_arg_vtable();
+  grpc_arg arg = grpc_channel_arg_pointer_create(
+      GRPC_ARG_RESOURCE_QUOTA, req->resource_quota,
+      grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &arg};
   grpc_tcp_client_connect(exec_ctx, &req->connected, &req->ep,
                           req->context->pollset_set, &args, addr,
