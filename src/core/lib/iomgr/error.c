@@ -124,14 +124,12 @@ bool grpc_error_is_special(grpc_error *err) {
 }
 
 #ifndef NDEBUG
-grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
-                           const char *func) {
+grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line) {
   if (grpc_error_is_special(err)) return err;
   if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
-   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
+   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
           gpr_atm_no_barrier_load(&err->atomics.refs.count),
-          gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line,
-          func);
+          gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line);
   }
   gpr_ref(&err->atomics.refs);
   return err;
@@ -179,14 +177,12 @@ static void error_destroy(grpc_error *err) {
 }
 
 #ifndef NDEBUG
-void grpc_error_unref(grpc_error *err, const char *file, int line,
-                      const char *func) {
+void grpc_error_unref(grpc_error *err, const char *file, int line) {
   if (grpc_error_is_special(err)) return;
   if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
-    gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
+    gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
             gpr_atm_no_barrier_load(&err->atomics.refs.count),
-            gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line,
-            func);
+            gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line);
   }
   if (gpr_unref(&err->atomics.refs)) {
     error_destroy(err);

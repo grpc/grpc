@@ -48,6 +48,7 @@
 #include "src/core/lib/transport/transport_impl.h"
 
 #ifndef NDEBUG
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/security_connector.h"
 #endif
@@ -141,12 +142,14 @@ void grpc_init(void) {
     grpc_register_tracer("call_error", &grpc_call_error_trace);
 #ifndef NDEBUG
     grpc_register_tracer("pending_tags", &grpc_trace_pending_tags);
+    grpc_register_tracer("queue_refcount", &grpc_trace_cq_refcount);
     grpc_register_tracer("closure", &grpc_trace_closure);
     grpc_register_tracer("error_refcount", &grpc_trace_error_refcount);
     grpc_register_tracer("stream_refcount", &grpc_trace_stream_refcount);
-    // TODO(ncteisen): re-enable after rebasing
+    // TODO(ncteisen): fix this after rebase
     // grpc_register_tracer("auth_context_refcount", &grpc_trace_auth_context_refcount);
     // grpc_register_tracer("security_connector_refcount", &grpc_trace_security_connector_refcount);
+    grpc_register_tracer("fd_refcount", &grpc_trace_fd_refcount);
     grpc_register_tracer("metadata", &grpc_trace_metadata);
 #endif
     grpc_security_pre_init();

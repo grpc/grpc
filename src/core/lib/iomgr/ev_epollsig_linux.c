@@ -49,6 +49,10 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
+
 #define GRPC_POLLING_TRACE(...)             \
   if (GRPC_TRACER_ON(grpc_polling_trace)) { \
     gpr_log(GPR_INFO, __VA_ARGS__);         \
@@ -141,7 +145,7 @@ struct grpc_fd {
 
 /* Reference counting for fds */
 // #define GRPC_FD_REF_COUNT_DEBUG
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
 static void fd_unref(grpc_fd *fd, const char *reason, const char *file,
                      int line);
@@ -167,7 +171,7 @@ static void fd_global_shutdown(void);
 #define PI_UNREF(exec_ctx, p, r) \
   pi_unref_dbg((exec_ctx), (p), (r), __FILE__, __LINE__)
 
-#else 
+#else
 
 #define PI_ADD_REF(p, r) pi_add_ref((p))
 #define PI_UNREF(exec_ctx, p, r) pi_unref((exec_ctx), (p))
@@ -286,13 +290,12 @@ static void pi_add_ref(polling_island *pi);
 static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_workqueue_refcount = GRPC_TRACER_INITIALIZER(false);
 static void pi_add_ref_dbg(polling_island *pi, const char *reason,
                            const char *file, int line) {
   if (GRPC_TRACER_ON(grpc_trace_workqueue_refcount)) {
     long old_cnt = gpr_atm_acq_load(&pi->ref_count);
     gpr_log(GPR_DEBUG, "Add ref pi: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
-          (void *)pi, old_cnt, old_cnt + 1, reason, file, line);
+            (void *)pi, old_cnt, old_cnt + 1, reason, file, line);
   }
   pi_add_ref(pi);
 }
@@ -302,7 +305,7 @@ static void pi_unref_dbg(grpc_exec_ctx *exec_ctx, polling_island *pi,
   if (GRPC_TRACER_ON(grpc_trace_workqueue_refcount)) {
     long old_cnt = gpr_atm_acq_load(&pi->ref_count);
     gpr_log(GPR_DEBUG, "Unref pi: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
-          (void *)pi, old_cnt, (old_cnt - 1), reason, file, line);
+            (void *)pi, old_cnt, (old_cnt - 1), reason, file, line);
   }
   pi_unref(exec_ctx, pi);
 }
@@ -723,14 +726,16 @@ static void polling_island_global_shutdown() {
 static grpc_fd *fd_freelist = NULL;
 static gpr_mu fd_freelist_mu;
 
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 #define REF_BY(fd, n, reason) ref_by(fd, n, reason, __FILE__, __LINE__)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                    int line) {
-  gpr_log(GPR_DEBUG, "FD %d %p   ref %d %ld -> %ld [%s; %s:%d]", fd->fd,
-          (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
-          gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+    gpr_log(GPR_DEBUG, "FD %d %p   ref %d %ld -> %ld [%s; %s:%d]", fd->fd,
+            (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+  }
 #else
 #define REF_BY(fd, n, reason) ref_by(fd, n)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n)
@@ -739,17 +744,18 @@ static void ref_by(grpc_fd *fd, int n) {
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&fd->refst, n) > 0);
 }
 
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                      int line) {
-  gpr_atm old;
-  gpr_log(GPR_DEBUG, "FD %d %p unref %d %ld -> %ld [%s; %s:%d]", fd->fd,
-          (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
-          gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+    gpr_log(GPR_DEBUG, "FD %d %p unref %d %ld -> %ld [%s; %s:%d]", fd->fd,
+            (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+  }
 #else
 static void unref_by(grpc_fd *fd, int n) {
-  gpr_atm old;
 #endif
+  gpr_atm old;
   old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     /* Add the fd to the freelist */
@@ -768,7 +774,7 @@ static void unref_by(grpc_fd *fd, int n) {
 }
 
 /* Increment refcount by two to avoid changing the orphan bit */
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file,
                    int line) {
   ref_by(fd, 2, reason, file, line);
@@ -836,7 +842,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
   char *fd_name;
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name);
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
   gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, (void *)new_fd, fd_name);
 #endif
   gpr_free(fd_name);

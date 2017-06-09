@@ -395,7 +395,7 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
                 gpr_atm_no_barrier_load(&md->refcnt) + 1, key_str, value_str);
         gpr_free(key_str);
         gpr_free(value_str);
-    }
+      }
 #endif
       /* we can assume the ref count is >= 1 as the application is calling
          this function - meaning that no adjustment to mdtab_free is necessary,

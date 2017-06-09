@@ -32,9 +32,19 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/tsi/transport_security_interface.h"
 
+#ifndef NDEBUG
+#include "src/core/lib/security/context/security_context.h"
+#endif
+
 void grpc_security_pre_init(void) {
   grpc_register_tracer("secure_endpoint", &grpc_trace_secure_endpoint);
   grpc_register_tracer("transport_security", &tsi_tracing_enabled);
+#ifndef NDEBUG
+  grpc_register_tracer("auth_context_refcount",
+                       &grpc_trace_auth_context_refcount);
+  grpc_register_tracer("security_connector_refcount",
+                       &grpc_trace_security_connector_refcount);
+#endif
 }
 
 static bool maybe_prepend_client_auth_filter(
