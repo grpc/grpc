@@ -38,7 +38,9 @@ EXPORTS
     census_resource_id
     census_record_values
     grpc_compression_algorithm_parse
+    grpc_compression_level_parse
     grpc_compression_algorithm_name
+    grpc_compression_level_name
     grpc_compression_algorithm_for_level
     grpc_compression_options_init
     grpc_compression_options_enable_algorithm
