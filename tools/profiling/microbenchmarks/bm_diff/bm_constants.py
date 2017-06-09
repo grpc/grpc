@@ -20,10 +20,22 @@ _AVAILABLE_BENCHMARK_TESTS = [
   'bm_fullstack_unary_ping_pong', 'bm_fullstack_streaming_ping_pong',
   'bm_fullstack_streaming_pump', 'bm_closure', 'bm_cq', 'bm_call_create',
   'bm_error', 'bm_chttp2_hpack', 'bm_chttp2_transport', 'bm_pollset',
-  'bm_metadata', 'bm_fullstack_trickle'
+  'bm_metadata'
 ]
+
+# these tests will only be run twice during the full sweep to prevent
+# timeouts in the Jenkins environment. For now, they also skip the counters
+# runs, because trickle doesn't need it. If we add more time intensive tests
+# that do provide interesting counters data, this will need to be updated.
+_TIME_INTENSIVE_BENCHMARK_TESTS = [
+  'bm_fullstack_trickle',
+]
+
+# This should be the biggest number that does not cause excessive timeouts
+_TIME_INTENSIVE_BENCHMARK_LOOP_CAP = 4
 
 _INTERESTING = ('cpu_time', 'real_time', 'locks_per_iteration',
         'allocs_per_iteration', 'writes_per_iteration',
         'atm_cas_per_iteration', 'atm_add_per_iteration',
-        'nows_per_iteration',)
+        'nows_per_iteration', 'cli_transport_stalls', 'cli_stream_stalls', 
+        'svr_transport_stalls', 'svr_stream_stalls')
