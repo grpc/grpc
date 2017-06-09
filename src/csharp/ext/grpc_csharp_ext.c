@@ -413,8 +413,14 @@ GPR_EXPORT grpc_call *GPR_CALLTYPE grpcsharp_channel_create_call(
     host_slice = grpc_slice_from_copied_string(host);
     host_slice_ptr = &host_slice;
   }
-  return grpc_channel_create_call(channel, parent_call, propagation_mask, cq,
-                                  method_slice, host_slice_ptr, deadline, NULL);
+  grpc_call *ret =
+      grpc_channel_create_call(channel, parent_call, propagation_mask, cq,
+                               method_slice, host_slice_ptr, deadline, NULL);
+  grpc_slice_unref(method_slice);
+  if (host != NULL) {
+    grpc_slice_unref(host_slice);
+  }
+  return ret;
 }
 
 GPR_EXPORT grpc_connectivity_state GPR_CALLTYPE
@@ -805,7 +811,9 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
     ops[nops].reserved = NULL;
     nops++;
   }
-  return grpcsharp_call_start_batch(call, ops, nops, ctx, NULL);
+  grpc_call_error ret = grpcsharp_call_start_batch(call, ops, nops, ctx, NULL);
+  grpc_slice_unref(status_details_slice);
+  return ret;
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
