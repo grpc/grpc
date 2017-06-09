@@ -49,9 +49,6 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
-#endif
 
 #define GRPC_POLLING_TRACE(...)             \
   if (GRPC_TRACER_ON(grpc_polling_trace)) { \
@@ -292,7 +289,7 @@ static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);
 #ifndef NDEBUG
 static void pi_add_ref_dbg(polling_island *pi, const char *reason,
                            const char *file, int line) {
-  if (GRPC_TRACER_ON(grpc_trace_workqueue_refcount)) {
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
     long old_cnt = gpr_atm_acq_load(&pi->ref_count);
     gpr_log(GPR_DEBUG, "Add ref pi: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
             (void *)pi, old_cnt, old_cnt + 1, reason, file, line);
@@ -302,7 +299,7 @@ static void pi_add_ref_dbg(polling_island *pi, const char *reason,
 
 static void pi_unref_dbg(grpc_exec_ctx *exec_ctx, polling_island *pi,
                          const char *reason, const char *file, int line) {
-  if (GRPC_TRACER_ON(grpc_trace_workqueue_refcount)) {
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
     long old_cnt = gpr_atm_acq_load(&pi->ref_count);
     gpr_log(GPR_DEBUG, "Unref pi: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
             (void *)pi, old_cnt, (old_cnt - 1), reason, file, line);

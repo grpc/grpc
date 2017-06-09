@@ -29,10 +29,6 @@
 
 extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
 
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_fd_refcount;
-#endif
-
 typedef struct grpc_fd grpc_fd;
 
 typedef struct grpc_event_engine_vtable {

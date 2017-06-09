@@ -47,12 +47,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#ifndef NDEBUG
-#include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/security/transport/security_connector.h"
-#endif
-
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
 
@@ -147,11 +141,6 @@ void grpc_init(void) {
     grpc_register_tracer("closure", &grpc_trace_closure);
     grpc_register_tracer("error_refcount", &grpc_trace_error_refcount);
     grpc_register_tracer("stream_refcount", &grpc_trace_stream_refcount);
-    // TODO(ncteisen): fix this after rebase
-    // grpc_register_tracer("auth_context_refcount",
-    // &grpc_trace_auth_context_refcount);
-    // grpc_register_tracer("security_connector_refcount",
-    // &grpc_trace_security_connector_refcount);
     grpc_register_tracer("fd_refcount", &grpc_trace_fd_refcount);
     grpc_register_tracer("metadata", &grpc_trace_metadata);
 #endif

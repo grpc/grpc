@@ -45,10 +45,6 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
-#endif
-
 /*******************************************************************************
  * FD declarations
  */

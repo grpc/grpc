@@ -41,6 +41,10 @@
 grpc_tracer_flag grpc_polling_trace =
     GRPC_TRACER_INITIALIZER(false); /* Disabled by default */
 
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
+
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
 grpc_poll_function_type grpc_poll_function = poll;

@@ -20,6 +20,10 @@
 
 #ifdef GRPC_UV
 
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
+
 #include <uv.h>
 
 #include <string.h>
