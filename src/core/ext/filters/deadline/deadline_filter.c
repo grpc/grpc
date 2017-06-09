@@ -74,7 +74,7 @@ retry:
         // If we've already created and destroyed a timer, we always create a
         // new closure: we have no other guarantee that the inlined closure is
         // not in use (it may hold a pending call to timer_callback)
-        closure = grpc_closure_create(timer_callback, elem,
+        closure = GRPC_CLOSURE_CREATE(timer_callback, elem,
                                       grpc_schedule_on_exec_ctx);
       } else {
         goto retry;
@@ -85,7 +85,7 @@ retry:
                           GRPC_DEADLINE_STATE_INITIAL,
                           GRPC_DEADLINE_STATE_PENDING)) {
         closure =
-            grpc_closure_init(&deadline_state->timer_callback, timer_callback,
+            GRPC_CLOSURE_INIT(&deadline_state->timer_callback, timer_callback,
                               elem, grpc_schedule_on_exec_ctx);
       } else {
         goto retry;
@@ -115,7 +115,7 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   grpc_deadline_state* deadline_state = arg;
   cancel_timer_if_needed(exec_ctx, deadline_state);
   // Invoke the next callback.
-  grpc_closure_run(exec_ctx, deadline_state->next_on_complete,
+  GRPC_CLOSURE_RUN(exec_ctx, deadline_state->next_on_complete,
                    GRPC_ERROR_REF(error));
 }
 
@@ -123,7 +123,7 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
                                   grpc_transport_stream_op_batch* op) {
   deadline_state->next_on_complete = op->on_complete;
-  grpc_closure_init(&deadline_state->on_complete, on_complete, deadline_state,
+  GRPC_CLOSURE_INIT(&deadline_state->on_complete, on_complete, deadline_state,
                     grpc_schedule_on_exec_ctx);
   op->on_complete = &deadline_state->on_complete;
 }
@@ -161,9 +161,9 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     struct start_timer_after_init_state* state = gpr_malloc(sizeof(*state));
     state->elem = elem;
     state->deadline = deadline;
-    grpc_closure_init(&state->closure, start_timer_after_init, state,
+    GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
-    grpc_closure_sched(exec_ctx, &state->closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -281,7 +281,7 @@ static void server_start_transport_stream_op_batch(
           op->payload->recv_initial_metadata.recv_initial_metadata_ready;
       calld->recv_initial_metadata =
           op->payload->recv_initial_metadata.recv_initial_metadata;
-      grpc_closure_init(&calld->recv_initial_metadata_ready,
+      GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                         recv_initial_metadata_ready, elem,
                         grpc_schedule_on_exec_ctx);
       op->payload->recv_initial_metadata.recv_initial_metadata_ready =

@@ -185,9 +185,14 @@ def diff(bms, loops, track, old, new):
   for name in sorted(benchmarks.keys()):
     if benchmarks[name].skip(): continue
     rows.append([name] + benchmarks[name].row(fields))
-  note = 'Corrupt JSON data (indicates timeout or crash) = %s' % str(
-    badjson_files)
-  note += '\n\nMissing files (new benchmark) = %s' % str(nonexistant_files)
+  note = None
+  if len(badjson_files):
+    note = 'Corrupt JSON data (indicates timeout or crash) = %s' % str(badjson_files)
+  if len(nonexistant_files):
+    if note:
+      note += '\n\nMissing files (indicates new benchmark) = %s' % str(nonexistant_files)
+    else:
+      note = '\n\nMissing files (indicates new benchmark) = %s' % str(nonexistant_files)
   if rows:
     return tabulate.tabulate(rows, headers=headers, floatfmt='+.2f'), note
   else:

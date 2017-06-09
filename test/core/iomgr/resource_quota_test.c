@@ -47,7 +47,7 @@ static void set_event_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
   gpr_event_set((gpr_event *)a, (void *)1);
 }
 grpc_closure *set_event(gpr_event *ev) {
-  return grpc_closure_create(set_event_cb, ev, grpc_schedule_on_exec_ctx);
+  return GRPC_CLOSURE_CREATE(set_event_cb, ev, grpc_schedule_on_exec_ctx);
 }
 
 typedef struct {
@@ -61,7 +61,7 @@ static void reclaimer_cb(grpc_exec_ctx *exec_ctx, void *args,
   reclaimer_args *a = args;
   grpc_resource_user_free(exec_ctx, a->resource_user, a->size);
   grpc_resource_user_finish_reclamation(exec_ctx, a->resource_user);
-  grpc_closure_run(exec_ctx, a->then, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_RUN(exec_ctx, a->then, GRPC_ERROR_NONE);
   gpr_free(a);
 }
 grpc_closure *make_reclaimer(grpc_resource_user *resource_user, size_t size,
@@ -70,16 +70,16 @@ grpc_closure *make_reclaimer(grpc_resource_user *resource_user, size_t size,
   a->size = size;
   a->resource_user = resource_user;
   a->then = then;
-  return grpc_closure_create(reclaimer_cb, a, grpc_schedule_on_exec_ctx);
+  return GRPC_CLOSURE_CREATE(reclaimer_cb, a, grpc_schedule_on_exec_ctx);
 }
 
 static void unused_reclaimer_cb(grpc_exec_ctx *exec_ctx, void *arg,
                                 grpc_error *error) {
   GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
-  grpc_closure_run(exec_ctx, arg, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_RUN(exec_ctx, arg, GRPC_ERROR_NONE);
 }
 grpc_closure *make_unused_reclaimer(grpc_closure *then) {
-  return grpc_closure_create(unused_reclaimer_cb, then,
+  return GRPC_CLOSURE_CREATE(unused_reclaimer_cb, then,
                              grpc_schedule_on_exec_ctx);
 }
 

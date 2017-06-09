@@ -1696,9 +1696,9 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
              however -- it might be that we receive a RST_STREAM following this
              and can avoid the extra write */
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
-          grpc_closure_sched(
+          GRPC_CLOSURE_SCHED(
               exec_ctx,
-              grpc_closure_create(force_client_rst_stream, s,
+              GRPC_CLOSURE_CREATE(force_client_rst_stream, s,
                                   grpc_combiner_finally_scheduler(t->combiner)),
               GRPC_ERROR_NONE);
         }

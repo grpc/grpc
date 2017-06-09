@@ -668,7 +668,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_httpcli_get(
       exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
-      grpc_closure_create(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
   grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   grpc_json_destroy(json);
@@ -771,7 +771,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&req.http.path, "/%s/%s", path_prefix, iss);
     }
     http_cb =
-        grpc_closure_create(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
+        GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_KEYS;
   } else {
     req.host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
@@ -783,7 +783,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&req.http.path, "/%s%s", path_prefix,
                    GRPC_OPENID_CONFIG_URL_SUFFIX);
     }
-    http_cb = grpc_closure_create(on_openid_config_retrieved, ctx,
+    http_cb = GRPC_CLOSURE_CREATE(on_openid_config_retrieved, ctx,
                                   grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_OPENID;
   }

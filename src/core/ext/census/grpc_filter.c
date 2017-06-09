@@ -141,7 +141,7 @@ static grpc_error *server_init_call_elem(grpc_exec_ctx *exec_ctx,
   memset(d, 0, sizeof(*d));
   d->start_ts = args->start_time;
   /* TODO(hongyu): call census_tracing_start_op here. */
-  grpc_closure_init(&d->finish_recv, server_on_done_recv, elem,
+  GRPC_CLOSURE_INIT(&d->finish_recv, server_on_done_recv, elem,
                     grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }

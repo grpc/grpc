@@ -117,7 +117,7 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   GPR_ASSERT(s->shutdown);
   if (s->shutdown_complete != NULL) {
-    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   while (s->head) {
@@ -171,7 +171,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
     grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_closure_list_sched(&local_exec_ctx, &s->shutdown_starting);
+    GRPC_CLOSURE_LIST_SCHED(&local_exec_ctx, &s->shutdown_starting);
     if (exec_ctx == NULL) {
       grpc_exec_ctx_flush(&local_exec_ctx);
       tcp_server_destroy(&local_exec_ctx, s);

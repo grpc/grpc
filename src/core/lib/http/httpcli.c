@@ -90,7 +90,7 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
                    grpc_error *error) {
   grpc_polling_entity_del_from_pollset_set(exec_ctx, req->pollent,
                                            req->context->pollset_set);
-  grpc_closure_sched(exec_ctx, req->on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, req->on_done, error);
   grpc_http_parser_destroy(&req->parser);
   if (req->addresses != NULL) {
     grpc_resolved_addresses_destroy(req->addresses);
@@ -213,7 +213,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
     return;
   }
   addr = &req->addresses->addrs[req->next_address++];
-  grpc_closure_init(&req->connected, on_connected, req,
+  GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
   grpc_arg arg;
   arg.key = GRPC_ARG_RESOURCE_QUOTA;
@@ -256,8 +256,8 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
   req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
   req->resource_quota = grpc_resource_quota_ref_internal(resource_quota);
-  grpc_closure_init(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&req->done_write, done_write, req,
+  GRPC_CLOSURE_INIT(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&req->done_write, done_write, req,
                     grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&req->incoming);
   grpc_slice_buffer_init(&req->outgoing);
@@ -271,7 +271,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
   grpc_resolve_address(
       exec_ctx, request->host, req->handshaker->default_port,
       req->context->pollset_set,
-      grpc_closure_create(on_resolved, req, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(on_resolved, req, grpc_schedule_on_exec_ctx),
       &req->addresses);
 }
 
