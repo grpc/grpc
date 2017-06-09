@@ -170,6 +170,7 @@ struct grpc_pollset_worker {
 };
 
 #define MAX_EPOLL_EVENTS 100
+#define MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL 5
 
 struct grpc_pollset {
   pollable pollable;
@@ -710,8 +711,9 @@ static grpc_error *pollset_process_events(grpc_exec_ctx *exec_ctx,
                                           grpc_pollset *pollset, bool drain) {
   static const char *err_desc = "pollset_process_events";
   grpc_error *error = GRPC_ERROR_NONE;
-  for (int i = 0;
-       (drain || i < 5) && pollset->event_cursor != pollset->event_count; i++) {
+  for (int i = 0; (drain || i < MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL) &&
+                  pollset->event_cursor != pollset->event_count;
+       i++) {
     int n = pollset->event_cursor++;
     struct epoll_event *ev = &pollset->events[n];
     void *data_ptr = ev->data.ptr;
