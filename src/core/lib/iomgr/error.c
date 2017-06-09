@@ -127,9 +127,9 @@ bool grpc_error_is_special(grpc_error *err) {
 grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line) {
   if (grpc_error_is_special(err)) return err;
   if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
-   gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
-          gpr_atm_no_barrier_load(&err->atomics.refs.count),
-          gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line);
+    gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
+            gpr_atm_no_barrier_load(&err->atomics.refs.count),
+            gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line);
   }
   gpr_ref(&err->atomics.refs);
   return err;

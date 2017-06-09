@@ -32,13 +32,13 @@ void grpc_resolver_init(grpc_resolver *resolver,
 }
 
 #ifndef NDEBUG
-void grpc_resolver_ref(grpc_resolver *resolver,
-                       const char *file, int line, const char *reason) {
+void grpc_resolver_ref(grpc_resolver *resolver, const char *file, int line,
+                       const char *reason) {
   if (GRPC_TRACER_ON(grpc_trace_resolver_refcount)) {
     long old_refs = gpr_atm_no_barrier_load(&resolver->refs.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "RESOLVER:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s",
-            resolver, old_refs, old_refs + 1,
-            reason);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "RESOLVER:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", resolver,
+            old_refs, old_refs + 1, reason);
   }
 #else
 void grpc_resolver_ref(grpc_resolver *resolver) {
@@ -47,13 +47,13 @@ void grpc_resolver_ref(grpc_resolver *resolver) {
 }
 
 #ifndef NDEBUG
-void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver, const char *file,
-                         int line, const char *reason) {
+void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
+                         const char *file, int line, const char *reason) {
   if (GRPC_TRACER_ON(grpc_trace_resolver_refcount)) {
     long old_refs = gpr_atm_no_barrier_load(&resolver->refs.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "RESOLVER:%p unref %" PRIdPTR " -> %" PRIdPTR " %s",
-            resolver, old_refs, old_refs - 1,
-            reason);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "RESOLVER:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", resolver,
+            old_refs, old_refs - 1, reason);
   }
 #else
 void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {

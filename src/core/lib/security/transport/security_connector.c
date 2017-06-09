@@ -44,7 +44,8 @@
 #include "src/core/tsi/transport_security_adapter.h"
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_security_connector_refcount = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_security_connector_refcount =
+    GRPC_TRACER_INITIALIZER(false);
 #endif
 
 /* -- Constants. -- */

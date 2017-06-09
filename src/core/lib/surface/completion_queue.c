@@ -444,8 +444,9 @@ void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
   cq_data *cqd = &cc->data;
   if (GRPC_TRACER_ON(grpc_trace_cq_refcount)) {
     gpr_atm val = gpr_atm_no_barrier_load(&cqd->owning_refs.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", cc,
-            val, val + 1, reason);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "CQ:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", cc, val, val + 1,
+            reason);
   }
 #else
 void grpc_cq_internal_ref(grpc_completion_queue *cc) {
@@ -461,13 +462,14 @@ static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 #ifndef NDEBUG
-void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc, const char *reason,
-                            const char *file, int line) {
+void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
+                            const char *reason, const char *file, int line) {
   cq_data *cqd = &cc->data;
   if (GRPC_TRACER_ON(grpc_trace_cq_refcount)) {
     gpr_atm val = gpr_atm_no_barrier_load(&cqd->owning_refs.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", cc,
-            val, val - 1, reason);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "CQ:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", cc, val, val - 1,
+            reason);
   }
 #else
 void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx,

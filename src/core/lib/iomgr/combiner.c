@@ -103,11 +103,13 @@ static void start_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
 }
 
 #ifndef NDEBUG
-#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                               \
-  if (GRPC_TRACER_ON(grpc_combiner_trace)) { gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                             \
-          "C:%p %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op), \
-          gpr_atm_no_barrier_load(&lock->refs.count),                     \
-          gpr_atm_no_barrier_load(&lock->refs.count) + (delta), reason); }
+#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                                \
+  if (GRPC_TRACER_ON(grpc_combiner_trace)) {                               \
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                            \
+            "C:%p %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op),        \
+            gpr_atm_no_barrier_load(&lock->refs.count),                    \
+            gpr_atm_no_barrier_load(&lock->refs.count) + (delta), reason); \
+  }
 #else
 #define GRPC_COMBINER_DEBUG_SPAM(op, delta)
 #endif

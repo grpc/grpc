@@ -29,7 +29,8 @@
 #include <grpc/support/string_util.h>
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_auth_context_refcount = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_auth_context_refcount =
+    GRPC_TRACER_INITIALIZER(false);
 #endif
 
 /* --- grpc_call --- */

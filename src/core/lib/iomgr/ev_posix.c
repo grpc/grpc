@@ -38,7 +38,6 @@
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
-
 grpc_tracer_flag grpc_polling_trace =
     GRPC_TRACER_INITIALIZER(false); /* Disabled by default */
 
