@@ -47,7 +47,7 @@ bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
 }
 
 bool grpc_exec_ctx_has_work(grpc_exec_ctx *exec_ctx) {
-  return exec_ctx->active_combiner != NULL ||
+  return exec_ctx->combiner != NULL ||
          !grpc_closure_list_empty(exec_ctx->closure_list);
 }
 
@@ -73,7 +73,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
       break;
     }
   }
-  GPR_ASSERT(exec_ctx->active_combiner == NULL);
+  GPR_ASSERT(exec_ctx->combiner == NULL);
   GPR_TIMER_END("grpc_exec_ctx_flush", 0);
   return did_something;
 }
