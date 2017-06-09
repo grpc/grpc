@@ -948,6 +948,7 @@ src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h \
+src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c \
 src/core/ext/filters/client_channel/resolver/dns/native/README.md \
 src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c \
@@ -1206,11 +1207,6 @@ src/core/lib/iomgr/wakeup_fd_pipe.c \
 src/core/lib/iomgr/wakeup_fd_pipe.h \
 src/core/lib/iomgr/wakeup_fd_posix.c \
 src/core/lib/iomgr/wakeup_fd_posix.h \
-src/core/lib/iomgr/workqueue.h \
-src/core/lib/iomgr/workqueue_uv.c \
-src/core/lib/iomgr/workqueue_uv.h \
-src/core/lib/iomgr/workqueue_windows.c \
-src/core/lib/iomgr/workqueue_windows.h \
 src/core/lib/json/json.c \
 src/core/lib/json/json.h \
 src/core/lib/json/json_common.h \
