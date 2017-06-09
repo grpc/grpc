@@ -370,11 +370,11 @@ static void rr_exit_idle_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   }
 }
 
-static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                          const grpc_lb_policy_pick_args *pick_args,
-                          grpc_connected_subchannel **target,
-                          grpc_call_context_element *context, void **user_data,
-                          grpc_closure *on_complete) {
+static void rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                           const grpc_lb_policy_pick_args *pick_args,
+                           grpc_connected_subchannel **target,
+                           grpc_call_context_element *context, void **user_data,
+                           grpc_closure *on_complete) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "Round Robin %p trying to pick", (void *)pol);
@@ -400,7 +400,8 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       }
       /* only advance the last picked pointer if the selection was used */
       update_last_ready_subchannel_index_locked(p, next_ready_index);
-      return 1;
+      grpc_closure_sched(exec_ctx, on_complete, GRPC_ERROR_NONE);
+      return;
     }
   }
   /* no pick currently available. Save for later in list of pending picks */
@@ -414,7 +415,6 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   pp->initial_metadata_flags = pick_args->initial_metadata_flags;
   pp->user_data = user_data;
   p->pending_picks = pp;
-  return 0;
 }
 
 static void update_state_counters_locked(subchannel_data *sd) {

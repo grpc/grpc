@@ -55,11 +55,11 @@ struct grpc_lb_policy_vtable {
   void (*shutdown_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
   /** \see grpc_lb_policy_pick */
-  int (*pick_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                     const grpc_lb_policy_pick_args *pick_args,
-                     grpc_connected_subchannel **target,
-                     grpc_call_context_element *context, void **user_data,
-                     grpc_closure *on_complete);
+  void (*pick_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                      const grpc_lb_policy_pick_args *pick_args,
+                      grpc_connected_subchannel **target,
+                      grpc_call_context_element *context, void **user_data,
+                      grpc_closure *on_complete);
 
   /** \see grpc_lb_policy_cancel_pick */
   void (*cancel_pick_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
@@ -138,26 +138,22 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
 
 /** Finds an appropriate subchannel for a call, based on \a pick_args.
 
-    \a target will be set to the selected subchannel, or NULL on failure
-    or when the LB policy decides to drop the call.
+    \a on_complete will be invoked once the pick is complete with its
+    error argument set to indicate success or failure.
 
-    Upon success, \a user_data will be set to whatever opaque information
-    may need to be propagated from the LB policy, or NULL if not needed.
-    \a context will be populated with context to pass to the subchannel
-    call, if needed.
-
-    If the pick succeeds and a result is known immediately, a non-zero
-    value will be returned.  Otherwise, \a on_complete will be invoked
-    once the pick is complete with its error argument set to indicate
-    success or failure.
+    Upon success, \a target will be set to the selected subchannel, or
+    NULL when the LB policy decides to drop the call.  \a user_data will
+    be set to whatever opaque information may need to be propagated from
+    the LB policy, or NULL if not needed.  \a context will be populated
+    with context to pass to the subchannel call, if needed.
 
     Any IO should be done under the \a interested_parties \a grpc_pollset_set
     in the \a grpc_lb_policy struct. */
-int grpc_lb_policy_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                               const grpc_lb_policy_pick_args *pick_args,
-                               grpc_connected_subchannel **target,
-                               grpc_call_context_element *context,
-                               void **user_data, grpc_closure *on_complete);
+void grpc_lb_policy_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                                const grpc_lb_policy_pick_args *pick_args,
+                                grpc_connected_subchannel **target,
+                                grpc_call_context_element *context,
+                                void **user_data, grpc_closure *on_complete);
 
 /** Perform a connected subchannel ping (see \a grpc_connected_subchannel_ping)
     against one of the connected subchannels managed by \a policy. */
