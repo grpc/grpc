@@ -113,7 +113,7 @@ static grpc_error *non_polling_poller_work(grpc_exec_ctx *exec_ctx,
     npp->root = w.next;
     if (&w == npp->root) {
       if (npp->shutdown) {
-        grpc_closure_sched(exec_ctx, npp->shutdown, GRPC_ERROR_NONE);
+        GRPC_CLOSURE_SCHED(exec_ctx, npp->shutdown, GRPC_ERROR_NONE);
       }
       npp->root = NULL;
     }
@@ -146,7 +146,7 @@ static void non_polling_poller_shutdown(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(closure != NULL);
   p->shutdown = closure;
   if (p->root == NULL) {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
   } else {
     non_polling_worker *w = p->root;
     do {
@@ -417,7 +417,7 @@ grpc_completion_queue *grpc_completion_queue_create_internal(
   cqd->outstanding_tag_count = 0;
 #endif
   cq_event_queue_init(&cqd->queue);
-  grpc_closure_init(&cqd->pollset_shutdown_done, on_pollset_shutdown_done, cc,
+  GRPC_CLOSURE_INIT(&cqd->pollset_shutdown_done, on_pollset_shutdown_done, cc,
                     grpc_schedule_on_exec_ctx);
 
   GPR_TIMER_END("grpc_completion_queue_create_internal", 0);

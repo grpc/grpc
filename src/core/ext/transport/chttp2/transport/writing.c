@@ -111,7 +111,7 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   }
   pq->inflight_id = t->ping_ctr * GRPC_CHTTP2_PING_TYPE_COUNT + ping_type;
   t->ping_ctr++;
-  grpc_closure_list_sched(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
+  GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
   grpc_closure_list_move(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   grpc_slice_buffer_add(&t->outbuf,

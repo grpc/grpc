@@ -364,9 +364,9 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 
   /* initialize members */
   grpc_slice_buffer_init(&calld->slices);
-  grpc_closure_init(&calld->got_slice, got_slice, elem,
+  GRPC_CLOSURE_INIT(&calld->got_slice, got_slice, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&calld->send_done, send_done, elem,
+  GRPC_CLOSURE_INIT(&calld->send_done, send_done, elem,
                     grpc_schedule_on_exec_ctx);
 
   return GRPC_ERROR_NONE;

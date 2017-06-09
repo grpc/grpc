@@ -50,7 +50,7 @@ grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
   alarm->tag = tag;
 
   grpc_cq_begin_op(cq, tag);
-  grpc_closure_init(&alarm->on_alarm, alarm_cb, alarm,
+  GRPC_CLOSURE_INIT(&alarm->on_alarm, alarm_cb, alarm,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&exec_ctx, &alarm->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),

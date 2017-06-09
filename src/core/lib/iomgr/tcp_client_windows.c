@@ -116,7 +116,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   async_connect_unlock_and_cleanup(exec_ctx, ac, socket);
   /* If the connection was aborted, the callback was already called when
      the deadline was met. */
-  grpc_closure_sched(exec_ctx, on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
 }
 
 /* Tries to issue one async connection, then schedules both an IOCP
@@ -201,9 +201,9 @@ static void tcp_client_connect_impl(
   ac->addr_name = grpc_sockaddr_to_uri(addr);
   ac->endpoint = endpoint;
   ac->channel_args = grpc_channel_args_copy(channel_args);
-  grpc_closure_init(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
-  grpc_closure_init(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &ac->alarm, deadline, &ac->on_alarm,
                   gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_socket_notify_on_write(exec_ctx, socket, &ac->on_connect);
@@ -222,7 +222,7 @@ failure:
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }
-  grpc_closure_sched(exec_ctx, on_done, final_error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, final_error);
 }
 
 // overridden by api_fuzzer.c

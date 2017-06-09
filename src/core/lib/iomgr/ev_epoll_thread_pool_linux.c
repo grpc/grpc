@@ -515,7 +515,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     fd->eps = NULL;
   }
 
-  grpc_closure_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_SCHED(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
 
   gpr_mu_unlock(&fd->mu);
 
@@ -716,7 +716,7 @@ static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx,
 
   /* Release the ref and set pollset->eps to NULL */
   pollset_release_epoll_set(exec_ctx, pollset, "ps_shutdown");
-  grpc_closure_sched(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE);
 }
 
 /* pollset->mu lock must be held by the caller before calling this */

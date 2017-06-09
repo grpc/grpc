@@ -79,7 +79,7 @@ static void cleanup_test_pollsets(grpc_exec_ctx *exec_ctx,
                                   const int num_pollsets) {
   grpc_closure destroyed;
   for (int i = 0; i < num_pollsets; i++) {
-    grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].ps,
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, pollsets[i].ps,
                       grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(exec_ctx, pollsets[i].ps, &destroyed);
 
@@ -108,7 +108,7 @@ void on_readable(grpc_exec_ctx *exec_ctx, void *tfd, grpc_error *error) {
 static void reset_test_fd(grpc_exec_ctx *exec_ctx, test_fd *tfd) {
   tfd->is_on_readable_called = false;
 
-  grpc_closure_init(&tfd->on_readable, on_readable, tfd,
+  GRPC_CLOSURE_INIT(&tfd->on_readable, on_readable, tfd,
                     grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_read(exec_ctx, tfd->fd, &tfd->on_readable);
 }
