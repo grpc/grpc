@@ -63,8 +63,8 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-  'linux': ['epollsig', 'poll', 'poll-cv'],
-# TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
+  'linux': ['epollex', 'epollsig', 'poll', 'poll-cv'],
+# TODO(ctiller, sreecha): enable epoll1, epoll-thread-pool
   'mac': ['poll'],
 }
 
