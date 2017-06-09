@@ -247,7 +247,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
     GPR_TIMER_BEGIN("combiner.exec1", 0);
     grpc_closure *cl = (grpc_closure *)n;
     grpc_error *cl_err = cl->error_data.error;
-#ifndef NDEBUG
+#ifdef GRPC_CLOSURE_RICH_DEBUG
     cl->scheduled = false;
 #endif
     cl->cb(exec_ctx, cl->cb_arg, cl_err);
@@ -264,7 +264,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
           gpr_log(GPR_DEBUG, "C:%p execute_final[%d] c=%p", lock, loops, c));
       grpc_closure *next = c->next_data.next;
       grpc_error *error = c->error_data.error;
-#ifndef NDEBUG
+#ifdef GRPC_CLOSURE_RICH_DEBUG
       c->scheduled = false;
 #endif
       c->cb(exec_ctx, c->cb_arg, error);
