@@ -1,5 +1,3 @@
-
-
 # Pre-generated MS Visual Studio project & solution files
 
 **DEPRECATED, please use cmake instead (it can generate Visual Studio projects for you). We will continue providing pre-generated VS projects for a while, but we will likely get rid of them entirely at some point.**
