@@ -191,15 +191,6 @@ class WriteOptions {
   bool last_message_;
 };
 
-/// Default argument for CallOpSet. I is unused by the class, but can be
-/// used for generating multiple names for the same thing.
-template <int I>
-class CallNoOp {
- protected:
-  void AddOp(grpc_op* ops, size_t* nops) {}
-  void FinishOp(bool* status) {}
-};
-
 class CallOpSendInitialMetadata {
  public:
   CallOpSendInitialMetadata() : send_(false) {
@@ -556,42 +547,22 @@ class CallOpSetInterface : public CompletionQueueTag {
   virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
 };
 
-/// Primary implementaiton of CallOpSetInterface.
-/// Since we cannot use variadic templates, we declare slots up to
-/// the maximum count of ops we'll need in a set. We leverage the
-/// empty base class optimization to slim this class (especially
-/// when there are many unused slots used). To avoid duplicate base classes,
-/// the template parmeter for CallNoOp is varied by argument position.
-template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>,
-          class Op3 = CallNoOp<3>, class Op4 = CallNoOp<4>,
-          class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
+/// Primary implementation of CallOpSetInterface.
+/// Since we cannot use fold expression, we declare an anonymous
+/// list-initializer and do the parameter pack expansion inside.
+template<class... Ops>
 class CallOpSet : public CallOpSetInterface,
-                  public Op1,
-                  public Op2,
-                  public Op3,
-                  public Op4,
-                  public Op5,
-                  public Op6 {
+                  public Ops... {
  public:
   CallOpSet() : return_tag_(this) {}
   void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
-    this->Op1::AddOp(ops, nops);
-    this->Op2::AddOp(ops, nops);
-    this->Op3::AddOp(ops, nops);
-    this->Op4::AddOp(ops, nops);
-    this->Op5::AddOp(ops, nops);
-    this->Op6::AddOp(ops, nops);
+    expand_t{ false, ((void)this->Ops::AddOp(ops, nops), false)... };
     g_core_codegen_interface->grpc_call_ref(call);
     call_ = call;
   }
 
   bool FinalizeResult(void** tag, bool* status) override {
-    this->Op1::FinishOp(status);
-    this->Op2::FinishOp(status);
-    this->Op3::FinishOp(status);
-    this->Op4::FinishOp(status);
-    this->Op5::FinishOp(status);
-    this->Op6::FinishOp(status);
+    expand_t{ false, ((void)this->Ops::FinishOp(status), false)... };
     *tag = return_tag_;
     g_core_codegen_interface->grpc_call_unref(call_);
     return true;
@@ -600,6 +571,8 @@ class CallOpSet : public CallOpSetInterface,
   void set_output_tag(void* return_tag) { return_tag_ = return_tag; }
 
  private:
+  typedef bool expand_t[];
+
   void* return_tag_;
   grpc_call* call_;
 };
@@ -608,13 +581,11 @@ class CallOpSet : public CallOpSetInterface,
 ///
 /// Allows hiding some completions that the C core must generate from
 /// C++ users.
-template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>,
-          class Op3 = CallNoOp<3>, class Op4 = CallNoOp<4>,
-          class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
-class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
+template <class... Ops>
+class SneakyCallOpSet : public CallOpSet<Ops...> {
  public:
   bool FinalizeResult(void** tag, bool* status) override {
-    typedef CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> Base;
+    typedef CallOpSet<Ops...> Base;
     return Base::FinalizeResult(tag, status) && false;
   }
 };
