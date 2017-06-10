@@ -1,4 +1,14 @@
+
+
 # Pre-generated MS Visual Studio project & solution files
+
+**DEPRECATED, please use cmake instead (it can generate Visual Studio projects for you). We will continue providing pre-generated VS projects for a while, but we will likely get rid of them entirely at some point.**
+
+**Pre-generated MS Visual Studio projects used to be the recommended way to build on Windows, but there were some limitations:**
+- **hard to build dependencies, expecially boringssl (deps usually support cmake quite well)**
+- **the nuget-based openssl & zlib dependencies are hard to maintain and update. We've received issues indicating that they are flawed.**
+- **.proto codegen is hard to support in Visual Studio directly (but we have a pretty decent support in cmake)**
+- **It's a LOT of generated files. We prefer not to have too much generated code in our github repo.**
 
 Versions 2013 and 2015 are both supported. You can use [their respective
 community
