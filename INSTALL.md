@@ -19,7 +19,7 @@ refer to these documents
 ## Linux
 
 ```sh
- $ [sudo] apt-get install build-essential autoconf libtool
+ $ [sudo] apt-get install build-essential autoconf libtool pkg-config
 ```
 
 If you plan to build from source and run tests, install the following as well:
