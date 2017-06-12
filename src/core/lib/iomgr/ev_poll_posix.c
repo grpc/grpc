@@ -290,8 +290,7 @@ static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
 #else
 static void unref_by(grpc_fd *fd, int n) {
 #endif
-  gpr_atm old;
-  old = gpr_atm_full_fetch_add(&fd->refst, -n);
+  gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     gpr_mu_destroy(&fd->mu);
     grpc_iomgr_unregister_object(&fd->iomgr_object);
@@ -1275,7 +1274,6 @@ static void pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 }
 
 /*******************************************************************************
-
  * Condition Variable polling extensions
  */
 

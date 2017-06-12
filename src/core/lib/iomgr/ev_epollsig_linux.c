@@ -49,7 +49,6 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
-
 #define GRPC_POLLING_TRACE(...)             \
   if (GRPC_TRACER_ON(grpc_polling_trace)) { \
     gpr_log(GPR_INFO, __VA_ARGS__);         \
@@ -729,8 +728,9 @@ static gpr_mu fd_freelist_mu;
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                    int line) {
   if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
-    gpr_log(GPR_DEBUG, "FD %d %p   ref %d %ld -> %ld [%s; %s:%d]", fd->fd,
-            (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
+    gpr_log(GPR_DEBUG,
+            "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
             gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
   }
 #else
@@ -745,8 +745,9 @@ static void ref_by(grpc_fd *fd, int n) {
 static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                      int line) {
   if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
-    gpr_log(GPR_DEBUG, "FD %d %p unref %d %ld -> %ld [%s; %s:%d]", fd->fd,
-            (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
+    gpr_log(GPR_DEBUG,
+            "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
             gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
   }
 #else

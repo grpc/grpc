@@ -20,10 +20,6 @@
 
 #ifdef GRPC_UV
 
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
-#endif
-
 #include <uv.h>
 
 #include <string.h>
@@ -34,6 +30,12 @@ grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
 
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_uv.h"
+
+#include "src/core/lib/debug/trace.h"
+
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
 
 struct grpc_pollset {
   uv_timer_t timer;
