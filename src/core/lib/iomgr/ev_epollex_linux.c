@@ -515,7 +515,7 @@ static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
                                           grpc_pollset *pollset) {
   if (pollset->shutdown_closure != NULL && pollset->root_worker == NULL &&
       pollset->kick_alls_pending == 0) {
-    grpc_closure_sched(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
     pollset->shutdown_closure = NULL;
   }
 }
@@ -553,7 +553,7 @@ static void do_kick_all(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void pollset_kick_all(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   pollset->kick_alls_pending++;
-  grpc_closure_sched(exec_ctx, grpc_closure_create(do_kick_all, pollset,
+  GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(do_kick_all, pollset,
                                                    grpc_schedule_on_exec_ctx),
                      GRPC_ERROR_NONE);
 }
