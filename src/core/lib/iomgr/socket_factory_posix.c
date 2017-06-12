@@ -20,6 +20,7 @@
 
 #ifdef GRPC_POSIX_SOCKET
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -84,12 +85,8 @@ static const grpc_arg_pointer_vtable socket_factory_arg_vtable = {
     socket_factory_arg_copy, socket_factory_arg_destroy, socket_factory_cmp};
 
 grpc_arg grpc_socket_factory_to_arg(grpc_socket_factory *factory) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
-  arg.key = GRPC_ARG_SOCKET_FACTORY;
-  arg.value.pointer.vtable = &socket_factory_arg_vtable;
-  arg.value.pointer.p = factory;
-  return arg;
+  return grpc_channel_arg_pointer_create(GRPC_ARG_SOCKET_FACTORY, factory,
+                                         &socket_factory_arg_vtable);
 }
 
 #endif

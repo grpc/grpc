@@ -37,12 +37,9 @@ static const grpc_arg_pointer_vtable server_to_balancer_names_vtable = {
 
 grpc_arg grpc_lb_targets_info_create_channel_arg(
     grpc_slice_hash_table *targets_info) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
-  arg.key = GRPC_ARG_LB_SECURE_NAMING_MAP;
-  arg.value.pointer.p = targets_info;
-  arg.value.pointer.vtable = &server_to_balancer_names_vtable;
-  return arg;
+  return grpc_channel_arg_pointer_create(GRPC_ARG_LB_SECURE_NAMING_MAP,
+                                         targets_info,
+                                         &server_to_balancer_names_vtable);
 }
 
 grpc_slice_hash_table *grpc_lb_targets_info_find_in_args(
