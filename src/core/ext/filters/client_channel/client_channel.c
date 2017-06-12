@@ -470,9 +470,9 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   // Swap out the LB policy, unreffing the old one and removing its fds
   // from chand->interested_parties.
   if (chand->lb_policy != NULL) {
-    grpc_pollset_set_del_pollset_set(
-        exec_ctx, chand->lb_policy->interested_parties,
-        chand->interested_parties);
+    grpc_pollset_set_del_pollset_set(exec_ctx,
+                                     chand->lb_policy->interested_parties,
+                                     chand->interested_parties);
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
   }
   chand->lb_policy = new_lb_policy;
@@ -515,8 +515,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       watch_lb_policy_locked(exec_ctx, chand, new_lb_policy, state);
     }
     set_channel_connectivity_state_locked(
-        exec_ctx, chand, state, GRPC_ERROR_REF(state_error),
-        "new_lb+resolver");
+        exec_ctx, chand, state, GRPC_ERROR_REF(state_error), "new_lb+resolver");
     grpc_resolver_next_locked(exec_ctx, chand->resolver,
                               &chand->resolver_result,
                               &chand->on_resolver_result_changed);
@@ -820,19 +819,17 @@ grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
   return get_call_or_error(call_elem->call_data).subchannel_call;
 }
 
-static void add_waiting_locked(call_data *calld,
-                               grpc_transport_stream_op_batch *batch) {
-  GPR_TIMER_BEGIN("add_waiting_locked", 0);
+static void waiting_for_pick_batches_add_locked(
+    call_data *calld, grpc_transport_stream_op_batch *batch) {
   GPR_ASSERT(calld->waiting_for_pick_batches_count < MAX_WAITING_BATCHES);
   calld->waiting_for_pick_batches[calld->waiting_for_pick_batches_count++] =
       batch;
-  GPR_TIMER_END("add_waiting_locked", 0);
 }
 
-static void fail_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld,
-                                grpc_error *error) {
-  size_t i;
-  for (i = 0; i < calld->waiting_for_pick_batches_count; i++) {
+static void waiting_for_pick_batches_fail_locked(grpc_exec_ctx *exec_ctx,
+                                                 call_data *calld,
+                                                 grpc_error *error) {
+  for (size_t i = 0; i < calld->waiting_for_pick_batches_count; ++i) {
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, calld->waiting_for_pick_batches[i], GRPC_ERROR_REF(error));
   }
@@ -840,14 +837,16 @@ static void fail_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld,
   GRPC_ERROR_UNREF(error);
 }
 
-static void retry_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld) {
+static void waiting_for_pick_batches_resume_locked(grpc_exec_ctx *exec_ctx,
+                                                   call_data *calld) {
   if (calld->waiting_for_pick_batches_count == 0) return;
   call_or_error coe = get_call_or_error(calld);
   if (coe.error != GRPC_ERROR_NONE) {
-    fail_waiting_locked(exec_ctx, calld, GRPC_ERROR_REF(coe.error));
+    waiting_for_pick_batches_fail_locked(exec_ctx, calld,
+                                         GRPC_ERROR_REF(coe.error));
     return;
   }
-  for (size_t i = 0; i < calld->waiting_for_pick_batches_count; i++) {
+  for (size_t i = 0; i < calld->waiting_for_pick_batches_count; ++i) {
     grpc_subchannel_call_process_op(exec_ctx, coe.subchannel_call,
                                     calld->waiting_for_pick_batches[i]);
   }
@@ -919,7 +918,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
             : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                   "Failed to create subchannel", &error, 1);
     set_call_or_error(calld, (call_or_error){.error = GRPC_ERROR_REF(failure)});
-    fail_waiting_locked(exec_ctx, calld, failure);
+    waiting_for_pick_batches_fail_locked(exec_ctx, calld, failure);
   } else if (coe.error != GRPC_ERROR_NONE) {
     /* already cancelled before subchannel became ready */
     grpc_error *child_errors[] = {error, coe.error};
@@ -933,7 +932,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
           grpc_error_set_int(cancellation_error, GRPC_ERROR_INT_GRPC_STATUS,
                              GRPC_STATUS_DEADLINE_EXCEEDED);
     }
-    fail_waiting_locked(exec_ctx, calld, cancellation_error);
+    waiting_for_pick_batches_fail_locked(exec_ctx, calld, cancellation_error);
   } else {
     /* Create call on subchannel. */
     grpc_subchannel_call *subchannel_call = NULL;
@@ -950,9 +949,9 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
         calld, (call_or_error){.subchannel_call = subchannel_call}));
     if (new_error != GRPC_ERROR_NONE) {
       new_error = grpc_error_add_child(new_error, error);
-      fail_waiting_locked(exec_ctx, calld, new_error);
+      waiting_for_pick_batches_fail_locked(exec_ctx, calld, new_error);
     } else {
-      retry_waiting_locked(exec_ctx, calld);
+      waiting_for_pick_batches_resume_locked(exec_ctx, calld);
     }
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
@@ -981,21 +980,21 @@ typedef struct {
   grpc_call_element *elem;
   bool cancelled;
   grpc_closure closure;
-} continue_picking_args;
+} pick_after_resolver_result_args;
 
-static void continue_picking_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                    grpc_error *error) {
-  continue_picking_args *cpa = arg;
-  if (cpa->cancelled) {
+static void continue_picking_after_resolver_result_locked(
+    grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  pick_after_resolver_result_args *args = arg;
+  if (args->cancelled) {
     /* cancelled, do nothing */
   } else if (error != GRPC_ERROR_NONE) {
-    subchannel_ready_locked(exec_ctx, cpa->elem, GRPC_ERROR_REF(error));
+    subchannel_ready_locked(exec_ctx, args->elem, GRPC_ERROR_REF(error));
   } else {
-    if (pick_subchannel_locked(exec_ctx, cpa->elem)) {
-      subchannel_ready_locked(exec_ctx, cpa->elem, GRPC_ERROR_NONE);
+    if (pick_subchannel_locked(exec_ctx, args->elem)) {
+      subchannel_ready_locked(exec_ctx, args->elem, GRPC_ERROR_NONE);
     }
   }
-  gpr_free(cpa);
+  gpr_free(args);
 }
 
 static void cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
@@ -1008,17 +1007,17 @@ static void cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                                       GRPC_ERROR_REF(error));
   }
   // If we don't yet have a resolver result, then a closure for
-  // continue_picking_locked() will have been added to
-  // chand->waiting_for_resolver_result_closures, and it may not be
-  // invoked until after this call has been destroyed.  We mark the
-  // the operation as cancelled, so that when continue_picking_locked()
+  // continue_picking_after_resolver_result_locked() will have been added to
+  // chand->waiting_for_resolver_result_closures, and it may not be invoked
+  // until after this call has been destroyed.  We mark the operation as
+  // cancelled, so that when continue_picking_after_resolver_result_locked()
   // is called, it will be a no-op.  We also immediately invoke
   // subchannel_ready_locked() to propagate the error back to the caller.
   for (grpc_closure *closure = chand->waiting_for_resolver_result_closures.head;
        closure != NULL; closure = closure->next_data.next) {
-    continue_picking_args *cpa = closure->cb_arg;
-    if (cpa->elem == elem) {
-      cpa->cancelled = true;
+    pick_after_resolver_result_args *args = closure->cb_arg;
+    if (args->elem == elem) {
+      args->cancelled = true;
       subchannel_ready_locked(exec_ctx, elem,
                               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                   "Pick cancelled", &error, 1));
@@ -1103,13 +1102,14 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
                                 &chand->resolver_result,
                                 &chand->on_resolver_result_changed);
     }
-    continue_picking_args *cpa =
-        (continue_picking_args *)gpr_zalloc(sizeof(*cpa));
-    cpa->elem = elem;
-    GRPC_CLOSURE_INIT(&cpa->closure, continue_picking_locked, cpa,
+    pick_after_resolver_result_args *args =
+        (pick_after_resolver_result_args *)gpr_zalloc(sizeof(*args));
+    args->elem = elem;
+    GRPC_CLOSURE_INIT(&args->closure,
+                      continue_picking_after_resolver_result_locked, args,
                       grpc_combiner_scheduler(chand->combiner));
     grpc_closure_list_append(&chand->waiting_for_resolver_result_closures,
-                             &cpa->closure, GRPC_ERROR_NONE);
+                             &args->closure, GRPC_ERROR_NONE);
   } else {
     subchannel_ready_locked(
         exec_ctx, elem, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
@@ -1136,6 +1136,10 @@ static void start_transport_stream_op_batch_locked_inner(
     /* early out */
     return;
   }
+  // Add to waiting-for-pick list.  If we succeed in getting a
+  // subchannel call below, we'll handle this batch (along with any
+  // other waiting batches) in waiting_for_pick_batches_resume_locked().
+  waiting_for_pick_batches_add_locked(calld, op);
   /* if this is a cancellation, then we can raise our cancelled flag */
   if (op->cancel_stream) {
     grpc_error *error = op->payload->cancel_stream.cancel_error;
@@ -1147,11 +1151,9 @@ static void start_transport_stream_op_batch_locked_inner(
     set_call_or_error(calld, (call_or_error){.error = GRPC_ERROR_REF(error)});
     if (calld->pick_pending) {
       cancel_pick_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
-    } else {
-      fail_waiting_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
     }
-    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op,
-                                                       GRPC_ERROR_REF(error));
+    waiting_for_pick_batches_fail_locked(exec_ctx, calld,
+                                         GRPC_ERROR_REF(error));
     /* early out */
     return;
   }
@@ -1172,8 +1174,8 @@ static void start_transport_stream_op_batch_locked_inner(
             "Call dropped by load balancing policy");
         set_call_or_error(calld,
                           (call_or_error){.error = GRPC_ERROR_REF(error)});
-        fail_waiting_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
-        grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
+        waiting_for_pick_batches_fail_locked(exec_ctx, calld,
+                                             GRPC_ERROR_REF(error));
         return;  // Early out.
       }
     } else {
@@ -1196,18 +1198,14 @@ static void start_transport_stream_op_batch_locked_inner(
     GPR_ASSERT(set_call_or_error(
         calld, (call_or_error){.subchannel_call = subchannel_call}));
     if (error != GRPC_ERROR_NONE) {
-      fail_waiting_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
-      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
+      waiting_for_pick_batches_fail_locked(exec_ctx, calld,
+                                           GRPC_ERROR_REF(error));
     } else {
-      retry_waiting_locked(exec_ctx, calld);
-      /* recurse to retry */
-      start_transport_stream_op_batch_locked_inner(exec_ctx, op, elem);
+      waiting_for_pick_batches_resume_locked(exec_ctx, calld);
     }
     /* early out */
     return;
   }
-  /* nothing to be done but wait */
-  add_waiting_locked(calld, op);
 }
 
 static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
