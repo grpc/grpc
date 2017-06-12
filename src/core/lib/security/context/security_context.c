@@ -18,6 +18,7 @@
 
 #include <string.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -315,13 +316,8 @@ static const grpc_arg_pointer_vtable auth_context_pointer_vtable = {
     auth_context_pointer_cmp};
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context *p) {
-  grpc_arg arg;
-  memset(&arg, 0, sizeof(grpc_arg));
-  arg.type = GRPC_ARG_POINTER;
-  arg.key = GRPC_AUTH_CONTEXT_ARG;
-  arg.value.pointer.p = p;
-  arg.value.pointer.vtable = &auth_context_pointer_vtable;
-  return arg;
+  return grpc_channel_arg_pointer_create(GRPC_AUTH_CONTEXT_ARG, p,
+                                         &auth_context_pointer_vtable);
 }
 
 grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg) {

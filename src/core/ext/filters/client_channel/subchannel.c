@@ -809,10 +809,7 @@ const char *grpc_get_subchannel_address_uri_arg(const grpc_channel_args *args) {
 }
 
 grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr) {
-  grpc_arg new_arg;
-  new_arg.key = GRPC_ARG_SUBCHANNEL_ADDRESS;
-  new_arg.type = GRPC_ARG_STRING;
-  new_arg.value.string =
-      addr->len > 0 ? grpc_sockaddr_to_uri(addr) : gpr_strdup("");
-  return new_arg;
+  return grpc_channel_arg_string_create(
+      GRPC_ARG_SUBCHANNEL_ADDRESS,
+      addr->len > 0 ? grpc_sockaddr_to_uri(addr) : gpr_strdup(""));
 }
