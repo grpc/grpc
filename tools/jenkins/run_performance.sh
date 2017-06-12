@@ -28,7 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script is invoked by Jenkins and runs performance smoke test.
+# This script is invoked by Jenkins and runs a diff on the microbenchmarks
 set -ex
 
 # List of benchmarks that provide good signal for analyzing performance changes in pull requests

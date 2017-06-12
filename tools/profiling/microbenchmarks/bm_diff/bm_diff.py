@@ -67,6 +67,9 @@ def _args():
     default=20,
     help='Number of times to loops the benchmarks. Must match what was passed to bm_run.py'
   )
+  argp.add_argument('--counters', dest='counters', action='store_true')
+  argp.add_argument('--no-counters', dest='counters', action='store_false')
+  argp.set_defaults(counters=True)
   argp.add_argument('-n', '--new', type=str, help='New benchmark name')
   argp.add_argument('-o', '--old', type=str, help='Old benchmark name')
   argp.add_argument(
@@ -121,7 +124,8 @@ def _read_json(filename, badjson_files, nonexistant_files):
   stripped = ".".join(filename.split(".")[:-2])
   try:
     with open(filename) as f:
-      return json.loads(f.read())
+      r = f.read();
+      return json.loads(r)
   except IOError, e:
     if stripped in nonexistant_files:
       nonexistant_files[stripped] += 1
@@ -129,14 +133,17 @@ def _read_json(filename, badjson_files, nonexistant_files):
       nonexistant_files[stripped] = 1
     return None
   except ValueError, e:
+    print r
     if stripped in badjson_files:
       badjson_files[stripped] += 1
     else:
       badjson_files[stripped] = 1
     return None
 
+def fmt_dict(d):
+  return ''.join(["    " + k + ": " + str(d[k]) + "\n" for k in d])
 
-def diff(bms, loops, track, old, new):
+def diff(bms, loops, track, old, new, counters):
   benchmarks = collections.defaultdict(Benchmark)
 
   badjson_files = {}
@@ -148,18 +155,22 @@ def diff(bms, loops, track, old, new):
          '--benchmark_list_tests']).splitlines():
         stripped_line = line.strip().replace("/", "_").replace(
           "<", "_").replace(">", "_").replace(", ", "_")
-        js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' %
-                    (bm, stripped_line, new, loop),
-                    badjson_files, nonexistant_files)
         js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
                     (bm, stripped_line, new, loop),
-                    badjson_files, nonexistant_files)
-        js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' %
-                    (bm, stripped_line, old, loop),
                     badjson_files, nonexistant_files)
         js_old_opt = _read_json('%s.%s.opt.%s.%d.json' %
                     (bm, stripped_line, old, loop),
                     badjson_files, nonexistant_files)
+        if counters:
+          js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' %
+                      (bm, stripped_line, new, loop),
+                      badjson_files, nonexistant_files)
+          js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' %
+                      (bm, stripped_line, old, loop),
+                      badjson_files, nonexistant_files)
+        else:
+          js_new_ctr = None
+          js_old_ctr = None
 
         if js_new_ctr:
           for row in bm_json.expand_json(js_new_ctr, js_new_opt):
@@ -187,12 +198,12 @@ def diff(bms, loops, track, old, new):
     rows.append([name] + benchmarks[name].row(fields))
   note = None
   if len(badjson_files):
-    note = 'Corrupt JSON data (indicates timeout or crash) = %s' % str(badjson_files)
+    note = 'Corrupt JSON data (indicates timeout or crash): \n%s' % fmt_dict(badjson_files)
   if len(nonexistant_files):
     if note:
-      note += '\n\nMissing files (indicates new benchmark) = %s' % str(nonexistant_files)
+      note += '\n\nMissing files (indicates new benchmark): \n%s' % fmt_dict(nonexistant_files)
     else:
-      note = '\n\nMissing files (indicates new benchmark) = %s' % str(nonexistant_files)
+      note = '\n\nMissing files (indicates new benchmark): \n%s' % fmt_dict(nonexistant_files)
   if rows:
     return tabulate.tabulate(rows, headers=headers, floatfmt='+.2f'), note
   else:
@@ -202,5 +213,5 @@ def diff(bms, loops, track, old, new):
 if __name__ == '__main__':
   args = _args()
   diff, note = diff(args.benchmarks, args.loops, args.track, args.old,
-            args.new)
+            args.new, args.counters)
   print('%s\n%s' % (note, diff if diff else "No performance differences"))
