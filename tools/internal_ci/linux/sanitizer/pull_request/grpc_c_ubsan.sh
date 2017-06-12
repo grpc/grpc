@@ -20,4 +20,4 @@ cd $(dirname $0)/../../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-tools/run_tests/run_tests_matrix.py -f c++ tsan --inner_jobs 16 -j 1 --internal_ci --bq_result_table aggregate_results
+tools/run_tests/run_tests_matrix.py -f c ubsan --inner_jobs 16 -j 1 --internal_ci --filter_pr_tests --base_branch origin/master --max_time=3600

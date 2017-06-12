@@ -50,10 +50,12 @@ _RESULTS_SCHEMA = [
 
 
 def _get_build_metadata(test_results):
-  """Add Jenkins build metadata to test_results based on environment variables set by Jenkins."""
-  build_id = os.getenv('BUILD_ID')
-  build_url = os.getenv('BUILD_URL')
-  job_name = os.getenv('JOB_BASE_NAME')
+  """Add Jenkins/Kokoro build metadata to test_results based on environment
+  variables set by Jenkins/Kokoro.
+  """
+  build_id = os.getenv('BUILD_ID') or os.getenv('KOKORO_BUILD_NUMBER')
+  build_url = os.getenv('BUILD_URL') or os.getenv('KOKORO_BUILD_URL')
+  job_name = os.getenv('JOB_BASE_NAME') or os.getenv('KOKORO_JOB_NAME')
 
   if build_id:
     test_results['build_id'] = build_id
@@ -61,6 +63,7 @@ def _get_build_metadata(test_results):
     test_results['build_url'] = build_url
   if job_name:
     test_results['job_name'] = job_name
+
 
 def upload_results_to_bq(resultset, bq_table, args, platform):
   """Upload test results to a BQ table.

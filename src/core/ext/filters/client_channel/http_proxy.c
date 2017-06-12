@@ -80,10 +80,9 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
     grpc_uri_destroy(uri);
     return false;
   }
-  grpc_arg new_arg;
-  new_arg.key = GRPC_ARG_HTTP_CONNECT_SERVER;
-  new_arg.type = GRPC_ARG_STRING;
-  new_arg.value.string = uri->path[0] == '/' ? uri->path + 1 : uri->path;
+  grpc_arg new_arg = grpc_channel_arg_string_create(
+      GRPC_ARG_HTTP_CONNECT_SERVER,
+      uri->path[0] == '/' ? uri->path + 1 : uri->path);
   *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   grpc_uri_destroy(uri);
   return true;

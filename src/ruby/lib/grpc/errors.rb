@@ -50,7 +50,8 @@ module GRPC
       Struct::Status.new(code, details, @metadata)
     end
 
-    def self.new_status_exception(code, details = 'unkown cause', metadata = {})
+    def self.new_status_exception(code, details = 'unknown cause',
+                                  metadata = {})
       codes = {}
       codes[OK] = Ok
       codes[CANCELLED] = Cancelled
@@ -59,16 +60,16 @@ module GRPC
       codes[DEADLINE_EXCEEDED] = DeadlineExceeded
       codes[NOT_FOUND] = NotFound
       codes[ALREADY_EXISTS] = AlreadyExists
-      codes[PERMISSION_DENIED] =  PermissionDenied
+      codes[PERMISSION_DENIED] = PermissionDenied
       codes[UNAUTHENTICATED] = Unauthenticated
       codes[RESOURCE_EXHAUSTED] = ResourceExhausted
       codes[FAILED_PRECONDITION] = FailedPrecondition
       codes[ABORTED] = Aborted
       codes[OUT_OF_RANGE] = OutOfRange
-      codes[UNIMPLEMENTED] =  Unimplemented
+      codes[UNIMPLEMENTED] = Unimplemented
       codes[INTERNAL] = Internal
-      codes[UNIMPLEMENTED] =  Unimplemented
-      codes[UNAVAILABLE] =  Unavailable
+      codes[UNIMPLEMENTED] = Unimplemented
+      codes[UNAVAILABLE] = Unavailable
       codes[DATA_LOSS] = DataLoss
 
       if codes[code].nil?
