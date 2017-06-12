@@ -283,6 +283,7 @@ setuptools.setup(
   author_email='grpc-io@googlegroups.com',
   url='http://www.grpc.io',
   license=LICENSE,
+  description='An RPC library and framework',
   long_description=open(README).read(),
   ext_modules=CYTHON_EXTENSION_MODULES,
   packages=list(PACKAGES),
