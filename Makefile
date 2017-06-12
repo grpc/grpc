@@ -329,6 +329,7 @@ HOST_CC ?= $(CC)
 HOST_CXX ?= $(CXX)
 HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
+HOST_AR ?= $(AR)
 
 CFLAGS += -std=c99 -Wsign-conversion -Wconversion $(W_SHADOW) $(W_EXTRA_SEMI)
 ifeq ($(HAS_CXX11),true)
@@ -438,11 +439,12 @@ LDFLAGS += $(EXTRA_LDFLAGS)
 DEFINES += $(EXTRA_DEFINES)
 LDLIBS += $(EXTRA_LDLIBS)
 
-HOST_CPPFLAGS = $(CPPFLAGS)
-HOST_CFLAGS = $(CFLAGS)
-HOST_CXXFLAGS = $(CXXFLAGS)
-HOST_LDFLAGS = $(LDFLAGS)
-HOST_LDLIBS = $(LDLIBS)
+HOST_CPPFLAGS = $(CPPFLAGS_NO_ARCH) -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -fPIC
+HOST_CFLAGS = -std=c99 -Wsign-conversion -Wconversion $(W_SHADOW) $(W_EXTRA_SEMI)
+HOST_CXXFLAGS = -std=c++11
+HOST_LDFLAGS = -g -fPIC -Llibs/$(CONFIG)
+HOST_LDLIBS = -lprotoc
+HOST_AROPTS = $(AROPTS)
 
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
@@ -5631,10 +5633,10 @@ $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: protobuf_dep_error
 else
 
 $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
-	$(E) "[AR]      Creating $@"
+	$(E) "[HOSTAR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
+	$(Q) $(HOST_AR) $(HOST_AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBGRPC_PLUGIN_SUPPORT_OBJS)
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
 endif
