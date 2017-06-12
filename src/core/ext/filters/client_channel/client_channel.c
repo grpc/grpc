@@ -1049,10 +1049,9 @@ static void pick_callback_locked(grpc_exec_ctx *exec_ctx, void *arg,
 static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem) {
   GPR_TIMER_BEGIN("pick_subchannel", 0);
-
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-
+  bool pick_done = false;
   if (chand->lb_policy != NULL) {
     apply_final_configuration_locked(exec_ctx, elem);
     grpc_lb_policy *lb_policy = chand->lb_policy;
@@ -1080,7 +1079,6 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
         calld->initial_metadata_payload->send_initial_metadata
             .send_initial_metadata,
         initial_metadata_flags, &calld->lb_token_mdelem};
-
     // Wrap the user-provided callback in order to hold a strong reference to
     // the LB policy for the duration of the pick.
     pick_callback_args *pick_args = gpr_zalloc(sizeof(*pick_args));
@@ -1089,7 +1087,7 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
     pick_args->elem = elem;
     GRPC_CLOSURE_INIT(&pick_args->closure, pick_callback_locked, pick_args,
                       grpc_combiner_scheduler(chand->combiner));
-    const bool pick_done = grpc_lb_policy_pick_locked(
+    pick_done = grpc_lb_policy_pick_locked(
         exec_ctx, lb_policy, &inputs, &calld->connected_subchannel,
         calld->subchannel_call_context, NULL, &pick_args->closure);
     if (pick_done) {
@@ -1097,17 +1095,14 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
       GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "pick_subchannel");
       gpr_free(pick_args);
     }
-    GPR_TIMER_END("pick_subchannel", 0);
-    return pick_done;
-  }
-  if (chand->resolver != NULL && !chand->started_resolving) {
-    chand->started_resolving = true;
-    GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next_locked(exec_ctx, chand->resolver,
-                              &chand->resolver_result,
-                              &chand->on_resolver_result_changed);
-  }
-  if (chand->resolver != NULL) {
+  } else if (chand->resolver != NULL) {
+    if (!chand->started_resolving) {
+      chand->started_resolving = true;
+      GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
+      grpc_resolver_next_locked(exec_ctx, chand->resolver,
+                                &chand->resolver_result,
+                                &chand->on_resolver_result_changed);
+    }
     continue_picking_args *cpa =
         (continue_picking_args *)gpr_zalloc(sizeof(*cpa));
     cpa->elem = elem;
@@ -1119,9 +1114,8 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
     subchannel_ready_locked(
         exec_ctx, elem, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
   }
-
   GPR_TIMER_END("pick_subchannel", 0);
-  return false;
+  return pick_done;
 }
 
 static void start_transport_stream_op_batch_locked_inner(
@@ -1129,7 +1123,6 @@ static void start_transport_stream_op_batch_locked_inner(
     grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-
   /* need to recheck that another thread hasn't set the call */
   call_or_error coe = get_call_or_error(calld);
   if (coe.error != GRPC_ERROR_NONE) {
