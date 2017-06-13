@@ -67,6 +67,12 @@ def _args():
     default=20,
     help='Number of times to loops the benchmarks. More loops cuts down on noise'
   )
+  argp.add_argument(
+    '-c',
+    '--counters',
+    type=bool,
+    default=True,
+    help='Whether or not to run and diff a counters build')
   args = argp.parse_args()
   assert args.name
   if args.loops < 3:
@@ -93,21 +99,22 @@ def _collect_bm_data(bm, cfg, name, reps, idx, loops):
         shortname='%s %s %s %s %d/%d' % (bm, line, cfg, name, idx + 1,
                          loops),
         verbose_success=True,
-        timeout_seconds=60 * 2))
+        timeout_seconds=60 * 60)) # one hour
   return jobs_list
 
 
-def run(name, benchmarks, jobs, loops, reps):
+def run(name, benchmarks, jobs, loops, reps, counters):
   jobs_list = []
   for loop in range(0, loops):
     for bm in benchmarks:
       jobs_list += _collect_bm_data(bm, 'opt', name, reps, loop, loops)
-      jobs_list += _collect_bm_data(bm, 'counters', name, reps, loop,
-                      loops)
+      if counters:
+        jobs_list += _collect_bm_data(bm, 'counters', name, reps, loop,
+                        loops)
   random.shuffle(jobs_list, random.SystemRandom().random)
   jobset.run(jobs_list, maxjobs=jobs)
 
 
 if __name__ == '__main__':
   args = _args()
-  run(args.name, args.benchmarks, args.jobs, args.loops, args.repetitions)
+  run(args.name, args.benchmarks, args.jobs, args.loops, args.repetitions, args.counters)

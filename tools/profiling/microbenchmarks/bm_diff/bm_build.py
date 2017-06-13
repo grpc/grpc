@@ -46,6 +46,12 @@ def _args():
     type=str,
     help='Unique name of this build. To be used as a handle to pass to the other bm* scripts'
   )
+  argp.add_argument(
+    '-c',
+    '--counters',
+    type=bool,
+    default=True,
+    help='Whether or not to run and diff a counters build')
   args = argp.parse_args()
   assert args.name
   return args
@@ -55,16 +61,18 @@ def _make_cmd(cfg, benchmarks, jobs):
   return ['make'] + benchmarks + ['CONFIG=%s' % cfg, '-j', '%d' % jobs]
 
 
-def build(name, benchmarks, jobs):
+def build(name, benchmarks, jobs, counters):
   shutil.rmtree('bm_diff_%s' % name, ignore_errors=True)
   subprocess.check_call(['git', 'submodule', 'update'])
   try:
     subprocess.check_call(_make_cmd('opt', benchmarks, jobs))
-    subprocess.check_call(_make_cmd('counters', benchmarks, jobs))
+    if counters:
+      subprocess.check_call(_make_cmd('counters', benchmarks, jobs))
   except subprocess.CalledProcessError, e:
     subprocess.check_call(['make', 'clean'])
     subprocess.check_call(_make_cmd('opt', benchmarks, jobs))
-    subprocess.check_call(_make_cmd('counters', benchmarks, jobs))
+    if counters:
+      subprocess.check_call(_make_cmd('counters', benchmarks, jobs))
   os.rename(
     'bins',
     'bm_diff_%s' % name,)
@@ -72,4 +80,4 @@ def build(name, benchmarks, jobs):
 
 if __name__ == '__main__':
   args = _args()
-  build(args.name, args.benchmarks, args.jobs)
+  build(args.name, args.benchmarks, args.jobs, args.counters)
