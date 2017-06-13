@@ -1,32 +1,17 @@
 //
-// Copyright 2016, Google Inc.
-// All rights reserved.
+// Copyright 2016 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 
 #include "src/core/lib/slice/slice_hash_table.h"
@@ -43,6 +28,7 @@
 struct grpc_slice_hash_table {
   gpr_refcount refs;
   void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value);
+  int (*value_cmp)(void* a, void* b);
   size_t size;
   size_t max_num_probes;
   grpc_slice_hash_table_entry* entries;
@@ -72,10 +58,12 @@ static void grpc_slice_hash_table_add(grpc_slice_hash_table* table,
 
 grpc_slice_hash_table* grpc_slice_hash_table_create(
     size_t num_entries, grpc_slice_hash_table_entry* entries,
-    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value)) {
+    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value),
+    int (*value_cmp)(void* a, void* b)) {
   grpc_slice_hash_table* table = gpr_zalloc(sizeof(*table));
   gpr_ref_init(&table->refs, 1);
   table->destroy_value = destroy_value;
+  table->value_cmp = value_cmp;
   // Keep load factor low to improve performance of lookups.
   table->size = num_entries * 2;
   const size_t entry_size = sizeof(grpc_slice_hash_table_entry) * table->size;
@@ -120,4 +108,38 @@ void* grpc_slice_hash_table_get(const grpc_slice_hash_table* table,
     }
   }
   return NULL;  // Not found.
+}
+
+static int pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+int grpc_slice_hash_table_cmp(const grpc_slice_hash_table* a,
+                              const grpc_slice_hash_table* b) {
+  int (*const value_cmp_fn_a)(void* a, void* b) =
+      a->value_cmp != NULL ? a->value_cmp : pointer_cmp;
+  int (*const value_cmp_fn_b)(void* a, void* b) =
+      b->value_cmp != NULL ? b->value_cmp : pointer_cmp;
+  // Compare value_fns
+  const int value_fns_cmp =
+      GPR_ICMP((void*)value_cmp_fn_a, (void*)value_cmp_fn_b);
+  if (value_fns_cmp != 0) return value_fns_cmp;
+  // Compare sizes
+  if (a->size < b->size) return -1;
+  if (a->size > b->size) return 1;
+  // Compare rows.
+  for (size_t i = 0; i < a->size; ++i) {
+    if (is_empty(&a->entries[i])) {
+      if (!is_empty(&b->entries[i])) {
+        return -1;  // a empty but b non-empty
+      }
+      continue;  // both empty, no need to check key or value
+    } else if (is_empty(&b->entries[i])) {
+      return 1;  // a non-empty but b empty
+    }
+    // neither entry is empty
+    const int key_cmp = grpc_slice_cmp(a->entries[i].key, b->entries[i].key);
+    if (key_cmp != 0) return key_cmp;
+    const int value_cmp =
+        value_cmp_fn_a(a->entries[i].value, b->entries[i].value);
+    if (value_cmp != 0) return value_cmp;
+  }
+  return 0;
 }

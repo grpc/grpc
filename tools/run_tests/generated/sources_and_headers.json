@@ -191,6 +191,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "census_intrusive_hash_map_test", 
+    "src": [
+      "test/core/census/intrusive_hash_map_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "census_resource_test", 
     "src": [
       "test/core/census/resource_test.c"
@@ -1748,6 +1765,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "num_external_connectivity_watchers_test", 
+    "src": [
+      "test/core/surface/num_external_connectivity_watchers_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "parse_address_test", 
     "src": [
       "test/core/client_channel/parse_address_test.c"
@@ -2879,6 +2913,25 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "client_lb_end2end_test", 
+    "src": [
+      "test/cpp/end2end/client_lb_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_codegen_base"
@@ -3732,25 +3785,6 @@
     "name": "reconnect_interop_server", 
     "src": [
       "test/cpp/interop/reconnect_interop_server.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "round_robin_end2end_test", 
-    "src": [
-      "test/cpp/end2end/round_robin_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5798,6 +5832,7 @@
       "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
+      "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
       "grpc_server_backward_compatibility", 
@@ -5905,6 +5940,7 @@
       "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
+      "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
       "grpc_server_backward_compatibility", 
       "grpc_transport_chttp2_client_insecure", 
@@ -7541,6 +7577,8 @@
       "src/core/ext/census/gen/census.pb.h", 
       "src/core/ext/census/gen/trace_context.pb.h", 
       "src/core/ext/census/grpc_filter.h", 
+      "src/core/ext/census/intrusive_hash_map.h", 
+      "src/core/ext/census/intrusive_hash_map_internal.h", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/resource.h", 
       "src/core/ext/census/rpc_metric_id.h", 
@@ -7571,6 +7609,9 @@
       "src/core/ext/census/grpc_filter.h", 
       "src/core/ext/census/grpc_plugin.c", 
       "src/core/ext/census/initialize.c", 
+      "src/core/ext/census/intrusive_hash_map.c", 
+      "src/core/ext/census/intrusive_hash_map.h", 
+      "src/core/ext/census/intrusive_hash_map_internal.h", 
       "src/core/ext/census/mlog.c", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/operation.c", 
@@ -7863,9 +7904,6 @@
       "src/core/lib/iomgr/wakeup_fd_cv.h", 
       "src/core/lib/iomgr/wakeup_fd_pipe.h", 
       "src/core/lib/iomgr/wakeup_fd_posix.h", 
-      "src/core/lib/iomgr/workqueue.h", 
-      "src/core/lib/iomgr/workqueue_uv.h", 
-      "src/core/lib/iomgr/workqueue_windows.h", 
       "src/core/lib/json/json.h", 
       "src/core/lib/json/json_common.h", 
       "src/core/lib/json/json_reader.h", 
@@ -8072,11 +8110,6 @@
       "src/core/lib/iomgr/wakeup_fd_pipe.h", 
       "src/core/lib/iomgr/wakeup_fd_posix.c", 
       "src/core/lib/iomgr/wakeup_fd_posix.h", 
-      "src/core/lib/iomgr/workqueue.h", 
-      "src/core/lib/iomgr/workqueue_uv.c", 
-      "src/core/lib/iomgr/workqueue_uv.h", 
-      "src/core/lib/iomgr/workqueue_windows.c", 
-      "src/core/lib/iomgr/workqueue_windows.h", 
       "src/core/lib/json/json.c", 
       "src/core/lib/json/json.h", 
       "src/core/lib/json/json_common.h", 
@@ -8310,6 +8343,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_resolver_fake", 
       "nanopb"
     ], 
     "headers": [
@@ -8345,6 +8379,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_resolver_fake", 
       "grpc_secure", 
       "nanopb"
     ], 
@@ -8483,7 +8518,8 @@
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c", 
-      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8500,6 +8536,25 @@
     "name": "grpc_resolver_dns_native", 
     "src": [
       "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_resolver_fake", 
+    "src": [
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c", 
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8625,8 +8680,8 @@
       "grpc"
     ], 
     "headers": [
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
       "test/core/end2end/cq_verifier.h", 
-      "test/core/end2end/fake_resolver.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
@@ -8645,10 +8700,10 @@
     "language": "c", 
     "name": "grpc_test_util_base", 
     "src": [
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c", 
+      "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
       "test/core/end2end/cq_verifier.c", 
       "test/core/end2end/cq_verifier.h", 
-      "test/core/end2end/fake_resolver.c", 
-      "test/core/end2end/fake_resolver.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.c", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.c", 

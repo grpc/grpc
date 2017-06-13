@@ -81,7 +81,7 @@
       "binding.gyp"
     ],
     "main": "src/node/index.js",
-    "license": "BSD-3-Clause",
+    "license": "Apache-2.0",
     "jshintConfig": {
       "bitwise": true,
       "curly": true,

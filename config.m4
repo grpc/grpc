@@ -167,8 +167,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_uv.c \
-    src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
@@ -305,11 +303,13 @@ if test "$PHP_GRPC" != "no"; then
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
+    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/filters/load_reporting/load_reporting.c \
@@ -322,6 +322,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
     src/core/ext/census/initialize.c \
+    src/core/ext/census/intrusive_hash_map.c \
     src/core/ext/census/mlog.c \
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
@@ -653,6 +654,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/round_robin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/c_ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/native)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)

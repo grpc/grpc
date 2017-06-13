@@ -10,27 +10,31 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2017-05-05</date>
+ <date>2017-05-22</date>
  <time>16:06:07</time>
  <version>
-  <release>1.4.0dev</release>
-  <api>1.4.0dev</api>
+  <release>1.5.0dev</release>
+  <api>1.5.0dev</api>
  </version>
  <stability>
   <release>beta</release>
   <api>beta</api>
  </stability>
- <license>BSD</license>
+ <license>Apache 2.0</license>
  <notes>
 - Fixed some memory leaks #9559, #10996
+- Disabled cares dependency from gRPC C Core #10940
+- De-coupled protobuf dependency #11112
+- Fixed extension reported version #10842
+- Added config.w32 for Windows support #8161
+- Fixed PHP distrib test after cc files were added #11193
+- Fixed protoc plugin comment escape bug #11025
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
     <file baseinstalldir="/" name="config.m4" role="src" />
     <file baseinstalldir="/" name="config.w32" role="src" />
     <file baseinstalldir="/" name="src/php/README.md" role="src" />
-    <file baseinstalldir="/" name="src/php/ext/grpc/CREDITS" role="src" />
-    <file baseinstalldir="/" name="src/php/ext/grpc/LICENSE" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call_credentials.c" role="src" />
@@ -259,9 +263,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_cv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_uv.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
@@ -378,6 +379,7 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting.h" role="src" />
@@ -389,6 +391,8 @@
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
@@ -484,8 +488,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_uv.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_string.c" role="src" />
@@ -622,11 +624,13 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting.c" role="src" />
@@ -639,6 +643,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/initialize.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/mlog.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/operation.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/placeholders.c" role="src" />

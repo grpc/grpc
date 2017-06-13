@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -529,6 +514,38 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_destroy(grpc_call *call) {
   grpc_call_unref(call);
 }
 
+typedef grpc_call_error (*grpcsharp_call_start_batch_func)(grpc_call *call,
+                                                           const grpc_op *ops,
+                                                           size_t nops,
+                                                           void *tag,
+                                                           void *reserved);
+
+/* Only for testing */
+static grpc_call_error grpcsharp_call_start_batch_nop(grpc_call *call,
+                                                      const grpc_op *ops,
+                                                      size_t nops, void *tag,
+                                                      void *reserved) {
+  return GRPC_CALL_OK;
+}
+
+static grpc_call_error grpcsharp_call_start_batch_default(grpc_call *call,
+                                                          const grpc_op *ops,
+                                                          size_t nops,
+                                                          void *tag,
+                                                          void *reserved) {
+  return grpc_call_start_batch(call, ops, nops, tag, reserved);
+}
+
+static grpcsharp_call_start_batch_func g_call_start_batch_func =
+    grpcsharp_call_start_batch_default;
+
+static grpc_call_error grpcsharp_call_start_batch(grpc_call *call,
+                                                  const grpc_op *ops,
+                                                  size_t nops, void *tag,
+                                                  void *reserved) {
+  return g_call_start_batch_func(call, ops, nops, tag, reserved);
+}
+
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
     grpc_call *call, grpcsharp_batch_context *ctx, const char *send_buffer,
     size_t send_buffer_len, uint32_t write_flags,
@@ -576,8 +593,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
   ops[5].flags = 0;
   ops[5].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
-                               NULL);
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
+                                    ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_client_streaming(
@@ -616,8 +633,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_client_streaming(
   ops[3].flags = 0;
   ops[3].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
-                               NULL);
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
+                                    ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
@@ -656,8 +673,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
   ops[3].flags = 0;
   ops[3].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
-                               NULL);
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
+                                    ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_duplex_streaming(
@@ -685,8 +702,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_duplex_streaming(
   ops[1].flags = 0;
   ops[1].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
-                               NULL);
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
+                                    ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
@@ -699,8 +716,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
-                               NULL);
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
+                                    ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_message(
@@ -720,7 +737,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_message(
   ops[1].flags = 0;
   ops[1].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, nops, ctx, NULL);
+  return grpcsharp_call_start_batch(call, ops, nops, ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_close_from_client(
@@ -731,8 +748,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_close_from_client(
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
-                               NULL);
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
+                                    ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
@@ -773,7 +790,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
     ops[nops].reserved = NULL;
     nops++;
   }
-  return grpc_call_start_batch(call, ops, nops, ctx, NULL);
+  return grpcsharp_call_start_batch(call, ops, nops, ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
@@ -784,8 +801,8 @@ grpcsharp_call_recv_message(grpc_call *call, grpcsharp_batch_context *ctx) {
   ops[0].data.recv_message.recv_message = &(ctx->recv_message);
   ops[0].flags = 0;
   ops[0].reserved = NULL;
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
-                               NULL);
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
+                                    ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
@@ -798,8 +815,8 @@ grpcsharp_call_start_serverside(grpc_call *call, grpcsharp_batch_context *ctx) {
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
-                               NULL);
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
+                                    ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_initial_metadata(
@@ -817,8 +834,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_initial_metadata(
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
-                               NULL);
+  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
+                                    ctx, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
@@ -1091,4 +1108,18 @@ GPR_EXPORT void *GPR_CALLTYPE grpcsharp_test_nop(void *ptr) { return ptr; }
 /* For testing */
 GPR_EXPORT int32_t GPR_CALLTYPE grpcsharp_sizeof_grpc_event(void) {
   return sizeof(grpc_event);
+}
+
+/* Override a method for testing */
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_test_override_method(const char *method_name, const char *variant) {
+  if (strcmp("grpcsharp_call_start_batch", method_name) == 0) {
+    if (strcmp("nop", variant) == 0) {
+      g_call_start_batch_func = grpcsharp_call_start_batch_nop;
+    } else {
+      GPR_ASSERT(0);
+    }
+  } else {
+    GPR_ASSERT(0);
+  }
 }

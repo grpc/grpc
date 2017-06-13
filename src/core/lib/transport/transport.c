@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -80,7 +65,7 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
          there. */
       refcount->destroy.scheduler = grpc_executor_scheduler;
     }
-    grpc_closure_sched(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE);
   }
 }
 
@@ -127,7 +112,7 @@ void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg) {
 #endif
   gpr_ref_init(&refcount->refs, initial_refs);
-  grpc_closure_init(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
   refcount->slice_refcount.vtable = &stream_ref_slice_vtable;
   refcount->slice_refcount.sub_refcount = &refcount->slice_refcount;
 }
@@ -217,16 +202,16 @@ void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
     grpc_error *error) {
   if (op->recv_message) {
-    grpc_closure_sched(exec_ctx, op->payload->recv_message.recv_message_ready,
+    GRPC_CLOSURE_SCHED(exec_ctx, op->payload->recv_message.recv_message_ready,
                        GRPC_ERROR_REF(error));
   }
   if (op->recv_initial_metadata) {
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx,
         op->payload->recv_initial_metadata.recv_initial_metadata_ready,
         GRPC_ERROR_REF(error));
   }
-  grpc_closure_sched(exec_ctx, op->on_complete, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, op->on_complete, error);
   if (op->cancel_stream) {
     GRPC_ERROR_UNREF(op->payload->cancel_stream.cancel_error);
   }
@@ -241,13 +226,13 @@ typedef struct {
 static void destroy_made_transport_op(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
   made_transport_op *op = arg;
-  grpc_closure_sched(exec_ctx, op->inner_on_complete, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_SCHED(exec_ctx, op->inner_on_complete, GRPC_ERROR_REF(error));
   gpr_free(op);
 }
 
 grpc_transport_op *grpc_make_transport_op(grpc_closure *on_complete) {
   made_transport_op *op = gpr_malloc(sizeof(*op));
-  grpc_closure_init(&op->outer_on_complete, destroy_made_transport_op, op,
+  GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_op, op,
                     grpc_schedule_on_exec_ctx);
   op->inner_on_complete = on_complete;
   memset(&op->op, 0, sizeof(op->op));
@@ -267,14 +252,14 @@ static void destroy_made_transport_stream_op(grpc_exec_ctx *exec_ctx, void *arg,
   made_transport_stream_op *op = arg;
   grpc_closure *c = op->inner_on_complete;
   gpr_free(op);
-  grpc_closure_run(exec_ctx, c, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_RUN(exec_ctx, c, GRPC_ERROR_REF(error));
 }
 
 grpc_transport_stream_op_batch *grpc_make_transport_stream_op(
     grpc_closure *on_complete) {
   made_transport_stream_op *op = gpr_zalloc(sizeof(*op));
   op->op.payload = &op->payload;
-  grpc_closure_init(&op->outer_on_complete, destroy_made_transport_stream_op,
+  GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_stream_op,
                     op, grpc_schedule_on_exec_ctx);
   op->inner_on_complete = on_complete;
   op->op.on_complete = &op->outer_on_complete;

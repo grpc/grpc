@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -176,7 +161,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
     // nread < 0: Error
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed");
   }
-  grpc_closure_sched(&exec_ctx, cb, error);
+  GRPC_CLOSURE_SCHED(&exec_ctx, cb, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -198,7 +183,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
                            grpc_slice_from_static_string(uv_strerror(status)));
-    grpc_closure_sched(exec_ctx, cb, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
   }
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     const char *str = grpc_error_string(error);
@@ -225,7 +210,7 @@ static void write_callback(uv_write_t *req, int status) {
   gpr_free(tcp->write_buffers);
   grpc_resource_user_free(&exec_ctx, tcp->resource_user,
                           sizeof(uv_buf_t) * tcp->write_slices->count);
-  grpc_closure_sched(&exec_ctx, cb, error);
+  GRPC_CLOSURE_SCHED(&exec_ctx, cb, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -251,7 +236,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   }
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                          "TCP socket is shutting down"));
     return;
   }
@@ -262,7 +247,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   if (tcp->write_slices->count == 0) {
     // No slices means we don't have to do anything,
     // and libuv doesn't like empty writes
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_NONE);
     return;
   }
 
@@ -333,15 +318,12 @@ static grpc_resource_user *uv_get_resource_user(grpc_endpoint *ep) {
   return tcp->resource_user;
 }
 
-static grpc_workqueue *uv_get_workqueue(grpc_endpoint *ep) { return NULL; }
-
 static int uv_get_fd(grpc_endpoint *ep) { return -1; }
 
 static grpc_endpoint_vtable vtable = {
-    uv_endpoint_read,  uv_endpoint_write,     uv_get_workqueue,
-    uv_add_to_pollset, uv_add_to_pollset_set, uv_endpoint_shutdown,
-    uv_destroy,        uv_get_resource_user,  uv_get_peer,
-    uv_get_fd};
+    uv_endpoint_read,      uv_endpoint_write,    uv_add_to_pollset,
+    uv_add_to_pollset_set, uv_endpoint_shutdown, uv_destroy,
+    uv_get_resource_user,  uv_get_peer,          uv_get_fd};
 
 grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle,
                                grpc_resource_quota *resource_quota,
