@@ -24,19 +24,29 @@ from grpc_reflection.v1alpha import reflection_pb2_grpc
 from google.protobuf import descriptor_pool
 from google.protobuf import descriptor_pb2
 
+from src.proto.grpc.testing import echo_messages_pb2
+from src.proto.grpc.testing import echo_pb2_grpc
 from src.proto.grpc.testing import empty_pb2
-#empty2_pb2 is imported for import-consequent side-effects.
-from src.proto.grpc.testing.proto2 import empty2_pb2  # pylint: disable=unused-import
 from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
 
 from tests.unit.framework.common import test_constants
 
+
 _EMPTY_PROTO_FILE_NAME = 'src/proto/grpc/testing/empty.proto'
 _EMPTY_PROTO_SYMBOL_NAME = 'grpc.testing.Empty'
-_SERVICE_NAMES = ('Angstrom', 'Bohr', 'Curie', 'Dyson', 'Einstein', 'Feynman',
-                  'Galilei')
+_INITIAL_SERVICE_NAMES = ('Angstrom', 'Bohr', 'Curie', 'Dyson',
+                          'Einstein', 'Feynman', 'Galilei',)
+_RUNNING_SERVICE_NAMES  = ('grpc.testing.UnimplementedEchoService',)
+_SERVICE_NAMES = tuple(sorted(_INITIAL_SERVICE_NAMES + _RUNNING_SERVICE_NAMES))
 _EMPTY_EXTENSIONS_SYMBOL_NAME = 'grpc.testing.proto2.EmptyWithExtensions'
 _EMPTY_EXTENSIONS_NUMBERS = (124, 125, 126, 127, 128,)
+
+
+class _EchoServicer(echo_pb2_grpc.UnimplementedEchoServiceServicer):
+
+    def Unimplemented(self, request, context):
+        return echo_messages_pb2.EchoResponse(message=request.message,
+                                              param=request.param)
 
 
 def _file_descriptor_to_proto(descriptor):
@@ -48,10 +58,12 @@ def _file_descriptor_to_proto(descriptor):
 class ReflectionServicerTest(unittest.TestCase):
 
     def setUp(self):
-        servicer = reflection.ReflectionServicer(service_names=_SERVICE_NAMES)
         server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
         self._server = grpc.server(server_pool)
         port = self._server.add_insecure_port('[::]:0')
+        echo_pb2_grpc.add_UnimplementedEchoServiceServicer_to_server(
+            _EchoServicer(), self._server)
+        servicer = reflection.ReflectionServicer(service_names=_SERVICE_NAMES)
         reflection_pb2_grpc.add_ServerReflectionServicer_to_server(servicer,
                                                                    self._server)
         self._server.start()
@@ -75,15 +87,21 @@ class ReflectionServicerTest(unittest.TestCase):
                 valid_host='',
                 error_response=reflection_pb2.ErrorResponse(
                     error_code=grpc.StatusCode.NOT_FOUND.value[0],
-                    error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
-                )),)
+                    error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),),),
+            reflection_pb2.ServerReflectionResponse(
+                valid_host='',
+                file_descriptor_response=reflection_pb2.FileDescriptorResponse(
+                    file_descriptor_proto=(
+                        _file_descriptor_to_proto(test_pb2.DESCRIPTOR),))),)
         self.assertSequenceEqual(expected_responses, responses)
 
     def testFileBySymbol(self):
         requests = (reflection_pb2.ServerReflectionRequest(
             file_containing_symbol=_EMPTY_PROTO_SYMBOL_NAME
         ), reflection_pb2.ServerReflectionRequest(
-            file_containing_symbol='i.donut.exist.co.uk.org.net.me.name.foo'),)
+            file_containing_symbol='i.donut.exist.co.uk.org.net.me.name.foo'
+        ), reflection_pb2.ServerReflectionRequest(
+            file_containing_symbol=_RUNNING_SERVICE_NAMES[0]),)
         responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
         expected_responses = (
             reflection_pb2.ServerReflectionResponse(
