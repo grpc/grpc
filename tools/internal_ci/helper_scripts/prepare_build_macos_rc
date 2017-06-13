@@ -36,8 +36,24 @@
 yes | ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 brew install autoconf automake libtool ccache cmake gflags gpg wget
 
-# TODO(jtattermusch): install rvm & ruby
-# TODO(jtattermusch): install cocoapods 
+# TODO(jtattermusch): hkp://keys.gnupg.net fails with "No route to host"
+gpg --keyserver hkp://193.164.133.100 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+curl -sSL https://get.rvm.io | sudo bash -s stable
+
+# add ourselves to rvm group to prevent later "access denied" errors.
+sudo dseditgroup -o edit -a `whoami` -t user rvm
+
+set +ex
+source /etc/profile.d/rvm.sh
+rvm install ruby-2.3
+gem install bundler
+
+rvm osx-ssl-certs status all
+rvm osx-ssl-certs update all
+set -ex
+
+# cocoapods
+gem install cocoapods --version 1.0.0
 
 # python
 wget -q https://bootstrap.pypa.io/get-pip.py
