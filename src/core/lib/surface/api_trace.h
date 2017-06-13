@@ -40,6 +40,9 @@ extern grpc_tracer_flag grpc_api_trace;
 #define GRPC_API_TRACE_UNWRAP10(a, b, c, d, e, f, g, h, i, j) \
   , a, b, c, d, e, f, g, h, i, j
 
+#define GRPC_API_TRACE_UNWRAP11(a, b, c, d, e, f, g, h, i, j, k) \
+  , a, b, c, d, e, f, g, h, i, j, k
+
 /* Due to the limitations of C89's preprocessor, the arity of the var-arg list
    'nargs' must be specified. */
 #define GRPC_API_TRACE(fmt, nargs, args)                      \

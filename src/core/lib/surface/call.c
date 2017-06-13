@@ -237,6 +237,7 @@ struct grpc_call {
     } server;
   } final_op;
 
+  int cancelled;
   void *saved_receiving_stream_ready_bctlp;
 };
 
@@ -302,6 +303,10 @@ static parent_call *get_or_create_parent_call(grpc_call *call) {
 
 static parent_call *get_parent_call(grpc_call *call) {
   return (parent_call *)gpr_atm_acq_load(&call->parent_call_atm);
+}
+
+bool grpc_call_recv_close_finalized(grpc_call *call) {
+  return (bool)gpr_atm_acq_load(&call->received_final_op_atm);
 }
 
 grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
@@ -457,6 +462,10 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_END("grpc_call_create", 0);
   return error;
 }
+
+bool grpc_call_get_cancelled(grpc_call *call) { return call->cancelled != 0; }
+
+int *grpc_call_get_cancelled_ptr(grpc_call *call) { return &call->cancelled; }
 
 void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq) {
@@ -2034,6 +2043,10 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_exec_ctx *exec_ctx,
                                                   const grpc_op *ops,
                                                   size_t nops,
                                                   grpc_closure *closure) {
+  GRPC_API_TRACE(
+      "grpc_call_start_batch_and_execute(call=%p, ops=%p, nops=%lu, tag=%p, "
+      "reserved=%p)",
+      5, (call, ops, (unsigned long)nops, NULL, NULL));
   return call_start_batch(exec_ctx, call, ops, nops, closure, 1);
 }
 

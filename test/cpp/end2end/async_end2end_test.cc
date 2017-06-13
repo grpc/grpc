@@ -1149,6 +1149,31 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   EXPECT_GE(server_trailing_metadata.size(), static_cast<size_t>(2));
 }
 
+// Server uses AsyncNotifyWhenDone API to check for shutdown
+TEST_P(AsyncEnd2endTest, ServerCheckShutdown) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  srv_ctx.AsyncNotifyWhenDone(tag(5));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
+                       cq_.get(), tag(2));
+  server_->Shutdown();
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, false)
+      .Expect(5, false)
+      .Verify(cq_.get());
+  EXPECT_TRUE(srv_ctx.IsCancelled());
+}
+
 // Server uses AsyncNotifyWhenDone API to check for cancellation
 TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   ResetStub();
