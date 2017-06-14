@@ -13,14 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script is invoked by Jenkins and runs a diff on the microbenchmarks
+# This script is invoked by Jenkins and runs a diff on bm_fullstack_trickle
 set -ex
-
-# List of benchmarks that provide good signal for analyzing performance changes in pull requests
-BENCHMARKS_TO_RUN="bm_fullstack_unary_ping_pong bm_fullstack_streaming_ping_pong bm_fullstack_streaming_pump bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_chttp2_transport bm_pollset bm_metadata"
 
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
 tools/run_tests/start_port_server.py
-tools/profiling/microbenchmarks/bm_diff/bm_main.py -d origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN
+tools/profiling/microbenchmarks/bm_diff/bm_main.py -d origin/$ghprbTargetBranch -b bm_fullstack_trickle -l 4 -t cli_transport_stalls cli_stream_stalls svr_transport_stalls svr_stream_stalls --no-counters --pr_comment_name trickle
