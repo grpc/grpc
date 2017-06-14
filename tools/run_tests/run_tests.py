@@ -83,7 +83,6 @@ def get_flaky_tests(limit=None):
     WHERE
       timestamp >= DATE_ADD(DATE(CURRENT_TIMESTAMP()), -1, "WEEK")
       AND NOT REGEXP_MATCH(job_name, '.*portability.*')
-      AND REGEXP_MATCH(job_name, '.*master.*')
     GROUP BY
       test_name
     HAVING
