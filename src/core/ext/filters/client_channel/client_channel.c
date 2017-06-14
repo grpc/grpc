@@ -467,15 +467,22 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   chand->method_params_table = method_params_table;
-  // Swap out the LB policy, unreffing the old one and removing its fds
-  // from chand->interested_parties.
-  if (chand->lb_policy != NULL) {
-    grpc_pollset_set_del_pollset_set(exec_ctx,
-                                     chand->lb_policy->interested_parties,
-                                     chand->interested_parties);
-    GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
+  // If we have a new LB policy or are shutting down (in which case
+  // new_lb_policy will be NULL), swap out the LB policy, unreffing the
+  // old one and removing its fds from chand->interested_parties.
+  // Note that we do NOT do this if either (a) we updated the existing
+  // LB policy above or (b) we failed to create the new LB policy (in
+  // which case we want to continue using the most recent one we had).
+  if (new_lb_policy != NULL || error != GRPC_ERROR_NONE ||
+      chand->resolver == NULL) {
+    if (chand->lb_policy != NULL) {
+      grpc_pollset_set_del_pollset_set(exec_ctx,
+                                       chand->lb_policy->interested_parties,
+                                       chand->interested_parties);
+      GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
+    }
+    chand->lb_policy = new_lb_policy;
   }
-  chand->lb_policy = new_lb_policy;
   // Now that we've swapped out the relevant fields of chand, check for
   // error or shutdown.
   if (error != GRPC_ERROR_NONE || chand->resolver == NULL) {
