@@ -1378,3 +1378,50 @@ describe('Cancelling surface client', function() {
     call.cancel();
   });
 });
+describe('Client reconnect', function() {
+  var server;
+  var Client;
+  var client;
+  var port;
+  beforeEach(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
+    var echo_service = test_proto.lookup('EchoService');
+    Client = grpc.loadObject(echo_service);
+    server = new grpc.Server();
+    server.addService(Client.service, {
+      echo: function(call, callback) {
+        callback(null, call.request);
+      }
+    });
+    port = server.bind('localhost:0', server_insecure_creds);
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
+    server.start();
+  });
+  afterEach(function() {
+    server.forceShutdown();
+  });
+  it('should reconnect after server restart', function(done) {
+    client.echo({value: 'test value', value2: 3}, function(error, response) {
+      assert.ifError(error);
+      assert.deepEqual(response, {value: 'test value', value2: 3});
+      server.tryShutdown(function() {
+        server = new grpc.Server();
+        server.addService(Client.service, {
+          echo: function(call, callback) {
+            callback(null, call.request);
+          }
+        });
+        server.bind('localhost:' + port, server_insecure_creds);
+        server.start();
+        client.echo(undefined, function(error, response) {
+          if (error) {
+            console.log(error);
+          }
+          assert.ifError(error);
+          assert.deepEqual(response, {value: '', value2: 0});
+          done();
+        });
+      });
+    });
+  });
+});
