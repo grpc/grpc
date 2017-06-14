@@ -80,6 +80,11 @@ def _args():
     type=int,
     default=multiprocessing.cpu_count(),
     help='Number of CPUs to use')
+  argp.add_argument(
+    '--pr_comment_name',
+    type=str,
+    default="microbenchmarks",
+    help='Name that Jenkins will use to commen on the PR')
   argp.add_argument('--counters', dest='counters', action='store_true')
   argp.add_argument('--no-counters', dest='counters', action='store_false')
   argp.set_defaults(counters=True)
@@ -126,9 +131,9 @@ def main(args):
   diff, note = bm_diff.diff(args.benchmarks, args.loops, args.track, old,
                 'new', args.counters)
   if diff:
-    text = 'Performance differences noted:\n' + diff
+    text = '[%s] Performance differences noted:\n%s' % (args.pr_comment_name, diff)
   else:
-    text = 'No significant performance differences'
+    text = '[%s] No significant performance differences' % args.pr_comment_name
   if note:
     text = note + '\n\n' + text
   print('%s' % text)

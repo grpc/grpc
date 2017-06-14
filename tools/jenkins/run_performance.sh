@@ -20,4 +20,4 @@ set -ex
 cd $(dirname $0)/../..
 
 tools/run_tests/start_port_server.py
-tools/profiling/microbenchmarks/bm_diff/bm_main.py -d origin/$ghprbTargetBranch -b bm_fullstack_trickle -l 4 -t cli_transport_stalls cli_stream_stalls svr_transport_stalls svr_stream_stalls --no-counters
+tools/profiling/microbenchmarks/bm_diff/bm_main.py -d origin/$ghprbTargetBranch -b bm_fullstack_trickle -l 4 -t cli_transport_stalls cli_stream_stalls svr_transport_stalls svr_stream_stalls --no-counters --pr_comment_name trickle
