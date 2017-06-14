@@ -472,8 +472,9 @@ int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
      * left NULL (in case only the public key is used).
      */
     if ((r->n == NULL && n == NULL)
-        || (r->e == NULL && e == NULL))
+        || (r->e == NULL && e == NULL)) {
         return 0;
+    }
 
     if (n != NULL) {
         BN_free(r->n);
@@ -490,7 +491,7 @@ int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
 
     return 1;
 }
-#endif
+#endif // OPENSSL_VERSION_NUMBER < 0x10100000L
 
 static EVP_PKEY *pkey_from_jwk(grpc_exec_ctx *exec_ctx, const grpc_json *json,
                                const char *kty) {
@@ -526,7 +527,7 @@ static EVP_PKEY *pkey_from_jwk(grpc_exec_ctx *exec_ctx, const grpc_json *json,
     goto end;
   }
   if (!RSA_set0_key(rsa, tmp_n, tmp_e, NULL)) {
-    gpr_log(GPR_ERROR, "Missing RSA public key field.");
+    gpr_log(GPR_ERROR, "Cannot set RSA key from inputs.");
     goto end;
   }
   result = EVP_PKEY_new();
