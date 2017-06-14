@@ -67,12 +67,9 @@ def _args():
     default=20,
     help='Number of times to loops the benchmarks. More loops cuts down on noise'
   )
-  argp.add_argument(
-    '-c',
-    '--counters',
-    type=bool,
-    default=True,
-    help='Whether or not to run and diff a counters build')
+  argp.add_argument('--counters', dest='counters', action='store_true')
+  argp.add_argument('--no-counters', dest='counters', action='store_false')
+  argp.set_defaults(counters=True)
   args = argp.parse_args()
   assert args.name
   if args.loops < 3:

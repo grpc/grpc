@@ -46,12 +46,9 @@ def _args():
     type=str,
     help='Unique name of this build. To be used as a handle to pass to the other bm* scripts'
   )
-  argp.add_argument(
-    '-c',
-    '--counters',
-    type=bool,
-    default=True,
-    help='Whether or not to run and diff a counters build')
+  argp.add_argument('--counters', dest='counters', action='store_true')
+  argp.add_argument('--no-counters', dest='counters', action='store_false')
+  argp.set_defaults(counters=True)
   args = argp.parse_args()
   assert args.name
   return args

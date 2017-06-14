@@ -67,12 +67,9 @@ def _args():
     default=20,
     help='Number of times to loops the benchmarks. Must match what was passed to bm_run.py'
   )
-  argp.add_argument(
-    '-c',
-    '--counters',
-    type=bool,
-    default=True,
-    help='Whether or not to run and diff a counters build')
+  argp.add_argument('--counters', dest='counters', action='store_true')
+  argp.add_argument('--no-counters', dest='counters', action='store_false')
+  argp.set_defaults(counters=True)
   argp.add_argument('-n', '--new', type=str, help='New benchmark name')
   argp.add_argument('-o', '--old', type=str, help='Old benchmark name')
   argp.add_argument(
