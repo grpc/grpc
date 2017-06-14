@@ -59,7 +59,7 @@ exports.deserializeCls = function deserializeCls(cls, options) {
    * @return {cls} The resulting object
    */
   return function deserialize(arg_buf) {
-    return cls.decode(arg_buf).toObject(conversion_options);
+    return cls.toObject(cls.decode(arg_buf), conversion_options);
   };
 };
 
