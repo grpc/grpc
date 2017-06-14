@@ -465,33 +465,31 @@ static BIGNUM *bignum_from_base64(grpc_exec_ctx *exec_ctx, const char *b64) {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 
 // Provide compatibility across OpenSSL 1.02 and 1.1.
-static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
-{
-    /* If the fields n and e in r are NULL, the corresponding input
-     * parameters MUST be non-NULL for n and e.  d may be
-     * left NULL (in case only the public key is used).
-     */
-    if ((r->n == NULL && n == NULL)
-        || (r->e == NULL && e == NULL)) {
-        return 0;
-    }
+static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
+  /* If the fields n and e in r are NULL, the corresponding input
+   * parameters MUST be non-NULL for n and e.  d may be
+   * left NULL (in case only the public key is used).
+   */
+  if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL)) {
+    return 0;
+  }
 
-    if (n != NULL) {
-        BN_free(r->n);
-        r->n = n;
-    }
-    if (e != NULL) {
-        BN_free(r->e);
-        r->e = e;
-    }
-    if (d != NULL) {
-        BN_free(r->d);
-        r->d = d;
-    }
+  if (n != NULL) {
+    BN_free(r->n);
+    r->n = n;
+  }
+  if (e != NULL) {
+    BN_free(r->e);
+    r->e = e;
+  }
+  if (d != NULL) {
+    BN_free(r->d);
+    r->d = d;
+  }
 
-    return 1;
+  return 1;
 }
-#endif // OPENSSL_VERSION_NUMBER < 0x10100000L
+#endif  // OPENSSL_VERSION_NUMBER < 0x10100000L
 
 static EVP_PKEY *pkey_from_jwk(grpc_exec_ctx *exec_ctx, const grpc_json *json,
                                const char *kty) {
