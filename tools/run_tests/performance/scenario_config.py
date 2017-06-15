@@ -269,15 +269,16 @@ class CXXLanguage:
           secure=secure,
           categories=smoketest_categories+[SCALABLE])
 
-      yield _ping_pong_scenario(
-          'cpp_generic_async_streaming_qps_unconstrained_1cq_%s' % secstr,
-          rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT',
-          server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async-limited', use_generic_payload=True,
-          secure=secure,
-          client_threads_per_cq=1000000, server_threads_per_cq=1000000,
-          categories=smoketest_categories+[SCALABLE])
+      # TODO(https://github.com/grpc/grpc/issues/11500) Re-enable this test
+      #yield _ping_pong_scenario(
+      #    'cpp_generic_async_streaming_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='STREAMING',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_GENERIC_SERVER',
+      #    unconstrained_client='async-limited', use_generic_payload=True,
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
           'cpp_generic_async_streaming_qps_unconstrained_2waysharedcq_%s' % secstr,
@@ -289,15 +290,15 @@ class CXXLanguage:
           client_threads_per_cq=2, server_threads_per_cq=2,
           categories=smoketest_categories+[SCALABLE])
 
-      yield _ping_pong_scenario(
-          'cpp_protobuf_async_streaming_qps_unconstrained_1cq_%s' % secstr,
-          rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT',
-          server_type='ASYNC_SERVER',
-          unconstrained_client='async-limited',
-          secure=secure,
-          client_threads_per_cq=1000000, server_threads_per_cq=1000000,
-          categories=smoketest_categories+[SCALABLE])
+      #yield _ping_pong_scenario(
+      #    'cpp_protobuf_async_streaming_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='STREAMING',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_SERVER',
+      #    unconstrained_client='async-limited',
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
           'cpp_protobuf_async_streaming_qps_unconstrained_2waysharedcq_%s' % secstr,
@@ -309,15 +310,15 @@ class CXXLanguage:
           client_threads_per_cq=2, server_threads_per_cq=2,
           categories=smoketest_categories+[SCALABLE])
 
-      yield _ping_pong_scenario(
-          'cpp_protobuf_async_unary_qps_unconstrained_1cq_%s' % secstr,
-          rpc_type='UNARY',
-          client_type='ASYNC_CLIENT',
-          server_type='ASYNC_SERVER',
-          unconstrained_client='async-limited',
-          secure=secure,
-          client_threads_per_cq=1000000, server_threads_per_cq=1000000,
-          categories=smoketest_categories+[SCALABLE])
+      #yield _ping_pong_scenario(
+      #    'cpp_protobuf_async_unary_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='UNARY',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_SERVER',
+      #    unconstrained_client='async-limited',
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
           'cpp_protobuf_async_unary_qps_unconstrained_2waysharedcq_%s' % secstr,
