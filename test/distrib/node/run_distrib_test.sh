@@ -49,8 +49,8 @@ npm install -g node-static
 
 STATIC_SERVER=127.0.0.1
 # If port_server is running, get port from that. Otherwise, assume we're in
-# docker and use 8080
-STATIC_PORT=$(curl 'localhost:32767/get' || echo '8080')
+# docker and use 12345
+STATIC_PORT=$(curl 'localhost:32767/get' || echo '12345')
 
 # Serves the input_artifacts directory statically at localhost:
 static "$EXTERNAL_GIT_ROOT/input_artifacts" -a $STATIC_SERVER -p $STATIC_PORT &
