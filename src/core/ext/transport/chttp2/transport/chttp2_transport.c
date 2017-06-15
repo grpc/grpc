@@ -266,7 +266,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->endpoint_reading = 1;
   t->next_stream_id = is_client ? 1 : 2;
   t->is_client = is_client;
-  grpc_chttp2_flow_control_init(&t->flow_control);
+  grpc_chttp2_flow_control_transport_init(&t->flow_control);
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
   grpc_connectivity_state_init(
@@ -341,7 +341,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
   t->sent_local_settings = 0;
   t->write_buffer_size = DEFAULT_WINDOW;
-  t->enable_bdp_probe = true;
+  t->enable_bdp_probe = false;
 
   if (is_client) {
     grpc_slice_buffer_add(&t->outbuf, grpc_slice_from_copied_string(
@@ -356,11 +356,16 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 0);
   }
   queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-                       DEFAULT_WINDOW);
+               MAX_WINDOW);
+  // Let the transport utilize the entire window.
+  grpc_chttp2_flow_control_credit_local_transport(&t->flow_control,
+                                                  MAX_WINDOW - DEFAULT_WINDOW);
+  grpc_chttp2_flow_control_announce_credit_transport(
+      &t->flow_control, MAX_WINDOW - DEFAULT_WINDOW);
   queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
-                       DEFAULT_MAX_HEADER_LIST_SIZE);
+               DEFAULT_MAX_HEADER_LIST_SIZE);
   queue_setting_update(exec_ctx, t,
-                       GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
+               GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
 
   t->ping_policy = (grpc_chttp2_repeated_ping_policy){
       .max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA,
@@ -665,6 +670,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
   grpc_chttp2_data_parser_init(&s->data_parser);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
+  grpc_chttp2_flow_control_stream_init(&s->flow_control);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   GRPC_CLOSURE_INIT(&s->complete_fetch_locked, complete_fetch_locked, s,
                     grpc_schedule_on_exec_ctx);
@@ -731,12 +737,15 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GRPC_ERROR_UNREF(s->write_closed_error);
   GRPC_ERROR_UNREF(s->byte_stream_error);
 
-  if (s->flow_control.local_window_delta > 0) {
-    GRPC_CHTTP2_FLOW_DEBIT_STREAM_LOCAL_WINDOW_DELTA(
-        "destroy", t, s, s->flow_control.local_window_delta);
-  } else if (s->flow_control.local_window_delta < 0) {
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM_LOCAL_WINDOW_DELTA(
-        "destroy", t, s, -s->flow_control.local_window_delta);
+  // have to rebalanced the transport's flow control
+  if (s->flow_control.announced_local_window_delta > 0) {
+    grpc_chttp2_flow_control_announce_debit_transport(
+        &t->flow_control,
+        (uint32_t)s->flow_control.announced_local_window_delta);
+  } else if (s->flow_control.announced_local_window_delta < 0) {
+    grpc_chttp2_flow_control_announce_credit_transport(
+        &t->flow_control,
+        (uint32_t)-s->flow_control.announced_local_window_delta);
   }
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "stream");
@@ -2530,25 +2539,9 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
   /* add some small lookahead to keep pipelines flowing */
   GPR_ASSERT(max_recv_bytes <= UINT32_MAX - initial_window_size);
   if (s->flow_control.local_window_delta < max_recv_bytes && !s->read_closed) {
-    uint32_t add_max_recv_bytes =
-        (uint32_t)(max_recv_bytes - s->flow_control.local_window_delta);
-    grpc_chttp2_stream_write_type write_type =
-        GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED;
-    if (s->flow_control.local_window_delta + initial_window_size <
-        (int64_t)have_already) {
-      write_type = GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
-    }
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM_LOCAL_WINDOW_DELTA("op", t, s,
-                                                      add_max_recv_bytes);
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
-                                   add_max_recv_bytes);
-    if ((int64_t)s->flow_control.local_window_delta +
-            (int64_t)initial_window_size -
-            (int64_t)s->flow_control.announce_window >
-        (int64_t)initial_window_size / 2) {
-      write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
-    }
-    grpc_chttp2_become_writable(exec_ctx, t, s, write_type,
+    // TODO(ncteisen): pull these bits out
+    grpc_chttp2_become_writable(exec_ctx, t, s,
+                                GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
                                 "read_incoming_stream");
   }
 }

@@ -266,11 +266,11 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
 }
 
 void ping_pong_streaming(grpc_end2end_test_config config) {
-  int i;
+  // int i;
 
-  for (i = 1; i < 10; i++) {
-    test_pingpong_streaming(config, i);
-  }
+  // for (i = 1; i < 10; i++) {
+  test_pingpong_streaming(config, 1);
+  // }
 }
 
 void ping_pong_streaming_pre_init(void) {}

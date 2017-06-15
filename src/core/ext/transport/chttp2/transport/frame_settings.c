@@ -203,7 +203,8 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
               parser->incoming_settings[id] != parser->value) {
             t->flow_control.initial_window_update +=
                 (int64_t)parser->value - parser->incoming_settings[id];
-            if (GRPC_TRACER_ON(grpc_http_trace)) {
+            if (GRPC_TRACER_ON(grpc_http_trace) ||
+                GRPC_TRACER_ON(grpc_flowctl_trace)) {
               gpr_log(GPR_DEBUG, "adding %d for initial_window change",
                       (int)t->flow_control.initial_window_update);
             }

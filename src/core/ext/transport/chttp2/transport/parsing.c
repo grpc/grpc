@@ -355,7 +355,7 @@ static grpc_error *update_local_window(grpc_exec_ctx *exec_ctx,
   uint32_t incoming_frame_size = t->incoming_frame_size;
   if (incoming_frame_size > t->flow_control.local_window) {
     char *msg;
-    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %" PRId64,
+    gpr_asprintf(&msg, "frame of size %d overflows local window of %" PRId64,
                  t->incoming_frame_size, t->flow_control.local_window);
     grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
@@ -363,14 +363,16 @@ static grpc_error *update_local_window(grpc_exec_ctx *exec_ctx,
   }
 
   if (s != NULL) {
-    if (incoming_frame_size >
+    int64_t acked_stream_window =
         s->flow_control.local_window_delta +
-            t->settings[GRPC_ACKED_SETTINGS]
-                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
-      if (incoming_frame_size <=
-          s->flow_control.local_window_delta +
-              t->settings[GRPC_SENT_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
+        t->settings[GRPC_ACKED_SETTINGS]
+                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+    int64_t sent_stream_window =
+        s->flow_control.local_window_delta +
+        t->settings[GRPC_SENT_SETTINGS]
+                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+    if (incoming_frame_size > acked_stream_window) {
+      if (incoming_frame_size <= sent_stream_window) {
         gpr_log(
             GPR_ERROR,
             "Incoming frame of size %d exceeds incoming window size of %" PRId64
@@ -380,30 +382,32 @@ static grpc_error *update_local_window(grpc_exec_ctx *exec_ctx,
             "This would usually cause a disconnection, but allowing it due to "
             "broken HTTP2 implementations in the wild.\n"
             "See (for example) https://github.com/netty/netty/issues/6520.",
-            t->incoming_frame_size,
-            s->flow_control.local_window_delta +
-                t->settings[GRPC_ACKED_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-            s->flow_control.local_window_delta +
-                t->settings[GRPC_SENT_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+            t->incoming_frame_size, acked_stream_window, sent_stream_window);
       } else {
         char *msg;
-        gpr_asprintf(&msg,
-                     "frame of size %d overflows incoming window of %" PRId64,
-                     t->incoming_frame_size,
-                     s->flow_control.local_window_delta +
-                         t->settings[GRPC_ACKED_SETTINGS]
-                                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+        gpr_asprintf(
+            &msg,
+            "frame of size %d overflows local stream[%d] window of %" PRId64,
+            t->incoming_frame_size, s->id, acked_stream_window);
         grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
         gpr_free(msg);
         return err;
       }
     }
 
-    GRPC_CHTTP2_FLOW_DEBIT_STREAM_LOCAL_WINDOW_DELTA("parse", t, s,
-                                                     incoming_frame_size);
-    if ((int64_t)s->flow_control.local_window_delta -
+    // WHY IS THIS COMMENTED OUT???
+    // Because at this point we are "disabling" flow control. We allow the
+    // stream to take data whenever it can. We debit the announced window so we
+    // can update accordingly when the remote peer's bookkeeping gets low
+    // grpc_chttp2_flow_control_debit_local_stream(&s->flow_control,
+    //                                             incoming_frame_size);
+
+    // Debit this bc the peer thinks we will be debiting it.
+    grpc_chttp2_flow_control_announce_debit_stream(&s->flow_control,
+                                                   incoming_frame_size);
+
+    // TODO(ncteisen): Pull these control bits into the module
+    if ((int64_t)s->flow_control.announced_local_window_delta -
             (int64_t)s->flow_control.announce_window <=
         -(int64_t)t->settings[GRPC_SENT_SETTINGS]
                              [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
@@ -416,8 +420,12 @@ static grpc_error *update_local_window(grpc_exec_ctx *exec_ctx,
   }
 
   uint32_t target_incoming_window = grpc_chttp2_target_incoming_window(t);
-  GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, local_window,
-                                   incoming_frame_size);
+  // grpc_chttp2_flow_control_debit_local_transport(&t->flow_control,
+  //                                                incoming_frame_size);
+  grpc_chttp2_flow_control_announce_debit_transport(&t->flow_control,
+                                                    incoming_frame_size);
+
+  // TODO(ncteisen): pull these bits out
   if (t->flow_control.local_window <= target_incoming_window / 2) {
     grpc_chttp2_initiate_write(exec_ctx, t, "flow_control");
   }

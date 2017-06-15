@@ -40,6 +40,14 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
+extern grpc_tracer_flag grpc_http_trace;
+
+#define GRPC_CHTTP2_IF_TRACING(stmt)      \
+  if (!(GRPC_TRACER_ON(grpc_http_trace))) \
+    ;                                     \
+  else                                    \
+  stmt
+
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
 typedef enum {

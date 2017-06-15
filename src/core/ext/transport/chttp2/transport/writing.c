@@ -150,11 +150,7 @@ static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
 
 /* How many bytes of incoming flow control would we like to advertise */
 uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
-  return (uint32_t)GPR_MIN(
-      (int64_t)((1u << 31) - 1),
-      t->flow_control.stream_total_over_local_window +
-          t->settings[GRPC_SENT_SETTINGS]
-                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+  return (int64_t)((1u << 31) - 1);
 }
 
 /* How many bytes would we like to put on the wire during a single syscall */
@@ -286,13 +282,20 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       s->sent_initial_metadata = true;
       sent_initial_metadata = true;
     }
-    /* send any window updates */
-    if (s->flow_control.announce_window > 0) {
-      uint32_t announce = s->flow_control.announce_window;
+    /* if there is any disparity between local and announced, send an update */
+    // TODO(ncteisen): tune this. No need to send an update if there is plenty
+    // of room
+    // TODO(ncteisen): pull this logic into the module
+    if (s->flow_control.local_window_delta >
+        s->flow_control.announced_local_window_delta) {
+      uint32_t announce =
+          (uint32_t)(s->flow_control.local_window_delta -
+                     s->flow_control.announced_local_window_delta);
       grpc_slice_buffer_add(
-          &t->outbuf,
-          grpc_chttp2_window_update_create(
-              s->id, s->flow_control.announce_window, &s->stats.outgoing));
+          &t->outbuf, grpc_chttp2_window_update_create(s->id, announce,
+                                                       &s->stats.outgoing));
+      grpc_chttp2_flow_control_announce_credit_stream(&s->flow_control,
+                                                      announce);
       t->ping_state.pings_before_data_required =
           t->ping_policy.max_pings_without_data;
       if (!t->is_client) {
@@ -300,7 +303,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             gpr_inf_past(GPR_CLOCK_MONOTONIC);
         t->ping_recv_state.ping_strikes = 0;
       }
-      GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, announce_window, announce);
     }
     if (sent_initial_metadata) {
       /* send any body bytes, if allowed by flow control */
@@ -326,10 +328,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, send_bytes,
                                   is_last_frame, &s->stats.outgoing,
                                   &t->outbuf);
-          GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, remote_window_delta,
-                                        send_bytes);
-          GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", t, remote_window,
-                                           send_bytes);
+          grpc_chttp2_flow_control_debit_remote_stream(&s->flow_control,
+                                                       send_bytes);
+          grpc_chttp2_flow_control_debit_remote_transport(&t->flow_control,
+                                                          send_bytes);
           t->ping_state.pings_before_data_required =
               t->ping_policy.max_pings_without_data;
           if (!t->is_client) {
@@ -407,20 +409,13 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
   }
 
-  /* if the grpc_chttp2_transport is ready to send a window update, do so here
-     also; 3/4 is a magic number that will likely get tuned soon */
-  uint32_t target_incoming_window = grpc_chttp2_target_incoming_window(t);
-  uint32_t threshold_to_send_transport_window_update =
-      t->outbuf.count > 0 ? 3 * target_incoming_window / 4
-                          : target_incoming_window / 2;
-  if (t->flow_control.local_window <=
-          threshold_to_send_transport_window_update &&
-      t->flow_control.local_window != target_incoming_window) {
+  if (t->flow_control.local_window > t->flow_control.announced_local_window) {
     maybe_initiate_ping(exec_ctx, t,
                         GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE);
-    uint32_t announced = (uint32_t)GPR_CLAMP(
-        target_incoming_window - t->flow_control.local_window, 0, UINT32_MAX);
-    GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("write", t, local_window, announced);
+    uint32_t announced = (uint32_t)(t->flow_control.local_window -
+                                    t->flow_control.announced_local_window);
+    grpc_chttp2_flow_control_announce_credit_transport(&t->flow_control,
+                                                       announced);
     grpc_transport_one_way_stats throwaway_stats;
     grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_window_update_create(
                                           0, announced, &throwaway_stats));
