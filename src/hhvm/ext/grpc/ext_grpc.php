@@ -66,7 +66,7 @@ class CallCredentials {
    * @return CallCredentials The new call credentials object
    */
   <<__Native>>
-  public static function createFromPlugin((function(string, string): array) $callback): CallCredentials;
+  public static function createFromPlugin((function(object): array) $callback): CallCredentials;
 
 }
 

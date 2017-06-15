@@ -63,7 +63,7 @@ class CallCredentialsData {
 };
 
 typedef struct plugin_state {
-  Object& function;
+  Variant function;
 } plugin_state;
 
 Object HHVM_STATIC_METHOD(CallCredentials, createComposite,

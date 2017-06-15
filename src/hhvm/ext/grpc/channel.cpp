@@ -101,8 +101,9 @@ void HHVM_METHOD(Channel, __construct,
     if (value.isNull() || !value.isObject()) {
       argsArrayCopy.remove(credentialsKey, true);
     } else {
-      ObjectData* obj = value.getObjectData();
-      if (!obj->instanceof(String("Grpc\\ChannelCredentials"))) {
+      Object obj = value.toObject();
+      ObjectData* objData = value.getObjectData();
+      if (!objData->instanceof(String("Grpc\\ChannelCredentials"))) {
         throw_invalid_argument("credentials must be a Grpc\\ChannelCredentials object");
         goto cleanup;
       }

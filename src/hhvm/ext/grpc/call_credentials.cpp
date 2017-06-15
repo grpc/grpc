@@ -109,12 +109,9 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
 Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
   const Variant& function) {
 
-  Object callbackFunc = Object{function.getObjectDataOrNull()};
-
   plugin_state *state;
   state = (plugin_state *)req::calloc(1, sizeof(plugin_state));
-
-  state->function = callbackFunc;
+  state->function = function;
 
   grpc_metadata_credentials_plugin plugin;
   plugin.get_metadata = plugin_get_metadata;
@@ -137,7 +134,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   returnObj.o_set("method_name", Variant(String(context.method_name, CopyString)));
 
   Array params = Array();
-  params.append(Object());
+  params.append(returnObj);
 
   plugin_state *state = (plugin_state *)ptr;
 

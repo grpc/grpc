@@ -102,6 +102,7 @@ void HHVM_METHOD(Call, __construct,
   const Variant& host_override /* = null */) {
   auto callData = Native::data<CallData>(this_);
   auto channelData = Native::data<ChannelData>(channel_obj);
+
   if (channelData->getWrapped() == nullptr) {
     throw_invalid_argument("Call cannot be constructed from a closed Channel");
     return;
@@ -179,8 +180,8 @@ Object HHVM_METHOD(Call, startBatch,
         break;
       case GRPC_OP_SEND_MESSAGE:
         {
-          if (!value.isDict()) {
-            throw_invalid_argument("Expected an array dictionary for send message");
+          if (!value.isArray()) {
+            throw_invalid_argument("Expected an array for send message");
             goto cleanup;
           }
 
@@ -210,12 +211,12 @@ Object HHVM_METHOD(Call, startBatch,
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
         {
-          if (!value.isDict()) {
-            throw_invalid_argument("Expected an array dictionary for server status");
+          if (!value.isArray()) {
+            throw_invalid_argument("Expected an array for server status");
             goto cleanup;
           }
 
-          auto statusDict = value.toArray().toDict();
+          auto statusDict = value.toArray();
           if (statusDict.exists(String("metadata"), true)) {
             auto innerMetadata = statusDict[String("metadata")];
             if (!innerMetadata.isArray()) {
@@ -460,16 +461,13 @@ bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadat
     }
 
     Variant value = iter.second();
-    if (!value.isDict()) {
+    if (!value.isArray()) {
       return false;
     }
 
-    Array innerArray = value.toArray().toDict();
+    Array innerArray = value.toArray();
     for (ArrayIter iter2(innerArray); iter2; ++iter2) {
       Variant key2 = iter2.first();
-      if (!key2.isString()) {
-        return false;
-      }
       Variant value2 = iter2.second();
       if (!value2.isString()) {
         return false;
