@@ -17,6 +17,7 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include <memory>
 #include <set>
 
@@ -57,6 +58,9 @@ DEFINE_string(qps_server_target_override, "",
               "Override QPS server target to configure in client configs."
               "Only applicable if there is a single benchmark server.");
 
+DEFINE_string(json_file_out, "",
+              "File to write the JSON output to.");
+
 namespace grpc {
 namespace testing {
 
@@ -86,6 +90,13 @@ static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
   }
   for (int i = 0; *success && i < result->server_success_size(); i++) {
     *success = result->server_success(i);
+  }
+
+  if (FLAGS_json_file_out != "") {
+    std::ofstream json_outfile;
+    json_outfile.open(FLAGS_json_file_out);
+    json_outfile << "{\"qps\": " << result->summary().qps() << "}\n";
+    json_outfile.close();
   }
 
   return result;
