@@ -63,8 +63,8 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-  'linux': ['epollex', 'epollsig', 'poll', 'poll-cv'],
-# TODO(ctiller, sreecha): enable epoll1, epoll-thread-pool
+  'linux': ['epollsig', 'poll', 'poll-cv'],
+# TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
   'mac': ['poll'],
 }
 
@@ -83,7 +83,6 @@ def get_flaky_tests(limit=None):
     WHERE
       timestamp >= DATE_ADD(DATE(CURRENT_TIMESTAMP()), -1, "WEEK")
       AND NOT REGEXP_MATCH(job_name, '.*portability.*')
-      AND REGEXP_MATCH(job_name, '.*master.*')
     GROUP BY
       test_name
     HAVING

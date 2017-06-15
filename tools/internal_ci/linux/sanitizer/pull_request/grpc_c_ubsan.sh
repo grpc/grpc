@@ -16,8 +16,8 @@
 set -ex
 
 # change to grpc repo root
-cd $(dirname $0)/../../..
+cd $(dirname $0)/../../../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-tools/run_tests/run_tests_matrix.py -f portability linux --internal_ci --build_only
+tools/run_tests/run_tests_matrix.py -f c ubsan --inner_jobs 16 -j 1 --internal_ci --filter_pr_tests --base_branch origin/master --max_time=3600

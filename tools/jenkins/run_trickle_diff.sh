@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,19 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# This script is invoked by Jenkins and runs a diff on bm_fullstack_trickle
+set -ex
 
-# Config file for the internal CI (in protobuf text format)
+# Enter the gRPC repo root
+cd $(dirname $0)/../..
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_run_tests_matrix.sh"
-timeout_mins: 1440
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-  }
-}
-
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f c msan --inner_jobs 16 -j 1 --internal_ci --bq_result_table aggregate_results"
-}
+tools/run_tests/start_port_server.py
+tools/profiling/microbenchmarks/bm_diff/bm_main.py -d origin/$ghprbTargetBranch -b bm_fullstack_trickle -l 4 -t cli_transport_stalls cli_stream_stalls svr_transport_stalls svr_stream_stalls --no-counters --pr_comment_name trickle
