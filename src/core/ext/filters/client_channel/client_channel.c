@@ -1205,9 +1205,9 @@ static void start_transport_stream_op_batch_locked_inner(
     GPR_ASSERT(set_call_or_error(
         calld, (call_or_error){.subchannel_call = subchannel_call}));
     if (error != GRPC_ERROR_NONE) {
-      waiting_for_pick_batches_fail_locked(exec_ctx, calld,
-                                           GRPC_ERROR_REF(error));
+      waiting_for_pick_batches_fail_locked(exec_ctx, calld, error);
     } else {
+      GRPC_ERROR_UNREF(error);
       waiting_for_pick_batches_resume_locked(exec_ctx, calld);
     }
     /* early out */
