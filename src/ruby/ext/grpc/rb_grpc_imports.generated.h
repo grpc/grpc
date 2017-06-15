@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -260,6 +245,9 @@ extern grpc_alarm_destroy_type grpc_alarm_destroy_import;
 typedef grpc_connectivity_state(*grpc_channel_check_connectivity_state_type)(grpc_channel *channel, int try_to_connect);
 extern grpc_channel_check_connectivity_state_type grpc_channel_check_connectivity_state_import;
 #define grpc_channel_check_connectivity_state grpc_channel_check_connectivity_state_import
+typedef int(*grpc_channel_num_external_connectivity_watchers_type)(grpc_channel *channel);
+extern grpc_channel_num_external_connectivity_watchers_type grpc_channel_num_external_connectivity_watchers_import;
+#define grpc_channel_num_external_connectivity_watchers grpc_channel_num_external_connectivity_watchers_import
 typedef void(*grpc_channel_watch_connectivity_state_type)(grpc_channel *channel, grpc_connectivity_state last_observed_state, gpr_timespec deadline, grpc_completion_queue *cq, void *tag);
 extern grpc_channel_watch_connectivity_state_type grpc_channel_watch_connectivity_state_import;
 #define grpc_channel_watch_connectivity_state grpc_channel_watch_connectivity_state_import
@@ -332,9 +320,6 @@ extern grpc_server_create_type grpc_server_create_import;
 typedef void(*grpc_server_register_completion_queue_type)(grpc_server *server, grpc_completion_queue *cq, void *reserved);
 extern grpc_server_register_completion_queue_type grpc_server_register_completion_queue_import;
 #define grpc_server_register_completion_queue grpc_server_register_completion_queue_import
-typedef void(*grpc_server_register_non_listening_completion_queue_type)(grpc_server *server, grpc_completion_queue *q, void *reserved);
-extern grpc_server_register_non_listening_completion_queue_type grpc_server_register_non_listening_completion_queue_import;
-#define grpc_server_register_non_listening_completion_queue grpc_server_register_non_listening_completion_queue_import
 typedef int(*grpc_server_add_insecure_http2_port_type)(grpc_server *server, const char *addr);
 extern grpc_server_add_insecure_http2_port_type grpc_server_add_insecure_http2_port_import;
 #define grpc_server_add_insecure_http2_port grpc_server_add_insecure_http2_port_import
@@ -491,6 +476,9 @@ extern grpc_slice_ref_type grpc_slice_ref_import;
 typedef void(*grpc_slice_unref_type)(grpc_slice s);
 extern grpc_slice_unref_type grpc_slice_unref_import;
 #define grpc_slice_unref grpc_slice_unref_import
+typedef grpc_slice(*grpc_slice_copy_type)(grpc_slice s);
+extern grpc_slice_copy_type grpc_slice_copy_import;
+#define grpc_slice_copy grpc_slice_copy_import
 typedef grpc_slice(*grpc_slice_new_type)(void *p, size_t len, void (*destroy)(void *));
 extern grpc_slice_new_type grpc_slice_new_import;
 #define grpc_slice_new grpc_slice_new_import
@@ -503,6 +491,9 @@ extern grpc_slice_new_with_len_type grpc_slice_new_with_len_import;
 typedef grpc_slice(*grpc_slice_malloc_type)(size_t length);
 extern grpc_slice_malloc_type grpc_slice_malloc_import;
 #define grpc_slice_malloc grpc_slice_malloc_import
+typedef grpc_slice(*grpc_slice_malloc_large_type)(size_t length);
+extern grpc_slice_malloc_large_type grpc_slice_malloc_large_import;
+#define grpc_slice_malloc_large grpc_slice_malloc_large_import
 typedef grpc_slice(*grpc_slice_intern_type)(grpc_slice slice);
 extern grpc_slice_intern_type grpc_slice_intern_import;
 #define grpc_slice_intern grpc_slice_intern_import
@@ -527,6 +518,9 @@ extern grpc_slice_sub_no_ref_type grpc_slice_sub_no_ref_import;
 typedef grpc_slice(*grpc_slice_split_tail_type)(grpc_slice *s, size_t split);
 extern grpc_slice_split_tail_type grpc_slice_split_tail_import;
 #define grpc_slice_split_tail grpc_slice_split_tail_import
+typedef grpc_slice(*grpc_slice_split_tail_maybe_ref_type)(grpc_slice *s, size_t split, grpc_slice_ref_whom ref_whom);
+extern grpc_slice_split_tail_maybe_ref_type grpc_slice_split_tail_maybe_ref_import;
+#define grpc_slice_split_tail_maybe_ref grpc_slice_split_tail_maybe_ref_import
 typedef grpc_slice(*grpc_slice_split_head_type)(grpc_slice *s, size_t split);
 extern grpc_slice_split_head_type grpc_slice_split_head_import;
 #define grpc_slice_split_head grpc_slice_split_head_import
@@ -611,6 +605,9 @@ extern grpc_slice_buffer_trim_end_type grpc_slice_buffer_trim_end_import;
 typedef void(*grpc_slice_buffer_move_first_type)(grpc_slice_buffer *src, size_t n, grpc_slice_buffer *dst);
 extern grpc_slice_buffer_move_first_type grpc_slice_buffer_move_first_import;
 #define grpc_slice_buffer_move_first grpc_slice_buffer_move_first_import
+typedef void(*grpc_slice_buffer_move_first_no_ref_type)(grpc_slice_buffer *src, size_t n, grpc_slice_buffer *dst);
+extern grpc_slice_buffer_move_first_no_ref_type grpc_slice_buffer_move_first_no_ref_import;
+#define grpc_slice_buffer_move_first_no_ref grpc_slice_buffer_move_first_no_ref_import
 typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_exec_ctx *exec_ctx, grpc_slice_buffer *src, size_t n, void *dst);
 extern grpc_slice_buffer_move_first_into_buffer_type grpc_slice_buffer_move_first_into_buffer_import;
 #define grpc_slice_buffer_move_first_into_buffer grpc_slice_buffer_move_first_into_buffer_import
@@ -752,6 +749,9 @@ extern gpr_join_host_port_type gpr_join_host_port_import;
 typedef int(*gpr_split_host_port_type)(const char *name, char **host, char **port);
 extern gpr_split_host_port_type gpr_split_host_port_import;
 #define gpr_split_host_port gpr_split_host_port_import
+typedef const char *(*gpr_log_severity_string_type)(gpr_log_severity severity);
+extern gpr_log_severity_string_type gpr_log_severity_string_import;
+#define gpr_log_severity_string gpr_log_severity_string_import
 typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import

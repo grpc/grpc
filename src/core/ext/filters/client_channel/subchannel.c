@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -283,6 +268,7 @@ static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
 void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
+  // add a weak ref and subtract a strong ref (atomically)
   old_refs = ref_mutate(c, (gpr_atm)1 - (gpr_atm)(1 << INTERNAL_REF_BITS),
                         1 REF_MUTATE_PURPOSE("STRONG_UNREF"));
   if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
@@ -297,7 +283,7 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
   gpr_atm old_refs;
   old_refs = ref_mutate(c, -(gpr_atm)1, 1 REF_MUTATE_PURPOSE("WEAK_UNREF"));
   if (old_refs == 1) {
-    grpc_closure_sched(exec_ctx, grpc_closure_create(subchannel_destroy, c,
+    GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(subchannel_destroy, c,
                                                      grpc_schedule_on_exec_ctx),
                        GRPC_ERROR_NONE);
   }
@@ -306,7 +292,7 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
 grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
                                         const grpc_subchannel_args *args) {
-  grpc_subchannel_key *key = grpc_subchannel_key_create(connector, args);
+  grpc_subchannel_key *key = grpc_subchannel_key_create(args);
   grpc_subchannel *c = grpc_subchannel_index_find(exec_ctx, key);
   if (c) {
     grpc_subchannel_key_destroy(exec_ctx, key);
@@ -347,7 +333,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   if (new_args != NULL) grpc_channel_args_destroy(exec_ctx, new_args);
   c->root_external_state_watcher.next = c->root_external_state_watcher.prev =
       &c->root_external_state_watcher;
-  grpc_closure_init(&c->connected, subchannel_connected, c,
+  GRPC_CLOSURE_INIT(&c->connected, subchannel_connected, c,
                     grpc_schedule_on_exec_ctx);
   grpc_connectivity_state_init(&c->state_tracker, GRPC_CHANNEL_IDLE,
                                "subchannel");
@@ -435,7 +421,7 @@ static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&w->subchannel->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, w->subchannel, "external_state_watcher");
   gpr_free(w);
-  grpc_closure_run(exec_ctx, follow_up, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_RUN(exec_ctx, follow_up, GRPC_ERROR_REF(error));
 }
 
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -502,7 +488,7 @@ static void maybe_start_connecting_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_INFO, "Retry in %" PRId64 ".%09d seconds",
               time_til_next.tv_sec, time_til_next.tv_nsec);
     }
-    grpc_closure_init(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
     grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, &c->on_alarm, now);
   }
 }
@@ -528,7 +514,7 @@ void grpc_subchannel_notify_on_state_change(
     w->subchannel = c;
     w->pollset_set = interested_parties;
     w->notify = notify;
-    grpc_closure_init(&w->closure, on_external_state_watcher_done, w,
+    GRPC_CLOSURE_INIT(&w->closure, on_external_state_watcher_done, w,
                       grpc_schedule_on_exec_ctx);
     if (interested_parties != NULL) {
       grpc_pollset_set_add_pollset_set(exec_ctx, c->pollset_set,
@@ -615,7 +601,7 @@ void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
   elem->filter->start_transport_op(exec_ctx, elem, op);
 }
 
-static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
+static bool publish_transport_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel *c) {
   grpc_connected_subchannel *con;
   grpc_channel_stack *stk;
@@ -631,15 +617,16 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   if (!grpc_channel_init_create_stack(exec_ctx, builder,
                                       GRPC_CLIENT_SUBCHANNEL)) {
     grpc_channel_stack_builder_destroy(exec_ctx, builder);
-    abort(); /* TODO(ctiller): what to do here (previously we just crashed) */
+    return false;
   }
   grpc_error *error = grpc_channel_stack_builder_finish(
       exec_ctx, builder, 0, 1, connection_destroy, NULL, (void **)&con);
   if (error != GRPC_ERROR_NONE) {
+    grpc_transport_destroy(exec_ctx, c->connecting_result.transport);
     gpr_log(GPR_ERROR, "error initializing subchannel stack: %s",
             grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
-    abort(); /* TODO(ctiller): what to do here? */
+    return false;
   }
   stk = CHANNEL_STACK_FROM_CONNECTION(con);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
@@ -648,15 +635,14 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   sw_subchannel = gpr_malloc(sizeof(*sw_subchannel));
   sw_subchannel->subchannel = c;
   sw_subchannel->connectivity_state = GRPC_CHANNEL_READY;
-  grpc_closure_init(&sw_subchannel->closure, subchannel_on_child_state_changed,
+  GRPC_CLOSURE_INIT(&sw_subchannel->closure, subchannel_on_child_state_changed,
                     sw_subchannel, grpc_schedule_on_exec_ctx);
 
   if (c->disconnected) {
     gpr_free(sw_subchannel);
     grpc_channel_stack_destroy(exec_ctx, stk);
     gpr_free(con);
-    GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
-    return;
+    return false;
   }
 
   /* publish */
@@ -678,6 +664,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   /* signal completion */
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker, GRPC_CHANNEL_READY,
                               GRPC_ERROR_NONE, "connected");
+  return true;
 }
 
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
@@ -688,8 +675,9 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_SUBCHANNEL_WEAK_REF(c, "connected");
   gpr_mu_lock(&c->mu);
   c->connecting = false;
-  if (c->connecting_result.transport != NULL) {
-    publish_transport_locked(exec_ctx, c);
+  if (c->connecting_result.transport != NULL &&
+      publish_transport_locked(exec_ctx, c)) {
+    /* do nothing, transport was published */
   } else if (c->disconnected) {
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   } else {
@@ -768,6 +756,11 @@ grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
   return GET_CONNECTED_SUBCHANNEL(c, acq);
 }
 
+const grpc_subchannel_key *grpc_subchannel_get_key(
+    const grpc_subchannel *subchannel) {
+  return subchannel->key;
+}
+
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
     const grpc_connected_subchannel_call_args *args,
@@ -780,7 +773,7 @@ grpc_error *grpc_connected_subchannel_create_call(
   (*call)->connection = GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   const grpc_call_element_args call_args = {.call_stack = callstk,
                                             .server_transport_data = NULL,
-                                            .context = NULL,
+                                            .context = args->context,
                                             .path = args->path,
                                             .start_time = args->start_time,
                                             .deadline = args->deadline,
@@ -836,10 +829,7 @@ const char *grpc_get_subchannel_address_uri_arg(const grpc_channel_args *args) {
 }
 
 grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr) {
-  grpc_arg new_arg;
-  new_arg.key = GRPC_ARG_SUBCHANNEL_ADDRESS;
-  new_arg.type = GRPC_ARG_STRING;
-  new_arg.value.string =
-      addr->len > 0 ? grpc_sockaddr_to_uri(addr) : gpr_strdup("");
-  return new_arg;
+  return grpc_channel_arg_string_create(
+      GRPC_ARG_SUBCHANNEL_ADDRESS,
+      addr->len > 0 ? grpc_sockaddr_to_uri(addr) : gpr_strdup(""));
 }

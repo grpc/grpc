@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -56,6 +41,7 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security_adapter.h"
 
 /* -- Constants. -- */
 
@@ -78,9 +64,8 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
 
 /* Defines the cipher suites that we accept by default. All these cipher suites
    are compliant with HTTP2. */
-#define GRPC_SSL_CIPHER_SUITES                                            \
-  "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-" \
-  "SHA384:ECDHE-RSA-AES256-GCM-SHA384"
+#define GRPC_SSL_CIPHER_SUITES \
+  "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384"
 
 static gpr_once cipher_suites_once = GPR_ONCE_INIT;
 static const char *cipher_suites = NULL;
@@ -137,7 +122,7 @@ void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_auth_context **auth_context,
                                         grpc_closure *on_peer_checked) {
   if (sc == NULL) {
-    grpc_closure_sched(exec_ctx, on_peer_checked,
+    GRPC_CLOSURE_SCHED(exec_ctx, on_peer_checked,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "cannot check peer -- no security connector"));
     tsi_peer_destruct(&peer);
@@ -206,12 +191,8 @@ static const grpc_arg_pointer_vtable connector_pointer_vtable = {
     connector_pointer_cmp};
 
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc) {
-  grpc_arg result;
-  result.type = GRPC_ARG_POINTER;
-  result.key = GRPC_ARG_SECURITY_CONNECTOR;
-  result.value.pointer.vtable = &connector_pointer_vtable;
-  result.value.pointer.p = sc;
-  return result;
+  return grpc_channel_arg_pointer_create(GRPC_ARG_SECURITY_CONNECTOR, sc,
+                                         &connector_pointer_vtable);
 }
 
 grpc_security_connector *grpc_security_connector_from_arg(const grpc_arg *arg) {
@@ -355,7 +336,7 @@ static void fake_check_peer(grpc_exec_ctx *exec_ctx,
       *auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
 end:
-  grpc_closure_sched(exec_ctx, on_peer_checked, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
@@ -391,7 +372,8 @@ static void fake_channel_add_handshakers(
   grpc_handshake_manager_add(
       handshake_mgr,
       grpc_security_handshaker_create(
-          exec_ctx, tsi_create_fake_handshaker(true /* is_client */),
+          exec_ctx, tsi_create_adapter_handshaker(
+                        tsi_create_fake_handshaker(true /* is_client */)),
           &sc->base));
 }
 
@@ -401,7 +383,8 @@ static void fake_server_add_handshakers(grpc_exec_ctx *exec_ctx,
   grpc_handshake_manager_add(
       handshake_mgr,
       grpc_security_handshaker_create(
-          exec_ctx, tsi_create_fake_handshaker(false /* is_client */),
+          exec_ctx, tsi_create_adapter_handshaker(
+                        tsi_create_fake_handshaker(false /* is_client */)),
           &sc->base));
 }
 
@@ -496,8 +479,10 @@ static void ssl_channel_add_handshakers(grpc_exec_ctx *exec_ctx,
   }
 
   // Create handshakers.
-  grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
-                                                exec_ctx, tsi_hs, &sc->base));
+  grpc_handshake_manager_add(
+      handshake_mgr,
+      grpc_security_handshaker_create(
+          exec_ctx, tsi_create_adapter_handshaker(tsi_hs), &sc->base));
 }
 
 static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
@@ -516,8 +501,10 @@ static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
   }
 
   // Create handshakers.
-  grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
-                                                exec_ctx, tsi_hs, &sc->base));
+  grpc_handshake_manager_add(
+      handshake_mgr,
+      grpc_security_handshaker_create(
+          exec_ctx, tsi_create_adapter_handshaker(tsi_hs), &sc->base));
 }
 
 static int ssl_host_matches_name(const tsi_peer *peer, const char *peer_name) {
@@ -611,7 +598,7 @@ static void ssl_channel_check_peer(grpc_exec_ctx *exec_ctx,
                                              ? c->overridden_target_name
                                              : c->target_name,
                                      &peer, auth_context);
-  grpc_closure_sched(exec_ctx, on_peer_checked, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
@@ -621,7 +608,7 @@ static void ssl_server_check_peer(grpc_exec_ctx *exec_ctx,
                                   grpc_closure *on_peer_checked) {
   grpc_error *error = ssl_check_peer(sc, NULL, &peer, auth_context);
   tsi_peer_destruct(&peer);
-  grpc_closure_sched(exec_ctx, on_peer_checked, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_peer_checked, error);
 }
 
 static void add_shallow_auth_property_to_peer(tsi_peer *peer,
@@ -695,6 +682,7 @@ static grpc_security_connector_vtable ssl_channel_vtable = {
 static grpc_security_connector_vtable ssl_server_vtable = {
     ssl_server_destroy, ssl_server_check_peer};
 
+/* returns a NULL terminated slice. */
 static grpc_slice compute_default_pem_root_certs_once(void) {
   grpc_slice result = grpc_empty_slice();
 
@@ -703,7 +691,7 @@ static grpc_slice compute_default_pem_root_certs_once(void) {
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
   if (default_root_certs_path != NULL) {
     GRPC_LOG_IF_ERROR("load_file",
-                      grpc_load_file(default_root_certs_path, 0, &result));
+                      grpc_load_file(default_root_certs_path, 1, &result));
     gpr_free(default_root_certs_path);
   }
 
@@ -714,15 +702,18 @@ static grpc_slice compute_default_pem_root_certs_once(void) {
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);
     if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
       GPR_ASSERT(pem_root_certs != NULL);
-      result = grpc_slice_new(pem_root_certs, strlen(pem_root_certs), gpr_free);
+      result = grpc_slice_from_copied_buffer(
+          pem_root_certs,
+          strlen(pem_root_certs) + 1);  // NULL terminator.
     }
+    gpr_free(pem_root_certs);
   }
 
   /* Fall back to installed certs if needed. */
   if (GRPC_SLICE_IS_EMPTY(result) &&
       ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
     GRPC_LOG_IF_ERROR("load_file",
-                      grpc_load_file(installed_roots_path, 0, &result));
+                      grpc_load_file(installed_roots_path, 1, &result));
   }
   return result;
 }
@@ -762,13 +753,14 @@ get_tsi_client_certificate_request_type(
   }
 }
 
-size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs) {
+const char *grpc_get_default_ssl_roots(void) {
   /* TODO(jboeuf@google.com): Maybe revisit the approach which consists in
      loading all the roots once for the lifetime of the process. */
   static gpr_once once = GPR_ONCE_INIT;
   gpr_once_init(&once, init_default_pem_root_certs);
-  *pem_root_certs = GRPC_SLICE_START_PTR(default_pem_root_certs);
-  return GRPC_SLICE_LENGTH(default_pem_root_certs);
+  return GRPC_SLICE_IS_EMPTY(default_pem_root_certs)
+             ? NULL
+             : (const char *)GRPC_SLICE_START_PTR(default_pem_root_certs);
 }
 
 grpc_security_status grpc_ssl_channel_security_connector_create(
@@ -776,22 +768,16 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     const grpc_ssl_config *config, const char *target_name,
     const char *overridden_target_name, grpc_channel_security_connector **sc) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
-  const unsigned char **alpn_protocol_strings =
+  const char **alpn_protocol_strings =
       gpr_malloc(sizeof(const char *) * num_alpn_protocols);
-  unsigned char *alpn_protocol_string_lengths =
-      gpr_malloc(sizeof(unsigned char) * num_alpn_protocols);
   tsi_result result = TSI_OK;
   grpc_ssl_channel_security_connector *c;
   size_t i;
-  const unsigned char *pem_root_certs;
-  size_t pem_root_certs_size;
+  const char *pem_root_certs;
   char *port;
 
   for (i = 0; i < num_alpn_protocols; i++) {
-    alpn_protocol_strings[i] =
-        (const unsigned char *)grpc_chttp2_get_alpn_version_index(i);
-    alpn_protocol_string_lengths[i] =
-        (unsigned char)strlen(grpc_chttp2_get_alpn_version_index(i));
+    alpn_protocol_strings[i] = grpc_chttp2_get_alpn_version_index(i);
   }
 
   if (config == NULL || target_name == NULL) {
@@ -799,14 +785,13 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     goto error;
   }
   if (config->pem_root_certs == NULL) {
-    pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
-    if (pem_root_certs == NULL || pem_root_certs_size == 0) {
+    pem_root_certs = grpc_get_default_ssl_roots();
+    if (pem_root_certs == NULL) {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       goto error;
     }
   } else {
     pem_root_certs = config->pem_root_certs;
-    pem_root_certs_size = config->pem_root_certs_size;
   }
 
   c = gpr_zalloc(sizeof(grpc_ssl_channel_security_connector));
@@ -823,11 +808,12 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   if (overridden_target_name != NULL) {
     c->overridden_target_name = gpr_strdup(overridden_target_name);
   }
+
+  bool has_key_cert_pair = config->pem_key_cert_pair.private_key != NULL &&
+                           config->pem_key_cert_pair.cert_chain != NULL;
   result = tsi_create_ssl_client_handshaker_factory(
-      config->pem_private_key, config->pem_private_key_size,
-      config->pem_cert_chain, config->pem_cert_chain_size, pem_root_certs,
-      pem_root_certs_size, ssl_cipher_suites(), alpn_protocol_strings,
-      alpn_protocol_string_lengths, (uint16_t)num_alpn_protocols,
+      has_key_cert_pair ? &config->pem_key_cert_pair : NULL, pem_root_certs,
+      ssl_cipher_suites(), alpn_protocol_strings, (uint16_t)num_alpn_protocols,
       &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
@@ -838,12 +824,10 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   }
   *sc = &c->base;
   gpr_free((void *)alpn_protocol_strings);
-  gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_OK;
 
 error:
   gpr_free((void *)alpn_protocol_strings);
-  gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_ERROR;
 }
 
@@ -851,19 +835,14 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     grpc_exec_ctx *exec_ctx, const grpc_ssl_server_config *config,
     grpc_server_security_connector **sc) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
-  const unsigned char **alpn_protocol_strings =
+  const char **alpn_protocol_strings =
       gpr_malloc(sizeof(const char *) * num_alpn_protocols);
-  unsigned char *alpn_protocol_string_lengths =
-      gpr_malloc(sizeof(unsigned char) * num_alpn_protocols);
   tsi_result result = TSI_OK;
   grpc_ssl_server_security_connector *c;
   size_t i;
 
   for (i = 0; i < num_alpn_protocols; i++) {
-    alpn_protocol_strings[i] =
-        (const unsigned char *)grpc_chttp2_get_alpn_version_index(i);
-    alpn_protocol_string_lengths[i] =
-        (unsigned char)strlen(grpc_chttp2_get_alpn_version_index(i));
+    alpn_protocol_strings[i] = grpc_chttp2_get_alpn_version_index(i);
   }
 
   if (config == NULL || config->num_key_cert_pairs == 0) {
@@ -876,15 +855,11 @@ grpc_security_status grpc_ssl_server_security_connector_create(
   c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;
   c->base.base.vtable = &ssl_server_vtable;
   result = tsi_create_ssl_server_handshaker_factory_ex(
-      (const unsigned char **)config->pem_private_keys,
-      config->pem_private_keys_sizes,
-      (const unsigned char **)config->pem_cert_chains,
-      config->pem_cert_chains_sizes, config->num_key_cert_pairs,
-      config->pem_root_certs, config->pem_root_certs_size,
-      get_tsi_client_certificate_request_type(
-          config->client_certificate_request),
-      ssl_cipher_suites(), alpn_protocol_strings, alpn_protocol_string_lengths,
-      (uint16_t)num_alpn_protocols, &c->handshaker_factory);
+      config->pem_key_cert_pairs, config->num_key_cert_pairs,
+      config->pem_root_certs, get_tsi_client_certificate_request_type(
+                                  config->client_certificate_request),
+      ssl_cipher_suites(), alpn_protocol_strings, (uint16_t)num_alpn_protocols,
+      &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -895,11 +870,9 @@ grpc_security_status grpc_ssl_server_security_connector_create(
   c->base.add_handshakers = ssl_server_add_handshakers;
   *sc = &c->base;
   gpr_free((void *)alpn_protocol_strings);
-  gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_OK;
 
 error:
   gpr_free((void *)alpn_protocol_strings);
-  gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_ERROR;
 }

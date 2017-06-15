@@ -5,49 +5,35 @@
 # This file can be regenerated from the template by running
 # tools/buildgen/generate_projects.sh
 
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Some of this file is built with the help of
 # https://n8.io/converting-a-c-library-to-gyp/
 {
   'variables': {
     'runtime%': 'node',
-    # UV integration in C core is enabled by default. It can be disabled
-    # by setting this argument to anything else.
-    'grpc_uv%': 'true',
     # Some Node installations use the system installation of OpenSSL, and on
     # some systems, the system OpenSSL still does not have ALPN support. This
     # will let users recompile gRPC to work without ALPN.
     'grpc_alpn%': 'true',
     # Indicates that the library should be built with gcov.
-    'grpc_gcov%': 'false'
+    'grpc_gcov%': 'false',
+    # Indicates that the library should be built with compatibility for musl
+    # libc, so that it can run on Alpine Linux. This is only necessary if not
+    # building on Alpine Linux
+    'grpc_alpine%': 'false'
   },
   'target_defaults': {
     'configurations': {
@@ -86,17 +72,11 @@
       'include'
     ],
     'defines': [
-      'GPR_BACKWARDS_COMPATIBILITY_MODE'
+      'GPR_BACKWARDS_COMPATIBILITY_MODE',
+      'GRPC_ARES=0',
+      'GRPC_UV'
     ],
     'conditions': [
-      ['grpc_uv=="true"', {
-        'defines': [
-          'GRPC_ARES=0',
-          # Disabling this while bugs are ironed out. Uncomment this to
-          # re-enable libuv integration in C core.
-          'GRPC_UV'
-        ]
-      }],
       ['grpc_gcov=="true"', {
         'cflags': [
             '-O0',
@@ -114,6 +94,11 @@
             '-ftest-coverage',
             '-rdynamic',
         ],
+      }],
+      ['grpc_alpine=="true"', {
+        'defines': [
+          'GPR_MUSL_LIBC_COMPAT'
+        ]
       }],
       ['OS!="win" and runtime=="electron"', {
         "defines": [
@@ -535,6 +520,10 @@
             }
           ]
         },
+      ]
+    }],
+    ['OS == "win"', {
+      'targets': [
         # Only want to compile zlib under Windows
         {
           'cflags': [
@@ -569,7 +558,6 @@
     }]
   ],
   'targets': [
-
     {
       'cflags': [
         '-std=c99',
@@ -648,7 +636,6 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
-        'node_modules/cares/deps/cares/cares.gyp:cares',
       ],
       'sources': [
         'src/core/lib/surface/init.c',
@@ -661,7 +648,6 @@
         'src/core/lib/channel/handshaker_registry.c',
         'src/core/lib/compression/compression.c',
         'src/core/lib/compression/message_compress.c',
-        'src/core/lib/debug/trace.c',
         'src/core/lib/http/format_request.c',
         'src/core/lib/http/httpcli.c',
         'src/core/lib/http/parser.c',
@@ -672,9 +658,14 @@
         'src/core/lib/iomgr/endpoint_pair_uv.c',
         'src/core/lib/iomgr/endpoint_pair_windows.c',
         'src/core/lib/iomgr/error.c',
-        'src/core/lib/iomgr/ev_epoll_linux.c',
+        'src/core/lib/iomgr/ev_epoll1_linux.c',
+        'src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c',
+        'src/core/lib/iomgr/ev_epoll_thread_pool_linux.c',
+        'src/core/lib/iomgr/ev_epollex_linux.c',
+        'src/core/lib/iomgr/ev_epollsig_linux.c',
         'src/core/lib/iomgr/ev_poll_posix.c',
         'src/core/lib/iomgr/ev_posix.c',
+        'src/core/lib/iomgr/ev_windows.c',
         'src/core/lib/iomgr/exec_ctx.c',
         'src/core/lib/iomgr/executor.c',
         'src/core/lib/iomgr/iocp_windows.c',
@@ -682,6 +673,7 @@
         'src/core/lib/iomgr/iomgr_posix.c',
         'src/core/lib/iomgr/iomgr_uv.c',
         'src/core/lib/iomgr/iomgr_windows.c',
+        'src/core/lib/iomgr/is_epollexclusive_available.c',
         'src/core/lib/iomgr/load_file.c',
         'src/core/lib/iomgr/lockfree_event.c',
         'src/core/lib/iomgr/network_status_tracker.c',
@@ -718,6 +710,7 @@
         'src/core/lib/iomgr/time_averaged_stats.c',
         'src/core/lib/iomgr/timer_generic.c',
         'src/core/lib/iomgr/timer_heap.c',
+        'src/core/lib/iomgr/timer_manager.c',
         'src/core/lib/iomgr/timer_uv.c',
         'src/core/lib/iomgr/udp_server.c',
         'src/core/lib/iomgr/unix_sockets_posix.c',
@@ -727,8 +720,6 @@
         'src/core/lib/iomgr/wakeup_fd_nospecial.c',
         'src/core/lib/iomgr/wakeup_fd_pipe.c',
         'src/core/lib/iomgr/wakeup_fd_posix.c',
-        'src/core/lib/iomgr/workqueue_uv.c',
-        'src/core/lib/iomgr/workqueue_windows.c',
         'src/core/lib/json/json.c',
         'src/core/lib/json/json_reader.c',
         'src/core/lib/json/json_string.c',
@@ -754,7 +745,7 @@
         'src/core/lib/surface/completion_queue.c',
         'src/core/lib/surface/completion_queue_factory.c',
         'src/core/lib/surface/event_string.c',
-        'src/core/lib/surface/lame_client.c',
+        'src/core/lib/surface/lame_client.cc',
         'src/core/lib/surface/metadata_array.c',
         'src/core/lib/surface/server.c',
         'src/core/lib/surface/validate_metadata.c',
@@ -773,6 +764,7 @@
         'src/core/lib/transport/timeout_encoding.c',
         'src/core/lib/transport/transport.c',
         'src/core/lib/transport/transport_op_string.c',
+        'src/core/lib/debug/trace.c',
         'src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c',
         'src/core/ext/transport/chttp2/transport/bin_decoder.c',
         'src/core/ext/transport/chttp2/transport/bin_encoder.c',
@@ -827,6 +819,7 @@
         'src/core/tsi/fake_transport_security.c',
         'src/core/tsi/ssl_transport_security.c',
         'src/core/tsi/transport_security.c',
+        'src/core/tsi/transport_security_adapter.c',
         'src/core/ext/transport/chttp2/server/chttp2_server.c',
         'src/core/ext/transport/chttp2/client/secure/secure_channel_create.c',
         'src/core/ext/filters/client_channel/channel_connectivity.c',
@@ -856,18 +849,22 @@
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
+        'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c',
+        'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
         'third_party/nanopb/pb_common.c',
         'third_party/nanopb/pb_decode.c',
         'third_party/nanopb/pb_encode.c',
+        'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c',
         'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c',
         'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c',
+        'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c',
         'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c',
         'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c',
         'src/core/ext/filters/load_reporting/load_reporting.c',
@@ -880,6 +877,7 @@
         'src/core/ext/census/grpc_filter.c',
         'src/core/ext/census/grpc_plugin.c',
         'src/core/ext/census/initialize.c',
+        'src/core/ext/census/intrusive_hash_map.c',
         'src/core/ext/census/mlog.c',
         'src/core/ext/census/operation.c',
         'src/core/ext/census/placeholders.c',
@@ -888,6 +886,8 @@
         'src/core/ext/census/tracing.c',
         'src/core/ext/filters/max_age/max_age_filter.c',
         'src/core/ext/filters/message_size/message_size_filter.c',
+        'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c',
+        'src/core/ext/filters/workarounds/workaround_utils.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
       "conditions": [
@@ -941,20 +941,16 @@
         "src/node/ext/call_credentials.cc",
         "src/node/ext/channel.cc",
         "src/node/ext/channel_credentials.cc",
-        "src/node/ext/completion_queue_threadpool.cc",
-        "src/node/ext/completion_queue_uv.cc",
+        "src/node/ext/completion_queue.cc",
         "src/node/ext/node_grpc.cc",
         "src/node/ext/server.cc",
         "src/node/ext/server_credentials.cc",
-        "src/node/ext/server_generic.cc",
-        "src/node/ext/server_uv.cc",
         "src/node/ext/slice.cc",
         "src/node/ext/timeval.cc",
       ],
       "dependencies": [
         "grpc",
         "gpr",
-        "node_modules/cares/deps/cares/cares.gyp:cares",
       ]
     },
     {

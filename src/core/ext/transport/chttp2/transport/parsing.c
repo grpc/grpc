@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -324,7 +309,7 @@ static grpc_error *init_frame_parser(grpc_exec_ctx *exec_ctx,
     case GRPC_CHTTP2_FRAME_GOAWAY:
       return init_goaway_parser(exec_ctx, t);
     default:
-      if (grpc_http_trace) {
+      if (GRPC_TRACER_ON(grpc_http_trace)) {
         gpr_log(GPR_ERROR, "Unknown frame type %02x", t->incoming_frame_type);
       }
       return init_skip_frame_parser(exec_ctx, t, 0);
@@ -418,11 +403,9 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
 
     GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA("parse", t, s,
                                                         incoming_frame_size);
-    if ((int64_t)t->settings[GRPC_SENT_SETTINGS]
-                            [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] +
-            (int64_t)s->incoming_window_delta - (int64_t)s->announce_window <=
-        (int64_t)t->settings[GRPC_SENT_SETTINGS]
-                            [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
+    if ((int64_t)s->incoming_window_delta - (int64_t)s->announce_window <=
+        -(int64_t)t->settings[GRPC_SENT_SETTINGS]
+                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
             2) {
       grpc_chttp2_become_writable(exec_ctx, t, s,
                                   GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
@@ -435,7 +418,7 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
   GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
                                    incoming_frame_size);
   if (t->incoming_window <= target_incoming_window / 2) {
-    grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
+    grpc_chttp2_initiate_write(exec_ctx, t, "flow_control");
   }
 
   return GRPC_ERROR_NONE;
@@ -494,7 +477,7 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
 
   GPR_ASSERT(s != NULL);
 
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     char *key = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char *value =
         grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -574,7 +557,7 @@ static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
 
   GPR_ASSERT(s != NULL);
 
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     char *key = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char *value =
         grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -807,7 +790,7 @@ static grpc_error *parse_frame_slice(grpc_exec_ctx *exec_ctx,
   if (err == GRPC_ERROR_NONE) {
     return err;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, NULL)) {
-    if (grpc_http_trace) {
+    if (GRPC_TRACER_ON(grpc_http_trace)) {
       const char *msg = grpc_error_string(err);
       gpr_log(GPR_ERROR, "%s", msg);
     }

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -205,8 +190,8 @@ static gpr_avl_node *rebalance(const gpr_avl_vtable *vtable, void *key,
   }
 }
 
-static gpr_avl_node *add(const gpr_avl_vtable *vtable, gpr_avl_node *node,
-                         void *key, void *value) {
+static gpr_avl_node *add_key(const gpr_avl_vtable *vtable, gpr_avl_node *node,
+                             void *key, void *value) {
   long cmp;
   if (node == NULL) {
     return new_node(key, value, NULL, NULL);
@@ -217,17 +202,17 @@ static gpr_avl_node *add(const gpr_avl_vtable *vtable, gpr_avl_node *node,
   } else if (cmp > 0) {
     return rebalance(
         vtable, vtable->copy_key(node->key), vtable->copy_value(node->value),
-        add(vtable, node->left, key, value), ref_node(node->right));
+        add_key(vtable, node->left, key, value), ref_node(node->right));
   } else {
     return rebalance(vtable, vtable->copy_key(node->key),
                      vtable->copy_value(node->value), ref_node(node->left),
-                     add(vtable, node->right, key, value));
+                     add_key(vtable, node->right, key, value));
   }
 }
 
 gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value) {
   gpr_avl_node *old_root = avl.root;
-  avl.root = add(avl.vtable, avl.root, key, value);
+  avl.root = add_key(avl.vtable, avl.root, key, value);
   assert_invariants(avl.root);
   unref_node(avl.vtable, old_root);
   return avl;
@@ -247,8 +232,8 @@ static gpr_avl_node *in_order_tail(gpr_avl_node *node) {
   return node;
 }
 
-static gpr_avl_node *remove(const gpr_avl_vtable *vtable, gpr_avl_node *node,
-                            void *key) {
+static gpr_avl_node *remove_key(const gpr_avl_vtable *vtable,
+                                gpr_avl_node *node, void *key) {
   long cmp;
   if (node == NULL) {
     return NULL;
@@ -263,27 +248,27 @@ static gpr_avl_node *remove(const gpr_avl_vtable *vtable, gpr_avl_node *node,
       gpr_avl_node *h = in_order_head(node->right);
       return rebalance(vtable, vtable->copy_key(h->key),
                        vtable->copy_value(h->value), ref_node(node->left),
-                       remove(vtable, node->right, h->key));
+                       remove_key(vtable, node->right, h->key));
     } else {
       gpr_avl_node *h = in_order_tail(node->left);
       return rebalance(
           vtable, vtable->copy_key(h->key), vtable->copy_value(h->value),
-          remove(vtable, node->left, h->key), ref_node(node->right));
+          remove_key(vtable, node->left, h->key), ref_node(node->right));
     }
   } else if (cmp > 0) {
-    return rebalance(vtable, vtable->copy_key(node->key),
-                     vtable->copy_value(node->value),
-                     remove(vtable, node->left, key), ref_node(node->right));
+    return rebalance(
+        vtable, vtable->copy_key(node->key), vtable->copy_value(node->value),
+        remove_key(vtable, node->left, key), ref_node(node->right));
   } else {
     return rebalance(vtable, vtable->copy_key(node->key),
                      vtable->copy_value(node->value), ref_node(node->left),
-                     remove(vtable, node->right, key));
+                     remove_key(vtable, node->right, key));
   }
 }
 
 gpr_avl gpr_avl_remove(gpr_avl avl, void *key) {
   gpr_avl_node *old_root = avl.root;
-  avl.root = remove(avl.vtable, avl.root, key);
+  avl.root = remove_key(avl.vtable, avl.root, key);
   assert_invariants(avl.root);
   unref_node(avl.vtable, old_root);
   return avl;

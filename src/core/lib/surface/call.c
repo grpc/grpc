@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -245,8 +230,8 @@ struct grpc_call {
   void *saved_receiving_stream_ready_bctlp;
 };
 
-int grpc_call_error_trace = 0;
-int grpc_compression_trace = 0;
+grpc_tracer_flag grpc_call_error_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_compression_trace = GRPC_TRACER_INITIALIZER(false);
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
@@ -522,7 +507,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
     }
   }
   if (c->cq) {
-    GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
+    GRPC_CQ_INTERNAL_UNREF(exec_ctx, c->cq, "bind");
   }
 
   get_final_status(call, set_status_value_directly, &c->final_info.final_status,
@@ -536,7 +521,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
   }
 
   grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->final_info,
-                          grpc_closure_init(&c->release_call, release_call, c,
+                          GRPC_CLOSURE_INIT(&c->release_call, release_call, c,
                                             grpc_schedule_on_exec_ctx));
   GPR_TIMER_END("destroy_call", 0);
 }
@@ -650,7 +635,7 @@ static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
   GRPC_CALL_INTERNAL_REF(c, "termination");
   set_status_from_error(exec_ctx, c, source, GRPC_ERROR_REF(error));
   grpc_transport_stream_op_batch *op = grpc_make_transport_stream_op(
-      grpc_closure_create(done_termination, c, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(done_termination, c, grpc_schedule_on_exec_ctx));
   op->cancel_stream = true;
   op->payload->cancel_stream.cancel_error = error;
   execute_op(exec_ctx, c, op);
@@ -703,7 +688,7 @@ static void get_final_status(grpc_call *call,
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     status[i] = unpack_received_status(gpr_atm_acq_load(&call->status[i]));
   }
-  if (grpc_call_error_trace) {
+  if (GRPC_TRACER_ON(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "get_final_status %s", call->is_client ? "CLI" : "SVR");
     for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
       if (status[i].is_set) {
@@ -1162,7 +1147,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
   if (bctl->completion_data.notify_tag.is_closure) {
     /* unrefs bctl->error */
     bctl->call = NULL;
-    grpc_closure_run(exec_ctx, bctl->completion_data.notify_tag.tag, error);
+    GRPC_CLOSURE_RUN(exec_ctx, bctl->completion_data.notify_tag.tag, error);
     GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
   } else {
     /* unrefs bctl->error */
@@ -1236,7 +1221,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   }
 
   if (error != GRPC_ERROR_NONE) {
-    if (grpc_trace_operation_failures) {
+    if (GRPC_TRACER_ON(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
     }
     grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
@@ -1267,7 +1252,7 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx,
     } else {
       *call->receiving_buffer = grpc_raw_byte_buffer_create(NULL, 0);
     }
-    grpc_closure_init(&call->receiving_slice_ready, receiving_slice_ready, bctl,
+    GRPC_CLOSURE_INIT(&call->receiving_slice_ready, receiving_slice_ready, bctl,
                       grpc_schedule_on_exec_ctx);
     continue_receiving_slices(exec_ctx, bctl);
   }
@@ -1332,8 +1317,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(call->encodings_accepted_by_peer != 0);
   if (!GPR_BITGET(call->encodings_accepted_by_peer,
                   call->incoming_compression_algorithm)) {
-    extern int grpc_compression_trace;
-    if (grpc_compression_trace) {
+    if (GRPC_TRACER_ON(grpc_compression_trace)) {
       char *algo_name = NULL;
       grpc_compression_algorithm_name(call->incoming_compression_algorithm,
                                       &algo_name);
@@ -1383,11 +1367,11 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
   call->has_initial_md_been_received = true;
   if (call->saved_receiving_stream_ready_bctlp != NULL) {
-    grpc_closure *saved_rsr_closure = grpc_closure_create(
+    grpc_closure *saved_rsr_closure = GRPC_CLOSURE_CREATE(
         receiving_stream_ready, call->saved_receiving_stream_ready_bctlp,
         grpc_schedule_on_exec_ctx);
     call->saved_receiving_stream_ready_bctlp = NULL;
-    grpc_closure_run(exec_ctx, saved_rsr_closure, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_RUN(exec_ctx, saved_rsr_closure, GRPC_ERROR_REF(error));
   }
 
   finish_batch_step(exec_ctx, bctl);
@@ -1429,7 +1413,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
                      free_no_op_completion, NULL,
                      gpr_malloc(sizeof(grpc_cq_completion)));
     } else {
-      grpc_closure_sched(exec_ctx, notify_tag, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_SCHED(exec_ctx, notify_tag, GRPC_ERROR_NONE);
     }
     error = GRPC_CALL_OK;
     goto done;
@@ -1446,7 +1430,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   grpc_transport_stream_op_batch *stream_op = &bctl->op;
   grpc_transport_stream_op_batch_payload *stream_op_payload =
       &call->stream_op_payload;
-  stream_op->covered_by_poller = true;
 
   /* rewrite batch ops into a transport op */
   for (i = 0; i < nops; i++) {
@@ -1635,14 +1618,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        /* IF this is a server, then GRPC_OP_RECV_INITIAL_METADATA *must* come
-           from server.c. In that case, it's coming from accept_stream, and in
-           that case we're not necessarily covered by a poller. */
-        stream_op->covered_by_poller = call->is_client;
         call->received_initial_metadata = true;
         call->buffered_metadata[0] =
             op->data.recv_initial_metadata.recv_initial_metadata;
-        grpc_closure_init(&call->receiving_initial_metadata_ready,
+        GRPC_CLOSURE_INIT(&call->receiving_initial_metadata_ready,
                           receiving_initial_metadata_ready, bctl,
                           grpc_schedule_on_exec_ctx);
         stream_op->recv_initial_metadata = true;
@@ -1666,7 +1645,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         stream_op->recv_message = true;
         call->receiving_buffer = op->data.recv_message.recv_message;
         stream_op_payload->recv_message.recv_message = &call->receiving_stream;
-        grpc_closure_init(&call->receiving_stream_ready, receiving_stream_ready,
+        GRPC_CLOSURE_INIT(&call->receiving_stream_ready, receiving_stream_ready,
                           bctl, grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_message.recv_message_ready =
             &call->receiving_stream_ready;
@@ -1732,7 +1711,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   }
   gpr_ref_init(&bctl->steps_to_complete, num_completion_callbacks_needed);
 
-  grpc_closure_init(&bctl->finish_batch, finish_batch, bctl,
+  GRPC_CLOSURE_INIT(&bctl->finish_batch, finish_batch, bctl,
                     grpc_schedule_on_exec_ctx);
   stream_op->on_complete = &bctl->finish_batch;
   gpr_atm_rel_store(&call->any_ops_sent_atm, 1);

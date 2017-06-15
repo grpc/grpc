@@ -1,0 +1,31 @@
+%YAML 1.2
+--- |
+  // $Id$
+  // vim:ft=javascript
+
+  ARG_WITH("grpc", "grpc support", "no");
+
+  if (PHP_GRPC != "no") {
+
+    grpc_source =
+      % for source in php_config_m4.src:
+      "${source.replace('/','\\\\')} " +
+      % endfor
+      % for lib in libs:
+      % if lib.name in php_config_m4.get('deps', []) and lib.name != 'ares':
+      % for source in lib.src:
+      "${source.replace('/','\\\\')} " +
+      % endfor
+      % endif
+      % endfor
+      "";
+
+    EXTENSION("grpc", grpc_source, null,
+      "/DOPENSSL_NO_ASM /D_GNU_SOURCE /DWIN32_LEAN_AND_MEAN "+
+      "/D_HAS_EXCEPTIONS=0 /DNOMINMAX /DGRPC_ARES=0 /D_WIN32_WINNT=0x600 "+
+      "/I"+configure_module_dirname+" "+
+      "/I"+configure_module_dirname+"\\include "+
+      "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
+      "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
+      "/I"+configure_module_dirname+"\\third_party\\zlib");
+  }

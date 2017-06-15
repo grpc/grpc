@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -73,7 +58,6 @@ typedef enum {
   GRPC_CHTTP2_WRITE_STATE_IDLE,
   GRPC_CHTTP2_WRITE_STATE_WRITING,
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
-  GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER,
 } grpc_chttp2_write_state;
 
 typedef enum {
@@ -458,7 +442,6 @@ struct grpc_chttp2_stream {
   grpc_slice fetching_slice;
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
-  bool complete_fetch_covered_by_poller;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
 
@@ -549,12 +532,16 @@ struct grpc_chttp2_stream {
     The actual call chain is documented in the implementation of this function.
     */
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t,
-                                bool covered_by_poller, const char *reason);
+                                grpc_chttp2_transport *t, const char *reason);
 
-/** Someone is unlocking the transport mutex: check to see if writes
-    are required, and frame them if so */
-bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
+typedef enum {
+  GRPC_CHTTP2_NOTHING_TO_WRITE,
+  GRPC_CHTTP2_PARTIAL_WRITE,
+  GRPC_CHTTP2_FULL_WRITE,
+} grpc_chttp2_begin_write_result;
+
+grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
 void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            grpc_error *error);
 
@@ -629,13 +616,13 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-extern int grpc_http_trace;
-extern int grpc_flowctl_trace;
+extern grpc_tracer_flag grpc_http_trace;
+extern grpc_tracer_flag grpc_flowctl_trace;
 
-#define GRPC_CHTTP2_IF_TRACING(stmt) \
-  if (!(grpc_http_trace))            \
-    ;                                \
-  else                               \
+#define GRPC_CHTTP2_IF_TRACING(stmt)      \
+  if (!(GRPC_TRACER_ON(grpc_http_trace))) \
+    ;                                     \
+  else                                    \
   stmt
 
 typedef enum {
@@ -648,7 +635,7 @@ typedef enum {
                                      dst_var, src_context, src_var)           \
   do {                                                                        \
     assert(id1 == id2);                                                       \
-    if (grpc_flowctl_trace) {                                                 \
+    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                 \
       grpc_chttp2_flowctl_trace(                                              \
           __FILE__, __LINE__, phase, GRPC_CHTTP2_FLOWCTL_MOVE, #dst_context,  \
           #dst_var, #src_context, #src_var, transport->is_client, id1,        \
@@ -671,7 +658,7 @@ typedef enum {
 #define GRPC_CHTTP2_FLOW_CREDIT_COMMON(phase, transport, id, dst_context,      \
                                        dst_var, amount)                        \
   do {                                                                         \
-    if (grpc_flowctl_trace) {                                                  \
+    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                  \
       grpc_chttp2_flowctl_trace(__FILE__, __LINE__, phase,                     \
                                 GRPC_CHTTP2_FLOWCTL_CREDIT, #dst_context,      \
                                 #dst_var, NULL, #amount, transport->is_client, \
@@ -729,7 +716,7 @@ typedef enum {
 #define GRPC_CHTTP2_FLOW_DEBIT_COMMON(phase, transport, id, dst_context,       \
                                       dst_var, amount)                         \
   do {                                                                         \
-    if (grpc_flowctl_trace) {                                                  \
+    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                  \
       grpc_chttp2_flowctl_trace(__FILE__, __LINE__, phase,                     \
                                 GRPC_CHTTP2_FLOWCTL_DEBIT, #dst_context,       \
                                 #dst_var, NULL, #amount, transport->is_client, \
@@ -815,7 +802,7 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 /** Add a new ping strike to ping_recv_state.ping_strikes. If
     ping_recv_state.ping_strikes > ping_policy.max_ping_strikes, it sends GOAWAY
     with error code ENHANCE_YOUR_CALM and additional debug data resembling
-    “too_many_pings” followed by immediately closing the connection. */
+    "too_many_pings" followed by immediately closing the connection. */
 void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport *t);
 

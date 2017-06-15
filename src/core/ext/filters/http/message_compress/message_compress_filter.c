@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -47,6 +32,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define INITIAL_METADATA_UNSEEN 0
@@ -197,7 +183,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   did_compress = grpc_msg_compress(exec_ctx, calld->compression_algorithm,
                                    &calld->slices, &tmp);
   if (did_compress) {
-    if (grpc_compression_trace) {
+    if (GRPC_TRACER_ON(grpc_compression_trace)) {
       char *algo_name;
       const size_t before_size = calld->slices.length;
       const size_t after_size = tmp.length;
@@ -211,7 +197,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
     grpc_slice_buffer_swap(&calld->slices, &tmp);
     calld->send_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
   } else {
-    if (grpc_compression_trace) {
+    if (GRPC_TRACER_ON(grpc_compression_trace)) {
       char *algo_name;
       GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
                                                  &algo_name));
@@ -277,13 +263,10 @@ static void compress_start_transport_stream_op_batch(
   GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);
 
   if (op->cancel_stream) {
-    gpr_atm cur;
     GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error);
-    do {
-      cur = gpr_atm_acq_load(&calld->send_initial_metadata_state);
-    } while (!gpr_atm_rel_cas(
-        &calld->send_initial_metadata_state, cur,
-        CANCELLED_BIT | (gpr_atm)op->payload->cancel_stream.cancel_error));
+    gpr_atm cur = gpr_atm_full_xchg(
+        &calld->send_initial_metadata_state,
+        CANCELLED_BIT | (gpr_atm)op->payload->cancel_stream.cancel_error);
     switch (cur) {
       case HAS_COMPRESSION_ALGORITHM:
       case NO_COMPRESSION_ALGORITHM:
@@ -311,13 +294,18 @@ static void compress_start_transport_stream_op_batch(
       grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
       return;
     }
-    gpr_atm cur = gpr_atm_acq_load(&calld->send_initial_metadata_state);
+    gpr_atm cur;
+  retry_send_im:
+    cur = gpr_atm_acq_load(&calld->send_initial_metadata_state);
     GPR_ASSERT(cur != HAS_COMPRESSION_ALGORITHM &&
                cur != NO_COMPRESSION_ALGORITHM);
     if ((cur & CANCELLED_BIT) == 0) {
-      gpr_atm_rel_store(&calld->send_initial_metadata_state,
-                        has_compression_algorithm ? HAS_COMPRESSION_ALGORITHM
-                                                  : NO_COMPRESSION_ALGORITHM);
+      if (!gpr_atm_rel_cas(&calld->send_initial_metadata_state, cur,
+                           has_compression_algorithm
+                               ? HAS_COMPRESSION_ALGORITHM
+                               : NO_COMPRESSION_ALGORITHM)) {
+        goto retry_send_im;
+      }
       if (cur != INITIAL_METADATA_UNSEEN) {
         grpc_call_next_op(exec_ctx, elem,
                           (grpc_transport_stream_op_batch *)cur);
@@ -376,9 +364,9 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 
   /* initialize members */
   grpc_slice_buffer_init(&calld->slices);
-  grpc_closure_init(&calld->got_slice, got_slice, elem,
+  GRPC_CLOSURE_INIT(&calld->got_slice, got_slice, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&calld->send_done, send_done, elem,
+  GRPC_CLOSURE_INIT(&calld->send_done, send_done, elem,
                     grpc_schedule_on_exec_ctx);
 
   return GRPC_ERROR_NONE;

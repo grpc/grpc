@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
- * All rights reserved.
+ * Copyright 2015-2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -92,55 +77,6 @@ GRPCAPI const char *grpc_version_string(void);
 
 /** Return a string specifying what the 'g' in gRPC stands for */
 GRPCAPI const char *grpc_g_stands_for(void);
-
-/** Specifies the type of APIs to use to pop events from the completion queue */
-typedef enum {
-  /** Events are popped out by calling grpc_completion_queue_next() API ONLY */
-  GRPC_CQ_NEXT = 1,
-
-  /** Events are popped out by calling grpc_completion_queue_pluck() API ONLY*/
-  GRPC_CQ_PLUCK
-} grpc_cq_completion_type;
-
-/** Completion queues internally MAY maintain a set of file descriptors in a
-    structure called 'pollset'. This enum specifies if a completion queue has an
-    associated pollset and any restrictions on the type of file descriptors that
-    can be present in the pollset.
-
-    I/O progress can only be made when grpc_completion_queue_next() or
-    grpc_completion_queue_pluck() are called on the completion queue (unless the
-    grpc_cq_polling_type is GRPC_CQ_NON_POLLING) and hence it is very important
-    to actively call these APIs */
-typedef enum {
-  /** The completion queue will have an associated pollset and there is no
-      restriction on the type of file descriptors the pollset may contain */
-  GRPC_CQ_DEFAULT_POLLING,
-
-  /** Similar to GRPC_CQ_DEFAULT_POLLING except that the completion queues will
-      not contain any 'listening file descriptors' (i.e file descriptors used to
-      listen to incoming channels) */
-  GRPC_CQ_NON_LISTENING,
-
-  /** The completion queue will not have an associated pollset. Note that
-      grpc_completion_queue_next() or grpc_completion_queue_pluck() MUST still
-      be called to pop events from the completion queue; it is not required to
-      call them actively to make I/O progress */
-  GRPC_CQ_NON_POLLING
-} grpc_cq_polling_type;
-
-#define GRPC_CQ_CURRENT_VERSION 1
-typedef struct grpc_completion_queue_attributes {
-  /* The version number of this structure. More fields might be added to this
-     structure in future. */
-  int version; /* Set to GRPC_CQ_CURRENT_VERSION */
-
-  grpc_cq_completion_type cq_completion_type;
-
-  grpc_cq_polling_type cq_polling_type;
-} grpc_completion_queue_attributes;
-
-/** The completion queue factory structure is opaque to the callers of grpc */
-typedef struct grpc_completion_queue_factory grpc_completion_queue_factory;
 
 /** Returns the completion queue factory based on the attributes. MAY return a
     NULL if no factory can be found */
@@ -226,6 +162,12 @@ GRPCAPI void grpc_alarm_destroy(grpc_alarm *alarm);
 /** Check the connectivity state of a channel. */
 GRPCAPI grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel *channel, int try_to_connect);
+
+/** Number of active "external connectivity state watchers" attached to a
+ * channel.
+ * Useful for testing. **/
+GRPCAPI int grpc_channel_num_external_connectivity_watchers(
+    grpc_channel *channel);
 
 /** Watch for a change in connectivity state.
     Once the channel connectivity state is different from last_observed_state,
@@ -336,7 +278,7 @@ GRPCAPI grpc_channel *grpc_lame_client_channel_create(
 /** Close and destroy a grpc channel */
 GRPCAPI void grpc_channel_destroy(grpc_channel *channel);
 
-/* Error handling for grpc_call
+/** Error handling for grpc_call
    Most grpc_call functions return a grpc_error. If the error is not GRPC_OK
    then the operation failed due to some unsatisfied precondition.
    If a grpc_call fails, it's guaranteed that no change to the call state
@@ -426,15 +368,6 @@ GRPCAPI grpc_server *grpc_server_create(const grpc_channel_args *args,
 GRPCAPI void grpc_server_register_completion_queue(grpc_server *server,
                                                    grpc_completion_queue *cq,
                                                    void *reserved);
-
-/** Register a non-listening completion queue with the server. This API is
-    similar to grpc_server_register_completion_queue except that the server will
-    not use this completion_queue to listen to any incoming channels.
-
-    Registering a non-listening completion queue will have negative performance
-    impact and hence this API is not recommended for production use cases. */
-GRPCAPI void grpc_server_register_non_listening_completion_queue(
-    grpc_server *server, grpc_completion_queue *q, void *reserved);
 
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.

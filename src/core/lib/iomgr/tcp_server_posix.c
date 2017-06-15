@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -136,7 +121,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   GPR_ASSERT(s->shutdown);
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != NULL) {
-    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -178,7 +163,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
       grpc_unlink_if_unix_domain_socket(&sp->addr);
-      grpc_closure_init(&sp->destroyed_closure, destroyed_port, s,
+      GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
                         grpc_schedule_on_exec_ctx);
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
                      "tcp_listener_shutdown");
@@ -257,7 +242,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
     addr_str = grpc_sockaddr_to_uri(&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
-    if (grpc_tcp_trace) {
+    if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 
@@ -518,7 +503,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
           "clone_port", clone_port(sp, (unsigned)(pollset_count - 1))));
       for (i = 0; i < pollset_count; i++) {
         grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
-        grpc_closure_init(&sp->read_closure, on_read, sp,
+        GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
                           grpc_schedule_on_exec_ctx);
         grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
         s->active_ports++;
@@ -528,7 +513,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
       for (i = 0; i < pollset_count; i++) {
         grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
       }
-      grpc_closure_init(&sp->read_closure, on_read, sp,
+      GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
                         grpc_schedule_on_exec_ctx);
       grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
       s->active_ports++;
@@ -555,7 +540,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(exec_ctx, s);
     gpr_mu_lock(&s->mu);
-    grpc_closure_list_sched(exec_ctx, &s->shutdown_starting);
+    GRPC_CLOSURE_LIST_SCHED(exec_ctx, &s->shutdown_starting);
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(exec_ctx, s);
   }
