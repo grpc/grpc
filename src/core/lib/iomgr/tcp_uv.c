@@ -161,7 +161,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
     // nread < 0: Error
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed");
   }
-  grpc_closure_sched(&exec_ctx, cb, error);
+  GRPC_CLOSURE_SCHED(&exec_ctx, cb, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -183,7 +183,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
                            grpc_slice_from_static_string(uv_strerror(status)));
-    grpc_closure_sched(exec_ctx, cb, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
   }
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     const char *str = grpc_error_string(error);
@@ -210,7 +210,7 @@ static void write_callback(uv_write_t *req, int status) {
   gpr_free(tcp->write_buffers);
   grpc_resource_user_free(&exec_ctx, tcp->resource_user,
                           sizeof(uv_buf_t) * tcp->write_slices->count);
-  grpc_closure_sched(&exec_ctx, cb, error);
+  GRPC_CLOSURE_SCHED(&exec_ctx, cb, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -236,7 +236,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   }
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                          "TCP socket is shutting down"));
     return;
   }
@@ -247,7 +247,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   if (tcp->write_slices->count == 0) {
     // No slices means we don't have to do anything,
     // and libuv doesn't like empty writes
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_NONE);
     return;
   }
 

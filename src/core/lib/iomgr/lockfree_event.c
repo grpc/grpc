@@ -112,7 +112,7 @@ void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
            closure when transitioning out of CLOSURE_NO_READY state (i.e there
            is no other code that needs to 'happen-after' this) */
         if (gpr_atm_no_barrier_cas(state, CLOSURE_READY, CLOSURE_NOT_READY)) {
-          grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
+          GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
           return; /* Successful. Return */
         }
 
@@ -125,7 +125,7 @@ void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
            schedule the closure with the shutdown error */
         if ((curr & FD_SHUTDOWN_BIT) > 0) {
           grpc_error *shutdown_err = (grpc_error *)(curr & ~FD_SHUTDOWN_BIT);
-          grpc_closure_sched(exec_ctx, closure,
+          GRPC_CLOSURE_SCHED(exec_ctx, closure,
                              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                  "FD Shutdown", &shutdown_err, 1));
           return;
@@ -177,7 +177,7 @@ bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
            happens-after on that edge), and a release to pair with anything
            loading the shutdown state. */
         if (gpr_atm_full_cas(state, curr, new_state)) {
-          grpc_closure_sched(exec_ctx, (grpc_closure *)curr,
+          GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure *)curr,
                              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                  "FD Shutdown", &shutdown_err, 1));
           return true;
@@ -226,7 +226,7 @@ void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state) {
            spurious set_ready; release pairs with this or the acquire in
            notify_on (or set_shutdown) */
         else if (gpr_atm_full_cas(state, curr, CLOSURE_NOT_READY)) {
-          grpc_closure_sched(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
+          GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
           return;
         }
         /* else the state changed again (only possible by either a racing

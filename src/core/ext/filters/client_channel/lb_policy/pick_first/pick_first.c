@@ -118,7 +118,7 @@ static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
-    grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
     gpr_free(pp);
     pp = next;
   }
@@ -134,7 +134,7 @@ static void pf_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       *target = NULL;
-      grpc_closure_sched(exec_ctx, pp->on_complete,
+      GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick Cancelled", &error, 1));
       gpr_free(pp);
@@ -159,7 +159,7 @@ static void pf_cancel_picks_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      grpc_closure_sched(exec_ctx, pp->on_complete,
+      GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick Cancelled", &error, 1));
       gpr_free(pp);
@@ -254,7 +254,7 @@ static void pf_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   if (p->selected) {
     grpc_connected_subchannel_ping(exec_ctx, p->selected, closure);
   } else {
-    grpc_closure_sched(exec_ctx, closure,
+    GRPC_CLOSURE_SCHED(exec_ctx, closure,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Not connected"));
   }
 }
@@ -553,7 +553,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                     "Servicing pending pick with selected subchannel %p",
                     (void *)p->selected);
           }
-          grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
+          GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
           gpr_free(pp);
         }
         grpc_connected_subchannel_notify_on_state_change(
@@ -606,7 +606,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
           while ((pp = p->pending_picks)) {
             p->pending_picks = pp->next;
             *pp->target = NULL;
-            grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
+            GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
             gpr_free(pp);
           }
           GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base,
@@ -650,7 +650,7 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   pick_first_lb_policy *p = gpr_zalloc(sizeof(*p));
   pf_update_locked(exec_ctx, &p->base, args);
   grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner);
-  grpc_closure_init(&p->connectivity_changed, pf_connectivity_changed_locked, p,
+  GRPC_CLOSURE_INIT(&p->connectivity_changed, pf_connectivity_changed_locked, p,
                     grpc_combiner_scheduler(args->combiner));
   return &p->base;
 }

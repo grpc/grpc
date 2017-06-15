@@ -107,7 +107,7 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
   if (done) {
     uv_tcp_connect_cleanup(&exec_ctx, connect);
   }
-  grpc_closure_sched(&exec_ctx, closure, error);
+  GRPC_CLOSURE_SCHED(&exec_ctx, closure, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -150,7 +150,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   uv_tcp_connect(&connect->connect_req, connect->tcp_handle,
                  (const struct sockaddr *)resolved_addr->addr,
                  uv_tc_on_connect);
-  grpc_closure_init(&connect->on_alarm, uv_tc_on_alarm, connect,
+  GRPC_CLOSURE_INIT(&connect->on_alarm, uv_tc_on_alarm, connect,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &connect->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),

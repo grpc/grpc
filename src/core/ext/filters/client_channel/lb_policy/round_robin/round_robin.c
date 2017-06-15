@@ -288,7 +288,7 @@ static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while ((pp = p->pending_picks)) {
     p->pending_picks = pp->next;
     *pp->target = NULL;
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, pp->on_complete,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
     gpr_free(pp);
@@ -311,7 +311,7 @@ static void rr_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       *target = NULL;
-      grpc_closure_sched(exec_ctx, pp->on_complete,
+      GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick cancelled", &error, 1));
       gpr_free(pp);
@@ -336,7 +336,7 @@ static void rr_cancel_picks_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       *pp->target = NULL;
-      grpc_closure_sched(exec_ctx, pp->on_complete,
+      GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick cancelled", &error, 1));
       gpr_free(pp);
@@ -553,7 +553,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
       while ((pp = p->pending_picks)) {
         p->pending_picks = pp->next;
         *pp->target = NULL;
-        grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
+        GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
         gpr_free(pp);
       }
     }
@@ -614,7 +614,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                   (void *)selected->subchannel,
                   (unsigned long)next_ready_index);
         }
-        grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
+        GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
         gpr_free(pp);
       }
     }
@@ -655,7 +655,7 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     grpc_connected_subchannel_ping(exec_ctx, target, closure);
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, target, "rr_picked");
   } else {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                               "Round Robin not connected"));
   }
 }
@@ -747,7 +747,7 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     subchannel_data *sd = &subchannel_list->subchannels[subchannel_index++];
     sd->subchannel_list = subchannel_list;
     sd->subchannel = subchannel;
-    grpc_closure_init(&sd->connectivity_changed_closure,
+    GRPC_CLOSURE_INIT(&sd->connectivity_changed_closure,
                       rr_connectivity_changed_locked, sd,
                       grpc_combiner_scheduler(args->combiner));
     /* use some sentinel value outside of the range of

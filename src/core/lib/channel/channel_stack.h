@@ -126,7 +126,7 @@ typedef struct {
   /* Destroy per call data.
      The filter does not need to do any chaining.
      The bottom filter of a stack will be passed a non-NULL pointer to
-     \a then_schedule_closure that should be passed to grpc_closure_sched when
+     \a then_schedule_closure that should be passed to GRPC_CLOSURE_SCHED when
      destruction is complete. \a final_info contains data about the completed
      call, mainly for reporting purposes. */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,

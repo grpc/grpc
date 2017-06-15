@@ -300,7 +300,7 @@ static void compute_engine_fetch_oauth2(
       grpc_resource_quota_create("oauth2_credentials");
   grpc_httpcli_get(
       exec_ctx, httpcli_context, pollent, resource_quota, &request, deadline,
-      grpc_closure_create(response_cb, metadata_req, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(response_cb, metadata_req, grpc_schedule_on_exec_ctx),
 
       &metadata_req->response);
   grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
@@ -360,7 +360,7 @@ static void refresh_token_fetch_oauth2(
   grpc_httpcli_post(
       exec_ctx, httpcli_context, pollent, resource_quota, &request, body,
       strlen(body), deadline,
-      grpc_closure_create(response_cb, metadata_req, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(response_cb, metadata_req, grpc_schedule_on_exec_ctx),
       &metadata_req->response);
   grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   gpr_free(body);

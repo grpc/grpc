@@ -55,7 +55,7 @@ static void maybe_call_write_cb_locked(grpc_exec_ctx *exec_ctx,
                                        trickle_endpoint *te) {
   if (te->write_cb != NULL && (te->error != GRPC_ERROR_NONE ||
                                te->write_buffer.length <= WRITE_BUFFER_SIZE)) {
-    grpc_closure_sched(exec_ctx, te->write_cb, GRPC_ERROR_REF(te->error));
+    GRPC_CLOSURE_SCHED(exec_ctx, te->write_cb, GRPC_ERROR_REF(te->error));
     te->write_cb = NULL;
   }
 }
@@ -176,7 +176,7 @@ size_t grpc_trickle_endpoint_trickle(grpc_exec_ctx *exec_ctx,
       te->last_write = now;
       grpc_endpoint_write(
           exec_ctx, te->wrapped, &te->writing_buffer,
-          grpc_closure_create(te_finish_write, te, grpc_schedule_on_exec_ctx));
+          GRPC_CLOSURE_CREATE(te_finish_write, te, grpc_schedule_on_exec_ctx));
       maybe_call_write_cb_locked(exec_ctx, te);
     }
   }
