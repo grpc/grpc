@@ -1351,7 +1351,7 @@ gpr_log(GPR_INFO, "recv_initial_metadata_ready() commit");
   grpc_metadata_batch_move(
       &batch_data->recv_initial_metadata,
       original_batch->payload->recv_initial_metadata.recv_initial_metadata);
-  grpc_closure_run(
+  GRPC_CLOSURE_RUN(
       exec_ctx,
       original_batch->payload->recv_initial_metadata
           .recv_initial_metadata_ready,
@@ -1396,7 +1396,7 @@ gpr_log(GPR_INFO, "recv_message_ready() commit");
       calld->pending_batches[batch_index];
   *original_batch->payload->recv_message.recv_message =
       batch_data->recv_message;
-  grpc_closure_run(
+  GRPC_CLOSURE_RUN(
       exec_ctx,
       original_batch->payload->recv_message.recv_message_ready,
       GRPC_ERROR_REF(error));
@@ -1510,7 +1510,7 @@ gpr_log(GPR_INFO, "starting next batch for pending send_message ops");
                                                 !have_pending_send_message_ops);
   if (idx != (size_t)-1) {
 gpr_log(GPR_INFO, "calling original on_complete");
-    grpc_closure_run(exec_ctx, calld->pending_batches[idx]->on_complete,
+    GRPC_CLOSURE_RUN(exec_ctx, calld->pending_batches[idx]->on_complete,
                      GRPC_ERROR_REF(error));
 gpr_log(GPR_INFO, "CLEARING pending_batches[%zu]->on_complete", idx);
     calld->pending_batches[idx]->on_complete = NULL;
@@ -1619,7 +1619,7 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
       batch_data->batch.payload->recv_initial_metadata.recv_flags =
           calld->pending_batches[recv_initial_metadata_idx]->payload
               ->recv_initial_metadata.recv_flags;
-      grpc_closure_init(&batch_data->recv_initial_metadata_ready,
+      GRPC_CLOSURE_INIT(&batch_data->recv_initial_metadata_ready,
                         recv_initial_metadata_ready, batch_data,
                         grpc_schedule_on_exec_ctx);
       batch_data->batch.payload->recv_initial_metadata
@@ -1635,7 +1635,7 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
       batch_data->batch.recv_message = true;
       batch_data->batch.payload->recv_message.recv_message =
           &batch_data->recv_message;
-      grpc_closure_init(&batch_data->recv_message_ready, recv_message_ready,
+      GRPC_CLOSURE_INIT(&batch_data->recv_message_ready, recv_message_ready,
                         batch_data, grpc_schedule_on_exec_ctx);
       batch_data->batch.payload->recv_message.recv_message_ready =
           &batch_data->recv_message_ready;
@@ -1658,7 +1658,7 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
           &batch_data->collect_stats;
     }
     // Intercept on_complete.
-    grpc_closure_init(&batch_data->on_complete, on_complete, batch_data,
+    GRPC_CLOSURE_INIT(&batch_data->on_complete, on_complete, batch_data,
                       grpc_schedule_on_exec_ctx);
     batch_data->batch.on_complete = &batch_data->on_complete;
     batch = &batch_data->batch;
