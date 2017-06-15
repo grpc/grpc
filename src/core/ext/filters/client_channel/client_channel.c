@@ -1156,12 +1156,13 @@ static void start_transport_stream_op_batch_locked_inner(
     calld->initial_metadata_payload = op->payload;
     calld->pick_pending = true;
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_subchannel");
-    pick_subchannel_locked(exec_ctx, elem);
-    // Provide the polling entity from call_data to channel_data's
-    // interested_parties, so that IO of the lb_policy and resolver can
-    // be done under it.
+    // Add polling entity from call_data to channel_data's
+    // interested_parties, so that I/O for the LB policy can be done as
+    // part of polling for this call.  This will be removed in
+    // subchannel_ready_locked().
     grpc_polling_entity_add_to_pollset_set(exec_ctx, calld->pollent,
                                            chand->interested_parties);
+    pick_subchannel_locked(exec_ctx, elem);
   }
 }
 
