@@ -184,7 +184,7 @@ void HHVM_METHOD(Channel, close) {
 
 void hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args) {
   args->num_args = args_array.size();
-  args->args = (grpc_arg *) req::calloc(args->num_args, sizeof(grpc_arg));
+  args->args = (grpc_arg *) req::calloc_untyped(args->num_args, sizeof(grpc_arg));
 
   int i = 0;
   for (ArrayIter iter(args_array); iter; ++iter) {
