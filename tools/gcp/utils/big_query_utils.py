@@ -31,7 +31,7 @@ def create_big_query():
   """Authenticates with cloud platform and gets a BiqQuery service object
   """
   creds = GoogleCredentials.get_application_default()
-  return discovery.build('bigquery', 'v2', credentials=creds)
+  return discovery.build('bigquery', 'v2', credentials=creds, cache_discovery=False)
 
 
 def create_dataset(biq_query, project_id, dataset_id):
