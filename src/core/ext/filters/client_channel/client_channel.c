@@ -875,6 +875,9 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 #define MAX_CONCURRENT_BATCHES 6
 
 // State used for sending a retryable batch down to a subchannel call.
+// This provides its own grpc_transport_stream_op_batch and other data
+// structures needed to populate the ops in the batch.
+// We allocate one struct on the arena for each batch we get from the surface.
 typedef struct {
   grpc_call_element *elem;
   grpc_subchannel_call *subchannel_call;
@@ -897,6 +900,7 @@ typedef struct {
 } subchannel_batch_data;
 
 // Retry state associated with a subchannel call.
+// Stored in the parent_data of the subchannel call object.
 typedef struct {
   // These fields indicate which ops have been sent down to this
   // subchannel call.
@@ -1227,7 +1231,7 @@ static void do_retry(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 // generalize the existing code so that it knows about not having a
 // specific batch available in the retry case.
   batch_data->batch.handler_private.extra_arg = elem;
-  grpc_closure_sched(
+  GRPC_CLOSURE_SCHED(
       exec_ctx,
       GRPC_CLOSURE_INIT(&batch_data->batch.handler_private.closure,
                         start_transport_stream_op_batch_locked,
@@ -1255,6 +1259,8 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx,
     // This catches the case where the batch has multiple callbacks
     // (i.e., it includes either recv_message or recv_initial_metadata and
     // at least one other op).
+// FIXME: shouldn't this be in subchannel_batch_data, not
+// subchannel_call_retry_state?
     subchannel_call_retry_state *retry_state =
         grpc_connected_subchannel_call_get_parent_data(
             batch_data->subchannel_call);
@@ -1643,7 +1649,7 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
       GRPC_SUBCHANNEL_CALL_REF(subchannel_call,
                                "client_channel_recv_message_ready");
     }
-    // read_trailing_metadata.
+    // recv_trailing_metadata.
     if (recv_trailing_metadata_idx != INT_MAX &&
         gpr_atm_full_cas(&retry_state->recv_trailing_metadata, (gpr_atm)0,
                          (gpr_atm)1)) {
