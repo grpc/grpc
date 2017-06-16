@@ -108,7 +108,7 @@ class Benchmark:
       mdn_diff = abs(_median(new) - _median(old))
       _maybe_print('%s: %s=%r %s=%r mdn_diff=%r' %
              (f, new_name, new, old_name, old, mdn_diff))
-      s = bm_speedup.speedup(new, old)
+      s = bm_speedup.speedup(new, old, 1e-10)
       if abs(s) > 3 and mdn_diff > 0.5:
         self.final[f] = '%+d%%' % s
     return self.final.keys()
