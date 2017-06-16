@@ -1032,7 +1032,6 @@ static void clear_call_or_error(grpc_exec_ctx *exec_ctx, call_data *calld) {
       }
       break;
     }
-gpr_log(GPR_INFO, "cas failed");
   }
 }
 
