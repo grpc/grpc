@@ -105,6 +105,7 @@ function _write(chunk, encoding, callback) {
     /* Once a write fails, just call the callback immediately to let the caller
        flush any pending writes. */
     setImmediate(callback);
+    return;
   }
   try {
     message = this.serialize(chunk);
