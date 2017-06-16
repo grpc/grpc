@@ -223,10 +223,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     bool sent_initial_metadata = s->sent_initial_metadata;
     bool now_writing = false;
 
-    GRPC_CHTTP2_IF_TRACING(gpr_log(
-        GPR_DEBUG, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t,
-        t->is_client ? "CLIENT" : "SERVER", s->id, sent_initial_metadata,
-        s->send_initial_metadata != NULL, s->flow_control.announce_window));
+    GRPC_CHTTP2_IF_TRACING(
+        gpr_log(GPR_DEBUG, "W:%p %s[%d] im-(sent,send)=(%d,%d)", t,
+                t->is_client ? "CLIENT" : "SERVER", s->id,
+                sent_initial_metadata, s->send_initial_metadata != NULL));
 
     grpc_mdelem *extra_headers_for_trailing_metadata[2];
     size_t num_extra_headers_for_trailing_metadata = 0;
@@ -282,20 +282,18 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       s->sent_initial_metadata = true;
       sent_initial_metadata = true;
     }
-    /* if there is any disparity between local and announced, send an update */
-    // TODO(ncteisen): tune this. No need to send an update if there is plenty
-    // of room
-    // TODO(ncteisen): pull this logic into the module
-    if (s->flow_control.local_window_delta >
-        s->flow_control.announced_local_window_delta) {
-      uint32_t announce =
-          (uint32_t)(s->flow_control.local_window_delta -
-                     s->flow_control.announced_local_window_delta);
+
+    // TODO(ncteisen): is sent settings the correct choice here?
+    uint32_t stream_announce = grpc_chttp2_flow_control_get_stream_announce(
+        &s->flow_control,
+        t->settings[GRPC_SENT_SETTINGS]
+                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+    if (stream_announce) {
       grpc_slice_buffer_add(
-          &t->outbuf, grpc_chttp2_window_update_create(s->id, announce,
+          &t->outbuf, grpc_chttp2_window_update_create(s->id, stream_announce,
                                                        &s->stats.outgoing));
       grpc_chttp2_flow_control_announce_credit_stream(&s->flow_control,
-                                                      announce);
+                                                      stream_announce);
       t->ping_state.pings_before_data_required =
           t->ping_policy.max_pings_without_data;
       if (!t->is_client) {
@@ -409,16 +407,17 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
   }
 
-  if (t->flow_control.local_window > t->flow_control.announced_local_window) {
+  uint32_t transport_announce =
+      grpc_chttp2_flow_control_get_transport_announce(&t->flow_control);
+  if (transport_announce) {
     maybe_initiate_ping(exec_ctx, t,
                         GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE);
-    uint32_t announced = (uint32_t)(t->flow_control.local_window -
-                                    t->flow_control.announced_local_window);
     grpc_chttp2_flow_control_announce_credit_transport(&t->flow_control,
-                                                       announced);
+                                                       transport_announce);
     grpc_transport_one_way_stats throwaway_stats;
-    grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_window_update_create(
-                                          0, announced, &throwaway_stats));
+    grpc_slice_buffer_add(
+        &t->outbuf, grpc_chttp2_window_update_create(0, transport_announce,
+                                                     &throwaway_stats));
     t->ping_state.pings_before_data_required =
         t->ping_policy.max_pings_without_data;
     if (!t->is_client) {

@@ -58,6 +58,31 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, bool credit,
  * INTERFACE
  */
 
+/* if there is any disparity between local and announced, send an update */
+// TODO(ncteisen): tune this. No need to send an update if there is plenty
+// of room
+uint32_t grpc_chttp2_flow_control_get_stream_announce(
+    grpc_chttp2_stream_flow_control_data *sfc, uint32_t initial_window) {
+  uint32_t stream_announced_window =
+      (uint32_t)(sfc->announced_local_window_delta + initial_window);
+  if (stream_announced_window < 32768) {
+    return (uint32_t)(sfc->local_window_delta -
+                      sfc->announced_local_window_delta);
+
+  } else {
+    return 0;
+  }
+}
+
+uint32_t grpc_chttp2_flow_control_get_transport_announce(
+    grpc_chttp2_transport_flow_control_data *tfc) {
+  if (tfc->announced_local_window < 32768) {
+    return (uint32_t)(tfc->local_window - tfc->announced_local_window);
+  } else {
+    return 0;
+  }
+}
+
 void grpc_chttp2_flow_control_transport_init(
     grpc_chttp2_transport_flow_control_data *tfc) {
   GRPC_FLOW_CONTROL_IF_TRACING(gpr_log(

@@ -33,7 +33,8 @@ BAD_CLIENT_TESTS = {
     'large_metadata': default_test_options,
     'server_registered_method': default_test_options,
     'simple_request': default_test_options,
-    'window_overflow': default_test_options,
+    # TODO(ncteisen): re enable this once flow control is stable
+    # 'window_overflow': default_test_options,
     'unknown_frame': default_test_options,
 }
 

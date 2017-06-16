@@ -4784,24 +4784,6 @@
   }, 
   {
     "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "window_overflow_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/window_overflow.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
       "bad_ssl_test_server", 
       "gpr", 
       "gpr_test_util", 

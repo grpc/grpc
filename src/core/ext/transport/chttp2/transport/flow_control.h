@@ -28,6 +28,10 @@
 
 extern grpc_tracer_flag grpc_flowctl_trace;
 
+// Though the data structures in this module are not actually opaque, they
+// should be treated as such. All manipulation and decision making bits should
+// remain in this module.
+
 typedef struct {
   /** initial window change. This is tracked as we parse settings frames from
    * the remote peer. If there is a positive delta, then we will make all
@@ -69,11 +73,12 @@ typedef struct {
   /** window available for peer to send to us over this stream that we have
    * announced to the peer */
   int64_t announced_local_window_delta;
-
-  /** how much window should we announce? */
-  /* DEPRECATE ME */
-  uint32_t announce_window;
 } grpc_chttp2_stream_flow_control_data;
+
+uint32_t grpc_chttp2_flow_control_get_stream_announce(
+    grpc_chttp2_stream_flow_control_data* sfc, uint32_t initial_window);
+uint32_t grpc_chttp2_flow_control_get_transport_announce(
+    grpc_chttp2_transport_flow_control_data* tfc);
 
 #define grpc_chttp2_flow_control_credit_local_transport(fc, v) \
   _grpc_chttp2_flow_control_credit_local_transport(fc, v, __FILE__, __LINE__)
