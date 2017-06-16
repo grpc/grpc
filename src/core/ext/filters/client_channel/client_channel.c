@@ -889,6 +889,7 @@ typedef struct {
   // For intercepting recv_initial_metadata.
   grpc_metadata_batch recv_initial_metadata;
   grpc_closure recv_initial_metadata_ready;
+  bool initial_metadata_received;
   // For intercepting recv_message.
   grpc_closure recv_message_ready;
   grpc_byte_stream *recv_message;
@@ -1016,6 +1017,23 @@ static bool set_call_or_error(call_data *p, call_or_error coe) {
                       (gpr_atm)coe.subchannel_call);
   }
   return true;
+}
+
+static void clear_call_or_error(grpc_exec_ctx *exec_ctx, call_data *calld) {
+  while (true) {
+    gpr_atm orig = gpr_atm_acq_load(&calld->subchannel_call_or_error);
+    grpc_subchannel_call *call = NULL;
+    if (orig != 0 && (orig & 1) == 0) {
+      call = (grpc_subchannel_call *)orig;
+    }
+    if (gpr_atm_full_cas(&calld->subchannel_call_or_error, orig, (gpr_atm)0)) {
+      if (call != NULL) {
+        GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, call, "client_channel_call_retry");
+      }
+      break;
+    }
+gpr_log(GPR_INFO, "cas failed");
+  }
 }
 
 grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
@@ -1289,6 +1307,9 @@ gpr_log(GPR_INFO, "max_retry_attempts=%d", retry_policy->max_retry_attempts);
         calld->num_retry_attempts < retry_policy->max_retry_attempts) {
 gpr_log(GPR_INFO, "RETRYING");
       // Reset subchannel call.
+// FIXME
+      clear_call_or_error(exec_ctx, calld);
+#if 0
       call_or_error coe = get_call_or_error(calld);
       if (coe.subchannel_call != NULL) {
         GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, coe.subchannel_call,
@@ -1297,6 +1318,8 @@ gpr_log(GPR_INFO, "RETRYING");
             .error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "call failed; retrying")});
       }
+#endif
+
       // Compute backoff delay.
       gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
       gpr_timespec next_attempt_time;
@@ -1337,6 +1360,11 @@ gpr_log(GPR_INFO, "==> recv_initial_metadata_ready()");
     grpc_error_get_status(error, calld->deadline, &status, NULL, NULL);
     if (maybe_retry(exec_ctx, batch_data, status)) return;
   } else {
+    // If we didn't actually receive the initial metadata (i.e., we got
+    // a Trailers-Only response), do nothing.  We'll probably wind up
+    // retrying when recv_trailing_metadata comes back.
+// FIXME: do we need to do anything from below before we do this?
+    if (!batch_data->initial_metadata_received) return;
     // No error, so commit the call.
 gpr_log(GPR_INFO, "recv_initial_metadata_ready() commit");
     retry_committed(exec_ctx, calld);
@@ -1625,6 +1653,8 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
       batch_data->batch.payload->recv_initial_metadata.recv_flags =
           calld->pending_batches[recv_initial_metadata_idx]->payload
               ->recv_initial_metadata.recv_flags;
+      batch_data->batch.payload->recv_initial_metadata.received =
+          &batch_data->initial_metadata_received;
       GRPC_CLOSURE_INIT(&batch_data->recv_initial_metadata_ready,
                         recv_initial_metadata_ready, batch_data,
                         grpc_schedule_on_exec_ctx);
