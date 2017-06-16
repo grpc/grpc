@@ -39,12 +39,25 @@ inline grpc::string GetPHPServiceFilename(
   return oss.str() + "/" + service->name() + "Client.php";
 }
 
+// ReplaceAll replaces all instances of search with replace in s.
+inline grpc::string ReplaceAll(grpc::string s, const grpc::string &search,
+                               const grpc::string &replace) {
+  size_t pos = 0;
+  while ((pos = s.find(search, pos)) != grpc::string::npos) {
+    s.replace(pos, search.length(), replace);
+    pos += replace.length();
+  }
+  return s;
+}
+
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in in front of leading comments.
 template <typename DescriptorType>
 inline grpc::string GetPHPComments(const DescriptorType *desc,
                                    grpc::string prefix) {
-  return grpc_generator::GetPrefixedComments(desc, true, prefix);
+  return ReplaceAll(grpc_generator::GetPrefixedComments(desc, true, prefix),
+                                           "*/",
+                                           "&#42;/");
 }
 
 }  // namespace grpc_php_generator
