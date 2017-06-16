@@ -686,6 +686,9 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
         t->hpack_parser.on_header = on_trailing_header;
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing initial_metadata"));
+        if (s->initial_metadata_received != NULL) {
+          *s->initial_metadata_received = true;
+        }
         t->hpack_parser.on_header = on_initial_header;
       }
       break;

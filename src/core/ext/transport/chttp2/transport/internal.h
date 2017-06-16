@@ -447,6 +447,7 @@ struct grpc_chttp2_stream {
 
   grpc_metadata_batch *recv_initial_metadata;
   grpc_closure *recv_initial_metadata_ready;
+  bool *initial_metadata_received;
   grpc_byte_stream **recv_message;
   grpc_closure *recv_message_ready;
   grpc_metadata_batch *recv_trailing_metadata;

@@ -1403,6 +1403,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         op_payload->recv_initial_metadata.recv_initial_metadata_ready;
     s->recv_initial_metadata =
         op_payload->recv_initial_metadata.recv_initial_metadata;
+    s->initial_metadata_received = op_payload->recv_initial_metadata.received;
     grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
   }
 
