@@ -95,7 +95,8 @@ static void verify(grpc_exec_ctx *exec_ctx, size_t window_available, bool eof,
       .max_frame_size = 16384,
       .stats = &stats,
   };
-  grpc_chttp2_encode_header(exec_ctx, &g_compressor, &b, &hopt, &output);
+  grpc_chttp2_encode_header(exec_ctx, &g_compressor, NULL, 0, &b, &hopt,
+                            &output);
   merged = grpc_slice_merge(output.slices, output.count);
   grpc_slice_buffer_destroy_internal(exec_ctx, &output);
   grpc_metadata_batch_destroy(exec_ctx, &b);
@@ -213,7 +214,8 @@ static void verify_table_size_change_match_elem_size(grpc_exec_ctx *exec_ctx,
                                      .use_true_binary_metadata = false,
                                      .max_frame_size = 16384,
                                      .stats = &stats};
-  grpc_chttp2_encode_header(exec_ctx, &g_compressor, &b, &hopt, &output);
+  grpc_chttp2_encode_header(exec_ctx, &g_compressor, NULL, 0, &b, &hopt,
+                            &output);
   grpc_slice_buffer_destroy_internal(exec_ctx, &output);
   grpc_metadata_batch_destroy(exec_ctx, &b);
 

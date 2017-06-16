@@ -82,7 +82,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State &state) {
         (size_t)state.range(1),
         &stats,
     };
-    grpc_chttp2_encode_header(&exec_ctx, &c, &b, &hopt, &outbuf);
+    grpc_chttp2_encode_header(&exec_ctx, &c, NULL, 0, &b, &hopt, &outbuf);
     if (!logged_representative_output && state.iterations() > 3) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {

@@ -162,6 +162,32 @@ static uint32_t target_write_size(grpc_chttp2_transport *t) {
   return 1024 * 1024;
 }
 
+// Returns true if initial_metadata contains only default headers.
+// Sets status_header and content_type_header to point to the relevant
+// headers, if present (but may not be set if the function returns false).
+//
+// TODO(roth): The fact that we hard-code these particular headers here
+// is fairly ugly.  Need some better way to know which headers are
+// default, maybe via a bit in the static metadata table?
+static bool is_default_initial_metadata(grpc_metadata_batch *initial_metadata,
+                                        grpc_mdelem **status_header,
+                                        grpc_mdelem **content_type_header) {
+  if (initial_metadata->list.count > 4) return false;
+  for (grpc_linked_mdelem *elem = initial_metadata->list.head; elem != NULL;
+       elem = elem->next) {
+    if (grpc_slice_eq(GRPC_MDKEY(elem->md), GRPC_MDSTR_STATUS)) {
+      *status_header = &elem->md;
+    } else if (grpc_slice_eq(GRPC_MDKEY(elem->md), GRPC_MDSTR_CONTENT_TYPE)) {
+      *content_type_header = &elem->md;
+    } else if (!grpc_slice_eq(GRPC_MDKEY(elem->md),
+                              GRPC_MDSTR_GRPC_ACCEPT_ENCODING) &&
+               !grpc_slice_eq(GRPC_MDKEY(elem->md), GRPC_MDSTR_GRPC_ENCODING)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
@@ -218,31 +244,60 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         t->is_client ? "CLIENT" : "SERVER", s->id, sent_initial_metadata,
         s->send_initial_metadata != NULL, s->announce_window));
 
+    grpc_mdelem *extra_headers_for_trailing_metadata[2];
+    size_t num_extra_headers_for_trailing_metadata = 0;
+
     /* send initial metadata if it's available */
-    if (!sent_initial_metadata && s->send_initial_metadata) {
-      grpc_encode_header_options hopt = {
-          .stream_id = s->id,
-          .is_eof = false,
-          .use_true_binary_metadata =
-              t->settings
-                  [GRPC_PEER_SETTINGS]
-                  [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] != 0,
-          .max_frame_size = t->settings[GRPC_PEER_SETTINGS]
-                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-          .stats = &s->stats.outgoing};
-      grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor,
-                                s->send_initial_metadata, &hopt, &t->outbuf);
+    if (!sent_initial_metadata && s->send_initial_metadata != NULL) {
+      grpc_mdelem *status_header = NULL;
+      grpc_mdelem *content_type_header = NULL;
+      // We skip this on the server side if there is no custom initial
+      // metadata, there are no messages to send, and we are also sending
+      // trailing metadata.  This results in a Trailers-Only response,
+      // which is required for retries, as per:
+      // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
+      if (t->is_client || s->fetching_send_message != NULL ||
+          s->flow_controlled_buffer.length != 0 ||
+          s->send_trailing_metadata == NULL ||
+          !is_default_initial_metadata(s->send_initial_metadata, &status_header,
+                                       &content_type_header)) {
+        grpc_encode_header_options hopt = {
+            .stream_id = s->id,
+            .is_eof = false,
+            .use_true_binary_metadata =
+                t->settings
+                    [GRPC_PEER_SETTINGS]
+                    [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] != 0,
+            .max_frame_size = t->settings[GRPC_PEER_SETTINGS]
+                                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+            .stats = &s->stats.outgoing};
+        grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor, NULL, 0,
+                                  s->send_initial_metadata, &hopt, &t->outbuf);
+        now_writing = true;
+        t->ping_state.pings_before_data_required =
+            t->ping_policy.max_pings_without_data;
+        if (!t->is_client) {
+          t->ping_recv_state.last_ping_recv_time =
+              gpr_inf_past(GPR_CLOCK_MONOTONIC);
+          t->ping_recv_state.ping_strikes = 0;
+        }
+      } else {
+        GRPC_CHTTP2_IF_TRACING(
+            gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
+        // When sending Trailers-Only, we need to move the status and
+        // content-type headers to the trailers.
+        if (status_header != NULL) {
+          extra_headers_for_trailing_metadata
+              [num_extra_headers_for_trailing_metadata++] = status_header;
+        }
+        if (content_type_header != NULL) {
+          extra_headers_for_trailing_metadata
+              [num_extra_headers_for_trailing_metadata++] = content_type_header;
+        }
+      }
       s->send_initial_metadata = NULL;
       s->sent_initial_metadata = true;
       sent_initial_metadata = true;
-      now_writing = true;
-      t->ping_state.pings_before_data_required =
-          t->ping_policy.max_pings_without_data;
-      if (!t->is_client) {
-        t->ping_recv_state.last_ping_recv_time =
-            gpr_inf_past(GPR_CLOCK_MONOTONIC);
-        t->ping_recv_state.ping_strikes = 0;
-      }
     }
     /* send any window updates */
     if (s->announce_window > 0) {
@@ -320,6 +375,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       if (s->send_trailing_metadata != NULL &&
           s->fetching_send_message == NULL &&
           s->flow_controlled_buffer.length == 0) {
+        GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
         if (grpc_metadata_batch_is_empty(s->send_trailing_metadata)) {
           grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, 0, true,
                                   &s->stats.outgoing, &t->outbuf);
@@ -337,6 +393,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                              [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
               .stats = &s->stats.outgoing};
           grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor,
+                                    extra_headers_for_trailing_metadata,
+                                    num_extra_headers_for_trailing_metadata,
                                     s->send_trailing_metadata, &hopt,
                                     &t->outbuf);
         }
