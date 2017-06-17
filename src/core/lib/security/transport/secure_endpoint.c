@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -147,7 +132,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
     }
   }
   ep->read_buffer = NULL;
-  grpc_closure_sched(exec_ctx, ep->read_cb, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, ep->read_cb, error);
   SECURE_ENDPOINT_UNREF(exec_ctx, ep, "read");
 }
 
@@ -332,7 +317,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   if (result != TSI_OK) {
     /* TODO(yangg) do different things according to the error type? */
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &ep->output_buffer);
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb,
         grpc_set_tsi_error_result(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Wrap failed"), result));
@@ -380,11 +365,6 @@ static int endpoint_get_fd(grpc_endpoint *secure_ep) {
   return grpc_endpoint_get_fd(ep->wrapped_ep);
 }
 
-static grpc_workqueue *endpoint_get_workqueue(grpc_endpoint *secure_ep) {
-  secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  return grpc_endpoint_get_workqueue(ep->wrapped_ep);
-}
-
 static grpc_resource_user *endpoint_get_resource_user(
     grpc_endpoint *secure_ep) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
@@ -393,7 +373,6 @@ static grpc_resource_user *endpoint_get_resource_user(
 
 static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_write,
-                                            endpoint_get_workqueue,
                                             endpoint_add_to_pollset,
                                             endpoint_add_to_pollset_set,
                                             endpoint_shutdown,
@@ -420,7 +399,7 @@ grpc_endpoint *grpc_secure_endpoint_create(
   grpc_slice_buffer_init(&ep->output_buffer);
   grpc_slice_buffer_init(&ep->source_buffer);
   ep->read_buffer = NULL;
-  grpc_closure_init(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
   gpr_mu_init(&ep->protector_mu);
   gpr_ref_init(&ep->ref, 1);
   return &ep->base;

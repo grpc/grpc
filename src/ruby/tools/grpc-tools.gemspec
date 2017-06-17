@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.homepage = 'https://github.com/google/grpc/tree/master/src/ruby/tools'
   s.summary = 'Development tools for Ruby gRPC'
   s.description = 'protoc and the Ruby gRPC protoc plugin'
-  s.license = 'BSD-3-Clause'
+  s.license = 'Apache-2.0'
 
   s.files = %w( version.rb platform_check.rb README.md )
   s.files += Dir.glob('bin/**/*')

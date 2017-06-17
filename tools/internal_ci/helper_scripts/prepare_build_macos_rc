@@ -1,32 +1,17 @@
 #!/bin/bash
-# Copyright 2017, Google Inc.
-# All rights reserved.
+# Copyright 2017 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Source this rc script to prepare the environment for macos builds
 
@@ -36,37 +21,47 @@
 yes | ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 brew install autoconf automake libtool ccache cmake gflags gpg wget
 
-# TODO(jtattermusch): install rvm & ruby
-# TODO(jtattermusch): install cocoapods 
+# TODO(jtattermusch): hkp://keys.gnupg.net fails with "No route to host"
+gpg --keyserver hkp://193.164.133.100 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+curl -sSL https://get.rvm.io | sudo bash -s stable
+
+# add ourselves to rvm group to prevent later "access denied" errors.
+sudo dseditgroup -o edit -a `whoami` -t user rvm
+
+set +ex
+source /etc/profile.d/rvm.sh
+rvm install ruby-2.3
+gem install bundler
+
+rvm osx-ssl-certs status all
+rvm osx-ssl-certs update all
+set -ex
+
+# cocoapods
+gem install cocoapods --version 1.0.0
 
 # python
-wget https://bootstrap.pypa.io/get-pip.py
+wget -q https://bootstrap.pypa.io/get-pip.py
 sudo python get-pip.py
 sudo pip install virtualenv
 
 # TODO(jtattermusch): install python3
 
 # mono
-wget https://download.mono-project.com/archive/5.0.1/macos-10-universal/MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg 
+wget -q https://download.mono-project.com/archive/5.0.1/macos-10-universal/MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg
 sudo installer -pkg MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg -target /
+ln -s /Library/Frameworks/Mono.framework/Versions/Current/bin/mono /usr/local/bin/mono
  
 # dotnet SDK
-wget https://go.microsoft.com/fwlink/?linkid=843444 -O dotnet-dev-osx-x64.1.0.1.pkg
+brew install openssl
+wget -q https://go.microsoft.com/fwlink/?linkid=843444 -O dotnet-dev-osx-x64.1.0.1.pkg
 sudo installer -pkg dotnet-dev-osx-x64.1.0.1.pkg -target /
 ln -s /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet
 dotnet --version  # bootstrap dotnet SDK
 
 # nvm
 wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.30.2/install.sh | bash
-# bootstrap nvm silently & without terminating this script
-set +ex
-source ~/.nvm/nvm.sh
-set -ex
 
-# node
-nvm install 4
-nvm alias default 4
-npm update npm -g
-npm install -g node-pre-gyp
+# TODO(jtattermusch): install node if needed
 
 git submodule update --init
