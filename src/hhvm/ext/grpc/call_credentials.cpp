@@ -110,7 +110,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
   const Variant& function) {
 
   plugin_state *state;
-  state = (plugin_state *)req::calloc_untyped(1, sizeof(plugin_state));
+  state = (plugin_state *)req::calloc(1, sizeof(plugin_state));
   state->function = function;
 
   grpc_metadata_credentials_plugin plugin;

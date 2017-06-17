@@ -399,10 +399,10 @@ Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
     elem = &elements[i];
 
     key_len = GRPC_SLICE_LENGTH(elem->key);
-    str_key = (char *) req::calloc_untyped(key_len + 1, sizeof(char));
+    str_key = (char *) req::calloc(key_len + 1, sizeof(char));
     memcpy(str_key, GRPC_SLICE_START_PTR(elem->key), key_len);
 
-    str_val = (char *) req::calloc_untyped(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
+    str_val = (char *) req::calloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
     memcpy(str_val, GRPC_SLICE_START_PTR(elem->value), GRPC_SLICE_LENGTH(elem->value));
 
     auto key = String(str_key, key_len, CopyString);

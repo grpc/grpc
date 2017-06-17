@@ -64,7 +64,7 @@ void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
 
   grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
   size_t length = GRPC_SLICE_LENGTH(slice);
-  char *string = (char *)HPHP::req::calloc_untyped(length + 1, sizeof(char));
+  char *string = (char *)HPHP::req::calloc(length + 1, sizeof(char));
   memcpy(string, GRPC_SLICE_START_PTR(slice), length);
   grpc_slice_unref(slice);
 
