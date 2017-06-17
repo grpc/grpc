@@ -35,13 +35,11 @@
 
 @interface GRXBufferedPipe ()
 @property(atomic) id<GRXWriteable> writeable;
-@property(atomic) BOOL inputIsFinished;
 @end
 
 @implementation GRXBufferedPipe {
   NSError *_errorOrNil;
   dispatch_queue_t _writeQueue;
-  dispatch_once_t _finishAction;
 }
 
 @synthesize state = _state;
@@ -62,9 +60,6 @@
 #pragma mark GRXWriteable implementation
 
 - (void)writeValue:(id)value {
-  if (self.inputIsFinished) {
-    return;
-  }
   if ([value respondsToSelector:@selector(copy)]) {
     // Even if we're paused and with enqueued values, we can't excert back-pressure to our writer.
     // So just buffer the new value.
@@ -78,22 +73,16 @@
 }
 
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
-  if (self.inputIsFinished) {
-    return;
+  if (errorOrNil) {
+    // No need to write pending values.
+    _errorOrNil = errorOrNil;
+    [self finishWithError:_errorOrNil];
+  } else {
+    __weak GRXBufferedPipe *weakSelf = self;
+    dispatch_async(_writeQueue, ^{
+      [weakSelf finishWithError:nil];
+    });
   }
-  self.inputIsFinished = YES;
-  dispatch_once(&_finishAction, ^{
-    if (errorOrNil) {
-      // No need to write pending values.
-      _errorOrNil = errorOrNil;
-      [self finishWithError:_errorOrNil];
-    } else {
-      __weak GRXBufferedPipe *weakSelf = self;
-      dispatch_async(_writeQueue, ^{
-        [weakSelf finishWithError:nil];
-      });
-    }
-  });
 }
 
 #pragma mark GRXWriter implementation
