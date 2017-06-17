@@ -107,6 +107,8 @@ typedef struct {
 static gpr_once init_openssl_once = GPR_ONCE_INIT;
 static gpr_mu *openssl_mutexes = NULL;
 
+/* These functions are no longer used in OpenSSL 1.1 */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void openssl_locking_cb(int mode, int type, const char *file, int line) {
   if (mode & CRYPTO_LOCK) {
     gpr_mu_lock(&openssl_mutexes[type]);
@@ -118,6 +120,7 @@ static void openssl_locking_cb(int mode, int type, const char *file, int line) {
 static unsigned long openssl_thread_id_cb(void) {
   return (unsigned long)gpr_thd_currentid();
 }
+#endif  // OPENSSL_VERSION_NUMBER < 0x10100000L
 
 static void init_openssl(void) {
   int i;
@@ -131,8 +134,10 @@ static void init_openssl(void) {
   for (i = 0; i < CRYPTO_num_locks(); i++) {
     gpr_mu_init(&openssl_mutexes[i]);
   }
+#if OPENSSL_VERSION_NUMBER < 0x10100000L // These macros are no-ops in OpenSSL 1.1
   CRYPTO_set_locking_callback(openssl_locking_cb);
   CRYPTO_set_id_callback(openssl_thread_id_cb);
+#endif  // OPENSSL_VERSION_NUMBER < 0x10100000L
 }
 
 /* --- Ssl utils. ---*/

@@ -424,7 +424,7 @@ class CallOpClientSendClose {
 
 class CallOpServerSendStatus {
  public:
-  CallOpServerSendStatus() : send_status_available_(false) {}
+  CallOpServerSendStatus() : send_status_available_(false), send_status_code_(GRPC_STATUS_OK) {}
 
   void ServerSendStatus(
       const std::multimap<grpc::string, grpc::string>& trailing_metadata,
@@ -500,7 +500,7 @@ class CallOpRecvInitialMetadata {
 
 class CallOpClientRecvStatus {
  public:
-  CallOpClientRecvStatus() : recv_status_(nullptr) {}
+  CallOpClientRecvStatus() : recv_status_(nullptr), status_code_(GRPC_STATUS_OK) {}
 
   void ClientRecvStatus(ClientContext* context, Status* status) {
     metadata_map_ = &context->trailing_metadata_;
@@ -573,7 +573,7 @@ class CallOpSet : public CallOpSetInterface,
                   public Op5,
                   public Op6 {
  public:
-  CallOpSet() : return_tag_(this) {}
+  CallOpSet() : return_tag_(this), call_(nullptr) {}
   void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
     this->Op1::AddOp(ops, nops);
     this->Op2::AddOp(ops, nops);
