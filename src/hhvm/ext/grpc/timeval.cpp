@@ -48,10 +48,7 @@ void TimevalData::init(gpr_timespec time) {
 }
 
 void TimevalData::sweep() {
-  //if (&wrapped) {
-    //free(wrapped);
-    //&wrapped = nullptr;
-  //}
+  // TODO: cleanup
 }
 
 gpr_timespec TimevalData::getWrapped() {
