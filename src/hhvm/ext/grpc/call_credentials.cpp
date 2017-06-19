@@ -31,6 +31,7 @@
 #include "hphp/runtime/base/object-data.h"
 #include "hphp/runtime/vm/native-data.h"
 #include "hphp/runtime/base/builtin-functions.h"
+#include "hphp/runtime/base/array-init.h"
 
 #include "call.h"
 
@@ -40,7 +41,7 @@
 namespace HPHP {
 
 Class* CallCredentialsData::s_class = nullptr;
-const StaticString CallCredentialsData::s_className("Grpc\\Channel");
+const StaticString CallCredentialsData::s_className("Grpc\\CallCredentials");
 
 IMPLEMENT_GET_CLASS(CallCredentialsData);
 
@@ -115,15 +116,12 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data) {
   Object returnObj = SystemLib::AllocStdClassObject();
-  returnObj.o_set("service_url", Variant(String(context.service_url, CopyString)));
-  returnObj.o_set("method_name", Variant(String(context.method_name, CopyString)));
-
-  Array params = Array();
-  params.append(returnObj);
+  returnObj.o_set("service_url", String(context.service_url, CopyString));
+  returnObj.o_set("method_name", String(context.method_name, CopyString));
 
   plugin_state *state = (plugin_state *)ptr;
 
-  Variant retval = vm_call_user_func(state->function, params);
+  Variant retval = vm_call_user_func(state->function, make_packed_array(returnObj));
 
   grpc_status_code code = GRPC_STATUS_OK;
   grpc_metadata_array metadata;

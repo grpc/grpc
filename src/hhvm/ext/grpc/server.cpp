@@ -125,8 +125,8 @@ Object HHVM_METHOD(Server, requestCall) {
   method_text = grpc_slice_to_c_string(details.method);
   host_text = grpc_slice_to_c_string(details.host);
 
-  resultObj.o_set("method_text", String(method_text));
-  resultObj.o_set("host_text", String(host_text));
+  resultObj.o_set("method_text", String(method_text, CopyString));
+  resultObj.o_set("host_text", String(host_text, CopyString));
 
   gpr_free(method_text);
   gpr_free(host_text);

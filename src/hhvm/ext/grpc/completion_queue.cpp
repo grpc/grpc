@@ -18,6 +18,7 @@
 
 #include "completion_queue.h"
 
+// TODO: Add thread local?
 grpc_completion_queue *completion_queue;
 
 void grpc_hhvm_init_completion_queue() {
