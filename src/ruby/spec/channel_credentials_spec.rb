@@ -20,7 +20,7 @@ describe GRPC::Core::ChannelCredentials do
 
   def load_test_certs
     test_root = File.join(File.dirname(__FILE__), 'testdata')
-    files = ['ca.pem', 'server1.pem', 'server1.key']
+    files = ['ca.pem', 'server1.key', 'server1.pem']
     files.map { |f| File.open(File.join(test_root, f)).read }
   end
 

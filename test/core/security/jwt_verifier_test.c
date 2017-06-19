@@ -341,7 +341,7 @@ static int httpcli_get_google_keys_for_email(
                     "/robot/v1/metadata/x509/"
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                     "gserviceaccount.com") == 0);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -385,7 +385,7 @@ static int httpcli_get_custom_keys_for_email(
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "keys.bar.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/jwk/foo@bar.com") == 0);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -419,7 +419,7 @@ static int httpcli_get_jwk_set(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/oauth2/v3/certs") == 0);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -434,7 +434,7 @@ static int httpcli_get_openid_config(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(strcmp(request->http.path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_httpcli_set_override(httpcli_get_jwk_set,
                             httpcli_post_should_not_be_called);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -475,7 +475,7 @@ static int httpcli_get_bad_json(grpc_exec_ctx *exec_ctx,
                                 grpc_httpcli_response *response) {
   *response = http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 

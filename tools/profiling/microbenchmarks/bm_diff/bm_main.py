@@ -80,6 +80,14 @@ def _args():
     type=int,
     default=multiprocessing.cpu_count(),
     help='Number of CPUs to use')
+  argp.add_argument(
+    '--pr_comment_name',
+    type=str,
+    default="microbenchmarks",
+    help='Name that Jenkins will use to commen on the PR')
+  argp.add_argument('--counters', dest='counters', action='store_true')
+  argp.add_argument('--no-counters', dest='counters', action='store_false')
+  argp.set_defaults(counters=True)
   args = argp.parse_args()
   assert args.diff_base or args.old, "One of diff_base or old must be set!"
   if args.loops < 3:
@@ -103,7 +111,7 @@ def eintr_be_gone(fn):
 
 def main(args):
 
-  bm_build.build('new', args.benchmarks, args.jobs)
+  bm_build.build('new', args.benchmarks, args.jobs, args.counters)
 
   old = args.old
   if args.diff_base:
@@ -112,22 +120,24 @@ def main(args):
       ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
     subprocess.check_call(['git', 'checkout', args.diff_base])
     try:
-      bm_build.build('old', args.benchmarks, args.jobs)
+      bm_build.build(old, args.benchmarks, args.jobs, args.counters)
     finally:
       subprocess.check_call(['git', 'checkout', where_am_i])
       subprocess.check_call(['git', 'submodule', 'update'])
 
-  bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.repetitions)
-  bm_run.run(old, args.benchmarks, args.jobs, args.loops, args.repetitions)
+  bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.repetitions, args.counters)
+  bm_run.run(old, args.benchmarks, args.jobs, args.loops, args.repetitions, args.counters)
 
   diff, note = bm_diff.diff(args.benchmarks, args.loops, args.track, old,
-                'new')
+                'new', args.counters)
   if diff:
-    text = 'Performance differences noted:\n' + diff
+    text = '[%s] Performance differences noted:\n%s' % (args.pr_comment_name, diff)
   else:
-    text = 'No significant performance differences'
-  print('%s\n%s' % (note, text))
-  comment_on_pr.comment_on_pr('```\n%s\n\n%s\n```' % (note, text))
+    text = '[%s] No significant performance differences' % args.pr_comment_name
+  if note:
+    text = note + '\n\n' + text
+  print('%s' % text)
+  comment_on_pr.comment_on_pr('```\n%s\n```' % text)
 
 
 if __name__ == '__main__':

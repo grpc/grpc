@@ -146,7 +146,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   gpr_log(GPR_INFO, "Start test left over");
 
   grpc_slice_buffer_init(&incoming);
-  grpc_closure_init(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(&exec_ctx, f.client_ep, &incoming, &done_closure);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(n == 1);
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   test_leftover(configs[1], 1);
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);

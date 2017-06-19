@@ -37,3 +37,4 @@ rm -f RemoteTestClient/*.{h,m}
 
 echo "TIME:  $(date)"
 pod install
+

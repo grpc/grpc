@@ -269,7 +269,7 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   } else {
     GRPC_ERROR_REF(err);
   }
-  grpc_closure_run(exec_ctx, calld->on_done_recv, err);
+  GRPC_CLOSURE_RUN(exec_ctx, calld->on_done_recv, err);
 }
 
 static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
@@ -281,11 +281,11 @@ static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
     *calld->pp_recv_message = calld->payload_bin_delivered
                                   ? NULL
                                   : (grpc_byte_stream *)&calld->read_stream;
-    grpc_closure_run(exec_ctx, calld->recv_message_ready, GRPC_ERROR_REF(err));
+    GRPC_CLOSURE_RUN(exec_ctx, calld->recv_message_ready, GRPC_ERROR_REF(err));
     calld->recv_message_ready = NULL;
     calld->payload_bin_delivered = true;
   }
-  grpc_closure_run(exec_ctx, calld->on_complete, GRPC_ERROR_REF(err));
+  GRPC_CLOSURE_RUN(exec_ctx, calld->on_complete, GRPC_ERROR_REF(err));
 }
 
 static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
@@ -296,7 +296,7 @@ static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
     /* do nothing. This is probably a GET request, and payload will be returned
     in hs_on_complete callback. */
   } else {
-    grpc_closure_run(exec_ctx, calld->recv_message_ready, GRPC_ERROR_REF(err));
+    GRPC_CLOSURE_RUN(exec_ctx, calld->recv_message_ready, GRPC_ERROR_REF(err));
   }
 }
 
@@ -383,11 +383,11 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   /* initialize members */
-  grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem,
+  GRPC_CLOSURE_INIT(&calld->hs_on_recv, hs_on_recv, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&calld->hs_on_complete, hs_on_complete, elem,
+  GRPC_CLOSURE_INIT(&calld->hs_on_complete, hs_on_complete, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&calld->hs_recv_message_ready, hs_recv_message_ready, elem,
+  GRPC_CLOSURE_INIT(&calld->hs_recv_message_ready, hs_recv_message_ready, elem,
                     grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&calld->read_slice_buffer);
   return GRPC_ERROR_NONE;

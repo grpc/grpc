@@ -179,7 +179,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
 
   tcp->read_cb = NULL;
   TCP_UNREF(exec_ctx, tcp, "read");
-  grpc_closure_sched(exec_ctx, cb, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
 }
 
 static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -193,7 +193,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   WSABUF buffer;
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "TCP socket is shutting down", &tcp->shutdown_error, 1));
@@ -220,7 +220,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   /* Did we get data immediately ? Yay. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
     info->bytes_transfered = bytes_read;
-    grpc_closure_sched(exec_ctx, &tcp->on_read, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, &tcp->on_read, GRPC_ERROR_NONE);
     return;
   }
 
@@ -233,7 +233,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       info->wsa_error = wsa_error;
-      grpc_closure_sched(exec_ctx, &tcp->on_read,
+      GRPC_CLOSURE_SCHED(exec_ctx, &tcp->on_read,
                          GRPC_WSA_ERROR(info->wsa_error, "WSARecv"));
       return;
     }
@@ -265,7 +265,7 @@ static void on_write(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
   }
 
   TCP_UNREF(exec_ctx, tcp, "write");
-  grpc_closure_sched(exec_ctx, cb, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
 }
 
 /* Initiates a write. */
@@ -283,7 +283,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   size_t len;
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "TCP socket is shutting down", &tcp->shutdown_error, 1));
@@ -317,7 +317,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     grpc_error *error = status == 0
                             ? GRPC_ERROR_NONE
                             : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
-    grpc_closure_sched(exec_ctx, cb, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
     if (allocated) gpr_free(allocated);
     return;
   }
@@ -335,7 +335,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       TCP_UNREF(exec_ctx, tcp, "write");
-      grpc_closure_sched(exec_ctx, cb, GRPC_WSA_ERROR(wsa_error, "WSASend"));
+      GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_WSA_ERROR(wsa_error, "WSASend"));
       return;
     }
   }
@@ -426,8 +426,8 @@ grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
   tcp->socket = socket;
   gpr_mu_init(&tcp->mu);
   gpr_ref_init(&tcp->refcount, 1);
-  grpc_closure_init(&tcp->on_read, on_read, tcp, grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&tcp->on_write, on_write, tcp, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&tcp->on_read, on_read, tcp, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&tcp->on_write, on_write, tcp, grpc_schedule_on_exec_ctx);
   tcp->peer_string = gpr_strdup(peer_string);
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   /* Tell network status tracking code about the new endpoint */

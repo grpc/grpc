@@ -107,10 +107,10 @@ static void grpc_ares_request_unref(grpc_exec_ctx *exec_ctx,
          acquire locks in on_done. ares_dns_resolver is using combiner to
          protect resources needed by on_done. */
       grpc_exec_ctx new_exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_closure_sched(&new_exec_ctx, r->on_done, r->error);
+      GRPC_CLOSURE_SCHED(&new_exec_ctx, r->on_done, r->error);
       grpc_exec_ctx_finish(&new_exec_ctx);
     } else {
-      grpc_closure_sched(exec_ctx, r->on_done, r->error);
+      GRPC_CLOSURE_SCHED(exec_ctx, r->on_done, r->error);
     }
     gpr_mu_destroy(&r->mu);
     grpc_ares_ev_driver_destroy(r->ev_driver);
@@ -370,7 +370,7 @@ static grpc_ares_request *grpc_dns_lookup_ares_impl(
   return r;
 
 error_cleanup:
-  grpc_closure_sched(exec_ctx, on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
   gpr_free(host);
   gpr_free(port);
   return NULL;
@@ -445,7 +445,7 @@ static void on_dns_lookup_done_cb(grpc_exec_ctx *exec_ctx, void *arg,
              &r->lb_addrs->addresses[i].address, sizeof(grpc_resolved_address));
     }
   }
-  grpc_closure_sched(exec_ctx, r->on_resolve_address_done,
+  GRPC_CLOSURE_SCHED(exec_ctx, r->on_resolve_address_done,
                      GRPC_ERROR_REF(error));
   grpc_lb_addresses_destroy(exec_ctx, r->lb_addrs);
   gpr_free(r);
@@ -461,7 +461,7 @@ static void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx,
       gpr_zalloc(sizeof(grpc_resolve_address_ares_request));
   r->addrs_out = addrs;
   r->on_resolve_address_done = on_done;
-  grpc_closure_init(&r->on_dns_lookup_done, on_dns_lookup_done_cb, r,
+  GRPC_CLOSURE_INIT(&r->on_dns_lookup_done, on_dns_lookup_done_cb, r,
                     grpc_schedule_on_exec_ctx);
   grpc_dns_lookup_ares(exec_ctx, NULL /* dns_server */, name, default_port,
                        interested_parties, &r->on_dns_lookup_done, &r->lb_addrs,

@@ -118,7 +118,7 @@ static void handshake_failed_locked(grpc_exec_ctx* exec_ctx,
     handshaker->shutdown = true;
   }
   // Invoke callback.
-  grpc_closure_sched(exec_ctx, handshaker->on_handshake_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, handshaker->on_handshake_done, error);
 }
 
 // Callback invoked when finished writing HTTP CONNECT request.
@@ -217,7 +217,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
     goto done;
   }
   // Success.  Invoke handshake-done callback.
-  grpc_closure_sched(exec_ctx, handshaker->on_handshake_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, handshaker->on_handshake_done, error);
 done:
   // Set shutdown to true so that subsequent calls to
   // http_connect_handshaker_shutdown() do nothing.
@@ -266,7 +266,7 @@ static void http_connect_handshaker_do_handshake(
     gpr_mu_lock(&handshaker->mu);
     handshaker->shutdown = true;
     gpr_mu_unlock(&handshaker->mu);
-    grpc_closure_sched(exec_ctx, on_handshake_done, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, on_handshake_done, GRPC_ERROR_NONE);
     return;
   }
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
@@ -339,9 +339,9 @@ static grpc_handshaker* grpc_http_connect_handshaker_create() {
   gpr_mu_init(&handshaker->mu);
   gpr_ref_init(&handshaker->refcount, 1);
   grpc_slice_buffer_init(&handshaker->write_buffer);
-  grpc_closure_init(&handshaker->request_done_closure, on_write_done,
+  GRPC_CLOSURE_INIT(&handshaker->request_done_closure, on_write_done,
                     handshaker, grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&handshaker->response_read_closure, on_read_done,
+  GRPC_CLOSURE_INIT(&handshaker->response_read_closure, on_read_done,
                     handshaker, grpc_schedule_on_exec_ctx);
   grpc_http_parser_init(&handshaker->http_parser, GRPC_HTTP_RESPONSE,
                         &handshaker->http_response);

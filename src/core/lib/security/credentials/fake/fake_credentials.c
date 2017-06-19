@@ -78,11 +78,8 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
 }
 
 grpc_arg grpc_fake_transport_expected_targets_arg(char *expected_targets) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_STRING;
-  arg.key = GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS;
-  arg.value.string = expected_targets;
-  return arg;
+  return grpc_channel_arg_string_create(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS,
+                                        expected_targets);
 }
 
 const char *grpc_fake_transport_get_expected_targets(
@@ -123,8 +120,8 @@ static void md_only_test_get_request_metadata(
   if (c->is_async) {
     grpc_credentials_metadata_request *cb_arg =
         grpc_credentials_metadata_request_create(creds, cb, user_data);
-    grpc_closure_sched(exec_ctx,
-                       grpc_closure_create(on_simulated_token_fetch_done,
+    GRPC_CLOSURE_SCHED(exec_ctx,
+                       GRPC_CLOSURE_CREATE(on_simulated_token_fetch_done,
                                            cb_arg, grpc_executor_scheduler),
                        GRPC_ERROR_NONE);
   } else {

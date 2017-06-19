@@ -122,7 +122,7 @@ void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_auth_context **auth_context,
                                         grpc_closure *on_peer_checked) {
   if (sc == NULL) {
-    grpc_closure_sched(exec_ctx, on_peer_checked,
+    GRPC_CLOSURE_SCHED(exec_ctx, on_peer_checked,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "cannot check peer -- no security connector"));
     tsi_peer_destruct(&peer);
@@ -191,12 +191,8 @@ static const grpc_arg_pointer_vtable connector_pointer_vtable = {
     connector_pointer_cmp};
 
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc) {
-  grpc_arg result;
-  result.type = GRPC_ARG_POINTER;
-  result.key = GRPC_ARG_SECURITY_CONNECTOR;
-  result.value.pointer.vtable = &connector_pointer_vtable;
-  result.value.pointer.p = sc;
-  return result;
+  return grpc_channel_arg_pointer_create(GRPC_ARG_SECURITY_CONNECTOR, sc,
+                                         &connector_pointer_vtable);
 }
 
 grpc_security_connector *grpc_security_connector_from_arg(const grpc_arg *arg) {
@@ -340,7 +336,7 @@ static void fake_check_peer(grpc_exec_ctx *exec_ctx,
       *auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
 end:
-  grpc_closure_sched(exec_ctx, on_peer_checked, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
@@ -602,7 +598,7 @@ static void ssl_channel_check_peer(grpc_exec_ctx *exec_ctx,
                                              ? c->overridden_target_name
                                              : c->target_name,
                                      &peer, auth_context);
-  grpc_closure_sched(exec_ctx, on_peer_checked, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
@@ -612,7 +608,7 @@ static void ssl_server_check_peer(grpc_exec_ctx *exec_ctx,
                                   grpc_closure *on_peer_checked) {
   grpc_error *error = ssl_check_peer(sc, NULL, &peer, auth_context);
   tsi_peer_destruct(&peer);
-  grpc_closure_sched(exec_ctx, on_peer_checked, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_peer_checked, error);
 }
 
 static void add_shallow_auth_property_to_peer(tsi_peer *peer,

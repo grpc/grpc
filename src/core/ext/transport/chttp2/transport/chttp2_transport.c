@@ -269,30 +269,30 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_slice_buffer_init(&t->outbuf);
   grpc_chttp2_hpack_compressor_init(&t->hpack_compressor);
 
-  grpc_closure_init(&t->write_action, write_action, t,
+  GRPC_CLOSURE_INIT(&t->write_action, write_action, t,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&t->read_action_locked, read_action_locked, t,
+  GRPC_CLOSURE_INIT(&t->read_action_locked, read_action_locked, t,
                     grpc_combiner_scheduler(t->combiner));
-  grpc_closure_init(&t->benign_reclaimer_locked, benign_reclaimer_locked, t,
+  GRPC_CLOSURE_INIT(&t->benign_reclaimer_locked, benign_reclaimer_locked, t,
                     grpc_combiner_scheduler(t->combiner));
-  grpc_closure_init(&t->destructive_reclaimer_locked,
+  GRPC_CLOSURE_INIT(&t->destructive_reclaimer_locked,
                     destructive_reclaimer_locked, t,
                     grpc_combiner_scheduler(t->combiner));
-  grpc_closure_init(&t->retry_initiate_ping_locked, retry_initiate_ping_locked,
+  GRPC_CLOSURE_INIT(&t->retry_initiate_ping_locked, retry_initiate_ping_locked,
                     t, grpc_combiner_scheduler(t->combiner));
-  grpc_closure_init(&t->start_bdp_ping_locked, start_bdp_ping_locked, t,
+  GRPC_CLOSURE_INIT(&t->start_bdp_ping_locked, start_bdp_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner));
-  grpc_closure_init(&t->finish_bdp_ping_locked, finish_bdp_ping_locked, t,
+  GRPC_CLOSURE_INIT(&t->finish_bdp_ping_locked, finish_bdp_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner));
-  grpc_closure_init(&t->init_keepalive_ping_locked, init_keepalive_ping_locked,
+  GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping_locked,
                     t, grpc_combiner_scheduler(t->combiner));
-  grpc_closure_init(&t->start_keepalive_ping_locked,
+  GRPC_CLOSURE_INIT(&t->start_keepalive_ping_locked,
                     start_keepalive_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner));
-  grpc_closure_init(&t->finish_keepalive_ping_locked,
+  GRPC_CLOSURE_INIT(&t->finish_keepalive_ping_locked,
                     finish_keepalive_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner));
-  grpc_closure_init(&t->keepalive_watchdog_fired_locked,
+  GRPC_CLOSURE_INIT(&t->keepalive_watchdog_fired_locked,
                     keepalive_watchdog_fired_locked, t,
                     grpc_combiner_scheduler(t->combiner));
 
@@ -567,8 +567,8 @@ static void destroy_transport_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
-  grpc_closure_sched(exec_ctx,
-                     grpc_closure_create(destroy_transport_locked, t,
+  GRPC_CLOSURE_SCHED(exec_ctx,
+                     GRPC_CLOSURE_CREATE(destroy_transport_locked, t,
                                          grpc_combiner_scheduler(t->combiner)),
                      GRPC_ERROR_NONE);
 }
@@ -656,12 +656,12 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_data_parser_init(&s->data_parser);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  grpc_closure_init(&s->complete_fetch_locked, complete_fetch_locked, s,
+  GRPC_CLOSURE_INIT(&s->complete_fetch_locked, complete_fetch_locked, s,
                     grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&s->unprocessed_incoming_frames_buffer);
   grpc_slice_buffer_init(&s->frame_storage);
   s->pending_byte_stream = false;
-  grpc_closure_init(&s->reset_byte_stream, reset_byte_stream, s,
+  GRPC_CLOSURE_INIT(&s->reset_byte_stream, reset_byte_stream, s,
                     grpc_combiner_scheduler(t->combiner));
 
   GRPC_CHTTP2_REF_TRANSPORT(t, "stream");
@@ -733,7 +733,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
 
   GPR_TIMER_END("destroy_stream", 0);
 
-  grpc_closure_sched(exec_ctx, s->destroy_stream_arg, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, s->destroy_stream_arg, GRPC_ERROR_NONE);
 }
 
 static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
@@ -744,8 +744,8 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
 
   s->destroy_stream_arg = then_schedule_closure;
-  grpc_closure_sched(
-      exec_ctx, grpc_closure_init(&s->destroy_stream, destroy_stream_locked, s,
+  GRPC_CLOSURE_SCHED(
+      exec_ctx, GRPC_CLOSURE_INIT(&s->destroy_stream, destroy_stream_locked, s,
                                   grpc_combiner_scheduler(t->combiner)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("destroy_stream", 0);
@@ -796,7 +796,7 @@ static void set_write_state(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                  write_state_name(st), reason));
   t->write_state = st;
   if (st == GRPC_CHTTP2_WRITE_STATE_IDLE) {
-    grpc_closure_list_sched(exec_ctx, &t->run_after_write);
+    GRPC_CLOSURE_LIST_SCHED(exec_ctx, &t->run_after_write);
     if (t->close_transport_on_writes_finished != NULL) {
       grpc_error *err = t->close_transport_on_writes_finished;
       t->close_transport_on_writes_finished = NULL;
@@ -813,9 +813,9 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING, reason);
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
-      grpc_closure_sched(
+      GRPC_CLOSURE_SCHED(
           exec_ctx,
-          grpc_closure_init(&t->write_action_begin_locked,
+          GRPC_CLOSURE_INIT(&t->write_action_begin_locked,
                             write_action_begin_locked, t,
                             grpc_combiner_finally_scheduler(t->combiner)),
           GRPC_ERROR_NONE);
@@ -863,12 +863,12 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
     case GRPC_CHTTP2_PARTIAL_WRITE:
       set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
                       "begin writing partial");
-      grpc_closure_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_SCHED(exec_ctx, &t->write_action, GRPC_ERROR_NONE);
       break;
     case GRPC_CHTTP2_FULL_WRITE:
       set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING,
                       "begin writing");
-      grpc_closure_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_SCHED(exec_ctx, &t->write_action, GRPC_ERROR_NONE);
       break;
   }
   GPR_TIMER_END("write_action_begin_locked", 0);
@@ -879,7 +879,7 @@ static void write_action(grpc_exec_ctx *exec_ctx, void *gt, grpc_error *error) {
   GPR_TIMER_BEGIN("write_action", 0);
   grpc_endpoint_write(
       exec_ctx, t->ep, &t->outbuf,
-      grpc_closure_init(&t->write_action_end_locked, write_action_end_locked, t,
+      GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end_locked, t,
                         grpc_combiner_scheduler(t->combiner)));
   GPR_TIMER_END("write_action", 0);
 }
@@ -914,9 +914,9 @@ static void write_action_end_locked(grpc_exec_ctx *exec_ctx, void *tp,
       set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING,
                       "continue writing [!covered]");
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
-      grpc_closure_run(
+      GRPC_CLOSURE_RUN(
           exec_ctx,
-          grpc_closure_init(&t->write_action_begin_locked,
+          GRPC_CLOSURE_INIT(&t->write_action_begin_locked,
                             write_action_begin_locked, t,
                             grpc_combiner_finally_scheduler(t->combiner)),
           GRPC_ERROR_NONE);
@@ -1046,7 +1046,7 @@ static void null_then_run_closure(grpc_exec_ctx *exec_ctx,
                                   grpc_closure **closure, grpc_error *error) {
   grpc_closure *c = *closure;
   *closure = NULL;
-  grpc_closure_run(exec_ctx, c, error);
+  GRPC_CLOSURE_RUN(exec_ctx, c, error);
 }
 
 void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
@@ -1088,7 +1088,7 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
     }
     if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
         !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
-      grpc_closure_run(exec_ctx, closure, closure->error_data.error);
+      GRPC_CLOSURE_RUN(exec_ctx, closure, closure->error_data.error);
     } else {
       grpc_closure_list_append(&t->run_after_write, closure,
                                closure->error_data.error);
@@ -1224,7 +1224,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   grpc_closure *on_complete = op->on_complete;
   if (on_complete == NULL) {
     on_complete =
-        grpc_closure_create(do_nothing, NULL, grpc_schedule_on_exec_ctx);
+        GRPC_CLOSURE_CREATE(do_nothing, NULL, grpc_schedule_on_exec_ctx);
   }
 
   /* use final_data as a barrier until enqueue time; the inital counter is
@@ -1456,9 +1456,9 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   op->handler_private.extra_arg = gs;
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
-  grpc_closure_sched(
+  GRPC_CLOSURE_SCHED(
       exec_ctx,
-      grpc_closure_init(&op->handler_private.closure, perform_stream_op_locked,
+      GRPC_CLOSURE_INIT(&op->handler_private.closure, perform_stream_op_locked,
                         op, grpc_combiner_scheduler(t->combiner)),
       GRPC_ERROR_NONE);
   GPR_TIMER_END("perform_stream_op", 0);
@@ -1472,7 +1472,7 @@ static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     grpc_chttp2_ping_queue *pq = &t->ping_queues[i];
     for (size_t j = 0; j < GRPC_CHTTP2_PCL_COUNT; j++) {
       grpc_closure_list_fail_all(&pq->lists[j], GRPC_ERROR_REF(error));
-      grpc_closure_list_sched(exec_ctx, &pq->lists[j]);
+      GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pq->lists[j]);
     }
   }
   GRPC_ERROR_UNREF(error);
@@ -1507,7 +1507,7 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     gpr_free(from);
     return;
   }
-  grpc_closure_list_sched(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
+  GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
     grpc_chttp2_initiate_write(exec_ctx, t, "continue_pings");
   }
@@ -1581,7 +1581,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
     close_transport_locked(exec_ctx, t, close_transport);
   }
 
-  grpc_closure_run(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_RUN(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "transport_op");
 }
@@ -1593,8 +1593,8 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   gpr_free(msg);
   op->handler_private.extra_arg = gt;
   GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");
-  grpc_closure_sched(exec_ctx,
-                     grpc_closure_init(&op->handler_private.closure,
+  GRPC_CLOSURE_SCHED(exec_ctx,
+                     GRPC_CLOSURE_INIT(&op->handler_private.closure,
                                        perform_transport_op_locked, op,
                                        grpc_combiner_scheduler(t->combiner)),
                      GRPC_ERROR_NONE);
@@ -2472,7 +2472,7 @@ static void reset_byte_stream(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, s->t, s);
   } else {
     GPR_ASSERT(error != GRPC_ERROR_NONE);
-    grpc_closure_sched(exec_ctx, s->on_next, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(exec_ctx, s->on_next, GRPC_ERROR_REF(error));
     s->on_next = NULL;
     GRPC_ERROR_UNREF(s->byte_stream_error);
     s->byte_stream_error = GRPC_ERROR_NONE;
@@ -2551,9 +2551,9 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   if (s->frame_storage.length > 0) {
     grpc_slice_buffer_swap(&s->frame_storage,
                            &s->unprocessed_incoming_frames_buffer);
-    grpc_closure_sched(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
   } else if (s->byte_stream_error != GRPC_ERROR_NONE) {
-    grpc_closure_sched(exec_ctx, bs->next_action.on_complete,
+    GRPC_CLOSURE_SCHED(exec_ctx, bs->next_action.on_complete,
                        GRPC_ERROR_REF(s->byte_stream_error));
     if (s->data_parser.parsing_frame != NULL) {
       incoming_byte_stream_unref(exec_ctx, s->data_parser.parsing_frame);
@@ -2563,7 +2563,7 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
     if (bs->remaining_bytes != 0) {
       s->byte_stream_error =
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
-      grpc_closure_sched(exec_ctx, bs->next_action.on_complete,
+      GRPC_CLOSURE_SCHED(exec_ctx, bs->next_action.on_complete,
                          GRPC_ERROR_REF(s->byte_stream_error));
       if (s->data_parser.parsing_frame != NULL) {
         incoming_byte_stream_unref(exec_ctx, s->data_parser.parsing_frame);
@@ -2594,9 +2594,9 @@ static bool incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
     gpr_ref(&bs->refs);
     bs->next_action.max_size_hint = max_size_hint;
     bs->next_action.on_complete = on_complete;
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx,
-        grpc_closure_init(&bs->next_action.closure,
+        GRPC_CLOSURE_INIT(&bs->next_action.closure,
                           incoming_byte_stream_next_locked, bs,
                           grpc_combiner_scheduler(bs->transport->combiner)),
         GRPC_ERROR_NONE);
@@ -2623,7 +2623,7 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
   } else {
     grpc_error *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
-    grpc_closure_sched(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_REF(error));
     return error;
   }
   GPR_TIMER_END("incoming_byte_stream_pull", 0);
@@ -2652,8 +2652,8 @@ static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_BEGIN("incoming_byte_stream_destroy", 0);
   grpc_chttp2_incoming_byte_stream *bs =
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
-  grpc_closure_sched(
-      exec_ctx, grpc_closure_init(
+  GRPC_CLOSURE_SCHED(
+      exec_ctx, GRPC_CLOSURE_INIT(
                     &bs->destroy_action, incoming_byte_stream_destroy_locked,
                     bs, grpc_combiner_scheduler(bs->transport->combiner)),
       GRPC_ERROR_NONE);
@@ -2666,7 +2666,7 @@ static void incoming_byte_stream_publish_error(
   grpc_chttp2_stream *s = bs->stream;
 
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  grpc_closure_sched(exec_ctx, s->on_next, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_SCHED(exec_ctx, s->on_next, GRPC_ERROR_REF(error));
   s->on_next = NULL;
   GRPC_ERROR_UNREF(s->byte_stream_error);
   s->byte_stream_error = GRPC_ERROR_REF(error);
@@ -2683,7 +2683,7 @@ grpc_error *grpc_chttp2_incoming_byte_stream_push(
     grpc_error *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many bytes in stream");
 
-    grpc_closure_sched(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_REF(error));
     grpc_slice_unref_internal(exec_ctx, slice);
     return error;
   } else {
@@ -2706,7 +2706,7 @@ grpc_error *grpc_chttp2_incoming_byte_stream_finished(
     }
   }
   if (error != GRPC_ERROR_NONE && reset_on_error) {
-    grpc_closure_sched(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_REF(error));
   }
   incoming_byte_stream_unref(exec_ctx, bs);
   return error;
@@ -2940,5 +2940,5 @@ void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);
   }
-  grpc_closure_sched(exec_ctx, &t->read_action_locked, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, &t->read_action_locked, GRPC_ERROR_NONE);
 }

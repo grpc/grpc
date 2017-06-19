@@ -84,7 +84,7 @@ static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
     (*addrs)->addrs[0].len = sizeof(*sa);
     gpr_mu_unlock(&g_mu);
   }
-  grpc_closure_sched(exec_ctx, on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
 }
 
 static grpc_ares_request *my_dns_lookup_ares(
@@ -113,7 +113,7 @@ static grpc_ares_request *my_dns_lookup_ares(
     gpr_free(sa);
     gpr_mu_unlock(&g_mu);
   }
-  grpc_closure_sched(exec_ctx, on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
   return NULL;
 }
 

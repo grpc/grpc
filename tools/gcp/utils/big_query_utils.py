@@ -22,6 +22,8 @@ from apiclient import discovery
 from apiclient.errors import HttpError
 from oauth2client.client import GoogleCredentials
 
+# 30 days in milliseconds
+_EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000
 NUM_RETRIES = 3
 
 
@@ -29,7 +31,7 @@ def create_big_query():
   """Authenticates with cloud platform and gets a BiqQuery service object
   """
   creds = GoogleCredentials.get_application_default()
-  return discovery.build('bigquery', 'v2', credentials=creds)
+  return discovery.build('bigquery', 'v2', credentials=creds, cache_discovery=False)
 
 
 def create_dataset(biq_query, project_id, dataset_id):
@@ -64,8 +66,21 @@ def create_table(big_query, project_id, dataset_id, table_id, table_schema,
                        fields, description)
 
 
+def create_partitioned_table(big_query, project_id, dataset_id, table_id, table_schema,
+                             description, partition_type='DAY', expiration_ms=_EXPIRATION_MS):
+  """Creates a partitioned table. By default, a date-paritioned table is created with
+  each partition lasting 30 days after it was last modified.
+  """
+  fields = [{'name': field_name,
+             'type': field_type,
+             'description': field_description
+             } for (field_name, field_type, field_description) in table_schema]
+  return create_table2(big_query, project_id, dataset_id, table_id,
+                       fields, description, partition_type, expiration_ms)
+
+
 def create_table2(big_query, project_id, dataset_id, table_id, fields_schema,
-                 description):
+                 description, partition_type=None, expiration_ms=None):
   is_success = True
 
   body = {
@@ -79,6 +94,12 @@ def create_table2(big_query, project_id, dataset_id, table_id, fields_schema,
           'tableId': table_id
       }
   }
+
+  if partition_type and expiration_ms:
+    body["timePartitioning"] = {
+      "type": partition_type,
+      "expirationMs": expiration_ms
+    }
 
   try:
     table_req = big_query.tables().insert(projectId=project_id,
