@@ -165,6 +165,7 @@ function _write(chunk, encoding, callback) {
     this.call.cancelWithStatus(constants.status.INTERNAL,
                                'Serialization failure');
     callback(e);
+    return;
   }
   if (_.isFinite(encoding)) {
     /* Attach the encoding if it is a finite number. This is the closest we
