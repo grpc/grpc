@@ -77,11 +77,13 @@
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
 
-  if (NOT MSVC)
-    set(gRPC_INSTALL ON CACHE BOOL "Generate installation target")
-  else()
-    set(gRPC_INSTALL OFF CACHE BOOL "Generate installation target")
+  set(gRPC_INSTALL_default ON)
+  if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # Disable gRPC_INSTALL by default if building as a submodule
+    set(gRPC_INSTALL_default OFF)
   endif()
+  set(gRPC_INSTALL <%text>${gRPC_INSTALL_default}</%text> CACHE BOOL
+      "Generate installation target: gRPC_ZLIB_PROVIDER, gRPC_CARES_PROVIDER, gRPC_SSL_PROVIDER and gRPC_PROTOBUF_PROVIDER must all be \"package\"")
 
   set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
   set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
@@ -148,6 +150,10 @@
     else()
         message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
     endif()
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_ZLIB_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
+    endif()
   elseif("<%text>${gRPC_ZLIB_PROVIDER}</%text>" STREQUAL "package")
     find_package(ZLIB)
     if(TARGET ZLIB::ZLIB)
@@ -179,12 +185,16 @@
     else()
       message(WARNING "gRPC_CARES_PROVIDER is \"module\" but CARES_ROOT_DIR is wrong")
     endif()
-  elseif("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "package")
-    find_package(CARES)
-    if(TARGET CARES::CARES)
-      set(_gRPC_CARES_LIBRARIES CARES::CARES)
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_CARES_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
     endif()
-    set(_gRPC_FIND_CARES "if(NOT CARES_FOUND)\n  find_package(CARES)\nendif()")
+  elseif("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "package")
+    find_package(c-ares CONFIG)
+    if(TARGET c-ares::cares)
+      set(_gRPC_CARES_LIBRARIES c-ares::cares)
+    endif()
+    set(_gRPC_FIND_CARES "if(NOT c-ares_FOUND)\n  find_package(c-ares CONFIG)\nendif()")
   endif()
 
   if("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "module")
@@ -212,6 +222,10 @@
       endif()
     else()
         message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
+    endif()
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_PROTOBUF_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "package")
     find_package(protobuf CONFIG)
@@ -245,6 +259,10 @@
       endif()
     else()
         message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
+    endif()
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_SSL_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "package")
     find_package(OpenSSL)
@@ -602,6 +620,13 @@
     )
   endif()
   </%def>
+
+  if (gRPC_INSTALL)
+    install(EXPORT gRPCTargets
+      DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
+      NAMESPACE gRPC::
+    )
+  endif()
 
   foreach(_config gRPCConfig gRPCConfigVersion)
     configure_file(tools/cmake/<%text>${_config}</%text>.cmake.in
