@@ -102,6 +102,8 @@ def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
           name += '_%s_%s' % (arch, compiler)
           runtests_args += ['--arch', arch,
                             '--compiler', compiler]
+        if '--build_only' in extra_args:
+          name += '_buildonly'
         for extra_env in extra_envs:
           name += '_%s_%s' % (extra_env, extra_envs[extra_env])
 

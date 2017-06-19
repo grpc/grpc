@@ -57,7 +57,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   on_resolution_arg on_res_arg;
   memset(&on_res_arg, 0, sizeof(on_res_arg));
   on_res_arg.expected_server_name = uri->path;
-  grpc_closure *on_resolution = grpc_closure_create(
+  grpc_closure *on_resolution = GRPC_CLOSURE_CREATE(
       on_resolution_cb, &on_res_arg, grpc_schedule_on_exec_ctx);
 
   grpc_resolver_next_locked(&exec_ctx, resolver, &on_res_arg.resolver_result,

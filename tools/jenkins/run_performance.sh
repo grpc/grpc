@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script is invoked by Jenkins and runs performance smoke test.
+# This script is invoked by Jenkins and runs a diff on the microbenchmarks
 set -ex
 
 # List of benchmarks that provide good signal for analyzing performance changes in pull requests

@@ -230,7 +230,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
   if (!g_shared_mutables.initialized) {
     timer->pending = false;
-    grpc_closure_sched(exec_ctx, timer->closure,
+    GRPC_CLOSURE_SCHED(exec_ctx, timer->closure,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "Attempt to create timer before initialization"));
     return;
@@ -240,7 +240,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   timer->pending = true;
   if (gpr_time_cmp(deadline, now) <= 0) {
     timer->pending = false;
-    grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_NONE);
     gpr_mu_unlock(&shard->mu);
     /* early out */
     return;
@@ -310,7 +310,7 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
             timer->pending ? "true" : "false");
   }
   if (timer->pending) {
-    grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
+    GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
     timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -400,7 +400,7 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, shard_type *shard,
   grpc_timer *timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
-    grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_REF(error));
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);

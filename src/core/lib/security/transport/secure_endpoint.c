@@ -132,7 +132,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
     }
   }
   ep->read_buffer = NULL;
-  grpc_closure_sched(exec_ctx, ep->read_cb, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, ep->read_cb, error);
   SECURE_ENDPOINT_UNREF(exec_ctx, ep, "read");
 }
 
@@ -317,7 +317,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   if (result != TSI_OK) {
     /* TODO(yangg) do different things according to the error type? */
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &ep->output_buffer);
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb,
         grpc_set_tsi_error_result(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Wrap failed"), result));
@@ -399,7 +399,7 @@ grpc_endpoint *grpc_secure_endpoint_create(
   grpc_slice_buffer_init(&ep->output_buffer);
   grpc_slice_buffer_init(&ep->source_buffer);
   ep->read_buffer = NULL;
-  grpc_closure_init(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
   gpr_mu_init(&ep->protector_mu);
   gpr_ref_init(&ep->ref, 1);
   return &ep->base;

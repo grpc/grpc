@@ -329,23 +329,23 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                            : gpr_time_from_millis(value, GPR_TIMESPAN);
     }
   }
-  grpc_closure_init(&chand->close_max_idle_channel, close_max_idle_channel,
+  GRPC_CLOSURE_INIT(&chand->close_max_idle_channel, close_max_idle_channel,
                     chand, grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->close_max_age_channel, close_max_age_channel, chand,
+  GRPC_CLOSURE_INIT(&chand->close_max_age_channel, close_max_age_channel, chand,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->force_close_max_age_channel,
+  GRPC_CLOSURE_INIT(&chand->force_close_max_age_channel,
                     force_close_max_age_channel, chand,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->start_max_idle_timer_after_init,
+  GRPC_CLOSURE_INIT(&chand->start_max_idle_timer_after_init,
                     start_max_idle_timer_after_init, chand,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->start_max_age_timer_after_init,
+  GRPC_CLOSURE_INIT(&chand->start_max_age_timer_after_init,
                     start_max_age_timer_after_init, chand,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->start_max_age_grace_timer_after_goaway_op,
+  GRPC_CLOSURE_INIT(&chand->start_max_age_grace_timer_after_goaway_op,
                     start_max_age_grace_timer_after_goaway_op, chand,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->channel_connectivity_changed,
+  GRPC_CLOSURE_INIT(&chand->channel_connectivity_changed,
                     channel_connectivity_changed, chand,
                     grpc_schedule_on_exec_ctx);
 
@@ -360,7 +360,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
        initialization is done. */
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_age_timer_after_init");
-    grpc_closure_sched(exec_ctx, &chand->start_max_age_timer_after_init,
+    GRPC_CLOSURE_SCHED(exec_ctx, &chand->start_max_age_timer_after_init,
                        GRPC_ERROR_NONE);
   }
 
@@ -371,7 +371,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
       0) {
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_idle_timer_after_init");
-    grpc_closure_sched(exec_ctx, &chand->start_max_idle_timer_after_init,
+    GRPC_CLOSURE_SCHED(exec_ctx, &chand->start_max_idle_timer_after_init,
                        GRPC_ERROR_NONE);
   }
   return GRPC_ERROR_NONE;

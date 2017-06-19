@@ -17,6 +17,7 @@
  */
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
+#include "src/core/lib/channel/channel_args.h"
 
 void grpc_client_channel_factory_ref(grpc_client_channel_factory* factory) {
   factory->vtable->ref(factory);
@@ -63,10 +64,6 @@ static const grpc_arg_pointer_vtable factory_arg_vtable = {
 
 grpc_arg grpc_client_channel_factory_create_channel_arg(
     grpc_client_channel_factory* factory) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
-  arg.key = GRPC_ARG_CLIENT_CHANNEL_FACTORY;
-  arg.value.pointer.p = factory;
-  arg.value.pointer.vtable = &factory_arg_vtable;
-  return arg;
+  return grpc_channel_arg_pointer_create(GRPC_ARG_CLIENT_CHANNEL_FACTORY,
+                                         factory, &factory_arg_vtable);
 }

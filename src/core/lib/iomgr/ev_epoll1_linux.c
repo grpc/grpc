@@ -237,7 +237,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     close(fd->fd);
   }
 
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_REF(error));
 
   grpc_iomgr_unregister_object(&fd->iomgr_object);
   grpc_lfev_destroy(&fd->read_closure);
@@ -427,7 +427,7 @@ static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
                                           grpc_pollset *pollset) {
   if (pollset->shutdown_closure != NULL && pollset->root_worker == NULL &&
       pollset->begin_refs == 0) {
-    grpc_closure_sched(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
     pollset->shutdown_closure = NULL;
   }
 }

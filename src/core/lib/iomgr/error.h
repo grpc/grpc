@@ -149,7 +149,7 @@ grpc_error *grpc_error_create(const char *file, int line, grpc_slice desc,
   grpc_error_create(__FILE__, __LINE__, grpc_slice_from_copied_string(desc), \
                     errs, count)
 
-//#define GRPC_ERROR_REFCOUNT_DEBUG
+// #define GRPC_ERROR_REFCOUNT_DEBUG
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
 grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func);

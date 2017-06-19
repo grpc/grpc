@@ -106,7 +106,7 @@ static void test_pollset_cleanup(grpc_exec_ctx *exec_ctx,
   int i;
 
   for (i = 0; i < num_pollsets; i++) {
-    grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].pollset,
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, pollsets[i].pollset,
                       grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(exec_ctx, pollsets[i].pollset, &destroyed);
 
@@ -280,7 +280,7 @@ static void test_threading(void) {
     grpc_pollset_add_fd(&exec_ctx, shared.pollset, shared.wakeup_desc);
     grpc_fd_notify_on_read(
         &exec_ctx, shared.wakeup_desc,
-        grpc_closure_init(&shared.on_wakeup, test_threading_wakeup, &shared,
+        GRPC_CLOSURE_INIT(&shared.on_wakeup, test_threading_wakeup, &shared,
                           grpc_schedule_on_exec_ctx));
     grpc_exec_ctx_finish(&exec_ctx);
   }
@@ -296,7 +296,7 @@ static void test_threading(void) {
     grpc_fd_shutdown(&exec_ctx, shared.wakeup_desc, GRPC_ERROR_CANCELLED);
     grpc_fd_orphan(&exec_ctx, shared.wakeup_desc, NULL, NULL, "done");
     grpc_pollset_shutdown(&exec_ctx, shared.pollset,
-                          grpc_closure_create(destroy_pollset, shared.pollset,
+                          GRPC_CLOSURE_CREATE(destroy_pollset, shared.pollset,
                                               grpc_schedule_on_exec_ctx));
     grpc_exec_ctx_finish(&exec_ctx);
   }

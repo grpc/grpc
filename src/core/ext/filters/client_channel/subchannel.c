@@ -283,7 +283,7 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
   gpr_atm old_refs;
   old_refs = ref_mutate(c, -(gpr_atm)1, 1 REF_MUTATE_PURPOSE("WEAK_UNREF"));
   if (old_refs == 1) {
-    grpc_closure_sched(exec_ctx, grpc_closure_create(subchannel_destroy, c,
+    GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(subchannel_destroy, c,
                                                      grpc_schedule_on_exec_ctx),
                        GRPC_ERROR_NONE);
   }
@@ -333,7 +333,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   if (new_args != NULL) grpc_channel_args_destroy(exec_ctx, new_args);
   c->root_external_state_watcher.next = c->root_external_state_watcher.prev =
       &c->root_external_state_watcher;
-  grpc_closure_init(&c->connected, subchannel_connected, c,
+  GRPC_CLOSURE_INIT(&c->connected, subchannel_connected, c,
                     grpc_schedule_on_exec_ctx);
   grpc_connectivity_state_init(&c->state_tracker, GRPC_CHANNEL_IDLE,
                                "subchannel");
@@ -421,7 +421,7 @@ static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&w->subchannel->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, w->subchannel, "external_state_watcher");
   gpr_free(w);
-  grpc_closure_run(exec_ctx, follow_up, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_RUN(exec_ctx, follow_up, GRPC_ERROR_REF(error));
 }
 
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -488,7 +488,7 @@ static void maybe_start_connecting_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_INFO, "Retry in %" PRId64 ".%09d seconds",
               time_til_next.tv_sec, time_til_next.tv_nsec);
     }
-    grpc_closure_init(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
     grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, &c->on_alarm, now);
   }
 }
@@ -514,7 +514,7 @@ void grpc_subchannel_notify_on_state_change(
     w->subchannel = c;
     w->pollset_set = interested_parties;
     w->notify = notify;
-    grpc_closure_init(&w->closure, on_external_state_watcher_done, w,
+    GRPC_CLOSURE_INIT(&w->closure, on_external_state_watcher_done, w,
                       grpc_schedule_on_exec_ctx);
     if (interested_parties != NULL) {
       grpc_pollset_set_add_pollset_set(exec_ctx, c->pollset_set,
@@ -635,7 +635,7 @@ static bool publish_transport_locked(grpc_exec_ctx *exec_ctx,
   sw_subchannel = gpr_malloc(sizeof(*sw_subchannel));
   sw_subchannel->subchannel = c;
   sw_subchannel->connectivity_state = GRPC_CHANNEL_READY;
-  grpc_closure_init(&sw_subchannel->closure, subchannel_on_child_state_changed,
+  GRPC_CLOSURE_INIT(&sw_subchannel->closure, subchannel_on_child_state_changed,
                     sw_subchannel, grpc_schedule_on_exec_ctx);
 
   if (c->disconnected) {
@@ -819,10 +819,7 @@ const char *grpc_get_subchannel_address_uri_arg(const grpc_channel_args *args) {
 }
 
 grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr) {
-  grpc_arg new_arg;
-  new_arg.key = GRPC_ARG_SUBCHANNEL_ADDRESS;
-  new_arg.type = GRPC_ARG_STRING;
-  new_arg.value.string =
-      addr->len > 0 ? grpc_sockaddr_to_uri(addr) : gpr_strdup("");
-  return new_arg;
+  return grpc_channel_arg_string_create(
+      GRPC_ARG_SUBCHANNEL_ADDRESS,
+      addr->len > 0 ? grpc_sockaddr_to_uri(addr) : gpr_strdup(""));
 }
