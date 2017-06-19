@@ -16,8 +16,8 @@
  *
  */
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <set>
 
@@ -58,8 +58,7 @@ DEFINE_string(qps_server_target_override, "",
               "Override QPS server target to configure in client configs."
               "Only applicable if there is a single benchmark server.");
 
-DEFINE_string(json_file_out, "",
-              "File to write the JSON output to.");
+DEFINE_string(json_file_out, "", "File to write the JSON output to.");
 
 namespace grpc {
 namespace testing {
