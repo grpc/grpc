@@ -3049,6 +3049,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++"
     ], 
     "headers": [], 
@@ -6080,6 +6081,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++", 
       "grpc++_config_proto", 
       "grpc++_reflection_proto"
@@ -6099,6 +6101,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++", 
       "grpc++_reflection_proto"
     ], 
@@ -6135,6 +6138,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
@@ -6229,6 +6233,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++", 
       "grpc++_config_proto", 
       "grpc++_proto_reflection_desc_db", 
@@ -6480,6 +6485,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
@@ -9336,6 +9342,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++"
     ], 
     "headers": [

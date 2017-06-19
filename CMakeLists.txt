@@ -2949,6 +2949,7 @@ target_link_libraries(grpc++_proto_reflection_desc_db
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  grpc
 )
 
 foreach(_hdr
@@ -3007,6 +3008,7 @@ target_link_libraries(grpc++_reflection
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  grpc
 )
 
 foreach(_hdr
@@ -3151,6 +3153,7 @@ target_link_libraries(grpc++_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
+  grpc
 )
 
 foreach(_hdr
@@ -3509,6 +3512,7 @@ target_link_libraries(grpc_cli_libs
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_proto_reflection_desc_db
   grpc++
+  grpc
 )
 
 foreach(_hdr
@@ -4047,6 +4051,7 @@ target_link_libraries(qps
   grpc_test_util
   grpc++_test_util
   grpc++
+  grpc
 )
 
 
@@ -10009,6 +10014,7 @@ target_link_libraries(cxx_string_ref_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
