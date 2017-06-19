@@ -36,7 +36,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-ProtoRPC'
-  version = '1.3.8'
+  version = '1.3.9'
   s.version  = version
   s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
   s.homepage = 'http://www.grpc.io'
