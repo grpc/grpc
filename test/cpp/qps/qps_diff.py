@@ -51,7 +51,7 @@ def _args():
     '-l',
     '--loops',
     type=int,
-    default=6,
+    default=4,
     help='Number of times to loops the benchmarks. More loops cuts down on noise'
   )
   argp.add_argument(
@@ -150,10 +150,10 @@ def main(args):
   run('new', _SCENARIOS, args.loops)
   run('old', _SCENARIOS, args.loops)
 
-  diff = diff(_SCENARIOS, args.loops, 'old', 'new')
+  diff_output = diff(_SCENARIOS, args.loops, 'old', 'new')
 
-  if diff:
-    text = '[qps] Performance differences noted:\n%s' % diff
+  if diff_output:
+    text = '[qps] Performance differences noted:\n%s' % diff_output
   else:
     text = '[qps] No significant performance differences'
   print('%s' % text)
