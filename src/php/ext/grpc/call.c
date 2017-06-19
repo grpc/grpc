@@ -67,7 +67,7 @@ php_grpc_zend_object create_wrapped_grpc_call(zend_class_entry *class_type
 /* Creates and returns a PHP array object with the data in a
  * grpc_metadata_array. Returns NULL on failure */
 zval *grpc_parse_metadata_array(grpc_metadata_array
-                                *metadata_arrayz) {
+                                *metadata_array TSRMLS_DC) {
   int count = metadata_array->count;
   grpc_metadata *elements = metadata_array->metadata;
   zval *array;
