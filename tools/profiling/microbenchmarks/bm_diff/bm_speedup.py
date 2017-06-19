@@ -17,6 +17,7 @@
 from scipy import stats
 import math
 
+_DEFAULT_THRESHOLD = 1e-10
 
 def scale(a, mul):
   return [x * mul for x in a]
@@ -26,7 +27,7 @@ def cmp(a, b):
   return stats.ttest_ind(a, b)
 
 
-def speedup(new, old, threshold):
+def speedup(new, old, threshold = _DEFAULT_THRESHOLD):
   if (len(set(new))) == 1 and new == old: return 0
   s0, p0 = cmp(new, old)
   if math.isnan(p0): return 0
@@ -52,6 +53,6 @@ def speedup(new, old, threshold):
 
 if __name__ == "__main__":
   new = [0.0, 0.0, 0.0, 0.0] 
-  old=[2.96608e-06, 3.35076e-06, 3.45384e-06, 3.34407e-06]
+  old = [2.96608e-06, 3.35076e-06, 3.45384e-06, 3.34407e-06]
   print speedup(new, old, 1e-5)
   print speedup(old, new, 1e-5)
