@@ -874,6 +874,30 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 // - recv_trailing_metadata
 #define MAX_CONCURRENT_BATCHES 6
 
+// Retry support:
+//
+// There are 2 sets of data to maintain:
+// - In call_data (in the parent channel), we maintain a list of pending
+//   ops and cached data for those ops.
+// - In the subchannel call, we maintain state to indicate what ops have
+//   already been sent down to that call.
+//
+// When new ops come down, we first try to send them immediately.  If
+// they fail and are retryable, then we do a new pick and start again.
+//
+// when new ops come down:
+// - if retries are enabled, create subchannel_batch_data and use that
+//   to send down batch
+// - otherwise, send down as-is
+//
+// In on_complete:
+// - if failed and is retryable, start new pick and then retry
+// - otherwise, return to surface
+//
+// synchronization problems:
+// - new batch coming down and retry started at the same time, how do we
+//   know which ops to include?
+
 // State used for sending a retryable batch down to a subchannel call.
 // This provides its own grpc_transport_stream_op_batch and other data
 // structures needed to populate the ops in the batch.
@@ -1106,6 +1130,9 @@ gpr_log(GPR_INFO, "retries configured and not committed");
     // Save context.  Should be the same for all batches on a call.
     calld->context = batch->payload->context;
     // Check if the batch takes us over the retry buffer limit.
+// FIXME: need to synchronize access to calld->bytes_buffered_for_retry,
+// since we could have one thread sending down send_initial_metadata and
+// another thread sending down send_message
     if (batch->send_initial_metadata) {
       calld->bytes_buffered_for_retry += grpc_metadata_batch_size(
           batch->payload->send_initial_metadata.send_initial_metadata);
@@ -1135,6 +1162,7 @@ gpr_log(GPR_INFO, "STORING batch in pending_batches[%zu]", idx);
           // but we can still proceed with the initial RPC.
 gpr_log(GPR_INFO, "grpc_metadata_batch_copy() failed, committing");
           retry_committed(exec_ctx, calld);
+          GRPC_ERROR_UNREF(error);
           return;
         }
         calld->send_initial_metadata_flags =
