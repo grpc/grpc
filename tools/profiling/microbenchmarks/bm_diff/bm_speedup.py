@@ -34,7 +34,7 @@ def speedup(new, old, threshold):
   if p0 > threshold: return 0
   if s0 < 0:
     pct = 1
-    while pct < 101:
+    while pct < 100:
       sp, pp = cmp(new, scale(old, 1 - pct / 100.0))
       if sp > 0: break
       if pp > threshold: break
@@ -42,7 +42,7 @@ def speedup(new, old, threshold):
     return -(pct - 1)
   else:
     pct = 1
-    while pct < 100000:
+    while pct < 10000:
       sp, pp = cmp(new, scale(old, 1 + pct / 100.0))
       if sp < 0: break
       if pp > threshold: break
@@ -51,7 +51,7 @@ def speedup(new, old, threshold):
 
 
 if __name__ == "__main__":
-  new = [1.0, 1.0, 1.0, 1.0]
-  old = [2.0, 2.0, 2.0, 2.0]
-  print speedup(new, old)
-  print speedup(old, new)
+  new = [0.0, 0.0, 0.0, 0.0] 
+  old=[2.96608e-06, 3.35076e-06, 3.45384e-06, 3.34407e-06]
+  print speedup(new, old, 1e-5)
+  print speedup(old, new, 1e-5)
