@@ -52,8 +52,8 @@ unsigned gpr_cpu_num_cores(void) {
 }
 
 unsigned gpr_cpu_current_cpu(void) {
-#ifdef GPR_MUSL_LIBC_COMPAT
-  // sched_getcpu() is undefined on musl
+#if defined GPR_MUSL_LIBC_COMPAT || !__GLIBC_PREREQ(2,6)
+  // sched_getcpu() is undefined on musl and glibc < 2.6
   return 0;
 #else
   int cpu = sched_getcpu();
