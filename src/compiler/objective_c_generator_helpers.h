@@ -23,6 +23,8 @@
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
 
+#include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
+
 namespace grpc_objective_c_generator {
 
 using ::grpc::protobuf::FileDescriptor;
@@ -30,7 +32,7 @@ using ::grpc::protobuf::ServiceDescriptor;
 using ::grpc::string;
 
 inline string MessageHeaderName(const FileDescriptor *file) {
-  return grpc_generator::FileNameInUpperCamel(file) + ".pbobjc.h";
+  return google::protobuf::compiler::objectivec::FilePath(file) + ".pbobjc.h";
 }
 
 inline string ServiceClassName(const ServiceDescriptor *service) {
