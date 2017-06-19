@@ -162,6 +162,11 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
   if(NOT protobuf_BUILD_TESTS)
     set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
   endif()
+  # Disable building protobuf with zlib. Building protobuf with zlib breaks
+  # the build if zlib is not installed on the system.
+  if(NOT protobuf_WITH_ZLIB)
+    set(protobuf_WITH_ZLIB OFF CACHE BOOL "Build protobuf with zlib.")
+  endif()
   if(NOT PROTOBUF_ROOT_DIR)
     set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
   endif()
