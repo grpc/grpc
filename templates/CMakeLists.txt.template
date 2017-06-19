@@ -43,7 +43,7 @@
       deps.append("${_gRPC_SSL_LIBRARIES}")
     if target_dict.language == 'c++':
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
-    if target_dict['name'] in ['grpc']:
+    if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
       deps.append("${_gRPC_CARES_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
