@@ -98,6 +98,9 @@ if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
   endif()
   set(ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}")
   if(EXISTS "${ZLIB_ROOT_DIR}/CMakeLists.txt")
+      # TODO(jtattermusch): workaround for https://github.com/madler/zlib/issues/218
+      include_directories(${ZLIB_INCLUDE_DIR})
+
       add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
       if(TARGET zlibstatic)
           set(_gRPC_ZLIB_LIBRARIES zlibstatic)

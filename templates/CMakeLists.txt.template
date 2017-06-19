@@ -143,6 +143,9 @@
     endif()
     set(ZLIB_INCLUDE_DIR "<%text>${ZLIB_ROOT_DIR}</%text>")
     if(EXISTS "<%text>${ZLIB_ROOT_DIR}</%text>/CMakeLists.txt")
+        # TODO(jtattermusch): workaround for https://github.com/madler/zlib/issues/218
+        include_directories(<%text>${ZLIB_INCLUDE_DIR}</%text>)
+
         add_subdirectory(<%text>${ZLIB_ROOT_DIR}</%text> third_party/zlib)
         if(TARGET zlibstatic)
             set(_gRPC_ZLIB_LIBRARIES zlibstatic)
