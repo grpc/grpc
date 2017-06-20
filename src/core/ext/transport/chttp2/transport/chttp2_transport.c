@@ -2726,6 +2726,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   gpr_ref_init(&incoming_byte_stream->refs, 2);
   incoming_byte_stream->transport = t;
   incoming_byte_stream->stream = s;
+  GRPC_ERROR_UNREF(s->byte_stream_error);
   s->byte_stream_error = GRPC_ERROR_NONE;
   return incoming_byte_stream;
 }
