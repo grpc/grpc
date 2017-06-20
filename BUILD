@@ -51,9 +51,9 @@ load(
 # This should be updated along with build.yaml
 g_stands_for = "gregarious"
 
-core_version = "4.0.0-pre1"
+core_version = "4.0.0"
 
-version = "1.4.0-pre1"
+version = "1.4.0"
 
 grpc_cc_library(
     name = "gpr",
