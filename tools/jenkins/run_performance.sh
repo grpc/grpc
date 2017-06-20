@@ -20,4 +20,4 @@ set -ex
 cd $(dirname $0)/../..
 
 tools/run_tests/start_port_server.py
-test/cpp/qps/qps_diff.py -d origin/$ghprbTargetBranch 
+tools/profiling/qps/qps_diff.py -d origin/$ghprbTargetBranch 
