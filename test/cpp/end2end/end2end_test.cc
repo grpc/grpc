@@ -772,6 +772,29 @@ TEST_P(End2endTest, ResponseStreamWithCoalescingApi) {
   EXPECT_TRUE(s.ok());
 }
 
+// This was added to prevent regression from issue:
+// https://github.com/grpc/grpc/issues/11546
+TEST_P(End2endTest, ResponseStreamWithEverythingCoalesced) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+  context.AddMetadata(kServerUseCoalescingApi, "1");
+  // We will only send one message, forcing everything (init metadata, message,
+  // trailing) to be coalesced together.
+  context.AddMetadata(kServerResponseStreamsToSend, "1");
+
+  auto stream = stub_->ResponseStream(&context, request);
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message() + "0");
+
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+}
+
 TEST_P(End2endTest, BidiStream) {
   ResetStub();
   EchoRequest request;
