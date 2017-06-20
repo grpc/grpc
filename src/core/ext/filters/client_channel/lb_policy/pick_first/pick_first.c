@@ -128,8 +128,7 @@ static void pf_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                                   grpc_connected_subchannel **target,
                                   grpc_error *error) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
-  pending_pick *pp;
-  pp = p->pending_picks;
+  pending_pick *pp = p->pending_picks;
   p->pending_picks = NULL;
   while (pp != NULL) {
     pending_pick *next = pp->next;
@@ -195,31 +194,28 @@ static void pf_exit_idle_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   }
 }
 
-static int pf_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                          const grpc_lb_policy_pick_args *pick_args,
-                          grpc_connected_subchannel **target,
-                          grpc_call_context_element *context, void **user_data,
-                          grpc_closure *on_complete) {
+static void pf_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                           const grpc_lb_policy_pick_args *pick_args,
+                           grpc_connected_subchannel **target,
+                           grpc_call_context_element *context, void **user_data,
+                           grpc_closure *on_complete) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
-  pending_pick *pp;
-
-  /* Check atomically for a selected channel */
+  // If we already have a subchannel selected, return it.
   if (p->selected != NULL) {
     *target = GRPC_CONNECTED_SUBCHANNEL_REF(p->selected, "picked");
-    return 1;
+    grpc_closure_sched(exec_ctx, on_complete, GRPC_ERROR_NONE);
+  } else {
+    // No subchannel selected yet, so need to wait until we've selected one.
+    if (!p->started_picking) {
+      start_picking_locked(exec_ctx, p);
+    }
+    pending_pick *pp = gpr_malloc(sizeof(*pp));
+    pp->next = p->pending_picks;
+    pp->target = target;
+    pp->initial_metadata_flags = pick_args->initial_metadata_flags;
+    pp->on_complete = on_complete;
+    p->pending_picks = pp;
   }
-
-  /* No subchannel selected yet, so try again */
-  if (!p->started_picking) {
-    start_picking_locked(exec_ctx, p);
-  }
-  pp = gpr_malloc(sizeof(*pp));
-  pp->next = p->pending_picks;
-  pp->target = target;
-  pp->initial_metadata_flags = pick_args->initial_metadata_flags;
-  pp->on_complete = on_complete;
-  p->pending_picks = pp;
-  return 0;
 }
 
 static void destroy_subchannels_locked(grpc_exec_ctx *exec_ctx,

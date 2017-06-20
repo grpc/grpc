@@ -600,14 +600,10 @@ static void update_lb_connectivity_status_locked(
                               "update_lb_connectivity_status_locked");
 }
 
-/* Perform a pick over \a glb_policy->rr_policy. Given that a pick can return
- * immediately (ignoring its completion callback), we need to perform the
- * cleanups this callback would otherwise be resposible for.
- * If \a force_async is true, then we will manually schedule the
- * completion callback even if the pick is available immediately. */
-static bool pick_from_internal_rr_locked(
+// Perform a pick over \a glb_policy->rr_policy.
+static void pick_from_internal_rr_locked(
     grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
-    const grpc_lb_policy_pick_args *pick_args, bool force_async,
+    const grpc_lb_policy_pick_args *pick_args,
     grpc_connected_subchannel **target, wrapped_rr_closure_arg *wc_arg) {
   // Look at the index into the serverlist to see if we should drop this call.
   grpc_grpclb_server *server =
@@ -633,47 +629,19 @@ static bool pick_from_internal_rr_locked(
         false /* failed_to_send */, false /* known_received */,
         wc_arg->client_stats);
     grpc_grpclb_client_stats_unref(wc_arg->client_stats);
-    if (force_async) {
-      GPR_ASSERT(wc_arg->wrapped_closure != NULL);
-      GRPC_CLOSURE_SCHED(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_NONE);
-      gpr_free(wc_arg->free_when_done);
-      return false;
-    }
+    GPR_ASSERT(wc_arg->wrapped_closure != NULL);
+    GRPC_CLOSURE_SCHED(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_NONE);
     gpr_free(wc_arg->free_when_done);
-    return true;
+  } else {
+    // Pick via the RR policy.
+    // The pending pick will be registered and taken care of by the
+    // pending pick list inside the RR policy (glb_policy->rr_policy).
+    // Eventually, wrapped_on_complete will be called, which will (among other
+    // things) add the LB token to the call's initial metadata.
+    grpc_lb_policy_pick_locked(exec_ctx, wc_arg->rr_policy, pick_args, target,
+                               wc_arg->context, (void **)&wc_arg->lb_token,
+                               &wc_arg->wrapper_closure);
   }
-  // Pick via the RR policy.
-  const bool pick_done = grpc_lb_policy_pick_locked(
-      exec_ctx, wc_arg->rr_policy, pick_args, target, wc_arg->context,
-      (void **)&wc_arg->lb_token, &wc_arg->wrapper_closure);
-  if (pick_done) {
-    /* synchronous grpc_lb_policy_pick call. Unref the RR policy. */
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
-      gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
-              (intptr_t)wc_arg->rr_policy);
-    }
-    GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->rr_policy, "glb_pick_sync");
-    /* add the load reporting initial metadata */
-    initial_metadata_add_lb_token(exec_ctx, pick_args->initial_metadata,
-                                  pick_args->lb_token_mdelem_storage,
-                                  GRPC_MDELEM_REF(wc_arg->lb_token));
-    // Pass on client stats via context. Passes ownership of the reference.
-    GPR_ASSERT(wc_arg->client_stats != NULL);
-    wc_arg->context[GRPC_GRPCLB_CLIENT_STATS].value = wc_arg->client_stats;
-    wc_arg->context[GRPC_GRPCLB_CLIENT_STATS].destroy = destroy_client_stats;
-    if (force_async) {
-      GPR_ASSERT(wc_arg->wrapped_closure != NULL);
-      GRPC_CLOSURE_SCHED(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_NONE);
-      gpr_free(wc_arg->free_when_done);
-      return false;
-    }
-    gpr_free(wc_arg->free_when_done);
-  }
-  /* else, the pending pick will be registered and taken care of by the
-   * pending pick list inside the RR policy (glb_policy->rr_policy).
-   * Eventually, wrapped_on_complete will be called, which will -among other
-   * things- add the LB token to the call's initial metadata */
-  return pick_done;
 }
 
 static grpc_lb_policy_args *lb_policy_args_create(grpc_exec_ctx *exec_ctx,
@@ -765,8 +733,7 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
               (intptr_t)glb_policy->rr_policy);
     }
     pick_from_internal_rr_locked(exec_ctx, glb_policy, &pp->pick_args,
-                                 true /* force_async */, pp->target,
-                                 &pp->wrapped_on_complete_arg);
+                                 pp->target, &pp->wrapped_on_complete_arg);
   }
 
   pending_ping *pping;
@@ -1151,22 +1118,21 @@ static void glb_exit_idle_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   }
 }
 
-static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                           const grpc_lb_policy_pick_args *pick_args,
-                           grpc_connected_subchannel **target,
-                           grpc_call_context_element *context, void **user_data,
-                           grpc_closure *on_complete) {
+static void glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                            const grpc_lb_policy_pick_args *pick_args,
+                            grpc_connected_subchannel **target,
+                            grpc_call_context_element *context,
+                            void **user_data, grpc_closure *on_complete) {
   if (pick_args->lb_token_mdelem_storage == NULL) {
     *target = NULL;
     GRPC_CLOSURE_SCHED(exec_ctx, on_complete,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "No mdelem storage for the LB token. Load reporting "
                            "won't work without it. Failing"));
-    return 0;
+    return;
   }
 
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  bool pick_done;
 
   if (glb_policy->rr_policy != NULL) {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
@@ -1189,9 +1155,8 @@ static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     wc_arg->lb_token_mdelem_storage = pick_args->lb_token_mdelem_storage;
     wc_arg->initial_metadata = pick_args->initial_metadata;
     wc_arg->free_when_done = wc_arg;
-    pick_done =
-        pick_from_internal_rr_locked(exec_ctx, glb_policy, pick_args,
-                                     false /* force_async */, target, wc_arg);
+    pick_from_internal_rr_locked(exec_ctx, glb_policy, pick_args, target,
+                                 wc_arg);
   } else {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_DEBUG,
@@ -1205,9 +1170,7 @@ static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if (!glb_policy->started_picking) {
       start_picking_locked(exec_ctx, glb_policy);
     }
-    pick_done = false;
   }
-  return pick_done;
 }
 
 static grpc_connectivity_state glb_check_connectivity_locked(
