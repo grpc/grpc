@@ -105,6 +105,7 @@ function _write(chunk, encoding, callback) {
     /* Once a write fails, just call the callback immediately to let the caller
        flush any pending writes. */
     setImmediate(callback);
+    return;
   }
   try {
     message = this.serialize(chunk);
@@ -116,6 +117,7 @@ function _write(chunk, encoding, callback) {
        programmer a useful error and to stop the stream properly */
     this.call.cancelWithStatus(grpc.status.INTERNAL, 'Serialization failure');
     callback(e);
+    return;
   }
   if (_.isFinite(encoding)) {
     /* Attach the encoding if it is a finite number. This is the closest we
