@@ -267,9 +267,10 @@ cv_fd_table g_cvfds;
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                    int line) {
   if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
-    gpr_log(GPR_DEBUG, "FD %d %p   ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-            (int)gpr_atm_no_barrier_load(&fd->refst),
-            (int)gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+    gpr_log(GPR_DEBUG,
+            "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
   }
 #else
 #define REF_BY(fd, n, reason) ref_by(fd, n)
@@ -283,9 +284,10 @@ static void ref_by(grpc_fd *fd, int n) {
 static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                      int line) {
   if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
-    gpr_log(GPR_DEBUG, "FD %d %p unref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-            (int)gpr_atm_no_barrier_load(&fd->refst),
-            (int)gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+    gpr_log(GPR_DEBUG,
+            "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
   }
 #else
 static void unref_by(grpc_fd *fd, int n) {

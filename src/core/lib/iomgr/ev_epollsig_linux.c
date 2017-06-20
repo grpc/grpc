@@ -289,9 +289,10 @@ static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);
 static void pi_add_ref_dbg(polling_island *pi, const char *reason,
                            const char *file, int line) {
   if (GRPC_TRACER_ON(grpc_polling_trace)) {
-    long old_cnt = gpr_atm_acq_load(&pi->ref_count);
-    gpr_log(GPR_DEBUG, "Add ref pi: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
-            (void *)pi, old_cnt, old_cnt + 1, reason, file, line);
+    gpr_atm old_cnt = gpr_atm_acq_load(&pi->ref_count);
+    gpr_log(GPR_DEBUG, "Add ref pi: %p, old:%" PRIdPTR " -> new:%" PRIdPTR
+                       " (%s) - (%s, %d)",
+            pi, old_cnt, old_cnt + 1, reason, file, line);
   }
   pi_add_ref(pi);
 }
@@ -299,9 +300,10 @@ static void pi_add_ref_dbg(polling_island *pi, const char *reason,
 static void pi_unref_dbg(grpc_exec_ctx *exec_ctx, polling_island *pi,
                          const char *reason, const char *file, int line) {
   if (GRPC_TRACER_ON(grpc_polling_trace)) {
-    long old_cnt = gpr_atm_acq_load(&pi->ref_count);
-    gpr_log(GPR_DEBUG, "Unref pi: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
-            (void *)pi, old_cnt, (old_cnt - 1), reason, file, line);
+    gpr_atm old_cnt = gpr_atm_acq_load(&pi->ref_count);
+    gpr_log(GPR_DEBUG, "Unref pi: %p, old:%" PRIdPTR " -> new:%" PRIdPTR
+                       " (%s) - (%s, %d)",
+            pi, old_cnt, (old_cnt - 1), reason, file, line);
   }
   pi_unref(exec_ctx, pi);
 }
@@ -730,7 +732,7 @@ static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
   if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
     gpr_log(GPR_DEBUG,
             "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
-            fd->fd, (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
             gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
   }
 #else
@@ -747,7 +749,7 @@ static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
   if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
     gpr_log(GPR_DEBUG,
             "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
-            fd->fd, (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
             gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
   }
 #else
@@ -841,7 +843,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name);
 #ifndef NDEBUG
-  gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, (void *)new_fd, fd_name);
+  gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, new_fd, fd_name);
 #endif
   gpr_free(fd_name);
   return new_fd;

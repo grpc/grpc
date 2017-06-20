@@ -150,7 +150,7 @@ static void ref_md_locked(mdtab_shard *shard,
     char *key_str = grpc_slice_to_c_string(md->key);
     char *value_str = grpc_slice_to_c_string(md->value);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
+            "ELM   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'", (void *)md,
             gpr_atm_no_barrier_load(&md->refcnt),
             gpr_atm_no_barrier_load(&md->refcnt) + 1, key_str, value_str);
     gpr_free(key_str);
@@ -250,8 +250,9 @@ grpc_mdelem grpc_mdelem_create(
     if (GRPC_TRACER_ON(grpc_trace_metadata)) {
       char *key_str = grpc_slice_to_c_string(allocated->key);
       char *value_str = grpc_slice_to_c_string(allocated->value);
-      gpr_log(GPR_DEBUG, "ELM ALLOC:%p:%zu: '%s' = '%s'", (void *)allocated,
-              gpr_atm_no_barrier_load(&allocated->refcnt), key_str, value_str);
+      gpr_log(GPR_DEBUG, "ELM ALLOC:%p:%" PRIdPTR ": '%s' = '%s'",
+              (void *)allocated, gpr_atm_no_barrier_load(&allocated->refcnt),
+              key_str, value_str);
       gpr_free(key_str);
       gpr_free(value_str);
     }
@@ -303,7 +304,7 @@ grpc_mdelem grpc_mdelem_create(
   if (GRPC_TRACER_ON(grpc_trace_metadata)) {
     char *key_str = grpc_slice_to_c_string(md->key);
     char *value_str = grpc_slice_to_c_string(md->value);
-    gpr_log(GPR_DEBUG, "ELM   NEW:%p:%zu: '%s' = '%s'", (void *)md,
+    gpr_log(GPR_DEBUG, "ELM   NEW:%p:%" PRIdPTR ": '%s' = '%s'", (void *)md,
             gpr_atm_no_barrier_load(&md->refcnt), key_str, value_str);
     gpr_free(key_str);
     gpr_free(value_str);
@@ -368,8 +369,8 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
         char *key_str = grpc_slice_to_c_string(md->key);
         char *value_str = grpc_slice_to_c_string(md->value);
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
-                gpr_atm_no_barrier_load(&md->refcnt),
+                "ELM   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'",
+                (void *)md, gpr_atm_no_barrier_load(&md->refcnt),
                 gpr_atm_no_barrier_load(&md->refcnt) + 1, key_str, value_str);
         gpr_free(key_str);
         gpr_free(value_str);
@@ -390,8 +391,8 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
         char *key_str = grpc_slice_to_c_string(md->key);
         char *value_str = grpc_slice_to_c_string(md->value);
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
-                gpr_atm_no_barrier_load(&md->refcnt),
+                "ELM   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'",
+                (void *)md, gpr_atm_no_barrier_load(&md->refcnt),
                 gpr_atm_no_barrier_load(&md->refcnt) + 1, key_str, value_str);
         gpr_free(key_str);
         gpr_free(value_str);
@@ -420,8 +421,8 @@ void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
         char *key_str = grpc_slice_to_c_string(md->key);
         char *value_str = grpc_slice_to_c_string(md->value);
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "ELM UNREF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
-                gpr_atm_no_barrier_load(&md->refcnt),
+                "ELM UNREF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'",
+                (void *)md, gpr_atm_no_barrier_load(&md->refcnt),
                 gpr_atm_no_barrier_load(&md->refcnt) - 1, key_str, value_str);
         gpr_free(key_str);
         gpr_free(value_str);
@@ -446,8 +447,8 @@ void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
         char *key_str = grpc_slice_to_c_string(md->key);
         char *value_str = grpc_slice_to_c_string(md->value);
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "ELM UNREF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
-                gpr_atm_no_barrier_load(&md->refcnt),
+                "ELM UNREF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'",
+                (void *)md, gpr_atm_no_barrier_load(&md->refcnt),
                 gpr_atm_no_barrier_load(&md->refcnt) - 1, key_str, value_str);
         gpr_free(key_str);
         gpr_free(value_str);

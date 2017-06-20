@@ -198,7 +198,7 @@ static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta,
 #ifndef NDEBUG
   if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "SUBCHANNEL: %p %s 0x%08" PRIxPTR " -> 0x%08" PRIxPTR " [%s]", c,
+            "SUBCHANNEL: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
             purpose, old_val, old_val + delta, reason);
   }
 #endif
