@@ -746,11 +746,11 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\md4");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\md5");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\modes");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\newhope");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\obj");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\pem");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\pkcs8");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\poly1305");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\pool");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\rand");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\rc4");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\rsa");
