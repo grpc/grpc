@@ -4,6 +4,10 @@ gRPC environment variables
 gRPC C core based implementations (those contained in this repository) expose
 some configuration as environment variables that can be set.
 
+* http_proxy
+  The URI of the proxy to use for HTTP CONNECT support.  Does not currently
+  support username or password information in the URI.
+
 * GRPC_ABORT_ON_LEAKS
   A debugging aid to cause a call to abort() when gRPC objects are leaked past
   grpc_shutdown(). Set to 1 to cause the abort, if unset or 0 it does not

@@ -14,5 +14,7 @@
 
 set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
 
-@rem Expire cache after 1 day
-call npm update --cache-min 86400
+@rem Update npm to at least version 5
+call npm update -g npm
+
+call npm update --prefer-online
