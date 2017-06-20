@@ -118,7 +118,7 @@ def diff(scenarios, loops, old, new):
   for sn in scenarios:
     old_data[sn] = []
     new_data[sn] = []
-    for i in range(0, loops):
+    for i in range(loops):
       old_data[sn].append(_load_qps("%s.%s.%d.json" % (sn, old, i)))
       new_data[sn].append(_load_qps("%s.%s.%d.json" % (sn, new, i)))
 
