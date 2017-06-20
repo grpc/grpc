@@ -212,6 +212,9 @@
 
   CFLAGS += -std=c99 -Wsign-conversion -Wconversion ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
   CXXFLAGS += -std=c++11
+  ifeq ($(SYSTEM),Darwin)
+  CXXFLAGS += -stdlib=libc++
+  endif
   % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'DEFINES']:
   %  if defaults.get('global', []).get(arg, None) is not None:
   ${arg} += ${defaults.get('global').get(arg)}

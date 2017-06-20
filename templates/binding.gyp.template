@@ -165,6 +165,7 @@
           % if lib.name in module.transitive_deps and lib.name == 'boringssl':
           {
             'cflags': [
+              '-std=c++11',
               '-std=c99',
               '-Wall',
               '-Werror'
@@ -181,12 +182,23 @@
               % for source in lib.src:
               '${source}',
               % endfor
-            ]
+            ],
+            'conditions': [
+              ['OS=="mac"', {
+                'xcode_settings': {
+                  'MACOSX_DEPLOYMENT_TARGET': '10.9',
+                  'OTHER_CPLUSPLUSFLAGS': [
+                    '-stdlib=libc++',
+                    '-std=c++11'
+                  ],
+                }
+              }],
+            ],
           },
           % endif
           % endfor
           % endfor
-        ]
+        ],
       }],
       ['OS == "win" and runtime!="electron"', {
         'targets': [

@@ -4230,7 +4230,9 @@
     ]
   }, 
   {
-    "args": [], 
+    "args": [
+      "third_party/boringssl/crypto/aes/aes_tests.txt"
+    ], 
     "boringssl": true, 
     "ci_platforms": [
       "linux", 
@@ -4382,62 +4384,9 @@
     ]
   }, 
   {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_chacha_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
     "args": [
       "aes-128-gcm", 
       "third_party/boringssl/crypto/cipher/test/aes_128_gcm_tests.txt"
-    ], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_aead_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [
-      "aes-128-key-wrap", 
-      "third_party/boringssl/crypto/cipher/test/aes_128_key_wrap_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -4492,8 +4441,36 @@
   }, 
   {
     "args": [
-      "aes-256-key-wrap", 
-      "third_party/boringssl/crypto/cipher/test/aes_256_key_wrap_tests.txt"
+      "aes-128-gcm-siv", 
+      "third_party/boringssl/crypto/cipher/test/aes_128_gcm_siv_tests.txt"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan", 
+      "ubsan"
+    ], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "boringssl_aead_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [
+      "aes-256-gcm-siv", 
+      "third_party/boringssl/crypto/cipher/test/aes_256_gcm_siv_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -4522,34 +4499,6 @@
     "args": [
       "chacha20-poly1305", 
       "third_party/boringssl/crypto/cipher/test/chacha20_poly1305_tests.txt"
-    ], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_aead_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [
-      "chacha20-poly1305-old", 
-      "third_party/boringssl/crypto/cipher/test/chacha20_poly1305_old_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -5137,31 +5086,6 @@
     ], 
     "flaky": false, 
     "language": "c++", 
-    "name": "boringssl_dh_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
     "name": "boringssl_digest_test", 
     "platforms": [
       "linux", 
@@ -5187,57 +5111,34 @@
     ], 
     "flaky": false, 
     "language": "c++", 
-    "name": "boringssl_dsa_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_ec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
     "name": "boringssl_example_mul", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [
+      "third_party/boringssl/crypto/ec/p256-x86_64_tests.txt"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan", 
+      "ubsan"
+    ], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "boringssl_p256-x86_64_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -5344,31 +5245,6 @@
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_ecdsa_verify_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_err_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -5572,83 +5448,6 @@
     ], 
     "flaky": false, 
     "language": "c++", 
-    "name": "boringssl_newhope_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_newhope_statistical_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [
-      "third_party/boringssl/crypto/newhope/newhope_tests.txt"
-    ], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_newhope_vectors_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
     "name": "boringssl_obj_test", 
     "platforms": [
       "linux", 
@@ -5751,7 +5550,7 @@
     ], 
     "flaky": false, 
     "language": "c++", 
-    "name": "boringssl_refcount_test", 
+    "name": "boringssl_pool_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -5776,7 +5575,7 @@
     ], 
     "flaky": false, 
     "language": "c++", 
-    "name": "boringssl_rsa_test", 
+    "name": "boringssl_refcount_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -5902,31 +5701,6 @@
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_v3name_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_ssl_test", 
     "platforms": [
       "linux", 
       "mac", 
