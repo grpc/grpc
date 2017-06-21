@@ -60,20 +60,23 @@ some configuration as environment variables that can be set.
   - timer - timers (alarms) in the grpc internals
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
-  - DEBUG builds only:  
-    * metadata - tracks creation and mutation of metadata
-    * closure - tracks closure creation, scheduling, and completion
-    * pending_tags - traces still-in-progress tags on completion queues
-    * queue_refcount
-    * error_refcount
-    * stream_refcount
-    * workqueue_refcount
-    * fd_refcount
-    * auth_context_refcount
-    * security_connector_refcount
-    * resolver_refcount
-    * lb_policy_refcount
-    * chttp2_refcount
+
+  The following tracers will only run in binaries built in DEBUG mode. This is
+  accomplished by invoking `CONFIG=dbg make <target>`
+  - metadata - tracks creation and mutation of metadata
+  - closure - tracks closure creation, scheduling, and completion
+  - pending_tags - traces still-in-progress tags on completion queues
+  - polling - traces the selected polling engine
+  - queue_refcount
+  - error_refcount
+  - stream_refcount
+  - workqueue_refcount
+  - fd_refcount
+  - auth_context_refcount
+  - security_connector_refcount
+  - resolver_refcount
+  - lb_policy_refcount
+  - chttp2_refcount
 
   'all' can additionally be used to turn all traces on.
   Individual traces can be disabled by prefixing them with '-'.
