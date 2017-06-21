@@ -25,6 +25,7 @@
 
 namespace grpc {
 
+namespace internal {
 /// A wrapper class of an application provided rpc method handler.
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler : public MethodHandler {
@@ -265,6 +266,7 @@ class UnknownMethodHandler : public MethodHandler {
   }
 };
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H
