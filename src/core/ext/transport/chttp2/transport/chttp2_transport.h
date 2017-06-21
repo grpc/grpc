@@ -26,6 +26,10 @@
 extern grpc_tracer_flag grpc_http_trace;
 extern grpc_tracer_flag grpc_flowctl_trace;
 
+#ifndef NDEBUG
+extern grpc_tracer_flag grpc_trace_chttp2_refcount;
+#endif
+
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
     grpc_endpoint *ep, int is_client);

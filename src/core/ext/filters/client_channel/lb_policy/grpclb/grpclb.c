@@ -1880,6 +1880,9 @@ static bool maybe_add_client_load_reporting_filter(
 void grpc_lb_policy_grpclb_init() {
   grpc_register_lb_policy(grpc_glb_lb_factory_create());
   grpc_register_tracer("glb", &grpc_lb_glb_trace);
+#ifndef NDEBUG
+  grpc_register_tracer("lb_policy_refcount", &grpc_trace_lb_policy_refcount);
+#endif
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_client_load_reporting_filter,
