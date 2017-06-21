@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.5.0-dev</span>
+   &#160;<span id="projectnumber">1.4.0</span>
    </div>
   </td>
  </tr>
@@ -81,20 +81,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">gRPC C++ API </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>The gRPC C++ API mainly consists of the following classes: <br/>
-</p>
-<ul>
-<li><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">grpc::Channel</a>, which represents the connection to an endpoint. See <a href="http://www.grpc.io/docs/guides/concepts.html">the gRPC Concepts page</a> for more details. Channels are created by the factory function <a class="el" href="namespacegrpc.html#ad62b23e19fdcd13898119cd94818616d" title="Create a new Channel pointing to target. ">grpc::CreateChannel</a>.</li>
-<li><a class="el" href="classgrpc_1_1_completion_queue.html" title="A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue.h). ">grpc::CompletionQueue</a>, the producer-consumer queue used for all asynchronous communication with the gRPC runtime.</li>
-<li><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">grpc::ClientContext</a> and <a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">grpc::ServerContext</a>, where optional configuration for an RPC can be set, such as setting custom metadata to be conveyed to the peer, compression settings, authentication, etc.</li>
-<li><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a>, representing a gRPC server, created by <a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">grpc::ServerBuilder</a>.</li>
-</ul>
-<p>Streaming calls are handled with the streaming classes in <a class="el" href="support_2sync__stream_8h.html">sync_stream.h</a> and <a class="el" href="support_2async__stream_8h.html">async_stream.h</a>.</p>
-<p>Refer to the <a href="https://github.com/grpc/grpc/blob/master/examples/cpp">examples</a> for code putting these pieces into play. </p>
+<div class="textblock"><p>The gRPC C++ API mainly consists of the following classes: </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 31 2017 15:48:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
