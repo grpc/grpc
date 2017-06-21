@@ -21,12 +21,15 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
-        $credentials = Grpc\ChannelCredentials::createSsl(
-            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
+        $ca = file_get_contents(dirname(__FILE__).'/../data/ca.pem');
+        $key = file_get_contents(dirname(__FILE__).'/../data/server1.key');
+        $pem = file_get_contents(dirname(__FILE__).'/../data/server1.pem');
+
+        $credentials = Grpc\ChannelCredentials::createSsl($ca);
         $server_credentials = Grpc\ServerCredentials::createSsl(
             null,
-            file_get_contents(dirname(__FILE__).'/../data/server1.key'),
-            file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
+            [['private_key' => $key,
+              'cert_chain' => $pem, ]]);
         $this->server = new Grpc\Server();
         $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
                                               $server_credentials);
@@ -66,7 +69,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
                               $this->host_override);
 
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
-            array($this, 'callbackFunc'));
+            [$this, 'callbackFunc']);
         $call->setCredentials($call_credentials);
 
         $event = $call->startBatch([
