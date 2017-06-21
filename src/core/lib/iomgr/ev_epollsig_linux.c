@@ -140,7 +140,6 @@ struct grpc_fd {
 };
 
 /* Reference counting for fds */
-// #define GRPC_FD_REF_COUNT_DEBUG
 #ifndef NDEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
 static void fd_unref(grpc_fd *fd, const char *reason, const char *file,
@@ -755,8 +754,7 @@ static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
 #else
 static void unref_by(grpc_fd *fd, int n) {
 #endif
-  gpr_atm old;
-  old = gpr_atm_full_fetch_add(&fd->refst, -n);
+  gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     /* Add the fd to the freelist */
     gpr_mu_lock(&fd_freelist_mu);
@@ -843,7 +841,9 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name);
 #ifndef NDEBUG
-  gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, new_fd, fd_name);
+  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+    gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, new_fd, fd_name);
+  }
 #endif
   gpr_free(fd_name);
   return new_fd;
