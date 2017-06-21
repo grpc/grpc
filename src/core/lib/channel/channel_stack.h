@@ -40,6 +40,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/transport.h"
@@ -71,6 +72,7 @@ typedef struct {
   gpr_timespec start_time;
   gpr_timespec deadline;
   gpr_arena *arena;
+  grpc_call_combiner *call_combiner;
 } grpc_call_element_args;
 
 typedef struct {

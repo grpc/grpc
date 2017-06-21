@@ -147,6 +147,7 @@ typedef struct {
 struct grpc_call {
   gpr_refcount ext_ref;
   gpr_arena *arena;
+  grpc_call_combiner call_combiner;
   grpc_completion_queue *cq;
   grpc_polling_entity pollent;
   grpc_channel *channel;
@@ -239,8 +240,8 @@ grpc_tracer_flag grpc_compression_trace = GRPC_TRACER_INITIALIZER(false);
 #define CALL_FROM_TOP_ELEM(top_elem) \
   CALL_FROM_CALL_STACK(grpc_call_stack_from_top_element(top_elem))
 
-static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                       grpc_transport_stream_op_batch *op);
+static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
+                          grpc_transport_stream_op_batch *op);
 static void cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                status_source source, grpc_status_code status,
                                const char *description);
@@ -305,6 +306,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
                          sizeof(grpc_call) + channel_stack->call_stack_size);
   gpr_ref_init(&call->ext_ref, 1);
   call->arena = arena;
+  grpc_call_combiner_init(&call->call_combiner);
   *out_call = call;
   call->channel = args->channel;
   call->cq = args->cq;
@@ -408,7 +410,8 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       .path = path,
       .start_time = call->start_time,
       .deadline = send_deadline,
-      .arena = call->arena};
+      .arena = call->arena,
+      .call_combiner = &call->call_combiner};
   add_init_error(&error, grpc_call_stack_init(exec_ctx, channel_stack, 1,
                                               destroy_call, call, &call_args));
   if (error != GRPC_ERROR_NONE) {
@@ -476,6 +479,7 @@ static void release_call(grpc_exec_ctx *exec_ctx, void *call,
   grpc_call *c = call;
   grpc_channel *channel = c->channel;
   grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(c->arena));
+  grpc_call_combiner_destroy(&c->call_combiner);
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
 }
 
@@ -574,14 +578,23 @@ grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
   return GRPC_CALL_OK;
 }
 
-static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                       grpc_transport_stream_op_batch *op) {
-  grpc_call_element *elem;
+static void execute_batch_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
+                                           grpc_error *ignored) {
+  grpc_transport_stream_op_batch *batch = arg;
+  grpc_call *call = batch->handler_private.extra_arg;
+  GPR_TIMER_BEGIN("execute_batch", 0);
+  grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
+gpr_log(GPR_INFO, "calling start_transport_stream_op_batch() for \"%s\" filter", elem->filter->name);
+  elem->filter->start_transport_stream_op_batch(exec_ctx, elem, batch);
+  GPR_TIMER_END("execute_batch", 0);
+}
 
-  GPR_TIMER_BEGIN("execute_op", 0);
-  elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->start_transport_stream_op_batch(exec_ctx, elem, op);
-  GPR_TIMER_END("execute_op", 0);
+static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
+                          grpc_transport_stream_op_batch *batch) {
+  batch->handler_private.extra_arg = call;
+  grpc_closure *closure = GRPC_CLOSURE_CREATE(
+      execute_batch_in_call_combiner, batch, &call->call_combiner.scheduler);
+  GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
 }
 
 char *grpc_call_get_peer(grpc_call *call) {
@@ -637,7 +650,7 @@ static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
       GRPC_CLOSURE_CREATE(done_termination, c, grpc_schedule_on_exec_ctx));
   op->cancel_stream = true;
   op->payload->cancel_stream.cancel_error = error;
-  execute_op(exec_ctx, c, op);
+  execute_batch(exec_ctx, c, op);
 }
 
 static grpc_error *error_from_status(grpc_status_code status,
@@ -1300,6 +1313,7 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   } else {
     call->saved_receiving_stream_ready_bctlp = bctlp;
   }
+  grpc_call_combiner_stop(exec_ctx, &call->call_combiner);
 }
 
 static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
@@ -1398,14 +1412,16 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
   }
 
   finish_batch_step(exec_ctx, bctl);
+  grpc_call_combiner_stop(exec_ctx, &call->call_combiner);
 }
 
 static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
                          grpc_error *error) {
   batch_control *bctl = bctlp;
-
+  grpc_call *call = bctl->call;
   add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error), false);
   finish_batch_step(exec_ctx, bctl);
+  grpc_call_combiner_stop(exec_ctx, &call->call_combiner);
 }
 
 static void free_no_op_completion(grpc_exec_ctx *exec_ctx, void *p,
@@ -1739,7 +1755,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   stream_op->on_complete = &bctl->finish_batch;
   gpr_atm_rel_store(&call->any_ops_sent_atm, 1);
 
-  execute_op(exec_ctx, call, stream_op);
+  execute_batch(exec_ctx, call, stream_op);
 
 done:
   GPR_TIMER_END("grpc_call_start_batch", 0);

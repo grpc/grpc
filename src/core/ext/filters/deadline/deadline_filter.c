@@ -45,6 +45,8 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
         grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED));
+  } else {
+    grpc_call_combiner_stop(exec_ctx, deadline_state->call_combiner);
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }
@@ -74,8 +76,8 @@ retry:
         // If we've already created and destroyed a timer, we always create a
         // new closure: we have no other guarantee that the inlined closure is
         // not in use (it may hold a pending call to timer_callback)
-        closure = GRPC_CLOSURE_CREATE(timer_callback, elem,
-                                      grpc_schedule_on_exec_ctx);
+        closure = GRPC_CLOSURE_CREATE(
+            timer_callback, elem, &deadline_state->call_combiner->scheduler);
       } else {
         goto retry;
       }
@@ -86,7 +88,7 @@ retry:
                           GRPC_DEADLINE_STATE_PENDING)) {
         closure =
             GRPC_CLOSURE_INIT(&deadline_state->timer_callback, timer_callback,
-                              elem, grpc_schedule_on_exec_ctx);
+                              elem, &deadline_state->call_combiner->scheduler);
       } else {
         goto retry;
       }
@@ -144,9 +146,11 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
 
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_call_stack* call_stack,
+                              grpc_call_combiner* call_combiner,
                               gpr_timespec deadline) {
   grpc_deadline_state* deadline_state = elem->call_data;
   deadline_state->call_stack = call_stack;
+  deadline_state->call_combiner = call_combiner;
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
@@ -232,7 +236,8 @@ typedef struct server_call_data {
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  grpc_deadline_state_init(exec_ctx, elem, args->call_stack, args->deadline);
+  grpc_deadline_state_init(exec_ctx, elem, args->call_stack,
+                           args->call_combiner, args->deadline);
   return GRPC_ERROR_NONE;
 }
 

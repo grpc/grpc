@@ -775,7 +775,9 @@ grpc_error *grpc_connected_subchannel_create_call(
                                             .path = args->path,
                                             .start_time = args->start_time,
                                             .deadline = args->deadline,
-                                            .arena = args->arena};
+                                            .arena = args->arena,
+                                            .call_combiner =
+                                                args->call_combiner};
   grpc_error *error = grpc_call_stack_init(
       exec_ctx, chanstk, 1, subchannel_call_destroy, *call, &call_args);
   if (error != GRPC_ERROR_NONE) {

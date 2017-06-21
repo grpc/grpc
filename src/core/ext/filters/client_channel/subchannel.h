@@ -106,6 +106,7 @@ typedef struct {
   gpr_timespec deadline;
   gpr_arena *arena;
   grpc_call_context_element *context;
+  grpc_call_combiner *call_combiner;
 } grpc_connected_subchannel_call_args;
 
 grpc_error *grpc_connected_subchannel_create_call(

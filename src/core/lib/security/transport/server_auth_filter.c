@@ -27,6 +27,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 typedef struct call_data {
+  grpc_call_combiner *call_combiner;
   grpc_metadata_batch *recv_initial_metadata;
   /* Closure to call when finished with the auth_on_recv hook. */
   grpc_closure *on_done_recv;
@@ -137,6 +138,19 @@ static void on_md_processing_done(
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+static void intercepted_closure_run(grpc_exec_ctx *exec_ctx, void *arg,
+                                    grpc_error *error) {
+  grpc_closure *original_closure = arg;
+  GRPC_CLOSURE_RUN(exec_ctx, original_closure, GRPC_ERROR_REF(error));
+}
+
+static void intercept_closure(
+    grpc_call_combiner *call_combiner, grpc_closure **original_closure) {
+  *original_closure =
+      GRPC_CLOSURE_CREATE(intercepted_closure_run, *original_closure,
+                          &call_combiner->scheduler);
+}
+
 static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
                          grpc_error *error) {
   grpc_call_element *elem = user_data;
@@ -144,14 +158,18 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   channel_data *chand = elem->channel_data;
   if (error == GRPC_ERROR_NONE) {
     if (chand->creds != NULL && chand->creds->processor.process != NULL) {
+      // We're calling out to the application, so we need to exit and
+      // then re-enter the call combiner.
+      intercept_closure(calld->call_combiner, &calld->on_done_recv);
       calld->md = metadata_batch_to_md_array(calld->recv_initial_metadata);
       chand->creds->processor.process(
           chand->creds->processor.state, calld->auth_context,
           calld->md.metadata, calld->md.count, on_md_processing_done, elem);
+      grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
       return;
     }
   }
-  GRPC_CLOSURE_SCHED(exec_ctx, calld->on_done_recv, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_RUN(exec_ctx, calld->on_done_recv, GRPC_ERROR_REF(error));
 }
 
 static void set_recv_ops_md_callbacks(grpc_call_element *elem,
@@ -192,7 +210,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   grpc_server_security_context *server_ctx = NULL;
 
   /* initialize members */
-  memset(calld, 0, sizeof(*calld));
+  calld->call_combiner = args->call_combiner;
   GRPC_CLOSURE_INIT(&calld->auth_on_recv, auth_on_recv, elem,
                     grpc_schedule_on_exec_ctx);
 

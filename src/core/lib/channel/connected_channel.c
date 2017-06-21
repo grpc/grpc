@@ -36,7 +36,23 @@ typedef struct connected_channel_channel_data {
   grpc_transport *transport;
 } channel_data;
 
-typedef struct connected_channel_call_data { void *unused; } call_data;
+typedef struct connected_channel_call_data {
+  grpc_call_combiner *call_combiner;
+} call_data;
+
+static void intercepted_closure_run(grpc_exec_ctx *exec_ctx, void *arg,
+                                    grpc_error *error) {
+  grpc_closure *original_closure = arg;
+  GRPC_CLOSURE_RUN(exec_ctx, original_closure, GRPC_ERROR_REF(error));
+}
+
+// FIXME: avoid dynamic allocation here
+static void intercept_closure(
+    grpc_call_combiner *call_combiner, grpc_closure **original_closure) {
+  *original_closure =
+      GRPC_CLOSURE_CREATE(intercepted_closure_run, *original_closure,
+                          &call_combiner->scheduler);
+}
 
 /* We perform a small hack to locate transport data alongside the connected
    channel data in call allocations, to allow everything to be pulled in minimal
@@ -53,9 +69,19 @@ static void con_start_transport_stream_op_batch(
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-
+  if (op->recv_initial_metadata) {
+    intercept_closure(
+        calld->call_combiner,
+        &op->payload->recv_initial_metadata.recv_initial_metadata_ready);
+  }
+  if (op->recv_message) {
+    intercept_closure(calld->call_combiner,
+                      &op->payload->recv_message.recv_message_ready);
+  }
+  intercept_closure(calld->call_combiner, &op->on_complete);
   grpc_transport_perform_stream_op(exec_ctx, chand->transport,
                                    TRANSPORT_STREAM_FROM_CALL_DATA(calld), op);
+  grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
 }
 
 static void con_start_transport_op(grpc_exec_ctx *exec_ctx,
@@ -71,6 +97,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
+  calld->call_combiner = args->call_combiner;
   int r = grpc_transport_init_stream(
       exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
       &args->call_stack->refcount, args->server_transport_data, args->arena);

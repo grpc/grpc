@@ -903,7 +903,8 @@ static void create_subchannel_call_locked(grpc_exec_ctx *exec_ctx,
       .start_time = calld->call_start_time,
       .deadline = calld->deadline,
       .arena = calld->arena,
-      .context = calld->subchannel_call_context};
+      .context = calld->subchannel_call_context,
+      .call_combiner = calld->deadline_state.call_combiner};
   grpc_error *new_error = grpc_connected_subchannel_create_call(
       exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
   GPR_ASSERT(set_call_or_error(
@@ -1289,7 +1290,8 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->owning_call = args->call_stack;
   calld->arena = args->arena;
   if (chand->deadline_checking_enabled) {
-    grpc_deadline_state_init(exec_ctx, elem, args->call_stack, calld->deadline);
+    grpc_deadline_state_init(exec_ctx, elem, args->call_stack,
+                             args->call_combiner, calld->deadline);
   }
   return GRPC_ERROR_NONE;
 }
