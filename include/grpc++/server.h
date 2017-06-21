@@ -172,7 +172,8 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// \param num_cqs How many completion queues does \a cqs hold.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
-  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
+  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
+                        internal::Call* call) override;
 
   void ShutdownInternal(gpr_timespec deadline) override;
 
