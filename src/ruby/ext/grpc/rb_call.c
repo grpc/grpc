@@ -38,6 +38,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/impl/codegen/compression_types.h>
 
 #include "rb_byte_buffer.h"
@@ -376,19 +377,15 @@ static VALUE grpc_rb_call_set_credentials(VALUE self, VALUE credentials) {
   return Qnil;
 }
 
-/* grpc_rb_md_ary_fill_hash_cb is the hash iteration callback used
-   to fill grpc_metadata_array.
-
-   it's capacity should have been computed via a prior call to
-   grpc_rb_md_ary_fill_hash_cb
-*/
-static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
-  grpc_metadata_array *md_ary = NULL;
-  long array_length;
-  long i;
+static int grpc_rb_md_ary_add_key_value_entry(VALUE key, VALUE val, grpc_metadata_array *md_ary) {
   grpc_slice key_slice;
   grpc_slice value_slice;
-  char* tmp_str;
+  char* tmp_str = NULL;
+
+  if (TYPE(val) != T_STRING) {
+    rb_raise(rb_eTypeError, "grpc_rb_md_ary_fill_hash_cb: bad type for key parameter");
+    return ST_STOP;
+  }
 
   if (TYPE(key) == T_SYMBOL) {
     key_slice = grpc_slice_from_static_string(rb_id2name(SYM2ID(key)));
@@ -396,6 +393,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
     key_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(key), RSTRING_LEN(key));
   } else {
     rb_raise(rb_eTypeError, "grpc_rb_md_ary_fill_hash_cb: bad type for key parameter");
+    return ST_STOP;
   }
 
   if (!grpc_header_key_is_legal(key_slice)) {
@@ -406,6 +404,36 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
     return ST_STOP;
   }
 
+  value_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(val), RSTRING_LEN(val));
+  if (!grpc_is_binary_header(key_slice) &&
+      !grpc_header_nonbin_value_is_legal(value_slice)) {
+    // The value has invalid characters
+    tmp_str = grpc_slice_to_c_string(value_slice);
+    rb_raise(rb_eArgError,
+             "Header value '%s' has invalid characters", tmp_str);
+    return ST_STOP;
+  }
+
+  GPR_ASSERT(md_ary->count < md_ary->capacity);
+
+  md_ary->metadata[md_ary->count].key = key_slice;
+  md_ary->metadata[md_ary->count].value = value_slice;
+  md_ary->count += 1;
+
+  return ST_CONTINUE;
+}
+
+/* grpc_rb_md_ary_fill_hash_cb is the hash iteration callback used
+   to fill grpc_metadata_array.
+
+   it's capacity should have been computed via a prior call to
+   grpc_rb_md_ary_capacity_hash_cb
+*/
+int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
+  grpc_metadata_array *md_ary = NULL;
+  long array_length;
+  long i;
+
   /* Construct a metadata object from key and value and add it */
   TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
                        &grpc_rb_md_ary_data_type, md_ary);
@@ -414,38 +442,17 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
     array_length = RARRAY_LEN(val);
     /* If the value is an array, add capacity for each value in the array */
     for (i = 0; i < array_length; i++) {
-      value_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(rb_ary_entry(val, i)), RSTRING_LEN(rb_ary_entry(val, i)));
-      if (!grpc_is_binary_header(key_slice) &&
-          !grpc_header_nonbin_value_is_legal(value_slice)) {
-        // The value has invalid characters
-        tmp_str = grpc_slice_to_c_string(value_slice);
-        rb_raise(rb_eArgError,
-                 "Header value '%s' has invalid characters", tmp_str);
+      if(grpc_rb_md_ary_add_key_value_entry(key, rb_ary_entry(val, i), md_ary) != ST_CONTINUE) {
         return ST_STOP;
       }
-      md_ary->metadata[md_ary->count].key = key_slice;
-      md_ary->metadata[md_ary->count].value = value_slice;
-      md_ary->count += 1;
     }
   } else if (TYPE(val) == T_STRING) {
-    value_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(val), RSTRING_LEN(val));
-    if (!grpc_is_binary_header(key_slice) &&
-        !grpc_header_nonbin_value_is_legal(value_slice)) {
-      // The value has invalid characters
-      tmp_str = grpc_slice_to_c_string(value_slice);
-      rb_raise(rb_eArgError,
-               "Header value '%s' has invalid characters", tmp_str);
-      return ST_STOP;
-    }
-    md_ary->metadata[md_ary->count].key = key_slice;
-    md_ary->metadata[md_ary->count].value = value_slice;
-    md_ary->count += 1;
+    return grpc_rb_md_ary_add_key_value_entry(key, val, md_ary);
   } else {
     rb_raise(rb_eArgError,
                "Header values must be of type string or array");
     return ST_STOP;
   }
-
   return ST_CONTINUE;
 }
 
@@ -468,6 +475,7 @@ static int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val,
   } else {
     md_ary->capacity += 1;
   }
+
   return ST_CONTINUE;
 }
 
@@ -491,7 +499,7 @@ void grpc_rb_md_ary_convert(VALUE md_ary_hash,
   md_ary_obj =
       TypedData_Wrap_Struct(grpc_rb_cMdAry, &grpc_rb_md_ary_data_type, md_ary);
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_capacity_hash_cb, md_ary_obj);
-  md_ary->metadata = gpr_malloc(md_ary->capacity * sizeof(grpc_metadata));
+  md_ary->metadata = gpr_zalloc(md_ary->capacity * sizeof(grpc_metadata));
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_fill_hash_cb, md_ary_obj);
 }
 
@@ -620,13 +628,24 @@ static void grpc_run_batch_stack_init(run_batch_stack *st,
   st->write_flag = write_flag;
 }
 
+void grpc_rb_metadata_array_destroy_including_entries(grpc_metadata_array *array) {
+  size_t i;
+  if (array->metadata) {
+    for (i = 0; i < array->count; i++) {
+      grpc_slice_unref(array->metadata[i].key);
+      grpc_slice_unref(array->metadata[i].value);
+    }
+  }
+  grpc_metadata_array_destroy(array);
+}
+
 /* grpc_run_batch_stack_cleanup ensures the run_batch_stack is properly
  * cleaned up */
 static void grpc_run_batch_stack_cleanup(run_batch_stack *st) {
   size_t i = 0;
 
-  grpc_metadata_array_destroy(&st->send_metadata);
-  grpc_metadata_array_destroy(&st->send_trailing_metadata);
+  grpc_rb_metadata_array_destroy_including_entries(&st->send_metadata);
+  grpc_rb_metadata_array_destroy_including_entries(&st->send_trailing_metadata);
   grpc_metadata_array_destroy(&st->recv_metadata);
   grpc_metadata_array_destroy(&st->recv_trailing_metadata);
 
@@ -667,8 +686,6 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack *st, VALUE ops_hash) {
     st->ops[st->op_num].flags = 0;
     switch (NUM2INT(this_op)) {
       case GRPC_OP_SEND_INITIAL_METADATA:
-        /* N.B. later there is no need to explicitly delete the metadata keys
-         * and values, they are references to data in ruby objects. */
         grpc_rb_md_ary_convert(this_value, &st->send_metadata);
         st->ops[st->op_num].data.send_initial_metadata.count =
             st->send_metadata.count;
@@ -684,8 +701,6 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack *st, VALUE ops_hash) {
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
-        /* N.B. later there is no need to explicitly delete the metadata keys
-         * and values, they are references to data in ruby objects. */
         grpc_rb_op_update_status_from_server(
             &st->ops[st->op_num], &st->send_trailing_metadata, &st->send_status_details, this_value);
         break;
