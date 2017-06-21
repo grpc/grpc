@@ -64,14 +64,14 @@ Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
-  grpc_call* c_call = NULL;
+  grpc_call* c_call = nullptr;
   if (kRegistered) {
     c_call = grpc_channel_create_registered_call(
         c_channel_, context->propagate_from_call_,
         context->propagation_options_.c_bitmask(), cq->cq(),
         method.channel_tag(), context->raw_deadline(), nullptr);
   } else {
-    const char* host_str = NULL;
+    const char* host_str = nullptr;
     if (!context->authority().empty()) {
       host_str = context->authority_.c_str();
     } else if (!host_.empty()) {
@@ -98,7 +98,7 @@ void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
 
 void* Channel::RegisterMethod(const char* method) {
   return grpc_channel_register_call(
-      c_channel_, method, host_.empty() ? NULL : host_.c_str(), nullptr);
+      c_channel_, method, host_.empty() ? nullptr : host_.c_str(), nullptr);
 }
 
 grpc_connectivity_state Channel::GetState(bool try_to_connect) {
@@ -134,10 +134,10 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                      gpr_timespec deadline) {
   CompletionQueue cq;
   bool ok = false;
-  void* tag = NULL;
-  NotifyOnStateChangeImpl(last_observed, deadline, &cq, NULL);
+  void* tag = nullptr;
+  NotifyOnStateChangeImpl(last_observed, deadline, &cq, nullptr);
   cq.Next(&tag, &ok);
-  GPR_ASSERT(tag == NULL);
+  GPR_ASSERT(tag == nullptr);
   return ok;
 }
 

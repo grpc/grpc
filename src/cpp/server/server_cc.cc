@@ -85,7 +85,7 @@ class Server::UnimplementedAsyncRequest final
  public:
   UnimplementedAsyncRequest(Server* server, ServerCompletionQueue* cq)
       : GenericAsyncRequest(server, &server_context_, &generic_stream_, cq, cq,
-                            NULL, false),
+                            nullptr, false),
         server_(server),
         cq_(cq) {}
 

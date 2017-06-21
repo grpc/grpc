@@ -55,11 +55,11 @@ std::shared_ptr<Channel> CreateCustomChannel(
     const ChannelArguments& args) {
   internal::GrpcLibrary
       init_lib;  // We need to call init in case of a bad creds.
-  return creds
-             ? creds->CreateChannel(target, args)
-             : CreateChannelInternal("", grpc_lame_client_channel_create(
-                                             NULL, GRPC_STATUS_INVALID_ARGUMENT,
-                                             "Invalid credentials."));
+  return creds ? creds->CreateChannel(target, args)
+               : CreateChannelInternal(
+                     "", grpc_lame_client_channel_create(
+                             nullptr, GRPC_STATUS_INVALID_ARGUMENT,
+                             "Invalid credentials."));
 }
 
 }  // namespace grpc

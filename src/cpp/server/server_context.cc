@@ -101,7 +101,7 @@ void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
   ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops->data.recv_close_on_server.cancelled = &cancelled_;
   ops->flags = 0;
-  ops->reserved = NULL;
+  ops->reserved = nullptr;
   *nops = 1;
 }
 
@@ -180,7 +180,7 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
 
 void ServerContext::TryCancel() const {
   grpc_call_error err = grpc_call_cancel_with_status(
-      call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", NULL);
+      call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", nullptr);
   if (err != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
   }
@@ -199,13 +199,13 @@ bool ServerContext::IsCancelled() const {
 
 void ServerContext::set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
-  char* algorithm_name = NULL;
+  char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
     gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
             algorithm);
     abort();
   }
-  GPR_ASSERT(algorithm_name != NULL);
+  GPR_ASSERT(algorithm_name != nullptr);
   AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 

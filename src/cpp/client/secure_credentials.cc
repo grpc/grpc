@@ -179,7 +179,7 @@ void MetadataCredentialsPluginWrapper::GetMetadata(
   MetadataCredentialsPluginWrapper* w =
       reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   if (!w->plugin_) {
-    cb(user_data, NULL, 0, GRPC_STATUS_OK, NULL);
+    cb(user_data, nullptr, 0, GRPC_STATUS_OK, nullptr);
     return;
   }
   if (w->plugin_->IsBlocking()) {
