@@ -32,7 +32,7 @@ struct grpc_channel;
 namespace grpc {
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
 class Channel final : public ChannelInterface,
-                      public CallHook,
+                      public internal::CallHook,
                       public std::enable_shared_from_this<Channel>,
                       private GrpcLibraryCodegen {
  public:
@@ -52,7 +52,7 @@ class Channel final : public ChannelInterface,
  private:
   template <class InputMessage, class OutputMessage>
   friend Status BlockingUnaryCall(ChannelInterface* channel,
-                                  const RpcMethod& method,
+                                  const internal::RpcMethod& method,
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);
@@ -60,9 +60,11 @@ class Channel final : public ChannelInterface,
       const grpc::string& host, grpc_channel* c_channel);
   Channel(const grpc::string& host, grpc_channel* c_channel);
 
-  Call CreateCall(const RpcMethod& method, ClientContext* context,
-                  CompletionQueue* cq) override;
-  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
+  internal::Call CreateCall(const internal::RpcMethod& method,
+                            ClientContext* context,
+                            CompletionQueue* cq) override;
+  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
+                        internal::Call* call) override;
   void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,

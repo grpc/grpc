@@ -77,7 +77,7 @@ class Alarm : private GrpcLibraryCodegen {
   void Cancel() { grpc_alarm_cancel(alarm_); }
 
  private:
-  class AlarmEntry : public CompletionQueueTag {
+  class AlarmEntry : public internal::CompletionQueueTag {
    public:
     AlarmEntry(void* tag) : tag_(tag) {}
     bool FinalizeResult(void** tag, bool* status) override {

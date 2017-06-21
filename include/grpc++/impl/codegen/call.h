@@ -44,10 +44,12 @@ struct grpc_byte_buffer;
 namespace grpc {
 
 class ByteBuffer;
-class Call;
-class CallHook;
 class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
+
+namespace internal {
+class Call;
+class CallHook;
 
 const char kBinaryErrorDetailsKey[] = "grpc-status-details-bin";
 
@@ -76,6 +78,7 @@ inline grpc_metadata* FillMetadataArray(
   }
   return metadata_array;
 }
+}  // namespace internal
 
 /// Per-message write options.
 class WriteOptions {
@@ -191,6 +194,7 @@ class WriteOptions {
   bool last_message_;
 };
 
+namespace internal {
 /// Default argument for CallOpSet. I is unused by the class, but can be
 /// used for generating multiple names for the same thing.
 template <int I>
@@ -678,7 +682,7 @@ class Call final {
   grpc_call* call_;
   int max_receive_message_size_;
 };
-
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_CALL_H
