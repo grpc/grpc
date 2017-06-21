@@ -40,12 +40,15 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_call_element* elem = arg;
   grpc_deadline_state* deadline_state = elem->call_data;
   if (error != GRPC_ERROR_CANCELLED) {
+    // The call combiner will be yielded by the connected_channel filter.
     grpc_call_element_signal_error(
         exec_ctx, elem,
         grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED));
   } else {
+    // Not sending a cancel op down the call stack, so yield the call
+    // combiner here.
     grpc_call_combiner_stop(exec_ctx, deadline_state->call_combiner);
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
@@ -60,41 +63,27 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
     return;
   }
   grpc_deadline_state* deadline_state = elem->call_data;
-  grpc_deadline_timer_state cur_state;
   grpc_closure* closure = NULL;
-retry:
-  cur_state =
-      (grpc_deadline_timer_state)gpr_atm_acq_load(&deadline_state->timer_state);
-  switch (cur_state) {
+  switch (deadline_state->timer_state) {
     case GRPC_DEADLINE_STATE_PENDING:
       // Note: We do not start the timer if there is already a timer
       return;
     case GRPC_DEADLINE_STATE_FINISHED:
-      if (gpr_atm_rel_cas(&deadline_state->timer_state,
-                          GRPC_DEADLINE_STATE_FINISHED,
-                          GRPC_DEADLINE_STATE_PENDING)) {
-        // If we've already created and destroyed a timer, we always create a
-        // new closure: we have no other guarantee that the inlined closure is
-        // not in use (it may hold a pending call to timer_callback)
-        closure = GRPC_CLOSURE_CREATE(
-            timer_callback, elem, &deadline_state->call_combiner->scheduler);
-      } else {
-        goto retry;
-      }
+      deadline_state->timer_state = GRPC_DEADLINE_STATE_PENDING;
+      // If we've already created and destroyed a timer, we always create a
+      // new closure: we have no other guarantee that the inlined closure is
+      // not in use (it may hold a pending call to timer_callback)
+      closure = GRPC_CLOSURE_CREATE(
+          timer_callback, elem, &deadline_state->call_combiner->scheduler);
       break;
     case GRPC_DEADLINE_STATE_INITIAL:
-      if (gpr_atm_rel_cas(&deadline_state->timer_state,
-                          GRPC_DEADLINE_STATE_INITIAL,
-                          GRPC_DEADLINE_STATE_PENDING)) {
-        closure =
-            GRPC_CLOSURE_INIT(&deadline_state->timer_callback, timer_callback,
-                              elem, &deadline_state->call_combiner->scheduler);
-      } else {
-        goto retry;
-      }
+      deadline_state->timer_state = GRPC_DEADLINE_STATE_PENDING;
+      closure =
+          GRPC_CLOSURE_INIT(&deadline_state->timer_callback, timer_callback,
+                            elem, &deadline_state->call_combiner->scheduler);
       break;
   }
-  GPR_ASSERT(closure);
+  GPR_ASSERT(closure != NULL);
   GRPC_CALL_STACK_REF(deadline_state->call_stack, "deadline_timer");
   grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, closure,
                   gpr_now(GPR_CLOCK_MONOTONIC));
@@ -103,8 +92,8 @@ retry:
 // Cancels the deadline timer.
 static void cancel_timer_if_needed(grpc_exec_ctx* exec_ctx,
                                    grpc_deadline_state* deadline_state) {
-  if (gpr_atm_rel_cas(&deadline_state->timer_state, GRPC_DEADLINE_STATE_PENDING,
-                      GRPC_DEADLINE_STATE_FINISHED)) {
+  if (deadline_state->timer_state == GRPC_DEADLINE_STATE_PENDING) {
+    deadline_state->timer_state = GRPC_DEADLINE_STATE_FINISHED;
     grpc_timer_cancel(exec_ctx, &deadline_state->timer);
   } else {
     // timer was either in STATE_INITAL (nothing to cancel)
@@ -140,8 +129,10 @@ struct start_timer_after_init_state {
 static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
                                    grpc_error* error) {
   struct start_timer_after_init_state* state = arg;
+  grpc_deadline_state* deadline_state = state->elem->call_data;
   start_timer_if_needed(exec_ctx, state->elem, state->deadline);
   gpr_free(state);
+  grpc_call_combiner_stop(exec_ctx, deadline_state->call_combiner);
 }
 
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
@@ -166,7 +157,7 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     state->elem = elem;
     state->deadline = deadline;
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
-                      grpc_schedule_on_exec_ctx);
+                      &deadline_state->call_combiner->scheduler);
     GRPC_CLOSURE_SCHED(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
 }

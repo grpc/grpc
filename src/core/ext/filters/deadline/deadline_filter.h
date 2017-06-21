@@ -32,7 +32,7 @@ typedef struct grpc_deadline_state {
   // We take a reference to the call stack for the timer callback.
   grpc_call_stack* call_stack;
   grpc_call_combiner* call_combiner;
-  gpr_atm timer_state;
+  grpc_deadline_timer_state timer_state;
   grpc_timer timer;
   grpc_closure timer_callback;
   // Closure to invoke when the call is complete.
