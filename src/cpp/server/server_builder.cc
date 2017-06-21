@@ -45,10 +45,8 @@ ServerBuilder::ServerBuilder()
       resource_quota_(nullptr),
       generic_service_(nullptr) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
-  for (auto it = g_plugin_factory_list->begin();
-       it != g_plugin_factory_list->end(); it++) {
-    auto& factory = *it;
-    plugins_.emplace_back(factory());
+  for (const auto& value : *g_plugin_factory_list) {
+    plugins_.emplace_back(value());
   }
 
   // all compression algorithms enabled by default.
@@ -177,13 +175,13 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
 
   ChannelArguments args;
-  for (auto option = options_.begin(); option != options_.end(); ++option) {
-    (*option)->UpdateArguments(&args);
-    (*option)->UpdatePlugins(&plugins_);
+  for (const auto& value : options_) {
+    value->UpdateArguments(&args);
+    value->UpdatePlugins(&plugins_);
   }
 
-  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-    (*plugin)->UpdateChannelArguments(&args);
+  for (const auto& value : plugins_) {
+    value->UpdateChannelArguments(&args);
   }
 
   if (max_receive_message_size_ >= 0) {
@@ -212,16 +210,16 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 
   // == Determine if the server has any syncrhonous methods ==
   bool has_sync_methods = false;
-  for (auto it = services_.begin(); it != services_.end(); ++it) {
-    if ((*it)->service->has_synchronous_methods()) {
+  for (const auto& value : services_) {
+    if (value->service->has_synchronous_methods()) {
       has_sync_methods = true;
       break;
     }
   }
 
   if (!has_sync_methods) {
-    for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-      if ((*plugin)->has_sync_methods()) {
+    for (const auto& value : plugins_) {
+      if (value->has_sync_methods()) {
         has_sync_methods = true;
         break;
       }
@@ -279,8 +277,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   //     server
   //  2. cqs_: Completion queues added via AddCompletionQueue() call
 
-  for (auto it = sync_server_cqs->begin(); it != sync_server_cqs->end(); ++it) {
-    grpc_server_register_completion_queue(server->server_, (*it)->cq(),
+  for (const auto& value : *sync_server_cqs) {
+    grpc_server_register_completion_queue(server->server_, value->cq(),
                                           nullptr);
     num_frequently_polled_cqs++;
   }
@@ -290,8 +288,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   // calling Next() or AsyncNext()) and hence are not safe to be used for
   // listening to incoming channels. Such completion queues must be registered
   // as non-listening queues
-  for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
-    grpc_server_register_completion_queue(server->server_, (*it)->cq(),
+  for (const auto& value : cqs_) {
+    grpc_server_register_completion_queue(server->server_, value->cq(),
                                           nullptr);
   }
 
@@ -301,22 +299,21 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     return nullptr;
   }
 
-  for (auto service = services_.begin(); service != services_.end();
-       service++) {
-    if (!server->RegisterService((*service)->host.get(), (*service)->service)) {
+  for (const auto& value : services_) {
+    if (!server->RegisterService(value->host.get(), value->service)) {
       return nullptr;
     }
   }
 
-  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-    (*plugin)->InitServer(initializer);
+  for (const auto& value : plugins_) {
+    value->InitServer(initializer);
   }
 
   if (generic_service_) {
     server->RegisterAsyncGenericService(generic_service_);
   } else {
-    for (auto it = services_.begin(); it != services_.end(); ++it) {
-      if ((*it)->service->has_generic_methods()) {
+    for (const auto& value : services_) {
+      if (value->service->has_generic_methods()) {
         gpr_log(GPR_ERROR,
                 "Some methods were marked generic but there is no "
                 "generic service registered.");
@@ -341,8 +338,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
   server->Start(cqs_data, cqs_.size());
 
-  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-    (*plugin)->Finish(initializer);
+  for (const auto& value : plugins_) {
+    value->Finish(initializer);
   }
 
   return server;
