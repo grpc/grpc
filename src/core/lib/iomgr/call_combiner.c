@@ -59,7 +59,7 @@ gpr_log(GPR_INFO, "==> grpc_call_combiner_start() [%p] closure->cb=%p", call_com
   closure->scheduler = &call_combiner->scheduler;
   size_t prev_size =
       (size_t)gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)1);
-gpr_log(GPR_INFO, "  prev_size=%zu", prev_size);
+gpr_log(GPR_INFO, "  size: %zu -> %zu", prev_size, prev_size + 1);
   if (prev_size == 0) {
 gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
     // Queue was empty, so execute this closure immediately.
@@ -77,7 +77,7 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
 gpr_log(GPR_INFO, "==> grpc_call_combiner_stop() [%p]", call_combiner);
   size_t prev_size =
       (size_t)gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)-1);
-gpr_log(GPR_INFO, "  prev_size=%zu", prev_size);
+gpr_log(GPR_INFO, "  size: %zu -> %zu", prev_size, prev_size - 1);
   GPR_ASSERT(prev_size >= 1);
   if (prev_size > (gpr_atm)1) {
     while (true) {

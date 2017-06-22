@@ -309,8 +309,8 @@ gpr_log(GPR_INFO, "==> %s(): op={send_initial_metadata=%d, send_message=%d, send
           exec_ctx, calld->send_op, GRPC_ERROR_REF(calld->cancel_error),
           calld->call_combiner);
     }
-  }
-  if (calld->cancel_error != GRPC_ERROR_NONE) {
+// FIXME: is this right?
+  } else if (calld->cancel_error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error),
         calld->call_combiner);

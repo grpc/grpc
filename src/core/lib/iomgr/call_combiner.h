@@ -37,7 +37,7 @@
 // callback.
 
 typedef struct {
-  gpr_atm size;  // size_t, num closures in queue + 1
+  gpr_atm size;  // size_t, num closures in queue or currently executing
   gpr_mpscq queue;
   grpc_closure_scheduler scheduler;
 } grpc_call_combiner;

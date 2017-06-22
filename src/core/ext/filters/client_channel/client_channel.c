@@ -844,6 +844,7 @@ static void waiting_for_pick_batches_fail_locked(grpc_exec_ctx *exec_ctx,
         exec_ctx, calld->waiting_for_pick_batches[i], GRPC_ERROR_REF(error),
         calld->deadline_state.call_combiner);
   }
+  grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
   calld->waiting_for_pick_batches_count = 0;
   GRPC_ERROR_UNREF(error);
 }
