@@ -170,9 +170,9 @@ Object HHVM_METHOD(Call, startBatch,
             goto cleanup;
           }
 
-          auto messageDict = value.toArray().toDict();
-          if (messageDict.exists(String("flags"), true)) {
-            auto messageFlags = messageDict[String("flags")];
+          auto messageArr = value.toArray();
+          if (messageArr.exists(String("flags"), true)) {
+            auto messageFlags = messageArr[String("flags")];
             if (!messageFlags.isInteger()) {
               throw_invalid_argument("Expected an int for message flags");
               goto cleanup;
@@ -180,8 +180,8 @@ Object HHVM_METHOD(Call, startBatch,
             ops[op_num].flags = messageFlags.toInt32() & GRPC_WRITE_USED_MASK;
           }
 
-          if (messageDict.exists(String("message"), true)) {
-            auto messageValue = messageDict[String("message")];
+          if (messageArr.exists(String("message"), true)) {
+            auto messageValue = messageArr[String("message")];
             if (!messageValue.isString()) {
               throw_invalid_argument("Expected a string for send message");
               goto cleanup;
@@ -201,9 +201,9 @@ Object HHVM_METHOD(Call, startBatch,
             goto cleanup;
           }
 
-          auto statusDict = value.toArray();
-          if (statusDict.exists(String("metadata"), true)) {
-            auto innerMetadata = statusDict[String("metadata")];
+          auto statusArr = value.toArray();
+          if (statusArr.exists(String("metadata"), true)) {
+            auto innerMetadata = statusArr[String("metadata")];
             if (!innerMetadata.isArray()) {
               throw_invalid_argument("Expected an array for server status metadata value");
               goto cleanup;
@@ -220,11 +220,11 @@ Object HHVM_METHOD(Call, startBatch,
                 trailing_metadata.count;
           }
 
-          if (!statusDict.exists(String("code"), true)) {
+          if (!statusArr.exists(String("code"), true)) {
             throw_invalid_argument("Integer status code is required");
           }
 
-          auto innerCode = statusDict[String("code")];
+          auto innerCode = statusArr[String("code")];
 
           if (!innerCode.isInteger()) {
             throw_invalid_argument("Status code must be an integer");
@@ -233,12 +233,12 @@ Object HHVM_METHOD(Call, startBatch,
 
           ops[op_num].data.send_status_from_server.status = (grpc_status_code)innerCode.toInt32();
 
-          if (!statusDict.exists(String("details"), true)) {
+          if (!statusArr.exists(String("details"), true)) {
             throw_invalid_argument("String status details is required");
             goto cleanup;
           }
 
-          auto innerDetails = statusDict[String("details")];
+          auto innerDetails = statusArr[String("details")];
           if (!innerDetails.isString()) {
             throw_invalid_argument("Status details must be a string");
             goto cleanup;
@@ -377,7 +377,7 @@ Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
   int count = metadata_array->count;
   grpc_metadata *elements = metadata_array->metadata;
 
-  auto array = Array::CreateDict();
+  auto array = Array::Create();
 
   grpc_metadata *elem;
   for (int i = 0; i < count; i++) {
@@ -460,7 +460,7 @@ bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadat
 
       String value2String = value2.toString();
 
-      metadata->metadata[metadata->count].key = grpc_slice_from_copied_string(key2.toString().c_str());
+      metadata->metadata[metadata->count].key = grpc_slice_from_copied_string(key.toString().c_str());
       metadata->metadata[metadata->count].value = grpc_slice_from_copied_buffer(value2String.c_str(), value2String.length());
       metadata->count += 1;
     }
