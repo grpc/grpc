@@ -30,6 +30,8 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <time.h>
+#include <stdlib.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -85,8 +87,8 @@ static int po_cmp(polling_obj *a, polling_obj *b);
 
 static void pg_create(grpc_exec_ctx *exec_ctx, polling_obj **initial_po,
                       size_t initial_po_count);
-static polling_group *pg_ref(polling_group *pg);
-static void pg_unref(polling_group *pg);
+static polling_group *pg_ref(polling_group *pg, char* reason);
+static void pg_unref(polling_group *pg, char* reason);
 static void pg_merge(grpc_exec_ctx *exec_ctx, polling_group *a,
                      polling_group *b);
 static void pg_join(grpc_exec_ctx *exec_ctx, polling_group *pg,
@@ -101,6 +103,7 @@ typedef struct pollable {
   int epfd;
   grpc_wakeup_fd wakeup;
   grpc_pollset_worker *root_worker;
+  int one_poll_number;
 } pollable;
 
 static pollable g_empty_pollable;
@@ -163,6 +166,7 @@ typedef enum {
 struct grpc_pollset_worker {
   bool kicked;
   bool initialized_cv;
+  int one_poll_number;
   pollset_worker_link links[POLLSET_WORKER_LINK_COUNT];
   gpr_cv cv;
   grpc_pollset *pollset;
@@ -176,6 +180,7 @@ struct grpc_pollset {
   pollable pollable;
   pollable *current_pollable;
   int kick_alls_pending;
+  int pollable_num;
   bool kicked_without_poller;
   grpc_closure *shutdown_closure;
   grpc_pollset_worker *root_worker;
@@ -232,17 +237,17 @@ static grpc_fd *fd_freelist = NULL;
 static gpr_mu fd_freelist_mu;
 
 #ifdef GRPC_FD_REF_COUNT_DEBUG
-#define REF_BY(fd, n, reason) ref_by(fd, n, reason, __FILE__, __LINE__)
-#define UNREF_BY(ec, fd, n, reason) \
-  unref_by(ec, fd, n, reason, __FILE__, __LINE__)
-static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
+#define REF_BY(fd, n, reason, id) ref_by(fd, n, reason, id, __FILE__, __LINE__)
+#define UNREF_BY(ec, fd, n, reason, id) \
+  unref_by(ec, fd, n, reason, id, __FILE__, __LINE__)
+static void ref_by(grpc_fd *fd, int n, const char *reason, int id, const char *file,
                    int line) {
-  gpr_log(GPR_DEBUG, "FD %d %p   ref %d %ld -> %ld [%s; %s:%d]", fd->fd,
-          (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
-          gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+  //gpr_log(GPR_DEBUG, "FD %d %p   ref %d %ld -> %ld [%s_%i; %s:%d]", fd->fd,
+  //        (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
+  //        gpr_atm_no_barrier_load(&fd->refst) + n, reason, id, file, line);
 #else
-#define REF_BY(fd, n, reason) ref_by(fd, n)
-#define UNREF_BY(ec, fd, n, reason) unref_by(ec, fd, n)
+#define REF_BY(fd, n, reason, id) ref_by(fd, n)
+#define UNREF_BY(ec, fd, n, reason, id) unref_by(ec, fd, n)
 static void ref_by(grpc_fd *fd, int n) {
 #endif
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&fd->refst, n) > 0);
@@ -266,11 +271,11 @@ static void fd_destroy(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 #ifdef GRPC_FD_REF_COUNT_DEBUG
 static void unref_by(grpc_exec_ctx *exec_ctx, grpc_fd *fd, int n,
-                     const char *reason, const char *file, int line) {
+                     const char *reason, int id, const char *file, int line) {
   gpr_atm old;
-  gpr_log(GPR_DEBUG, "FD %d %p unref %d %ld -> %ld [%s; %s:%d]", fd->fd,
-          (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
-          gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+  //gpr_log(GPR_DEBUG, "FD %d %p unref %d %ld -> %ld [%s_%i; %s:%d]", fd->fd,
+  //        (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
+  //        gpr_atm_no_barrier_load(&fd->refst) - n, reason, id, file, line);
 #else
 static void unref_by(grpc_exec_ctx *exec_ctx, grpc_fd *fd, int n) {
   gpr_atm old;
@@ -373,13 +378,13 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 
   /* Remove the active status but keep referenced. We want this grpc_fd struct
      to be alive (and not added to freelist) until the end of this function */
-  REF_BY(fd, 1, reason);
+  REF_BY(fd, 1, reason, 0);
 
   GRPC_CLOSURE_SCHED(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
 
   gpr_mu_unlock(&fd->orphaned_mu);
   gpr_mu_unlock(&fd->pollable.po.mu);
-  UNREF_BY(exec_ctx, fd, 2, reason); /* Drop the reference */
+  UNREF_BY(exec_ctx, fd, 2, reason, 0); /* Drop the reference */
   GRPC_LOG_IF_ERROR("fd_orphan", GRPC_ERROR_REF(error));
   GRPC_ERROR_UNREF(error);
 }
@@ -444,7 +449,7 @@ static grpc_error *pollable_materialize(pollable *p) {
       close(new_epfd);
       return err;
     }
-    struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLET),
+    struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLET | EPOLLEXCLUSIVE),
                              .data.ptr = (void *)(1 | (intptr_t)&p->wakeup)};
     if (epoll_ctl(new_epfd, EPOLL_CTL_ADD, p->wakeup.read_fd, &ev) != 0) {
       err = GRPC_OS_ERROR(errno, "epoll_ctl");
@@ -475,7 +480,7 @@ static grpc_error *pollable_add_fd(pollable *p, grpc_fd *fd) {
     return GRPC_ERROR_NONE;
   }
   struct epoll_event ev_fd = {
-      .events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLOUT | EPOLLEXCLUSIVE),
+      .events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLOUT),
       .data.ptr = fd};
   if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd->fd, &ev_fd) != 0) {
     switch (errno) {
@@ -499,6 +504,7 @@ GPR_TLS_DECL(g_current_thread_worker);
 
 /* Global state management */
 static grpc_error *pollset_global_init(void) {
+  srand(0);
   gpr_tls_init(&g_current_thread_pollset);
   gpr_tls_init(&g_current_thread_worker);
   pollable_init(&g_empty_pollable, PO_EMPTY_POLLABLE);
@@ -546,6 +552,11 @@ static void do_kick_all(grpc_exec_ctx *exec_ctx, void *arg,
     } while (worker != pollset->root_worker);
   }
   pollset->kick_alls_pending--;
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    gpr_log(GPR_DEBUG,
+            "PS:%p kick_all kick_alls_pending=%i",
+            pollset, pollset->kick_alls_pending);
+  }
   pollset_maybe_finish_shutdown(exec_ctx, pollset);
   gpr_mu_unlock(&pollset->pollable.po.mu);
   GRPC_LOG_IF_ERROR("kick_all", error);
@@ -752,7 +763,7 @@ static void pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   pollable_destroy(&pollset->pollable);
   if (pollset_is_pollable_fd(pollset, pollset->current_pollable)) {
     UNREF_BY(exec_ctx, (grpc_fd *)pollset->current_pollable, 2,
-             "pollset_pollable");
+             "pollset_pollable", pollset->pollable_num);
   }
   GRPC_LOG_IF_ERROR("pollset_process_events",
                     pollset_process_events(exec_ctx, pollset, true));
@@ -839,15 +850,16 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
   worker->kicked = false;
   worker->pollset = pollset;
   worker->pollable = pollset->current_pollable;
+  gpr_cv_init(&worker->cv);
 
   if (pollset_is_pollable_fd(pollset, worker->pollable)) {
-    REF_BY((grpc_fd *)worker->pollable, 2, "one_poll");
+    worker->one_poll_number = rand();
+    REF_BY((grpc_fd *)worker->pollable, 2, "one_poll", worker->one_poll_number);
   }
 
   worker_insert(&pollset->root_worker, PWL_POLLSET, worker);
   if (!worker_insert(&worker->pollable->root_worker, PWL_POLLABLE, worker)) {
     worker->initialized_cv = true;
-    gpr_cv_init(&worker->cv);
     if (worker->pollable != &pollset->pollable) {
       gpr_mu_unlock(&pollset->pollable.po.mu);
     }
@@ -874,6 +886,8 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
                  worker->pollable->root_worker != worker) {
         gpr_log(GPR_DEBUG, "PS:%p spurious_wakeup %p w=%p", pollset,
                 worker->pollable, worker);
+      } else {
+        do_poll = false;
       }
     }
     if (worker->pollable != &pollset->pollable) {
@@ -896,10 +910,10 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     gpr_cv_signal(&worker->pollable->root_worker->cv);
   }
   if (worker->initialized_cv) {
-    gpr_cv_destroy(&worker->cv);
+    //gpr_cv_destroy(&worker->cv);
   }
   if (pollset_is_pollable_fd(pollset, worker->pollable)) {
-    UNREF_BY(exec_ctx, (grpc_fd *)worker->pollable, 2, "one_poll");
+    UNREF_BY(exec_ctx, (grpc_fd *)worker->pollable, 2, "one_poll", worker->one_poll_number);
   }
   if (EMPTIED == worker_remove(&pollset->root_worker, PWL_POLLSET, worker)) {
     pollset_maybe_finish_shutdown(exec_ctx, pollset);
@@ -913,11 +927,18 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker **worker_hdl,
                                 gpr_timespec now, gpr_timespec deadline) {
-  grpc_pollset_worker worker;
-  if (0 && GRPC_TRACER_ON(grpc_polling_trace)) {
+  grpc_pollset_worker* worker;
+  if (worker_hdl == NULL) {
+    grpc_pollset_worker worker_data;
+    worker = &worker_data;
+  } else {
+    worker = gpr_malloc(sizeof(*worker));
+  }
+
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
     gpr_log(GPR_DEBUG, "PS:%p work hdl=%p worker=%p now=%" PRId64
                        ".%09d deadline=%" PRId64 ".%09d kwp=%d root_worker=%p",
-            pollset, worker_hdl, &worker, now.tv_sec, now.tv_nsec,
+            pollset, worker_hdl, worker, now.tv_sec, now.tv_nsec,
             deadline.tv_sec, deadline.tv_nsec, pollset->kicked_without_poller,
             pollset->root_worker);
   }
@@ -930,33 +951,33 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (pollset->current_pollable != &pollset->pollable) {
     gpr_mu_lock(&pollset->current_pollable->po.mu);
   }
-  if (begin_worker(pollset, &worker, worker_hdl, &now, deadline)) {
+  if (begin_worker(pollset, worker, worker_hdl, &now, deadline)) {
     gpr_tls_set(&g_current_thread_pollset, (intptr_t)pollset);
     gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
     GPR_ASSERT(!pollset->shutdown_closure);
-    append_error(&error, pollable_materialize(worker.pollable), err_desc);
-    if (worker.pollable != &pollset->pollable) {
-      gpr_mu_unlock(&worker.pollable->po.mu);
+    append_error(&error, pollable_materialize(worker->pollable), err_desc);
+    if (worker->pollable != &pollset->pollable) {
+      gpr_mu_unlock(&worker->pollable->po.mu);
     }
     gpr_mu_unlock(&pollset->pollable.po.mu);
     if (pollset->event_cursor == pollset->event_count) {
-      append_error(&error, pollset_epoll(exec_ctx, pollset, worker.pollable,
+      append_error(&error, pollset_epoll(exec_ctx, pollset, worker->pollable,
                                          now, deadline),
                    err_desc);
     }
     append_error(&error, pollset_process_events(exec_ctx, pollset, false),
                  err_desc);
     gpr_mu_lock(&pollset->pollable.po.mu);
-    if (worker.pollable != &pollset->pollable) {
-      gpr_mu_lock(&worker.pollable->po.mu);
+    if (worker->pollable != &pollset->pollable) {
+      gpr_mu_lock(&worker->pollable->po.mu);
     }
     gpr_tls_set(&g_current_thread_pollset, 0);
     gpr_tls_set(&g_current_thread_worker, 0);
     pollset_maybe_finish_shutdown(exec_ctx, pollset);
   }
-  end_worker(exec_ctx, pollset, &worker, worker_hdl);
-  if (worker.pollable != &pollset->pollable) {
-    gpr_mu_unlock(&worker.pollable->po.mu);
+  end_worker(exec_ctx, pollset, worker, worker_hdl);
+  if (worker->pollable != &pollset->pollable) {
+    gpr_mu_unlock(&worker->pollable->po.mu);
   }
   if (grpc_exec_ctx_has_work(exec_ctx)) {
     gpr_mu_unlock(&pollset->pollable.po.mu);
@@ -966,10 +987,16 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   return error;
 }
 
+typedef struct unref_args {
+  grpc_fd *fd;
+  int id;
+} unref_args;
+
 static void unref_fd_no_longer_poller(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
-  grpc_fd *fd = arg;
-  UNREF_BY(exec_ctx, fd, 2, "pollset_pollable");
+  unref_args* uargs = arg;
+  UNREF_BY(exec_ctx, uargs->fd, 2, "pollset_pollable", uargs->id);
+  gpr_free(uargs);
 }
 
 /* expects pollsets locked, flag whether fd is locked or not */
@@ -978,6 +1005,11 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
                                          bool fd_locked) {
   static const char *err_desc = "pollset_add_fd";
   grpc_error *error = GRPC_ERROR_NONE;
+  if (gpr_atm_no_barrier_load(&fd->refst) == 0) {
+    //This fd is in the process of being deleted
+    return GRPC_ERROR_NONE;
+  }
+
   if (pollset->current_pollable == &g_empty_pollable) {
     if (GRPC_TRACER_ON(grpc_polling_trace))
       gpr_log(GPR_DEBUG,
@@ -986,10 +1018,11 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
     /* empty pollable --> single fd pollable */
     pollset_kick_all(exec_ctx, pollset);
     pollset->current_pollable = &fd->pollable;
+    pollset->pollable_num = rand();
     if (!fd_locked) gpr_mu_lock(&fd->pollable.po.mu);
     append_error(&error, fd_become_pollable_locked(fd), err_desc);
     if (!fd_locked) gpr_mu_unlock(&fd->pollable.po.mu);
-    REF_BY(fd, 2, "pollset_pollable");
+    REF_BY(fd, 2, "pollset_pollable", pollset->pollable_num);
   } else if (pollset->current_pollable == &pollset->pollable) {
     if (GRPC_TRACER_ON(grpc_polling_trace))
       gpr_log(GPR_DEBUG, "PS:%p add fd %p; already multipolling", pollset, fd);
@@ -1008,9 +1041,11 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
       pollable_add_fd(&pollset->pollable, had_fd);
       pollable_add_fd(&pollset->pollable, fd);
     }
+    unref_args* args = gpr_malloc(sizeof(*args));
+    args->fd = had_fd;
+    args->id = pollset->pollable_num;
     GRPC_CLOSURE_SCHED(exec_ctx,
-                       GRPC_CLOSURE_CREATE(unref_fd_no_longer_poller, had_fd,
-                                           grpc_schedule_on_exec_ctx),
+                       GRPC_CLOSURE_CREATE(unref_fd_no_longer_poller, args, grpc_schedule_on_exec_ctx),
                        GRPC_ERROR_NONE);
   }
   return error;
@@ -1074,37 +1109,52 @@ static void po_init(polling_obj *po, polling_obj_type type) {
   po->prev = po;
 }
 
-static polling_group *pg_lock_latest(polling_group *pg) {
-  /* assumes pg unlocked; consumes ref, returns ref */
-  gpr_mu_lock(&pg->po.mu);
-  while (pg->po.group != NULL) {
-    polling_group *new_pg = pg_ref(pg->po.group);
-    gpr_mu_unlock(&pg->po.mu);
-    pg_unref(pg);
-    pg = new_pg;
-    gpr_mu_lock(&pg->po.mu);
+static polling_obj *po_lock_latest(polling_obj *po, polling_group** group) {
+  /* Locks the latest group containing the po */
+  polling_group* last_refd = NULL;
+  gpr_mu_lock(&po->mu);
+  *group = NULL;
+  while (po->group != NULL) {
+    *group = pg_ref(po->group, "po_lock_latest");
+    polling_obj *new_obj = &po->group->po;
+    gpr_mu_unlock(&po->mu);
+    po = new_obj;
+    if (last_refd) {
+      pg_unref(last_refd, "po_lock_latest");
+    }
+    gpr_mu_lock(&po->mu);
+    last_refd = *group;
   }
-  return pg;
+  return po;
 }
 
 static void po_destroy(polling_obj *po) {
-  if (po->group != NULL) {
-    polling_group *pg = pg_lock_latest(po->group);
-    po->prev->next = po->next;
-    po->next->prev = po->prev;
-    gpr_mu_unlock(&pg->po.mu);
-    pg_unref(pg);
-  }
+  polling_group *pg;
+  polling_group *old_group;
+  polling_obj *obj = po_lock_latest(po, &pg);
+  po->prev->next = po->next;
+  po->next->prev = po->prev;
+  old_group = po->group;
+  gpr_mu_unlock(&obj->mu);
   gpr_mu_destroy(&po->mu);
+  if (old_group) {
+    pg_unref(old_group, "po_destroy");
+  }
+  if (pg) {
+    pg_unref(pg, "po_destroy");
+  }
 }
 
-static polling_group *pg_ref(polling_group *pg) {
+static polling_group *pg_ref(polling_group *pg, char* reason) {
+  //gpr_log(GPR_ERROR, "%p Ref: %s", pg, reason);
   gpr_ref(&pg->refs);
   return pg;
 }
 
-static void pg_unref(polling_group *pg) {
+static void pg_unref(polling_group *pg, char* reason) {
+  //gpr_log(GPR_ERROR, "%p UnRef: %s", pg, reason);
   if (gpr_unref(&pg->refs)) {
+    //gpr_log(GPR_ERROR, "%p DESTROYED!", pg);
     po_destroy(&pg->po);
     gpr_free(pg);
   }
@@ -1137,26 +1187,30 @@ static void po_join(grpc_exec_ctx *exec_ctx, polling_obj *a, polling_obj *b) {
           gpr_mu_unlock(&a->mu);
           gpr_mu_unlock(&b->mu);
         } else {
-          polling_group *b_group = pg_ref(b->group);
+          polling_group *b_group = pg_ref(b->group, "b->group");
           gpr_mu_unlock(&b->mu);
           gpr_mu_unlock(&a->mu);
           pg_join(exec_ctx, b_group, a);
+          pg_unref(b_group, "b_group");
         }
       } else if (b->group == NULL) {
-        polling_group *a_group = pg_ref(a->group);
+        polling_group *a_group = pg_ref(a->group, "a->group");
         gpr_mu_unlock(&a->mu);
         gpr_mu_unlock(&b->mu);
         pg_join(exec_ctx, a_group, b);
+        pg_unref(a_group, "b_group");
       } else if (a->group == b->group) {
         /* nothing to do */
         gpr_mu_unlock(&a->mu);
         gpr_mu_unlock(&b->mu);
       } else {
-        polling_group *a_group = pg_ref(a->group);
-        polling_group *b_group = pg_ref(b->group);
+        polling_group *a_group = pg_ref(a->group, "a->group");
+        polling_group *b_group = pg_ref(b->group, "b->group");
         gpr_mu_unlock(&a->mu);
         gpr_mu_unlock(&b->mu);
         pg_merge(exec_ctx, a_group, b_group);
+        pg_unref(a_group, "a_group");
+        pg_unref(b_group, "b_group");
       }
   }
 }
@@ -1194,6 +1248,7 @@ static void pg_create(grpc_exec_ctx *exec_ctx, polling_obj **initial_po,
   polling_group *pg = gpr_malloc(sizeof(*pg));
   po_init(&pg->po, PO_POLLING_GROUP);
   gpr_ref_init(&pg->refs, (int)initial_po_count);
+  //gpr_log(GPR_ERROR, "%p initial %i", pg, (int)initial_po_count);
   for (size_t i = 0; i < initial_po_count; i++) {
     GPR_ASSERT(initial_po[i]->group == NULL);
     initial_po[i]->group = pg;
@@ -1217,8 +1272,10 @@ static void pg_create(grpc_exec_ctx *exec_ctx, polling_obj **initial_po,
 
 static void pg_join(grpc_exec_ctx *exec_ctx, polling_group *pg,
                     polling_obj *po) {
-  /* assumes neither pg nor po are locked; consumes one ref to pg */
-  pg = pg_lock_latest(pg);
+  /* assumes neither pg nor po are locked */
+  polling_group *latest;
+  po_lock_latest(&pg->po, &latest);
+  pg = latest ? latest : pg;
   /* pg locked */
   for (polling_obj *existing = pg->po.next /* skip pg - it's just a stub */;
        existing != &pg->po; existing = existing->next) {
@@ -1233,7 +1290,7 @@ static void pg_join(grpc_exec_ctx *exec_ctx, polling_group *pg,
     /* pg, po, existing locked */
     if (po->group != NULL) {
       gpr_mu_unlock(&pg->po.mu);
-      polling_group *po_group = pg_ref(po->group);
+      polling_group *po_group = po->group;
       gpr_mu_unlock(&po->mu);
       gpr_mu_unlock(&existing->mu);
       pg_merge(exec_ctx, pg, po_group);
@@ -1248,43 +1305,43 @@ static void pg_join(grpc_exec_ctx *exec_ctx, polling_group *pg,
   gpr_mu_lock(&po->mu);
   if (po->group != NULL) {
     gpr_mu_unlock(&pg->po.mu);
-    polling_group *po_group = pg_ref(po->group);
+    polling_group *po_group = po->group;
     gpr_mu_unlock(&po->mu);
     pg_merge(exec_ctx, pg, po_group);
     /* early exit: polling obj picked up a group during joining: we needed
        to do a full merge */
     return;
   }
+  pg_ref(pg, "pg_join");
   po->group = pg;
   po->next = &pg->po;
   po->prev = pg->po.prev;
   po->prev->next = po->next->prev = po;
   gpr_mu_unlock(&pg->po.mu);
   gpr_mu_unlock(&po->mu);
+  if (latest) {
+    pg_unref(latest, "pg_join");
+  }
 }
 
 static void pg_merge(grpc_exec_ctx *exec_ctx, polling_group *a,
                      polling_group *b) {
   for (;;) {
     if (a == b) {
-      pg_unref(a);
-      pg_unref(b);
       return;
     }
     if (a > b) GPR_SWAP(polling_group *, a, b);
     gpr_mu_lock(&a->po.mu);
     gpr_mu_lock(&b->po.mu);
     if (a->po.group != NULL) {
-      polling_group *m2 = pg_ref(a->po.group);
+      polling_group *m2 = a->po.group;
       gpr_mu_unlock(&a->po.mu);
       gpr_mu_unlock(&b->po.mu);
-      pg_unref(a);
       a = m2;
     } else if (b->po.group != NULL) {
-      polling_group *m2 = pg_ref(b->po.group);
+      polling_group *m2 = b->po.group;
       gpr_mu_unlock(&a->po.mu);
       gpr_mu_unlock(&b->po.mu);
-      pg_unref(b);
       b = m2;
     } else {
       break;
@@ -1294,6 +1351,7 @@ static void pg_merge(grpc_exec_ctx *exec_ctx, polling_group *a,
   size_t unref_count = 0;
   size_t unref_cap = 0;
   b->po.group = a;
+  pg_ref(a, "b->po.group = a");
   pg_broadcast(exec_ctx, a, b);
   pg_broadcast(exec_ctx, b, a);
   while (b->po.next != &b->po) {
@@ -1304,7 +1362,7 @@ static void pg_merge(grpc_exec_ctx *exec_ctx, polling_group *a,
       unref = gpr_realloc(unref, unref_cap * sizeof(*unref));
     }
     unref[unref_count++] = po->group;
-    po->group = pg_ref(a);
+    po->group = pg_ref(a, "pg_merge_case_3");
     // unlink from b
     po->prev->next = po->next;
     po->next->prev = po->prev;
@@ -1317,10 +1375,9 @@ static void pg_merge(grpc_exec_ctx *exec_ctx, polling_group *a,
   gpr_mu_unlock(&a->po.mu);
   gpr_mu_unlock(&b->po.mu);
   for (size_t i = 0; i < unref_count; i++) {
-    pg_unref(unref[i]);
+    pg_unref(unref[i], "pg_merge_case_5");
   }
   gpr_free(unref);
-  pg_unref(b);
 }
 
 /*******************************************************************************

@@ -877,6 +877,7 @@ static void del_plucker(grpc_completion_queue *cc, void *tag,
     if (cqd->pluckers[i].tag == tag && cqd->pluckers[i].worker == worker) {
       cqd->num_pluckers--;
       GPR_SWAP(plucker, cqd->pluckers[i], cqd->pluckers[cqd->num_pluckers]);
+      //if(*worker != NULL) gpr_free(*worker);
       return;
     }
   }
