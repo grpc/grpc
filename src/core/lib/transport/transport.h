@@ -165,6 +165,10 @@ struct grpc_transport_stream_op_batch_payload {
     uint32_t *recv_flags;
     /** Should be enqueued when initial metadata is ready to be processed. */
     grpc_closure *recv_initial_metadata_ready;
+    // If not NULL, will be set to true if trailing metadata is
+    // immediately available.  This may be a signal that we received a
+    // Trailers-Only response.
+    bool *trailing_metadata_available;
   } recv_initial_metadata;
 
   struct {
