@@ -25,6 +25,7 @@
 #ifndef NDEBUG
 
 extern grpc_tracer_flag grpc_trace_alarm_refcount;
+
 #define GRPC_ALARM_REF(a, reason) alarm_ref_dbg(a, reason, __FILE__, __LINE__)
 #define GRPC_ALARM_UNREF(a, reason) \
   alarm_unref_dbg(a, reason, __FILE__, __LINE__)
