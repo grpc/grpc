@@ -37,15 +37,6 @@ using namespace HPHP;
 
 namespace HPHP {
 
-const StaticString s_Grpc("Grpc");
-class Grpc {
- public:
-  Grpc() { }
-  ~Grpc() { sweep(); }
-
-  void sweep() { }
-};
-
 class GrpcExtension : public Extension {
   public:
     GrpcExtension() : Extension("grpc", HHVM_GRPC_VERSION) {}
@@ -146,6 +137,7 @@ class GrpcExtension : public Extension {
       /* Register call error constants */
       grpc_init();
 
+      grpc_hhvm_init_channel_credentials();
       grpc_hhvm_init_completion_queue();
 
       loadSystemlib();

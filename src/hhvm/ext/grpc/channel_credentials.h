@@ -66,6 +66,8 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
 
 Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure);
 
+void grpc_hhvm_init_channel_credentials();
+
 }
 
 #endif /* NET_GRPC_HHVM_GRPC_CHANNEL_CREDENTIALS_H_ */

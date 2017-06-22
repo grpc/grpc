@@ -19,7 +19,7 @@
 
 namespace Grpc {
 
-<<__NativeData("Call")>>
+<<__NativeData("Grpc\\Call")>>
 class Call {
 
   /**
@@ -65,7 +65,7 @@ class Call {
   public function setCredentials(CallCredentials $credentials): int;
 }
 
-<<__NativeData("CallCredentials")>>
+<<__NativeData("Grpc\\CallCredentials")>>
 class CallCredentials {
 
   /**
@@ -87,7 +87,7 @@ class CallCredentials {
 
 }
 
-<<__NativeData("Channel")>>
+<<__NativeData("Grpc\\Channel")>>
 class Channel {
 
   /**
@@ -134,7 +134,7 @@ class Channel {
 
 }
 
-<<__NativeData("ChannelCredentials")>>
+<<__NativeData("Grpc\\ChannelCredentials")>>
 class ChannelCredentials {
 
   /**
@@ -184,7 +184,7 @@ class ChannelCredentials {
 
 }
 
-<<__NativeData("Server")>>
+<<__NativeData("Grpc\\Server")>>
 class Server {
 
   /**
@@ -227,7 +227,7 @@ class Server {
 
 }
 
-<<__NativeData("ServerCredentials")>>
+<<__NativeData("Grpc\\ServerCredentials")>>
 class ServerCredentials {
 
   /**
@@ -242,7 +242,7 @@ class ServerCredentials {
 
 }
 
-<<__NativeData("Timeval")>>
+<<__NativeData("Grpc\\Timeval")>>
 class Timeval {
 
   /**

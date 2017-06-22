@@ -34,7 +34,16 @@
 
 namespace HPHP {
 
+// TODO: make thread local?
 static char *default_pem_root_certs = NULL;
+
+static grpc_ssl_roots_override_result get_ssl_roots_override(char **pem_root_certs) {
+  *pem_root_certs = default_pem_root_certs;
+  if (default_pem_root_certs == NULL) {
+    return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+  }
+  return GRPC_SSL_ROOTS_OVERRIDE_OK;
+}
 
 Class* ChannelCredentialsData::s_class = nullptr;
 const StaticString ChannelCredentialsData::s_className("Grpc\\ChannelCredentials");
@@ -101,8 +110,8 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
 
   channelCredentialsData->init(grpc_ssl_credentials_create(
     pem_root_certs_,
-    pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL)
-  );
+    pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL
+  ));
 
   return newChannelCredentialsObj;
 }
@@ -128,6 +137,10 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
 
 Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure) {
   return Variant();
+}
+
+void grpc_hhvm_init_channel_credentials() {
+  grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
 }
 
 } // namespace HPHP
