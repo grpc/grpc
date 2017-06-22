@@ -39,6 +39,7 @@
 
 /* We can have a per-call credentials. */
 typedef struct {
+  grpc_call_combiner *call_combiner;
   grpc_call_credentials *creds;
   bool have_host;
   bool have_method;
@@ -122,7 +123,9 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   if (error == GRPC_ERROR_NONE) {
     grpc_call_next_op(exec_ctx, elem, op);
   } else {
-    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
+// FIXME
+    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error,
+                                                       calld->call_combiner);
   }
 }
 
@@ -179,12 +182,14 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
     calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
                                                           ctx->creds, NULL);
     if (calld->creds == NULL) {
+// FIXME
       grpc_transport_stream_op_batch_finish_with_failure(
           exec_ctx, op,
           grpc_error_set_int(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                   "Incompatible credentials set on channel and call."),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED));
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
+          calld->call_combiner);
       return;
     }
   } else {
@@ -228,10 +233,10 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
      - a network event (or similar) from below, to receive something
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
-static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
-                                    grpc_call_element *elem,
-                                    grpc_transport_stream_op_batch *op) {
-  GPR_TIMER_BEGIN("auth_start_transport_op", 0);
+static void auth_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
+  GPR_TIMER_BEGIN("auth_start_transport_stream_op_batch", 0);
 
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
@@ -289,14 +294,14 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
           exec_ctx, chand->security_connector, call_host, chand->auth_context,
           on_host_checked, elem);
       gpr_free(call_host);
-      GPR_TIMER_END("auth_start_transport_op", 0);
+      GPR_TIMER_END("auth_start_transport_stream_op_batch", 0);
       return; /* early exit */
     }
   }
 
   /* pass control down the stack */
   grpc_call_next_op(exec_ctx, elem, op);
-  GPR_TIMER_END("auth_start_transport_op", 0);
+  GPR_TIMER_END("auth_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */
@@ -304,7 +309,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
-  memset(calld, 0, sizeof(*calld));
+  calld->call_combiner = args->call_combiner;
   gpr_mu_init(&calld->security_context_mu);
   return GRPC_ERROR_NONE;
 }
@@ -379,7 +384,8 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 const grpc_channel_filter grpc_client_auth_filter = {
-    auth_start_transport_op, grpc_channel_next_op,       sizeof(call_data),
+    auth_start_transport_stream_op_batch,
+    grpc_channel_next_op,    sizeof(call_data),
     init_call_elem,          set_pollset_or_pollset_set, destroy_call_elem,
     sizeof(channel_data),    init_channel_elem,          destroy_channel_elem,
     grpc_call_next_get_peer, grpc_channel_next_get_info, "client-auth"};

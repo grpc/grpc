@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -272,7 +273,7 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
 
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
-    grpc_error *error);
+    grpc_error *error, grpc_call_combiner *call_combiner);
 
 char *grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch *op);
 char *grpc_transport_op_string(grpc_transport_op *op);

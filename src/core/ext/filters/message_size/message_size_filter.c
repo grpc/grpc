@@ -67,6 +67,7 @@ static void* message_size_limits_create_from_json(const grpc_json* json) {
 }
 
 typedef struct call_data {
+  grpc_call_combiner *call_combiner;
   message_size_limits limits;
   // Receive closures are chained: we inject this closure as the
   // recv_message_ready up-call on transport_stream_op, and remember to
@@ -130,8 +131,10 @@ static void start_transport_stream_op_batch(
         exec_ctx, op,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
                            GRPC_ERROR_INT_GRPC_STATUS,
-                           GRPC_STATUS_RESOURCE_EXHAUSTED));
+                           GRPC_STATUS_RESOURCE_EXHAUSTED),
+        calld->call_combiner);
     gpr_free(message_string);
+    grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
     return;
   }
   // Inject callback for receiving a message.
@@ -151,6 +154,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   const grpc_call_element_args* args) {
   channel_data* chand = elem->channel_data;
   call_data* calld = elem->call_data;
+  calld->call_combiner = args->call_combiner;
   calld->next_recv_message_ready = NULL;
   GRPC_CLOSURE_INIT(&calld->recv_message_ready, recv_message_ready, elem,
                     grpc_schedule_on_exec_ctx);

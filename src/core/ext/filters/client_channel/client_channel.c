@@ -841,7 +841,8 @@ static void waiting_for_pick_batches_fail_locked(grpc_exec_ctx *exec_ctx,
                                                  grpc_error *error) {
   for (size_t i = 0; i < calld->waiting_for_pick_batches_count; ++i) {
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, calld->waiting_for_pick_batches[i], GRPC_ERROR_REF(error));
+        exec_ctx, calld->waiting_for_pick_batches[i], GRPC_ERROR_REF(error),
+        calld->deadline_state.call_combiner);
   }
   calld->waiting_for_pick_batches_count = 0;
   GRPC_ERROR_UNREF(error);
@@ -857,6 +858,9 @@ static void waiting_for_pick_batches_resume_locked(grpc_exec_ctx *exec_ctx,
     return;
   }
   for (size_t i = 0; i < calld->waiting_for_pick_batches_count; ++i) {
+// FIXME: can we have only one pending batch now?  if so, then this
+// doesn't need to be an array.  otherwise, need to invoke each one in
+// its own call_combiner callback
     grpc_subchannel_call_process_op(exec_ctx, coe.subchannel_call,
                                     calld->waiting_for_pick_batches[i]);
   }
@@ -1142,7 +1146,9 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
   call_or_error coe = get_call_or_error(calld);
   if (coe.error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, op, GRPC_ERROR_REF(coe.error));
+        exec_ctx, op, GRPC_ERROR_REF(coe.error),
+        calld->deadline_state.call_combiner);
+    grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
     goto done;
   }
   if (coe.subchannel_call != NULL) {
@@ -1255,7 +1261,9 @@ static void cc_start_transport_stream_op_batch(
   GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
   if (coe.error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, op, GRPC_ERROR_REF(coe.error));
+        exec_ctx, op, GRPC_ERROR_REF(coe.error),
+        calld->deadline_state.call_combiner);
+    grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
     GPR_TIMER_END("cc_start_transport_stream_op_batch", 0);
     /* early out */
     return;

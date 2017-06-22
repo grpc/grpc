@@ -35,13 +35,17 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-#define INITIAL_METADATA_UNSEEN 0
-#define HAS_COMPRESSION_ALGORITHM 2
-#define NO_COMPRESSION_ALGORITHM 4
-
-#define CANCELLED_BIT ((gpr_atm)1)
+typedef enum {
+  // Initial metadata not yet seen.
+  INITIAL_METADATA_UNSEEN = 0,
+  // Initial metadata seen; compression algorithm set.
+  HAS_COMPRESSION_ALGORITHM,
+  // Initial metadata seen; no compression algorithm set.
+  NO_COMPRESSION_ALGORITHM,
+} initial_metadata_state;
 
 typedef struct call_data {
+  grpc_call_combiner *call_combiner;
   grpc_slice_buffer slices; /**< Buffers up input slices to be compressed */
   grpc_linked_mdelem compression_algorithm_storage;
   grpc_linked_mdelem accept_encoding_storage;
@@ -50,16 +54,8 @@ typedef struct call_data {
    * metadata, or by the channel's default compression settings. */
   grpc_compression_algorithm compression_algorithm;
 
-  /* Atomic recording the state of initial metadata; allowed values:
-     INITIAL_METADATA_UNSEEN - initial metadata op not seen
-     HAS_COMPRESSION_ALGORITHM - initial metadata seen; compression algorithm
-                                 set
-     NO_COMPRESSION_ALGORITHM - initial metadata seen; no compression algorithm
-                                set
-     pointer - a stalled op containing a send_message that's waiting on initial
-               metadata
-     pointer | CANCELLED_BIT - request was cancelled with error pointed to */
-  gpr_atm send_initial_metadata_state;
+  initial_metadata_state send_initial_metadata_state;
+  grpc_error *cancel_error;
 
   grpc_transport_stream_op_batch *send_op;
   uint32_t send_length;
@@ -67,6 +63,7 @@ typedef struct call_data {
   grpc_slice incoming_slice;
   grpc_slice_buffer_stream replacement_stream;
   grpc_closure *post_send;
+  grpc_closure send_in_call_combiner;
   grpc_closure send_done;
   grpc_closure got_slice;
 } call_data;
@@ -164,8 +161,9 @@ static grpc_error *process_send_initial_metadata(
   return error;
 }
 
-static void continue_send_message(grpc_exec_ctx *exec_ctx,
-                                  grpc_call_element *elem);
+static bool continue_send_message(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  bool in_call_combiner);
 
 static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
@@ -174,8 +172,17 @@ static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   calld->post_send->cb(exec_ctx, calld->post_send->cb_arg, error);
 }
 
+static void send_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
+                                  grpc_error *ignored) {
+  grpc_call_element *elem = arg;
+  call_data *calld = elem->call_data;
+  grpc_call_next_op(exec_ctx, elem, calld->send_op);
+}
+
 static void finish_send_message(grpc_exec_ctx *exec_ctx,
-                                grpc_call_element *elem) {
+                                grpc_call_element *elem,
+                                bool in_call_combiner) {
+gpr_log(GPR_INFO, "==> %s(): elem=%p, in_call_combiner=%d", __func__, elem, in_call_combiner);
   call_data *calld = elem->call_data;
   int did_compress;
   grpc_slice_buffer tmp;
@@ -217,11 +224,17 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   calld->post_send = calld->send_op->on_complete;
   calld->send_op->on_complete = &calld->send_done;
 
-  grpc_call_next_op(exec_ctx, elem, calld->send_op);
+  // If we're not in the call combiner, schedule a closure on the
+  // call combiner to send the op down.
+  if (!in_call_combiner) {
+    GRPC_CLOSURE_SCHED(exec_ctx, &calld->send_in_call_combiner,
+                       GRPC_ERROR_NONE);
+  }
 }
 
 static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
+gpr_log(GPR_INFO, "==> %s(): elem=%p", __func__, elem);
   call_data *calld = elem->call_data;
   if (GRPC_ERROR_NONE !=
       grpc_byte_stream_pull(exec_ctx,
@@ -232,14 +245,17 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   }
   grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
   if (calld->send_length == calld->slices.length) {
-    finish_send_message(exec_ctx, elem);
+    finish_send_message(exec_ctx, elem, false /* in_call_combiner */);
   } else {
-    continue_send_message(exec_ctx, elem);
+    continue_send_message(exec_ctx, elem, false /* in_call_combiner */);
   }
 }
 
-static void continue_send_message(grpc_exec_ctx *exec_ctx,
-                                  grpc_call_element *elem) {
+// Returns true if compression is done.
+static bool continue_send_message(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  bool in_call_combiner) {
+gpr_log(GPR_INFO, "==> %s(): elem=%p, in_call_combiner=%d", __func__, elem, in_call_combiner);
   call_data *calld = elem->call_data;
   while (grpc_byte_stream_next(
       exec_ctx, calld->send_op->payload->send_message.send_message, ~(size_t)0,
@@ -249,109 +265,127 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
                           &calld->incoming_slice);
     grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
     if (calld->send_length == calld->slices.length) {
-      finish_send_message(exec_ctx, elem);
-      break;
+      finish_send_message(exec_ctx, elem, in_call_combiner);
+gpr_log(GPR_INFO, "<== %s(): elem=%p: TRUE", __func__, elem);
+      return true;
     }
   }
+gpr_log(GPR_INFO, "<=> %s(): elem=%p: FALSE", __func__, elem);
+  return false;
 }
 
-static void compress_start_transport_stream_op_batch(
+// Returns true if compression is done.
+static bool start_send_message_op(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  bool in_call_combiner) {
+gpr_log(GPR_INFO, "==> %s(): elem=%p, in_call_combiner=%d", __func__, elem, in_call_combiner);
+  call_data *calld = elem->call_data;
+  bool done = true;
+  if (!skip_compression(
+          elem, calld->send_op->payload->send_message.send_message->flags,
+          calld->send_initial_metadata_state == HAS_COMPRESSION_ALGORITHM)) {
+    calld->send_length =
+        calld->send_op->payload->send_message.send_message->length;
+    calld->send_flags =
+        calld->send_op->payload->send_message.send_message->flags;
+    done = continue_send_message(exec_ctx, elem, in_call_combiner);
+  }
+gpr_log(GPR_INFO, "<== %s(): elem=%p: done=%d", __func__, elem, done);
+  return done;
+}
+
+static void compress_start_transport_stream_op_batch_inner(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
+gpr_log(GPR_INFO, "==> %s(): op={send_initial_metadata=%d, send_message=%d, send_trailing_metadata=%d, recv_initial_metadata=%d, recv_message=%d, recv_trailing_metadata=%d, cancel_stream=%d, collect_stats=%d}", __func__, op->send_initial_metadata, op->send_message, op->send_trailing_metadata, op->recv_initial_metadata, op->recv_message, op->recv_trailing_metadata, op->cancel_stream, op->collect_stats);
   call_data *calld = elem->call_data;
-
-  GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);
-
+  // Handle cancel_stream.
   if (op->cancel_stream) {
-    GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error);
-    gpr_atm cur = gpr_atm_full_xchg(
-        &calld->send_initial_metadata_state,
-        CANCELLED_BIT | (gpr_atm)op->payload->cancel_stream.cancel_error);
-    switch (cur) {
-      case HAS_COMPRESSION_ALGORITHM:
-      case NO_COMPRESSION_ALGORITHM:
-      case INITIAL_METADATA_UNSEEN:
-        break;
-      default:
-        if ((cur & CANCELLED_BIT) == 0) {
-          grpc_transport_stream_op_batch_finish_with_failure(
-              exec_ctx, (grpc_transport_stream_op_batch *)cur,
-              GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error));
-        } else {
-          GRPC_ERROR_UNREF((grpc_error *)(cur & ~CANCELLED_BIT));
-        }
-        break;
+    GRPC_ERROR_UNREF(calld->cancel_error);
+    calld->cancel_error =
+        GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error);
+    if (calld->send_op != NULL) {
+      grpc_transport_stream_op_batch_finish_with_failure(
+          exec_ctx, calld->send_op, GRPC_ERROR_REF(calld->cancel_error),
+          calld->call_combiner);
     }
   }
-
+  if (calld->cancel_error != GRPC_ERROR_NONE) {
+    grpc_transport_stream_op_batch_finish_with_failure(
+        exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error),
+        calld->call_combiner);
+    grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
+    return;
+  }
+  // Handle send_initial_metadata.
   if (op->send_initial_metadata) {
+    GPR_ASSERT(calld->send_initial_metadata_state == INITIAL_METADATA_UNSEEN);
     bool has_compression_algorithm;
     grpc_error *error = process_send_initial_metadata(
         exec_ctx, elem,
         op->payload->send_initial_metadata.send_initial_metadata,
         &has_compression_algorithm);
     if (error != GRPC_ERROR_NONE) {
-      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
+      grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error,
+                                                         calld->call_combiner);
+      grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
       return;
     }
-    gpr_atm cur;
-  retry_send_im:
-    cur = gpr_atm_acq_load(&calld->send_initial_metadata_state);
-    GPR_ASSERT(cur != HAS_COMPRESSION_ALGORITHM &&
-               cur != NO_COMPRESSION_ALGORITHM);
-    if ((cur & CANCELLED_BIT) == 0) {
-      if (!gpr_atm_rel_cas(&calld->send_initial_metadata_state, cur,
-                           has_compression_algorithm
-                               ? HAS_COMPRESSION_ALGORITHM
-                               : NO_COMPRESSION_ALGORITHM)) {
-        goto retry_send_im;
-      }
-      if (cur != INITIAL_METADATA_UNSEEN) {
-        grpc_call_next_op(exec_ctx, elem,
-                          (grpc_transport_stream_op_batch *)cur);
+    calld->send_initial_metadata_state = has_compression_algorithm
+                                             ? HAS_COMPRESSION_ALGORITHM
+                                             : NO_COMPRESSION_ALGORITHM;
+    // If we had previously received a batch containing a send_message op,
+    // send it down now.  Note that we need to re-enter the call combiner
+    // for this, since we can't send two batches down while holding the
+    // call combiner, since the connected_channel filter (at the bottom of
+    // the call stack) will release the call combiner for each batch it sees.
+    if (calld->send_op != NULL) {
+gpr_log(GPR_INFO, "  found send_msg op from before send_initial_metadata");
+      if (start_send_message_op(exec_ctx, elem, false /* in_call_combiner */)) {
+gpr_log(GPR_INFO, "  compression done, scheduling send_msg op on call combiner");
+        GRPC_CLOSURE_SCHED(exec_ctx, &calld->send_in_call_combiner,
+                           GRPC_ERROR_NONE);
       }
     }
   }
+  // Handle send_message.
   if (op->send_message) {
-    gpr_atm cur;
-  retry_send:
-    cur = gpr_atm_acq_load(&calld->send_initial_metadata_state);
-    switch (cur) {
-      case INITIAL_METADATA_UNSEEN:
-        if (!gpr_atm_rel_cas(&calld->send_initial_metadata_state, cur,
-                             (gpr_atm)op)) {
-          goto retry_send;
-        }
-        break;
-      case HAS_COMPRESSION_ALGORITHM:
-      case NO_COMPRESSION_ALGORITHM:
-        if (!skip_compression(elem,
-                              op->payload->send_message.send_message->flags,
-                              cur == HAS_COMPRESSION_ALGORITHM)) {
-          calld->send_op = op;
-          calld->send_length = op->payload->send_message.send_message->length;
-          calld->send_flags = op->payload->send_message.send_message->flags;
-          continue_send_message(exec_ctx, elem);
-        } else {
-          /* pass control down the stack */
-          grpc_call_next_op(exec_ctx, elem, op);
-        }
-        break;
-      default:
-        if (cur & CANCELLED_BIT) {
-          grpc_transport_stream_op_batch_finish_with_failure(
-              exec_ctx, op,
-              GRPC_ERROR_REF((grpc_error *)(cur & ~CANCELLED_BIT)));
-        } else {
-          /* >1 send_message concurrently */
-          GPR_UNREACHABLE_CODE(break);
-        }
+    // There are several cases here:
+    // 1. We have not yet received initial metadata, in which case we
+    //    give up the call combiner and stop here.  This batch will be
+    //    sent down when we receive initial metadata.
+    // 2. We have received initial metadata, and we have completed
+    //    compression (or no compression was needed), in which case we send
+    //    (a possibly modified version of) the batch down.
+    // 3. We have received initial metadata, and compression is going to be
+    //    completed asynchronously.  In this case, we give up the call
+    //    combiner and will re-enter it once the compression is completed
+    //    to send the batch down.
+    calld->send_op = op;
+    if (calld->send_initial_metadata_state == INITIAL_METADATA_UNSEEN ||
+        !start_send_message_op(exec_ctx, elem, true /* in_call_combiner */)) {
+if (calld->send_initial_metadata_state == INITIAL_METADATA_UNSEEN) {
+gpr_log(GPR_INFO, "  got send_msg before send_initial_metadata, releasing call combiner");
+} else {
+gpr_log(GPR_INFO, "  compression not done, releasing call combiner");
+}
+      // Cases 1 and 3.
+      // Not processing further right now, so give up combiner lock.
+      grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
+      return;
     }
-  } else {
-    /* pass control down the stack */
-    grpc_call_next_op(exec_ctx, elem, op);
+    // Case 2 (fallthrough).
+gpr_log(GPR_INFO, "  compression done, proceding as usual");
   }
+  // Pass control down the stack.
+  grpc_call_next_op(exec_ctx, elem, op);
+}
 
+static void compress_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
+  GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);
+  compress_start_transport_stream_op_batch_inner(exec_ctx, elem, op);
   GPR_TIMER_END("compress_start_transport_stream_op_batch", 0);
 }
 
@@ -363,7 +397,11 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
 
   /* initialize members */
+  calld->call_combiner = args->call_combiner;
+  calld->cancel_error = GRPC_ERROR_NONE;
   grpc_slice_buffer_init(&calld->slices);
+  GRPC_CLOSURE_INIT(&calld->send_in_call_combiner, send_in_call_combiner, elem,
+                    &calld->call_combiner->scheduler);
   GRPC_CLOSURE_INIT(&calld->got_slice, got_slice, elem,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&calld->send_done, send_done, elem,
@@ -379,11 +417,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   grpc_slice_buffer_destroy_internal(exec_ctx, &calld->slices);
-  gpr_atm imstate =
-      gpr_atm_no_barrier_load(&calld->send_initial_metadata_state);
-  if (imstate & CANCELLED_BIT) {
-    GRPC_ERROR_UNREF((grpc_error *)(imstate & ~CANCELLED_BIT));
-  }
+  GRPC_ERROR_UNREF(calld->cancel_error);
 }
 
 /* Constructor for channel_data */
@@ -436,4 +470,4 @@ const grpc_channel_filter grpc_message_compress_filter = {
     destroy_channel_elem,
     grpc_call_next_get_peer,
     grpc_channel_next_get_info,
-    "compress"};
+    "message_compress"};

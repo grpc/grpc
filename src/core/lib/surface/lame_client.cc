@@ -40,6 +40,7 @@ namespace grpc_core {
 namespace {
 
 struct CallData {
+  grpc_call_combiner *call_combiner;
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
   grpc_core::atomic<bool> filled_metadata;
@@ -79,6 +80,7 @@ static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void lame_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
+  CallData *calld = static_cast<CallData *>(elem->call_data);
   if (op->recv_initial_metadata) {
     fill_metadata(exec_ctx, elem,
                   op->payload->recv_initial_metadata.recv_initial_metadata);
@@ -88,7 +90,9 @@ static void lame_start_transport_stream_op_batch(
   }
   grpc_transport_stream_op_batch_finish_with_failure(
       exec_ctx, op,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
+      calld->call_combiner);
+  grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
 }
 
 static char *lame_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
@@ -122,6 +126,8 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
+  CallData *calld = static_cast<CallData *>(elem->call_data);
+  calld->call_combiner = args->call_combiner;
   return GRPC_ERROR_NONE;
 }
 

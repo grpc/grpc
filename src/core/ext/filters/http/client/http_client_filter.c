@@ -36,6 +36,8 @@
 static const size_t kMaxPayloadSizeForGet = 2048;
 
 typedef struct call_data {
+  grpc_call_combiner *call_combiner;
+
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
   grpc_linked_mdelem authority;
@@ -270,9 +272,9 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
             channeld->max_payload_size_for_get) {
       method = GRPC_MDELEM_METHOD_GET;
       /* The following write to calld->send_message_blocked isn't racy with
-      reads in hc_start_transport_op (which deals with SEND_MESSAGE ops) because
-      being here means ops->send_message is not NULL, which is primarily
-      guarding the read there. */
+      reads in hc_start_transport_stream_op_batch (which deals with
+      SEND_MESSAGE ops) because being here means ops->send_message is not
+      NULL, which is primarily guarding the read there. */
       calld->send_message_blocked = true;
     } else if (op->payload->send_initial_metadata.send_initial_metadata_flags &
                GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
@@ -413,16 +415,18 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
-                                  grpc_call_element *elem,
-                                  grpc_transport_stream_op_batch *op) {
-  GPR_TIMER_BEGIN("hc_start_transport_op", 0);
+static void hc_start_transport_stream_op_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_transport_stream_op_batch *op) {
+  call_data *calld = elem->call_data;
+  GPR_TIMER_BEGIN("hc_start_transport_stream_op_batch", 0);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   grpc_error *error = hc_mutate_op(exec_ctx, elem, op);
   if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error);
+    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error,
+                                                       calld->call_combiner);
+    grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
   } else {
-    call_data *calld = elem->call_data;
     if (op->send_message && calld->send_message_blocked) {
       /* Don't forward the op. send_message contains slices that aren't ready
          yet. The call will be forwarded by the op_complete of slice read call.
@@ -431,7 +435,7 @@ static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
       grpc_call_next_op(exec_ctx, elem, op);
     }
   }
-  GPR_TIMER_END("hc_start_transport_op", 0);
+  GPR_TIMER_END("hc_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */
@@ -439,6 +443,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
+  calld->call_combiner = args->call_combiner;
   calld->on_done_recv_initial_metadata = NULL;
   calld->on_done_recv_trailing_metadata = NULL;
   calld->on_complete = NULL;
@@ -580,7 +585,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 const grpc_channel_filter grpc_http_client_filter = {
-    hc_start_transport_op,
+    hc_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
