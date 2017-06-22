@@ -723,6 +723,20 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
+    if self.args.config == 'asan':
+      env = {}
+      for k in _FORCE_ENVIRON_FOR_WRAPPERS.keys():
+        env[k] = _FORCE_ENVIRON_FOR_WRAPPERS[k]
+
+      env['ASAN_SYMBOLIZER_PATH'] = '/usr/bin/llvm-symbolizer-3.5'
+      env['LD_PRELOAD'] = '/usr/lib/gcc/x86_64-linux-gnu/4.9/libasan.so'
+      env['ASAN_OPTIONS'] = 'detect_leaks=1,symbolize=1'
+      env['LSAN_OPTIONS'] = 'suppressions=/var/local/git/grpc/tools/ruby_lsan_suppressions.txt'
+
+      return [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby_asan.sh'],
+                                   timeout_seconds=10*60,
+                                   environ=env)]
+
     tests = [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
                                   timeout_seconds=10*60,
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
@@ -750,6 +764,9 @@ class RubyLanguage(object):
     return 'Makefile'
 
   def dockerfile_dir(self):
+    if self.args.config == 'asan':
+      return 'tools/dockerfile/test/asan_ruby_jessie_x64'
+
     return 'tools/dockerfile/test/ruby_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
   def __str__(self):

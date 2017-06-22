@@ -1,0 +1,36 @@
+# The ruby runtime doesn't appear to play well
+# with asan.
+# But these ruby-grpc asan tests are mostly interested in
+# catching leaks due to non-ruby-allocated memory
+# anyways, (e.g. times when the ruby-grpc extension calls
+# "gpr_malloc"), so just ignore the ruby garbage collector.
+#
+# These symbols are added on as as-needed basis, but
+# should cover the grpc-ruby unit tests on at least
+# ruby 2.1 and 2.4.
+#
+# TODO(apolcyn): using a patched ruby that plays nicely
+# with asan would probably be ideal.
+
+leak:objspace_xmalloc0
+leak:objspace_xcalloc
+leak:objspace_xrealloc
+leak:rb_reg_initialize
+leak:ruby_init
+leak:compile_tree
+leak:onig_region_resize
+leak:add_compile_string
+leak:parse_exp
+leak:onig_bbuf_init
+leak:onig_ruby_compile
+leak:onig_st_insert_strend
+leak:add_mem_num
+leak:add_opcode
+leak:gc_mark_ptr
+leak:onig_compile_ruby
+leak:onig_compile
+leak:heap_assign_page
+leak:compile_quantifier_node
+leak:objspace_xmalloc
+leak:onig_new
+leak:gc_mark
