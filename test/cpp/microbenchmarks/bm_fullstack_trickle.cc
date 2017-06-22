@@ -315,7 +315,7 @@ BENCHMARK(BM_PumpStreamServerToClient_Trickle)->Apply(StreamingTrickleArgs);
 static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
-      &service, true, state.range(0) /* req_size */,
+      &service, false, state.range(0) /* req_size */,
       state.range(1) /* resp_size */, state.range(2) /* bw in kbit/s */));
   EchoRequest send_request;
   EchoResponse send_response;
