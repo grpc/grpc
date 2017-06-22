@@ -56,8 +56,7 @@ template <typename DescriptorType>
 inline grpc::string GetPHPComments(const DescriptorType *desc,
                                    grpc::string prefix) {
   return ReplaceAll(grpc_generator::GetPrefixedComments(desc, true, prefix),
-                                           "*/",
-                                           "&#42;/");
+                    "*/", "&#42;/");
 }
 
 }  // namespace grpc_php_generator
