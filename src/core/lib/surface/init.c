@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/alarm_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -137,6 +138,7 @@ void grpc_init(void) {
     grpc_register_tracer("call_error", &grpc_call_error_trace);
 #ifndef NDEBUG
     grpc_register_tracer("pending_tags", &grpc_trace_pending_tags);
+    grpc_register_tracer("alarm_refcount", &grpc_trace_alarm_refcount);
     grpc_register_tracer("queue_refcount", &grpc_trace_cq_refcount);
     grpc_register_tracer("closure", &grpc_trace_closure);
     grpc_register_tracer("error_refcount", &grpc_trace_error_refcount);
