@@ -100,13 +100,13 @@ class ClientAsyncResponseReader final
       : context_(context),
         call_(channel->CreateCall(method, context, cq)),
         collection_(std::make_shared<Ops>()) {
-    collection_->init_buf_.SetCollection(collection_);
-    collection_->init_buf_.SendInitialMetadata(
+    collection_->init_buf.SetCollection(collection_);
+    collection_->init_buf.SendInitialMetadata(
         context->send_initial_metadata_, context->initial_metadata_flags());
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(collection_->init_buf_.SendMessage(request).ok());
-    collection_->init_buf_.ClientSendClose();
-    call_.PerformOps(&collection_->init_buf_);
+    GPR_CODEGEN_ASSERT(collection_->init_buf.SendMessage(request).ok());
+    collection_->init_buf.ClientSendClose();
+    call_.PerformOps(&collection_->init_buf);
   }
 
   // always allocated against a call arena, no memory free required
@@ -123,18 +123,18 @@ class ClientAsyncResponseReader final
   void ReadInitialMetadata(void* tag) {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
-    Ops& o = ops;
+    Ops& o = ops_;
 
     // TODO(vjpai): Remove the collection_ specialization as soon
     // as the public constructor is deleted
     if (collection_) {
       o = *collection_;
-      collection_->meta_buf_.SetCollection(collection_);
+      collection_->meta_buf.SetCollection(collection_);
     }
 
-    o.meta_buf_.set_output_tag(tag);
-    o.meta_buf_.RecvInitialMetadata(context_);
-    call_.PerformOps(&o.meta_buf_);
+    o.meta_buf.set_output_tag(tag);
+    o.meta_buf.RecvInitialMetadata(context_);
+    call_.PerformOps(&o.meta_buf);
   }
 
   /// See \a ClientAysncResponseReaderInterface::Finish for semantics.
@@ -143,23 +143,23 @@ class ClientAsyncResponseReader final
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
   void Finish(R* msg, Status* status, void* tag) {
-    Ops& o = ops;
+    Ops& o = ops_;
 
     // TODO(vjpai): Remove the collection_ specialization as soon
     // as the public constructor is deleted
     if (collection_) {
       o = *collection_;
-      collection_->finish_buf_.SetCollection(collection_);
+      collection_->finish_buf.SetCollection(collection_);
     }
 
-    o.finish_buf_.set_output_tag(tag);
+    o.finish_buf.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
-      o.finish_buf_.RecvInitialMetadata(context_);
+      o.finish_buf.RecvInitialMetadata(context_);
     }
-    o.finish_buf_.RecvMessage(msg);
-    o.finish_buf_.AllowNoMessage();
-    o.finish_buf_.ClientRecvStatus(context_, status);
-    call_.PerformOps(&o.finish_buf_);
+    o.finish_buf.RecvMessage(msg);
+    o.finish_buf.AllowNoMessage();
+    o.finish_buf.ClientRecvStatus(context_, status);
+    call_.PerformOps(&o.finish_buf);
   }
 
  private:
@@ -169,12 +169,12 @@ class ClientAsyncResponseReader final
   template <class W>
   ClientAsyncResponseReader(Call call, ClientContext* context, const W& request)
       : context_(context), call_(call) {
-    ops.init_buf_.SendInitialMetadata(context->send_initial_metadata_,
+    ops_.init_buf.SendInitialMetadata(context->send_initial_metadata_,
                                       context->initial_metadata_flags());
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(ops.init_buf_.SendMessage(request).ok());
-    ops.init_buf_.ClientSendClose();
-    call_.PerformOps(&ops.init_buf_);
+    GPR_CODEGEN_ASSERT(ops_.init_buf.SendMessage(request).ok());
+    ops_.init_buf.ClientSendClose();
+    call_.PerformOps(&ops_.init_buf);
   }
 
   // disable operator new
@@ -186,12 +186,12 @@ class ClientAsyncResponseReader final
   struct Ops : public CallOpSetCollectionInterface {
     SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
                     CallOpClientSendClose>
-        init_buf_;
-    CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
+        init_buf;
+    CallOpSet<CallOpRecvInitialMetadata> meta_buf;
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
               CallOpClientRecvStatus>
-        finish_buf_;
-  } ops;
+        finish_buf;
+  } ops_;
 
   // TODO(vjpai): Remove the collection_ as soon as the related workaround
   // (public constructor) is deleted
