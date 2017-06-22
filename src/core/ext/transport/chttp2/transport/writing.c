@@ -268,8 +268,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             .stats = &s->stats.outgoing};
         grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor, NULL, 0,
                                   s->send_initial_metadata, &hopt, &t->outbuf);
-        t->ping_state.pings_before_data_required =
-            t->ping_policy.max_pings_without_data;
+        now_writing = true;
         if (!t->is_client) {
           t->ping_recv_state.last_ping_recv_time =
               gpr_inf_past(GPR_CLOCK_MONOTONIC);
