@@ -41,6 +41,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -293,7 +294,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
    int flags = fcntl(fd, F_GETFL, 0);
    GPR_ASSERT(flags > 0);
-   GPR_ASSERT(fcntl(fd, F_SETFL, flags | ~O_NONBLOCK) == 0);
+   GPR_ASSERT(fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) != -1);
 
   do {
     GPR_ASSERT(addr->len < ~(socklen_t)0);
