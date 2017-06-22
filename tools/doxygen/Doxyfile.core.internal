@@ -1332,6 +1332,7 @@ src/core/lib/support/tmpfile_windows.c \
 src/core/lib/support/wrap_memcpy.c \
 src/core/lib/surface/README.md \
 src/core/lib/surface/alarm.c \
+src/core/lib/surface/alarm_internal.h \
 src/core/lib/surface/api_trace.c \
 src/core/lib/surface/api_trace.h \
 src/core/lib/surface/byte_buffer.c \
