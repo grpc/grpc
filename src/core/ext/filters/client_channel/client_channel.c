@@ -757,26 +757,27 @@ typedef struct client_channel_call_data {
   // The code in deadline_filter.c requires this to be the first field.
   // TODO(roth): This is slightly sub-optimal in that grpc_deadline_state
   // and this struct both independently store a pointer to the call
-  // stack and each has its own mutex.  If/when we have time, find a way
-  // to avoid this without breaking the grpc_deadline_state abstraction.
+  // stack.  If/when we have time, find a way to avoid this without breaking
+  // the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state;
 
   grpc_slice path;  // Request path.
   gpr_timespec call_start_time;
   gpr_timespec deadline;
+  gpr_arena *arena;
+
   grpc_server_retry_throttle_data *retry_throttle_data;
   method_parameters *method_params;
 
-  /** either 0 for no call, a pointer to a grpc_subchannel_call (if the lowest
-      bit is 0), or a pointer to an error (if the lowest bit is 1) */
-  gpr_atm subchannel_call_or_error;
-  gpr_arena *arena;
+  grpc_subchannel_call *subchannel_call;
+  grpc_error *error;
 
   bool pick_pending;
   grpc_connected_subchannel *connected_subchannel;
   grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
   grpc_polling_entity *pollent;
 
+// FIXME: highlander!
   grpc_transport_stream_op_batch *waiting_for_pick_batches[MAX_WAITING_BATCHES];
   size_t waiting_for_pick_batches_count;
 
@@ -795,38 +796,10 @@ typedef struct {
   grpc_error *error;
 } call_or_error;
 
-static call_or_error get_call_or_error(call_data *p) {
-  gpr_atm c = gpr_atm_acq_load(&p->subchannel_call_or_error);
-  if (c == 0)
-    return (call_or_error){NULL, NULL};
-  else if (c & 1)
-    return (call_or_error){NULL, (grpc_error *)((c) & ~(gpr_atm)1)};
-  else
-    return (call_or_error){(grpc_subchannel_call *)c, NULL};
-}
-
-static bool set_call_or_error(call_data *p, call_or_error coe) {
-  // this should always be under a lock
-  call_or_error existing = get_call_or_error(p);
-  if (existing.error != GRPC_ERROR_NONE) {
-    GRPC_ERROR_UNREF(coe.error);
-    return false;
-  }
-  GPR_ASSERT(existing.subchannel_call == NULL);
-  if (coe.error != GRPC_ERROR_NONE) {
-    GPR_ASSERT(coe.subchannel_call == NULL);
-    gpr_atm_rel_store(&p->subchannel_call_or_error, 1 | (gpr_atm)coe.error);
-  } else {
-    GPR_ASSERT(coe.subchannel_call != NULL);
-    gpr_atm_rel_store(&p->subchannel_call_or_error,
-                      (gpr_atm)coe.subchannel_call);
-  }
-  return true;
-}
-
 grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
-    grpc_call_element *call_elem) {
-  return get_call_or_error(call_elem->call_data).subchannel_call;
+    grpc_call_element *elem) {
+  call_data *calld = elem->call_data;
+  return calld->subchannel_call;
 }
 
 static void waiting_for_pick_batches_add_locked(
@@ -855,10 +828,9 @@ gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combin
 static void waiting_for_pick_batches_resume_locked(grpc_exec_ctx *exec_ctx,
                                                    call_data *calld) {
   if (calld->waiting_for_pick_batches_count == 0) return;
-  call_or_error coe = get_call_or_error(calld);
-  if (coe.error != GRPC_ERROR_NONE) {
+  if (calld->error != GRPC_ERROR_NONE) {
     waiting_for_pick_batches_fail_locked(exec_ctx, calld,
-                                         GRPC_ERROR_REF(coe.error));
+                                         GRPC_ERROR_REF(calld->error));
     return;
   }
   for (size_t i = 0; i < calld->waiting_for_pick_batches_count; ++i) {
@@ -866,7 +838,7 @@ static void waiting_for_pick_batches_resume_locked(grpc_exec_ctx *exec_ctx,
 // doesn't need to be an array.  otherwise, need to invoke each one in
 // its own call_combiner callback
 gpr_log(GPR_INFO, "RESUMING OP ON CURRENT CALL COMBINER");
-    grpc_subchannel_call_process_op(exec_ctx, coe.subchannel_call,
+    grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
                                     calld->waiting_for_pick_batches[i]);
   }
   calld->waiting_for_pick_batches_count = 0;
@@ -905,7 +877,6 @@ static void apply_service_config_to_call_locked(grpc_exec_ctx *exec_ctx,
 
 static void create_subchannel_call_locked(grpc_exec_ctx *exec_ctx,
                                           call_data *calld, grpc_error *error) {
-  grpc_subchannel_call *subchannel_call = NULL;
   const grpc_connected_subchannel_call_args call_args = {
       .pollent = calld->pollent,
       .path = calld->path,
@@ -915,9 +886,8 @@ static void create_subchannel_call_locked(grpc_exec_ctx *exec_ctx,
       .context = calld->subchannel_call_context,
       .call_combiner = calld->deadline_state.call_combiner};
   grpc_error *new_error = grpc_connected_subchannel_create_call(
-      exec_ctx, calld->connected_subchannel, &call_args, &subchannel_call);
-  GPR_ASSERT(set_call_or_error(
-      calld, (call_or_error){.subchannel_call = subchannel_call}));
+      exec_ctx, calld->connected_subchannel, &call_args,
+      &calld->subchannel_call);
   if (new_error != GRPC_ERROR_NONE) {
     new_error = grpc_error_add_child(new_error, error);
     waiting_for_pick_batches_fail_locked(exec_ctx, calld, new_error);
@@ -936,20 +906,19 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
   calld->pick_pending = false;
   grpc_polling_entity_del_from_pollset_set(exec_ctx, calld->pollent,
                                            chand->interested_parties);
-  call_or_error coe = get_call_or_error(calld);
   if (calld->connected_subchannel == NULL) {
     // Failed to create subchannel.
-    grpc_error *failure =
+    calld->error =
         error == GRPC_ERROR_NONE
             ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                   "Call dropped by load balancing policy")
             : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                   "Failed to create subchannel", &error, 1);
-    set_call_or_error(calld, (call_or_error){.error = GRPC_ERROR_REF(failure)});
-    waiting_for_pick_batches_fail_locked(exec_ctx, calld, failure);
-  } else if (coe.error != GRPC_ERROR_NONE) {
+    waiting_for_pick_batches_fail_locked(exec_ctx, calld,
+                                         GRPC_ERROR_REF(calld->error));
+  } else if (calld->error != GRPC_ERROR_NONE) {
     /* already cancelled before subchannel became ready */
-    grpc_error *child_errors[] = {error, coe.error};
+    grpc_error *child_errors[] = {error, calld->error};
     grpc_error *cancellation_error =
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "Cancelled before creating subchannel", child_errors,
@@ -969,14 +938,13 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(error);
 }
 
+// FIXME: this needs to be invoked in the call combiner
 static char *cc_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   call_data *calld = elem->call_data;
-  grpc_subchannel_call *subchannel_call =
-      get_call_or_error(calld).subchannel_call;
-  if (subchannel_call == NULL) {
+  if (calld->subchannel_call == NULL) {
     return NULL;
   } else {
-    return grpc_subchannel_call_get_peer(exec_ctx, subchannel_call);
+    return grpc_subchannel_call_get_peer(exec_ctx, calld->subchannel_call);
   }
 }
 
@@ -1147,19 +1115,19 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
   grpc_call_element *elem = op->handler_private.extra_arg;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
+// FIXME: is this recheck still necessary?
   /* need to recheck that another thread hasn't set the call */
-  call_or_error coe = get_call_or_error(calld);
-  if (coe.error != GRPC_ERROR_NONE) {
+  if (calld->error != GRPC_ERROR_NONE) {
 gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->deadline_state.call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, op, GRPC_ERROR_REF(coe.error),
+        exec_ctx, op, GRPC_ERROR_REF(calld->error),
         calld->deadline_state.call_combiner);
 gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combiner);
     grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
     goto done;
   }
-  if (coe.subchannel_call != NULL) {
-    grpc_subchannel_call_process_op(exec_ctx, coe.subchannel_call, op);
+  if (calld->subchannel_call != NULL) {
+    grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call, op);
     goto done;
   }
   // Add to waiting-for-pick list.  If we succeed in getting a
@@ -1168,18 +1136,17 @@ gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combin
   waiting_for_pick_batches_add_locked(calld, op);
   /* if this is a cancellation, then we can raise our cancelled flag */
   if (op->cancel_stream) {
-    grpc_error *error = op->payload->cancel_stream.cancel_error;
+    calld->error = GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error);
     /* Stash a copy of cancel_error in our call data, so that we can use
        it for subsequent operations.  This ensures that if the call is
        cancelled before any ops are passed down (e.g., if the deadline
        is in the past when the call starts), we can return the right
        error to the caller when the first op does get passed down. */
-    set_call_or_error(calld, (call_or_error){.error = GRPC_ERROR_REF(error)});
     if (calld->pick_pending) {
-      cancel_pick_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
+      cancel_pick_locked(exec_ctx, elem, GRPC_ERROR_REF(calld->error));
     }
     waiting_for_pick_batches_fail_locked(exec_ctx, calld,
-                                         GRPC_ERROR_REF(error));
+                                         GRPC_ERROR_REF(calld->error));
     goto done;
   }
   /* if we don't have a subchannel, try to get one */
@@ -1196,11 +1163,10 @@ gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combin
       calld->pick_pending = false;
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
       if (calld->connected_subchannel == NULL) {
-        grpc_error *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        calld->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Call dropped by load balancing policy");
-        set_call_or_error(calld,
-                          (call_or_error){.error = GRPC_ERROR_REF(error)});
-        waiting_for_pick_batches_fail_locked(exec_ctx, calld, error);
+        waiting_for_pick_batches_fail_locked(exec_ctx, calld,
+                                             GRPC_ERROR_REF(calld->error));
       } else {
         // Create subchannel call.
         create_subchannel_call_locked(exec_ctx, calld, GRPC_ERROR_NONE);
@@ -1264,12 +1230,11 @@ static void cc_start_transport_stream_op_batch(
     op->on_complete = &calld->on_complete;
   }
   /* try to (atomically) get the call */
-  call_or_error coe = get_call_or_error(calld);
   GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
-  if (coe.error != GRPC_ERROR_NONE) {
+  if (calld->error != GRPC_ERROR_NONE) {
 gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->deadline_state.call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, op, GRPC_ERROR_REF(coe.error),
+        exec_ctx, op, GRPC_ERROR_REF(calld->error),
         calld->deadline_state.call_combiner);
 gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combiner);
     grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
@@ -1277,8 +1242,8 @@ gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combin
     /* early out */
     return;
   }
-  if (coe.subchannel_call != NULL) {
-    grpc_subchannel_call_process_op(exec_ctx, coe.subchannel_call, op);
+  if (calld->subchannel_call != NULL) {
+    grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call, op);
     GPR_TIMER_END("cc_start_transport_stream_op_batch", 0);
     /* early out */
     return;
@@ -1327,13 +1292,12 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   if (calld->method_params != NULL) {
     method_parameters_unref(calld->method_params);
   }
-  call_or_error coe = get_call_or_error(calld);
-  GRPC_ERROR_UNREF(coe.error);
-  if (coe.subchannel_call != NULL) {
-    grpc_subchannel_call_set_cleanup_closure(coe.subchannel_call,
+  GRPC_ERROR_UNREF(calld->error);
+  if (calld->subchannel_call != NULL) {
+    grpc_subchannel_call_set_cleanup_closure(calld->subchannel_call,
                                              then_schedule_closure);
     then_schedule_closure = NULL;
-    GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, coe.subchannel_call,
+    GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, calld->subchannel_call,
                                "client_channel_destroy_call");
   }
   GPR_ASSERT(!calld->pick_pending);
