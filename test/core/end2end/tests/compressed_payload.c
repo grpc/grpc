@@ -279,7 +279,7 @@ static void request_with_payload_template(
   grpc_call *c;
   grpc_call *s;
   grpc_slice request_payload_slice;
-  grpc_byte_buffer *request_payload;
+  grpc_byte_buffer *request_payload = NULL;
   grpc_channel_args *client_args;
   grpc_channel_args *server_args;
   grpc_end2end_test_fixture f;
