@@ -723,7 +723,7 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    if self.args.config == 'asan':
+    if self.args.config == 'asan-dynamic':
       env = {}
       for k in _FORCE_ENVIRON_FOR_WRAPPERS.keys():
         env[k] = _FORCE_ENVIRON_FOR_WRAPPERS[k]
@@ -735,7 +735,8 @@ class RubyLanguage(object):
 
       return [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby_asan.sh'],
                                    timeout_seconds=10*60,
-                                   environ=env)]
+                                   environ=env,
+                                   shortname='ruby-asan-dynamic')]
 
     tests = [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
                                   timeout_seconds=10*60,

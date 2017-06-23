@@ -90,6 +90,15 @@ LDXX_asan-trace-cmp = clang++
 CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-trace-cmp = -fsanitize=address
 
+VALID_CONFIG_gcov = 1
+CC_gcov = gcc
+CXX_gcov = g++
+LD_gcov = gcc
+LDXX_gcov = g++
+CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
+DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
+
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)
@@ -181,14 +190,14 @@ LDXX_stapprof = $(DEFAULT_CXX)
 CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
 DEFINES_stapprof = NDEBUG
 
-VALID_CONFIG_gcov = 1
-CC_gcov = gcc
-CXX_gcov = g++
-LD_gcov = gcc
-LDXX_gcov = g++
-CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
-LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
-DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
+VALID_CONFIG_asan-dynamic = 1
+REQUIRE_CUSTOM_LIBRARIES_asan-dynamic = 1
+CC_asan-dynamic = gcc
+CXX_asan-dynamic = g++
+LD_asan-dynamic = g++
+LDXX_asan-dynamic = g++
+CPPFLAGS_asan-dynamic = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_asan-dynamic = -fsanitize=address
 
 VALID_CONFIG_memcheck = 1
 CC_memcheck = $(DEFAULT_CC)

@@ -46367,6 +46367,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46405,6 +46406,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46443,6 +46445,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46481,6 +46484,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46519,6 +46523,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46557,6 +46562,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46595,6 +46601,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46633,6 +46640,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46671,6 +46679,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46709,6 +46718,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46747,6 +46757,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46785,6 +46796,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46823,6 +46835,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46863,6 +46876,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46901,6 +46915,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46941,6 +46956,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -46979,6 +46995,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47017,6 +47034,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47055,6 +47073,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47093,6 +47112,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47131,6 +47151,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47169,6 +47190,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47207,6 +47229,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47245,6 +47268,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47283,6 +47307,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47321,6 +47346,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47359,6 +47385,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47397,6 +47424,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47435,6 +47463,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47473,6 +47502,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47511,6 +47541,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47549,6 +47580,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47587,6 +47619,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47625,6 +47658,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47663,6 +47697,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47701,6 +47736,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47739,6 +47775,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47777,6 +47814,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47815,6 +47853,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47853,6 +47892,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47891,6 +47931,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47929,6 +47970,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -47967,6 +48009,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48005,6 +48048,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48043,6 +48087,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48081,6 +48126,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48119,6 +48165,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48159,6 +48206,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48197,6 +48245,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48237,6 +48286,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48275,6 +48325,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48313,6 +48364,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48351,6 +48403,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48389,6 +48442,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48427,6 +48481,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48465,6 +48520,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48503,6 +48559,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48541,6 +48598,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48579,6 +48637,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48617,6 +48676,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48655,6 +48715,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48693,6 +48754,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48731,6 +48793,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48769,6 +48832,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48807,6 +48871,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48845,6 +48910,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48883,6 +48949,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48921,6 +48988,7 @@
     "cpu_cost": 64, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48959,6 +49027,7 @@
     "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 
@@ -48997,6 +49066,7 @@
     "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [
+      "asan-dynamic", 
       "asan-noleaks", 
       "asan-trace-cmp", 
       "basicprof", 

@@ -62,16 +62,8 @@ ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
 ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
 ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 
-if grpc_config == 'asan'
-  ENV['CFLAGS'] = "#{ENV['CFLAGS']} -fsanitize=address"
-end
-
-grpc_make_config = grpc_config
-#TODO(apolcyn) instead of using dbg config, probably create a separate 'shared asan' config for the makefile
-grpc_make_config = 'dbg' if grpc_make_config == 'asan'
-
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
-grpc_lib_dir = File.join(output_dir, 'libs', grpc_make_config)
+grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
 ENV['BUILDDIR'] = output_dir
 
 unless windows
@@ -79,7 +71,7 @@ unless windows
   nproc = 4
   nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
 
-  system("make -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_make_config} Q=")
+  system("make -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config} Q=")
   exit 1 unless $? == 0
 end
 
@@ -94,7 +86,7 @@ if grpc_config == 'dbg'
   $CFLAGS << ' -O0'
 end
 
-if grpc_config == 'asan'
+if grpc_config == 'asan-dynamic'
   $CFLAGS << ' -O0'
   $CFLAGS << ' -g '
   $CFLAGS << ' -fno-omit-frame-pointer '

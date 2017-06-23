@@ -10,6 +10,9 @@
     }
   }, 
   {
+    "config": "gcov"
+  }, 
+  {
     "config": "dbg"
   }, 
   {
@@ -57,7 +60,7 @@
     "config": "stapprof"
   }, 
   {
-    "config": "gcov"
+    "config": "asan-dynamic"
   }, 
   {
     "config": "memcheck", 

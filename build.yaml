@@ -4500,6 +4500,15 @@ configs:
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
       LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
+  asan-dynamic:
+    CC: gcc
+    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -DGPR_NO_DIRECT_SYSCALLS
+    CXX: g++
+    LD: g++
+    LDFLAGS: -fsanitize=address
+    LDXX: g++
+    compile_the_world: true
   asan-noleaks:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
