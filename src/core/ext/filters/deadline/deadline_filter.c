@@ -124,6 +124,7 @@ static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
 // Callback and associated state for starting the timer after call stack
 // initialization has been completed.
 struct start_timer_after_init_state {
+  bool in_call_combiner;
   grpc_call_element* elem;
   gpr_timespec deadline;
   grpc_closure closure;
@@ -132,6 +133,15 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
                                    grpc_error* error) {
   struct start_timer_after_init_state* state = arg;
   grpc_deadline_state* deadline_state = state->elem->call_data;
+  if (!state->in_call_combiner) {
+    // We are initially called without holding the call combiner, so we
+    // need to bounce ourselves into it.
+    state->in_call_combiner = true;
+    GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
+                      &deadline_state->call_combiner->scheduler);
+    GRPC_CLOSURE_SCHED(exec_ctx, &state->closure, GRPC_ERROR_REF(error));
+    return;
+  }
   start_timer_if_needed(exec_ctx, state->elem, state->deadline);
   gpr_free(state);
 gpr_log(GPR_INFO, "STOPPING call_combiner=%p", deadline_state->call_combiner);
@@ -156,13 +166,11 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     // call stack initialization is finished.  To avoid that problem, we
     // create a closure to start the timer, and we schedule that closure
     // to be run after call stack initialization is done.
-    struct start_timer_after_init_state* state = gpr_malloc(sizeof(*state));
+    struct start_timer_after_init_state* state = gpr_zalloc(sizeof(*state));
     state->elem = elem;
     state->deadline = deadline;
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
-                      &deadline_state->call_combiner->scheduler);
-// FIXME: this does not wait until after call stack is initialized!
-// (maybe need surface/call.c to hold call combiner for call stack init?)
+                      grpc_schedule_on_exec_ctx);
 gpr_log(GPR_INFO, "SCHEDULING TIMER START: closure=%p call_combiner=%p", &state->closure, deadline_state->call_combiner);
     GRPC_CLOSURE_SCHED(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
