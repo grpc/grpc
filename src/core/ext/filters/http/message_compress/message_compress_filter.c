@@ -227,6 +227,7 @@ gpr_log(GPR_INFO, "==> %s(): elem=%p, in_call_combiner=%d", __func__, elem, in_c
   // If we're not in the call combiner, schedule a closure on the
   // call combiner to send the op down.
   if (!in_call_combiner) {
+gpr_log(GPR_INFO, "SCHEDULING send_message CLOSURE ON call_combiner=%p",calld->call_combiner);
     GRPC_CLOSURE_SCHED(exec_ctx, &calld->send_in_call_combiner,
                        GRPC_ERROR_NONE);
   }
@@ -305,15 +306,18 @@ gpr_log(GPR_INFO, "==> %s(): op={send_initial_metadata=%d, send_message=%d, send
     calld->cancel_error =
         GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error);
     if (calld->send_op != NULL) {
+gpr_log(GPR_INFO, "FAILING send_message BATCH ON call_combiner=%p", calld->call_combiner);
       grpc_transport_stream_op_batch_finish_with_failure(
           exec_ctx, calld->send_op, GRPC_ERROR_REF(calld->cancel_error),
           calld->call_combiner);
     }
 // FIXME: is this right?
   } else if (calld->cancel_error != GRPC_ERROR_NONE) {
+gpr_log(GPR_INFO, "FAILING current BATCH ON call_combiner=%p", calld->call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error),
         calld->call_combiner);
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
     grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
     return;
   }
@@ -326,8 +330,10 @@ gpr_log(GPR_INFO, "==> %s(): op={send_initial_metadata=%d, send_message=%d, send
         op->payload->send_initial_metadata.send_initial_metadata,
         &has_compression_algorithm);
     if (error != GRPC_ERROR_NONE) {
+gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
       grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error,
                                                          calld->call_combiner);
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
       grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
       return;
     }
@@ -343,6 +349,7 @@ gpr_log(GPR_INFO, "==> %s(): op={send_initial_metadata=%d, send_message=%d, send
 gpr_log(GPR_INFO, "  found send_msg op from before send_initial_metadata");
       if (start_send_message_op(exec_ctx, elem, false /* in_call_combiner */)) {
 gpr_log(GPR_INFO, "  compression done, scheduling send_msg op on call combiner");
+gpr_log(GPR_INFO, "SCHEDULING send_message BATCH ON call_combiner=%p", calld->call_combiner);
         GRPC_CLOSURE_SCHED(exec_ctx, &calld->send_in_call_combiner,
                            GRPC_ERROR_NONE);
       }
@@ -371,6 +378,7 @@ gpr_log(GPR_INFO, "  compression not done, releasing call combiner");
 }
       // Cases 1 and 3.
       // Not processing further right now, so give up combiner lock.
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
       grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
       return;
     }

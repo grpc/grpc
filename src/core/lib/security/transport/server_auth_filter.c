@@ -160,11 +160,13 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
     if (chand->creds != NULL && chand->creds->processor.process != NULL) {
       // We're calling out to the application, so we need to exit and
       // then re-enter the call combiner.
+gpr_log(GPR_INFO, "INTERCEPTING recv_initial_metadata CLOSURE ON call_combiner=%p", calld->call_combiner);
       intercept_closure(calld->call_combiner, &calld->on_done_recv);
       calld->md = metadata_batch_to_md_array(calld->recv_initial_metadata);
       chand->creds->processor.process(
           chand->creds->processor.state, calld->auth_context,
           calld->md.metadata, calld->md.count, on_md_processing_done, elem);
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
       grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
       return;
     }

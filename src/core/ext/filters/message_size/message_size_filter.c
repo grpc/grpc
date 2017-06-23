@@ -127,6 +127,7 @@ static void start_transport_stream_op_batch(
     gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
                  op->payload->send_message.send_message->length,
                  calld->limits.max_send_size);
+gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, op,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
@@ -134,6 +135,7 @@ static void start_transport_stream_op_batch(
                            GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
     gpr_free(message_string);
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
     grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
     return;
   }

@@ -208,6 +208,7 @@ void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
     grpc_error *error, grpc_call_combiner *call_combiner) {
   if (op->recv_message) {
+gpr_log(GPR_INFO, "SCHEDULING recv_message ON call_combiner=%p", call_combiner);
     GRPC_CLOSURE_SCHED(
         exec_ctx,
         GRPC_CLOSURE_CREATE(run_in_call_combiner,
@@ -216,6 +217,7 @@ void grpc_transport_stream_op_batch_finish_with_failure(
         GRPC_ERROR_REF(error));
   }
   if (op->recv_initial_metadata) {
+gpr_log(GPR_INFO, "SCHEDULING recv_initial_metadata ON call_combiner=%p", call_combiner);
     GRPC_CLOSURE_SCHED(
         exec_ctx,
         GRPC_CLOSURE_CREATE(
@@ -224,6 +226,7 @@ void grpc_transport_stream_op_batch_finish_with_failure(
             &call_combiner->scheduler),
         GRPC_ERROR_REF(error));
   }
+gpr_log(GPR_INFO, "SCHEDULING on_complete ON call_combiner=%p", call_combiner);
   GRPC_CLOSURE_SCHED(exec_ctx,
                      GRPC_CLOSURE_CREATE(run_in_call_combiner, op->on_complete,
                                          &call_combiner->scheduler),

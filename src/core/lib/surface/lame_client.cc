@@ -88,10 +88,12 @@ static void lame_start_transport_stream_op_batch(
     fill_metadata(exec_ctx, elem,
                   op->payload->recv_trailing_metadata.recv_trailing_metadata);
   }
+gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
   grpc_transport_stream_op_batch_finish_with_failure(
       exec_ctx, op,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
       calld->call_combiner);
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
   grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
 }
 

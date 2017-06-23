@@ -73,14 +73,18 @@ static void con_start_transport_stream_op_batch(
     intercept_closure(
         calld->call_combiner,
         &op->payload->recv_initial_metadata.recv_initial_metadata_ready);
+gpr_log(GPR_INFO, "INTERCEPTING recv_initial_metadata: closure=%p call_combiner=%p", op->payload->recv_initial_metadata.recv_initial_metadata_ready, calld->call_combiner);
   }
   if (op->recv_message) {
     intercept_closure(calld->call_combiner,
                       &op->payload->recv_message.recv_message_ready);
+gpr_log(GPR_INFO, "INTERCEPTING recv_message: closure=%p call_combiner=%p", op->payload->recv_message.recv_message_ready, calld->call_combiner);
   }
   intercept_closure(calld->call_combiner, &op->on_complete);
+gpr_log(GPR_INFO, "INTERCEPTING on_complete: closure=%p call_combiner=%p", op->on_complete, calld->call_combiner);
   grpc_transport_perform_stream_op(exec_ctx, chand->transport,
                                    TRANSPORT_STREAM_FROM_CALL_DATA(calld), op);
+gpr_log(GPR_INFO, "STOPPING call_combiner %p", calld->call_combiner);
   grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
 }
 

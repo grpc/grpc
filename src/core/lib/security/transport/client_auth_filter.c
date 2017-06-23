@@ -124,6 +124,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
     grpc_call_next_op(exec_ctx, elem, op);
   } else {
 // FIXME
+gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error,
                                                        calld->call_combiner);
   }
@@ -183,6 +184,7 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
                                                           ctx->creds, NULL);
     if (calld->creds == NULL) {
 // FIXME
+gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
       grpc_transport_stream_op_batch_finish_with_failure(
           exec_ctx, op,
           grpc_error_set_int(
@@ -219,6 +221,7 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  host);
     gpr_free(host);
+// FIXME: does this need to do something special about the call combiner?
     grpc_call_element_signal_error(
         exec_ctx, elem,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg),

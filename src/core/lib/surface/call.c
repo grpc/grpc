@@ -594,6 +594,7 @@ static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
   batch->handler_private.extra_arg = call;
   grpc_closure *closure = GRPC_CLOSURE_CREATE(
       execute_batch_in_call_combiner, batch, &call->call_combiner.scheduler);
+gpr_log(GPR_INFO, "EXECUTING BATCH: closure=%p call_combiner=%p", closure, &call->call_combiner);
   GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
 }
 
@@ -637,8 +638,11 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   return GRPC_CALL_OK;
 }
 
-static void done_termination(grpc_exec_ctx *exec_ctx, void *call,
+static void done_termination(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
+  grpc_call* call = arg;
+gpr_log(GPR_INFO, "STOPPING (done_termination) call_combiner=%p", &call->call_combiner);
+  grpc_call_combiner_stop(exec_ctx, &call->call_combiner);
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "termination");
 }
 
@@ -1313,6 +1317,7 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   } else {
     call->saved_receiving_stream_ready_bctlp = bctlp;
   }
+gpr_log(GPR_INFO, "STOPPING (recv_msg) call_combiner=%p", &call->call_combiner);
   grpc_call_combiner_stop(exec_ctx, &call->call_combiner);
 }
 
@@ -1412,6 +1417,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
   }
 
   finish_batch_step(exec_ctx, bctl);
+gpr_log(GPR_INFO, "STOPPING (recv_initial_metadata) call_combiner=%p", &call->call_combiner);
   grpc_call_combiner_stop(exec_ctx, &call->call_combiner);
 }
 
@@ -1421,6 +1427,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *call = bctl->call;
   add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error), false);
   finish_batch_step(exec_ctx, bctl);
+gpr_log(GPR_INFO, "STOPPING (on_complete) call_combiner=%p", &call->call_combiner);
   grpc_call_combiner_stop(exec_ctx, &call->call_combiner);
 }
 

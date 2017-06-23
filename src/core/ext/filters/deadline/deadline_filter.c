@@ -49,6 +49,7 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
   } else {
     // Not sending a cancel op down the call stack, so yield the call
     // combiner here.
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", deadline_state->call_combiner);
     grpc_call_combiner_stop(exec_ctx, deadline_state->call_combiner);
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
@@ -85,6 +86,7 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
   }
   GPR_ASSERT(closure != NULL);
   GRPC_CALL_STACK_REF(deadline_state->call_stack, "deadline_timer");
+gpr_log(GPR_INFO, "SCHEDULING TIMER: closure=%p call_combiner=%p", closure, deadline_state->call_combiner);
   grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, closure,
                   gpr_now(GPR_CLOCK_MONOTONIC));
 }
@@ -132,6 +134,7 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_deadline_state* deadline_state = state->elem->call_data;
   start_timer_if_needed(exec_ctx, state->elem, state->deadline);
   gpr_free(state);
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", deadline_state->call_combiner);
   grpc_call_combiner_stop(exec_ctx, deadline_state->call_combiner);
 }
 
@@ -158,6 +161,9 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     state->deadline = deadline;
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       &deadline_state->call_combiner->scheduler);
+// FIXME: this does not wait until after call stack is initialized!
+// (maybe need surface/call.c to hold call combiner for call stack init?)
+gpr_log(GPR_INFO, "SCHEDULING TIMER START: closure=%p call_combiner=%p", &state->closure, deadline_state->call_combiner);
     GRPC_CLOSURE_SCHED(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
 }

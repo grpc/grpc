@@ -423,8 +423,10 @@ static void hc_start_transport_stream_op_batch(
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   grpc_error *error = hc_mutate_op(exec_ctx, elem, op);
   if (error != GRPC_ERROR_NONE) {
+gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error,
                                                        calld->call_combiner);
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
     grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
   } else {
     if (op->send_message && calld->send_message_blocked) {

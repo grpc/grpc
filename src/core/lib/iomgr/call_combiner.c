@@ -55,7 +55,7 @@ static void execute_closure(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
 void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
                               grpc_call_combiner* call_combiner,
                               grpc_closure *closure, grpc_error* error) {
-gpr_log(GPR_INFO, "==> grpc_call_combiner_start() [%p] closure->cb=%p", call_combiner, closure->cb);
+gpr_log(GPR_INFO, "==> grpc_call_combiner_start() [%p] closure=%p", call_combiner, closure);
   closure->scheduler = &call_combiner->scheduler;
   size_t prev_size =
       (size_t)gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)1);
@@ -89,7 +89,7 @@ gpr_log(GPR_INFO, "  checking queue");
         if (!empty) continue;  // Try again.
 gpr_log(GPR_INFO, "  queue empty");
       } else {
-gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE");
+gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p", closure);
         execute_closure(exec_ctx, closure, closure->error_data.error);
       }
       break;

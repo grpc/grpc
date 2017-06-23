@@ -831,7 +831,8 @@ grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
 
 static void waiting_for_pick_batches_add_locked(
     call_data *calld, grpc_transport_stream_op_batch *batch) {
-  GPR_ASSERT(calld->waiting_for_pick_batches_count < MAX_WAITING_BATCHES);
+//  GPR_ASSERT(calld->waiting_for_pick_batches_count < MAX_WAITING_BATCHES);
+  GPR_ASSERT(calld->waiting_for_pick_batches_count < 1);
   calld->waiting_for_pick_batches[calld->waiting_for_pick_batches_count++] =
       batch;
 }
@@ -840,10 +841,12 @@ static void waiting_for_pick_batches_fail_locked(grpc_exec_ctx *exec_ctx,
                                                  call_data *calld,
                                                  grpc_error *error) {
   for (size_t i = 0; i < calld->waiting_for_pick_batches_count; ++i) {
+gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->deadline_state.call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, calld->waiting_for_pick_batches[i], GRPC_ERROR_REF(error),
         calld->deadline_state.call_combiner);
   }
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combiner);
   grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
   calld->waiting_for_pick_batches_count = 0;
   GRPC_ERROR_UNREF(error);
@@ -862,6 +865,7 @@ static void waiting_for_pick_batches_resume_locked(grpc_exec_ctx *exec_ctx,
 // FIXME: can we have only one pending batch now?  if so, then this
 // doesn't need to be an array.  otherwise, need to invoke each one in
 // its own call_combiner callback
+gpr_log(GPR_INFO, "RESUMING OP ON CURRENT CALL COMBINER");
     grpc_subchannel_call_process_op(exec_ctx, coe.subchannel_call,
                                     calld->waiting_for_pick_batches[i]);
   }
@@ -1146,9 +1150,11 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
   /* need to recheck that another thread hasn't set the call */
   call_or_error coe = get_call_or_error(calld);
   if (coe.error != GRPC_ERROR_NONE) {
+gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->deadline_state.call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, op, GRPC_ERROR_REF(coe.error),
         calld->deadline_state.call_combiner);
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combiner);
     grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
     goto done;
   }
@@ -1261,9 +1267,11 @@ static void cc_start_transport_stream_op_batch(
   call_or_error coe = get_call_or_error(calld);
   GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
   if (coe.error != GRPC_ERROR_NONE) {
+gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->deadline_state.call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, op, GRPC_ERROR_REF(coe.error),
         calld->deadline_state.call_combiner);
+gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combiner);
     grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
     GPR_TIMER_END("cc_start_transport_stream_op_batch", 0);
     /* early out */
