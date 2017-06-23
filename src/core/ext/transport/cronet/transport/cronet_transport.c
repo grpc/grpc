@@ -47,7 +47,7 @@
   } while (0)
 
 /* TODO (makdharma): Hook up into the wider tracing mechanism */
-int grpc_cronet_trace = 0;
+int grpc_cronet_trace = 1;
 
 enum e_op_result {
   ACTION_TAKEN_WITH_CALLBACK,
@@ -788,8 +788,7 @@ static bool op_can_be_run(grpc_transport_stream_op_batch *curr_op,
       CRONET_LOG(GPR_DEBUG, "Because");
       result = false;
     }
-    if (op_id == OP_RECV_MESSAGE &&
-        stream_state->state_op_done[OP_RECV_MESSAGE]) {
+    if (op_id == OP_RECV_MESSAGE && op_state->state_op_done[OP_RECV_MESSAGE]) {
       CRONET_LOG(GPR_DEBUG, "Because");
       result = false;
     }
