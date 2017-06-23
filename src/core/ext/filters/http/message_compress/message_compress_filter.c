@@ -298,7 +298,7 @@ gpr_log(GPR_INFO, "<== %s(): elem=%p: done=%d", __func__, elem, done);
 static void compress_start_transport_stream_op_batch_inner(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
-gpr_log(GPR_INFO, "==> %s(): op={send_initial_metadata=%d, send_message=%d, send_trailing_metadata=%d, recv_initial_metadata=%d, recv_message=%d, recv_trailing_metadata=%d, cancel_stream=%d, collect_stats=%d}", __func__, op->send_initial_metadata, op->send_message, op->send_trailing_metadata, op->recv_initial_metadata, op->recv_message, op->recv_trailing_metadata, op->cancel_stream, op->collect_stats);
+//gpr_log(GPR_INFO, "==> %s(): op={send_initial_metadata=%d, send_message=%d, send_trailing_metadata=%d, recv_initial_metadata=%d, recv_message=%d, recv_trailing_metadata=%d, cancel_stream=%d, collect_stats=%d}", __func__, op->send_initial_metadata, op->send_message, op->send_trailing_metadata, op->recv_initial_metadata, op->recv_message, op->recv_trailing_metadata, op->cancel_stream, op->collect_stats);
   call_data *calld = elem->call_data;
   // Handle cancel_stream.
   if (op->cancel_stream) {

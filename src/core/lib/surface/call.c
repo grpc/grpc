@@ -594,7 +594,7 @@ static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
   batch->handler_private.extra_arg = call;
   grpc_closure *closure = GRPC_CLOSURE_CREATE(
       execute_batch_in_call_combiner, batch, &call->call_combiner.scheduler);
-gpr_log(GPR_INFO, "EXECUTING BATCH: closure=%p call_combiner=%p", closure, &call->call_combiner);
+gpr_log(GPR_INFO, "EXECUTING BATCH: batch={send_initial_metadata=%d, send_message=%d, send_trailing_metadata=%d, recv_initial_metadata=%d, recv_message=%d, recv_trailing_metadata=%d, cancel_stream=%d, collect_stats=%d}, closure=%p, call_combiner=%p", batch->send_initial_metadata, batch->send_message, batch->send_trailing_metadata, batch->recv_initial_metadata, batch->recv_message, batch->recv_trailing_metadata, batch->cancel_stream, batch->collect_stats, closure, &call->call_combiner);
   GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
 }
 
