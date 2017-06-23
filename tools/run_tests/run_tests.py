@@ -733,10 +733,15 @@ class RubyLanguage(object):
       env['ASAN_OPTIONS'] = 'detect_leaks=1,symbolize=1'
       env['LSAN_OPTIONS'] = 'suppressions=/var/local/git/grpc/tools/ruby_lsan_suppressions.txt'
 
-      return [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby_asan.sh'],
-                                   timeout_seconds=10*60,
-                                   environ=env,
-                                   shortname='ruby-asan-dynamic')]
+      job_specs = []
+      test_cases = subprocess.check_output("find -name '*_spec.rb'".split(' ')).splitlines()
+      for t in test_cases:
+        t = t.strip()
+        job_specs.append(self.config.job_spec(['rspec', t]),
+                                              timeout_seconds=10*60,
+                                              environ=env,
+                                              shortname='%s-ruby-asan-dynamic' % t)
+      return job_specs
 
     tests = [self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
                                   timeout_seconds=10*60,
