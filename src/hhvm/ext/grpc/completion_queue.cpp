@@ -18,7 +18,8 @@
 
 #include "completion_queue.h"
 
-// TODO: Add thread local?
+// TODO: This struct and related functions appread to be used in thread safe ways
+// But someone should double check this
 grpc_completion_queue *completion_queue;
 
 void grpc_hhvm_init_completion_queue() {

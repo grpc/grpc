@@ -41,6 +41,12 @@ class GrpcExtension : public Extension {
   public:
     GrpcExtension() : Extension("grpc", HHVM_GRPC_VERSION) {}
     virtual void moduleInit() {
+      /* Register call error constants */
+      grpc_init();
+
+      grpc_hhvm_init_channel_credentials();
+      grpc_hhvm_init_completion_queue();
+
       HHVM_RC_INT(Grpc\\CALL_OK, GRPC_CALL_OK);
       HHVM_RC_INT(Grpc\\CALL_ERROR, GRPC_CALL_ERROR);
       HHVM_RC_INT(Grpc\\CALL_ERROR_NOT_ON_SERVER, GRPC_CALL_ERROR_NOT_ON_SERVER);
@@ -133,12 +139,6 @@ class GrpcExtension : public Extension {
       Native::registerNativeDataInfo<ChannelCredentialsData>(ChannelCredentialsData::s_className.get());
       Native::registerNativeDataInfo<ChannelData>(ChannelData::s_className.get());
       Native::registerNativeDataInfo<CallData>(CallData::s_className.get());
-
-      /* Register call error constants */
-      grpc_init();
-
-      grpc_hhvm_init_channel_credentials();
-      grpc_hhvm_init_completion_queue();
 
       loadSystemlib();
     }
