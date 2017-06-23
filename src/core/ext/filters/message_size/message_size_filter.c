@@ -135,8 +135,6 @@ gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
                            GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
     gpr_free(message_string);
-gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
-    grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
     return;
   }
   // Inject callback for receiving a message.

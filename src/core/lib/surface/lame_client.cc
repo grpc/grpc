@@ -93,8 +93,6 @@ gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
       exec_ctx, op,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
       calld->call_combiner);
-gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
-  grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
 }
 
 static char *lame_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {

@@ -295,6 +295,14 @@ gpr_log(GPR_INFO, "<== %s(): elem=%p: done=%d", __func__, elem, done);
   return done;
 }
 
+static void fail_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
+                                  grpc_error *ignored) {
+  call_data *calld = arg;
+  grpc_transport_stream_op_batch_finish_with_failure(
+      exec_ctx, calld->send_op, GRPC_ERROR_REF(calld->cancel_error),
+      calld->call_combiner);
+}
+
 static void compress_start_transport_stream_op_batch_inner(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
@@ -307,9 +315,11 @@ static void compress_start_transport_stream_op_batch_inner(
         GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error);
     if (calld->send_op != NULL) {
 gpr_log(GPR_INFO, "FAILING send_message BATCH ON call_combiner=%p", calld->call_combiner);
-      grpc_transport_stream_op_batch_finish_with_failure(
-          exec_ctx, calld->send_op, GRPC_ERROR_REF(calld->cancel_error),
-          calld->call_combiner);
+      GRPC_CLOSURE_SCHED(
+          exec_ctx,
+          GRPC_CLOSURE_CREATE(fail_in_call_combiner, calld,
+                              &calld->call_combiner->scheduler),
+          GRPC_ERROR_REF(calld->cancel_error));
     }
 // FIXME: is this right?
   } else if (calld->cancel_error != GRPC_ERROR_NONE) {
@@ -317,8 +327,6 @@ gpr_log(GPR_INFO, "FAILING current BATCH ON call_combiner=%p", calld->call_combi
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error),
         calld->call_combiner);
-gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
-    grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
     return;
   }
   // Handle send_initial_metadata.
@@ -333,8 +341,6 @@ gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
 gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
       grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error,
                                                          calld->call_combiner);
-gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
-      grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
       return;
     }
     calld->send_initial_metadata_state = has_compression_algorithm

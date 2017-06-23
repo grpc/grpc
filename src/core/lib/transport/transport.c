@@ -226,11 +226,8 @@ gpr_log(GPR_INFO, "SCHEDULING recv_initial_metadata ON call_combiner=%p", call_c
             &call_combiner->scheduler),
         GRPC_ERROR_REF(error));
   }
-gpr_log(GPR_INFO, "SCHEDULING on_complete ON call_combiner=%p", call_combiner);
-  GRPC_CLOSURE_SCHED(exec_ctx,
-                     GRPC_CLOSURE_CREATE(run_in_call_combiner, op->on_complete,
-                                         &call_combiner->scheduler),
-                     error);
+gpr_log(GPR_INFO, "SCHEDULING on_complete ON CURRENT CALL_COMBINER");
+  GRPC_CLOSURE_SCHED(exec_ctx, op->on_complete, error);
   if (op->cancel_stream) {
     GRPC_ERROR_UNREF(op->payload->cancel_stream.cancel_error);
   }
