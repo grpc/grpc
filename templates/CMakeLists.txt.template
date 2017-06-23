@@ -73,6 +73,11 @@
   set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
   project(<%text>${PACKAGE_NAME}</%text> C CXX)
+  
+  set(gRPC_INSTALL_BINDIR "<%text>${CMAKE_INSTALL_PREFIX}</%text>/bin" CACHE PATH "Installation directory for executables")
+  set(gRPC_INSTALL_LIBDIR "<%text>${CMAKE_INSTALL_PREFIX}</%text>/lib" CACHE PATH "Installation directory for libraries")
+  set(gRPC_INSTALL_INCLUDEDIR "<%text>${CMAKE_INSTALL_PREFIX}</%text>/include" CACHE PATH "Installation directory for headers")
+  set(gRPC_INSTALL_CMAKEDIR "<%text>${CMAKE_INSTALL_PREFIX}/lib/cmake/${PACKAGE_NAME}</%text>" CACHE PATH "Installation directory for cmake config files")
 
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
@@ -335,11 +340,6 @@
     set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
   endif()
 
-  include(GNUInstallDirs)
-  if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
-    set(CMAKE_INSTALL_CMAKEDIR "<%text>${CMAKE_INSTALL_LIBDIR}</%text>/cmake/gRPC")
-  endif()
-
   # Create directory for generated .proto files
   set(_gRPC_PROTO_GENS_DIR <%text>${CMAKE_BINARY_DIR}/gens</%text>)
   file(MAKE_DIRECTORY <%text>${_gRPC_PROTO_GENS_DIR}</%text>)
@@ -500,7 +500,7 @@
     )
     if (gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
-        DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text> OPTIONAL
+        DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text> OPTIONAL
       )
     endif()
   endif()
@@ -554,7 +554,7 @@
     string(REPLACE "include/" "" _path <%text>${_hdr}</%text>)
     get_filename_component(_path <%text>${_path}</%text> PATH)
     install(FILES <%text>${_hdr}</%text>
-      DESTINATION "<%text>${CMAKE_INSTALL_INCLUDEDIR}/${_path}</%text>"
+      DESTINATION "<%text>${gRPC_INSTALL_INCLUDEDIR}/${_path}</%text>"
     )
   endforeach()
   % endif
@@ -622,16 +622,16 @@
   <%def name="cc_install(tgt)">
   if (gRPC_INSTALL)
     install(TARGETS ${tgt.name} EXPORT gRPCTargets
-      RUNTIME DESTINATION <%text>${CMAKE_INSTALL_BINDIR}</%text>
-      LIBRARY DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text>
-      ARCHIVE DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text>
+      RUNTIME DESTINATION <%text>${gRPC_INSTALL_BINDIR}</%text>
+      LIBRARY DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
+      ARCHIVE DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
     )
   endif()
   </%def>
 
   if (gRPC_INSTALL)
     install(EXPORT gRPCTargets
-      DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
+      DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
       NAMESPACE gRPC::
     )
   endif()
@@ -640,6 +640,6 @@
     configure_file(tools/cmake/<%text>${_config}</%text>.cmake.in
       <%text>${_config}</%text>.cmake @ONLY)
     install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/${_config}</%text>.cmake
-      DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
+      DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
     )
   endforeach()
