@@ -37,4 +37,4 @@ extern grpc_tracer_flag grpc_trace_alarm_refcount;
 
 #endif /* defined(NDEBUG) */
 
-#endif  // GRPC_CORE_LIB_SURFACE_ALARM_INTERNAL_H
+#endif /* GRPC_CORE_LIB_SURFACE_ALARM_INTERNAL_H */
