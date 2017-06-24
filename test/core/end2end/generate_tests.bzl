@@ -79,6 +79,7 @@ END2END_TESTS = {
     'cancel_after_accept': test_options(),
     'cancel_after_client_done': test_options(),
     'cancel_after_invoke': test_options(),
+    'cancel_after_round_trip': test_options(),
     'cancel_before_invoke': test_options(),
     'cancel_in_a_vacuum': test_options(),
     'cancel_with_status': test_options(),
