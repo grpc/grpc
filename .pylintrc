@@ -31,9 +31,8 @@ notes=FIXME,XXX
 # disable=cyclic-import suppressions.
 #TODO: Enable too-many-instance-attributes
 #TODO: Enable too-many-lines
-#TODO: Enable redefined-variable-type
 #TODO: Enable import-error
 #TODO: Enable useless-else-on-loop
 #TODO: Enable too-many-nested-blocks
 
-disable=missing-docstring,too-few-public-methods,no-init,duplicate-code,invalid-name,locally-disabled,protected-access,no-name-in-module,wrong-import-order,cyclic-import,too-many-instance-attributes,too-many-lines,redefined-variable-type,import-error,useless-else-on-loop,too-many-nested-blocks
+disable=missing-docstring,too-few-public-methods,no-init,duplicate-code,invalid-name,locally-disabled,protected-access,no-name-in-module,wrong-import-order,cyclic-import,too-many-instance-attributes,too-many-lines,import-error,useless-else-on-loop,too-many-nested-blocks
