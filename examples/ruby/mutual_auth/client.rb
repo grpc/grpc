@@ -47,7 +47,7 @@ require 'helloworld_services_pb'
 def load_test_certs
   this_dir = File.expand_path(File.dirname(__FILE__))
   cert_dir = File.join(this_dir, 'client_certs')
-  files = ['trusted_server_roots.pem', 'client.key', 'client.crt']
+  files = ['trusted_server_roots.pem', 'client.key', 'client.pem']
   files.map { |f| File.open(File.join(cert_dir, f)).read }
 end
 

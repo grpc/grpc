@@ -70,16 +70,23 @@ class GreeterServer < Helloworld::Greeter::Service
 end
 
 # loads the certificates for the test server.
+# Returns [trusted root certs for client auth, server private key, server cert]
 def load_test_certs
   this_dir = File.expand_path(File.dirname(__FILE__))
-  cert_dir = File.join(this_dir, 'server_certs')
-  files = ['trusted_client_roots.pem', 'server1.key', 'server1.pem']
-  files.map { |f| File.open(File.join(cert_dir, f)).read }
+  client_cert_dir = File.join(this_dir, 'client_certs')
+  server_cert_dir = File.join(this_dir, 'server_certs')
+  files = [File.join(client_cert_dir, 'ca.pem'),
+           File.join(server_cert_dir, 'server1.key'),
+           File.join(server_cert_dir, 'server1.pem')]
+  files.map { |f| File.open(f).read }
 end
 
 # creates ServerCredentials from the test certificates.
 def test_server_creds
   certs = load_test_certs
+  # Pass the set of trusted roots for client certification and the server
+  # certificate with its private key. Force client authentication by passing
+  # true as the final argument.
   GRPC::Core::ServerCredentials.new(
       certs[0], [{private_key: certs[1], cert_chain: certs[2]}], true)
 end
