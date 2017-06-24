@@ -25,7 +25,6 @@ notes=FIXME,XXX
 #TODO: Enable locally-disabled
 #TODO: Enable protected-access
 #TODO: Enable no-name-in-module
-#TODO: Enable wrong-import-order
 # TODO(https://github.com/PyCQA/pylint/issues/59#issuecomment-283774279):
 # enable cyclic-import after a 1.7-or-later pylint release that recognizes our
 # disable=cyclic-import suppressions.
@@ -35,4 +34,4 @@ notes=FIXME,XXX
 #TODO: Enable useless-else-on-loop
 #TODO: Enable too-many-nested-blocks
 
-disable=missing-docstring,too-few-public-methods,no-init,duplicate-code,invalid-name,locally-disabled,protected-access,no-name-in-module,wrong-import-order,cyclic-import,too-many-instance-attributes,too-many-lines,import-error,useless-else-on-loop,too-many-nested-blocks
+disable=missing-docstring,too-few-public-methods,no-init,duplicate-code,invalid-name,locally-disabled,protected-access,no-name-in-module,cyclic-import,too-many-instance-attributes,too-many-lines,import-error,useless-else-on-loop,too-many-nested-blocks
