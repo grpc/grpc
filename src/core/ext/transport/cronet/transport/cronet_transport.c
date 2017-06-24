@@ -799,11 +799,13 @@ static bool op_can_be_run(grpc_transport_stream_op_batch *curr_op,
     }
     /* ON_COMPLETE can be processed if one of the following conditions is met:
      * 1. the stream failed
-     * 2. the stream is cancelled, and the callback is received, or
-     * 3. the stream is cancelled, and the stream is never started */
+     * 2. the stream is cancelled, and the callback is received
+     * 3. the stream succeeded before cancel is effective
+     * 4. the stream is cancelled, and the stream is never started */
     if (op_id == OP_ON_COMPLETE &&
         !(stream_state->state_callback_received[OP_FAILED] ||
           stream_state->state_callback_received[OP_CANCELED] ||
+          stream_state->state_callback_received[OP_SUCCEEDED] ||
           !stream_state->state_op_done[OP_SEND_INITIAL_METADATA])) {
       CRONET_LOG(GPR_DEBUG, "Because");
       result = false;
