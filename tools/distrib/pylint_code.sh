@@ -19,15 +19,16 @@ set -ex
 cd "$(dirname "$0")/../.."
 
 DIRS=(
-  'src/python/grpcio/grpc'
-  'src/python/grpcio_reflection/grpc_reflection'
-  'src/python/grpcio_health_checking/grpc_health'
+    'src/python/grpcio/grpc'
+    'src/python/grpcio_health_checking/grpc_health'
+    'src/python/grpcio_reflection/grpc_reflection'
 )
 
 VIRTUALENV=python_pylint_venv
 
 virtualenv $VIRTUALENV
 PYTHON=$(realpath $VIRTUALENV/bin/python)
+$PYTHON -m pip install --upgrade pip
 $PYTHON -m pip install pylint==1.6.5
 
 for dir in "${DIRS[@]}"; do
