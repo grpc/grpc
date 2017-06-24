@@ -20,6 +20,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -329,4 +330,51 @@ tsi_result tsi_construct_peer(size_t property_count, tsi_peer *peer) {
     peer->property_count = property_count;
   }
   return TSI_OK;
+}
+
+/* --- tsi_plugin_func implementation --- */
+
+typedef struct tsi_plugin_func_list tsi_plugin_func_list;
+
+static tsi_plugin_func_list *tsi_destroy_list = NULL;
+static gpr_once tsi_once_var = GPR_ONCE_INIT;
+static gpr_mu tsi_mu;
+
+typedef struct tsi_plugin_func_node {
+  void (*func)(void);
+  struct tsi_plugin_func_node *next;
+} tsi_plugin_func_node;
+
+struct tsi_plugin_func_list {
+  tsi_plugin_func_node *head;
+};
+
+void tsi_register_destroy_plugin(void (*destroy)(void)) {
+  gpr_mu_lock(&tsi_mu);
+  if (tsi_destroy_list == NULL) {
+    tsi_destroy_list = gpr_zalloc(sizeof(*tsi_destroy_list));
+  }
+  /* Create a tsi_plugin_func_node instance and add to tsi_destroy_list. */
+  tsi_plugin_func_node *node = gpr_zalloc(sizeof(*node));
+  node->func = destroy;
+  node->next = tsi_destroy_list->head;
+  tsi_destroy_list->head = node;
+  gpr_mu_unlock(&tsi_mu);
+}
+
+/* --- tsi_init/tsi_destroy implementation --- */
+
+static void init_mu() { gpr_mu_init(&tsi_mu); }
+
+void tsi_init() { gpr_once_init(&tsi_once_var, init_mu); }
+
+void tsi_destroy() {
+  if (tsi_destroy_list == NULL) {
+    return;
+  }
+  tsi_plugin_func_node *node = tsi_destroy_list->head;
+  while (node != NULL) {
+    node->func();
+    node = node->next;
+  }
 }

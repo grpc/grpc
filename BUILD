@@ -1276,12 +1276,14 @@ grpc_cc_library(
     srcs = [
         "src/core/tsi/fake_transport_security.c",
         "src/core/tsi/ssl_transport_security.c",
+        "src/core/tsi/gts_transport_security.c",
         "src/core/tsi/transport_security.c",
         "src/core/tsi/transport_security_adapter.c",
     ],
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
+        "src/core/tsi/gts_transport_security.h",
         "src/core/tsi/ssl_types.h",
         "src/core/tsi/transport_security.h",
         "src/core/tsi/transport_security_adapter.h",
