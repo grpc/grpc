@@ -571,11 +571,13 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         GPR_ASSERT(sd->subchannel_list == p->latest_pending_subchannel_list);
         GPR_ASSERT(!sd->subchannel_list->shutting_down);
         if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
+          const unsigned long num_subchannels =
+              p->subchannel_list != NULL ? p->subchannel_list->num_subchannels
+                                         : 0;
           gpr_log(GPR_DEBUG,
                   "[RR %p] phasing out subchannel list %p (size %lu) in favor "
                   "of %p (size %lu)",
-                  (void *)p, (void *)p->subchannel_list,
-                  (unsigned long)p->subchannel_list->num_subchannels,
+                  (void *)p, (void *)p->subchannel_list, num_subchannels,
                   (void *)sd->subchannel_list,
                   (unsigned long)sd->subchannel_list->num_subchannels);
         }
