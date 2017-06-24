@@ -138,6 +138,8 @@ struct round_robin_lb_policy {
   size_t num_ready;
   /** how many subchannels are in state TRANSIENT_FAILURE */
   size_t num_transient_failures;
+  /** how many subchannels are in state SHUTDOWN */
+  size_t num_shutdown;
   /** how many subchannels are in state IDLE */
   size_t num_idle;
 
@@ -381,6 +383,8 @@ static void update_state_counters_locked(subchannel_data *sd) {
     ++p->num_ready;
   } else if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     ++p->num_transient_failures;
+  } else if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
+    ++p->num_shutdown;
   } else if (sd->curr_connectivity_state == GRPC_CHANNEL_IDLE) {
     ++p->num_idle;
   }
@@ -421,7 +425,7 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
                                 GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
                                 "rr_connecting");
     return GRPC_CHANNEL_CONNECTING;
-  } else if (p->num_subchannels == 0) { /* 3) SHUTDOWN */
+  } else if (p->num_shutdown == p->num_subchannels) { /* 3) SHUTDOWN */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
                                 "rr_shutdown");
