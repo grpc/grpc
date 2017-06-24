@@ -47,7 +47,7 @@
   } while (0)
 
 /* TODO (makdharma): Hook up into the wider tracing mechanism */
-int grpc_cronet_trace = 1;
+int grpc_cronet_trace = 0;
 
 enum e_op_result {
   ACTION_TAKEN_WITH_CALLBACK,
@@ -797,8 +797,10 @@ static bool op_can_be_run(grpc_transport_stream_op_batch *curr_op,
       CRONET_LOG(GPR_DEBUG, "Because");
       result = false;
     }
-    /* If cancelled, we need to wait for the cancel callback (if call is already
-     * started) */
+    /* ON_COMPLETE can be processed if one of the following conditions is met:
+     * 1. the stream failed
+     * 2. the stream is cancelled, and the callback is received, or
+     * 3. the stream is cancelled, and the stream is never started */
     if (op_id == OP_ON_COMPLETE &&
         !(stream_state->state_callback_received[OP_FAILED] ||
           stream_state->state_callback_received[OP_CANCELED] ||
