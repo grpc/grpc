@@ -405,7 +405,7 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
    *    CHECK: sd->curr_connectivity_state == CONNECTING.
    *
    * 3) RULE: ALL subchannels are SHUTDOWN => policy is SHUTDOWN.
-   *    CHECK: p->num_subchannels = 0.
+   *    CHECK: p->num_shutdown == p->num_subchannels.
    *
    * 4) RULE: ALL subchannels are TRANSIENT_FAILURE => policy is
    *    TRANSIENT_FAILURE.
@@ -427,14 +427,13 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
     return GRPC_CHANNEL_CONNECTING;
   } else if (p->num_shutdown == p->num_subchannels) { /* 3) SHUTDOWN */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
-                                "rr_shutdown");
+                                GRPC_CHANNEL_SHUTDOWN, error, "rr_shutdown");
     return GRPC_CHANNEL_SHUTDOWN;
   } else if (p->num_transient_failures ==
              p->num_subchannels) { /* 4) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                GRPC_ERROR_REF(error), "rr_transient_failure");
+                                GRPC_CHANNEL_TRANSIENT_FAILURE, error,
+                                "rr_transient_failure");
     return GRPC_CHANNEL_TRANSIENT_FAILURE;
   } else if (p->num_idle == p->num_subchannels) { /* 5) IDLE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
