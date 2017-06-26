@@ -379,7 +379,6 @@ grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle,
 #endif
 
   grpc_exec_ctx_finish(&exec_ctx);
-
   return &tcp->base;
 }
 
