@@ -251,10 +251,11 @@
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil path:nil];
+  return [self initWithHost:nil serverName:nil path:nil];
 }
 
 - (instancetype)initWithHost:(NSString *)host
+                  serverName:(nullable NSString *)serverName
                         path:(NSString *)path {
   if (!path || !host) {
     [NSException raise:NSInvalidArgumentException
@@ -267,7 +268,7 @@
     // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
 
-    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path completionQueue:_queue];
+    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path serverName:serverName completionQueue:_queue];
     if (_call == NULL) {
       return nil;
     }

@@ -179,6 +179,11 @@ extern id const kGRPCTrailersKey;
 @interface GRPCCall : GRXWriter
 
 /**
+ * The server name for the RPC. If nil, the host name of the service object will be used instead.
+ */
+@property (atomic, readwrite) NSString *serverName;
+
+/**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of
  * NSMutableDictionary's interface. It will become a NSMutableDictionary later on.
  * The keys of this container are the header names, which per the HTTP standard are case-
