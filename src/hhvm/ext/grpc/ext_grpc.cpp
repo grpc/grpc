@@ -143,6 +143,11 @@ class GrpcExtension : public Extension {
       loadSystemlib();
     }
 
+    virtual void moduleShutdown() {
+      grpc_hhvm_shutdown_completion_queue();
+      grpc_shutdown();
+    }
+
 } s_grpc_extension;
 
 HHVM_GET_MODULE(grpc);

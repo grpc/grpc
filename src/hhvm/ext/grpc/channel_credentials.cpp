@@ -34,10 +34,13 @@
 
 namespace HPHP {
 
-IMPLEMENT_THREAD_LOCAL(DefaultPemRootCerts, DefaultPemRootCerts::tl_obj);
+ReadWriteMutex s_default_pem_root_certs_mutex;
+
+static char *default_pem_root_certs = NULL;
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(char **pem_root_certs) {
-  *pem_root_certs = DefaultPemRootCerts::tl_obj.get()->getCerts();
+  ReadLock l(s_default_pem_root_certs_mutex);
+  *pem_root_certs = default_pem_root_certs;
   if (*pem_root_certs == NULL) {
     return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   }
@@ -48,15 +51,6 @@ Class* ChannelCredentialsData::s_class = nullptr;
 const StaticString ChannelCredentialsData::s_className("Grpc\\ChannelCredentials");
 
 IMPLEMENT_GET_CLASS(ChannelCredentialsData);
-
-DefaultPemRootCerts::DefaultPemRootCerts() {}
-
-char * DefaultPemRootCerts::getCerts() { return default_pem_root_certs; }
-void DefaultPemRootCerts::setCerts(const String& pem_roots) {
-  default_pem_root_certs = (char *) gpr_malloc((pem_roots.length() + 1) * sizeof(char));
-  memcpy(default_pem_root_certs, pem_roots.c_str(), pem_roots.length() + 1);
-}
-
 
 ChannelCredentialsData::ChannelCredentialsData() {}
 ChannelCredentialsData::~ChannelCredentialsData() { sweep(); }
@@ -78,7 +72,9 @@ grpc_channel_credentials* ChannelCredentialsData::getWrapped() {
 
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
   const String& pem_roots) {
-  DefaultPemRootCerts::tl_obj.get()->setCerts(pem_roots);
+  WriteLock l(s_default_pem_root_certs_mutex);
+  default_pem_root_certs = (char *) gpr_malloc((pem_roots.length() + 1) * sizeof(char));
+  memcpy(default_pem_root_certs, pem_roots.c_str(), pem_roots.length() + 1);
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault) {
