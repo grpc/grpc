@@ -415,33 +415,35 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
    *    CHECK: p->num_idle == p->num_subchannels.
    */
   round_robin_lb_policy *p = sd->policy;
+  grpc_connectivity_state new_state = sd->curr_connectivity_state;
   if (p->num_ready > 0) { /* 1) READY */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_READY,
                                 GRPC_ERROR_NONE, "rr_ready");
-    return GRPC_CHANNEL_READY;
+    new_state = GRPC_CHANNEL_READY;
   } else if (sd->curr_connectivity_state ==
              GRPC_CHANNEL_CONNECTING) { /* 2) CONNECTING */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
                                 "rr_connecting");
-    return GRPC_CHANNEL_CONNECTING;
+    new_state = GRPC_CHANNEL_CONNECTING;
   } else if (p->num_shutdown == p->num_subchannels) { /* 3) SHUTDOWN */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                GRPC_CHANNEL_SHUTDOWN, error, "rr_shutdown");
-    return GRPC_CHANNEL_SHUTDOWN;
+                                GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
+                                "rr_shutdown");
+    new_state = GRPC_CHANNEL_SHUTDOWN;
   } else if (p->num_transient_failures ==
              p->num_subchannels) { /* 4) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                GRPC_CHANNEL_TRANSIENT_FAILURE, error,
-                                "rr_transient_failure");
-    return GRPC_CHANNEL_TRANSIENT_FAILURE;
+                                GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                GRPC_ERROR_REF(error), "rr_transient_failure");
+    new_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   } else if (p->num_idle == p->num_subchannels) { /* 5) IDLE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
                                 GRPC_ERROR_NONE, "rr_idle");
-    return GRPC_CHANNEL_IDLE;
+    new_state = GRPC_CHANNEL_IDLE;
   }
-  /* no change */
-  return sd->curr_connectivity_state;
+  GRPC_ERROR_UNREF(error);
+  return new_state;
 }
 
 static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -557,8 +559,9 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     grpc_connected_subchannel_ping(exec_ctx, target, closure);
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, target, "rr_picked");
   } else {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                              "Round Robin not connected"));
+    grpc_closure_sched(
+        exec_ctx, closure,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Round Robin not connected"));
   }
 }
 
