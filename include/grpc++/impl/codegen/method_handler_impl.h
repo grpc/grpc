@@ -141,6 +141,9 @@ class ServerStreamingHandler : public MethodHandler {
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
+    if (param.server_context->has_hanging_ops_) {
+      param.call->cq()->Pluck(&param.server_context->hanging_ops_);
+    }
     param.call->cq()->Pluck(&ops);
   }
 

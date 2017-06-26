@@ -25,6 +25,7 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 
+#include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
@@ -272,6 +273,8 @@ class ServerContext {
 
   uint32_t initial_metadata_flags() const { return 0; }
 
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> hanging_ops_;
+  bool has_hanging_ops_;
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
