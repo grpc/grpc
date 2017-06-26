@@ -22,10 +22,8 @@ mkdir solution & cd solution
 cmake -G "%generator%" -Dprotobuf_BUILD_TESTS=OFF ../.. || goto :error
 endlocal
 
-call vsprojects/build_plugins.bat || goto :error
-
-xcopy /Y third_party\protobuf\cmake\build\solution\Release\protoc.exe %ARTIFACTS_OUT%\ || goto :error
-xcopy /Y vsprojects\Release\*_plugin.exe %ARTIFACTS_OUT%\ || xcopy /Y vsprojects\x64\Release\*_plugin.exe %ARTIFACTS_OUT%\ || goto :error
+xcopy /Y cmake\build\third_party\protobuf\Release\protoc.exe %ARTIFACTS_OUT%\ || goto :error
+xcopy /Y cmake\build\Release\*_plugin.exe %ARTIFACTS_OUT%\ || goto :error
 
 goto :EOF
 
