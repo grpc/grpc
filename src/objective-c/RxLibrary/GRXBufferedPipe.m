@@ -96,13 +96,11 @@
 
     switch (newState) {
       case GRXWriterStateFinished:
+        self.writeable = nil;
         if (_state == GRXWriterStatePaused) {
-          dispatch_resume(_writeQueue);
+          _writeQueue = nil;
         }
         _state = newState;
-        // Per GRXWriter's contract, setting the state to Finished manually means one doesn't wish the
-        // writeable to be messaged anymore.
-        _writeable = nil;
         return;
       case GRXWriterStatePaused:
         if (_state == GRXWriterStateStarted) {
@@ -124,13 +122,12 @@
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
   _state = GRXWriterStateStarted;
-  _writeable = writeable;
+  self.writeable = writeable;
   dispatch_resume(_writeQueue);
 }
 
 - (void)finishWithError:(NSError *)errorOrNil {
   id<GRXWriteable> writeable = self.writeable;
-  self.writeable = nil;
   self.state = GRXWriterStateFinished;
   dispatch_async(_writeQueue, ^{
     [writeable writesFinishedWithError:errorOrNil];
