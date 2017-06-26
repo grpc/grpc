@@ -21,6 +21,10 @@
 
 #define WEAK_REF_BITS 16
 
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_lb_policy_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
+
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable,
                          grpc_combiner *combiner) {
@@ -30,7 +34,7 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
   policy->combiner = GRPC_COMBINER_REF(combiner, "lb_policy");
 }
 
-#ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define REF_FUNC_EXTRA_ARGS , const char *file, int line, const char *reason
 #define REF_MUTATE_EXTRA_ARGS REF_FUNC_EXTRA_ARGS, const char *purpose
 #define REF_FUNC_PASS_ARGS(new_reason) , file, line, new_reason
@@ -46,11 +50,12 @@ static gpr_atm ref_mutate(grpc_lb_policy *c, gpr_atm delta,
                           int barrier REF_MUTATE_EXTRA_ARGS) {
   gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta)
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
-#ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "LB_POLICY: 0x%" PRIxPTR " %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR
-          " [%s]",
-          (intptr_t)c, purpose, old_val, old_val + delta, reason);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_lb_policy_refcount)) {
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "LB_POLICY: 0x%p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
+            purpose, old_val, old_val + delta, reason);
+  }
 #endif
   return old_val;
 }

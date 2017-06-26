@@ -236,7 +236,7 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_stack *call_stack,
                                                 grpc_polling_entity *pollent);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_CALL_STACK_REF(call_stack, reason) \
   grpc_stream_ref(&(call_stack)->refcount, reason)
 #define GRPC_CALL_STACK_UNREF(exec_ctx, call_stack, reason) \

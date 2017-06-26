@@ -62,7 +62,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
 void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_call_internal_ref(grpc_call *call, const char *reason);
 void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *call,
                               const char *reason);

@@ -69,16 +69,18 @@ static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   gpr_free(tcp);
 }
 
-/*#define GRPC_TCP_REFCOUNT_DEBUG*/
-#ifdef GRPC_TCP_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define TCP_UNREF(exec_ctx, tcp, reason) \
   tcp_unref((exec_ctx), (tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
                       const char *reason, const char *file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "TCP unref %p : %s %" PRIiPTR " -> %" PRIiPTR, tcp, reason,
-          tcp->refcount.count, tcp->refcount.count - 1);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
+            val - 1);
+  }
   if (gpr_unref(&tcp->refcount)) {
     tcp_free(exec_ctx, tcp);
   }
@@ -86,9 +88,12 @@ static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 
 static void tcp_ref(grpc_tcp *tcp, const char *reason, const char *file,
                     int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "TCP   ref %p : %s %" PRIiPTR " -> %" PRIiPTR, tcp, reason,
-          tcp->refcount.count, tcp->refcount.count + 1);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
+            val + 1);
+  }
   gpr_ref(&tcp->refcount);
 }
 #else

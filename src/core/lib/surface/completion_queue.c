@@ -38,6 +38,7 @@
 grpc_tracer_flag grpc_trace_operation_failures = GRPC_TRACER_INITIALIZER(false);
 #ifndef NDEBUG
 grpc_tracer_flag grpc_trace_pending_tags = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_cq_refcount = GRPC_TRACER_INITIALIZER(false);
 #endif
 
 typedef struct {
@@ -437,12 +438,16 @@ int grpc_get_cq_poll_num(grpc_completion_queue *cc) {
   return cur_num_polls;
 }
 
-#ifdef GRPC_CQ_REF_COUNT_DEBUG
+#ifndef NDEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
                           const char *file, int line) {
   cq_data *cqd = &cc->data;
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p   ref %d -> %d %s", cc,
-          (int)cqd->owning_refs.count, (int)cqd->owning_refs.count + 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_cq_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&cqd->owning_refs.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "CQ:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", cc, val, val + 1,
+            reason);
+  }
 #else
 void grpc_cq_internal_ref(grpc_completion_queue *cc) {
   cq_data *cqd = &cc->data;
@@ -456,12 +461,16 @@ static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_CQ_INTERNAL_UNREF(exec_ctx, cc, "pollset_destroy");
 }
 
-#ifdef GRPC_CQ_REF_COUNT_DEBUG
-void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason,
-                            const char *file, int line) {
+#ifndef NDEBUG
+void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
+                            const char *reason, const char *file, int line) {
   cq_data *cqd = &cc->data;
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p unref %d -> %d %s", cc,
-          (int)cqd->owning_refs.count, (int)cqd->owning_refs.count - 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_cq_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&cqd->owning_refs.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "CQ:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", cc, val, val - 1,
+            reason);
+  }
 #else
 void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx,
                             grpc_completion_queue *cc) {

@@ -22,6 +22,10 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
+#ifndef NDEBUG
+extern grpc_tracer_flag grpc_trace_auth_context_refcount;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,7 +54,7 @@ struct grpc_auth_context {
 grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained);
 
 /* Refcounting. */
-#ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_AUTH_CONTEXT_REF(p, r) \
   grpc_auth_context_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_AUTH_CONTEXT_UNREF(p, r) \

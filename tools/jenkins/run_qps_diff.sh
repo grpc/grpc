@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2017 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,27 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+#
+# This script is invoked by Jenkins and runs a diff on the qps drivers
 set -ex
 
-# change to root directory
-cd "$(dirname "$0")/../.."
+# Enter the gRPC repo root
+cd $(dirname $0)/../..
 
-DIRS=(
-    'src/python/grpcio/grpc'
-    'src/python/grpcio_health_checking/grpc_health'
-    'src/python/grpcio_reflection/grpc_reflection'
-)
-
-VIRTUALENV=python_pylint_venv
-
-virtualenv $VIRTUALENV
-PYTHON=$(realpath $VIRTUALENV/bin/python)
-$PYTHON -m pip install --upgrade pip
-$PYTHON -m pip install pylint==1.6.5
-
-for dir in "${DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" || exit $?
-done
-
-exit 0
+tools/run_tests/start_port_server.py
+tools/profiling/qps/qps_diff.py -d origin/$ghprbTargetBranch 
