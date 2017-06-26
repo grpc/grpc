@@ -434,7 +434,6 @@ static void update_state_counters_locked(subchannel_data *sd) {
     GPR_ASSERT(subchannel_list->num_idle > 0);
     --subchannel_list->num_idle;
   }
-
   if (sd->curr_connectivity_state == GRPC_CHANNEL_READY) {
     ++subchannel_list->num_ready;
   } else if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
