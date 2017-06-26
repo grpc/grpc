@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -1110,6 +1095,18 @@ describe('Other conditions', function() {
         done();
       });
     });
+    it('after the call has fully completed', function(done) {
+      var peer;
+      var call = client.unary({error: false}, function(err, data) {
+        assert.ifError(err);
+        setImmediate(function() {
+          assert.strictEqual(peer, call.getPeer());
+          done();
+        });
+      });
+      peer = call.getPeer();
+      assert.strictEqual(typeof peer, 'string');
+    });
   });
 });
 describe('Call propagation', function() {
@@ -1351,5 +1348,65 @@ describe('Cancelling surface client', function() {
       done();
     });
     call.cancel();
+  });
+  it('Should be idempotent', function(done) {
+    var call = client.div({'divisor': 0, 'dividend': 0}, function(err, resp) {
+      assert.strictEqual(err.code, grpc.status.CANCELLED);
+      // Call asynchronously to try cancelling after call is fully completed
+      setImmediate(function() {
+        assert.doesNotThrow(function() {
+          call.cancel();
+        });
+        done();
+      });
+    });
+    call.cancel();
+  });
+});
+describe('Client reconnect', function() {
+  var server;
+  var Client;
+  var client;
+  var port;
+  beforeEach(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
+    var echo_service = test_proto.lookup('EchoService');
+    Client = grpc.loadObject(echo_service);
+    server = new grpc.Server();
+    server.addService(Client.service, {
+      echo: function(call, callback) {
+        callback(null, call.request);
+      }
+    });
+    port = server.bind('localhost:0', server_insecure_creds);
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
+    server.start();
+  });
+  afterEach(function() {
+    server.forceShutdown();
+  });
+  it('should reconnect after server restart', function(done) {
+    client.echo({value: 'test value', value2: 3}, function(error, response) {
+      assert.ifError(error);
+      assert.deepEqual(response, {value: 'test value', value2: 3});
+      server.tryShutdown(function() {
+        server = new grpc.Server();
+        server.addService(Client.service, {
+          echo: function(call, callback) {
+            callback(null, call.request);
+          }
+        });
+        server.bind('localhost:' + port, server_insecure_creds);
+        server.start();
+        client.echo(undefined, function(error, response) {
+          if (error) {
+            console.log(error);
+          }
+          assert.ifError(error);
+          assert.deepEqual(response, {value: '', value2: 0});
+          done();
+        });
+      });
+    });
   });
 });

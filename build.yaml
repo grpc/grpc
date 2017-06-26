@@ -14,7 +14,7 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 4.0.0-dev
   g_stands_for: gregarious
-  version: 1.4.0-dev
+  version: 1.5.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -99,7 +99,6 @@ filegroups:
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/spinlock.h
-  - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
   - src/core/lib/support/thd_internal.h
@@ -130,7 +129,6 @@ filegroups:
   - src/core/lib/support/log_windows.c
   - src/core/lib/support/mpscq.c
   - src/core/lib/support/murmur_hash.c
-  - src/core/lib/support/stack_lockfree.c
   - src/core/lib/support/string.c
   - src/core/lib/support/string_posix.c
   - src/core/lib/support/string_util_windows.c
@@ -254,9 +252,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_cv.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/iomgr/workqueue.h
-  - src/core/lib/iomgr/workqueue_uv.h
-  - src/core/lib/iomgr/workqueue_windows.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_common.h
   - src/core/lib/json/json_reader.h
@@ -375,8 +370,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_nospecial.c
   - src/core/lib/iomgr/wakeup_fd_pipe.c
   - src/core/lib/iomgr/wakeup_fd_posix.c
-  - src/core/lib/iomgr/workqueue_uv.c
-  - src/core/lib/iomgr/workqueue_windows.c
   - src/core/lib/json/json.c
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
@@ -523,6 +516,7 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - nanopb
+  - grpc_resolver_fake
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
@@ -544,6 +538,7 @@ filegroups:
   - grpc_secure
   - grpc_client_channel
   - nanopb
+  - grpc_resolver_fake
 - name: grpc_lb_policy_pick_first
   src:
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
@@ -592,6 +587,7 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c
   plugin: grpc_resolver_dns_ares
   uses:
   - grpc_base
@@ -600,6 +596,15 @@ filegroups:
   src:
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
   plugin: grpc_resolver_dns_native
+  uses:
+  - grpc_base
+  - grpc_client_channel
+- name: grpc_resolver_fake
+  headers:
+  - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
+  src:
+  - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c
+  plugin: grpc_resolver_fake
   uses:
   - grpc_base
   - grpc_client_channel
@@ -673,8 +678,8 @@ filegroups:
 - name: grpc_test_util_base
   build: test
   headers:
+  - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - test/core/end2end/cq_verifier.h
-  - test/core/end2end/fake_resolver.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
@@ -689,8 +694,8 @@ filegroups:
   - test/core/util/slice_splitter.h
   - test/core/util/trickle_endpoint.h
   src:
+  - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c
   - test/core/end2end/cq_verifier.c
-  - test/core/end2end/fake_resolver.c
   - test/core/end2end/fixtures/http_proxy_fixture.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
@@ -1030,6 +1035,7 @@ filegroups:
   - include/grpc++/test/server_context_test_spouse.h
   deps:
   - grpc++
+  - grpc
 libs:
 - name: gpr
   build: all
@@ -1069,6 +1075,7 @@ libs:
   - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
+  - grpc_resolver_fake
   - grpc_load_reporting
   - grpc_secure
   - census
@@ -1168,6 +1175,7 @@ libs:
   - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
+  - grpc_resolver_fake
   - grpc_load_reporting
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
@@ -1278,6 +1286,7 @@ libs:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
   - grpc++
+  - grpc
   filegroups:
   - grpc++_reflection_proto
   - grpc++_config_proto
@@ -1293,6 +1302,7 @@ libs:
   - src/cpp/ext/proto_server_reflection_plugin.cc
   deps:
   - grpc++
+  - grpc
   filegroups:
   - grpc++_reflection_proto
 - name: grpc++_test_config
@@ -1326,6 +1336,7 @@ libs:
   deps:
   - grpc++
   - grpc_test_util
+  - grpc
   filegroups:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
@@ -1383,6 +1394,7 @@ libs:
   deps:
   - grpc++_proto_reflection_desc_db
   - grpc++
+  - grpc
   filegroups:
   - grpc++_reflection_proto
   - grpc++_config_proto
@@ -1547,6 +1559,7 @@ libs:
   - grpc_test_util
   - grpc++_test_util
   - grpc++
+  - grpc
 - name: grpc_csharp_ext
   build: all
   language: csharp
@@ -2105,15 +2118,6 @@ targets:
   language: c
   src:
   - test/core/support/spinlock_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_stack_lockfree_test
-  cpu_cost: 7
-  build: test
-  language: c
-  src:
-  - test/core/support/stack_lockfree_test.c
   deps:
   - gpr_test_util
   - gpr
@@ -2707,6 +2711,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: num_external_connectivity_watchers_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/num_external_connectivity_watchers_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
 - name: parse_address_test
   build: test
   language: c
@@ -3613,6 +3629,22 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: client_lb_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/client_lb_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  excluded_poll_engines:
+  - poll
+  - poll-cv
 - name: codegen_test_full
   gtest: true
   build: test
@@ -3689,6 +3721,7 @@ targets:
   - test/cpp/util/string_ref_test.cc
   deps:
   - grpc++
+  - grpc
 - name: cxx_time_test
   gtest: true
   build: test
@@ -3891,6 +3924,9 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  excluded_poll_engines:
+  - poll
+  - poll-cv
 - name: grpclb_test
   gtest: false
   build: test
@@ -3905,6 +3941,9 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  excluded_poll_engines:
+  - poll
+  - poll-cv
 - name: health_service_end2end_test
   gtest: true
   build: test
@@ -4204,19 +4243,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-- name: round_robin_end2end_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/cpp/end2end/round_robin_end2end_test.cc
-  deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: secure_auth_context_test
   gtest: true
   build: test

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -102,6 +87,28 @@ class ClientAsyncResponseReader final
         ClientAsyncResponseReader(call, context, request);
   }
 
+  /// TODO(vjpai): Delete the below constructor
+  /// PLEASE DO NOT USE THIS CONSTRUCTOR IN NEW CODE
+  /// This code is only present as a short-term workaround
+  /// for users that bypassed the code-generator and directly
+  /// created this struct rather than properly using a stub.
+  /// This code will not remain a valid public constructor for long.
+  template <class W>
+  ClientAsyncResponseReader(ChannelInterface* channel, CompletionQueue* cq,
+                            const RpcMethod& method, ClientContext* context,
+                            const W& request)
+      : context_(context),
+        call_(channel->CreateCall(method, context, cq)),
+        collection_(std::make_shared<Ops>()) {
+    collection_->init_buf.SetCollection(collection_);
+    collection_->init_buf.SendInitialMetadata(
+        context->send_initial_metadata_, context->initial_metadata_flags());
+    // TODO(ctiller): don't assert
+    GPR_CODEGEN_ASSERT(collection_->init_buf.SendMessage(request).ok());
+    collection_->init_buf.ClientSendClose();
+    call_.PerformOps(&collection_->init_buf);
+  }
+
   // always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
     assert(size == sizeof(ClientAsyncResponseReader));
@@ -116,9 +123,18 @@ class ClientAsyncResponseReader final
   void ReadInitialMetadata(void* tag) {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
-    meta_buf_.set_output_tag(tag);
-    meta_buf_.RecvInitialMetadata(context_);
-    call_.PerformOps(&meta_buf_);
+    Ops& o = ops_;
+
+    // TODO(vjpai): Remove the collection_ specialization as soon
+    // as the public constructor is deleted
+    if (collection_) {
+      o = *collection_;
+      collection_->meta_buf.SetCollection(collection_);
+    }
+
+    o.meta_buf.set_output_tag(tag);
+    o.meta_buf.RecvInitialMetadata(context_);
+    call_.PerformOps(&o.meta_buf);
   }
 
   /// See \a ClientAysncResponseReaderInterface::Finish for semantics.
@@ -127,14 +143,23 @@ class ClientAsyncResponseReader final
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
   void Finish(R* msg, Status* status, void* tag) {
-    finish_buf_.set_output_tag(tag);
-    if (!context_->initial_metadata_received_) {
-      finish_buf_.RecvInitialMetadata(context_);
+    Ops& o = ops_;
+
+    // TODO(vjpai): Remove the collection_ specialization as soon
+    // as the public constructor is deleted
+    if (collection_) {
+      o = *collection_;
+      collection_->finish_buf.SetCollection(collection_);
     }
-    finish_buf_.RecvMessage(msg);
-    finish_buf_.AllowNoMessage();
-    finish_buf_.ClientRecvStatus(context_, status);
-    call_.PerformOps(&finish_buf_);
+
+    o.finish_buf.set_output_tag(tag);
+    if (!context_->initial_metadata_received_) {
+      o.finish_buf.RecvInitialMetadata(context_);
+    }
+    o.finish_buf.RecvMessage(msg);
+    o.finish_buf.AllowNoMessage();
+    o.finish_buf.ClientRecvStatus(context_, status);
+    call_.PerformOps(&o.finish_buf);
   }
 
  private:
@@ -144,25 +169,33 @@ class ClientAsyncResponseReader final
   template <class W>
   ClientAsyncResponseReader(Call call, ClientContext* context, const W& request)
       : context_(context), call_(call) {
-    init_buf_.SendInitialMetadata(context->send_initial_metadata_,
-                                  context->initial_metadata_flags());
+    ops_.init_buf.SendInitialMetadata(context->send_initial_metadata_,
+                                      context->initial_metadata_flags());
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(init_buf_.SendMessage(request).ok());
-    init_buf_.ClientSendClose();
-    call_.PerformOps(&init_buf_);
+    GPR_CODEGEN_ASSERT(ops_.init_buf.SendMessage(request).ok());
+    ops_.init_buf.ClientSendClose();
+    call_.PerformOps(&ops_.init_buf);
   }
 
   // disable operator new
   static void* operator new(std::size_t size);
-  static void* operator new(std::size_t size, void* p) { return p; };
+  static void* operator new(std::size_t size, void* p) { return p; }
 
-  SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-                  CallOpClientSendClose>
-      init_buf_;
-  CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
-  CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
-            CallOpClientRecvStatus>
-      finish_buf_;
+  // TODO(vjpai): Remove the reference to CallOpSetCollectionInterface
+  // as soon as the related workaround (public constructor) is deleted
+  struct Ops : public CallOpSetCollectionInterface {
+    SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+                    CallOpClientSendClose>
+        init_buf;
+    CallOpSet<CallOpRecvInitialMetadata> meta_buf;
+    CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
+              CallOpClientRecvStatus>
+        finish_buf;
+  } ops_;
+
+  // TODO(vjpai): Remove the collection_ as soon as the related workaround
+  // (public constructor) is deleted
+  std::shared_ptr<Ops> collection_;
 };
 
 /// Async server-side API for handling unary calls, where the single

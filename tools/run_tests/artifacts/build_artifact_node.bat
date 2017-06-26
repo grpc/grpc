@@ -1,33 +1,18 @@
-@rem Copyright 2016, Google Inc.
-@rem All rights reserved.
+@rem Copyright 2016 gRPC authors.
 @rem
-@rem Redistribution and use in source and binary forms, with or without
-@rem modification, are permitted provided that the following conditions are
-@rem met:
+@rem Licensed under the Apache License, Version 2.0 (the "License");
+@rem you may not use this file except in compliance with the License.
+@rem You may obtain a copy of the License at
 @rem
-@rem     * Redistributions of source code must retain the above copyright
-@rem notice, this list of conditions and the following disclaimer.
-@rem     * Redistributions in binary form must reproduce the above
-@rem copyright notice, this list of conditions and the following disclaimer
-@rem in the documentation and/or other materials provided with the
-@rem distribution.
-@rem     * Neither the name of Google Inc. nor the names of its
-@rem contributors may be used to endorse or promote products derived from
-@rem this software without specific prior written permission.
+@rem     http://www.apache.org/licenses/LICENSE-2.0
 @rem
-@rem THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-@rem "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-@rem LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-@rem A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-@rem OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-@rem SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-@rem LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-@rem DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-@rem THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-@rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-@rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+@rem Unless required by applicable law or agreed to in writing, software
+@rem distributed under the License is distributed on an "AS IS" BASIS,
+@rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+@rem See the License for the specific language governing permissions and
+@rem limitations under the License.
 
-set node_versions=4.0.0 5.0.0 6.0.0 7.0.0
+set node_versions=4.0.0 5.0.0 6.0.0 7.0.0 8.0.0
 
 set electron_versions=1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0
 
@@ -45,13 +30,13 @@ for %%v in (%node_versions%) do (
 @rem Try again after removing openssl headers
   rmdir "%HOMEDRIVE%%HOMEPATH%\.node-gyp\%%v\include\node\openssl" /S /Q
   rmdir "%HOMEDRIVE%%HOMEPATH%\.node-gyp\iojs-%%v\include\node\openssl" /S /Q
-  call .\node_modules\.bin\node-pre-gyp.cmd build package testpackage --target=%%v --target_arch=%1 || goto :error
+  call .\node_modules\.bin\node-pre-gyp.cmd build package --target=%%v --target_arch=%1 || goto :error
 
   xcopy /Y /I /S build\stage\* %ARTIFACTS_OUT%\ || goto :error
 )
 
 for %%v in (%electron_versions%) do (
-  cmd /V /C "set "HOME=%HOMEDRIVE%%HOMEPATH%\electron-gyp" && call .\node_modules\.bin\node-pre-gyp.cmd configure rebuild package testpackage --runtime=electron --target=%%v --target_arch=%1 --disturl=https://atom.io/download/electron" || goto :error
+  cmd /V /C "set "HOME=%HOMEDRIVE%%HOMEPATH%\electron-gyp" && call .\node_modules\.bin\node-pre-gyp.cmd configure rebuild package --runtime=electron --target=%%v --target_arch=%1 --disturl=https://atom.io/download/electron" || goto :error
 
   xcopy /Y /I /S build\stage\* %ARTIFACTS_OUT%\ || goto :error
 )

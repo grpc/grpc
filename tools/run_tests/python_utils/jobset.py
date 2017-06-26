@@ -1,31 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Run a group of subprocesses and then finish."""
 
@@ -41,6 +26,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import errno
 
 
 # cpu cost measurement
@@ -132,29 +118,44 @@ _TAG_COLOR = {
 _FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(level=logging.INFO, format=_FORMAT)
 
+
+def eintr_be_gone(fn):
+  """Run fn until it doesn't stop because of EINTR"""
+  while True:
+    try:
+      return fn()
+    except IOError, e:
+      if e.errno != errno.EINTR:
+        raise
+
+
+
 def message(tag, msg, explanatory_text=None, do_newline=False):
   if message.old_tag == tag and message.old_msg == msg and not explanatory_text:
     return
   message.old_tag = tag
   message.old_msg = msg
-  try:
-    if platform_string() == 'windows' or not sys.stdout.isatty():
-      if explanatory_text:
-        logging.info(explanatory_text)
-      logging.info('%s: %s', tag, msg)
-    else:
-      sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
-          _BEGINNING_OF_LINE,
-          _CLEAR_LINE,
-          '\n%s' % explanatory_text if explanatory_text is not None else '',
-          _COLORS[_TAG_COLOR[tag]][1],
-          _COLORS[_TAG_COLOR[tag]][0],
-          tag,
-          msg,
-          '\n' if do_newline or explanatory_text is not None else ''))
-    sys.stdout.flush()
-  except:
-    pass
+  while True:
+    try:
+      if platform_string() == 'windows' or not sys.stdout.isatty():
+        if explanatory_text:
+          logging.info(explanatory_text)
+        logging.info('%s: %s', tag, msg)
+      else:
+        sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
+            _BEGINNING_OF_LINE,
+            _CLEAR_LINE,
+            '\n%s' % explanatory_text if explanatory_text is not None else '',
+            _COLORS[_TAG_COLOR[tag]][1],
+            _COLORS[_TAG_COLOR[tag]][0],
+            tag,
+            msg,
+            '\n' if do_newline or explanatory_text is not None else ''))
+      sys.stdout.flush()
+      return
+    except IOError, e:
+      if e.errno != errno.EINTR:
+        raise
 
 message.old_tag = ''
 message.old_msg = ''
@@ -226,16 +227,6 @@ class JobResult(object):
     self.cpu_measured = 0
 
 
-def eintr_be_gone(fn):
-  """Run fn until it doesn't stop because of EINTR"""
-  while True:
-    try:
-      return fn()
-    except IOError, e:
-      if e.errno != errno.EINTR:
-        raise
-
-
 def read_from_start(f):
   f.seek(0)
   return f.read()
@@ -270,8 +261,13 @@ class Job(object):
     env = sanitized_environment(env)
     self._start = time.time()
     cmdline = self._spec.cmdline
-    if measure_cpu_costs:
+    # The Unix time command is finicky when used with MSBuild, so we don't use it
+    # with jobs that run MSBuild.
+    global measure_cpu_costs
+    if measure_cpu_costs and not 'vsprojects\\build' in cmdline[0]:
       cmdline = ['time', '-p'] + cmdline
+    else:
+      measure_cpu_costs = False
     try_start = lambda: subprocess.Popen(args=cmdline,
                                          stderr=subprocess.STDOUT,
                                          stdout=self._tempfile,
@@ -477,6 +473,8 @@ class Jobset(object):
     while self._running:
       if self.cancelled(): pass  # poll cancellation
       self.reap()
+    if platform_string() != 'windows':
+      signal.alarm(0)
     return not self.cancelled() and self._failures == 0
 
 

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
- * All rights reserved.
+ * Copyright 2015-2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 #include "src/core/lib/surface/completion_queue.h"
@@ -53,6 +38,7 @@
 grpc_tracer_flag grpc_trace_operation_failures = GRPC_TRACER_INITIALIZER(false);
 #ifndef NDEBUG
 grpc_tracer_flag grpc_trace_pending_tags = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_cq_refcount = GRPC_TRACER_INITIALIZER(false);
 #endif
 
 typedef struct {
@@ -128,7 +114,7 @@ static grpc_error *non_polling_poller_work(grpc_exec_ctx *exec_ctx,
     npp->root = w.next;
     if (&w == npp->root) {
       if (npp->shutdown) {
-        grpc_closure_sched(exec_ctx, npp->shutdown, GRPC_ERROR_NONE);
+        GRPC_CLOSURE_SCHED(exec_ctx, npp->shutdown, GRPC_ERROR_NONE);
       }
       npp->root = NULL;
     }
@@ -161,7 +147,7 @@ static void non_polling_poller_shutdown(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(closure != NULL);
   p->shutdown = closure;
   if (p->root == NULL) {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
   } else {
     non_polling_worker *w = p->root;
     do {
@@ -432,7 +418,7 @@ grpc_completion_queue *grpc_completion_queue_create_internal(
   cqd->outstanding_tag_count = 0;
 #endif
   cq_event_queue_init(&cqd->queue);
-  grpc_closure_init(&cqd->pollset_shutdown_done, on_pollset_shutdown_done, cc,
+  GRPC_CLOSURE_INIT(&cqd->pollset_shutdown_done, on_pollset_shutdown_done, cc,
                     grpc_schedule_on_exec_ctx);
 
   GPR_TIMER_END("grpc_completion_queue_create_internal", 0);
@@ -452,12 +438,16 @@ int grpc_get_cq_poll_num(grpc_completion_queue *cc) {
   return cur_num_polls;
 }
 
-#ifdef GRPC_CQ_REF_COUNT_DEBUG
+#ifndef NDEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
                           const char *file, int line) {
   cq_data *cqd = &cc->data;
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p   ref %d -> %d %s", cc,
-          (int)cqd->owning_refs.count, (int)cqd->owning_refs.count + 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_cq_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&cqd->owning_refs.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "CQ:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", cc, val, val + 1,
+            reason);
+  }
 #else
 void grpc_cq_internal_ref(grpc_completion_queue *cc) {
   cq_data *cqd = &cc->data;
@@ -471,12 +461,16 @@ static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_CQ_INTERNAL_UNREF(exec_ctx, cc, "pollset_destroy");
 }
 
-#ifdef GRPC_CQ_REF_COUNT_DEBUG
-void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason,
-                            const char *file, int line) {
+#ifndef NDEBUG
+void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
+                            const char *reason, const char *file, int line) {
   cq_data *cqd = &cc->data;
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p unref %d -> %d %s", cc,
-          (int)cqd->owning_refs.count, (int)cqd->owning_refs.count - 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_cq_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&cqd->owning_refs.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "CQ:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", cc, val, val - 1,
+            reason);
+  }
 #else
 void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx,
                             grpc_completion_queue *cc) {

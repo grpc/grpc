@@ -250,12 +250,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_uv.c">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.c">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json.c">
       <Filter>src\core\lib\json</Filter>
     </ClCompile>
@@ -556,11 +550,17 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.c">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper_fallback.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\native\dns_resolver.c">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\native</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\sockaddr\sockaddr_resolver.c">
       <Filter>src\core\ext\filters\client_channel\resolver\sockaddr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\fake</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting.c">
       <Filter>src\core\ext\filters\load_reporting</Filter>
@@ -977,15 +977,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_uv.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json.h">
       <Filter>src\core\lib\json</Filter>
     </ClInclude>
@@ -1235,6 +1226,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.h">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.h">
+      <Filter>src\core\ext\filters\client_channel\resolver\fake</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting.h">
       <Filter>src\core\ext\filters\load_reporting</Filter>
     </ClInclude>
@@ -1411,6 +1405,9 @@
     </Filter>
     <Filter Include="src\core\ext\filters\client_channel\resolver\dns\native">
       <UniqueIdentifier>{55f499bd-ae18-5210-81e1-385c85e60875}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\client_channel\resolver\fake">
+      <UniqueIdentifier>{7f924133-4a98-87b0-f158-cb64ea91e71a}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\filters\client_channel\resolver\sockaddr">
       <UniqueIdentifier>{99210f5e-b2a0-ecd1-024f-fc152db68a11}</UniqueIdentifier>

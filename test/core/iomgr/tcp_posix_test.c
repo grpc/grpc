@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -162,6 +147,7 @@ static void read_cb(grpc_exec_ctx *exec_ctx, void *user_data,
   gpr_log(GPR_INFO, "Read %" PRIuPTR " bytes of %" PRIuPTR, read_bytes,
           state->target_read_bytes);
   if (state->read_bytes >= state->target_read_bytes) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, NULL)));
     gpr_mu_unlock(g_mu);
   } else {
     grpc_endpoint_read(exec_ctx, state->ep, &state->incoming, &state->read_cb);
@@ -198,7 +184,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
   grpc_slice_buffer_init(&state.incoming);
-  grpc_closure_init(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
 
@@ -250,7 +236,7 @@ static void large_read_test(size_t slice_size) {
   state.read_bytes = 0;
   state.target_read_bytes = (size_t)written_bytes;
   grpc_slice_buffer_init(&state.incoming);
-  grpc_closure_init(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
 
@@ -390,7 +376,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 
   grpc_slice_buffer_init(&outgoing);
   grpc_slice_buffer_addn(&outgoing, slices, num_blocks);
-  grpc_closure_init(&write_done_closure, write_done, &state,
+  GRPC_CLOSURE_INIT(&write_done_closure, write_done, &state,
                     grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_write(&exec_ctx, ep, &outgoing, &write_done_closure);
@@ -436,7 +422,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure fd_released_cb;
   int fd_released_done = 0;
-  grpc_closure_init(&fd_released_cb, &on_fd_released, &fd_released_done,
+  GRPC_CLOSURE_INIT(&fd_released_cb, &on_fd_released, &fd_released_done,
                     grpc_schedule_on_exec_ctx);
 
   gpr_log(GPR_INFO,
@@ -461,7 +447,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
   grpc_slice_buffer_init(&state.incoming);
-  grpc_closure_init(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
 
@@ -574,7 +560,7 @@ int main(int argc, char **argv) {
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   run_tests();
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);

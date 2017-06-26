@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "1.4.0-dev",
+  "version": "1.5.0-dev",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "http://www.grpc.io/",
@@ -33,7 +33,7 @@
     "arguejs": "^0.2.3",
     "lodash": "^4.15.0",
     "nan": "^2.0.0",
-    "node-pre-gyp": "^0.6.0",
+    "node-pre-gyp": "^0.6.35",
     "protobufjs": "^5.0.0"
   },
   "devDependencies": {
@@ -79,7 +79,7 @@
     "binding.gyp"
   ],
   "main": "src/node/index.js",
-  "license": "BSD-3-Clause",
+  "license": "Apache-2.0",
   "jshintConfig": {
     "bitwise": true,
     "curly": true,
