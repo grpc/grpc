@@ -36,7 +36,14 @@
 #include "src/core/lib/security/context/security_context.h"
 #endif
 
+static gpr_once tsi_once_var = GPR_ONCE_INIT;
+
+static void register_tsi_plugin(void) {
+  grpc_register_plugin(tsi_init, tsi_destroy);
+}
+
 void grpc_security_pre_init(void) {
+  gpr_once_init(&tsi_once_var, register_tsi_plugin);
   grpc_register_tracer("secure_endpoint", &grpc_trace_secure_endpoint);
   grpc_register_tracer("transport_security", &tsi_tracing_enabled);
 #ifndef NDEBUG

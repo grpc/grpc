@@ -111,6 +111,9 @@ tsi_result tsi_construct_allocated_string_peer_property(
 tsi_result tsi_construct_string_peer_property_from_cstring(
     const char *name, const char *value, tsi_peer_property *property);
 
+/* Destroy plugin registration funcion. */
+void tsi_register_destroy_plugin(void (*destroy)(void));
+
 /* Utils. */
 char *tsi_strdup(const char *src); /* Sadly, no strdup in C89. */
 
