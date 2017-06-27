@@ -334,7 +334,7 @@ BENCHMARK(BM_PumpStreamServerToClient_Trickle)->Apply(StreamingTrickleArgs);
 static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
-      &service, true, state.range(0) /* req_size */,
+      &service, false, state.range(0) /* req_size */,
       state.range(1) /* resp_size */, state.range(2) /* bw in kbit/s */));
   EchoRequest send_request;
   EchoResponse send_response;
@@ -374,7 +374,7 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
         stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
     void* t;
     bool ok;
-    TrickleCQNext(fixture.get(), &t, &ok, state.iterations());
+    TrickleCQNext(fixture.get(), &t, &ok, in_warmup ? -1 : state.iterations());
     GPR_ASSERT(ok);
     GPR_ASSERT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
@@ -420,12 +420,6 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
 }
 
 static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
-  // A selection of interesting numbers
-  const int cli_1024k = 1024 * 1024;
-  const int cli_32M = 32 * 1024 * 1024;
-  const int svr_256k = 256 * 1024;
-  const int svr_4M = 4 * 1024 * 1024;
-  const int svr_64M = 64 * 1024 * 1024;
   for (int bw = 64; bw <= 128 * 1024 * 1024; bw *= 16) {
     b->Args({1, 1, bw});
     for (int i = 64; i <= 128 * 1024 * 1024; i *= 64) {
