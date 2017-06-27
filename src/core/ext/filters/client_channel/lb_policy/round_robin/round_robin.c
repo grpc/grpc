@@ -559,9 +559,8 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     grpc_connected_subchannel_ping(exec_ctx, target, closure);
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, target, "rr_picked");
   } else {
-    grpc_closure_sched(
-        exec_ctx, closure,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Round Robin not connected"));
+    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                              "Round Robin not connected"));
   }
 }
 
