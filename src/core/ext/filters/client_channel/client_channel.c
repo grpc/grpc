@@ -837,14 +837,10 @@ gpr_log(GPR_INFO, "scheduling in call_combiner");
     GRPC_CLOSURE_SCHED(exec_ctx, &calld->handle_pending_batch_in_call_combiner,
                        GRPC_ERROR_REF(error));
   }
-  if (calld->initial_metadata_batch != NULL) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, calld->initial_metadata_batch, GRPC_ERROR_REF(error),
-        calld->deadline_state.call_combiner);
-  } else {
-gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combiner);
-    grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
-  }
+  GPR_ASSERT(calld->initial_metadata_batch != NULL);
+  grpc_transport_stream_op_batch_finish_with_failure(
+      exec_ctx, calld->initial_metadata_batch, GRPC_ERROR_REF(error),
+      calld->deadline_state.call_combiner);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -875,13 +871,9 @@ gpr_log(GPR_INFO, "scheduling in call_combiner");
     GRPC_CLOSURE_SCHED(exec_ctx, &calld->handle_pending_batch_in_call_combiner,
                        GRPC_ERROR_NONE);
   }
-  if (calld->initial_metadata_batch != NULL) {
-    grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
-                                    calld->initial_metadata_batch);
-  } else {
-gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combiner);
-    grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
-  }
+  GPR_ASSERT(calld->initial_metadata_batch != NULL);
+  grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
+                                  calld->initial_metadata_batch);
 }
 
 // Applies service config to the call.  Must be invoked once we know
@@ -978,7 +970,6 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(error);
 }
 
-// FIXME: this needs to be invoked in the call combiner
 static char *cc_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   if (calld->subchannel_call == NULL) {

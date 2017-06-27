@@ -598,20 +598,37 @@ gpr_log(GPR_INFO, "EXECUTING BATCH: batch={send_initial_metadata=%d, send_messag
   GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
 }
 
+typedef struct {
+  char *result;
+  grpc_call_element *elem;
+  grpc_call_combiner *call_combiner;
+} get_peer_state;
+
+static void get_peer_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
+                                      grpc_error *ignored) {
+  get_peer_state *state = arg;
+  grpc_call_element *elem = state->elem;
+  state->result = elem->filter->get_peer(exec_ctx, elem);
+  grpc_call_combiner_stop(exec_ctx, state->call_combiner);
+}
+
 char *grpc_call_get_peer(grpc_call *call) {
   grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
+  get_peer_state state = {NULL, elem, &call->call_combiner};
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  char *result;
   GRPC_API_TRACE("grpc_call_get_peer(%p)", 1, (call));
-  result = elem->filter->get_peer(&exec_ctx, elem);
-  if (result == NULL) {
-    result = grpc_channel_get_target(call->channel);
+  GRPC_CLOSURE_SCHED(&exec_ctx,
+                     GRPC_CLOSURE_CREATE(get_peer_in_call_combiner, &state,
+                                         &call->call_combiner.scheduler),
+                     GRPC_ERROR_NONE);
+  grpc_exec_ctx_finish(&exec_ctx);  // Ensures callback is complete.
+  if (state.result == NULL) {
+    state.result = grpc_channel_get_target(call->channel);
   }
-  if (result == NULL) {
-    result = gpr_strdup("unknown");
+  if (state.result == NULL) {
+    state.result = gpr_strdup("unknown");
   }
-  grpc_exec_ctx_finish(&exec_ctx);
-  return result;
+  return state.result;
 }
 
 grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
