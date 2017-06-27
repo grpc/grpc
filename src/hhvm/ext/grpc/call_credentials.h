@@ -48,7 +48,7 @@ class CallCredentialsData {
 };
 
 typedef struct plugin_state {
-  Variant function;
+  Variant callback;
 } plugin_state;
 
 Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
@@ -56,7 +56,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
   const Object& cred2_obj);
 
 Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
-  const Variant& function);
+  const Variant& callback);
 
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,

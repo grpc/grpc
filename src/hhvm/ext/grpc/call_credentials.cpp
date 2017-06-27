@@ -89,15 +89,19 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
 
 /**
  * Create a call credentials object from the plugin API
- * @param function $fci The callback function
+ * @param callable $fci The callback
  * @return CallCredentials The new call credentials object
  */
 Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
-  const Variant& function) {
+  const Variant& callback) {
+
+  if (!is_callable(callback)) {
+    throw_invalid_argument("Callback argument is not a valid callback");
+  }
 
   plugin_state *state;
   state = (plugin_state *)req::calloc(1, sizeof(plugin_state));
-  state->function = function;
+  state->callback = callback;
 
   grpc_metadata_credentials_plugin plugin;
   plugin.get_metadata = plugin_get_metadata;
@@ -121,7 +125,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
   plugin_state *state = (plugin_state *)ptr;
 
-  Variant retval = vm_call_user_func(state->function, make_packed_array(returnObj));
+  Variant retval = vm_call_user_func(state->callback, make_packed_array(returnObj));
 
   grpc_status_code code = GRPC_STATUS_OK;
   grpc_metadata_array metadata;

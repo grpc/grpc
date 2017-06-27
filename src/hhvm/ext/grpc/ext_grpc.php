@@ -79,7 +79,7 @@ class CallCredentials {
 
   /**
    * Create a call credentials object from the plugin API
-   * @param function $fci The callback function
+   * @param callable $fci The callback
    * @return CallCredentials The new call credentials object
    */
   <<__Native>>

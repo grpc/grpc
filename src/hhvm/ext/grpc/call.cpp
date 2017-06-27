@@ -110,6 +110,9 @@ void HHVM_METHOD(Call, __construct,
   callData->setOwned(true);
 }
 
+Mutex s_grpc_call_start_batch_mutex;
+Mutex s_grpc_completion_queue_pluck_mutex;
+
 Object HHVM_METHOD(Call, startBatch,
   const Array& actions) { // array<int, mixed>
   auto resultObj = SystemLib::AllocStdClassObject();
@@ -273,16 +276,22 @@ Object HHVM_METHOD(Call, startBatch,
     op_num++;
   }
 
-  error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
+  {
+    Lock l1(s_grpc_call_start_batch_mutex);
+    error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
+  }
 
   if (error != GRPC_CALL_OK) {
     throw_invalid_argument("start_batch was called incorrectly: %d" PRId64, (int)error);
     goto cleanup;
   }
 
-  grpc_completion_queue_pluck(completion_queue, callData->getWrapped(),
+  {
+    Lock l2(s_grpc_completion_queue_pluck_mutex);
+    grpc_completion_queue_pluck(completion_queue, callData->getWrapped(),
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
+  }
   for (int i = 0; i < op_num; i++) {
     switch(ops[i].op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
