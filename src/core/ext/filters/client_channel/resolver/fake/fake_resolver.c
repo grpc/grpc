@@ -101,6 +101,9 @@ static void fake_resolver_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
 static void fake_resolver_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
                                                    grpc_resolver* resolver) {
   fake_resolver* r = (fake_resolver*)resolver;
+  gpr_log(
+      GPR_INFO,
+      "FOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
   if (r->next_results == NULL && r->results_upon_error != NULL) {
     // Pretend we re-resolved.
     r->next_results = grpc_channel_args_copy(r->results_upon_error);
