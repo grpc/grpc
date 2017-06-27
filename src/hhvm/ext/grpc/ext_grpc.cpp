@@ -134,10 +134,14 @@ class GrpcExtension : public Extension {
       HHVM_MALIAS(Grpc\\Timeval, sleepUntil, Timeval, sleepUntil);
 
       Native::registerNativeDataInfo<TimevalData>(TimevalData::s_className.get());
+
       Native::registerNativeDataInfo<ServerCredentialsData>(ServerCredentialsData::s_className.get());
       Native::registerNativeDataInfo<ServerData>(ServerData::s_className.get());
+
       Native::registerNativeDataInfo<ChannelCredentialsData>(ChannelCredentialsData::s_className.get());
       Native::registerNativeDataInfo<ChannelData>(ChannelData::s_className.get());
+
+      Native::registerNativeDataInfo<CallCredentialsData>(CallCredentialsData::s_className.get());
       Native::registerNativeDataInfo<CallData>(CallData::s_className.get());
 
       loadSystemlib();
