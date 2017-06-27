@@ -122,8 +122,6 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   if (error == GRPC_ERROR_NONE) {
     grpc_call_next_op(exec_ctx, elem, batch);
   } else {
-// FIXME
-gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, batch, error,
                                                        calld->call_combiner);
   }
@@ -182,8 +180,6 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
     calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
                                                           ctx->creds, NULL);
     if (calld->creds == NULL) {
-// FIXME
-gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
       grpc_transport_stream_op_batch_finish_with_failure(
           exec_ctx, batch,
           grpc_error_set_int(
@@ -201,6 +197,8 @@ gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
   build_auth_metadata_context(&chand->security_connector->base,
                               chand->auth_context, calld);
   GPR_ASSERT(calld->pollent != NULL);
+// FIXME: can this call out to application?  if so, need to release call
+// combiner first and then re-acquire when we come back in
   grpc_call_credentials_get_request_metadata(
       exec_ctx, calld->creds, calld->pollent, calld->auth_md_context,
       on_credentials_metadata, batch);
@@ -221,7 +219,6 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  host);
     gpr_free(host);
-// FIXME: does this need to do something special about the call combiner?
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, batch,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg),
@@ -288,6 +285,8 @@ static void auth_start_transport_stream_op_batch(
     if (calld->have_host) {
       char *call_host = grpc_slice_to_c_string(calld->host);
       batch->handler_private.extra_arg = elem;
+// FIXME: can this call out to application?  if so, need to release call
+// combiner first and then re-acquire when we come back in
       grpc_channel_security_connector_check_call_host(
           exec_ctx, chand->security_connector, call_host, chand->auth_context,
           on_host_checked, batch);
