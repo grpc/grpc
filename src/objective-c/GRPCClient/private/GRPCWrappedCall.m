@@ -75,6 +75,10 @@
 }
 
 - (void)dealloc {
+  for (int i = 0; i < _op.data.send_initial_metadata.count; i++) {
+    grpc_slice_unref(_op.data.send_initial_metadata.metadata[i].key);
+    grpc_slice_unref(_op.data.send_initial_metadata.metadata[i].value);
+  }
   gpr_free(_op.data.send_initial_metadata.metadata);
 }
 
