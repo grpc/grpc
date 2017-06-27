@@ -661,20 +661,26 @@ class ServerReaderWriterBody final {
     if (options.is_last_message()) {
       options.set_buffer_hint();
     }
-    CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
-    if (!ops.SendMessage(msg, options).ok()) {
+    if (!ctx_->hanging_ops_.SendMessage(msg, options).ok()) {
       return false;
     }
     if (!ctx_->sent_initial_metadata_) {
-      ops.SendInitialMetadata(ctx_->initial_metadata_,
-                              ctx_->initial_metadata_flags());
+      ctx_->hanging_ops_.SendInitialMetadata(ctx_->initial_metadata_,
+                                             ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
-        ops.set_compression_level(ctx_->compression_level());
+        ctx_->hanging_ops_.set_compression_level(ctx_->compression_level());
       }
       ctx_->sent_initial_metadata_ = true;
     }
-    call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops);
+    call_->PerformOps(&ctx_->hanging_ops_);
+    // if this is the last message we defer the pluck until AFTER we start
+    // the trailing md op. This prevents hangs. See
+    // https://github.com/grpc/grpc/issues/11546
+    if (options.is_last_message()) {
+      ctx_->has_hanging_ops_ = true;
+      return true;
+    }
+    return call_->cq()->Pluck(&ctx_->hanging_ops_);
   }
 
  private:

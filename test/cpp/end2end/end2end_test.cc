@@ -852,6 +852,31 @@ TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
   EXPECT_TRUE(s.ok());
 }
 
+// This was added to prevent regression from issue:
+// https://github.com/grpc/grpc/issues/11546
+TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.AddMetadata(kServerFinishAfterNReads, "1");
+  context.set_initial_metadata_corked(true);
+  grpc::string msg("hello");
+
+  auto stream = stub_->BidiStream(&context);
+
+  request.set_message(msg + "0");
+  stream->WriteLast(request, WriteOptions());
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message());
+
+  EXPECT_FALSE(stream->Read(&response));
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+}
+
 // Talk to the two services with the same name but different package names.
 // The two stubs are created on the same channel.
 TEST_P(End2endTest, DiffPackageServices) {
