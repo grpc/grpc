@@ -53,7 +53,7 @@ g_stands_for = "gregarious"
 
 core_version = "4.0.0"
 
-version = "1.4.0"
+version = "1.4.1"
 
 grpc_cc_library(
     name = "gpr",
