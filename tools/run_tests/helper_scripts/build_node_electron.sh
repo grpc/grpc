@@ -32,7 +32,7 @@
 ELECTRON_VERSION=$1
 source ~/.nvm/nvm.sh
 
-nvm use 6
+nvm use 8
 set -ex
 
 # change to grpc repo root

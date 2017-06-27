@@ -32,7 +32,7 @@ NODE_TARGET_ARCH=$1
 NODE_TARGET_OS=$2
 source ~/.nvm/nvm.sh
 
-nvm use 4
+nvm use 8
 set -ex
 
 cd $(dirname $0)/../../..
