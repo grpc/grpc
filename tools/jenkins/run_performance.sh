@@ -38,4 +38,4 @@ BENCHMARKS_TO_RUN="bm_fullstack_unary_ping_pong bm_fullstack_streaming_ping_pong
 cd $(dirname $0)/../..
 
 tools/run_tests/start_port_server.py
-tools/profiling/microbenchmarks/bm_diff.py -d origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN
+tools/profiling/microbenchmarks/bm_diff/bm_main.py -d origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN
