@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2015, Google Inc.
+# Copyright 2017, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,15 +26,45 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and runs a diff on the microbenchmarks
-set -ex
 
-# List of benchmarks that provide good signal for analyzing performance changes in pull requests
-BENCHMARKS_TO_RUN="bm_fullstack_unary_ping_pong bm_fullstack_streaming_ping_pong bm_fullstack_streaming_pump bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_chttp2_transport bm_pollset bm_metadata"
+from scipy import stats
+import math
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../..
+_DEFAULT_THRESHOLD = 1e-10
 
-tools/run_tests/start_port_server.py
-tools/profiling/microbenchmarks/bm_diff/bm_main.py -d origin/$ghprbTargetBranch -b $BENCHMARKS_TO_RUN
+def scale(a, mul):
+  return [x * mul for x in a]
+
+
+def cmp(a, b):
+  return stats.ttest_ind(a, b)
+
+def speedup(new, old, threshold = _DEFAULT_THRESHOLD):
+  if (len(set(new))) == 1 and new == old: return 0
+  s0, p0 = cmp(new, old)
+  if math.isnan(p0): return 0
+  if s0 == 0: return 0
+  if p0 > _DEFAULT_THRESHOLD: return 0
+  if s0 < 0:
+    pct = 1
+    while pct < 100:
+      sp, pp = cmp(new, scale(old, 1 - pct / 100.0))
+      if sp > 0: break
+      if pp > _DEFAULT_THRESHOLD: break
+      pct += 1
+    return -(pct - 1)
+  else:
+    pct = 1
+    while pct < 10000:
+      sp, pp = cmp(new, scale(old, 1 + pct / 100.0))
+      if sp < 0: break
+      if pp > _DEFAULT_THRESHOLD: break
+      pct += 1
+    return pct - 1
+
+
+if __name__ == "__main__":
+  new = [0.0, 0.0, 0.0, 0.0] 
+  old = [2.96608e-06, 3.35076e-06, 3.45384e-06, 3.34407e-06]
+  print speedup(new, old, 1e-5)
+  print speedup(old, new, 1e-5)
