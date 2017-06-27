@@ -60,7 +60,7 @@
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
   __weak GRXBufferedPipe *weakSelf = self;
   dispatch_async(_writeQueue, ^{
-    [weakSelf finishWithError:nil];
+    [weakSelf finishWithError:errorOrNil];
   });
 }
 
@@ -88,8 +88,7 @@
         }
         return;
       case GRXWriterStateStarted:
-        if (_state == GRXWriterStatePaused ||
-            _state == GRXWriterStateNotStarted) {
+        if (_state == GRXWriterStatePaused) {
           _state = newState;
           dispatch_resume(_writeQueue);
         }
@@ -102,7 +101,8 @@
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
   self.writeable = writeable;
-  self.state = GRXWriterStateStarted;
+  _state = GRXWriterStateStarted;
+  dispatch_resume(_writeQueue);
 }
 
 - (void)finishWithError:(NSError *)errorOrNil {
