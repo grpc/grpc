@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -120,7 +105,7 @@ void test_succeeds(void) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)addr,
                          (socklen_t *)&resolved_addr.len) == 0);
-  grpc_closure_init(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
                           &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
 
@@ -170,7 +155,7 @@ void test_fails(void) {
   gpr_mu_unlock(g_mu);
 
   /* connect to a broken address */
-  grpc_closure_init(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
                           &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
 
@@ -181,10 +166,17 @@ void test_fails(void) {
     grpc_pollset_worker *worker = NULL;
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec polling_deadline = test_deadline();
-    if (!grpc_timer_check(&exec_ctx, now, &polling_deadline)) {
-      GPR_ASSERT(GRPC_LOG_IF_ERROR(
-          "pollset_work", grpc_pollset_work(&exec_ctx, g_pollset, &worker, now,
-                                            polling_deadline)));
+    switch (grpc_timer_check(&exec_ctx, now, &polling_deadline)) {
+      case GRPC_TIMERS_FIRED:
+        break;
+      case GRPC_TIMERS_NOT_CHECKED:
+        polling_deadline = now;
+      /* fall through */
+      case GRPC_TIMERS_CHECKED_AND_EMPTY:
+        GPR_ASSERT(GRPC_LOG_IF_ERROR(
+            "pollset_work", grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                                              now, polling_deadline)));
+        break;
     }
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(&exec_ctx);
@@ -197,7 +189,7 @@ void test_fails(void) {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(p);
+  grpc_pollset_destroy(exec_ctx, p);
 }
 
 int main(int argc, char **argv) {
@@ -214,7 +206,7 @@ int main(int argc, char **argv) {
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
   grpc_pollset_set_destroy(&exec_ctx, g_pollset_set);
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);

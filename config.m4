@@ -8,23 +8,21 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/cares)
 
   LIBS="-lpthread $LIBS"
 
+  CFLAGS="-Wall -Werror -Wno-parentheses-equality -Wno-unused-value -std=c11"
+  CXXFLAGS="-std=c++11"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
+  PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
-
   PHP_ADD_LIBRARY(dl,,GRPC_SHARED_LIBADD)
   PHP_ADD_LIBRARY(dl)
 
   case $host in
     *darwin*)
-      PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/config_darwin)
       ;;
     *)
-      PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cares/config_linux)
       PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
       PHP_ADD_LIBRARY(rt)
       ;;
@@ -65,7 +63,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/log_windows.c \
     src/core/lib/support/mpscq.c \
     src/core/lib/support/murmur_hash.c \
-    src/core/lib/support/stack_lockfree.c \
     src/core/lib/support/string.c \
     src/core/lib/support/string_posix.c \
     src/core/lib/support/string_util_windows.c \
@@ -97,7 +94,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -108,9 +104,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
+    src/core/lib/iomgr/ev_epoll1_linux.c \
+    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
+    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
+    src/core/lib/iomgr/ev_epollex_linux.c \
+    src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
     src/core/lib/iomgr/iocp_windows.c \
@@ -118,6 +119,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/is_epollexclusive_available.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/lockfree_event.c \
     src/core/lib/iomgr/network_status_tracker.c \
@@ -154,6 +156,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/time_averaged_stats.c \
     src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_manager.c \
     src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
@@ -163,8 +166,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_uv.c \
-    src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
@@ -208,6 +209,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/lib/debug/trace.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \
@@ -300,11 +302,13 @@ if test "$PHP_GRPC" != "no"; then
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
+    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/filters/load_reporting/load_reporting.c \
@@ -317,6 +321,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
     src/core/ext/census/initialize.c \
+    src/core/ext/census/intrusive_hash_map.c \
     src/core/ext/census/mlog.c \
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
@@ -325,9 +330,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/tracing.c \
     src/core/ext/filters/max_age/max_age_filter.c \
     src/core/ext/filters/message_size/message_size_filter.c \
+    src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
+    src/core/ext/filters/workarounds/workaround_utils.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
     src/boringssl/err_data.c \
     third_party/boringssl/crypto/aes/aes.c \
+    third_party/boringssl/crypto/aes/key_wrap.c \
     third_party/boringssl/crypto/aes/mode_wrappers.c \
     third_party/boringssl/crypto/asn1/a_bitstr.c \
     third_party/boringssl/crypto/asn1/a_bool.c \
@@ -359,12 +367,12 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/asn1/tasn_new.c \
     third_party/boringssl/crypto/asn1/tasn_typ.c \
     third_party/boringssl/crypto/asn1/tasn_utl.c \
+    third_party/boringssl/crypto/asn1/time_support.c \
     third_party/boringssl/crypto/asn1/x_bignum.c \
     third_party/boringssl/crypto/asn1/x_long.c \
     third_party/boringssl/crypto/base64/base64.c \
     third_party/boringssl/crypto/bio/bio.c \
     third_party/boringssl/crypto/bio/bio_mem.c \
-    third_party/boringssl/crypto/bio/buffer.c \
     third_party/boringssl/crypto/bio/connect.c \
     third_party/boringssl/crypto/bio/fd.c \
     third_party/boringssl/crypto/bio/file.c \
@@ -471,12 +479,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/modes/ctr.c \
     third_party/boringssl/crypto/modes/gcm.c \
     third_party/boringssl/crypto/modes/ofb.c \
-    third_party/boringssl/crypto/newhope/error_correction.c \
-    third_party/boringssl/crypto/newhope/newhope.c \
-    third_party/boringssl/crypto/newhope/ntt.c \
-    third_party/boringssl/crypto/newhope/poly.c \
-    third_party/boringssl/crypto/newhope/precomp.c \
-    third_party/boringssl/crypto/newhope/reduce.c \
+    third_party/boringssl/crypto/modes/polyval.c \
     third_party/boringssl/crypto/obj/obj.c \
     third_party/boringssl/crypto/obj/obj_xref.c \
     third_party/boringssl/crypto/pem/pem_all.c \
@@ -487,14 +490,15 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/pem/pem_pkey.c \
     third_party/boringssl/crypto/pem/pem_x509.c \
     third_party/boringssl/crypto/pem/pem_xaux.c \
-    third_party/boringssl/crypto/pkcs8/p5_pbe.c \
     third_party/boringssl/crypto/pkcs8/p5_pbev2.c \
     third_party/boringssl/crypto/pkcs8/p8_pkey.c \
     third_party/boringssl/crypto/pkcs8/pkcs8.c \
     third_party/boringssl/crypto/poly1305/poly1305.c \
     third_party/boringssl/crypto/poly1305/poly1305_arm.c \
     third_party/boringssl/crypto/poly1305/poly1305_vec.c \
+    third_party/boringssl/crypto/pool/pool.c \
     third_party/boringssl/crypto/rand/deterministic.c \
+    third_party/boringssl/crypto/rand/fuchsia.c \
     third_party/boringssl/crypto/rand/rand.c \
     third_party/boringssl/crypto/rand/urandom.c \
     third_party/boringssl/crypto/rand/windows.c \
@@ -506,6 +510,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/rsa/rsa.c \
     third_party/boringssl/crypto/rsa/rsa_asn1.c \
     third_party/boringssl/crypto/rsa/rsa_impl.c \
+    third_party/boringssl/crypto/sha/sha1-altivec.c \
     third_party/boringssl/crypto/sha/sha1.c \
     third_party/boringssl/crypto/sha/sha256.c \
     third_party/boringssl/crypto/sha/sha512.c \
@@ -514,7 +519,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/thread_none.c \
     third_party/boringssl/crypto/thread_pthread.c \
     third_party/boringssl/crypto/thread_win.c \
-    third_party/boringssl/crypto/time_support.c \
     third_party/boringssl/crypto/x509/a_digest.c \
     third_party/boringssl/crypto/x509/a_sign.c \
     third_party/boringssl/crypto/x509/a_strex.c \
@@ -598,6 +602,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/x509v3/v3_skey.c \
     third_party/boringssl/crypto/x509v3/v3_sxnet.c \
     third_party/boringssl/crypto/x509v3/v3_utl.c \
+    third_party/boringssl/ssl/bio_ssl.c \
     third_party/boringssl/ssl/custom_extensions.c \
     third_party/boringssl/ssl/d1_both.c \
     third_party/boringssl/ssl/d1_lib.c \
@@ -608,7 +613,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/handshake_client.c \
     third_party/boringssl/ssl/handshake_server.c \
     third_party/boringssl/ssl/s3_both.c \
-    third_party/boringssl/ssl/s3_enc.c \
     third_party/boringssl/ssl/s3_lib.c \
     third_party/boringssl/ssl/s3_pkt.c \
     third_party/boringssl/ssl/ssl_aead_ctx.c \
@@ -619,9 +623,12 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/ssl_ecdh.c \
     third_party/boringssl/ssl/ssl_file.c \
     third_party/boringssl/ssl/ssl_lib.c \
-    third_party/boringssl/ssl/ssl_rsa.c \
+    third_party/boringssl/ssl/ssl_privkey.c \
+    third_party/boringssl/ssl/ssl_privkey_cc.cc \
     third_party/boringssl/ssl/ssl_session.c \
     third_party/boringssl/ssl/ssl_stat.c \
+    third_party/boringssl/ssl/ssl_transcript.c \
+    third_party/boringssl/ssl/ssl_x509.c \
     third_party/boringssl/ssl/t1_enc.c \
     third_party/boringssl/ssl/t1_lib.c \
     third_party/boringssl/ssl/tls13_both.c \
@@ -630,59 +637,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/tls13_server.c \
     third_party/boringssl/ssl/tls_method.c \
     third_party/boringssl/ssl/tls_record.c \
-    third_party/cares/cares/ares__close_sockets.c \
-    third_party/cares/cares/ares__get_hostent.c \
-    third_party/cares/cares/ares__read_line.c \
-    third_party/cares/cares/ares__timeval.c \
-    third_party/cares/cares/ares_cancel.c \
-    third_party/cares/cares/ares_create_query.c \
-    third_party/cares/cares/ares_data.c \
-    third_party/cares/cares/ares_destroy.c \
-    third_party/cares/cares/ares_expand_name.c \
-    third_party/cares/cares/ares_expand_string.c \
-    third_party/cares/cares/ares_fds.c \
-    third_party/cares/cares/ares_free_hostent.c \
-    third_party/cares/cares/ares_free_string.c \
-    third_party/cares/cares/ares_getenv.c \
-    third_party/cares/cares/ares_gethostbyaddr.c \
-    third_party/cares/cares/ares_gethostbyname.c \
-    third_party/cares/cares/ares_getnameinfo.c \
-    third_party/cares/cares/ares_getopt.c \
-    third_party/cares/cares/ares_getsock.c \
-    third_party/cares/cares/ares_init.c \
-    third_party/cares/cares/ares_library_init.c \
-    third_party/cares/cares/ares_llist.c \
-    third_party/cares/cares/ares_mkquery.c \
-    third_party/cares/cares/ares_nowarn.c \
-    third_party/cares/cares/ares_options.c \
-    third_party/cares/cares/ares_parse_a_reply.c \
-    third_party/cares/cares/ares_parse_aaaa_reply.c \
-    third_party/cares/cares/ares_parse_mx_reply.c \
-    third_party/cares/cares/ares_parse_naptr_reply.c \
-    third_party/cares/cares/ares_parse_ns_reply.c \
-    third_party/cares/cares/ares_parse_ptr_reply.c \
-    third_party/cares/cares/ares_parse_soa_reply.c \
-    third_party/cares/cares/ares_parse_srv_reply.c \
-    third_party/cares/cares/ares_parse_txt_reply.c \
-    third_party/cares/cares/ares_platform.c \
-    third_party/cares/cares/ares_process.c \
-    third_party/cares/cares/ares_query.c \
-    third_party/cares/cares/ares_search.c \
-    third_party/cares/cares/ares_send.c \
-    third_party/cares/cares/ares_strcasecmp.c \
-    third_party/cares/cares/ares_strdup.c \
-    third_party/cares/cares/ares_strerror.c \
-    third_party/cares/cares/ares_timeout.c \
-    third_party/cares/cares/ares_version.c \
-    third_party/cares/cares/ares_writev.c \
-    third_party/cares/cares/bitncmp.c \
-    third_party/cares/cares/inet_net_pton.c \
-    third_party/cares/cares/inet_ntop.c \
-    third_party/cares/cares/windows_port.c \
-    , $ext_shared, , -Wall -Werror \
-    -Wno-parentheses-equality -Wno-unused-value -std=c11 \
-    -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
-    -D_HAS_EXCEPTIONS=0 -DNOMINMAX)
+    , $ext_shared, , -fvisibility=hidden \
+    -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
+    -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0)
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
 
@@ -696,6 +653,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/round_robin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/c_ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/native)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)
@@ -705,6 +663,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/load_reporting)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/max_age)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/workarounds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)
@@ -768,11 +727,11 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/md4)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/md5)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/modes)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/newhope)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/obj)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/pem)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/pkcs8)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/poly1305)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/pool)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/rand)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/rc4)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/rsa)
@@ -781,6 +740,5 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/cares/cares)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/nanopb)
 fi

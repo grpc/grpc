@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -35,6 +20,10 @@
 #include "src/core/lib/iomgr/combiner.h"
 
 #define WEAK_REF_BITS 16
+
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_lb_policy_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
 
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable,
@@ -45,7 +34,7 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
   policy->combiner = GRPC_COMBINER_REF(combiner, "lb_policy");
 }
 
-#ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define REF_FUNC_EXTRA_ARGS , const char *file, int line, const char *reason
 #define REF_MUTATE_EXTRA_ARGS REF_FUNC_EXTRA_ARGS, const char *purpose
 #define REF_FUNC_PASS_ARGS(new_reason) , file, line, new_reason
@@ -61,11 +50,12 @@ static gpr_atm ref_mutate(grpc_lb_policy *c, gpr_atm delta,
                           int barrier REF_MUTATE_EXTRA_ARGS) {
   gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta)
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
-#ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "LB_POLICY: 0x%" PRIxPTR " %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR
-          " [%s]",
-          (intptr_t)c, purpose, old_val, old_val + delta, reason);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_lb_policy_refcount)) {
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "LB_POLICY: 0x%p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
+            purpose, old_val, old_val + delta, reason);
+  }
 #endif
   return old_val;
 }
@@ -89,11 +79,10 @@ void grpc_lb_policy_unref(grpc_exec_ctx *exec_ctx,
   gpr_atm mask = ~(gpr_atm)((1 << WEAK_REF_BITS) - 1);
   gpr_atm check = 1 << WEAK_REF_BITS;
   if ((old_val & mask) == check) {
-    grpc_closure_sched(
-        exec_ctx,
-        grpc_closure_create(shutdown_locked, policy,
-                            grpc_combiner_scheduler(policy->combiner, false)),
-        GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(
+                                     shutdown_locked, policy,
+                                     grpc_combiner_scheduler(policy->combiner)),
+                       GRPC_ERROR_NONE);
   } else {
     grpc_lb_policy_weak_unref(exec_ctx,
                               policy REF_FUNC_PASS_ARGS("strong-unref"));
@@ -165,4 +154,10 @@ grpc_connectivity_state grpc_lb_policy_check_connectivity_locked(
     grpc_error **connectivity_error) {
   return policy->vtable->check_connectivity_locked(exec_ctx, policy,
                                                    connectivity_error);
+}
+
+void grpc_lb_policy_update_locked(grpc_exec_ctx *exec_ctx,
+                                  grpc_lb_policy *policy,
+                                  const grpc_lb_policy_args *lb_policy_args) {
+  policy->vtable->update_locked(exec_ctx, policy, lb_policy_args);
 }

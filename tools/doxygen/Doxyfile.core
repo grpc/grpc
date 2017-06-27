@@ -792,7 +792,9 @@ doc/service_config.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
+doc/unit_testing.md \
 doc/wait-for-ready.md \
+doc/workarounds.md \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
@@ -860,7 +862,8 @@ include/grpc/support/tls.h \
 include/grpc/support/tls_gcc.h \
 include/grpc/support/tls_msvc.h \
 include/grpc/support/tls_pthread.h \
-include/grpc/support/useful.h
+include/grpc/support/useful.h \
+include/grpc/support/workaround_list.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

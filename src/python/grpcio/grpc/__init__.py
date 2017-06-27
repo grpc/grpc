@@ -1,31 +1,16 @@
-# Copyright 2015-2016, Google Inc.
-# All rights reserved.
+# Copyright 2015-2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """gRPC's Python API."""
 
 import abc
@@ -66,7 +51,8 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         Returns False under all other circumstances, for example:
         1. computation has begun and could not be canceled.
         2. computation has finished
-        3. computation is scheduled for execution and it is impossible to determine its state without blocking.
+        3. computation is scheduled for execution and it is impossible to
+           determine its state without blocking.
     """
         raise NotImplementedError()
 
@@ -123,8 +109,8 @@ class Future(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       timeout: The length of time in seconds to wait for the computation to
-        finish or be cancelled. If None, the call will block until the computations's
-        termination.
+        finish or be cancelled. If None, the call will block until the
+        computations's termination.
 
     Returns:
       The return value of the computation.
@@ -146,8 +132,8 @@ class Future(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       timeout: The length of time in seconds to wait for the computation to
-        terminate or be cancelled. If None, the call will block until the computations's
-        termination.
+        terminate or be cancelled. If None, the call will block until the
+        computations's termination.
 
     Returns:
         The exception raised by the computation, or None if the computation did
@@ -363,9 +349,9 @@ class ChannelCredentials(object):
     """An encapsulation of the data required to create a secure Channel.
 
   This class has no supported interface - it exists to define the type of its
-  instances and its instances exist to be passed to other functions. For example,
-  ssl_channel_credentials returns an instance, and secure_channel consumes an
-  instance of this class.
+  instances and its instances exist to be passed to other functions. For
+  example, ssl_channel_credentials returns an instance, and secure_channel
+  consumes an instance of this class.
   """
 
     def __init__(self, credentials):
@@ -373,7 +359,8 @@ class ChannelCredentials(object):
 
 
 class CallCredentials(object):
-    """An encapsulation of the data required to assert an identity over a channel.
+    """An encapsulation of the data required to assert an identity over a
+       channel.
 
   A CallCredentials may be composed with ChannelCredentials to always assert
   identity for every call over that Channel.
@@ -399,7 +386,8 @@ class AuthMetadataPluginCallback(six.with_metaclass(abc.ABCMeta)):
     """Callback object received by a metadata plugin."""
 
     def __call__(self, metadata, error):
-        """Inform the gRPC runtime of the metadata to construct a CallCredentials.
+        """Inform the gRPC runtime of the metadata to construct a
+           CallCredentials.
 
     Args:
       metadata: The :term:`metadata` used to construct the CallCredentials.
@@ -774,6 +762,42 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def peer_identities(self):
+        """Gets one or more peer identity(s).
+
+      Equivalent to
+      servicer_context.auth_context().get(
+          servicer_context.peer_identity_key())
+
+    Returns:
+      An iterable of the identities, or None if the call is not authenticated.
+      Each identity is returned as a raw bytes type.
+     """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def peer_identity_key(self):
+        """The auth property used to identify the peer.
+
+    For example, "x509_common_name" or "x509_subject_alternative_name" are
+    used to identify an SSL peer.
+
+    Returns:
+      The auth property (string) that indicates the
+      peer identity, or None if the call is not authenticated.
+    """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def auth_context(self):
+        """Gets the auth context for the call.
+
+      Returns:
+        A map of strings to an iterable of bytes for each auth property.
+      """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def send_initial_metadata(self, initial_metadata):
         """Sends the initial metadata value to the client.
 
@@ -879,8 +903,8 @@ class GenericRpcHandler(six.with_metaclass(abc.ABCMeta)):
       handler_call_details: A HandlerCallDetails describing the RPC.
 
     Returns:
-      An RpcMethodHandler with which the RPC may be serviced if the implementation
-      chooses to service this RPC, or None otherwise.
+      An RpcMethodHandler with which the RPC may be serviced if the
+      implementation chooses to service this RPC, or None otherwise.
     """
         raise NotImplementedError()
 

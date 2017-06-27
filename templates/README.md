@@ -1,3 +1,12 @@
+# Regenerating project files
+
+Prerequisites: `python`, `pip install mako`
+
+```
+# Regenerate the projects files using templates
+tools/buildgen/generate_projects.sh
+```
+
 # Quick justification
 
 We've approached the problem of the build system from a lot of different
