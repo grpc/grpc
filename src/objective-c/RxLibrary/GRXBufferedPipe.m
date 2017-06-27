@@ -73,16 +73,10 @@
 }
 
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
-  if (errorOrNil) {
-    // No need to write pending values.
-    _errorOrNil = errorOrNil;
-    [self finishWithError:_errorOrNil];
-  } else {
-    __weak GRXBufferedPipe *weakSelf = self;
-    dispatch_async(_writeQueue, ^{
-      [weakSelf finishWithError:nil];
-    });
-  }
+  __weak GRXBufferedPipe *weakSelf = self;
+  dispatch_async(_writeQueue, ^{
+    [weakSelf finishWithError:nil];
+  });
 }
 
 #pragma mark GRXWriter implementation
@@ -98,7 +92,7 @@
       case GRXWriterStateFinished:
         self.writeable = nil;
         if (_state == GRXWriterStatePaused) {
-          _writeQueue = nil;
+          dispatch_resume(_writeQueue);
         }
         _state = newState;
         return;
@@ -109,7 +103,8 @@
         }
         return;
       case GRXWriterStateStarted:
-        if (_state == GRXWriterStatePaused) {
+        if (_state == GRXWriterStatePaused ||
+            _state == GRXWriterStateNotStarted) {
           _state = newState;
           dispatch_resume(_writeQueue);
         }
@@ -121,17 +116,13 @@
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
-  _state = GRXWriterStateStarted;
   self.writeable = writeable;
-  dispatch_resume(_writeQueue);
+  self.state = GRXWriterStateStarted;
 }
 
 - (void)finishWithError:(NSError *)errorOrNil {
-  id<GRXWriteable> writeable = self.writeable;
+  [self.writeable writesFinishedWithError:errorOrNil];
   self.state = GRXWriterStateFinished;
-  dispatch_async(_writeQueue, ^{
-    [writeable writesFinishedWithError:errorOrNil];
-  });
 }
 
 @end
