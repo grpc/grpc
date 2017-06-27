@@ -49,7 +49,7 @@ static const uint32_t kInitialLog2Size = 4;
 typedef struct object { uint64_t val; } object;
 
 /* Helper function to allocate and initialize object. */
-static inline object *make_new_object(uint64_t val) {
+static __inline object *make_new_object(uint64_t val) {
   object *obj = (object *)gpr_malloc(sizeof(object));
   obj->val = val;
   return obj;
@@ -63,7 +63,7 @@ typedef struct ptr_item {
 
 /* Helper function that creates a new hash map item.  It is up to the user to
  * free the item that was allocated. */
-static inline ptr_item *make_ptr_item(uint64_t key, uint64_t value) {
+static __inline ptr_item *make_ptr_item(uint64_t key, uint64_t value) {
   ptr_item *new_item = (ptr_item *)gpr_malloc(sizeof(ptr_item));
   new_item->IHM_key = key;
   new_item->IHM_hash_link = NULL;
