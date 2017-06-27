@@ -42,7 +42,9 @@ typedef struct grpc_closure_list {
  *
  * \param arg Arbitrary input.
  * \param error GRPC_ERROR_NONE if no error occurred, otherwise some grpc_error
- *              describing what went wrong */
+ *              describing what went wrong.
+ *              Error contract: it is not the cb's job to unref this error;
+ *              the closure scheduler will do that after the cb returns */
 typedef void (*grpc_iomgr_cb_func)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_error *error);
 
