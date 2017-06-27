@@ -101,6 +101,14 @@ RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 RUN apt-get update && apt-get install -y \
     php5 php5-dev php-pear phpunit
 
+##################
+# Install cross compiler for ARM
+
+RUN echo 'deb http://emdebian.org/tools/debian/ jessie main' | tee -a /etc/apt/sources.list.d/crosstools.list && \
+  curl http://emdebian.org/tools/debian/emdebian-toolchain-archive.key | apt-key add -
+
+RUN dpkg --add-architecture armhf && apt-get update && apt-get install -y crossbuild-essential-armhf
+
 RUN mkdir /var/local/jenkins
 
 # Define the default command.
