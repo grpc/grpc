@@ -206,6 +206,11 @@ grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
   return transport->vtable->get_endpoint(exec_ctx, transport);
 }
 
+// grpc_transport_stream_op_batch_finish_with_failure
+// is a function that must always unref cancel_error
+// though it lives in lib, it handles transport stream ops sure
+// it's grpc_transport_stream_op_batch_finish_with_failure
+
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
     grpc_error *error) {
