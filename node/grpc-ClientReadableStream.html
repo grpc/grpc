@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: ClientReadableStream</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Class: ClientReadableStream</h1>
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+            <span class="ancestors"><a href="grpc.html">grpc</a>~</span>ClientReadableStream</h2>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+
+    <h4 class="name" id="ClientReadableStream"><span class="type-signature"></span>new ClientReadableStream<span class="signature">(call, deserialize<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>A stream that the client can read from. Used for calls that are streaming
+from the server side.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>call</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">grpc.internal~Call</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>The call object to read data with</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>deserialize</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    identity
+                
+                </td>
+            
+
+            <td class="description last"><p>Deserialization function for reads</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line191">line 191</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+        <h3 class="subsection-title">Extends</h3>
+
+        
+
+
+    <ul>
+        <li><a href="external-Readable.html">external:Readable</a></li>
+    </ul>
+
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="cancel"><span class="type-signature"></span>cancel<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Cancel the ongoing call. Results in the call ending with a CANCELLED status,
+unless it has already ended with some other status.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line384">line 384</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="getPeer"><span class="type-signature"></span>getPeer<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Get the endpoint this call/stream is connected to.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line399">line 399</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The URI of the endpoint</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+    
+
+    
+
+    
+        <h3 class="subsection-title">Events</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="event:metadata">metadata</h4>
+
+    
+
+
+
+<div class="description">
+    <p>Initial response metadata sent by the server when it starts processing the
+call</p>
+</div>
+
+
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line71">line 71</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="event:status">status</h4>
+
+    
+
+
+
+<div class="description">
+    <p>Status of the call when it has completed.</p>
+</div>
+
+
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type"><a href="grpc.html#~StatusObject">grpc~StatusObject</a></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line78">line 78</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external-Duplex.html">Duplex</a></li><li><a href="external-EventEmitter.html">EventEmitter</a></li><li><a href="external-GoogleCredential.html">GoogleCredential</a></li><li><a href="external-Readable.html">Readable</a></li><li><a href="external-Writable.html">Writable</a></li></ul><h3>Classes</h3><ul><li><a href="grpc.Client.html">Client</a></li><li><a href="grpc.credentials-CallCredentials.html">CallCredentials</a></li><li><a href="grpc.credentials-ChannelCredentials.html">ChannelCredentials</a></li><li><a href="grpc.Metadata.html">Metadata</a></li><li><a href="grpc.Server.html">Server</a></li><li><a href="grpc.ServerCredentials.html">ServerCredentials</a></li><li><a href="grpc-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="grpc-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="grpc-ClientUnaryCall.html">ClientUnaryCall</a></li><li><a href="grpc-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="grpc-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="grpc-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="grpc-ServerUnaryCall.html">ServerUnaryCall</a></li><li><a href="grpc-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Events</h3><ul><li><a href="grpc-ClientDuplexStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientDuplexStream.html#event:status">status</a></li><li><a href="grpc-ClientReadableStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientReadableStream.html#event:status">status</a></li><li><a href="grpc-ClientUnaryCall.html#event:metadata">metadata</a></li><li><a href="grpc-ClientUnaryCall.html#event:status">status</a></li><li><a href="grpc-ClientWritableStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientWritableStream.html#event:status">status</a></li><li><a href="grpc-ServerDuplexStream.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerReadableStream.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerUnaryCall.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerWritableStream.html#~event:cancelled">cancelled</a></li></ul><h3>Namespaces</h3><ul><li><a href="grpc.html">grpc</a></li><li><a href="grpc.credentials.html">credentials</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Jun 28 2017 09:44:06 GMT-0700 (PDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
