@@ -100,7 +100,7 @@ void HHVM_METHOD(Call, __construct,
   grpc_slice host_slice = !host_override.isNull() ? grpc_slice_from_copied_string(host_override.toString().c_str())
                               : grpc_empty_slice();
   callData->init(grpc_channel_create_call(channelData->getWrapped(), NULL, GRPC_PROPAGATE_DEFAULTS,
-                             completion_queue, method_slice,
+                             CompletionQueue::tl_obj.get()->getQueue(), method_slice,
                              !host_override.isNull() ? &host_slice : NULL,
                              deadlineTimevalData->getWrapped(), NULL));
 
@@ -109,9 +109,6 @@ void HHVM_METHOD(Call, __construct,
 
   callData->setOwned(true);
 }
-
-Mutex s_grpc_call_start_batch_mutex;
-Mutex s_grpc_completion_queue_pluck_mutex;
 
 Object HHVM_METHOD(Call, startBatch,
   const Array& actions) { // array<int, mixed>
@@ -276,22 +273,15 @@ Object HHVM_METHOD(Call, startBatch,
     op_num++;
   }
 
-  {
-    Lock l1(s_grpc_call_start_batch_mutex);
-    error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
-  }
-
+  error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
   if (error != GRPC_CALL_OK) {
     throw_invalid_argument("start_batch was called incorrectly: %d" PRId64, (int)error);
     goto cleanup;
   }
 
-  {
-    Lock l2(s_grpc_completion_queue_pluck_mutex);
-    grpc_completion_queue_pluck(completion_queue, callData->getWrapped(),
+  grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), callData->getWrapped(),
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
-  }
   for (int i = 0; i < op_num; i++) {
     switch(ops[i].op) {
       case GRPC_OP_SEND_INITIAL_METADATA:

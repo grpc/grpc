@@ -45,7 +45,6 @@ class GrpcExtension : public Extension {
       grpc_init();
 
       grpc_hhvm_init_channel_credentials();
-      grpc_hhvm_init_completion_queue();
 
       HHVM_RC_INT(Grpc\\CALL_OK, GRPC_CALL_OK);
       HHVM_RC_INT(Grpc\\CALL_ERROR, GRPC_CALL_ERROR);
@@ -147,8 +146,17 @@ class GrpcExtension : public Extension {
       loadSystemlib();
     }
 
+    virtual void threadInit() {
+      // Initializes the completion queue for this thread
+      //CompletionQueue::tl_obj.get();
+    }
+
+    virtual void threadShutdown() {
+      // Shuts down the completion queue for this thread
+      //delete CompletionQueue::tl_obj.get();
+    }
+
     virtual void moduleShutdown() {
-      grpc_hhvm_shutdown_completion_queue();
       grpc_shutdown();
     }
 

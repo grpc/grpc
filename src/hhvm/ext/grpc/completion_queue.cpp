@@ -18,15 +18,23 @@
 
 #include "completion_queue.h"
 
-// TODO: This struct and related functions appread to be used in thread safe ways
-// But someone should double check this
-grpc_completion_queue *completion_queue;
+#include "hphp/runtime/ext/extension.h"
 
-void grpc_hhvm_init_completion_queue() {
+namespace HPHP {
+
+IMPLEMENT_THREAD_LOCAL(CompletionQueue, CompletionQueue::tl_obj);
+
+CompletionQueue::CompletionQueue() {
   completion_queue = grpc_completion_queue_create_for_pluck(NULL);
 }
 
-void grpc_hhvm_shutdown_completion_queue() {
+CompletionQueue::~CompletionQueue() {
   grpc_completion_queue_shutdown(completion_queue);
   grpc_completion_queue_destroy(completion_queue);
+}
+
+grpc_completion_queue *CompletionQueue::getQueue() {
+  return completion_queue;
+}
+
 }

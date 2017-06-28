@@ -148,10 +148,10 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
 
   grpc_channel_watch_connectivity_state(channelData->getWrapped(),
                                           (grpc_connectivity_state)last_state,
-                                          timevalDataDeadline->getWrapped(), completion_queue,
+                                          timevalDataDeadline->getWrapped(), CompletionQueue::tl_obj.get()->getQueue(),
                                           NULL);
 
-  grpc_event event = grpc_completion_queue_pluck(completion_queue, NULL,
+  grpc_event event = grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), NULL,
                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
   return (bool)event.success;

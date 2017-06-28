@@ -21,13 +21,21 @@
 
 #include <grpc/grpc.h>
 
-/* The global completion queue for all operations */
-extern grpc_completion_queue *completion_queue;
+#include "hphp/runtime/ext/extension.h"
 
-/* Initializes the completion queue */
-void grpc_hhvm_init_completion_queue();
+namespace HPHP {
 
-/* Shut down the completion queue */
-void grpc_hhvm_shutdown_completion_queue();
+struct CompletionQueue {
+  CompletionQueue();
+  ~CompletionQueue();
+  grpc_completion_queue *getQueue();
+
+  /* The global completion queue for all operations */
+  grpc_completion_queue *completion_queue;
+
+  static DECLARE_THREAD_LOCAL(CompletionQueue, tl_obj);
+};
+
+}
 
 #endif /* GRPC_HHVM_GRPC_COMPLETION_QUEUE_H_ */

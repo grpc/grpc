@@ -58,9 +58,9 @@ void ServerData::init(grpc_server* server) {
 
 void ServerData::sweep() {
   if (wrapped) {
-    grpc_server_shutdown_and_notify(wrapped, completion_queue, NULL);
+    grpc_server_shutdown_and_notify(wrapped, CompletionQueue::tl_obj.get()->getQueue(), NULL);
     grpc_server_cancel_all_calls(wrapped);
-    grpc_completion_queue_pluck(completion_queue, NULL,
+    grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), NULL,
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     grpc_server_destroy(wrapped);
     wrapped = nullptr;
@@ -83,7 +83,7 @@ void HHVM_METHOD(Server, __construct,
     req::free(args.args);
   }
 
-  grpc_server_register_completion_queue(serverData->getWrapped(), completion_queue, NULL);
+  grpc_server_register_completion_queue(serverData->getWrapped(), CompletionQueue::tl_obj.get()->getQueue(), NULL);
 }
 
 Object HHVM_METHOD(Server, requestCall) {
@@ -106,14 +106,14 @@ Object HHVM_METHOD(Server, requestCall) {
   grpc_call_details_init(&details);
   grpc_metadata_array_init(&metadata);
   error_code = grpc_server_request_call(serverData->getWrapped(), &call, &details, &metadata,
-                                 completion_queue, completion_queue, NULL);
+                                 CompletionQueue::tl_obj.get()->getQueue(), CompletionQueue::tl_obj.get()->getQueue(), NULL);
 
   if (error_code != GRPC_CALL_OK) {
     throw_invalid_argument("request_call failed: %d", error_code);
     goto cleanup;
   }
 
-  event = grpc_completion_queue_pluck(completion_queue, NULL,
+  event = grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), NULL,
                                         gpr_inf_future(GPR_CLOCK_REALTIME),
                                         NULL);
 
