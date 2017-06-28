@@ -49,6 +49,14 @@ void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
       << " allocs/iter:"
       << ((double)(counters_at_end.total_allocs_absolute -
                    counters_at_start_.total_allocs_absolute) /
+          (double)state.iterations())
+      << " trans_stalls/iter:"
+      << ((double)(gpr_atm_no_barrier_load(&g_transport_stalls_count) -
+                   transport_stalls_at_start_) /
+          (double)state.iterations())
+      << " stream_stalls/iter:"
+      << ((double)(gpr_atm_no_barrier_load(&g_stream_stalls_count) -
+                   stream_stalls_at_start_) /
           (double)state.iterations());
 #endif
 }
