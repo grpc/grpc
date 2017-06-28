@@ -146,16 +146,6 @@ class GrpcExtension : public Extension {
       loadSystemlib();
     }
 
-    virtual void threadInit() {
-      // Initializes the completion queue for this thread
-      //CompletionQueue::tl_obj.get();
-    }
-
-    virtual void threadShutdown() {
-      // Shuts down the completion queue for this thread
-      //delete CompletionQueue::tl_obj.get();
-    }
-
     virtual void moduleShutdown() {
       grpc_shutdown();
     }
