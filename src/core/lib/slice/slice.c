@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -52,6 +37,13 @@ grpc_slice grpc_empty_slice(void) {
   grpc_slice out;
   out.refcount = NULL;
   out.data.inlined.length = 0;
+  return out;
+}
+
+grpc_slice grpc_slice_copy(grpc_slice s) {
+  grpc_slice out = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(s));
+  memcpy(GRPC_SLICE_START_PTR(out), GRPC_SLICE_START_PTR(s),
+         GRPC_SLICE_LENGTH(s));
   return out;
 }
 
@@ -197,7 +189,8 @@ grpc_slice grpc_slice_new_with_len(void *p, size_t len,
 }
 
 grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t length) {
-  grpc_slice slice = grpc_slice_malloc(length);
+  if (length == 0) return grpc_empty_slice();
+  grpc_slice slice = GRPC_SLICE_MALLOC(length);
   memcpy(GRPC_SLICE_START_PTR(slice), source, length);
   return slice;
 }
@@ -227,35 +220,42 @@ static const grpc_slice_refcount_vtable malloc_vtable = {
     malloc_ref, malloc_unref, grpc_slice_default_eq_impl,
     grpc_slice_default_hash_impl};
 
+grpc_slice grpc_slice_malloc_large(size_t length) {
+  grpc_slice slice;
+
+  /* Memory layout used by the slice created here:
+
+     +-----------+----------------------------------------------------------+
+     | refcount  | bytes                                                    |
+     +-----------+----------------------------------------------------------+
+
+     refcount is a malloc_refcount
+     bytes is an array of bytes of the requested length
+     Both parts are placed in the same allocation returned from gpr_malloc */
+  malloc_refcount *rc = gpr_malloc(sizeof(malloc_refcount) + length);
+
+  /* Initial refcount on rc is 1 - and it's up to the caller to release
+     this reference. */
+  gpr_ref_init(&rc->refs, 1);
+
+  rc->base.vtable = &malloc_vtable;
+  rc->base.sub_refcount = &rc->base;
+
+  /* Build up the slice to be returned. */
+  /* The slices refcount points back to the allocated block. */
+  slice.refcount = &rc->base;
+  /* The data bytes are placed immediately after the refcount struct */
+  slice.data.refcounted.bytes = (uint8_t *)(rc + 1);
+  /* And the length of the block is set to the requested length */
+  slice.data.refcounted.length = length;
+  return slice;
+}
+
 grpc_slice grpc_slice_malloc(size_t length) {
   grpc_slice slice;
 
   if (length > sizeof(slice.data.inlined.bytes)) {
-    /* Memory layout used by the slice created here:
-
-       +-----------+----------------------------------------------------------+
-       | refcount  | bytes                                                    |
-       +-----------+----------------------------------------------------------+
-
-       refcount is a malloc_refcount
-       bytes is an array of bytes of the requested length
-       Both parts are placed in the same allocation returned from gpr_malloc */
-    malloc_refcount *rc = gpr_malloc(sizeof(malloc_refcount) + length);
-
-    /* Initial refcount on rc is 1 - and it's up to the caller to release
-       this reference. */
-    gpr_ref_init(&rc->refs, 1);
-
-    rc->base.vtable = &malloc_vtable;
-    rc->base.sub_refcount = &rc->base;
-
-    /* Build up the slice to be returned. */
-    /* The slices refcount points back to the allocated block. */
-    slice.refcount = &rc->base;
-    /* The data bytes are placed immediately after the refcount struct */
-    slice.data.refcounted.bytes = (uint8_t *)(rc + 1);
-    /* And the length of the block is set to the requested length */
-    slice.data.refcounted.length = length;
+    return grpc_slice_malloc_large(length);
   } else {
     /* small slice: just inline the data */
     slice.refcount = NULL;
@@ -305,7 +305,8 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
   return subset;
 }
 
-grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
+grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice *source, size_t split,
+                                           grpc_slice_ref_whom ref_whom) {
   grpc_slice tail;
 
   if (source->refcount == NULL) {
@@ -319,26 +320,44 @@ grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
   } else {
     size_t tail_length = source->data.refcounted.length - split;
     GPR_ASSERT(source->data.refcounted.length >= split);
-    if (tail_length < sizeof(tail.data.inlined.bytes)) {
+    if (tail_length < sizeof(tail.data.inlined.bytes) &&
+        ref_whom != GRPC_SLICE_REF_TAIL) {
       /* Copy out the bytes - it'll be cheaper than refcounting */
       tail.refcount = NULL;
       tail.data.inlined.length = (uint8_t)tail_length;
       memcpy(tail.data.inlined.bytes, source->data.refcounted.bytes + split,
              tail_length);
+      source->refcount = source->refcount->sub_refcount;
     } else {
       /* Build the result */
-      tail.refcount = source->refcount->sub_refcount;
-      /* Bump the refcount */
-      tail.refcount->vtable->ref(tail.refcount);
+      switch (ref_whom) {
+        case GRPC_SLICE_REF_TAIL:
+          tail.refcount = source->refcount->sub_refcount;
+          source->refcount = &noop_refcount;
+          break;
+        case GRPC_SLICE_REF_HEAD:
+          tail.refcount = &noop_refcount;
+          source->refcount = source->refcount->sub_refcount;
+          break;
+        case GRPC_SLICE_REF_BOTH:
+          tail.refcount = source->refcount->sub_refcount;
+          source->refcount = source->refcount->sub_refcount;
+          /* Bump the refcount */
+          tail.refcount->vtable->ref(tail.refcount);
+          break;
+      }
       /* Point into the source array */
       tail.data.refcounted.bytes = source->data.refcounted.bytes + split;
       tail.data.refcounted.length = tail_length;
     }
-    source->refcount = source->refcount->sub_refcount;
     source->data.refcounted.length = split;
   }
 
   return tail;
+}
+
+grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
+  return grpc_slice_split_tail_maybe_ref(source, split, GRPC_SLICE_REF_BOTH);
 }
 
 grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
@@ -382,8 +401,9 @@ grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
 }
 
 int grpc_slice_default_eq_impl(grpc_slice a, grpc_slice b) {
-  return GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b) &&
-         0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
+  if (GRPC_SLICE_LENGTH(a) != GRPC_SLICE_LENGTH(b)) return false;
+  if (GRPC_SLICE_LENGTH(a) == 0) return true;
+  return 0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
                      GRPC_SLICE_LENGTH(a));
 }
 
@@ -457,7 +477,7 @@ int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
 }
 
 grpc_slice grpc_slice_dup(grpc_slice a) {
-  grpc_slice copy = grpc_slice_malloc(GRPC_SLICE_LENGTH(a));
+  grpc_slice copy = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(a));
   memcpy(GRPC_SLICE_START_PTR(copy), GRPC_SLICE_START_PTR(a),
          GRPC_SLICE_LENGTH(a));
   return copy;

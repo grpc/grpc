@@ -21,25 +21,24 @@ See [Performance dashboard](http://performance-dot-grpc-testing.appspot.com/expl
 
 # Repository Structure & Status
 
-This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core] (src/core).
+This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core](src/core).
 
 Libraries in different languages may be in different states of development. We are seeking contributions for all of these libraries.
 
 | Language                | Source                              | Status  |
 |-------------------------|-------------------------------------|---------|
-| Shared C [core library] | [src/core] (src/core)               | 1.0     |
-| C++                     | [src/cpp] (src/cpp)                 | 1.0     |
-| Ruby                    | [src/ruby] (src/ruby)               | 1.0     |
-| NodeJS                  | [src/node] (src/node)               | 1.0     |
-| Python                  | [src/python] (src/python)           | 1.0     |
-| PHP                     | [src/php] (src/php)                 | 1.0     |
-| C#                      | [src/csharp] (src/csharp)           | 1.0     |
-| Objective-C             | [src/objective-c] (src/objective-c) | 1.0     |
+| Shared C [core library] | [src/core](src/core)                | 1.0     |
+| C++                     | [src/cpp](src/cpp)                  | 1.0     |
+| Ruby                    | [src/ruby](src/ruby)                | 1.0     |
+| NodeJS                  | [src/node](src/node)                | 1.0     |
+| Python                  | [src/python](src/python)            | 1.0     |
+| PHP                     | [src/php](src/php)                  | 1.0     |
+| C#                      | [src/csharp](src/csharp)            | 1.0     |
+| Objective-C             | [src/objective-c](src/objective-c)  | 1.0     |
 
-<small>
-Java source code is in the [grpc-java](http://github.com/grpc/grpc-java) repository.
-Go source code is in the [grpc-go](http://github.com/grpc/grpc-go) repository.
-</small>
+Java source code is in the [grpc-java](http://github.com/grpc/grpc-java)
+repository. Go source code is in the
+[grpc-go](http://github.com/grpc/grpc-go) repository.
 
 See [MANIFEST.md](MANIFEST.md) for a listing of top-level items in the
 repository.

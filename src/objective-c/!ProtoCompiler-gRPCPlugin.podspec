@@ -42,7 +42,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler-gRPCPlugin'
-  v = '1.3.0-dev'
+  v = '1.5.0-dev'
   s.version  = v
   s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
   s.description = <<-DESC
@@ -53,7 +53,7 @@ Pod::Spec.new do |s|
   DESC
   s.homepage = 'http://www.grpc.io'
   s.license  = {
-    :type => 'New BSD',
+    :type => 'Apache License, Version 2.0',
     :text => <<-LICENSE
       Copyright 2015, Google Inc.
       All rights reserved.

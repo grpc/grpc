@@ -7,37 +7,19 @@
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
   #
-  # Additionally, this is currently very experimental, and unsupported.
-  # Further work will happen on that file.
+  # Copyright 2015 gRPC authors.
   #
-  # Copyright 2015, Google Inc.
-  # All rights reserved.
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
   #
-  # Redistribution and use in source and binary forms, with or without
-  # modification, are permitted provided that the following conditions are
-  # met:
+  #     http://www.apache.org/licenses/LICENSE-2.0
   #
-  #     * Redistributions of source code must retain the above copyright
-  # notice, this list of conditions and the following disclaimer.
-  #     * Redistributions in binary form must reproduce the above
-  # copyright notice, this list of conditions and the following disclaimer
-  # in the documentation and/or other materials provided with the
-  # distribution.
-  #     * Neither the name of Google Inc. nor the names of its
-  # contributors may be used to endorse or promote products derived from
-  # this software without specific prior written permission.
-  #
-  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-  # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-  # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-  # A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-  # OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-  # SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-  # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-  # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
 
   <%!
 
@@ -61,7 +43,7 @@
       deps.append("${_gRPC_SSL_LIBRARIES}")
     if target_dict.language == 'c++':
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
-    if target_dict['name'] in ['grpc']:
+    if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
       deps.append("${_gRPC_CARES_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
@@ -95,11 +77,13 @@
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
 
-  if (NOT MSVC)
-    set(gRPC_INSTALL ON CACHE BOOL "Generate installation target")
-  else()
-    set(gRPC_INSTALL OFF CACHE BOOL "Generate installation target")
+  set(gRPC_INSTALL_default ON)
+  if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # Disable gRPC_INSTALL by default if building as a submodule
+    set(gRPC_INSTALL_default OFF)
   endif()
+  set(gRPC_INSTALL <%text>${gRPC_INSTALL_default}</%text> CACHE BOOL
+      "Generate installation target: gRPC_ZLIB_PROVIDER, gRPC_CARES_PROVIDER, gRPC_SSL_PROVIDER and gRPC_PROTOBUF_PROVIDER must all be \"package\"")
 
   set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
   set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
@@ -166,6 +150,10 @@
     else()
         message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
     endif()
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_ZLIB_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
+    endif()
   elseif("<%text>${gRPC_ZLIB_PROVIDER}</%text>" STREQUAL "package")
     find_package(ZLIB)
     if(TARGET ZLIB::ZLIB)
@@ -197,12 +185,16 @@
     else()
       message(WARNING "gRPC_CARES_PROVIDER is \"module\" but CARES_ROOT_DIR is wrong")
     endif()
-  elseif("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "package")
-    find_package(CARES)
-    if(TARGET CARES::CARES)
-      set(_gRPC_CARES_LIBRARIES CARES::CARES)
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_CARES_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
     endif()
-    set(_gRPC_FIND_CARES "if(NOT CARES_FOUND)\n  find_package(CARES)\nendif()")
+  elseif("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "package")
+    find_package(c-ares CONFIG)
+    if(TARGET c-ares::cares)
+      set(_gRPC_CARES_LIBRARIES c-ares::cares)
+    endif()
+    set(_gRPC_FIND_CARES "if(NOT c-ares_FOUND)\n  find_package(c-ares CONFIG)\nendif()")
   endif()
 
   if("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "module")
@@ -215,6 +207,7 @@
     if(NOT PROTOBUF_ROOT_DIR)
       set(PROTOBUF_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/protobuf)
     endif()
+    set(PROTOBUF_WELLKNOWN_IMPORT_DIR <%text>${PROTOBUF_ROOT_DIR}</%text>/src)
     if(EXISTS "<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake/CMakeLists.txt")
       set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
       add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
@@ -229,6 +222,10 @@
       endif()
     else()
         message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
+    endif()
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_PROTOBUF_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "package")
     find_package(protobuf CONFIG)
@@ -247,6 +244,7 @@
       find_package(Protobuf MODULE)
       set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
     endif()
+    set(PROTOBUF_WELLKNOWN_IMPORT_DIR /usr/local/include)
   endif()
 
   if("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "module")
@@ -261,6 +259,10 @@
       endif()
     else()
         message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
+    endif()
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_SSL_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "package")
     find_package(OpenSSL)
@@ -315,8 +317,10 @@
     set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
   endif()
 
-  if(UNIX)
-    set(_gRPC_ALLTARGETS_LIBRARIES dl rt m pthread)
+  if(_gRPC_PLATFORM_MAC)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m pthread)
+  elseif(UNIX)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> rt m pthread)
   endif()
 
   if(WIN32 AND MSVC)
@@ -349,31 +353,32 @@
       return()
     endif()
 
-    set(_protobuf_include_path -I .)
+    set(_protobuf_include_path -I . -I <%text>${PROTOBUF_WELLKNOWN_IMPORT_DIR}</%text>)
     foreach(FIL <%text>${ARGN}</%text>)
       get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
       get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
-      file(RELATIVE_PATH REL_FIL <%text>${CMAKE_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
+      file(RELATIVE_PATH REL_FIL <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
       get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
       set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
 
       add_custom_command(
         OUTPUT <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"</%text>
-        COMMAND <%text>${_gRPC_PROTOBUF_PROTOC}</%text>
-        ARGS --grpc_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
+        COMMAND <%text>$<TARGET_FILE:${_gRPC_PROTOBUF_PROTOC}></%text>
+        ARGS --grpc_out=<%text>generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}</%text>
              --cpp_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
              --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
              <%text>${_protobuf_include_path}</%text>
              <%text>${REL_FIL}</%text>
         DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> grpc_cpp_plugin
-        WORKING_DIRECTORY <%text>${CMAKE_SOURCE_DIR}</%text>
+        WORKING_DIRECTORY <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
         COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
         VERBATIM)
 
-        <%text>set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)</%text>
+        <%text>set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"  "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)</%text>
     endforeach()
   endfunction()
 
@@ -474,6 +479,9 @@
     ${proto_replace_ext(src, '.grpc.pb.cc')}
     ${proto_replace_ext(src, '.pb.h')}
     ${proto_replace_ext(src, '.grpc.pb.h')}
+    % if src in ["src/proto/grpc/testing/compiler_test.proto", "src/proto/grpc/testing/echo.proto"]:
+    ${proto_replace_ext(src, '_mock.grpc.pb.h')}
+    % endif
   % endif
   % endfor
   )
@@ -511,8 +519,10 @@
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
-    PRIVATE third_party/googletest/include
-    PRIVATE third_party/googletest
+    PRIVATE third_party/googletest/googletest/include
+    PRIVATE third_party/googletest/googletest
+    PRIVATE third_party/googletest/googlemock/include
+    PRIVATE third_party/googletest/googlemock
   % endif
   % if lib.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
@@ -555,7 +565,8 @@
   % endif
   % endfor
   % if tgt.build == 'test' and tgt.language == 'c++':
-    third_party/googletest/src/gtest-all.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
   % endif
   )
 
@@ -581,8 +592,10 @@
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
-    PRIVATE third_party/googletest/include
-    PRIVATE third_party/googletest
+    PRIVATE third_party/googletest/googletest/include
+    PRIVATE third_party/googletest/googletest
+    PRIVATE third_party/googletest/googlemock/include
+    PRIVATE third_party/googletest/googlemock
   % endif
   % if tgt.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
@@ -607,6 +620,13 @@
     )
   endif()
   </%def>
+
+  if (gRPC_INSTALL)
+    install(EXPORT gRPCTargets
+      DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
+      NAMESPACE gRPC::
+    )
+  endif()
 
   foreach(_config gRPCConfig gRPCConfigVersion)
     configure_file(tools/cmake/<%text>${_config}</%text>.cmake.in

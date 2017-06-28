@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -65,7 +50,7 @@ static zend_object_handlers call_ce_handlers;
 /* Frees and destroys an instance of wrapped_grpc_call */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_call)
   if (p->owned && p->wrapped != NULL) {
-    grpc_call_destroy(p->wrapped);
+    grpc_call_unref(p->wrapped);
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
@@ -125,7 +110,12 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
       php_grpc_add_next_index_stringl(inner_array, str_val,
                                       GRPC_SLICE_LENGTH(elem->value), false);
       add_assoc_zval(array, str_key, inner_array);
+      PHP_GRPC_FREE_STD_ZVAL(inner_array);
     }
+    efree(str_key);
+#if PHP_MAJOR_VERSION >= 7
+    efree(str_val);
+#endif
   }
   return array;
 }
@@ -256,8 +246,6 @@ PHP_METHOD(Call, startBatch) {
   object_init(result);
   php_grpc_ulong index;
   zval *recv_status;
-  PHP_GRPC_MAKE_STD_ZVAL(recv_status);
-  object_init(recv_status);
   zval *value;
   zval *inner_value;
   zval *message_value;
@@ -439,7 +427,7 @@ PHP_METHOD(Call, startBatch) {
   grpc_completion_queue_pluck(completion_queue, call->wrapped,
                               gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 #if PHP_MAJOR_VERSION >= 7
-  zval recv_md;
+  zval *recv_md;
 #endif
   for (int i = 0; i < op_num; i++) {
     switch(ops[i].op) {
@@ -460,8 +448,10 @@ PHP_METHOD(Call, startBatch) {
       array = grpc_parse_metadata_array(&recv_metadata TSRMLS_CC);
       add_property_zval(result, "metadata", array);
 #else
-      recv_md = *grpc_parse_metadata_array(&recv_metadata);
-      add_property_zval(result, "metadata", &recv_md);
+      recv_md = grpc_parse_metadata_array(&recv_metadata);
+      add_property_zval(result, "metadata", recv_md);
+      zval_ptr_dtor(recv_md);
+      PHP_GRPC_FREE_STD_ZVAL(recv_md);
 #endif
       PHP_GRPC_DELREF(array);
       break;
@@ -475,12 +465,16 @@ PHP_METHOD(Call, startBatch) {
       }
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
+      PHP_GRPC_MAKE_STD_ZVAL(recv_status);
+      object_init(recv_status);
 #if PHP_MAJOR_VERSION < 7
       array = grpc_parse_metadata_array(&recv_trailing_metadata TSRMLS_CC);
       add_property_zval(recv_status, "metadata", array);
 #else
-      recv_md = *grpc_parse_metadata_array(&recv_trailing_metadata);
-      add_property_zval(recv_status, "metadata", &recv_md);
+      recv_md = grpc_parse_metadata_array(&recv_trailing_metadata);
+      add_property_zval(recv_status, "metadata", recv_md);
+      zval_ptr_dtor(recv_md);
+      PHP_GRPC_FREE_STD_ZVAL(recv_md);
 #endif
       PHP_GRPC_DELREF(array);
       add_property_long(recv_status, "code", status);
@@ -489,6 +483,9 @@ PHP_METHOD(Call, startBatch) {
                                    true);
       gpr_free(status_details_text);
       add_property_zval(result, "status", recv_status);
+#if PHP_MAJOR_VERSION >= 7
+      zval_ptr_dtor(recv_status);
+#endif
       PHP_GRPC_DELREF(recv_status);
       PHP_GRPC_FREE_STD_ZVAL(recv_status);
       break;

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -112,9 +97,9 @@ typedef struct {
 typedef struct {
   /* Called to eg. send/receive data on a call.
      See grpc_call_next_op on how to call the next element in the stack */
-  void (*start_transport_stream_op)(grpc_exec_ctx *exec_ctx,
-                                    grpc_call_element *elem,
-                                    grpc_transport_stream_op *op);
+  void (*start_transport_stream_op_batch)(grpc_exec_ctx *exec_ctx,
+                                          grpc_call_element *elem,
+                                          grpc_transport_stream_op_batch *op);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
@@ -141,7 +126,7 @@ typedef struct {
   /* Destroy per call data.
      The filter does not need to do any chaining.
      The bottom filter of a stack will be passed a non-NULL pointer to
-     \a then_schedule_closure that should be passed to grpc_closure_sched when
+     \a then_schedule_closure that should be passed to GRPC_CLOSURE_SCHED when
      destruction is complete. \a final_info contains data about the completed
      call, mainly for reporting purposes. */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
@@ -249,7 +234,7 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_stack *call_stack,
                                                 grpc_polling_entity *pollent);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_CALL_STACK_REF(call_stack, reason) \
   grpc_stream_ref(&(call_stack)->refcount, reason)
 #define GRPC_CALL_STACK_UNREF(exec_ctx, call_stack, reason) \
@@ -281,7 +266,7 @@ void grpc_call_stack_ignore_set_pollset_or_pollset_set(
     grpc_polling_entity *pollent);
 /* Call the next operation in a call stack */
 void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                       grpc_transport_stream_op *op);
+                       grpc_transport_stream_op_batch *op);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
 void grpc_channel_next_op(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
@@ -300,16 +285,17 @@ grpc_channel_stack *grpc_channel_stack_from_top_element(
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem, grpc_transport_stream_op *op);
+                      grpc_call_element *elem,
+                      grpc_transport_stream_op_batch *op);
 
 void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *cur_elem,
                                     grpc_error *error);
 
-extern int grpc_trace_channel;
+extern grpc_tracer_flag grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
-  if (grpc_trace_channel) grpc_call_log_op(sev, elem, op)
+  if (GRPC_TRACER_ON(grpc_trace_channel)) grpc_call_log_op(sev, elem, op)
 
 #ifdef __cplusplus
 }

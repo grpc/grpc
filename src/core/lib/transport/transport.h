@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -57,18 +42,20 @@ typedef struct grpc_transport grpc_transport;
    for a stream. */
 typedef struct grpc_stream grpc_stream;
 
-//#define GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
+extern grpc_tracer_flag grpc_trace_stream_refcount;
+#endif
 
 typedef struct grpc_stream_refcount {
   gpr_refcount refs;
   grpc_closure destroy;
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
   const char *object_type;
 #endif
   grpc_slice_refcount slice_refcount;
 } grpc_stream_refcount;
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg,
                           const char *object_type);
@@ -109,55 +96,98 @@ void grpc_transport_move_stats(grpc_transport_stream_stats *from,
                                grpc_transport_stream_stats *to);
 
 typedef struct {
+  void *extra_arg;
   grpc_closure closure;
-  void *args[2];
-} grpc_transport_private_op_data;
+} grpc_handler_private_op_data;
+
+typedef struct grpc_transport_stream_op_batch_payload
+    grpc_transport_stream_op_batch_payload;
 
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
-typedef struct grpc_transport_stream_op {
+typedef struct grpc_transport_stream_op_batch {
   /** Should be enqueued when all requested operations (excluding recv_message
       and recv_initial_metadata which have their own closures) in a given batch
       have been completed. */
   grpc_closure *on_complete;
 
-  /** Is the completion of this op covered by a poller (if false: the op should
-      complete independently of some pollset being polled) */
-  bool covered_by_poller;
+  /** Values for the stream op (fields set are determined by flags above) */
+  grpc_transport_stream_op_batch_payload *payload;
 
-  /** Send initial metadata to the peer, from the provided metadata batch.
-      idempotent_request MUST be set if this is non-null */
-  grpc_metadata_batch *send_initial_metadata;
-  /** Iff send_initial_metadata != NULL, flags associated with
-      send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
-  uint32_t send_initial_metadata_flags;
+  /** Send initial metadata to the peer, from the provided metadata batch. */
+  bool send_initial_metadata : 1;
 
   /** Send trailing metadata to the peer, from the provided metadata batch. */
-  grpc_metadata_batch *send_trailing_metadata;
+  bool send_trailing_metadata : 1;
 
   /** Send message data to the peer, from the provided byte stream. */
-  grpc_byte_stream *send_message;
+  bool send_message : 1;
 
   /** Receive initial metadata from the stream, into provided metadata batch. */
-  grpc_metadata_batch *recv_initial_metadata;
-  bool *recv_idempotent_request;
-  bool *recv_cacheable_request;
-  /** Should be enqueued when initial metadata is ready to be processed. */
-  grpc_closure *recv_initial_metadata_ready;
+  bool recv_initial_metadata : 1;
 
   /** Receive message data from the stream, into provided byte stream. */
-  grpc_byte_stream **recv_message;
-  /** Should be enqueued when one message is ready to be processed. */
-  grpc_closure *recv_message_ready;
+  bool recv_message : 1;
 
   /** Receive trailing metadata from the stream, into provided metadata batch.
    */
-  grpc_metadata_batch *recv_trailing_metadata;
+  bool recv_trailing_metadata : 1;
 
   /** Collect any stats into provided buffer, zero internal stat counters */
-  grpc_transport_stream_stats *collect_stats;
+  bool collect_stats : 1;
 
-  /** If != GRPC_ERROR_NONE, forcefully close this stream.
+  /** Cancel this stream with the provided error */
+  bool cancel_stream : 1;
+
+  /***************************************************************************
+   * remaining fields are initialized and used at the discretion of the
+   * current handler of the op */
+
+  grpc_handler_private_op_data handler_private;
+} grpc_transport_stream_op_batch;
+
+struct grpc_transport_stream_op_batch_payload {
+  struct {
+    grpc_metadata_batch *send_initial_metadata;
+    /** Iff send_initial_metadata != NULL, flags associated with
+        send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
+    uint32_t send_initial_metadata_flags;
+  } send_initial_metadata;
+
+  struct {
+    grpc_metadata_batch *send_trailing_metadata;
+  } send_trailing_metadata;
+
+  struct {
+    grpc_byte_stream *send_message;
+  } send_message;
+
+  struct {
+    grpc_metadata_batch *recv_initial_metadata;
+    uint32_t *recv_flags;
+    /** Should be enqueued when initial metadata is ready to be processed. */
+    grpc_closure *recv_initial_metadata_ready;
+    // If not NULL, will be set to true if trailing metadata is
+    // immediately available.  This may be a signal that we received a
+    // Trailers-Only response.
+    bool *trailing_metadata_available;
+  } recv_initial_metadata;
+
+  struct {
+    grpc_byte_stream **recv_message;
+    /** Should be enqueued when one message is ready to be processed. */
+    grpc_closure *recv_message_ready;
+  } recv_message;
+
+  struct {
+    grpc_metadata_batch *recv_trailing_metadata;
+  } recv_trailing_metadata;
+
+  struct {
+    grpc_transport_stream_stats *collect_stats;
+  } collect_stats;
+
+  /** Forcefully close this stream.
       The HTTP2 semantics should be:
       - server side: if cancel_error has GRPC_ERROR_INT_GRPC_STATUS, and
         trailing metadata has not been sent, send trailing metadata with status
@@ -167,17 +197,15 @@ typedef struct grpc_transport_stream_op {
         convert to a HTTP2 error code using
         grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
         error. */
-  grpc_error *cancel_error;
+  struct {
+    // Error contract: the transport that gets this op must cause cancel_error
+    //                 to be unref'ed after processing it
+    grpc_error *cancel_error;
+  } cancel_stream;
 
   /* Indexes correspond to grpc_context_index enum values */
   grpc_call_context_element *context;
-
-  /***************************************************************************
-   * remaining fields are initialized and used at the discretion of the
-   * current handler of the op */
-
-  grpc_transport_private_op_data handler_private;
-} grpc_transport_stream_op;
+};
 
 /** Transport op: a set of operations to perform on a transport as a whole */
 typedef struct grpc_transport_op {
@@ -186,9 +214,13 @@ typedef struct grpc_transport_op {
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
   grpc_closure *on_connectivity_state_change;
   grpc_connectivity_state *connectivity_state;
-  /** should the transport be disconnected */
+  /** should the transport be disconnected
+   * Error contract: the transport that gets this op must cause
+   *                 disconnect_with_error to be unref'ed after processing it */
   grpc_error *disconnect_with_error;
-  /** what should the goaway contain? */
+  /** what should the goaway contain?
+   * Error contract: the transport that gets this op must cause
+   *                 goaway_error to be unref'ed after processing it */
   grpc_error *goaway_error;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.
@@ -210,7 +242,7 @@ typedef struct grpc_transport_op {
    * remaining fields are initialized and used at the discretion of the
    * transport implementation */
 
-  grpc_transport_private_op_data transport_private;
+  grpc_handler_private_op_data handler_private;
 } grpc_transport_op;
 
 /* Returns the amount of memory required to store a grpc_stream for this
@@ -250,11 +282,11 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_stream *stream,
                                    grpc_closure *then_schedule_closure);
 
-void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
-                                                  grpc_transport_stream_op *op,
-                                                  grpc_error *error);
+void grpc_transport_stream_op_batch_finish_with_failure(
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
+    grpc_error *error);
 
-char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
+char *grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch *op);
 char *grpc_transport_op_string(grpc_transport_op *op);
 
 /* Send a batch of operations on a transport
@@ -265,11 +297,12 @@ char *grpc_transport_op_string(grpc_transport_op *op);
      transport - the transport on which to initiate the stream
      stream    - the stream on which to send the operations. This must be
                  non-NULL and previously initialized by the same transport.
-     op        - a grpc_transport_stream_op specifying the op to perform */
+     op        - a grpc_transport_stream_op_batch specifying the op to perform
+   */
 void grpc_transport_perform_stream_op(grpc_exec_ctx *exec_ctx,
                                       grpc_transport *transport,
                                       grpc_stream *stream,
-                                      grpc_transport_stream_op *op);
+                                      grpc_transport_stream_op_batch *op);
 
 void grpc_transport_perform_op(grpc_exec_ctx *exec_ctx,
                                grpc_transport *transport,
@@ -301,9 +334,10 @@ grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
 /* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
    \a on_consumed and then delete the returned transport op */
 grpc_transport_op *grpc_make_transport_op(grpc_closure *on_consumed);
-/* Allocate a grpc_transport_stream_op, and preconfigure the on_consumed closure
+/* Allocate a grpc_transport_stream_op_batch, and preconfigure the on_consumed
+   closure
    to \a on_consumed and then delete the returned transport op */
-grpc_transport_stream_op *grpc_make_transport_stream_op(
+grpc_transport_stream_op_batch *grpc_make_transport_stream_op(
     grpc_closure *on_consumed);
 
 #ifdef __cplusplus

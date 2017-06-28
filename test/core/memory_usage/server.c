@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -161,6 +146,7 @@ int main(int argc, char **argv) {
   grpc_event ev;
   char *addr_buf = NULL;
   gpr_cmdline *cl;
+  grpc_completion_queue *shutdown_cq;
   int shutdown_started = 0;
   int shutdown_finished = 0;
 
@@ -188,7 +174,7 @@ int main(int argc, char **argv) {
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
 
   struct grpc_memory_counters before_server_create =
       grpc_memory_counters_snapshot();
@@ -230,10 +216,14 @@ int main(int argc, char **argv) {
   while (!shutdown_finished) {
     if (got_sigint && !shutdown_started) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
-      grpc_server_shutdown_and_notify(server, cq, tag(1000));
-      GPR_ASSERT(grpc_completion_queue_pluck(
-                     cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
-                     .type == GRPC_OP_COMPLETE);
+
+      shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+      grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
+      GPR_ASSERT(
+          grpc_completion_queue_pluck(shutdown_cq, tag(1000),
+                                      grpc_timeout_seconds_to_deadline(5), NULL)
+              .type == GRPC_OP_COMPLETE);
+      grpc_completion_queue_destroy(shutdown_cq);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
     }
@@ -281,7 +271,7 @@ int main(int argc, char **argv) {
           case FLING_SERVER_WAIT_FOR_DESTROY:
             break;
           case FLING_SERVER_SEND_STATUS_FLING_CALL:
-            grpc_call_destroy(s->call);
+            grpc_call_unref(s->call);
             grpc_call_details_destroy(&s->call_details);
             grpc_metadata_array_destroy(&s->initial_metadata_send);
             grpc_metadata_array_destroy(&s->request_metadata_recv);
@@ -299,7 +289,7 @@ int main(int argc, char **argv) {
           case FLING_SERVER_SEND_STATUS_SNAPSHOT:
             grpc_byte_buffer_destroy(payload_buffer);
             grpc_byte_buffer_destroy(terminal_buffer);
-            grpc_call_destroy(s->call);
+            grpc_call_unref(s->call);
             grpc_call_details_destroy(&s->call_details);
             grpc_metadata_array_destroy(&s->initial_metadata_send);
             grpc_metadata_array_destroy(&s->request_metadata_recv);

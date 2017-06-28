@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,7 +26,6 @@
 #include <vector>
 #include "call.h"
 #include "completion_queue.h"
-#include "completion_queue_async_worker.h"
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
@@ -78,6 +62,30 @@ using v8::Value;
 Nan::Callback *Server::constructor;
 Persistent<FunctionTemplate> Server::fun_tpl;
 
+static Callback *shutdown_callback = NULL;
+
+class ServerShutdownOp : public Op {
+ public:
+  ServerShutdownOp(grpc_server *server) : server(server) {}
+
+  ~ServerShutdownOp() {}
+
+  Local<Value> GetNodeValue() const { return Nan::Null(); }
+
+  bool ParseOp(Local<Value> value, grpc_op *out) { return true; }
+  bool IsFinalOp() { return false; }
+  void OnComplete(bool success) {
+    /* Because cancel_all_calls was called, we assume that shutdown_and_notify
+       completes successfully */
+    grpc_server_destroy(server);
+  }
+
+  grpc_server *server;
+
+ protected:
+  std::string GetTypeString() const { return "shutdown"; }
+};
+
 class NewCallOp : public Op {
  public:
   NewCallOp() {
@@ -111,12 +119,9 @@ class NewCallOp : public Op {
     return scope.Escape(obj);
   }
 
-  bool ParseOp(Local<Value> value, grpc_op *out) {
-    return true;
-  }
-  bool IsFinalOp() {
-    return false;
-  }
+  bool ParseOp(Local<Value> value, grpc_op *out) { return true; }
+  bool IsFinalOp() { return false; }
+  void OnComplete(bool success) {}
 
   grpc_call *call;
   grpc_call_details details;
@@ -125,6 +130,36 @@ class NewCallOp : public Op {
  protected:
   std::string GetTypeString() const { return "new_call"; }
 };
+
+class TryShutdownOp : public Op {
+ public:
+  TryShutdownOp(Server *server, Local<Value> server_value) : server(server) {
+    server_persist.Reset(server_value);
+  }
+  Local<Value> GetNodeValue() const {
+    EscapableHandleScope scope;
+    return scope.Escape(Nan::New(server_persist));
+  }
+  bool ParseOp(Local<Value> value, grpc_op *out) { return true; }
+  bool IsFinalOp() { return false; }
+  void OnComplete(bool success) {
+    if (success) {
+      server->DestroyWrappedServer();
+    }
+  }
+
+ protected:
+  std::string GetTypeString() const { return "try_shutdown"; }
+
+ private:
+  Server *server;
+  Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>>
+      server_persist;
+};
+
+Server::Server(grpc_server *server) : wrapped_server(server) {}
+
+Server::~Server() { this->ShutdownServer(); }
 
 void Server::Init(Local<Object> exports) {
   HandleScope scope;
@@ -145,6 +180,43 @@ void Server::Init(Local<Object> exports) {
 bool Server::HasInstance(Local<Value> val) {
   HandleScope scope;
   return Nan::New(fun_tpl)->HasInstance(val);
+}
+
+void Server::DestroyWrappedServer() {
+  if (this->wrapped_server != NULL) {
+    grpc_server_destroy(this->wrapped_server);
+    this->wrapped_server = NULL;
+  }
+}
+
+NAN_METHOD(ServerShutdownCallback) {
+  if (!info[0]->IsNull()) {
+    return Nan::ThrowError("forceShutdown failed somehow");
+  }
+}
+
+void Server::ShutdownServer() {
+  Nan::HandleScope scope;
+  if (this->wrapped_server != NULL) {
+    if (shutdown_callback == NULL) {
+      Local<FunctionTemplate> callback_tpl =
+          Nan::New<FunctionTemplate>(ServerShutdownCallback);
+      shutdown_callback =
+          new Callback(Nan::GetFunction(callback_tpl).ToLocalChecked());
+    }
+
+    ServerShutdownOp *op = new ServerShutdownOp(this->wrapped_server);
+    unique_ptr<OpVec> ops(new OpVec());
+    ops->push_back(unique_ptr<Op>(op));
+
+    grpc_server_shutdown_and_notify(
+        this->wrapped_server, GetCompletionQueue(),
+        new struct tag(new Callback(**shutdown_callback), ops.release(), NULL,
+                       Nan::Null()));
+    grpc_server_cancel_all_calls(this->wrapped_server);
+    CompletionQueueNext();
+    this->wrapped_server = NULL;
+  }
 }
 
 NAN_METHOD(Server::New) {
@@ -190,10 +262,9 @@ NAN_METHOD(Server::RequestCall) {
   ops->push_back(unique_ptr<Op>(op));
   grpc_call_error error = grpc_server_request_call(
       server->wrapped_server, &op->call, &op->details, &op->request_metadata,
-      GetCompletionQueue(),
-      GetCompletionQueue(),
-      new struct tag(new Callback(info[0].As<Function>()), ops.release(),
-                     NULL));
+      GetCompletionQueue(), GetCompletionQueue(),
+      new struct tag(new Callback(info[0].As<Function>()), ops.release(), NULL,
+                     Nan::Null()));
   if (error != GRPC_CALL_OK) {
     return Nan::ThrowError(nanErrorWithCode("requestCall failed", error));
   }
@@ -242,11 +313,19 @@ NAN_METHOD(Server::TryShutdown) {
     return Nan::ThrowTypeError("tryShutdown can only be called on a Server");
   }
   Server *server = ObjectWrap::Unwrap<Server>(info.This());
+  if (server->wrapped_server == NULL) {
+    // Server is already shut down. Call callback immediately.
+    Nan::Callback callback(info[0].As<Function>());
+    callback.Call(0, {});
+    return;
+  }
+  TryShutdownOp *op = new TryShutdownOp(server, info.This());
   unique_ptr<OpVec> ops(new OpVec());
+  ops->push_back(unique_ptr<Op>(op));
   grpc_server_shutdown_and_notify(
       server->wrapped_server, GetCompletionQueue(),
       new struct tag(new Nan::Callback(info[0].As<Function>()), ops.release(),
-                     NULL));
+                     NULL, Nan::Null()));
   CompletionQueueNext();
 }
 

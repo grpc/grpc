@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -35,8 +20,8 @@
 
 #include <string.h>
 
-#include "rb_grpc_imports.generated.h"
 #include "rb_channel_credentials.h"
+#include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -91,8 +76,10 @@ static void grpc_rb_channel_credentials_mark(void *p) {
 
 static rb_data_type_t grpc_rb_channel_credentials_data_type = {
     "grpc_channel_credentials",
-    {grpc_rb_channel_credentials_mark, grpc_rb_channel_credentials_free,
-     GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
+    {grpc_rb_channel_credentials_mark,
+     grpc_rb_channel_credentials_free,
+     GRPC_RB_MEMSIZE_UNAVAILABLE,
+     {NULL, NULL}},
     NULL,
     NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
@@ -106,13 +93,15 @@ static VALUE grpc_rb_channel_credentials_alloc(VALUE cls) {
   grpc_rb_channel_credentials *wrapper = ALLOC(grpc_rb_channel_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
-  return TypedData_Wrap_Struct(cls, &grpc_rb_channel_credentials_data_type, wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_channel_credentials_data_type,
+                               wrapper);
 }
 
 /* Creates a wrapping object for a given channel credentials. This should only
  * be called with grpc_channel_credentials objects that are not already
  * associated with any Ruby object. */
-VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials *c, VALUE mark) {
+VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials *c,
+                                       VALUE mark) {
   VALUE rb_wrapper;
   grpc_rb_channel_credentials *wrapper;
   if (c == NULL) {
@@ -147,7 +136,8 @@ static ID id_pem_cert_chain;
     pem_private_key: (optional) PEM encoding of the client's private key
     pem_cert_chain: (optional) PEM encoding of the client's cert chain
     Initializes Credential instances. */
-static VALUE grpc_rb_channel_credentials_init(int argc, VALUE *argv, VALUE self) {
+static VALUE grpc_rb_channel_credentials_init(int argc, VALUE *argv,
+                                              VALUE self) {
   VALUE pem_root_certs = Qnil;
   VALUE pem_private_key = Qnil;
   VALUE pem_cert_chain = Qnil;
@@ -156,6 +146,9 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE *argv, VALUE self)
   grpc_ssl_pem_key_cert_pair key_cert_pair;
   const char *pem_root_certs_cstr = NULL;
   MEMZERO(&key_cert_pair, grpc_ssl_pem_key_cert_pair, 1);
+
+  grpc_ruby_once_init();
+
   /* "03" == no mandatory arg, 3 optional */
   rb_scan_args(argc, argv, "03", &pem_root_certs, &pem_private_key,
                &pem_cert_chain);
@@ -170,8 +163,8 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE *argv, VALUE self)
   } else {
     key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
     key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
-    creds = grpc_ssl_credentials_create(pem_root_certs_cstr,
-                                        &key_cert_pair, NULL);
+    creds =
+        grpc_ssl_credentials_create(pem_root_certs_cstr, &key_cert_pair, NULL);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
@@ -230,8 +223,8 @@ static VALUE grpc_rb_set_default_roots_pem(VALUE self, VALUE roots) {
 }
 
 void Init_grpc_channel_credentials() {
-  grpc_rb_cChannelCredentials =
-      rb_define_class_under(grpc_rb_mGrpcCore, "ChannelCredentials", rb_cObject);
+  grpc_rb_cChannelCredentials = rb_define_class_under(
+      grpc_rb_mGrpcCore, "ChannelCredentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(grpc_rb_cChannelCredentials,
@@ -259,7 +252,6 @@ void Init_grpc_channel_credentials() {
 grpc_channel_credentials *grpc_rb_get_wrapped_channel_credentials(VALUE v) {
   grpc_rb_channel_credentials *wrapper = NULL;
   TypedData_Get_Struct(v, grpc_rb_channel_credentials,
-                       &grpc_rb_channel_credentials_data_type,
-                       wrapper);
+                       &grpc_rb_channel_credentials_data_type, wrapper);
   return wrapper->wrapped;
 }

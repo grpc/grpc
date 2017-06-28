@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -79,12 +64,22 @@ struct grpc_udp_listener {
   grpc_resolved_address addr;
   grpc_closure read_closure;
   grpc_closure write_closure;
+  // To be called when corresponding QuicGrpcServer closes all active
+  // connections.
+  grpc_closure orphan_fd_closure;
   grpc_closure destroyed_closure;
   grpc_udp_server_read_cb read_cb;
   grpc_udp_server_write_cb write_cb;
   grpc_udp_server_orphan_cb orphan_cb;
+  // True if orphan_cb is trigered.
+  bool orphan_notified;
 
   struct grpc_udp_listener *next;
+};
+
+struct shutdown_fd_args {
+  grpc_fd *fd;
+  gpr_mu *server_mu;
 };
 
 /* the overall server */
@@ -146,9 +141,22 @@ grpc_udp_server *grpc_udp_server_create(const grpc_channel_args *args) {
   return s;
 }
 
+static void shutdown_fd(grpc_exec_ctx *exec_ctx, void *args,
+                        grpc_error *error) {
+  struct shutdown_fd_args *shutdown_args = (struct shutdown_fd_args *)args;
+  gpr_mu_lock(shutdown_args->server_mu);
+  grpc_fd_shutdown(exec_ctx, shutdown_args->fd, GRPC_ERROR_REF(error));
+  gpr_mu_unlock(shutdown_args->server_mu);
+  gpr_free(shutdown_args);
+}
+
+static void dummy_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  // No-op.
+}
+
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -193,14 +201,18 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
     for (sp = s->head; sp; sp = sp->next) {
       grpc_unlink_if_unix_domain_socket(&sp->addr);
 
-      grpc_closure_init(&sp->destroyed_closure, destroyed_port, s,
+      GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
                         grpc_schedule_on_exec_ctx);
-
-      /* Call the orphan_cb to signal that the FD is about to be closed and
-       * should no longer be used. */
-      GPR_ASSERT(sp->orphan_cb);
-      sp->orphan_cb(exec_ctx, sp->emfd, sp->server->user_data);
-
+      if (!sp->orphan_notified) {
+        /* Call the orphan_cb to signal that the FD is about to be closed and
+         * should no longer be used. Because at this point, all listening ports
+         * have been shutdown already, no need to shutdown again.*/
+        GRPC_CLOSURE_INIT(&sp->orphan_fd_closure, dummy_cb, sp->emfd,
+                          grpc_schedule_on_exec_ctx);
+        GPR_ASSERT(sp->orphan_cb);
+        sp->orphan_cb(exec_ctx, sp->emfd, &sp->orphan_fd_closure,
+                      sp->server->user_data);
+      }
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
                      "udp_listener_shutdown");
     }
@@ -225,9 +237,14 @@ void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
   if (s->active_ports) {
     for (sp = s->head; sp; sp = sp->next) {
       GPR_ASSERT(sp->orphan_cb);
-      sp->orphan_cb(exec_ctx, sp->emfd, sp->server->user_data);
-      grpc_fd_shutdown(exec_ctx, sp->emfd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                               "Server destroyed"));
+      struct shutdown_fd_args *args = gpr_malloc(sizeof(*args));
+      args->fd = sp->emfd;
+      args->server_mu = &s->mu;
+      GRPC_CLOSURE_INIT(&sp->orphan_fd_closure, shutdown_fd, args,
+                        grpc_schedule_on_exec_ctx);
+      sp->orphan_cb(exec_ctx, sp->emfd, &sp->orphan_fd_closure,
+                    sp->server->user_data);
+      sp->orphan_notified = true;
     }
     gpr_mu_unlock(&s->mu);
   } else {
@@ -391,6 +408,7 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
     sp->read_cb = read_cb;
     sp->write_cb = write_cb;
     sp->orphan_cb = orphan_cb;
+    sp->orphan_notified = false;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
     gpr_free(name);
@@ -507,11 +525,11 @@ void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
     for (i = 0; i < pollset_count; i++) {
       grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
     }
-    grpc_closure_init(&sp->read_closure, on_read, sp,
+    GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
                       grpc_schedule_on_exec_ctx);
     grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
 
-    grpc_closure_init(&sp->write_closure, on_write, sp,
+    GRPC_CLOSURE_INIT(&sp->write_closure, on_write, sp,
                       grpc_schedule_on_exec_ctx);
     grpc_fd_notify_on_write(exec_ctx, sp->emfd, &sp->write_closure);
 

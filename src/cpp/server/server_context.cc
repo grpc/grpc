@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -62,7 +47,7 @@ class ServerContext::CompletionOp final : public CallOpSetInterface {
         finalized_(false),
         cancelled_(0) {}
 
-  void FillOps(grpc_op* ops, size_t* nops) override;
+  void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override;
   bool FinalizeResult(void** tag, bool* status) override;
 
   bool CheckCancelled(CompletionQueue* cq) {
@@ -100,7 +85,8 @@ void ServerContext::CompletionOp::Unref() {
   }
 }
 
-void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
+void ServerContext::CompletionOp::FillOps(grpc_call* call, grpc_op* ops,
+                                          size_t* nops) {
   ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops->data.recv_close_on_server.cancelled = &cancelled_;
   ops->flags = 0;
@@ -151,7 +137,7 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
 
 ServerContext::~ServerContext() {
   if (call_) {
-    grpc_call_destroy(call_);
+    grpc_call_unref(call_);
   }
   if (completion_op_) {
     completion_op_->Unref();
@@ -165,6 +151,10 @@ void ServerContext::BeginCompletionOp(Call* call) {
     completion_op_->set_tag(async_notify_when_done_tag_);
   }
   call->PerformOps(completion_op_);
+}
+
+CompletionQueueTag* ServerContext::GetCompletionOpTag() {
+  return static_cast<CompletionQueueTag*>(completion_op_);
 }
 
 void ServerContext::AddInitialMetadata(const grpc::string& key,
@@ -225,17 +215,9 @@ const struct census_context* ServerContext::census_context() const {
 void ServerContext::SetLoadReportingCosts(
     const std::vector<grpc::string>& cost_data) {
   if (call_ == nullptr) return;
-  grpc_load_reporting_cost_context* cost_ctx =
-      static_cast<grpc_load_reporting_cost_context*>(
-          gpr_malloc(sizeof(*cost_ctx)));
-  cost_ctx->values_count = cost_data.size();
-  cost_ctx->values = static_cast<grpc_slice*>(
-      gpr_malloc(sizeof(*cost_ctx->values) * cost_ctx->values_count));
-  for (size_t i = 0; i < cost_ctx->values_count; ++i) {
-    cost_ctx->values[i] =
-        grpc_slice_from_copied_buffer(cost_data[i].data(), cost_data[i].size());
+  for (const auto& cost_datum : cost_data) {
+    AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);
   }
-  grpc_call_set_load_reporting_cost_context(call_, cost_ctx);
 }
 
 }  // namespace grpc

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -44,9 +29,21 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/ev_epoll1_linux.h"
+#include "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h"
+#include "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h"
+#include "src/core/lib/iomgr/ev_epollex_linux.h"
+#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
+
+grpc_tracer_flag grpc_polling_trace =
+    GRPC_TRACER_INITIALIZER(false); /* Disabled by default */
+
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
@@ -57,7 +54,8 @@ grpc_wakeup_fd grpc_global_wakeup_fd;
 static const grpc_event_engine_vtable *g_event_engine;
 static const char *g_poll_strategy_name = NULL;
 
-typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(void);
+typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(
+    bool explicit_request);
 
 typedef struct {
   const char *name;
@@ -65,9 +63,13 @@ typedef struct {
 } event_engine_factory;
 
 static const event_engine_factory g_factories[] = {
-    {"epoll", grpc_init_epoll_linux},
+    {"epollsig", grpc_init_epollsig_linux},
+    {"epoll1", grpc_init_epoll1_linux},
+    {"epoll-threadpool", grpc_init_epoll_thread_pool_linux},
+    {"epoll-limited", grpc_init_epoll_limited_pollers_linux},
     {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
+    {"epollex", grpc_init_epollex_linux},
 };
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
@@ -102,7 +104,8 @@ static bool is(const char *want, const char *have) {
 static void try_engine(const char *engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
     if (is(engine, g_factories[i].name)) {
-      if ((g_event_engine = g_factories[i].factory())) {
+      if ((g_event_engine = g_factories[i].factory(
+               0 == strcmp(engine, g_factories[i].name)))) {
         g_poll_strategy_name = g_factories[i].name;
         gpr_log(GPR_DEBUG, "Using polling engine: %s", g_factories[i].name);
         return;
@@ -111,10 +114,18 @@ static void try_engine(const char *engine) {
   }
 }
 
+/* This should be used for testing purposes ONLY */
+void grpc_set_event_engine_test_only(
+    const grpc_event_engine_vtable *ev_engine) {
+  g_event_engine = ev_engine;
+}
+
 /* Call this only after calling grpc_event_engine_init() */
 const char *grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
+  grpc_register_tracer("polling", &grpc_polling_trace);
+
   char *s = gpr_getenv("GRPC_POLL_STRATEGY");
   if (s == NULL) {
     s = gpr_strdup("all");
@@ -147,10 +158,6 @@ void grpc_event_engine_shutdown(void) {
 
 grpc_fd *grpc_fd_create(int fd, const char *name) {
   return g_event_engine->fd_create(fd, name);
-}
-
-grpc_workqueue *grpc_fd_get_workqueue(grpc_fd *fd) {
-  return g_event_engine->fd_get_workqueue(fd);
 }
 
 int grpc_fd_wrapped_fd(grpc_fd *fd) {
@@ -191,8 +198,8 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   g_event_engine->pollset_shutdown(exec_ctx, pollset, closure);
 }
 
-void grpc_pollset_destroy(grpc_pollset *pollset) {
-  g_event_engine->pollset_destroy(pollset);
+void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
+  g_event_engine->pollset_destroy(exec_ctx, pollset);
 }
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -252,30 +259,6 @@ void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
 void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd) {
   g_event_engine->pollset_set_del_fd(exec_ctx, pollset_set, fd);
-}
-
-grpc_error *grpc_kick_poller(void) { return g_event_engine->kick_poller(); }
-
-#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
-                                   int line, const char *reason) {
-  return g_event_engine->workqueue_ref(workqueue, file, line, reason);
-}
-void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                          const char *file, int line, const char *reason) {
-  g_event_engine->workqueue_unref(exec_ctx, workqueue, file, line, reason);
-}
-#else
-grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue) {
-  return g_event_engine->workqueue_ref(workqueue);
-}
-void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
-  g_event_engine->workqueue_unref(exec_ctx, workqueue);
-}
-#endif
-
-grpc_closure_scheduler *grpc_workqueue_scheduler(grpc_workqueue *workqueue) {
-  return g_event_engine->workqueue_scheduler(workqueue);
 }
 
 #endif  // GRPC_POSIX_SOCKET

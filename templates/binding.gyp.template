@@ -7,63 +7,87 @@
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
 
-  # Copyright 2015, Google Inc.
-  # All rights reserved.
+  # Copyright 2015 gRPC authors.
   #
-  # Redistribution and use in source and binary forms, with or without
-  # modification, are permitted provided that the following conditions are
-  # met:
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
   #
-  #     * Redistributions of source code must retain the above copyright
-  # notice, this list of conditions and the following disclaimer.
-  #     * Redistributions in binary form must reproduce the above
-  # copyright notice, this list of conditions and the following disclaimer
-  # in the documentation and/or other materials provided with the
-  # distribution.
-  #     * Neither the name of Google Inc. nor the names of its
-  # contributors may be used to endorse or promote products derived from
-  # this software without specific prior written permission.
+  #     http://www.apache.org/licenses/LICENSE-2.0
   #
-  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-  # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-  # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-  # A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-  # OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-  # SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-  # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-  # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
 
   # Some of this file is built with the help of
   # https://n8.io/converting-a-c-library-to-gyp/
   {
     'variables': {
       'runtime%': 'node',
-      # UV integration in C core is enabled by default. It can be disabled
-      # by setting this argument to anything else.
-      'grpc_uv%': 'true',
       # Some Node installations use the system installation of OpenSSL, and on
       # some systems, the system OpenSSL still does not have ALPN support. This
       # will let users recompile gRPC to work without ALPN.
-      'grpc_alpn%': 'true'
+      'grpc_alpn%': 'true',
+      # Indicates that the library should be built with gcov.
+      'grpc_gcov%': 'false',
+      # Indicates that the library should be built with compatibility for musl
+      # libc, so that it can run on Alpine Linux. This is only necessary if not
+      # building on Alpine Linux
+      'grpc_alpine%': 'false'
     },
     'target_defaults': {
+      'configurations': {
+        % for name, args in configs.iteritems():
+        %  if name in ['dbg', 'opt']:
+        '${{'dbg':'Debug', 'opt': 'Release'}[name]}': {
+          % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines')]:
+          %  if args.get(arg, None) is not None:
+          '${prop}': [
+            % for item in args.get(arg).split():
+              '${item}',
+            % endfor
+          ],
+          %  endif
+          % endfor
+        },
+        %  endif
+        % endfor
+      },
+      % for arg, prop in [('CPPFLAGS', 'cflags'), ('LDFLAGS', 'ldflags')]:
+      %  if defaults['global'].get(arg, None) is not None:
+      '${prop}': [
+        % for item in defaults['global'].get(arg).split():
+          '${item}',
+        % endfor
+      ],
+      %  endif
+      % endfor
       'include_dirs': [
         '.',
         'include'
       ],
       'defines': [
-        'GPR_BACKWARDS_COMPATIBILITY_MODE'
+        'GPR_BACKWARDS_COMPATIBILITY_MODE',
+        'GRPC_ARES=0',
+        'GRPC_UV'
       ],
       'conditions': [
-        ['grpc_uv=="true"', {
+        ['grpc_gcov=="true"', {
+          % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines'), ('LDFLAGS', 'ldflags')]:
+          %  if configs['gcov'].get(arg, None) is not None:
+          '${prop}': [
+            % for item in configs['gcov'].get(arg).split():
+              '${item}',
+            % endfor
+          ],
+          %  endif
+          % endfor
+        }],
+        ['grpc_alpine=="true"', {
           'defines': [
-            'GRPC_ARES=0',
-            # Disabling this while bugs are ironed out. Uncomment this to
-            # re-enable libuv integration in C core.
-            'GRPC_UV'
+            'GPR_MUSL_LIBC_COMPAT'
           ]
         }],
         ['OS!="win" and runtime=="electron"', {
@@ -81,6 +105,15 @@
           ]
         }, {
           'conditions': [
+            ["target_arch=='ia32'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+            }],
+            ["target_arch=='x64'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+            }],
+            ["target_arch=='arm'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+            }],
             ['grpc_alpn=="true"', {
               'defines': [
                 'TSI_OPENSSL_ALPN_SUPPORT=1'
@@ -93,17 +126,6 @@
           ],
           'include_dirs': [
             '<(node_root_dir)/deps/openssl/openssl/include',
-          ],
-          'conditions': [
-           ["target_arch=='ia32'", {
-               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
-           }],
-           ["target_arch=='x64'", {
-               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
-           }],
-           ["target_arch=='arm'", {
-               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
-           }]
           ]
         }],
         ['OS == "win"', {
@@ -128,26 +150,9 @@
             "ws2_32"
           ]
         }, { # OS != "win"
-          'variables': {
-            'config': '<!(echo $CONFIG)',
-          },
           'include_dirs': [
             '<(node_root_dir)/deps/zlib',
-            '<(node_root_dir)/deps/cares/include',
-          ],
-          'conditions': [
-            ['config=="gcov"', {
-              'cflags': [
-                '-ftest-coverage',
-                '-fprofile-arcs',
-                '-O0'
-              ],
-              'ldflags': [
-                '-ftest-coverage',
-                '-fprofile-arcs'
-              ]
-            }
-           ]
+            '<(node_root_dir)/deps/cares/include'
           ]
         }]
       ]
@@ -160,6 +165,7 @@
           % if lib.name in module.transitive_deps and lib.name == 'boringssl':
           {
             'cflags': [
+              '-std=c++11',
               '-std=c99',
               '-Wall',
               '-Werror'
@@ -176,14 +182,25 @@
               % for source in lib.src:
               '${source}',
               % endfor
-            ]
+            ],
+            'conditions': [
+              ['OS=="mac"', {
+                'xcode_settings': {
+                  'MACOSX_DEPLOYMENT_TARGET': '10.9',
+                  'OTHER_CPLUSPLUSFLAGS': [
+                    '-stdlib=libc++',
+                    '-std=c++11'
+                  ],
+                }
+              }],
+            ],
           },
           % endif
           % endfor
           % endfor
-        ]
+        ],
       }],
-      ['OS == "win"', {
+      ['OS == "win" and runtime!="electron"', {
         'targets': [
           {
             # IMPORTANT WINDOWS BUILD INFORMATION
@@ -194,10 +211,13 @@
             # when including the Node headers. The remedy for this is to remove
             # the OpenSSL headers, from the downloaded Node development package,
             # which is typically located in `.node-gyp` in your home directory.
+            #
+            # This is not true of Electron, which does not have OpenSSL headers.
             'target_name': 'WINDOWS_BUILD_WARNING',
-            'actions': [
+            'rules': [
               {
-                'action_name': 'WINDOWS_BUILD_WARNING',
+                'rule_name': 'WINDOWS_BUILD_WARNING',
+                'extension': 'S',
                 'inputs': [
                   'package.json'
                 ],
@@ -208,6 +228,10 @@
               }
             ]
           },
+        ]
+      }],
+      ['OS == "win"', {
+        'targets': [
           # Only want to compile zlib under Windows
           % for module in node_modules:
           % for lib in libs:
@@ -239,13 +263,6 @@
       }]
     ],
     'targets': [
-  <%
-      for lib in libs:
-        if 'grpc' in lib.transitive_deps or lib.name == 'grpc':
-          lib.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
-      for module in node_modules:
-        module.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
-  %>
       % for module in node_modules:
       % for lib in libs:
       % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):
@@ -284,15 +301,9 @@
         ],
         'cflags': [
           '-std=c++11',
-          '-Wall',
           '-pthread',
-          '-g',
           '-zdefs',
-          '-Werror',
           '-Wno-error=deprecated-declarations'
-        ],
-        'ldflags': [
-          '-g'
         ],
         "conditions": [
           ['OS=="win" or runtime=="electron"', {
