@@ -148,11 +148,6 @@ static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
   return true;
 }
 
-/* How many bytes of incoming flow control would we like to advertise */
-uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
-  return (int64_t)((1u << 31) - 1);
-}
-
 /* How many bytes would we like to put on the wire during a single syscall */
 static uint32_t target_write_size(grpc_chttp2_transport *t) {
   return 1024 * 1024;
@@ -284,16 +279,14 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
 
     // TODO(ncteisen): is sent settings the correct choice here?
-    uint32_t stream_announce = grpc_chttp2_flow_control_get_stream_announce(
-        &s->flow_control,
-        t->settings[GRPC_SENT_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+    uint32_t stream_announce =
+        grpc_chttp2_flow_control_get_stream_announce(&s->flow_control);
     if (stream_announce) {
       grpc_slice_buffer_add(
           &t->outbuf, grpc_chttp2_window_update_create(s->id, stream_announce,
                                                        &s->stats.outgoing));
-      grpc_chttp2_flow_control_announce_credit_stream(&s->flow_control,
-                                                      stream_announce);
+      GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_CREDIT_STREAM(
+          &s->flow_control, stream_announce, "sending stream window update");
       t->ping_state.pings_before_data_required =
           t->ping_policy.max_pings_without_data;
       if (!t->is_client) {
@@ -326,10 +319,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, send_bytes,
                                   is_last_frame, &s->stats.outgoing,
                                   &t->outbuf);
-          grpc_chttp2_flow_control_debit_remote_stream(&s->flow_control,
-                                                       send_bytes);
-          grpc_chttp2_flow_control_debit_remote_transport(&t->flow_control,
-                                                          send_bytes);
+          GRPC_CHTTP2_FLOW_CONTROL_DEBIT_REMOTE_STREAM(
+              &s->flow_control, send_bytes, "sent bytes to peer");
+          GRPC_CHTTP2_FLOW_CONTROL_DEBIT_REMOTE_TRANSPORT(
+              &t->flow_control, send_bytes, "sent bytes to peer");
           t->ping_state.pings_before_data_required =
               t->ping_policy.max_pings_without_data;
           if (!t->is_client) {
@@ -407,13 +400,21 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
   }
 
-  uint32_t transport_announce =
-      grpc_chttp2_flow_control_get_transport_announce(&t->flow_control);
-  if (transport_announce) {
+  uint32_t transport_announce = grpc_chttp2_flow_control_get_transport_announce(
+      &t->flow_control, t->settings[GRPC_SENT_SETTINGS]
+                                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+  uint32_t threshold_to_send_transport_window_update =
+      t->outbuf.count > 0 ? 3 * transport_announce / 4
+                          : transport_announce / 2;
+  if (t->flow_control.announced_local_window <= threshold_to_send_transport_window_update &&
+      t->flow_control.announced_local_window != transport_announce) {
     maybe_initiate_ping(exec_ctx, t,
                         GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE);
-    grpc_chttp2_flow_control_announce_credit_transport(&t->flow_control,
-                                                       transport_announce);
+    uint32_t announced = (uint32_t)GPR_CLAMP(
+        transport_announce - t->flow_control.announced_local_window, 0, UINT32_MAX);
+    GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_CREDIT_TRANSPORT(
+        &t->flow_control, announced,
+        "sending transport window update");
     grpc_transport_one_way_stats throwaway_stats;
     grpc_slice_buffer_add(
         &t->outbuf, grpc_chttp2_window_update_create(0, transport_announce,

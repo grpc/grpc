@@ -396,22 +396,17 @@ static grpc_error *update_local_window(grpc_exec_ctx *exec_ctx,
       }
     }
 
-    // WHY IS THIS COMMENTED OUT???
-    // Because at this point we are "disabling" flow control. We allow the
-    // stream to take data whenever it can. We debit the announced window so we
-    // can update accordingly when the remote peer's bookkeeping gets low
-    // grpc_chttp2_flow_control_debit_local_stream(&s->flow_control,
-    //                                             incoming_frame_size);
-
+    GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_STREAM(
+        &s->flow_control, incoming_frame_size, "recv'd data frame");
     // Debit this bc the peer thinks we will be debiting it.
-    grpc_chttp2_flow_control_announce_debit_stream(&s->flow_control,
-                                                   incoming_frame_size);
+    GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_DEBIT_STREAM(
+        &s->flow_control, incoming_frame_size, "recv'd data frame");
 
     // TODO(ncteisen): Pull these control bits into the module
-    if ((int64_t)s->flow_control.announced_local_window_delta +
-            (int64_t)t->settings[GRPC_SENT_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] <=
-        32768) {
+    if ((int64_t)s->flow_control.announced_local_window_delta <=
+        (int64_t)t->settings[GRPC_SENT_SETTINGS]
+                            [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
+            2) {
       grpc_chttp2_become_writable(exec_ctx, t, s,
                                   GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
                                   "window-update-required");
@@ -419,14 +414,18 @@ static grpc_error *update_local_window(grpc_exec_ctx *exec_ctx,
     s->received_bytes += incoming_frame_size;
   }
 
-  // uint32_t target_incoming_window = grpc_chttp2_target_incoming_window(t);
-  // grpc_chttp2_flow_control_debit_local_transport(&t->flow_control,
-  //                                                incoming_frame_size);
-  grpc_chttp2_flow_control_announce_debit_transport(&t->flow_control,
-                                                    incoming_frame_size);
+  uint32_t target_incoming_window =
+      grpc_chttp2_flow_control_get_transport_announce(
+          &t->flow_control,
+          t->settings[GRPC_SENT_SETTINGS]
+                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+  GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_TRANSPORT(
+      &t->flow_control, incoming_frame_size, "recv'd data frame");
+  GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_DEBIT_TRANSPORT(
+      &t->flow_control, incoming_frame_size, "recv'd data frame");
 
   // TODO(ncteisen): pull these bits out
-  if (t->flow_control.announced_local_window <= 32768) {
+  if (t->flow_control.announced_local_window <= target_incoming_window / 2) {
     grpc_chttp2_initiate_write(exec_ctx, t, "flow_control");
   }
 

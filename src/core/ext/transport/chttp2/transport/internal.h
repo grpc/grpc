@@ -703,8 +703,6 @@ void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      grpc_chttp2_stream *s, grpc_error *error);
 
-uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t);
-
 /** Set the default keepalive configurations, must only be called at
     initialization */
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args,

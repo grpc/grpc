@@ -51,12 +51,29 @@ typedef struct {
    * to send WINDOW_UPDATE frames. */
   int64_t announced_local_window;
 
+  /** calculating what we should give for incoming window:
+      we track the total amount of flow control over initial window size
+      across all streams: this is data that we want to receive right now (it
+      has an outstanding read)
+      and the total amount of flow control under initial window size across all
+      streams: this is data we've read early
+      we want to adjust incoming_window such that:
+      incoming_window = total_over - max(bdp - total_under, 0) */
+  int64_t local_stream_total_over_incoming_window;
+  int64_t local_stream_total_under_incoming_window;
+
   /* bdp estimation */
   grpc_bdp_estimator bdp_estimator;
 
   /* pid controller */
   grpc_pid_controller pid_controller;
   gpr_timespec last_pid_update;
+
+// duplicated data for debugging/tracing ease
+#ifndef NDEBUG
+  bool is_client;
+#endif
+
 } grpc_chttp2_transport_flow_control_data;
 
 typedef struct {
@@ -73,77 +90,132 @@ typedef struct {
   /** window available for peer to send to us over this stream that we have
    * announced to the peer */
   int64_t announced_local_window_delta;
+
+  grpc_chttp2_transport_flow_control_data* tfc;
+
+// duplicated data for debugging/tracing ease
+#ifndef NDEBUG
+  bool is_client;
+#endif
+
 } grpc_chttp2_stream_flow_control_data;
 
 uint32_t grpc_chttp2_flow_control_get_stream_announce(
-    grpc_chttp2_stream_flow_control_data* sfc, uint32_t initial_window);
+    grpc_chttp2_stream_flow_control_data* sfc);
 uint32_t grpc_chttp2_flow_control_get_transport_announce(
-    grpc_chttp2_transport_flow_control_data* tfc);
+    grpc_chttp2_transport_flow_control_data* tfc, int64_t initial_window);
 
-#define grpc_chttp2_flow_control_credit_local_transport(fc, v) \
-  _grpc_chttp2_flow_control_credit_local_transport(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_debit_local_transport(fc, v) \
-  _grpc_chttp2_flow_control_debit_local_transport(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_credit_local_stream(fc, v) \
-  _grpc_chttp2_flow_control_credit_local_stream(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_debit_local_stream(fc, v) \
-  _grpc_chttp2_flow_control_debit_local_stream(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_announce_credit_transport(fc, v) \
-  _grpc_chttp2_flow_control_announce_credit_transport(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_announce_debit_transport(fc, v) \
-  _grpc_chttp2_flow_control_announce_debit_transport(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_announce_credit_stream(fc, v) \
-  _grpc_chttp2_flow_control_announce_credit_stream(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_announce_debit_stream(fc, v) \
-  _grpc_chttp2_flow_control_announce_debit_stream(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_credit_remote_transport(fc, v) \
-  _grpc_chttp2_flow_control_credit_remote_transport(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_debit_remote_transport(fc, v) \
-  _grpc_chttp2_flow_control_debit_remote_transport(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_credit_remote_stream(fc, v) \
-  _grpc_chttp2_flow_control_credit_remote_stream(fc, v, __FILE__, __LINE__)
-#define grpc_chttp2_flow_control_debit_remote_stream(fc, v) \
-  _grpc_chttp2_flow_control_debit_remote_stream(fc, v, __FILE__, __LINE__)
+// All of the ugliness below is in the interest of having a consistent,
+// malleable tracing system to examine flow control intricacies. For a quick
+// overview of the flow control API, read the lowercase function prototypes
+// below all these macros.
+#ifndef NDEBUG
+#define GRPC_FLOW_CONTROL_DEBUG_ARGS \
+  , const char *file, int line, const char *reason
+#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_credit_local_transport((fc), (val), __FILE__, \
+                                                  __LINE__, (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_debit_local_transport((fc), (val), __FILE__, \
+                                                 __LINE__, (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_credit_local_stream((fc), (val), __FILE__, \
+                                               __LINE__, (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_STREAM(fc, val, reason)           \
+  grpc_chttp2_flow_control_debit_local_stream((fc), (val), __FILE__, __LINE__, \
+                                              (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_CREDIT_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_announce_credit_transport((fc), (val), __FILE__, \
+                                                     __LINE__, (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_DEBIT_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_announce_debit_transport((fc), (val), __FILE__, \
+                                                    __LINE__, (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_CREDIT_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_announce_credit_stream((fc), (val), __FILE__, \
+                                                  __LINE__, (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_DEBIT_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_announce_debit_stream((fc), (val), __FILE__, \
+                                                 __LINE__, (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_REMOTE_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_credit_remote_transport((fc), (val), __FILE__, \
+                                                   __LINE__, (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_REMOTE_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_debit_remote_transport((fc), (val), __FILE__, \
+                                                  __LINE__, (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_REMOTE_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_credit_remote_stream((fc), (val), __FILE__, \
+                                                __LINE__, (reason))
+#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_REMOTE_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_debit_remote_stream((fc), (val), __FILE__, \
+                                               __LINE__, (reason))
+#else
+#define GRPC_FLOW_CONTROL_DEBUG_ARGS
+#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_credit_local_transport((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_debit_local_transport((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_credit_local_stream((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_debit_local_stream((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_CREDIT_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_announce_credit_transport((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_DEBIT_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_announce_debit_transport((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_CREDIT_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_announce_credit_stream((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_DEBIT_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_announce_debit_stream((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_REMOTE_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_credit_remote_transport((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_REMOTE_TRANSPORT(fc, val, reason) \
+  grpc_chttp2_flow_control_debit_remote_transport((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_REMOTE_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_credit_remote_stream((fc), (val))
+#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_REMOTE_STREAM(fc, val, reason) \
+  grpc_chttp2_flow_control_debit_remote_stream((fc), (val))
+#endif
 
 void grpc_chttp2_flow_control_transport_init(
     grpc_chttp2_transport_flow_control_data* tfc);
 void grpc_chttp2_flow_control_stream_init(
     grpc_chttp2_stream_flow_control_data* sfc);
-void _grpc_chttp2_flow_control_credit_local_transport(
-    grpc_chttp2_transport_flow_control_data* tfc, uint32_t val,
-    const char* file, int line);
-void _grpc_chttp2_flow_control_debit_local_transport(
-    grpc_chttp2_transport_flow_control_data* tfc, uint32_t val,
-    const char* file, int line);
-void _grpc_chttp2_flow_control_credit_local_stream(
-    grpc_chttp2_stream_flow_control_data* sfc, uint32_t val, const char* file,
-    int line);
-void _grpc_chttp2_flow_control_debit_local_stream(
-    grpc_chttp2_stream_flow_control_data* sfc, uint32_t val, const char* file,
-    int line);
-void _grpc_chttp2_flow_control_announce_credit_transport(
-    grpc_chttp2_transport_flow_control_data* tfc, uint32_t val,
-    const char* file, int line);
-void _grpc_chttp2_flow_control_announce_debit_transport(
-    grpc_chttp2_transport_flow_control_data* tfc, uint32_t val,
-    const char* file, int line);
-void _grpc_chttp2_flow_control_announce_credit_stream(
-    grpc_chttp2_stream_flow_control_data* sfc, uint32_t val, const char* file,
-    int line);
-void _grpc_chttp2_flow_control_announce_debit_stream(
-    grpc_chttp2_stream_flow_control_data* sfc, uint32_t val, const char* file,
-    int line);
-void _grpc_chttp2_flow_control_credit_remote_transport(
-    grpc_chttp2_transport_flow_control_data* tfc, uint32_t val,
-    const char* file, int line);
-void _grpc_chttp2_flow_control_debit_remote_transport(
-    grpc_chttp2_transport_flow_control_data* tfc, uint32_t val,
-    const char* file, int line);
-void _grpc_chttp2_flow_control_credit_remote_stream(
-    grpc_chttp2_stream_flow_control_data* sfc, uint32_t val, const char* file,
-    int line);
-void _grpc_chttp2_flow_control_debit_remote_stream(
-    grpc_chttp2_stream_flow_control_data* sfc, uint32_t val, const char* file,
-    int line);
+
+void grpc_chttp2_flow_control_credit_local_transport(
+    grpc_chttp2_transport_flow_control_data* tfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_debit_local_transport(
+    grpc_chttp2_transport_flow_control_data* tfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_credit_local_stream(
+    grpc_chttp2_stream_flow_control_data* sfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_debit_local_stream(
+    grpc_chttp2_stream_flow_control_data* sfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_announce_credit_transport(
+    grpc_chttp2_transport_flow_control_data* tfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_announce_debit_transport(
+    grpc_chttp2_transport_flow_control_data* tfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_announce_credit_stream(
+    grpc_chttp2_stream_flow_control_data* sfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_announce_debit_stream(
+    grpc_chttp2_stream_flow_control_data* sfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_credit_remote_transport(
+    grpc_chttp2_transport_flow_control_data* tfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_debit_remote_transport(
+    grpc_chttp2_transport_flow_control_data* tfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_credit_remote_stream(
+    grpc_chttp2_stream_flow_control_data* sfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+void grpc_chttp2_flow_control_debit_remote_stream(
+    grpc_chttp2_stream_flow_control_data* sfc,
+    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H */
