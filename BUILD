@@ -1522,6 +1522,7 @@ grpc_cc_library(
         ":grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
