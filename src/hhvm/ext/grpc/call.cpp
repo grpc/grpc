@@ -40,6 +40,8 @@
 
 namespace HPHP {
 
+Mutex s_grpc_call_start_batch_mutex;
+
 Class* CallData::s_class = nullptr;
 const StaticString CallData::s_className("Grpc\\Call");
 
@@ -128,8 +130,6 @@ Object HHVM_METHOD(Call, startBatch,
   grpc_byte_buffer *message;
   int cancelled;
   grpc_call_error error;
-  char *message_str;
-  size_t message_len;
 
   grpc_metadata_array_init(&metadata);
   grpc_metadata_array_init(&trailing_metadata);
@@ -273,12 +273,17 @@ Object HHVM_METHOD(Call, startBatch,
     op_num++;
   }
 
-  error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
+  {
+    Lock l1(s_grpc_call_start_batch_mutex);
+    error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
+  }
+
   if (error != GRPC_CALL_OK) {
     throw_invalid_argument("start_batch was called incorrectly: %d" PRId64, (int)error);
     goto cleanup;
   }
 
+  // This doesn't need a lock b/c we use a completion queue per-thread
   grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), callData->getWrapped(),
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
@@ -300,12 +305,15 @@ Object HHVM_METHOD(Call, startBatch,
         resultObj.o_set("metadata", grpc_parse_metadata_array(&recv_metadata));
         break;
       case GRPC_OP_RECV_MESSAGE:
+        char *message_str;
+        size_t message_len;
         byte_buffer_to_string(message, &message_str, &message_len);
         if (message_str == NULL) {
           resultObj.o_set("message", Variant());
         } else {
           resultObj.o_set("message", Variant(String(message_str, message_len, CopyString)));
         }
+        req::free(message_str);
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         {
@@ -339,7 +347,6 @@ Object HHVM_METHOD(Call, startBatch,
       }
       if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
         grpc_byte_buffer_destroy(message);
-        req::free(message_str);
       }
     }
     return resultObj;
