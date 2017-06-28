@@ -29,7 +29,7 @@
 <header>
     
         <h2>
-            <span class="ancestors"><a href="module-src_metadata.html">src/metadata</a>~</span>Metadata</h2>
+            <span class="ancestors"><a href="grpc.html">grpc</a>.</span>Metadata</h2>
         
     
 </header>
@@ -48,7 +48,7 @@
 
 
 <div class="description">
-    Class for storing metadata. Keys are normalized to lowercase ASCII.
+    <p>Class for storing metadata. Keys are normalized to lowercase ASCII.</p>
 </div>
 
 
@@ -92,7 +92,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line58">line 58</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line50">line 50</a>
     </li></ul></dd>
     
 
@@ -115,6 +115,14 @@
 
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var metadata = new metadata_module.Metadata();
+metadata.set('key1', 'value1');
+metadata.add('key1', 'value2');
+metadata.get('key1') // returns ['value1', 'value2']</code></pre>
 
 
 
@@ -148,7 +156,7 @@
 
 
 <div class="description">
-    Adds the given value for the given key. Normalizes the key.
+    <p>Adds the given value for the given key. Normalizes the key.</p>
 </div>
 
 
@@ -200,7 +208,7 @@
 
             
 
-            <td class="description last">The key to add to.</td>
+            <td class="description last"><p>The key to add to.</p></td>
         </tr>
 
     
@@ -226,8 +234,8 @@
 
             
 
-            <td class="description last">The value to add. Must be a buffer if and only
-    if the normalized key ends with '-bin'</td>
+            <td class="description last"><p>The value to add. Must be a buffer if and only
+    if the normalized key ends with '-bin'</p></td>
         </tr>
 
     
@@ -268,7 +276,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line107">line 107</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line99">line 99</a>
     </li></ul></dd>
     
 
@@ -299,14 +307,14 @@
 
     
 
-    <h4 class="name" id="clone"><span class="type-signature"></span>clone<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#Metadata">Metadata</a>}</span></h4>
+    <h4 class="name" id="clone"><span class="type-signature"></span>clone<span class="signature">()</span><span class="type-signature"> &rarr; {Metadata}</span></h4>
 
     
 
 
 
 <div class="description">
-    Clone the metadata object.
+    <p>Clone the metadata object.</p>
 </div>
 
 
@@ -350,7 +358,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line160">line 160</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line152">line 152</a>
     </li></ul></dd>
     
 
@@ -377,7 +385,7 @@
 
         
 <div class="param-desc">
-    The new cloned object
+    <p>The new cloned object</p>
 </div>
 
 
@@ -388,7 +396,7 @@
     </dt>
     <dd>
         
-<span class="param-type"><a href="global.html#Metadata">Metadata</a></span>
+<span class="param-type">Metadata</span>
 
 
     </dd>
@@ -410,7 +418,7 @@
 
 
 <div class="description">
-    Gets a list of all values associated with the key. Normalizes the key.
+    <p>Gets a list of all values associated with the key. Normalizes the key.</p>
 </div>
 
 
@@ -462,7 +470,7 @@
 
             
 
-            <td class="description last">The key to get</td>
+            <td class="description last"><p>The key to get</p></td>
         </tr>
 
     
@@ -503,7 +511,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line132">line 132</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line124">line 124</a>
     </li></ul></dd>
     
 
@@ -530,7 +538,7 @@
 
         
 <div class="param-desc">
-    The values associated with that key
+    <p>The values associated with that key</p>
 </div>
 
 
@@ -563,8 +571,8 @@
 
 
 <div class="description">
-    Get a map of each key to a single associated value. This reflects the most
-common way that people will want to see metadata.
+    <p>Get a map of each key to a single associated value. This reflects the most
+common way that people will want to see metadata.</p>
 </div>
 
 
@@ -608,7 +616,7 @@ common way that people will want to see metadata.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line146">line 146</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line138">line 138</a>
     </li></ul></dd>
     
 
@@ -635,7 +643,7 @@ common way that people will want to see metadata.
 
         
 <div class="param-desc">
-    A key/value mapping of the metadata
+    <p>A key/value mapping of the metadata</p>
 </div>
 
 
@@ -668,7 +676,7 @@ common way that people will want to see metadata.
 
 
 <div class="description">
-    Remove the given key and any associated values. Normalizes the key.
+    <p>Remove the given key and any associated values. Normalizes the key.</p>
 </div>
 
 
@@ -720,7 +728,7 @@ common way that people will want to see metadata.
 
             
 
-            <td class="description last">The key to remove</td>
+            <td class="description last"><p>The key to remove</p></td>
         </tr>
 
     
@@ -761,7 +769,7 @@ common way that people will want to see metadata.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line120">line 120</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line112">line 112</a>
     </li></ul></dd>
     
 
@@ -799,8 +807,8 @@ common way that people will want to see metadata.
 
 
 <div class="description">
-    Sets the given value for the given key, replacing any other values associated
-with that key. Normalizes the key.
+    <p>Sets the given value for the given key, replacing any other values associated
+with that key. Normalizes the key.</p>
 </div>
 
 
@@ -852,7 +860,7 @@ with that key. Normalizes the key.
 
             
 
-            <td class="description last">The key to set</td>
+            <td class="description last"><p>The key to set</p></td>
         </tr>
 
     
@@ -878,8 +886,8 @@ with that key. Normalizes the key.
 
             
 
-            <td class="description last">The value to set. Must be a buffer if and only
-    if the normalized key ends with '-bin'</td>
+            <td class="description last"><p>The value to set. Must be a buffer if and only
+    if the normalized key ends with '-bin'</p></td>
         </tr>
 
     
@@ -920,7 +928,7 @@ with that key. Normalizes the key.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line95">line 95</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line87">line 87</a>
     </li></ul></dd>
     
 
@@ -962,13 +970,13 @@ with that key. Normalizes the key.
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_credentials.html">src/credentials</a></li><li><a href="module-src_metadata.html">src/metadata</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_metadata-Metadata.html">Metadata</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#credentials">credentials</a></li><li><a href="global.html#deserializeCls">deserializeCls</a></li><li><a href="global.html#fullyQualifiedName">fullyQualifiedName</a></li><li><a href="global.html#getClientChannel">getClientChannel</a></li><li><a href="global.html#getProtobufServiceAttrs">getProtobufServiceAttrs</a></li><li><a href="global.html#isProbablyProtobufJs5">isProbablyProtobufJs5</a></li><li><a href="global.html#isProbablyProtobufJs6">isProbablyProtobufJs6</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#logVerbosity">logVerbosity</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#Metadata">Metadata</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#serializeCls">serializeCls</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#setLogger">setLogger</a></li><li><a href="global.html#setLogVerbosity">setLogVerbosity</a></li><li><a href="global.html#status">status</a></li><li><a href="global.html#waitForClientReady">waitForClientReady</a></li><li><a href="global.html#writeFlags">writeFlags</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external-Duplex.html">Duplex</a></li><li><a href="external-EventEmitter.html">EventEmitter</a></li><li><a href="external-GoogleCredential.html">GoogleCredential</a></li><li><a href="external-Readable.html">Readable</a></li><li><a href="external-Writable.html">Writable</a></li></ul><h3>Classes</h3><ul><li><a href="grpc.Client.html">Client</a></li><li><a href="grpc.credentials-CallCredentials.html">CallCredentials</a></li><li><a href="grpc.credentials-ChannelCredentials.html">ChannelCredentials</a></li><li><a href="grpc.Metadata.html">Metadata</a></li><li><a href="grpc.Server.html">Server</a></li><li><a href="grpc.ServerCredentials.html">ServerCredentials</a></li><li><a href="grpc-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="grpc-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="grpc-ClientUnaryCall.html">ClientUnaryCall</a></li><li><a href="grpc-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="grpc-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="grpc-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="grpc-ServerUnaryCall.html">ServerUnaryCall</a></li><li><a href="grpc-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Events</h3><ul><li><a href="grpc-ClientDuplexStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientDuplexStream.html#event:status">status</a></li><li><a href="grpc-ClientReadableStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientReadableStream.html#event:status">status</a></li><li><a href="grpc-ClientUnaryCall.html#event:metadata">metadata</a></li><li><a href="grpc-ClientUnaryCall.html#event:status">status</a></li><li><a href="grpc-ClientWritableStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientWritableStream.html#event:status">status</a></li><li><a href="grpc-ServerDuplexStream.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerReadableStream.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerUnaryCall.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerWritableStream.html#~event:cancelled">cancelled</a></li></ul><h3>Namespaces</h3><ul><li><a href="grpc.html">grpc</a></li><li><a href="grpc.credentials.html">credentials</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Thu Apr 27 2017 17:35:39 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Jun 28 2017 09:44:06 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

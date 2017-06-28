@@ -1,0 +1,4692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Namespace: grpc</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Namespace: grpc</h1>
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>grpc</h2>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+        
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line62">line 62</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="grpc.Client.html">Client</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc.Metadata.html">Metadata</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc.Server.html">Server</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc.ServerCredentials.html">ServerCredentials</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc-ClientDuplexStream.html">ClientDuplexStream</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc-ClientReadableStream.html">ClientReadableStream</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc-ClientUnaryCall.html">ClientUnaryCall</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc-ClientWritableStream.html">ClientWritableStream</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc-ServerDuplexStream.html">ServerDuplexStream</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc-ServerReadableStream.html">ServerReadableStream</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc-ServerUnaryCall.html">ServerUnaryCall</a></dt>
+            <dd></dd>
+        
+            <dt><a href="grpc-ServerWritableStream.html">ServerWritableStream</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+     
+
+    
+        <h3 class="subsection-title">Namespaces</h3>
+
+        <dl>
+            <dt><a href="grpc.credentials.html">credentials</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id=".callError"><span class="type-signature">(static, constant) </span>callError<span class="type-signature"> :number</span></h4>
+
+
+
+
+<div class="description">
+    <p>Call error constants. Call errors almost always indicate bugs in the gRPC
+library, and these error codes are mainly useful for finding those bugs.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">number</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>OK</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ERROR</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>NOT_ON_SERVER</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>NOT_ON_CLIENT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ALREADY_INVOKED</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>NOT_INVOKED</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ALREADY_FINISHED</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>TOO_MANY_OPERATIONS</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>INVALID_FLAGS</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>INVALID_METADATA</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>INVALID_MESSAGE</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>NOT_SERVER_COMPLETION_QUEUE</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>BATCH_TOO_BIG</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>PAYLOAD_TYPE_MISMATCH</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_constants.js.html">src/constants.js</a>, <a href="src_constants.js.html#line201">line 201</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id=".logVerbosity"><span class="type-signature">(static, readonly) </span>logVerbosity<span class="type-signature"> :number</span></h4>
+
+
+
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">number</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>DEBUG</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>INFO</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ERROR</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_constants.js.html">src/constants.js</a>, <a href="src_constants.js.html#line247">line 247</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id=".propagate"><span class="type-signature">(static) </span>propagate<span class="type-signature"> :number</span></h4>
+
+
+
+
+<div class="description">
+    <p>Propagation flags: these can be bitwise or-ed to form the propagation option
+for calls.</p>
+<p>Users are encouraged to write propagation masks as deltas from the default.
+i.e. write <code>grpc.propagate.DEFAULTS &amp; ~grpc.propagate.DEADLINE</code> to disable
+deadline propagation.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">number</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>DEADLINE</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>CENSUS_STATS_CONTEXT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>CENSUS_TRACING_CONTEXT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>CANCELLATION</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>DEFAULTS</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_constants.js.html">src/constants.js</a>, <a href="src_constants.js.html#line183">line 183</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id=".status"><span class="type-signature">(static, readonly) </span>status<span class="type-signature"> :number</span></h4>
+
+
+
+
+<div class="description">
+    <p>Enum of status codes that gRPC can return</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">number</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>OK</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Not an error; returned on success</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>CANCELLED</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The operation was cancelled (typically by the caller).</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>UNKNOWN</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Unknown error.  An example of where this error may be returned is
+if a status value received from another address space belongs to
+an error-space that is not known in this address space.  Also
+errors raised by APIs that do not return enough error information
+may be converted to this error.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>INVALID_ARGUMENT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Client specified an invalid argument.  Note that this differs
+from FAILED_PRECONDITION.  INVALID_ARGUMENT indicates arguments
+that are problematic regardless of the state of the system
+(e.g., a malformed file name).</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>DEADLINE_EXCEEDED</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Deadline expired before operation could complete.  For operations
+that change the state of the system, this error may be returned
+even if the operation has completed successfully.  For example, a
+successful response from a server could have been delayed long
+enough for the deadline to expire.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>NOT_FOUND</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Some requested entity (e.g., file or directory) was not found.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ALREADY_EXISTS</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Some entity that we attempted to create (e.g., file or directory)
+already exists.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>PERMISSION_DENIED</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The caller does not have permission to execute the specified
+operation.  PERMISSION_DENIED must not be used for rejections
+caused by exhausting some resource (use RESOURCE_EXHAUSTED
+instead for those errors).  PERMISSION_DENIED must not be
+used if the caller can not be identified (use UNAUTHENTICATED
+instead for those errors).</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>RESOURCE_EXHAUSTED</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Some resource has been exhausted, perhaps a per-user quota, or
+perhaps the entire file system is out of space.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>FAILED_PRECONDITION</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Operation was rejected because the system is not in a state
+required for the operation's execution.  For example, directory
+to be deleted may be non-empty, an rmdir operation is applied to
+a non-directory, etc.</p>
+<p>A litmus test that may help a service implementor in deciding
+between FAILED_PRECONDITION, ABORTED, and UNAVAILABLE:</p>
+<ul>
+<li>Use UNAVAILABLE if the client can retry just the failing call.</li>
+<li>Use ABORTED if the client should retry at a higher-level
+(e.g., restarting a read-modify-write sequence).</li>
+<li>Use FAILED_PRECONDITION if the client should not retry until
+the system state has been explicitly fixed.  E.g., if an &quot;rmdir&quot;
+fails because the directory is non-empty, FAILED_PRECONDITION
+should be returned since the client should not retry unless
+they have first fixed up the directory by deleting files from it.</li>
+<li>Use FAILED_PRECONDITION if the client performs conditional
+REST Get/Update/Delete on a resource and the resource on the
+server does not match the condition. E.g., conflicting
+read-modify-write on the same resource.</li>
+</ul></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ABORTED</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The operation was aborted, typically due to a concurrency issue
+like sequencer check failures, transaction aborts, etc.</p>
+<p>See litmus test above for deciding between FAILED_PRECONDITION,
+ABORTED, and UNAVAILABLE.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>OUT_OF_RANGE</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Operation was attempted past the valid range.  E.g., seeking or
+reading past end of file.</p>
+<p>Unlike INVALID_ARGUMENT, this error indicates a problem that may
+be fixed if the system state changes. For example, a 32-bit file
+system will generate INVALID_ARGUMENT if asked to read at an
+offset that is not in the range [0,2^32-1], but it will generate
+OUT_OF_RANGE if asked to read from an offset past the current
+file size.</p>
+<p>There is a fair bit of overlap between FAILED_PRECONDITION and
+OUT_OF_RANGE.  We recommend using OUT_OF_RANGE (the more specific
+error) when it applies so that callers who are iterating through
+a space can easily look for an OUT_OF_RANGE error to detect when
+they are done.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>UNIMPLEMENTED</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Operation is not implemented or not supported/enabled in this service.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>INTERNAL</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Internal errors.  Means some invariants expected by underlying
+system has been broken.  If you see one of these errors,
+something is very broken.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>UNAVAILABLE</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The service is currently unavailable.  This is a most likely a
+transient condition and may be corrected by retrying with
+a backoff.</p>
+<p>See litmus test above for deciding between FAILED_PRECONDITION,
+ABORTED, and UNAVAILABLE.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>DATA_LOSS</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Unrecoverable data loss or corruption.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>UNAUTHENTICATED</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The request does not have valid authentication credentials for the
+operation.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_constants.js.html">src/constants.js</a>, <a href="src_constants.js.html#line45">line 45</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id=".writeFlags"><span class="type-signature">(static, readonly) </span>writeFlags<span class="type-signature"> :number</span></h4>
+
+
+
+
+<div class="description">
+    <p>Write flags: these can be bitwise or-ed to form write options that modify
+how data is written.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">number</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>BUFFER_HINT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Hint that the write may be buffered and need not go out on the wire
+immediately. GRPC is free to buffer the message until the next non-buffered
+write, or until writes_done, but it need not buffer completely or at all.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>NO_COMPRESS</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Force compression to be disabled for a particular write</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_constants.js.html">src/constants.js</a>, <a href="src_constants.js.html#line228">line 228</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~defaultLoadOptions"><span class="type-signature">(inner) </span>defaultLoadOptions<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    <p>Default options for loading proto files into gRPC</p>
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line85">line 85</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".closeClient"><span class="type-signature">(static) </span>closeClient<span class="signature">(client_obj)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>client_obj</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Client.html">grpc.Client</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The client to close</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line266">line 266</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".load"><span class="type-signature">(static) </span>load<span class="signature">(filename, format<span class="signature-attributes">opt</span>, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object.&lt;string, *>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Load a gRPC object from a .proto file.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filename</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+|
+
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The file to load</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>format</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The file format to expect. Must be either 'proto' or
+    'json'. Defaults to 'proto'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Options to apply to the loaded file</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>convertFieldsToCamelCase</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Load this file with
+    field names in camel case instead of their original case</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>binaryAsBase64</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>deserialize bytes values as
+    base64 strings instead of Buffers</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>longsAsStrings</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
+
+            <td class="description last"><p>deserialize long values as
+    strings instead of objects</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>deprecatedArgumentOrder</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>use the beta method
+    argument order for client methods, with optional arguments after the
+    callback. This option is only a temporary stopgap measure to smooth an
+    API breakage. It is deprecated, and new code should not use it.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line136">line 136</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The resulting gRPC object</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object.&lt;string, *></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".loadObject"><span class="type-signature">(static) </span>loadObject<span class="signature">(value, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object.&lt;string, *>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Load a ProtoBuf.js object as a gRPC object.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The ProtoBuf.js reflection object to load</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Options to apply to the loaded file</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>binaryAsBase64</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>deserialize bytes values as
+    base64 strings instead of Buffers</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>longsAsStrings</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
+
+            <td class="description last"><p>deserialize long values as
+    strings instead of objects</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>enumsAsStrings</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
+
+            <td class="description last"><p>deserialize enum values as
+    strings instead of numbers. Only works with Protobuf.js 6 values.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>deprecatedArgumentOrder</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>use the beta method
+    argument order for client methods, with optional arguments after the
+    callback. This option is only a temporary stopgap measure to smooth an
+    API breakage. It is deprecated, and new code should not use it.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>protobufjsVersion</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+|
+
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    'detect'
+                
+                </td>
+            
+
+            <td class="description last"><p>5 and 6
+    respectively indicate that an object from the corresponding version of
+    Protobuf.js is provided in the value argument. If the option is 'detect',
+    gRPC wll guess what the version is based on the structure of the value.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line88">line 88</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The resulting gRPC object.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object.&lt;string, *></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".setLogger"><span class="type-signature">(static) </span>setLogger<span class="signature">(logger)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Sets the logger function for the gRPC module. For debugging purposes, the C
+core will log synchronously directly to stdout unless this function is
+called. Note: the output format here is intended to be informational, and
+is not guaranteed to stay the same in the future.
+Logs will be directed to logger.error.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>logger</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Console</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A Console-like object.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line178">line 178</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".setLogVerbosity"><span class="type-signature">(static) </span>setLogVerbosity<span class="signature">(verbosity)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Sets the logger verbosity for gRPC module logging. The options are members
+of the grpc.logVerbosity map.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>verbosity</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The minimum severity to log</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line199">line 199</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~getClientChannel"><span class="type-signature">(inner) </span>getClientChannel<span class="signature">(client)</span><span class="type-signature"> &rarr; {Channel}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Return the underlying channel object for the specified client</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>client</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Client</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line945">line 945</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="grpc.Client.html#getChannel">grpc.Client#getChannel</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The channel</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Channel</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~makeGenericClientConstructor"><span class="type-signature">(inner) </span>makeGenericClientConstructor<span class="signature">(methods, serviceName, class_options)</span><span class="type-signature"> &rarr; {function}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Creates a constructor for a client with the given methods, as specified in
+the methods argument. The resulting class will have an instance method for
+each method in the service, which is a partial application of one of the
+<a href="grpc.Client.html">Client</a> request methods, depending on <code>requestSerialize</code>
+and <code>responseSerialize</code>, with the <code>method</code>, <code>serialize</code>, and <code>deserialize</code>
+arguments predefined.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>methods</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~ServiceDefinition">grpc~ServiceDefinition</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>An object mapping method names to
+    method attributes</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>serviceName</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The fully qualified name of the service</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>class_options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>An options object.</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>deprecatedArgumentOrder</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Indicates
+    that the old argument order should be used for methods, with optional
+    arguments at the end instead of the callback at the end. This option
+    is only a temporary stopgap measure to smooth an API breakage.
+    It is deprecated, and new code should not use it.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line889">line 889</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>New client constructor, which is a subclass of
+    <a href="grpc.Client.html">grpc.Client</a>, and has the same arguments as that constructor.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">function</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~waitForClientReady"><span class="type-signature">(inner) </span>waitForClientReady<span class="signature">(client, deadline, callback)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Wait for the client to be ready. The callback will be called when the
+client has successfully connected to the server, and it will be called
+with an error if the attempt to connect to the server has unrecoverablly
+failed or if the deadline expires. This function will make the channel
+start connecting if it has not already done so.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>client</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Client</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The client to wait on</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>deadline</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~Deadline">grpc~Deadline</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>When to stop waiting for a connection. Pass
+    Infinity to wait forever.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The callback to call when done attempting
+    to connect.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line964">line 964</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="grpc.Client.html#waitForReady">grpc.Client#waitForReady</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Type Definitions</h3>
+
+        
+                
+<h4 class="name" id="~Deadline">Deadline</h4>
+
+
+
+
+<div class="description">
+    <p>The deadline of an operation. If it is a date, the deadline is reached at
+the date and time specified. If it is a finite number, it is treated as
+a number of milliseconds since the Unix Epoch. If it is Infinity, the
+deadline will never be reached. If it is -Infinity, the deadline has already
+passed.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">number</span>
+|
+
+<span class="param-type">date</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line157">line 157</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
+                
+
+    
+
+    <h4 class="name" id="~deserialize"><span class="type-signature"></span>deserialize<span class="signature">(data)</span><span class="type-signature"> &rarr; {*}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>A deserialization function</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>data</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Buffer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The byte sequence to deserialize</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line150">line 150</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The data deserialized as a value</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">*</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+            
+                
+<h4 class="name" id="~MethodDefinition">MethodDefinition</h4>
+
+
+
+
+<div class="description">
+    <p>An object that completely defines a service method signature.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>path</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The method's URL path</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>requestStream</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Indicates whether the method accepts
+    a stream of requests</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>responseStream</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Indicates whether the method returns
+    a stream of responses</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>requestSerialize</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~serialize">grpc~serialize</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Serialization
+    function for request values</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>responseSerialize</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~serialize">grpc~serialize</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Serialization
+    function for response values</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>requestDeserialize</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Deserialization
+    function for request data</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>responseDeserialize</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Deserialization
+    function for repsonse data</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line166">line 166</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
+                
+
+    
+
+    <h4 class="name" id="~serialize"><span class="type-signature"></span>serialize<span class="signature">(value)</span><span class="type-signature"> &rarr; {Buffer}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>A serialization function</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The value to serialize</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line143">line 143</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The value serialized as a byte sequence</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Buffer</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+            
+                
+<h4 class="name" id="~ServiceDefinition">ServiceDefinition</h4>
+
+
+
+
+<div class="description">
+    <p>An object that completely defines a service.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, <a href="grpc.html#~MethodDefinition">grpc~MethodDefinition</a>></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line184">line 184</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
+                
+<h4 class="name" id="~ServiceError">ServiceError</h4>
+
+
+
+
+<div class="description">
+    <p>Describes how a request has failed. The member <code>message</code> will be the same as
+<code>details</code> in <a href="grpc.html#~StatusObject">grpc~StatusObject</a>, and <code>code</code> and <code>metadata</code> are the
+same as in that object.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Error</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>code</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The error code, a key of <a href="grpc.html#.status">grpc.status</a> that is
+    not <code>grpc.status.OK</code></p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>metadata</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Trailing metadata sent with the status,
+    if applicable</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line108">line 108</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
+                
+<h4 class="name" id="~StatusObject">StatusObject</h4>
+
+
+
+
+<div class="description">
+    <p>Represents the status of a completed request. If <code>code</code> is
+<a href="grpc.html#.status">grpc.status</a>.OK, then the request has completed successfully.
+Otherwise, the request has failed, <code>details</code> will contain a description of
+the error. Either way, <code>metadata</code> contains the trailing response metadata
+sent by the server when it finishes processing the call.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>code</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The error code, a key of <a href="grpc.html#.status">grpc.status</a></p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Human-readable description of the status</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>metadata</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Trailing metadata sent with the status,
+    if applicable</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line95">line 95</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external-Duplex.html">Duplex</a></li><li><a href="external-EventEmitter.html">EventEmitter</a></li><li><a href="external-GoogleCredential.html">GoogleCredential</a></li><li><a href="external-Readable.html">Readable</a></li><li><a href="external-Writable.html">Writable</a></li></ul><h3>Classes</h3><ul><li><a href="grpc.Client.html">Client</a></li><li><a href="grpc.credentials-CallCredentials.html">CallCredentials</a></li><li><a href="grpc.credentials-ChannelCredentials.html">ChannelCredentials</a></li><li><a href="grpc.Metadata.html">Metadata</a></li><li><a href="grpc.Server.html">Server</a></li><li><a href="grpc.ServerCredentials.html">ServerCredentials</a></li><li><a href="grpc-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="grpc-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="grpc-ClientUnaryCall.html">ClientUnaryCall</a></li><li><a href="grpc-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="grpc-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="grpc-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="grpc-ServerUnaryCall.html">ServerUnaryCall</a></li><li><a href="grpc-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Events</h3><ul><li><a href="grpc-ClientDuplexStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientDuplexStream.html#event:status">status</a></li><li><a href="grpc-ClientReadableStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientReadableStream.html#event:status">status</a></li><li><a href="grpc-ClientUnaryCall.html#event:metadata">metadata</a></li><li><a href="grpc-ClientUnaryCall.html#event:status">status</a></li><li><a href="grpc-ClientWritableStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientWritableStream.html#event:status">status</a></li><li><a href="grpc-ServerDuplexStream.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerReadableStream.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerUnaryCall.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerWritableStream.html#~event:cancelled">cancelled</a></li></ul><h3>Namespaces</h3><ul><li><a href="grpc.html">grpc</a></li><li><a href="grpc.credentials.html">credentials</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Jun 28 2017 09:44:06 GMT-0700 (PDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
