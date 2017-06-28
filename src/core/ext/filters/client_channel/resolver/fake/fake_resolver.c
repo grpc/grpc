@@ -74,7 +74,9 @@ static void fake_resolver_shutdown_locked(grpc_exec_ctx* exec_ctx,
   fake_resolver* r = (fake_resolver*)resolver;
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    GRPC_CLOSURE_SCHED(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(
+        exec_ctx, r->next_completion,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     r->next_completion = NULL;
   }
 }

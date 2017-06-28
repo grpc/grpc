@@ -19,6 +19,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
@@ -140,6 +141,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Starts the server.
+        /// Throws <c>IOException</c> if not successful.
         /// </summary>
         public void Start()
         {
@@ -148,7 +150,8 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckState(!startRequested);
                 GrpcPreconditions.CheckState(!shutdownRequested);
                 startRequested = true;
-                
+
+                CheckPortsBoundSuccessfully();
                 handle.Start();
 
                 for (int i = 0; i < requestCallTokensPerCq; i++)
@@ -298,6 +301,22 @@ namespace Grpc.Core
             if (!shutdownRequested)
             {
                 handle.RequestCall((success, ctx) => HandleNewServerRpc(success, ctx, cq), cq);
+            }
+        }
+
+        /// <summary>
+        /// Checks that all ports have been bound successfully.
+        /// </summary>
+        private void CheckPortsBoundSuccessfully()
+        {
+            lock (myLock)
+            {
+                var unboundPort = ports.FirstOrDefault(port => port.BoundPort == 0);
+                if (unboundPort != null)
+                {
+                    throw new IOException(
+                        string.Format("Failed to bind port \"{0}:{1}\"", unboundPort.Host, unboundPort.Port));
+                }
             }
         }
 

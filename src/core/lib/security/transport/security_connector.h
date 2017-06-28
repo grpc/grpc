@@ -29,6 +29,10 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
+#ifndef NDEBUG
+extern grpc_tracer_flag grpc_trace_security_connector_refcount;
+#endif
+
 /* --- status enum. --- */
 
 typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
@@ -66,7 +70,7 @@ struct grpc_security_connector {
 };
 
 /* Refcounting. */
-#ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_SECURITY_CONNECTOR_REF(p, r) \
   grpc_security_connector_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, p, r) \

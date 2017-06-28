@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D15F1CF5-EC88-FDD5-55A0-CBE5DC8A9F29}</ProjectGuid>
+    <ProjectGuid>{92D44604-E9C2-7E21-E2FD-E392F711DE69}</ProjectGuid>
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
@@ -57,10 +57,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>boringssl_chacha_test_lib</TargetName>
+    <TargetName>boringssl_pool_test_lib</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>boringssl_chacha_test_lib</TargetName>
+    <TargetName>boringssl_pool_test_lib</TargetName>
   </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -147,7 +147,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\chacha\chacha_test.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pool\pool_test.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
