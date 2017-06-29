@@ -212,6 +212,8 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
 
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
+  request_payload_recv = NULL;
+  response_payload_recv = NULL;
 
   memset(ops, 0, sizeof(ops));
   op = ops;
