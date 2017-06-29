@@ -27,7 +27,12 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 typedef struct call_data {
+  grpc_call_combiner *call_combiner;
+  // The original recv_initial_metadata_ready callback.
   grpc_closure *original_recv_initial_metadata_ready;
+  // Used to both inject our recv_initial_metadata_ready callback and to
+  // bounce back into the call combiner after calling out to the
+  // application.
   grpc_closure recv_initial_metadata_ready;
   grpc_metadata_array md;
   const grpc_metadata *consumed_md;
@@ -77,7 +82,10 @@ static grpc_filtered_mdelem remove_consumed_md(grpc_exec_ctx *exec_ctx,
   return GRPC_FILTERED_MDELEM(md);
 }
 
-/* called from application code */
+// Called from application code.
+// Note that this does NOT execute inside of the call combiner, but that
+// should be okay, because there can be only one recv_initial_metadata
+// callback per call.
 static void on_md_processing_done(
     void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
     const grpc_metadata *response_md, size_t num_response_md,
@@ -112,22 +120,15 @@ static void on_md_processing_done(
     grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
   }
   grpc_metadata_array_destroy(&calld->md);
-  GRPC_CLOSURE_SCHED(&exec_ctx, calld->original_recv_initial_metadata_ready,
-                     error);
+  // This callback was changed earlier to re-enter the call combiner.
+  GRPC_CLOSURE_SCHED(&exec_ctx, &calld->recv_initial_metadata_ready, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void intercepted_closure_run(grpc_exec_ctx *exec_ctx, void *arg,
-                                    grpc_error *error) {
-  grpc_closure *original_closure = arg;
-  GRPC_CLOSURE_RUN(exec_ctx, original_closure, GRPC_ERROR_REF(error));
-}
-
-static void intercept_closure(
-    grpc_call_combiner *call_combiner, grpc_closure **original_closure) {
-  *original_closure =
-      GRPC_CLOSURE_CREATE(intercepted_closure_run, *original_closure,
-                          &call_combiner->scheduler);
+static void run_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
+                                 grpc_error *error) {
+  grpc_closure *closure = arg;
+  GRPC_CLOSURE_RUN(exec_ctx, closure, GRPC_ERROR_REF(error));
 }
 
 static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
@@ -140,10 +141,14 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     if (chand->creds != NULL && chand->creds->processor.process != NULL) {
       // We're calling out to the application, so we need to exit and
       // then re-enter the call combiner.
+      // Note that we reuse calld->recv_initial_metadata_ready here,
+      // which is fine, because it is no longer used once this function
+      // is called.
 gpr_log(GPR_INFO, "INTERCEPTING recv_initial_metadata CLOSURE ON call_combiner=%p", calld->call_combiner);
-// FIXME: this is wrong -- need to bounce back into call combiner before
-// running body of on_md_processing_done()
-      intercept_closure(calld->call_combiner, &calld->on_done_recv);
+      GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
+                        run_in_call_combiner,
+                        calld->original_recv_initial_metadata_ready,
+                        &calld->call_combiner->scheduler);
       calld->md = metadata_batch_to_md_array(
           batch->payload->recv_initial_metadata.recv_initial_metadata);
       chand->creds->processor.process(
