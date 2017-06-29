@@ -52,8 +52,25 @@ class Alarm : private GrpcLibraryCodegen {
         alarm_(grpc_alarm_create(cq->cq(), TimePoint<T>(deadline).raw_time(),
                                  static_cast<void*>(&tag_))) {}
 
+  /// Alarms aren't copyable.
+  Alarm(const Alarm&) = delete;
+  Alarm& operator=(const Alarm&) = delete;
+
+  /// Alarms are movable.
+  Alarm(Alarm&& rhs) : tag_(rhs.tag_), alarm_(rhs.alarm_) {
+    rhs.alarm_ = nullptr;
+  }
+  Alarm& operator=(Alarm&& rhs) {
+    tag_ = rhs.tag_;
+    alarm_ = rhs.alarm_;
+    rhs.alarm_ = nullptr;
+    return *this;
+  }
+
   /// Destroy the given completion queue alarm, cancelling it in the process.
-  ~Alarm() { grpc_alarm_destroy(alarm_); }
+  ~Alarm() {
+    if (alarm_ != nullptr) grpc_alarm_destroy(alarm_);
+  }
 
   /// Cancel a completion queue alarm. Calling this function over an alarm that
   /// has already fired has no effect.
@@ -73,7 +90,7 @@ class Alarm : private GrpcLibraryCodegen {
   };
 
   AlarmEntry tag_;
-  grpc_alarm* const alarm_;  // owned
+  grpc_alarm* alarm_;  // owned
 };
 
 }  // namespace grpc
