@@ -127,7 +127,7 @@ Object HHVM_METHOD(Call, startBatch,
   grpc_status_code status;
   grpc_slice recv_status_details = grpc_empty_slice();
   grpc_slice send_status_details = grpc_empty_slice();
-  grpc_byte_buffer *message;
+  grpc_byte_buffer *message = nullptr;
   int cancelled;
   grpc_call_error error;
 
