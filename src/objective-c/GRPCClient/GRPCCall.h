@@ -179,8 +179,8 @@ extern id const kGRPCTrailersKey;
 @interface GRPCCall : GRXWriter
 
 /**
- * The server name for the RPC. If nil, the host name of the service object will be used instead.
- * This property must be nil when Cronet transport is enabled.
+ * The authority for the RPC. If nil, the default authority will be used. This property must be nil
+ * when Cronet transport is enabled.
  */
 @property (atomic, readwrite) NSString *serverName;
 
