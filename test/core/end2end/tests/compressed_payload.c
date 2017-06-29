@@ -138,7 +138,7 @@ static void request_for_disabled_algorithm(
   f = begin_test(config, test_name, client_args, server_args);
   cqv = cq_verifier_create(f.cq);
 
-  gpr_timespec deadline = n_seconds_from_now(3600);  // five_seconds_from_now();
+  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
@@ -635,14 +635,12 @@ static void test_invoke_request_with_disabled_algorithm(
 }
 
 void compressed_payload(grpc_end2end_test_config config) {
-if (false) {
   test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);
   test_invoke_request_with_send_message_before_initial_metadata(config);
   test_invoke_request_with_server_level(config);
   test_invoke_request_with_compressed_payload_md_override(config);
-}
   test_invoke_request_with_disabled_algorithm(config);
 }
 
