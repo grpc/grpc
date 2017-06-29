@@ -81,7 +81,7 @@ def get_flaky_tests(limit=None):
     FROM
       [grpc-testing:jenkins_test_results.aggregate_results]
     WHERE
-      timestamp >= DATE_ADD(DATE(CURRENT_TIMESTAMP()), -1, "WEEK")
+      timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
       AND NOT REGEXP_MATCH(job_name, '.*portability.*')
     GROUP BY
       test_name
