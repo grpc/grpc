@@ -45,7 +45,7 @@ sudo pip install virtualenv
 sudo pip install -U six tox setuptools
 
 # python 3.4
-wget https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg
+wget -q https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg
 sudo installer -pkg python-3.4.4-macosx10.6.pkg -target /
 
 git submodule update --init
