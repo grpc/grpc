@@ -35,7 +35,7 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
-tools/run_tests/run_tests_matrix.py -f basictests macos --internal_ci || FAILED="true"
+tools/run_tests/run_tests_matrix.py -f basictests macos --internal_ci -j 2 --inner_jobs 4 || FAILED="true"
 
 # kill port_server.py to prevent the build from hanging
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9

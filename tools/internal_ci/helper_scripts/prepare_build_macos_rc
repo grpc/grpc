@@ -30,6 +30,12 @@
 
 # Source this rc script to prepare the environment for macos builds
 
+ulimit -n 1000
+
+# show current limits
+ulimit -a
+
+
 # required to build protobuf
 brew install gflags
 
@@ -50,9 +56,11 @@ pod repo update  # needed by python
 
 # python
 brew install coreutils  # we need grealpath
-#wget -q https://bootstrap.pypa.io/get-pip.py
-#sudo python get-pip.py
 sudo pip install virtualenv
 sudo pip install -U six tox setuptools
+
+# python 3.4
+wget https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg
+sudo installer -pkg python-3.4.4-macosx10.6.pkg -target /
 
 git submodule update --init
