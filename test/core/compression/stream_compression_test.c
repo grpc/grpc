@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/ext/transport/chttp2/transport/stream_compression.h"
+#include "src/core/lib/compression/stream_compression.h"
 
 static void generate_random_payload(char *payload, size_t size) {
   size_t i;

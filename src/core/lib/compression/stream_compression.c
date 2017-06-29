@@ -34,7 +34,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/transport/stream_compression.h"
+#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 

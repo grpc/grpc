@@ -934,6 +934,7 @@ add_library(grpc
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1068,7 +1069,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
-  src/core/ext/transport/chttp2/transport/stream_compression.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
   src/core/ext/transport/chttp2/transport/varint.c
@@ -1274,6 +1274,7 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1411,7 +1412,6 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
-  src/core/ext/transport/chttp2/transport/stream_compression.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
   src/core/ext/transport/chttp2/transport/varint.c
@@ -1594,6 +1594,7 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1856,6 +1857,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1991,7 +1993,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
-  src/core/ext/transport/chttp2/transport/stream_compression.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
   src/core/ext/transport/chttp2/transport/varint.c
@@ -2500,7 +2501,6 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/huffsyms.c
   src/core/ext/transport/chttp2/transport/incoming_metadata.c
   src/core/ext/transport/chttp2/transport/parsing.c
-  src/core/ext/transport/chttp2/transport/stream_compression.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
   src/core/ext/transport/chttp2/transport/varint.c
@@ -2514,6 +2514,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
