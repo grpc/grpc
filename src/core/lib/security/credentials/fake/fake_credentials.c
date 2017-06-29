@@ -130,7 +130,7 @@ static void md_only_test_get_request_metadata(
 }
 
 static grpc_call_credentials_vtable md_only_test_vtable = {
-    md_only_test_destruct, md_only_test_get_request_metadata};
+    md_only_test_destruct, md_only_test_get_request_metadata, NULL};
 
 grpc_call_credentials *grpc_md_only_test_credentials_create(
     const char *md_key, const char *md_value, int is_async) {

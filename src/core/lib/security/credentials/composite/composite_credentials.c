@@ -112,8 +112,18 @@ static void composite_call_get_request_metadata(
       auth_md_context, composite_call_metadata_cb, ctx);
 }
 
+static bool composite_calls_outside_of_core(grpc_call_credentials *creds) {
+  grpc_composite_call_credentials *c = (grpc_composite_call_credentials *)creds;
+  for (size_t i = 0; i < c->inner.num_creds; ++i) {
+    grpc_call_credentials *inner = c->inner.creds_array[i];
+    if (grpc_call_credentials_calls_outside_of_core(inner)) return true;
+  }
+  return false;
+}
+
 static grpc_call_credentials_vtable composite_call_credentials_vtable = {
-    composite_call_destruct, composite_call_get_request_metadata};
+    composite_call_destruct, composite_call_get_request_metadata,
+    composite_calls_outside_of_core};
 
 static grpc_call_credentials_array get_creds_array(
     grpc_call_credentials **creds_addr) {

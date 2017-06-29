@@ -87,13 +87,10 @@ static void add_error(grpc_error **combined, grpc_error *error) {
   *combined = grpc_error_add_child(*combined, error);
 }
 
-static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
-                                    grpc_credentials_md *md_elems,
-                                    size_t num_md,
-                                    grpc_credentials_status status,
-                                    const char *error_details) {
-  grpc_transport_stream_op_batch *batch =
-      (grpc_transport_stream_op_batch *)user_data;
+static void on_credentials_metadata_inner(
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *batch,
+    grpc_credentials_md *md_elems, size_t num_md,
+    grpc_credentials_status status, const char *error_details) {
   grpc_call_element *elem = batch->handler_private.extra_arg;
   call_data *calld = elem->call_data;
   reset_auth_metadata_context(&calld->auth_md_context);
@@ -124,6 +121,53 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   } else {
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, batch, error,
                                                        calld->call_combiner);
+  }
+}
+
+typedef struct {
+  grpc_transport_stream_op_batch *batch;
+  grpc_credentials_md *md_elems;
+  size_t num_md;
+  grpc_credentials_status status;
+  const char *error_details;
+  grpc_closure closure;
+} on_credentials_metadata_state;
+
+static void on_credentials_metadata_in_call_combiner(grpc_exec_ctx *exec_ctx,
+                                                     void *arg,
+                                                     grpc_error *ignored) {
+  on_credentials_metadata_state *state = arg;
+  on_credentials_metadata_inner(exec_ctx, state->batch, state->md_elems,
+                                state->num_md, state->status,
+                                state->error_details);
+  gpr_free(state);
+}
+
+static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
+                                    grpc_credentials_md *md_elems,
+                                    size_t num_md,
+                                    grpc_credentials_status status,
+                                    const char *error_details) {
+  grpc_transport_stream_op_batch *batch =
+      (grpc_transport_stream_op_batch *)user_data;
+  grpc_call_element *elem = batch->handler_private.extra_arg;
+  call_data *calld = elem->call_data;
+  // If the credentials called outside of core, we need to re-enter the
+  // call combiner before calling on_credentials_metadata_inner().
+  // Otherwise, we invoke it directly.
+  if (grpc_call_credentials_calls_outside_of_core(calld->creds)) {
+    on_credentials_metadata_state *state = gpr_malloc(sizeof(*state));
+    state->batch = batch;
+    state->md_elems = md_elems;
+    state->num_md = num_md;
+    state->status = status;
+    state->error_details = error_details;
+    GRPC_CLOSURE_INIT(&state->closure, on_credentials_metadata_in_call_combiner,
+                      state, &calld->call_combiner->scheduler);
+    GRPC_CLOSURE_SCHED(exec_ctx, &state->closure, GRPC_ERROR_NONE);
+  } else {
+    on_credentials_metadata_inner(exec_ctx, batch, md_elems, num_md, status,
+                                  error_details);
   }
 }
 
@@ -197,11 +241,15 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
   build_auth_metadata_context(&chand->security_connector->base,
                               chand->auth_context, calld);
   GPR_ASSERT(calld->pollent != NULL);
-// FIXME: can this call out to application?  if so, need to release call
-// combiner first and then re-acquire when we come back in
   grpc_call_credentials_get_request_metadata(
       exec_ctx, calld->creds, calld->pollent, calld->auth_md_context,
       on_credentials_metadata, batch);
+  // If the credentials are calling outside of core (e.g., plugin
+  // credentials), then give up the call combiner here.  We will
+  // reacquire it when the callback returns.
+  if (grpc_call_credentials_calls_outside_of_core(calld->creds)) {
+    grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
+  }
 }
 
 static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,

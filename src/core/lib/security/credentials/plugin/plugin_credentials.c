@@ -121,8 +121,13 @@ static void plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static bool plugin_calls_outside_of_core(grpc_call_credentials *creds) {
+  grpc_plugin_credentials *c = (grpc_plugin_credentials *)creds;
+  return c->plugin.get_metadata != NULL;
+}
+
 static grpc_call_credentials_vtable plugin_vtable = {
-    plugin_destruct, plugin_get_request_metadata};
+    plugin_destruct, plugin_get_request_metadata, plugin_calls_outside_of_core};
 
 grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin, void *reserved) {

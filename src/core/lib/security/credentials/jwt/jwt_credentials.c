@@ -109,7 +109,8 @@ static void jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_call_credentials_vtable jwt_vtable = {jwt_destruct,
-                                                  jwt_get_request_metadata};
+                                                  jwt_get_request_metadata,
+                                                  NULL};
 
 grpc_call_credentials *
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(

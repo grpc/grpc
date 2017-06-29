@@ -180,6 +180,7 @@ typedef struct {
                                grpc_auth_metadata_context context,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
+  bool (*calls_outside_of_core)(grpc_call_credentials *c);
 } grpc_call_credentials_vtable;
 
 struct grpc_call_credentials {
@@ -195,6 +196,11 @@ void grpc_call_credentials_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
     grpc_credentials_metadata_cb cb, void *user_data);
+// Returns true if the credentials call outside of core.  This can be
+// used by filter code to decide to give up locks before calling
+// grpc_call_credentials_get_request_metadata() and then reacquire
+// them when the callback returns.
+bool grpc_call_credentials_calls_outside_of_core(grpc_call_credentials *creds);
 
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */

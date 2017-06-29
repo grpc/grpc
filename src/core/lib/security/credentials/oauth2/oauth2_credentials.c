@@ -280,7 +280,8 @@ static void init_oauth2_token_fetcher(grpc_oauth2_token_fetcher_credentials *c,
 //
 
 static grpc_call_credentials_vtable compute_engine_vtable = {
-    oauth2_token_fetcher_destruct, oauth2_token_fetcher_get_request_metadata};
+    oauth2_token_fetcher_destruct, oauth2_token_fetcher_get_request_metadata,
+    NULL};
 
 static void compute_engine_fetch_oauth2(
     grpc_exec_ctx *exec_ctx, grpc_credentials_metadata_request *metadata_req,
@@ -331,7 +332,7 @@ static void refresh_token_destruct(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_call_credentials_vtable refresh_token_vtable = {
-    refresh_token_destruct, oauth2_token_fetcher_get_request_metadata};
+    refresh_token_destruct, oauth2_token_fetcher_get_request_metadata, NULL};
 
 static void refresh_token_fetch_oauth2(
     grpc_exec_ctx *exec_ctx, grpc_credentials_metadata_request *metadata_req,
@@ -429,7 +430,7 @@ static void access_token_get_request_metadata(
 }
 
 static grpc_call_credentials_vtable access_token_vtable = {
-    access_token_destruct, access_token_get_request_metadata};
+    access_token_destruct, access_token_get_request_metadata, NULL};
 
 grpc_call_credentials *grpc_access_token_credentials_create(
     const char *access_token, void *reserved) {

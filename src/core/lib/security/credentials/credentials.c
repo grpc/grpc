@@ -118,6 +118,13 @@ void grpc_call_credentials_get_request_metadata(
                                       user_data);
 }
 
+bool grpc_call_credentials_calls_outside_of_core(grpc_call_credentials *creds) {
+  if (creds == NULL || creds->vtable->calls_outside_of_core == NULL) {
+    return false;
+  }
+  return creds->vtable->calls_outside_of_core(creds);
+}
+
 grpc_security_status grpc_channel_credentials_create_security_connector(
     grpc_exec_ctx *exec_ctx, grpc_channel_credentials *channel_creds,
     const char *target, const grpc_channel_args *args,
