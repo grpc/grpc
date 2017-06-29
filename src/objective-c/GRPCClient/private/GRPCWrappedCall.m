@@ -236,7 +236,7 @@
 }
 
 - (instancetype)initWithHost:(NSString *)host
-                  serverName:(nullable NSString *)serverName
+                  serverName:(NSString *)serverName
                         path:(NSString *)path {
   if (!path || !host) {
     [NSException raise:NSInvalidArgumentException
