@@ -32,8 +32,6 @@ Pod::Spec.new do |s|
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
     :tag => "v#{version}",
-    # TODO(jcanizales): Depend explicitly on the nanopb pod, and disable submodules.
-    :submodules => true,
   }
 
   s.ios.deployment_target = '7.0'
@@ -179,7 +177,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL', '~> 8.0'
-    ss.dependency 'nanopb'
+    ss.dependency 'nanopb', '~> 0.3'
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
