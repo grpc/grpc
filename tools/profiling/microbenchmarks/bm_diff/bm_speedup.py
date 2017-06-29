@@ -44,13 +44,13 @@ def speedup(new, old, threshold = _DEFAULT_THRESHOLD):
   s0, p0 = cmp(new, old)
   if math.isnan(p0): return 0
   if s0 == 0: return 0
-  if p0 > _DEFAULT_THRESHOLD: return 0
+  if p0 > threshold: return 0
   if s0 < 0:
     pct = 1
     while pct < 100:
       sp, pp = cmp(new, scale(old, 1 - pct / 100.0))
       if sp > 0: break
-      if pp > _DEFAULT_THRESHOLD: break
+      if pp > threshold: break
       pct += 1
     return -(pct - 1)
   else:
@@ -58,7 +58,7 @@ def speedup(new, old, threshold = _DEFAULT_THRESHOLD):
     while pct < 10000:
       sp, pp = cmp(new, scale(old, 1 + pct / 100.0))
       if sp < 0: break
-      if pp > _DEFAULT_THRESHOLD: break
+      if pp > threshold: break
       pct += 1
     return pct - 1
 
