@@ -21,6 +21,11 @@
                BlueprintName = "CronetUnitTests"
                ReferencedContainer = "container:Tests.xcodeproj">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "CronetUnitTests/testInternalError">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
       <AdditionalOptions>
