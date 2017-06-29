@@ -212,6 +212,10 @@ static void run_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_CLOSURE_RUN(exec_ctx, closure, GRPC_ERROR_REF(error));
 }
 
+// grpc_transport_stream_op_batch_finish_with_failure
+// is a function that must always unref cancel_error
+// though it lives in lib, it handles transport stream ops sure
+// it's grpc_transport_stream_op_batch_finish_with_failure
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
     grpc_error *error, grpc_call_combiner *call_combiner) {
