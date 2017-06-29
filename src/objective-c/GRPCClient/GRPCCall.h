@@ -180,6 +180,7 @@ extern id const kGRPCTrailersKey;
 
 /**
  * The server name for the RPC. If nil, the host name of the service object will be used instead.
+ * This property must be nil when Cronet transport is enabled.
  */
 @property (atomic, readwrite) NSString *serverName;
 
