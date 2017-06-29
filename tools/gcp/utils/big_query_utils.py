@@ -116,6 +116,33 @@ def create_table2(big_query, project_id, dataset_id, table_id, fields_schema,
   return is_success
 
 
+def patch_table(big_query, project_id, dataset_id, table_id, fields_schema):
+  is_success = True
+
+  body = {
+      'schema': {
+          'fields': fields_schema
+      },
+      'tableReference': {
+          'datasetId': dataset_id,
+          'projectId': project_id,
+          'tableId': table_id
+      }
+  }
+
+  try:
+    table_req = big_query.tables().patch(projectId=project_id,
+                                         datasetId=dataset_id,
+                                         tableId=table_id,
+                                         body=body)
+    res = table_req.execute(num_retries=NUM_RETRIES)
+    print 'Successfully patched %s "%s"' % (res['kind'], res['id'])
+  except HttpError as http_error:
+    print 'Error in creating table: %s. Err: %s' % (table_id, http_error)
+    is_success = False
+  return is_success
+
+
 def insert_rows(big_query, project_id, dataset_id, table_id, rows_list):
   is_success = True
   body = {'rows': rows_list}
