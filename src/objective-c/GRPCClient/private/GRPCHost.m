@@ -145,8 +145,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
     }
     channel = _channel;
   }
-  NSString *name = serverName ? serverName : _address;
-  return [channel unmanagedCallWithPath:path serverName:name completionQueue:queue];
+  return [channel unmanagedCallWithPath:path serverName:serverName completionQueue:queue];
 }
 
 - (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
