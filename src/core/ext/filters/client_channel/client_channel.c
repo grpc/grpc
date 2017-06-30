@@ -344,6 +344,7 @@ static void parse_retry_throttle_params(const grpc_json *field, void *arg) {
 
 static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
                                               void *arg, grpc_error *error) {
+gpr_log(GPR_INFO, "==> on_resolver_result_changed_locked()");
   channel_data *chand = arg;
   // Extract the following fields from the resolver result, if non-NULL.
   char *lb_policy_name = NULL;
@@ -352,6 +353,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   grpc_server_retry_throttle_data *retry_throttle_data = NULL;
   grpc_slice_hash_table *method_params_table = NULL;
   if (chand->resolver_result != NULL) {
+gpr_log(GPR_INFO, "chand->resolver_result != NULL");
     // Find LB policy name.
     const grpc_arg *channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
@@ -994,13 +996,18 @@ typedef struct {
 
 static void continue_picking_after_resolver_result_locked(
     grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+gpr_log(GPR_INFO, "==> continue_picking_after_resolver_result_locked()");
   pick_after_resolver_result_args *args = arg;
   if (args->cancelled) {
+gpr_log(GPR_INFO, "  cancelled");
     /* cancelled, do nothing */
   } else if (error != GRPC_ERROR_NONE) {
+gpr_log(GPR_INFO, "  error: %s", grpc_error_string(error));
     subchannel_ready_locked(exec_ctx, args->elem, GRPC_ERROR_REF(error));
   } else {
+gpr_log(GPR_INFO, "  calling pick_subchannel_locked()");
     if (pick_subchannel_locked(exec_ctx, args->elem)) {
+gpr_log(GPR_INFO, "  pick_subchannel_locked() returned true");
       subchannel_ready_locked(exec_ctx, args->elem, GRPC_ERROR_NONE);
     }
   }
@@ -1039,6 +1046,7 @@ static void cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 // State for pick callback that holds a reference to the LB policy
 // from which the pick was requested.
 typedef struct {
+  bool in_call_combiner;
   grpc_lb_policy *lb_policy;
   grpc_call_element *elem;
   grpc_closure closure;
@@ -1048,8 +1056,18 @@ typedef struct {
 // Unrefs the LB policy after invoking subchannel_ready_locked().
 static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
+gpr_log(GPR_INFO, "pick done: error=%s", grpc_error_string(error));
   pick_callback_args *args = arg;
   GPR_ASSERT(args != NULL);
+  if (!args->in_call_combiner) {
+gpr_log(GPR_INFO, "bouncing back into call combiner");
+    args->in_call_combiner = true;
+    call_data *calld = args->elem->call_data;
+    GRPC_CLOSURE_INIT(&args->closure, pick_callback_done_locked, args,
+                      &calld->deadline_state.call_combiner->scheduler);
+    GRPC_CLOSURE_RUN(exec_ctx, &args->closure, GRPC_ERROR_REF(error));
+    return;
+  }
   GPR_ASSERT(args->lb_policy != NULL);
   subchannel_ready_locked(exec_ctx, args->elem, GRPC_ERROR_REF(error));
   GRPC_LB_POLICY_UNREF(exec_ctx, args->lb_policy, "pick_subchannel");
@@ -1062,6 +1080,7 @@ static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
 static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
                                        grpc_call_element *elem,
                                        const grpc_lb_policy_pick_args *inputs) {
+gpr_log(GPR_INFO, "starting pick");
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   pick_callback_args *pick_args = gpr_zalloc(sizeof(*pick_args));
@@ -1077,6 +1096,9 @@ static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
     /* synchronous grpc_lb_policy_pick call. Unref the LB policy. */
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "pick_subchannel");
     gpr_free(pick_args);
+  } else {
+gpr_log(GPR_INFO, "async pick -- yielding call combiner");
+    grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
   }
   return pick_done;
 }
@@ -1116,12 +1138,14 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
     pick_done = pick_callback_start_locked(exec_ctx, elem, &inputs);
   } else if (chand->resolver != NULL) {
     if (!chand->started_resolving) {
+gpr_log(GPR_INFO, "querying resolver");
       chand->started_resolving = true;
       GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
       grpc_resolver_next_locked(exec_ctx, chand->resolver,
                                 &chand->resolver_result,
                                 &chand->on_resolver_result_changed);
     }
+gpr_log(GPR_INFO, "waiting for resolver result");
     pick_after_resolver_result_args *args =
         (pick_after_resolver_result_args *)gpr_zalloc(sizeof(*args));
     args->elem = elem;
