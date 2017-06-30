@@ -83,18 +83,17 @@ void HHVM_METHOD(Channel, __construct,
 
   if (argsArrayCopy.exists(credentialsKey, true)) {
     Variant value = argsArrayCopy[credentialsKey];
-    if (value.isNull() || !value.isObject()) {
-      argsArrayCopy.remove(credentialsKey, true);
-    } else {
+    if (value.isObject() && !value.isNull()) {
       Object obj = value.toObject();
       ObjectData* objData = value.getObjectData();
       if (!objData->instanceof(String("Grpc\\ChannelCredentials"))) {
         throw_invalid_argument("credentials must be a Grpc\\ChannelCredentials object");
-        goto cleanup;
+        return;
       }
       channelCredentialsData = Native::data<ChannelCredentialsData>(obj);
-      argsArrayCopy.remove(credentialsKey, true);
     }
+
+    argsArrayCopy.remove(credentialsKey, true);
   }
 
   grpc_channel_args args;
@@ -106,9 +105,7 @@ void HHVM_METHOD(Channel, __construct,
     channelData->init(grpc_secure_channel_create(channelCredentialsData->getWrapped(), target.c_str(), &args, NULL));
   }
 
-  cleanup:
-    req::free(args.args);
-    return;
+  req::free(args.args);
 }
 
 /**
@@ -182,10 +179,10 @@ void hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args)
 
     Variant v = iter.second();
     
-    if (key.isInteger()) {
+    if (v.isInteger()) {
       args->args[i].value.integer = v.toInt32();
       args->args[i].type = GRPC_ARG_INTEGER;
-    } else if (key.isString()) {
+    } else if (v.isString()) {
       args->args[i].value.string = (char *)v.toString().c_str();
       args->args[i].type = GRPC_ARG_STRING;
     } else {

@@ -115,6 +115,12 @@ void HHVM_METHOD(Call, __construct,
 Object HHVM_METHOD(Call, startBatch,
   const Array& actions) { // array<int, mixed>
   auto resultObj = SystemLib::AllocStdClassObject();
+
+  if (actions.size() > 8) {
+    throw_invalid_argument("actions array must not be longer than 8 operations");
+    return resultObj;
+  }
+
   auto callData = Native::data<CallData>(this_);
 
   size_t op_num = 0;
