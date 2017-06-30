@@ -42,7 +42,7 @@ brew install gflags
 set +ex  # rvm script is very verbose and exits with errorcode
 source $HOME/.rvm/scripts/rvm
 set -e  # rvm commands are very verbose  
-rvm install ruby-2.3
+rvm install ruby-2.4
 rvm osx-ssl-certs status all
 rvm osx-ssl-certs update all
 set -ex
