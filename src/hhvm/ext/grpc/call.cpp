@@ -435,7 +435,7 @@ Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
 /* Populates a grpc_metadata_array with the data in a PHP array object.
    Returns true on success and false on failure */
 bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadata) {
-  grpc_metadata_array_init(metadata);
+  // Must call grpc_metadata_array_init(&metadata); before calling this function
 
   for (ArrayIter iter(array); iter; ++iter) {
     Variant key = iter.first();

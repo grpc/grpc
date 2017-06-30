@@ -126,13 +126,16 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   plugin_state *state = (plugin_state *)ptr;
 
   Variant retval = vm_call_user_func(state->callback, make_packed_array(returnObj));
+  if (!retval.isArray()) {
+    throw_invalid_argument("Callback return value expected an array.");
+  }
 
   grpc_status_code code = GRPC_STATUS_OK;
+
   grpc_metadata_array metadata;
-  bool cleanup = true;
+  grpc_metadata_array_init(&metadata);
 
   if (!retval.isArray()) {
-    cleanup = false;
     code = GRPC_STATUS_INVALID_ARGUMENT;
   } else if (!hhvm_create_metadata_array(retval.toArray(), &metadata)) {
     code = GRPC_STATUS_INVALID_ARGUMENT;
@@ -140,12 +143,11 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
   /* Pass control back to core */
   cb(user_data, metadata.metadata, metadata.count, code, NULL);
-  if (cleanup) {
-    for (int i = 0; i < metadata.count; i++) {
-      grpc_slice_unref(metadata.metadata[i].value);
-    }
-    grpc_metadata_array_destroy(&metadata);
+
+  for (int i = 0; i < metadata.count; i++) {
+    grpc_slice_unref(metadata.metadata[i].value);
   }
+  grpc_metadata_array_destroy(&metadata);
 }
 
 
