@@ -145,6 +145,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   cb(user_data, metadata.metadata, metadata.count, code, NULL);
 
   for (int i = 0; i < metadata.count; i++) {
+    grpc_slice_unref(metadata.metadata[i].key);
     grpc_slice_unref(metadata.metadata[i].value);
   }
   grpc_metadata_array_destroy(&metadata);
