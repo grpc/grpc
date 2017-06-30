@@ -73,6 +73,9 @@ grpc_channel_credentials* ChannelCredentialsData::getWrapped() {
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
   const String& pem_roots) {
   WriteLock l(s_default_pem_root_certs_mutex);
+  if (s_default_pem_root_certs_mutex != NULL) {
+    gpr_free((void *)s_default_pem_root_certs_mutex);
+  }
   default_pem_root_certs = (char *) gpr_malloc((pem_roots.length() + 1) * sizeof(char));
   memcpy(default_pem_root_certs, pem_roots.c_str(), pem_roots.length() + 1);
 }

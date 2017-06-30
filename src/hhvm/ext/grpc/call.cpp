@@ -341,7 +341,13 @@ Object HHVM_METHOD(Call, startBatch,
   }
 
   cleanup:
+    for (int i = 0; i < metadata.count; i++) {
+      grpc_slice_unref(metadata.metadata[i].value);
+    }
     grpc_metadata_array_destroy(&metadata);
+    for (int i = 0; i < trailing_metadata.count; i++) {
+      grpc_slice_unref(trailing_metadata.metadata[i].value);
+    }
     grpc_metadata_array_destroy(&trailing_metadata);
     grpc_metadata_array_destroy(&recv_metadata);
     grpc_metadata_array_destroy(&recv_trailing_metadata);
