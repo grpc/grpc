@@ -64,6 +64,11 @@
 #define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
 #define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
 
+#define DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
+#define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
+#define DEFAULT_MAX_PINGS_BETWEEN_DATA 0                      /* unlimited */
+#define DEFAULT_MAX_PING_STRIKES 2
+
 static int g_default_client_keepalive_time_ms =
     DEFAULT_CLIENT_KEEPALIVE_TIME_MS;
 static int g_default_client_keepalive_timeout_ms =
@@ -74,6 +79,13 @@ static int g_default_server_keepalive_timeout_ms =
     DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS;
 static bool g_default_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
+
+static int g_default_min_sent_ping_interval_without_data_ms =
+    DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS;
+static int g_default_min_recv_ping_interval_without_data_ms =
+    DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS;
+static int g_default_max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
+static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false, "http");
@@ -151,11 +163,6 @@ static void send_ping_locked(
     grpc_chttp2_initiate_write_reason initiate_write_reason);
 static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                        grpc_error *error);
-
-#define DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
-#define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
-#define DEFAULT_MAX_PINGS_BETWEEN_DATA 0                      /* unlimited */
-#define DEFAULT_MAX_PING_STRIKES 2
 
 /** keepalive-relevant functions */
 static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -363,12 +370,12 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                        GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
 
   t->ping_policy = (grpc_chttp2_repeated_ping_policy){
-      .max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA,
+      .max_pings_without_data = g_default_max_pings_without_data,
       .min_sent_ping_interval_without_data = gpr_time_from_millis(
-          DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS, GPR_TIMESPAN),
-      .max_ping_strikes = DEFAULT_MAX_PING_STRIKES,
+          g_default_min_sent_ping_interval_without_data_ms, GPR_TIMESPAN),
+      .max_ping_strikes = g_default_max_ping_strikes,
       .min_recv_ping_interval_without_data = gpr_time_from_millis(
-          DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS, GPR_TIMESPAN),
+          g_default_min_recv_ping_interval_without_data_ms, GPR_TIMESPAN),
   };
 
   /* Keepalive setting */
@@ -428,12 +435,13 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
         t->ping_policy.max_pings_without_data = grpc_channel_arg_get_integer(
             &channel_args->args[i],
-            (grpc_integer_options){DEFAULT_MAX_PINGS_BETWEEN_DATA, 0, INT_MAX});
+            (grpc_integer_options){g_default_max_pings_without_data, 0,
+                                   INT_MAX});
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
         t->ping_policy.max_ping_strikes = grpc_channel_arg_get_integer(
             &channel_args->args[i],
-            (grpc_integer_options){DEFAULT_MAX_PING_STRIKES, 0, INT_MAX});
+            (grpc_integer_options){g_default_max_ping_strikes, 0, INT_MAX});
       } else if (0 ==
                  strcmp(
                      channel_args->args[i].key,
@@ -443,7 +451,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                 grpc_channel_arg_get_integer(
                     &channel_args->args[i],
                     (grpc_integer_options){
-                        DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS, 0,
+                        g_default_min_sent_ping_interval_without_data_ms, 0,
                         INT_MAX}),
                 GPR_TIMESPAN);
       } else if (0 ==
@@ -455,7 +463,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                 grpc_channel_arg_get_integer(
                     &channel_args->args[i],
                     (grpc_integer_options){
-                        DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS, 0,
+                        g_default_min_recv_ping_interval_without_data_ms, 0,
                         INT_MAX}),
                 GPR_TIMESPAN);
       } else if (0 == strcmp(channel_args->args[i].key,
@@ -2643,6 +2651,36 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args,
                 &args->args[i],
                 (grpc_integer_options){g_default_keepalive_permit_without_calls,
                                        0, 1});
+      } else if (0 ==
+                 strcmp(args->args[i].key, GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
+        g_default_max_ping_strikes = grpc_channel_arg_get_integer(
+            &args->args[i],
+            (grpc_integer_options){g_default_max_ping_strikes, 0, INT_MAX});
+      } else if (0 == strcmp(args->args[i].key,
+                             GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
+        g_default_max_pings_without_data = grpc_channel_arg_get_integer(
+            &args->args[i], (grpc_integer_options){
+                                g_default_max_pings_without_data, 0, INT_MAX});
+      } else if (0 ==
+                 strcmp(
+                     args->args[i].key,
+                     GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS)) {
+        g_default_min_sent_ping_interval_without_data_ms =
+            grpc_channel_arg_get_integer(
+                &args->args[i],
+                (grpc_integer_options){
+                    g_default_min_sent_ping_interval_without_data_ms, 0,
+                    INT_MAX});
+      } else if (0 ==
+                 strcmp(
+                     args->args[i].key,
+                     GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)) {
+        g_default_min_recv_ping_interval_without_data_ms =
+            grpc_channel_arg_get_integer(
+                &args->args[i],
+                (grpc_integer_options){
+                    g_default_min_recv_ping_interval_without_data_ms, 0,
+                    INT_MAX});
       }
     }
   }
