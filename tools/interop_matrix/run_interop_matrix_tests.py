@@ -125,6 +125,7 @@ def find_test_cases(lang, release):
       # Only line start with 'docker run' are test cases.
       for line in f.readlines():
         if line.startswith('docker run'):
+          line = line.replace('docker run', 'gcloud docker -- run')
           m = re.search('--test_case=(.*)"', line)
           shortname = m.group(1) if m else 'unknown_test'
           spec = jobset.JobSpec(cmdline=line,

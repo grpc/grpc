@@ -38,6 +38,7 @@ from specific releases/tag, are used to test version compatiblity between gRPC r
 - The output for all the test cases is recorded in a junit style xml file (default to 'report.xml').
 
 ## Instructions for running test cases against a GCR image manually
+- Download docker image from GCR.  For example: `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_go1.7:master`.
 - Run test cases by specifying `docker_image` variable inline with the test case script created above.
 For example:
   - `docker_image=gcr.io/grpc-testing/grpc_interop_go1.7:master ./testcases/go__master` will run go__master test cases against `go1.7` with gRPC release `master` docker image in GCR.
