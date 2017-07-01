@@ -32,6 +32,16 @@
 
 namespace HPHP {
 
+struct DefaultPemRootCerts {
+  DefaultPemRootCerts();
+  char * getCerts();
+  void setCerts(const String& pem_roots);
+
+  char * default_pem_root_certs{NULL};
+
+  static DECLARE_THREAD_LOCAL(DefaultPemRootCerts, tl_obj);
+};
+
 class ChannelCredentialsData {
   private:
     grpc_channel_credentials* wrapped{nullptr};
