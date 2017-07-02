@@ -649,7 +649,7 @@ static void create_grpc_frame(grpc_slice_buffer *write_slice_buffer,
   uint8_t *p = (uint8_t *)write_buffer;
   /* Append 5 byte header */
   /* Compressed flag */
-  *p++ = (flags & GRPC_WRITE_INTERNAL_COMPRESS) ? 1 : 0;
+  *p++ = (uint8_t)((flags & GRPC_WRITE_INTERNAL_COMPRESS) ? 1 : 0);
   /* Message length */
   *p++ = (uint8_t)(length >> 24);
   *p++ = (uint8_t)(length >> 16);

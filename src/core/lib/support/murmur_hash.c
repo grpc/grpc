@@ -61,9 +61,9 @@ uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed) {
   /* tail */
   switch (len & 3) {
     case 3:
-      k1 ^= ((uint32_t)tail[2]) << 16;
+      k1 ^= ((uint32_t)tail[2]) << 16; // fallthrough
     case 2:
-      k1 ^= ((uint32_t)tail[1]) << 8;
+      k1 ^= ((uint32_t)tail[1]) << 8; // fallthrough
     case 1:
       k1 ^= tail[0];
       k1 *= c1;
