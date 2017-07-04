@@ -27,6 +27,13 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+@rem Move python installation from _32bit to _32bits where they are expected python artifact builder
+@rem TODO(jtattermusch): get rid of this hack
+rename C:\Python27_32bit Python27_32bits
+rename C:\Python34_32bit Python34_32bits
+rename C:\Python35_32bit Python35_32bits
+rename C:\Python36_32bit Python36_32bits
+
 @rem make sure msys binaries are preferred over cygwin binaries
 @rem set path to python 2.7
 set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
