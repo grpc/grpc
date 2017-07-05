@@ -20,8 +20,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/compression/stream_compression.h"
 
@@ -34,7 +34,8 @@ static void generate_random_payload(char *payload, size_t size) {
   payload[size - 1] = '\0';
 }
 
-static bool slice_buffer_equals_string(grpc_slice_buffer *buf, const char *str) {
+static bool slice_buffer_equals_string(grpc_slice_buffer *buf,
+                                       const char *str) {
   size_t i;
   if (buf->length != strlen(str)) {
     return false;
@@ -42,7 +43,8 @@ static bool slice_buffer_equals_string(grpc_slice_buffer *buf, const char *str) 
   size_t pointer = 0;
   for (i = 0; i < buf->count; i++) {
     size_t slice_len = GRPC_SLICE_LENGTH(buf->slices[i]);
-    if (0 != strncmp(str + pointer, (char *)GRPC_SLICE_START_PTR(buf->slices[i]), slice_len)) {
+    if (0 != strncmp(str + pointer,
+                     (char *)GRPC_SLICE_START_PTR(buf->slices[i]), slice_len)) {
       return false;
     }
     pointer += slice_len;
@@ -128,7 +130,8 @@ test_stream_compression_simple_compress_decompress_with_output_size_constraint()
 }
 
 #define LARGE_DATA_SIZE 1024 * 1024
-static void test_stream_compression_simple_compress_decompress_with_large_data() {
+static void
+test_stream_compression_simple_compress_decompress_with_large_data() {
   char test_str[LARGE_DATA_SIZE];
   generate_random_payload(test_str, LARGE_DATA_SIZE);
   grpc_slice_buffer source, relay, sink;
