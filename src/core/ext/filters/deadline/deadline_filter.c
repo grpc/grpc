@@ -41,6 +41,7 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_deadline_state* deadline_state = elem->call_data;
   if (error != GRPC_ERROR_CANCELLED) {
     // The call combiner will be yielded by the connected_channel filter.
+gpr_log(GPR_INFO, "PASSING ERROR DOWN CALL STACK: call_combiner=%p", deadline_state->call_combiner);
     grpc_call_element_signal_error(
         exec_ctx, elem,
         grpc_error_set_int(

@@ -57,7 +57,7 @@ typedef struct call_data {
   initial_metadata_state send_initial_metadata_state;
   grpc_error *cancel_error;
 
-  grpc_transport_stream_op_batch *send_message_batch;
+  grpc_transport_stream_op_batch *pending_send_message_batch;
   uint32_t send_length;
   uint32_t send_flags;
   grpc_slice incoming_slice;
@@ -83,13 +83,13 @@ static bool skip_compression(grpc_call_element *elem, uint32_t flags,
   channel_data *channeld = elem->channel_data;
 
   if (flags & (GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_INTERNAL_COMPRESS)) {
-    return 1;
+    return true;
   }
   if (has_compression_algorithm) {
     if (calld->compression_algorithm == GRPC_COMPRESS_NONE) {
-      return 1;
+      return true;
     }
-    return 0; /* we have an actual call-specific algorithm */
+    return false; /* we have an actual call-specific algorithm */
   }
   /* no per-call compression override */
   return channeld->default_compression_algorithm == GRPC_COMPRESS_NONE;
@@ -176,7 +176,8 @@ static void send_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
                                   grpc_error *ignored) {
   grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
-  grpc_call_next_op(exec_ctx, elem, calld->send_message_batch);
+  calld->pending_send_message_batch = NULL;
+  grpc_call_next_op(exec_ctx, elem, calld->pending_send_message_batch);
 }
 
 static void finish_send_message(grpc_exec_ctx *exec_ctx,
@@ -218,10 +219,10 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
 
   grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
                                 calld->send_flags);
-  calld->send_message_batch->payload->send_message.send_message =
+  calld->pending_send_message_batch->payload->send_message.send_message =
       &calld->replacement_stream.base;
-  calld->post_send = calld->send_message_batch->on_complete;
-  calld->send_message_batch->on_complete = &calld->send_done;
+  calld->post_send = calld->pending_send_message_batch->on_complete;
+  calld->pending_send_message_batch->on_complete = &calld->send_done;
 
   // If we're not in the call combiner, schedule a closure on the
   // call combiner to send the op down.
@@ -237,7 +238,7 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   if (GRPC_ERROR_NONE !=
       grpc_byte_stream_pull(
           exec_ctx,
-          calld->send_message_batch->payload->send_message.send_message,
+          calld->pending_send_message_batch->payload->send_message.send_message,
           &calld->incoming_slice)) {
     /* Should never reach here */
     abort();
@@ -256,7 +257,7 @@ static bool continue_send_message(grpc_exec_ctx *exec_ctx,
                                   bool in_call_combiner) {
   call_data *calld = elem->call_data;
   grpc_transport_stream_op_batch_payload *payload =
-      calld->send_message_batch->payload;
+      calld->pending_send_message_batch->payload;
   while (grpc_byte_stream_next(exec_ctx, payload->send_message.send_message,
                                ~(size_t)0, &calld->got_slice)) {
     grpc_byte_stream_pull(exec_ctx, payload->send_message.send_message,
@@ -276,7 +277,7 @@ static bool start_send_message_batch(grpc_exec_ctx *exec_ctx,
                                      bool in_call_combiner) {
   call_data *calld = elem->call_data;
   grpc_transport_stream_op_batch_payload *payload =
-      calld->send_message_batch->payload;
+      calld->pending_send_message_batch->payload;
   bool done = true;
   if (!skip_compression(
           elem, payload->send_message.send_message->flags,
@@ -293,8 +294,8 @@ static void fail_send_message_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                      grpc_error *ignored) {
   call_data *calld = arg;
   grpc_transport_stream_op_batch_finish_with_failure(
-      exec_ctx, calld->send_message_batch, GRPC_ERROR_REF(calld->cancel_error),
-      calld->call_combiner);
+      exec_ctx, calld->pending_send_message_batch,
+      GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
 }
 
 static void compress_start_transport_stream_op_batch(
@@ -307,7 +308,7 @@ static void compress_start_transport_stream_op_batch(
     GRPC_ERROR_UNREF(calld->cancel_error);
     calld->cancel_error =
         GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
-    if (calld->send_message_batch != NULL) {
+    if (calld->pending_send_message_batch != NULL) {
       GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(
                                        fail_send_message_batch_in_call_combiner,
                                        calld, &calld->call_combiner->scheduler),
@@ -340,7 +341,7 @@ static void compress_start_transport_stream_op_batch(
     // for this, since we can't send two batches down while holding the
     // call combiner, since the connected_channel filter (at the bottom of
     // the call stack) will release the call combiner for each batch it sees.
-    if (calld->send_message_batch != NULL) {
+    if (calld->pending_send_message_batch != NULL) {
       if (start_send_message_batch(exec_ctx, elem,
                                    false /* in_call_combiner */)) {
         GRPC_CLOSURE_SCHED(exec_ctx, &calld->send_in_call_combiner,
@@ -361,16 +362,18 @@ static void compress_start_transport_stream_op_batch(
     //    completed asynchronously.  In this case, we give up the call
     //    combiner and will re-enter it once the compression is completed
     //    to send the batch down.
-    calld->send_message_batch = batch;
+    GPR_ASSERT(calld->pending_send_message_batch == NULL);
+    calld->pending_send_message_batch = batch;
     if (calld->send_initial_metadata_state == INITIAL_METADATA_UNSEEN ||
         !start_send_message_batch(exec_ctx, elem,
                                   true /* in_call_combiner */)) {
       // Cases 1 and 3.
-      // Not processing further right now, so give up combiner lock.
+      // Not processing further right now, so give up call combiner.
       grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
       goto done;
     }
     // Case 2 (fallthrough).
+    calld->pending_send_message_batch = NULL;
   }
   // Pass control down the stack.
   grpc_call_next_op(exec_ctx, elem, batch);
