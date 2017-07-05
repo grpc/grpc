@@ -474,7 +474,7 @@ int grpc_get_cq_poll_num(grpc_completion_queue *cq) {
 }
 
 #ifndef NDEBUG
-void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
+void grpc_cq_internal_ref(grpc_completion_queue *cq, const char *reason,
                           const char *file, int line) {
   if (GRPC_TRACER_ON(grpc_trace_cq_refcount)) {
     gpr_atm val = gpr_atm_no_barrier_load(&cq->owning_refs.count);
