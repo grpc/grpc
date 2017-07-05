@@ -34,24 +34,35 @@
 // grpc_deadline_state
 //
 
+static void send_cancel_op_in_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
+                                            grpc_error* error) {
+  grpc_call_element* elem = arg;
+  grpc_deadline_state* deadline_state = elem->call_data;
+gpr_log(GPR_INFO, "SENDING ERROR DOWN CALL STACK IN CALL COMBINER: call_combiner=%p", deadline_state->call_combiner);
+  grpc_transport_stream_op_batch *batch = grpc_make_transport_stream_op(NULL);
+  batch->cancel_stream = true;
+  batch->payload->cancel_stream.cancel_error = error;
+  elem->filter->start_transport_stream_op_batch(exec_ctx, elem, batch);
+}
+
 // Timer callback.
 static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
                            grpc_error* error) {
   grpc_call_element* elem = arg;
   grpc_deadline_state* deadline_state = elem->call_data;
   if (error != GRPC_ERROR_CANCELLED) {
-    // The call combiner will be yielded by the connected_channel filter.
-gpr_log(GPR_INFO, "PASSING ERROR DOWN CALL STACK: call_combiner=%p", deadline_state->call_combiner);
-    grpc_call_element_signal_error(
-        exec_ctx, elem,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED));
-  } else {
-    // Not sending a cancel op down the call stack, so yield the call
-    // combiner here.
-gpr_log(GPR_INFO, "STOPPING call_combiner=%p", deadline_state->call_combiner);
-    grpc_call_combiner_stop(exec_ctx, deadline_state->call_combiner);
+gpr_log(GPR_INFO, "TIMER POPPED; CANCELLING VIA call_combiner=%p", deadline_state->call_combiner);
+    error = grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
+    grpc_call_combiner_cancel(exec_ctx, deadline_state->call_combiner,
+                              GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(
+        exec_ctx,
+        GRPC_CLOSURE_INIT(&deadline_state->timer_callback,
+                          send_cancel_op_in_call_combiner, elem,
+                          &deadline_state->call_combiner->scheduler),
+        error);
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }
@@ -75,14 +86,14 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
       // If we've already created and destroyed a timer, we always create a
       // new closure: we have no other guarantee that the inlined closure is
       // not in use (it may hold a pending call to timer_callback)
-      closure = GRPC_CLOSURE_CREATE(
-          timer_callback, elem, &deadline_state->call_combiner->scheduler);
+      closure = GRPC_CLOSURE_CREATE(timer_callback, elem,
+                                    grpc_schedule_on_exec_ctx);
       break;
     case GRPC_DEADLINE_STATE_INITIAL:
       deadline_state->timer_state = GRPC_DEADLINE_STATE_PENDING;
-      closure =
-          GRPC_CLOSURE_INIT(&deadline_state->timer_callback, timer_callback,
-                            elem, &deadline_state->call_combiner->scheduler);
+      closure = GRPC_CLOSURE_INIT(&deadline_state->timer_callback,
+                                  timer_callback, elem,
+                                  grpc_schedule_on_exec_ctx);
       break;
   }
   GPR_ASSERT(closure != NULL);
@@ -167,6 +178,9 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     // call stack initialization is finished.  To avoid that problem, we
     // create a closure to start the timer, and we schedule that closure
     // to be run after call stack initialization is done.
+// FIXME: in server code, we will already be in the call combiner, so
+// we should set state->in_call_combiner=true here somehow to avoid the
+// unnecessary level of redirection in start_timer_after_init() above
     struct start_timer_after_init_state* state = gpr_zalloc(sizeof(*state));
     state->elem = elem;
     state->deadline = deadline;

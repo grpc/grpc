@@ -40,6 +40,7 @@ typedef struct {
   gpr_atm size;  // size_t, num closures in queue or currently executing
   gpr_mpscq queue;
   grpc_closure_scheduler scheduler;
+  grpc_closure* notify_on_cancel;
 } grpc_call_combiner;
 
 // Assumes memory was initialized to zero.
@@ -54,5 +55,17 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
 /// Invoked by the callback to indicate that it is done processing.
 void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
                              grpc_call_combiner* call_combiner);
+
+/// Tells \a call_combiner to invoke \a closure when
+/// grpc_call_combiner_cancel() is called.  If \a closure is NULL, then
+/// no closure will be invoked on cancellation.
+/// Note: Caller must hold call_combiner before calling this.
+void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
+                                             grpc_closure* closure);
+
+/// Indicates that the call has been cancelled.
+void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
+                               grpc_call_combiner* call_combiner,
+                               grpc_error* error);
 
 #endif /* GRPC_CORE_LIB_IOMGR_CALL_COMBINER_H */

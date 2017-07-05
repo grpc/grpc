@@ -818,9 +818,9 @@ typedef struct client_channel_call_data {
   grpc_subchannel_call *subchannel_call;
   grpc_error *error;
 
-  bool pick_callback_in_call_combiner;
   grpc_lb_policy *lb_policy;  // Holds ref while LB pick is pending.
   grpc_closure lb_pick_closure;
+  grpc_closure cancel_closure;
 
   grpc_connected_subchannel *connected_subchannel;
   grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
@@ -1065,58 +1065,10 @@ typedef struct {
   grpc_closure closure;
 } pick_after_resolver_result_args;
 
-static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
-                                                   void *arg,
-                                                   grpc_error *error) {
-gpr_log(GPR_INFO, "==> pick_after_resolver_result_done_locked()");
-  pick_after_resolver_result_args *args = arg;
-  if (args->cancelled) {
-gpr_log(GPR_INFO, "  cancelled");
-    /* cancelled, do nothing */
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      gpr_log(GPR_DEBUG, "call cancelled before resolver result");
-    }
-  } else if (error != GRPC_ERROR_NONE) {
-gpr_log(GPR_INFO, "  error: %s", grpc_error_string(error));
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      gpr_log(GPR_DEBUG, "calld=%p: resolver failed to return data",
-              args->elem->call_data);
-    }
-    subchannel_ready_locked(exec_ctx, args->elem, GRPC_ERROR_REF(error));
-  } else {
-gpr_log(GPR_INFO, "  calling pick_subchannel_locked()");
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      gpr_log(GPR_DEBUG, "calld=%p: resolver returned, doing pick",
-              args->elem->call_data);
-    }
-    if (pick_subchannel_locked(exec_ctx, args->elem)) {
-gpr_log(GPR_INFO, "  pick_subchannel_locked() returned true");
-      subchannel_ready_locked(exec_ctx, args->elem, GRPC_ERROR_NONE);
-    }
-  }
-  gpr_free(args);
-}
-
-static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
-                                                    grpc_call_element *elem) {
-  channel_data *chand = elem->channel_data;
-  call_data *calld = elem->call_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-    gpr_log(GPR_DEBUG, "calld=%p: deferring pick pending resolver result",
-            calld);
-  }
-  pick_after_resolver_result_args *args =
-      (pick_after_resolver_result_args *)gpr_zalloc(sizeof(*args));
-  args->elem = elem;
-  GRPC_CLOSURE_INIT(&args->closure, pick_after_resolver_result_done_locked,
-                    args, grpc_combiner_scheduler(chand->combiner));
-  grpc_closure_list_append(&chand->waiting_for_resolver_result_closures,
-                           &args->closure, GRPC_ERROR_NONE);
-}
-
 static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
-                                                     grpc_call_element *elem,
+                                                     void *arg,
                                                      grpc_error *error) {
+  grpc_call_element *elem = arg;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   // If we don't yet have a resolver result, then a closure for
@@ -1140,7 +1092,81 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
                                   "Pick cancelled", &error, 1));
     }
   }
-  GRPC_ERROR_UNREF(error);
+}
+
+static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
+                                                   void *arg,
+                                                   grpc_error *error) {
+gpr_log(GPR_INFO, "==> pick_after_resolver_result_done_locked()");
+  pick_after_resolver_result_args *args = arg;
+  if (args->cancelled) {
+gpr_log(GPR_INFO, "  cancelled");
+    /* cancelled, do nothing */
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "call cancelled before resolver result");
+    }
+  } else {
+    grpc_call_element *elem = args->elem;
+    call_data *calld = elem->call_data;
+    grpc_call_combiner_set_notify_on_cancel(
+        calld->deadline_state.call_combiner, NULL);
+    if (error != GRPC_ERROR_NONE) {
+gpr_log(GPR_INFO, "  error: %s", grpc_error_string(error));
+      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+        gpr_log(GPR_DEBUG, "calld=%p: resolver failed to return data", calld);
+      }
+      subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
+    } else {
+gpr_log(GPR_INFO, "  calling pick_subchannel_locked()");
+      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+        gpr_log(GPR_DEBUG, "calld=%p: resolver returned, doing pick", calld);
+      }
+      if (pick_subchannel_locked(exec_ctx, elem)) {
+gpr_log(GPR_INFO, "  pick_subchannel_locked() returned true");
+        subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_NONE);
+      }
+    }
+  }
+  gpr_free(args);
+}
+
+static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
+                                                    grpc_call_element *elem) {
+  channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    gpr_log(GPR_DEBUG, "calld=%p: deferring pick pending resolver result",
+            calld);
+  }
+  pick_after_resolver_result_args *args =
+      (pick_after_resolver_result_args *)gpr_zalloc(sizeof(*args));
+  args->elem = elem;
+  GRPC_CLOSURE_INIT(&args->closure, pick_after_resolver_result_done_locked,
+                    args, grpc_combiner_scheduler(chand->combiner));
+  grpc_closure_list_append(&chand->waiting_for_resolver_result_closures,
+                           &args->closure, GRPC_ERROR_NONE);
+  grpc_call_combiner_set_notify_on_cancel(
+      calld->deadline_state.call_combiner,
+      GRPC_CLOSURE_INIT(&calld->cancel_closure,
+                        pick_after_resolver_result_cancel_locked,
+                        elem, grpc_combiner_scheduler(chand->combiner)));
+}
+
+static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx,
+                                        void *arg, grpc_error *error) {
+  call_data *calld = arg;
+// FIXME: is this assert right?  what if this callback is scheduled but
+// not yet invoked when the pick finishes?  may need to make this
+// conditional and make the callback hold a ref to the call-stack... but
+// then what if it is never invoked?
+  GPR_ASSERT(calld->lb_policy != NULL);
+  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    gpr_log(GPR_DEBUG, "calld=%p: cancelling pick from LB policy %p", calld,
+            calld->lb_policy);
+  }
+  grpc_lb_policy_cancel_pick_locked(exec_ctx, calld->lb_policy,
+                                    &calld->connected_subchannel,
+                                    GRPC_ERROR_REF(error));
 }
 
 // Callback invoked by grpc_lb_policy_pick_locked() for async picks.
@@ -1150,17 +1176,11 @@ static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
 gpr_log(GPR_INFO, "pick done: error=%s", grpc_error_string(error));
   grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
-  if (!calld->pick_callback_in_call_combiner) {
-gpr_log(GPR_INFO, "bouncing back into call combiner");
-    calld->pick_callback_in_call_combiner = true;
-    GRPC_CLOSURE_INIT(&calld->lb_pick_closure, pick_callback_done_locked, elem,
-                      &calld->deadline_state.call_combiner->scheduler);
-    GRPC_CLOSURE_RUN(exec_ctx, &calld->lb_pick_closure, GRPC_ERROR_REF(error));
-    return;
-  }
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG, "calld=%p: pick completed asynchronously", calld);
   }
+  grpc_call_combiner_set_notify_on_cancel(calld->deadline_state.call_combiner,
+                                          NULL);
   GPR_ASSERT(calld->lb_policy != NULL);
   subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
   GRPC_LB_POLICY_UNREF(exec_ctx, calld->lb_policy, "pick_subchannel");
@@ -1196,21 +1216,12 @@ gpr_log(GPR_INFO, "starting pick");
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "pick_subchannel");
     calld->lb_policy = NULL;
   } else {
-gpr_log(GPR_INFO, "async pick -- yielding call combiner");
-    grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
+    grpc_call_combiner_set_notify_on_cancel(
+        calld->deadline_state.call_combiner,
+        GRPC_CLOSURE_INIT(&calld->cancel_closure, pick_callback_cancel_locked,
+                          calld, grpc_combiner_scheduler(chand->combiner)));
   }
   return pick_done;
-}
-
-static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx,
-                                        call_data *calld, grpc_error *error) {
-  GPR_ASSERT(calld->lb_policy != NULL);
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-    gpr_log(GPR_DEBUG, "calld=%p: cancelling pick from LB policy %p", calld,
-            calld->lb_policy);
-  }
-  grpc_lb_policy_cancel_pick_locked(exec_ctx, calld->lb_policy,
-                                    &calld->connected_subchannel, error);
 }
 
 static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
@@ -1271,6 +1282,7 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   /* if this is a cancellation, then we can raise our cancelled flag */
   if (batch->cancel_stream) {
+    if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "calld=%p: recording cancel_error=%s", calld,
@@ -1282,11 +1294,9 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
        is in the past when the call starts), we can return the right
        error to the caller when the first batch does get passed down. */
     if (calld->lb_policy != NULL) {
-      pick_callback_cancel_locked(exec_ctx, calld,
-                                  GRPC_ERROR_REF(calld->error));
+      pick_callback_cancel_locked(exec_ctx, calld, calld->error);
     } else {
-      pick_after_resolver_result_cancel_locked(exec_ctx, elem,
-                                               GRPC_ERROR_REF(calld->error));
+      pick_after_resolver_result_cancel_locked(exec_ctx, elem, calld->error);
     }
     waiting_for_pick_batches_fail(exec_ctx, calld,
                                   GRPC_ERROR_REF(calld->error));
@@ -1301,6 +1311,7 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
       // Pick was returned synchronously.
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
       if (calld->connected_subchannel == NULL) {
+        if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
         calld->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Call dropped by load balancing policy");
         waiting_for_pick_batches_fail(exec_ctx, calld,

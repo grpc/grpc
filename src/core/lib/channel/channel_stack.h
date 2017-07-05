@@ -290,10 +290,6 @@ void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
                       grpc_call_element *elem,
                       grpc_transport_stream_op_batch *op);
 
-void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
-                                    grpc_call_element *cur_elem,
-                                    grpc_error *error);
-
 extern grpc_tracer_flag grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \

@@ -97,3 +97,18 @@ gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p", closure);
   }
 else { gpr_log(GPR_INFO, "  queue empty"); }
 }
+
+void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
+                                             grpc_closure* closure) {
+  call_combiner->notify_on_cancel = closure;
+}
+
+void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
+                               grpc_call_combiner* call_combiner,
+                               grpc_error* error) {
+  if (call_combiner->notify_on_cancel != NULL) {
+    GRPC_CLOSURE_SCHED(exec_ctx, call_combiner->notify_on_cancel,
+                       GRPC_ERROR_REF(error));
+  }
+  GRPC_ERROR_UNREF(error);
+}
