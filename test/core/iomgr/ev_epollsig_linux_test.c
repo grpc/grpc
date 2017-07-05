@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 #include "src/core/lib/iomgr/port.h"
@@ -47,7 +32,6 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/workqueue.h"
 #include "test/core/util/test_config.h"
 
 typedef struct test_pollset {
@@ -122,7 +106,7 @@ static void test_pollset_cleanup(grpc_exec_ctx *exec_ctx,
   int i;
 
   for (i = 0; i < num_pollsets; i++) {
-    grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].pollset,
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, pollsets[i].pollset,
                       grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(exec_ctx, pollsets[i].pollset, &destroyed);
 
@@ -130,86 +114,6 @@ static void test_pollset_cleanup(grpc_exec_ctx *exec_ctx,
     gpr_free(pollsets[i].pollset);
   }
 }
-
-static void increment(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  ++*(int *)arg;
-}
-
-/*
- * Validate that merging two workqueues preserves the closures in each queue.
- * This is a regression test for a bug in
- * polling_island_merge()[ev_epoll_linux.c], where the parent relationship was
- * inverted.
- */
-
-#define NUM_FDS 2
-#define NUM_POLLSETS 2
-#define NUM_CLOSURES 4
-
-static void test_pollset_queue_merge_items() {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  test_fd tfds[NUM_FDS];
-  int fds[NUM_FDS];
-  test_pollset pollsets[NUM_POLLSETS];
-  grpc_closure closures[NUM_CLOSURES];
-  int i;
-  int result = 0;
-
-  test_fd_init(tfds, fds, NUM_FDS);
-  test_pollset_init(pollsets, NUM_POLLSETS);
-
-  /* Two distinct polling islands, each with their own FD and pollset. */
-  for (i = 0; i < NUM_FDS; i++) {
-    grpc_pollset_add_fd(&exec_ctx, pollsets[i].pollset, tfds[i].fd);
-    grpc_exec_ctx_flush(&exec_ctx);
-  }
-
-  /* Enqeue the closures, 3 to polling island 0 and 1 to polling island 1. */
-  grpc_closure_init(
-      closures, increment, &result,
-      grpc_workqueue_scheduler(grpc_fd_get_polling_island(tfds[0].fd)));
-  grpc_closure_init(
-      closures + 1, increment, &result,
-      grpc_workqueue_scheduler(grpc_fd_get_polling_island(tfds[0].fd)));
-  grpc_closure_init(
-      closures + 2, increment, &result,
-      grpc_workqueue_scheduler(grpc_fd_get_polling_island(tfds[0].fd)));
-  grpc_closure_init(
-      closures + 3, increment, &result,
-      grpc_workqueue_scheduler(grpc_fd_get_polling_island(tfds[1].fd)));
-  for (i = 0; i < NUM_CLOSURES; ++i) {
-    grpc_closure_sched(&exec_ctx, closures + i, GRPC_ERROR_NONE);
-  }
-
-  /* Merge the two polling islands. */
-  grpc_pollset_add_fd(&exec_ctx, pollsets[0].pollset, tfds[1].fd);
-  grpc_exec_ctx_flush(&exec_ctx);
-
-  /*
-   * Execute the closures, verify we see each one execute when executing work on
-   * the merged polling island.
-   */
-  grpc_pollset_worker *worker = NULL;
-  for (i = 0; i < NUM_CLOSURES; ++i) {
-    const gpr_timespec deadline = gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(2, GPR_TIMESPAN));
-    gpr_mu_lock(pollsets[1].mu);
-    GRPC_LOG_IF_ERROR(
-        "grpc_pollset_work",
-        grpc_pollset_work(&exec_ctx, pollsets[1].pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline));
-    gpr_mu_unlock(pollsets[1].mu);
-  }
-  GPR_ASSERT(result == NUM_CLOSURES);
-
-  test_fd_cleanup(&exec_ctx, tfds, NUM_FDS);
-  test_pollset_cleanup(&exec_ctx, pollsets, NUM_POLLSETS);
-  grpc_exec_ctx_finish(&exec_ctx);
-}
-
-#undef NUM_FDS
-#undef NUM_POLLSETS
-#undef NUM_CLOSURES
 
 /*
  * Cases to test:
@@ -376,7 +280,7 @@ static void test_threading(void) {
     grpc_pollset_add_fd(&exec_ctx, shared.pollset, shared.wakeup_desc);
     grpc_fd_notify_on_read(
         &exec_ctx, shared.wakeup_desc,
-        grpc_closure_init(&shared.on_wakeup, test_threading_wakeup, &shared,
+        GRPC_CLOSURE_INIT(&shared.on_wakeup, test_threading_wakeup, &shared,
                           grpc_schedule_on_exec_ctx));
     grpc_exec_ctx_finish(&exec_ctx);
   }
@@ -392,7 +296,7 @@ static void test_threading(void) {
     grpc_fd_shutdown(&exec_ctx, shared.wakeup_desc, GRPC_ERROR_CANCELLED);
     grpc_fd_orphan(&exec_ctx, shared.wakeup_desc, NULL, NULL, "done");
     grpc_pollset_shutdown(&exec_ctx, shared.pollset,
-                          grpc_closure_create(destroy_pollset, shared.pollset,
+                          GRPC_CLOSURE_CREATE(destroy_pollset, shared.pollset,
                                               grpc_schedule_on_exec_ctx));
     grpc_exec_ctx_finish(&exec_ctx);
   }
@@ -402,13 +306,13 @@ static void test_threading(void) {
 int main(int argc, char **argv) {
   const char *poll_strategy = NULL;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
-  grpc_iomgr_start();
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_iomgr_init(&exec_ctx);
+  grpc_iomgr_start(&exec_ctx);
 
   poll_strategy = grpc_get_poll_strategy_name();
   if (poll_strategy != NULL && strcmp(poll_strategy, "epollsig") == 0) {
     test_add_fd_to_pollset();
-    test_pollset_queue_merge_items();
     test_threading();
   } else {
     gpr_log(GPR_INFO,
@@ -417,11 +321,8 @@ int main(int argc, char **argv) {
             poll_strategy);
   }
 
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_iomgr_shutdown(&exec_ctx);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+  grpc_iomgr_shutdown(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL) */

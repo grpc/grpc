@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -37,44 +22,39 @@
 
 #include <grpc/support/alloc.h>
 
+/* invoked once for every Server in ServerList */
+static bool count_serverlist(pb_istream_t *stream, const pb_field_t *field,
+                             void **arg) {
+  grpc_grpclb_serverlist *sl = *arg;
+  grpc_grpclb_server server;
+  if (!pb_decode(stream, grpc_lb_v1_Server_fields, &server)) {
+    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
+    return false;
+  }
+  ++sl->num_servers;
+  return true;
+}
+
 typedef struct decode_serverlist_arg {
-  /* The first pass counts the number of servers in the server list. The second
-   * one allocates and decodes. */
-  bool first_pass;
   /* The decoding callback is invoked once per server in serverlist. Remember
    * which index of the serverlist are we currently decoding */
   size_t decoding_idx;
-  /* Populated after the first pass. Number of server in the input serverlist */
-  size_t num_servers;
   /* The decoded serverlist */
-  grpc_grpclb_server **servers;
+  grpc_grpclb_serverlist *serverlist;
 } decode_serverlist_arg;
 
 /* invoked once for every Server in ServerList */
 static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
                               void **arg) {
   decode_serverlist_arg *dec_arg = *arg;
-  if (dec_arg->first_pass) { /* count how many server do we have */
-    grpc_grpclb_server server;
-    if (!pb_decode(stream, grpc_lb_v1_Server_fields, &server)) {
-      gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
-      return false;
-    }
-    dec_arg->num_servers++;
-  } else { /* second pass. Actually decode. */
-    grpc_grpclb_server *server = gpr_zalloc(sizeof(grpc_grpclb_server));
-    GPR_ASSERT(dec_arg->num_servers > 0);
-    if (dec_arg->decoding_idx == 0) { /* first iteration of second pass */
-      dec_arg->servers =
-          gpr_malloc(sizeof(grpc_grpclb_server *) * dec_arg->num_servers);
-    }
-    if (!pb_decode(stream, grpc_lb_v1_Server_fields, server)) {
-      gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
-      return false;
-    }
-    dec_arg->servers[dec_arg->decoding_idx++] = server;
+  GPR_ASSERT(dec_arg->serverlist->num_servers >= dec_arg->decoding_idx);
+  grpc_grpclb_server *server = gpr_zalloc(sizeof(grpc_grpclb_server));
+  if (!pb_decode(stream, grpc_lb_v1_Server_fields, server)) {
+    gpr_free(server);
+    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
+    return false;
   }
-
+  dec_arg->serverlist->servers[dec_arg->decoding_idx++] = server;
   return true;
 }
 
@@ -165,36 +145,38 @@ grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
 
 grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
     grpc_slice encoded_grpc_grpclb_response) {
-  bool status;
-  decode_serverlist_arg arg;
   pb_istream_t stream =
       pb_istream_from_buffer(GRPC_SLICE_START_PTR(encoded_grpc_grpclb_response),
                              GRPC_SLICE_LENGTH(encoded_grpc_grpclb_response));
   pb_istream_t stream_at_start = stream;
+  grpc_grpclb_serverlist *sl = gpr_zalloc(sizeof(grpc_grpclb_serverlist));
   grpc_grpclb_response res;
   memset(&res, 0, sizeof(grpc_grpclb_response));
-  memset(&arg, 0, sizeof(decode_serverlist_arg));
-
-  res.server_list.servers.funcs.decode = decode_serverlist;
-  res.server_list.servers.arg = &arg;
-  arg.first_pass = true;
-  status = pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res);
+  // First pass: count number of servers.
+  res.server_list.servers.funcs.decode = count_serverlist;
+  res.server_list.servers.arg = sl;
+  bool status = pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res);
   if (!status) {
+    gpr_free(sl);
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
     return NULL;
   }
-
-  arg.first_pass = false;
-  status =
-      pb_decode(&stream_at_start, grpc_lb_v1_LoadBalanceResponse_fields, &res);
-  if (!status) {
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-    return NULL;
+  // Second pass: populate servers.
+  if (sl->num_servers > 0) {
+    sl->servers = gpr_zalloc(sizeof(grpc_grpclb_server *) * sl->num_servers);
+    decode_serverlist_arg decode_arg;
+    memset(&decode_arg, 0, sizeof(decode_arg));
+    decode_arg.serverlist = sl;
+    res.server_list.servers.funcs.decode = decode_serverlist;
+    res.server_list.servers.arg = &decode_arg;
+    status = pb_decode(&stream_at_start, grpc_lb_v1_LoadBalanceResponse_fields,
+                       &res);
+    if (!status) {
+      grpc_grpclb_destroy_serverlist(sl);
+      gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
+      return NULL;
+    }
   }
-
-  grpc_grpclb_serverlist *sl = gpr_zalloc(sizeof(grpc_grpclb_serverlist));
-  sl->num_servers = arg.num_servers;
-  sl->servers = arg.servers;
   if (res.server_list.has_expiration_interval) {
     sl->expiration_interval = res.server_list.expiration_interval;
   }
@@ -228,7 +210,7 @@ grpc_grpclb_serverlist *grpc_grpclb_serverlist_copy(
 
 bool grpc_grpclb_serverlist_equals(const grpc_grpclb_serverlist *lhs,
                                    const grpc_grpclb_serverlist *rhs) {
-  if ((lhs == NULL) || (rhs == NULL)) {
+  if (lhs == NULL || rhs == NULL) {
     return false;
   }
   if (lhs->num_servers != rhs->num_servers) {

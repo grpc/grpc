@@ -78,6 +78,7 @@ cc_library(
         "cares/ares_version.h",
         "cares/bitncmp.h",
         "cares/config-win32.h",
+        "cares/nameser.h",
         "cares/setup_once.h",
     ] + select({
         ":darwin": ["config_darwin/ares_config.h"],

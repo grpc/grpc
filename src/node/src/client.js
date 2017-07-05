@@ -1,33 +1,18 @@
-/*
+/**
+ * @license
+ * Copyright 2015 gRPC authors.
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -43,8 +28,6 @@
  * var Client = proto_obj.package.subpackage.ServiceName;
  * var client = new Client(server_address, client_credentials);
  * var call = client.unaryMethod(arguments, callback);
- *
- * @module
  */
 
 'use strict';
@@ -58,6 +41,8 @@ var common = require('./common');
 
 var Metadata = require('./metadata');
 
+var constants = require('./constants');
+
 var EventEmitter = require('events').EventEmitter;
 
 var stream = require('stream');
@@ -68,13 +53,26 @@ var Duplex = stream.Duplex;
 var util = require('util');
 var version = require('../../../package.json').version;
 
+/**
+ * Initial response metadata sent by the server when it starts processing the
+ * call
+ * @event grpc~ClientUnaryCall#metadata
+ * @type {grpc.Metadata}
+ */
+
+/**
+ * Status of the call when it has completed.
+ * @event grpc~ClientUnaryCall#status
+ * @type grpc~StatusObject
+ */
+
 util.inherits(ClientUnaryCall, EventEmitter);
 
 /**
- * An EventEmitter. Used for unary calls
- * @constructor
+ * An EventEmitter. Used for unary calls.
+ * @constructor grpc~ClientUnaryCall
  * @extends external:EventEmitter
- * @param {grpc.Call} call The call object associated with the request
+ * @param {grpc.internal~Call} call The call object associated with the request
  */
 function ClientUnaryCall(call) {
   EventEmitter.call(this);
@@ -86,14 +84,16 @@ util.inherits(ClientWritableStream, Writable);
 /**
  * A stream that the client can write to. Used for calls that are streaming from
  * the client side.
- * @constructor
+ * @constructor grpc~ClientWritableStream
  * @extends external:Writable
- * @borrows module:src/client~ClientUnaryCall#cancel as
- *     module:src/client~ClientWritableStream#cancel
- * @borrows module:src/client~ClientUnaryCall#getPeer as
- *     module:src/client~ClientWritableStream#getPeer
- * @param {grpc.Call} call The call object to send data with
- * @param {module:src/common~serialize=} [serialize=identity] Serialization
+ * @borrows grpc~ClientUnaryCall#cancel as grpc~ClientWritableStream#cancel
+ * @borrows grpc~ClientUnaryCall#getPeer as grpc~ClientWritableStream#getPeer
+ * @borrows grpc~ClientUnaryCall#event:metadata as
+ *     grpc~ClientWritableStream#metadata
+ * @borrows grpc~ClientUnaryCall#event:status as
+ *     grpc~ClientWritableStream#status
+ * @param {grpc.internal~Call} call The call object to send data with
+ * @param {grpc~serialize=} [serialize=identity] Serialization
  *     function for writes.
  */
 function ClientWritableStream(call, serialize) {
@@ -108,17 +108,36 @@ function ClientWritableStream(call, serialize) {
 }
 
 /**
+ * Write a message to the request stream. If serializing the argument fails,
+ * the call will be cancelled and the stream will end with an error.
+ * @name grpc~ClientWritableStream#write
+ * @kind function
+ * @override
+ * @param {*} message The message to write. Must be a valid argument to the
+ *     serialize function of the corresponding method
+ * @param {grpc.writeFlags} flags Flags to modify how the message is written
+ * @param {Function} callback Callback for when this chunk of data is flushed
+ * @return {boolean} As defined for [Writable]{@link external:Writable}
+ */
+
+/**
  * Attempt to write the given chunk. Calls the callback when done. This is an
  * implementation of a method needed for implementing stream.Writable.
- * @access private
- * @param {Buffer} chunk The chunk to write
- * @param {string} encoding Used to pass write flags
+ * @private
+ * @param {*} chunk The chunk to write
+ * @param {grpc.writeFlags} encoding Used to pass write flags
  * @param {function(Error=)} callback Called when the write is complete
  */
 function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
   var message;
+  var self = this;
+  if (this.writeFailed) {
+    /* Once a write fails, just call the callback immediately to let the caller
+       flush any pending writes. */
+    setImmediate(callback);
+  }
   try {
     message = this.serialize(chunk);
   } catch (e) {
@@ -127,7 +146,8 @@ function _write(chunk, encoding, callback) {
        but passing an object that causes a serialization failure is a misuse
        of the API anyway, so that's OK. The primary purpose here is to give the
        programmer a useful error and to stop the stream properly */
-    this.call.cancelWithStatus(grpc.status.INTERNAL, 'Serialization failure');
+    this.call.cancelWithStatus(constants.status.INTERNAL,
+                               'Serialization failure');
     callback(e);
   }
   if (_.isFinite(encoding)) {
@@ -138,8 +158,10 @@ function _write(chunk, encoding, callback) {
   batch[grpc.opType.SEND_MESSAGE] = message;
   this.call.startBatch(batch, function(err, event) {
     if (err) {
-      // Something has gone wrong. Stop writing by failing to call callback
-      return;
+      /* Assume that the call is complete and that writing failed because a
+         status was received. In that case, set a flag to discard all future
+         writes */
+      self.writeFailed = true;
     }
     callback();
   });
@@ -152,14 +174,16 @@ util.inherits(ClientReadableStream, Readable);
 /**
  * A stream that the client can read from. Used for calls that are streaming
  * from the server side.
- * @constructor
+ * @constructor grpc~ClientReadableStream
  * @extends external:Readable
- * @borrows module:src/client~ClientUnaryCall#cancel as
- *     module:src/client~ClientReadableStream#cancel
- * @borrows module:src/client~ClientUnaryCall#getPeer as
- *     module:src/client~ClientReadableStream#getPeer
- * @param {grpc.Call} call The call object to read data with
- * @param {module:src/common~deserialize=} [deserialize=identity]
+ * @borrows grpc~ClientUnaryCall#cancel as grpc~ClientReadableStream#cancel
+ * @borrows grpc~ClientUnaryCall#getPeer as grpc~ClientReadableStream#getPeer
+ * @borrows grpc~ClientUnaryCall#event:metadata as
+ *     grpc~ClientReadableStream#metadata
+ * @borrows grpc~ClientUnaryCall#event:status as
+ *     grpc~ClientReadableStream#status
+ * @param {grpc.internal~Call} call The call object to read data with
+ * @param {grpc~deserialize=} [deserialize=identity]
  *     Deserialization function for reads
  */
 function ClientReadableStream(call, deserialize) {
@@ -180,14 +204,14 @@ function ClientReadableStream(call, deserialize) {
  * parameter indicates that the call should end with that status. status
  * defaults to OK if not provided.
  * @param {Object!} status The status that the call should end with
- * @access private
+ * @private
  */
 function _readsDone(status) {
   /* jshint validthis: true */
   if (!status) {
-    status = {code: grpc.status.OK, details: 'OK'};
+    status = {code: constants.status.OK, details: 'OK'};
   }
-  if (status.code !== grpc.status.OK) {
+  if (status.code !== constants.status.OK) {
     this.call.cancelWithStatus(status.code, status.details);
   }
   this.finished = true;
@@ -199,7 +223,7 @@ ClientReadableStream.prototype._readsDone = _readsDone;
 
 /**
  * Called to indicate that we have received a status from the server.
- * @access private
+ * @private
  */
 function _receiveStatus(status) {
   /* jshint validthis: true */
@@ -212,18 +236,18 @@ ClientReadableStream.prototype._receiveStatus = _receiveStatus;
 /**
  * If we have both processed all incoming messages and received the status from
  * the server, emit the status. Otherwise, do nothing.
- * @access private
+ * @private
  */
 function _emitStatusIfDone() {
   /* jshint validthis: true */
   var status;
   if (this.read_status && this.received_status) {
-    if (this.read_status.code !== grpc.status.OK) {
+    if (this.read_status.code !== constants.status.OK) {
       status = this.read_status;
     } else {
       status = this.received_status;
     }
-    if (status.code === grpc.status.OK) {
+    if (status.code === constants.status.OK) {
       this.push(null);
     } else {
       var error = new Error(status.details);
@@ -239,7 +263,7 @@ ClientReadableStream.prototype._emitStatusIfDone = _emitStatusIfDone;
 
 /**
  * Read the next object from the stream.
- * @access private
+ * @private
  * @param {*} size Ignored because we use objectMode=true
  */
 function _read(size) {
@@ -262,7 +286,7 @@ function _read(size) {
     try {
       deserialized = self.deserialize(data);
     } catch (e) {
-      self._readsDone({code: grpc.status.INTERNAL,
+      self._readsDone({code: constants.status.INTERNAL,
                        details: 'Failed to parse server response'});
       return;
     }
@@ -297,16 +321,19 @@ util.inherits(ClientDuplexStream, Duplex);
 /**
  * A stream that the client can read from or write to. Used for calls with
  * duplex streaming.
- * @constructor
+ * @constructor grpc~ClientDuplexStream
  * @extends external:Duplex
- * @borrows module:src/client~ClientUnaryCall#cancel as
- *     module:src/client~ClientDuplexStream#cancel
- * @borrows module:src/client~ClientUnaryCall#getPeer as
- *     module:src/client~ClientDuplexStream#getPeer
- * @param {grpc.Call} call Call object to proxy
- * @param {module:src/common~serialize=} [serialize=identity] Serialization
+ * @borrows grpc~ClientUnaryCall#cancel as grpc~ClientDuplexStream#cancel
+ * @borrows grpc~ClientUnaryCall#getPeer as grpc~ClientDuplexStream#getPeer
+ * @borrows grpc~ClientWritableStream#write as grpc~ClientDuplexStream#write
+ * @borrows grpc~ClientUnaryCall#event:metadata as
+ *     grpc~ClientDuplexStream#metadata
+ * @borrows grpc~ClientUnaryCall#event:status as
+ *     grpc~ClientDuplexStream#status
+ * @param {grpc.internal~Call} call Call object to proxy
+ * @param {grpc~serialize=} [serialize=identity] Serialization
  *     function for requests
- * @param {module:src/common~deserialize=} [deserialize=identity]
+ * @param {grpc~deserialize=} [deserialize=identity]
  *     Deserialization function for responses
  */
 function ClientDuplexStream(call, serialize, deserialize) {
@@ -333,8 +360,9 @@ ClientDuplexStream.prototype._read = _read;
 ClientDuplexStream.prototype._write = _write;
 
 /**
- * Cancel the ongoing call
- * @alias module:src/client~ClientUnaryCall#cancel
+ * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
+ * unless it has already ended with some other status.
+ * @alias grpc~ClientUnaryCall#cancel
  */
 function cancel() {
   /* jshint validthis: true */
@@ -349,7 +377,7 @@ ClientDuplexStream.prototype.cancel = cancel;
 /**
  * Get the endpoint this call/stream is connected to.
  * @return {string} The URI of the endpoint
- * @alias module:src/client~ClientUnaryCall#getPeer
+ * @alias grpc~ClientUnaryCall#getPeer
  */
 function getPeer() {
   /* jshint validthis: true */
@@ -365,33 +393,31 @@ ClientDuplexStream.prototype.getPeer = getPeer;
  * Any client call type
  * @typedef {(ClientUnaryCall|ClientReadableStream|
  *            ClientWritableStream|ClientDuplexStream)}
- *     module:src/client~Call
+ *     grpc.Client~Call
  */
 
 /**
  * Options that can be set on a call.
- * @typedef {Object} module:src/client~CallOptions
- * @property {(date|number)} deadline The deadline for the entire call to
- *     complete. A value of Infinity indicates that no deadline should be set.
- * @property {(string)} host Server hostname to set on the call. Only meaningful
+ * @typedef {Object} grpc.Client~CallOptions
+ * @property {grpc~Deadline} deadline The deadline for the entire call to
+ *     complete.
+ * @property {string} host Server hostname to set on the call. Only meaningful
  *     if different from the server address used to construct the client.
- * @property {module:src/client~Call} parent Parent call. Used in servers when
+ * @property {grpc.Client~Call} parent Parent call. Used in servers when
  *     making a call as part of the process of handling a call. Used to
  *     propagate some information automatically, as specified by
  *     propagate_flags.
  * @property {number} propagate_flags Indicates which properties of a parent
  *     call should propagate to this call. Bitwise combination of flags in
- *     [grpc.propagate]{@link module:index.propagate}.
- * @property {module:src/credentials~CallCredentials} credentials The
- *     credentials that should be used to make this particular call.
+ *     {@link grpc.propagate}.
+ * @property {grpc.credentials~CallCredentials} credentials The credentials that
+ *     should be used to make this particular call.
  */
 
 /**
- * Get a call object built with the provided options. Keys for options are
- * 'deadline', which takes a date or number, and 'host', which takes a string
- * and overrides the hostname to connect to.
+ * Get a call object built with the provided options.
  * @access private
- * @param {module:src/client~CallOptions=} options Options object.
+ * @param {grpc.Client~CallOptions=} options Options object.
  */
 function getCall(channel, method, options) {
   var deadline;
@@ -419,14 +445,14 @@ function getCall(channel, method, options) {
 
 /**
  * A generic gRPC client. Primarily useful as a base class for generated clients
- * @alias module:src/client.Client
+ * @memberof grpc
  * @constructor
  * @param {string} address Server address to connect to
- * @param {module:src/credentials~ChannelCredentials} credentials Credentials to
- *     use to connect to the server
+ * @param {grpc~ChannelCredentials} credentials Credentials to use to connect to
+ *     the server
  * @param {Object} options Options to apply to channel creation
  */
-var Client = exports.Client = function Client(address, credentials, options) {
+function Client(address, credentials, options) {
   if (!options) {
     options = {};
   }
@@ -442,19 +468,13 @@ var Client = exports.Client = function Client(address, credentials, options) {
   /* Private fields use $ as a prefix instead of _ because it is an invalid
    * prefix of a method name */
   this.$channel = new grpc.Channel(address, credentials, options);
-};
+}
+
+exports.Client = Client;
 
 /**
- * @typedef {Error} module:src/client.Client~ServiceError
- * @property {number} code The error code, a key of
- *     [grpc.status]{@link module:src/client.status}
- * @property {module:metadata.Metadata} metadata Metadata sent with the status
- *     by the server, if any
- */
-
-/**
- * @callback module:src/client.Client~requestCallback
- * @param {?module:src/client.Client~ServiceError} error The error, if the call
+ * @callback grpc.Client~requestCallback
+ * @param {?grpc~ServiceError} error The error, if the call
  *     failed
  * @param {*} value The response value, if the call succeeded
  */
@@ -463,17 +483,17 @@ var Client = exports.Client = function Client(address, credentials, options) {
  * Make a unary request to the given method, using the given serialize
  * and deserialize functions, with the given argument.
  * @param {string} method The name of the method to request
- * @param {module:src/common~serialize} serialize The serialization function for
+ * @param {grpc~serialize} serialize The serialization function for
  *     inputs
- * @param {module:src/common~deserialize} deserialize The deserialization
+ * @param {grpc~deserialize} deserialize The deserialization
  *     function for outputs
  * @param {*} argument The argument to the call. Should be serializable with
  *     serialize
- * @param {module:src/metadata.Metadata=} metadata Metadata to add to the call
- * @param {module:src/client~CallOptions=} options Options map
- * @param {module:src/client.Client~requestCallback} callback The callback to
+ * @param {grpc.Metadata=} metadata Metadata to add to the call
+ * @param {grpc.Client~CallOptions=} options Options map
+ * @param {grpc.Client~requestCallback} callback The callback to
  *     for when the response is received
- * @return {EventEmitter} An event emitter for stream related events
+ * @return {grpc~ClientUnaryCall} An event emitter for stream related events
  */
 Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
                                              argument, metadata, options,
@@ -510,7 +530,7 @@ Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
     var deserialized;
     emitter.emit('metadata', Metadata._fromCoreRepresentation(
         response.metadata));
-    if (status.code === grpc.status.OK) {
+    if (status.code === constants.status.OK) {
       if (err) {
         // Got a batch error, but OK status. Something went wrong
         args.callback(err);
@@ -522,13 +542,13 @@ Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
           /* Change status to indicate bad server response. This will result
            * in passing an error to the callback */
           status = {
-            code: grpc.status.INTERNAL,
+            code: constants.status.INTERNAL,
             details: 'Failed to parse server response'
           };
         }
       }
     }
-    if (status.code !== grpc.status.OK) {
+    if (status.code !== constants.status.OK) {
       error = new Error(status.details);
       error.code = status.code;
       error.metadata = status.metadata;
@@ -545,17 +565,17 @@ Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
  * Make a client stream request to the given method, using the given serialize
  * and deserialize functions, with the given argument.
  * @param {string} method The name of the method to request
- * @param {module:src/common~serialize} serialize The serialization function for
+ * @param {grpc~serialize} serialize The serialization function for
  *     inputs
- * @param {module:src/common~deserialize} deserialize The deserialization
+ * @param {grpc~deserialize} deserialize The deserialization
  *     function for outputs
- * @param {module:src/metadata.Metadata=} metadata Array of metadata key/value
- *     pairs to add to the call
- * @param {module:src/client~CallOptions=} options Options map
- * @param {Client~requestCallback} callback The callback to for when the
+ * @param {grpc.Metadata=} metadata Array of metadata key/value pairs to add to
+ *     the call
+ * @param {grpc.Client~CallOptions=} options Options map
+ * @param {grpc.Client~requestCallback} callback The callback to for when the
  *     response is received
- * @return {module:src/client~ClientWritableStream} An event emitter for stream
- *     related events
+ * @return {grpc~ClientWritableStream} An event emitter for stream related
+ *     events
  */
 Client.prototype.makeClientStreamRequest = function(method, serialize,
                                                       deserialize, metadata,
@@ -593,7 +613,7 @@ Client.prototype.makeClientStreamRequest = function(method, serialize,
     var status = response.status;
     var error;
     var deserialized;
-    if (status.code === grpc.status.OK) {
+    if (status.code === constants.status.OK) {
       if (err) {
         // Got a batch error, but OK status. Something went wrong
         args.callback(err);
@@ -605,13 +625,13 @@ Client.prototype.makeClientStreamRequest = function(method, serialize,
           /* Change status to indicate bad server response. This will result
            * in passing an error to the callback */
           status = {
-            code: grpc.status.INTERNAL,
+            code: constants.status.INTERNAL,
             details: 'Failed to parse server response'
           };
         }
       }
     }
-    if (status.code !== grpc.status.OK) {
+    if (status.code !== constants.status.OK) {
       error = new Error(response.status.details);
       error.code = status.code;
       error.metadata = status.metadata;
@@ -628,17 +648,16 @@ Client.prototype.makeClientStreamRequest = function(method, serialize,
  * Make a server stream request to the given method, with the given serialize
  * and deserialize function, using the given argument
  * @param {string} method The name of the method to request
- * @param {module:src/common~serialize} serialize The serialization function for
- *     inputs
- * @param {module:src/common~deserialize} deserialize The deserialization
+ * @param {grpc~serialize} serialize The serialization function for inputs
+ * @param {grpc~deserialize} deserialize The deserialization
  *     function for outputs
  * @param {*} argument The argument to the call. Should be serializable with
  *     serialize
- * @param {module:src/metadata.Metadata=} metadata Array of metadata key/value
- *     pairs to add to the call
- * @param {module:src/client~CallOptions=} options Options map
- * @return {module:src/client~ClientReadableStream} An event emitter for stream
- *     related events
+ * @param {grpc.Metadata=} metadata Array of metadata key/value pairs to add to
+ *     the call
+ * @param {grpc.Client~CallOptions=} options Options map
+ * @return {grpc~ClientReadableStream} An event emitter for stream related
+ *     events
  */
 Client.prototype.makeServerStreamRequest = function(method, serialize,
                                                     deserialize, argument,
@@ -690,15 +709,13 @@ Client.prototype.makeServerStreamRequest = function(method, serialize,
 /**
  * Make a bidirectional stream request with this method on the given channel.
  * @param {string} method The name of the method to request
- * @param {module:src/common~serialize} serialize The serialization function for
- *     inputs
- * @param {module:src/common~deserialize} deserialize The deserialization
+ * @param {grpc~serialize} serialize The serialization function for inputs
+ * @param {grpc~deserialize} deserialize The deserialization
  *     function for outputs
- * @param {module:src/metadata.Metadata=} metadata Array of metadata key/value
+ * @param {grpc.Metadata=} metadata Array of metadata key/value
  *     pairs to add to the call
- * @param {module:src/client~CallOptions=} options Options map
- * @return {module:src/client~ClientDuplexStream} An event emitter for stream
- *     related events
+ * @param {grpc.Client~CallOptions=} options Options map
+ * @return {grpc~ClientDuplexStream} An event emitter for stream related events
  */
 Client.prototype.makeBidiStreamRequest = function(method, serialize,
                                                   deserialize, metadata,
@@ -740,6 +757,9 @@ Client.prototype.makeBidiStreamRequest = function(method, serialize,
   return stream;
 };
 
+/**
+ * Close this client.
+ */
 Client.prototype.close = function() {
   this.$channel.close();
 };
@@ -758,8 +778,7 @@ Client.prototype.getChannel = function() {
  * with an error if the attempt to connect to the server has unrecoverablly
  * failed or if the deadline expires. This function will make the channel
  * start connecting if it has not already done so.
- * @param {(Date|Number)} deadline When to stop waiting for a connection. Pass
- *     Infinity to wait forever.
+ * @param {grpc~Deadline} deadline When to stop waiting for a connection.
  * @param {function(Error)} callback The callback to call when done attempting
  *     to connect.
  */
@@ -785,7 +804,7 @@ Client.prototype.waitForReady = function(deadline, callback) {
 /**
  * Map with short names for each of the requester maker functions. Used in
  * makeClientConstructor
- * @access private
+ * @private
  */
 var requester_funcs = {
   unary: Client.prototype.makeUnaryRequest,
@@ -831,9 +850,15 @@ var deprecated_request_wrap = {
 
 /**
  * Creates a constructor for a client with the given methods, as specified in
- * the methods argument.
- * @param {module:src/common~ServiceDefinition} methods An object mapping
- *     method names to method attributes
+ * the methods argument. The resulting class will have an instance method for
+ * each method in the service, which is a partial application of one of the
+ * [Client]{@link grpc.Client} request methods, depending on `requestSerialize`
+ * and `responseSerialize`, with the `method`, `serialize`, and `deserialize`
+ * arguments predefined.
+ * @memberof grpc
+ * @alias grpc~makeGenericClientConstructor
+ * @param {grpc~ServiceDefinition} methods An object mapping method names to
+ *     method attributes
  * @param {string} serviceName The fully qualified name of the service
  * @param {Object} class_options An options object.
  * @param {boolean=} [class_options.deprecatedArgumentOrder=false] Indicates
@@ -841,9 +866,8 @@ var deprecated_request_wrap = {
  *     arguments at the end instead of the callback at the end. This option
  *     is only a temporary stopgap measure to smooth an API breakage.
  *     It is deprecated, and new code should not use it.
- * @return {function(string, Object)} New client constructor, which is a
- *     subclass of [grpc.Client]{@link module:src/client.Client}, and has the
- *     same arguments as that constructor.
+ * @return {function} New client constructor, which is a subclass of
+ *     {@link grpc.Client}, and has the same arguments as that constructor.
  */
 exports.makeClientConstructor = function(methods, serviceName,
                                          class_options) {
@@ -895,8 +919,11 @@ exports.makeClientConstructor = function(methods, serviceName,
 
 /**
  * Return the underlying channel object for the specified client
+ * @memberof grpc
+ * @alias grpc~getClientChannel
  * @param {Client} client
  * @return {Channel} The channel
+ * @see grpc.Client#getChannel
  */
 exports.getClientChannel = function(client) {
   return Client.prototype.getChannel.call(client);
@@ -908,22 +935,15 @@ exports.getClientChannel = function(client) {
  * with an error if the attempt to connect to the server has unrecoverablly
  * failed or if the deadline expires. This function will make the channel
  * start connecting if it has not already done so.
+ * @memberof grpc
+ * @alias grpc~waitForClientReady
  * @param {Client} client The client to wait on
- * @param {(Date|Number)} deadline When to stop waiting for a connection. Pass
+ * @param {grpc~Deadline} deadline When to stop waiting for a connection. Pass
  *     Infinity to wait forever.
  * @param {function(Error)} callback The callback to call when done attempting
  *     to connect.
+ * @see grpc.Client#waitForReady
  */
 exports.waitForClientReady = function(client, deadline, callback) {
   Client.prototype.waitForReady.call(client, deadline, callback);
 };
-
-/**
- * Map of status code names to status codes
- */
-exports.status = grpc.status;
-
-/**
- * See docs for client.callError
- */
-exports.callError = grpc.callError;
