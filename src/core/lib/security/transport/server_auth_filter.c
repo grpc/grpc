@@ -27,6 +27,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 typedef struct call_data {
+  grpc_transport_stream_op_batch *recv_initial_metadata_batch;
   grpc_closure *original_recv_initial_metadata_ready;
   grpc_closure recv_initial_metadata_ready;
   grpc_metadata_array md;
@@ -119,10 +120,10 @@ static void on_md_processing_done(
 
 static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
                                         void *arg, grpc_error *error) {
-  grpc_transport_stream_op_batch *batch = arg;
-  grpc_call_element *elem = batch->handler_private.extra_arg;
-  call_data *calld = elem->call_data;
+  grpc_call_element *elem = arg;
   channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
   if (error == GRPC_ERROR_NONE) {
     if (chand->creds != NULL && chand->creds->processor.process != NULL) {
       calld->md = metadata_batch_to_md_array(
@@ -143,13 +144,11 @@ static void auth_start_transport_stream_op_batch(
   call_data *calld = elem->call_data;
   if (batch->recv_initial_metadata) {
     // Inject our callback.
+    calld->recv_initial_metadata_batch = batch;
     calld->original_recv_initial_metadata_ready =
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    batch->handler_private.extra_arg = elem;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
-                          recv_initial_metadata_ready, batch,
-                          grpc_schedule_on_exec_ctx);
+        &calld->recv_initial_metadata_ready;
   }
   grpc_call_next_op(exec_ctx, elem, batch);
 }
@@ -160,6 +159,9 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   const grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
+  GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
+                    recv_initial_metadata_ready, elem,
+                    grpc_schedule_on_exec_ctx);
   // Create server security context.  Set its auth context from channel
   // data and save it in the call context.
   grpc_server_security_context *server_ctx =
