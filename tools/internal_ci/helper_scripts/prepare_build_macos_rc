@@ -27,7 +27,7 @@ brew install gflags
 set +ex  # rvm script is very verbose and exits with errorcode
 source $HOME/.rvm/scripts/rvm
 set -e  # rvm commands are very verbose  
-rvm install ruby-2.3
+rvm install ruby-2.4
 rvm osx-ssl-certs status all
 rvm osx-ssl-certs update all
 set -ex
@@ -45,7 +45,7 @@ sudo pip install virtualenv
 sudo pip install -U six tox setuptools
 
 # python 3.4
-wget https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg
+wget -q https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg
 sudo installer -pkg python-3.4.4-macosx10.6.pkg -target /
 
 git submodule update --init
