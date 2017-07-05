@@ -143,7 +143,7 @@ def find_test_cases(lang, release):
   _loaded_testcases[lang][release]=job_spec_list
   return job_spec_list
 
-_xml_report_tree = None
+_xml_report_tree = report_utils.new_junit_xml_tree()
 def run_tests_for_lang(lang, runtime, images):
   """Find and run all test cases for a language.
 
@@ -163,15 +163,12 @@ def run_tests_for_lang(lang, runtime, images):
     else:
       jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
-    # Required, otherwise _xml_report_tree will be shadowed by local (undefined)
-    # reference in the next line.
-    global _xml_report_tree
-    _xml_report_tree = report_utils.add_junit_xml_results(
+    report_utils.append_junit_xml_results(
+        _xml_report_tree,
         resultset,
         'grpc_interop_matrix',
         '%s__%s:%s'%(lang,runtime,release),
-        str(uuid.uuid4()),
-        _xml_report_tree)
+        str(uuid.uuid4()))
 
 _docker_images_cleanup = []
 def cleanup():
@@ -187,4 +184,4 @@ for lang in languages:
   for runtime in sorted(docker_images.keys()):
     run_tests_for_lang(lang, runtime, docker_images[runtime])
 
-report_utils.create_xml_report_file(args.report_file, _xml_report_tree)
+report_utils.create_xml_report_file(_xml_report_tree, args.report_file)

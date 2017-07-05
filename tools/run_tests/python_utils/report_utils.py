@@ -22,6 +22,7 @@ try:
   from mako import exceptions
 except (ImportError):
   pass  # Mako not installed but it is ok.
+import datetime
 import os
 import string
 import xml.etree.cElementTree as ET
@@ -43,26 +44,29 @@ def _filter_msg(msg, output_format):
     return msg
 
 
-def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
+def new_junit_xml_tree():
+  return ET.ElementTree(ET.Element('testsuites'))
+
+def render_junit_xml_report(resultset, report_file, suite_package='grpc',
                             suite_name='tests'):
   """Generate JUnit-like XML report."""
-  tree = add_junit_xml_results(resultset, suite_package, suite_name, '1')
-  create_xml_report_file(xml_report, tree)
+  tree = new_junit_xml_tree()
+  append_junit_xml_results(tree, resultset, suite_package, suite_name, '1')
+  create_xml_report_file(tree, report_file)
 
-def create_xml_report_file(xml_report, tree):
+def create_xml_report_file(tree, report_file):
   """Generate JUnit-like report file from xml tree ."""
   # ensure the report directory exists
-  report_dir = os.path.dirname(os.path.abspath(xml_report))
+  report_dir = os.path.dirname(os.path.abspath(report_file))
   if not os.path.exists(report_dir):
     os.makedirs(report_dir)
-  tree.write(xml_report, encoding='UTF-8')
+  tree.write(report_file, encoding='UTF-8')
 
-def add_junit_xml_results(resultset, suite_package, suite_name, id,
-                          old_tree=None):
-  """Returns a JUnit-like XML report tree with added test results."""
-  root = ET.Element('testsuites')  if not old_tree else old_tree.getroot()
-  testsuite = ET.SubElement(root, 'testsuite', id=id, package=suite_package,
-                            name=suite_name)
+def append_junit_xml_results(tree, resultset, suite_package, suite_name, id):
+  """Append a JUnit-like XML report tree with test results as a new suite."""
+  testsuite = ET.SubElement(tree.getroot(), 'testsuite',
+                            id=id, package=suite_package, name=suite_name,
+                            timestamp=datetime.datetime.now().isoformat())
   failure_count  = 0
   error_count = 0
   for shortname, results in six.iteritems(resultset):
@@ -81,7 +85,6 @@ def add_junit_xml_results(resultset, suite_package, suite_name, id,
         ET.SubElement(xml_test, 'skipped', message='Skipped')
   testsuite.set('failures', str(failure_count))
   testsuite.set('errors', str(error_count))
-  return ET.ElementTree(root)
 
 def render_interop_html_report(
   client_langs, server_langs, test_cases, auth_test_cases, http2_cases,
