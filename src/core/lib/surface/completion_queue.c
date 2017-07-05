@@ -525,7 +525,16 @@ void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx,
 static void cq_begin_op_for_next(grpc_completion_queue *cq, void *tag) {
   cq_next_data *cqd = DATA_FROM_CQ(cq);
   GPR_ASSERT(!cqd->shutdown_called);
-  gpr_atm_no_barrier_fetch_add(&cqd->pending_events, 1);
+  while (true) {
+    gpr_atm count = gpr_atm_no_barrier_load(&cqd->pending_events.count);
+    if (count == 0) {
+      return 1;
+    } else if (gpr_atm_no_barrier_cas(&cqd->pending_events.count, count,
+                                      count + 1)) {
+      break;
+    }
+  }
+  return 0;
 }
 
 static void cq_begin_op_for_pluck(grpc_completion_queue *cq, void *tag) {

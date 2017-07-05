@@ -1259,7 +1259,7 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   }
 
   /* stay locked, and gather up some stuff to do */
-  grpc_cq_begin_op(cq, tag);
+  GPR_ASSERT(grpc_cq_begin_op(cq, tag) == 0);
   if (server->shutdown_published) {
     grpc_cq_end_op(&exec_ctx, cq, tag, GRPC_ERROR_NONE, done_published_shutdown,
                    NULL, gpr_malloc(sizeof(grpc_cq_completion)));
@@ -1446,7 +1446,11 @@ grpc_call_error grpc_server_request_call(
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
     goto done;
   }
-  grpc_cq_begin_op(cq_for_notification, tag);
+  if (grpc_cq_begin_op(cq_for_notification, tag)) {
+    gpr_free(rc);
+    error = GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
+    goto done;
+  }
   details->reserved = NULL;
   rc->cq_idx = cq_idx;
   rc->type = BATCH_CALL;
@@ -1496,7 +1500,11 @@ grpc_call_error grpc_server_request_registered_call(
     error = GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
     goto done;
   }
-  grpc_cq_begin_op(cq_for_notification, tag);
+  if (grpc_cq_begin_op(cq_for_notification, tag)) {
+    gpr_free(rc);
+    error = GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
+    goto done;
+  }
   rc->cq_idx = cq_idx;
   rc->type = REGISTERED_CALL;
   rc->server = server;

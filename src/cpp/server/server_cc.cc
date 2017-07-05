@@ -151,19 +151,24 @@ class Server::SyncRequest final : public CompletionQueueTag {
     GPR_ASSERT(cq_ && !in_flight_);
     in_flight_ = true;
     if (tag_) {
-      GPR_ASSERT(GRPC_CALL_OK ==
-                 grpc_server_request_registered_call(
-                     server, tag_, &call_, &deadline_, &request_metadata_,
-                     has_request_payload_ ? &request_payload_ : nullptr, cq_,
-                     notify_cq, this));
+      if (grpc_server_request_registered_call(
+              server, tag_, &call_, &deadline_, &request_metadata_,
+              has_request_payload_ ? &request_payload_ : nullptr, cq_,
+              notify_cq, this) != GRPC_CALL_OK) {
+        TeardownRequest();
+        return;
+      }
     } else {
       if (!call_details_) {
         call_details_ = new grpc_call_details;
         grpc_call_details_init(call_details_);
       }
-      GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                     server, &call_, call_details_,
-                                     &request_metadata_, cq_, notify_cq, this));
+      if (grpc_server_request_call(server, &call_, call_details_,
+                                   &request_metadata_, cq_, notify_cq,
+                                   this) != GRPC_CALL_OK) {
+        TeardownRequest();
+        return;
+      }
     }
   }
 
@@ -286,12 +291,10 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     if (ok) {
       // Calldata takes ownership of the completion queue inside sync_req
       SyncRequest::CallData cd(server_, sync_req);
-      {
-        // Prepare for the next request
-        if (!IsShutdown()) {
-          sync_req->SetupRequest();  // Create new completion queue for sync_req
-          sync_req->Request(server_->c_server(), server_cq_->cq());
-        }
+      // Prepare for the next request
+      if (!IsShutdown()) {
+        sync_req->SetupRequest();  // Create new completion queue for sync_req
+        sync_req->Request(server_->c_server(), server_cq_->cq());
       }
 
       GPR_TIMER_SCOPE("cd.Run()", 0);
@@ -316,8 +319,8 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   }
 
   void Shutdown() override {
-    server_cq_->Shutdown();
     ThreadManager::Shutdown();
+    server_cq_->Shutdown();
   }
 
   void Wait() override {
@@ -652,10 +655,11 @@ ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
 void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,
     ServerCompletionQueue* notification_cq) {
-  grpc_server_request_registered_call(
-      server_->server(), registered_method, &call_, &context_->deadline_,
-      context_->client_metadata_.arr(), payload, call_cq_->cq(),
-      notification_cq->cq(), this);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
+                                 server_->server(), registered_method, &call_,
+                                 &context_->deadline_,
+                                 context_->client_metadata_.arr(), payload,
+                                 call_cq_->cq(), notification_cq->cq(), this));
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -667,9 +671,10 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
-  grpc_server_request_call(server->server(), &call_, &call_details_,
-                           context->client_metadata_.arr(), call_cq->cq(),
-                           notification_cq->cq(), this);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 server->server(), &call_, &call_details_,
+                                 context->client_metadata_.arr(), call_cq->cq(),
+                                 notification_cq->cq(), this));
 }
 
 bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,

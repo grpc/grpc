@@ -107,7 +107,7 @@ static void test_too_many_plucks(void) {
   GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-    grpc_cq_begin_op(cc, tags[i]);
+    GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]) == 0);
     grpc_cq_end_op(&exec_ctx, cc, tags[i], GRPC_ERROR_NONE,
                    do_nothing_end_completion, NULL, &completions[i]);
   }
@@ -153,7 +153,7 @@ static void producer_thread(void *arg) {
 
   gpr_log(GPR_INFO, "producer %d phase 1", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_cq_begin_op(opt->cc, (void *)(intptr_t)1);
+    GPR_ASSERT(grpc_cq_begin_op(opt->cc, (void *)(intptr_t)1) == 0);
   }
 
   gpr_log(GPR_INFO, "producer %d phase 1 done", opt->id);
