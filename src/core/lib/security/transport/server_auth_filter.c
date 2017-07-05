@@ -28,11 +28,8 @@
 
 typedef struct call_data {
   grpc_call_combiner *call_combiner;
-  // The original recv_initial_metadata_ready callback.
+  grpc_transport_stream_op_batch *recv_initial_metadata_batch;
   grpc_closure *original_recv_initial_metadata_ready;
-  // Used to both inject our recv_initial_metadata_ready callback and to
-  // bounce back into the call combiner after calling out to the
-  // application.
   grpc_closure recv_initial_metadata_ready;
   grpc_metadata_array md;
   const grpc_metadata *consumed_md;
@@ -133,10 +130,10 @@ static void run_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
                                         void *arg, grpc_error *error) {
-  grpc_transport_stream_op_batch *batch = arg;
-  grpc_call_element *elem = batch->handler_private.extra_arg;
-  call_data *calld = elem->call_data;
+  grpc_call_element *elem = arg;
   channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
   if (error == GRPC_ERROR_NONE) {
     if (chand->creds != NULL && chand->creds->processor.process != NULL) {
       // We're calling out to the application, so we need to exit and
@@ -169,13 +166,11 @@ static void auth_start_transport_stream_op_batch(
   call_data *calld = elem->call_data;
   if (batch->recv_initial_metadata) {
     // Inject our callback.
+    calld->recv_initial_metadata_batch = batch;
     calld->original_recv_initial_metadata_ready =
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    batch->handler_private.extra_arg = elem;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
-                          recv_initial_metadata_ready, batch,
-                          grpc_schedule_on_exec_ctx);
+        &calld->recv_initial_metadata_ready;
   }
   grpc_call_next_op(exec_ctx, elem, batch);
 }
@@ -187,6 +182,9 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   calld->call_combiner = args->call_combiner;
+  GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
+                    recv_initial_metadata_ready, elem,
+                    grpc_schedule_on_exec_ctx);
   // Create server security context.  Set its auth context from channel
   // data and save it in the call context.
   grpc_server_security_context *server_ctx =
