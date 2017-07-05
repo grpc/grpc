@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -40,6 +25,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -105,7 +91,7 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
                    grpc_error *error) {
   grpc_polling_entity_del_from_pollset_set(exec_ctx, req->pollent,
                                            req->context->pollset_set);
-  grpc_closure_sched(exec_ctx, req->on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, req->on_done, error);
   grpc_http_parser_destroy(&req->parser);
   if (req->addresses != NULL) {
     grpc_resolved_addresses_destroy(req->addresses);
@@ -228,13 +214,11 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
     return;
   }
   addr = &req->addresses->addrs[req->next_address++];
-  grpc_closure_init(&req->connected, on_connected, req,
+  GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
-  grpc_arg arg;
-  arg.key = GRPC_ARG_RESOURCE_QUOTA;
-  arg.type = GRPC_ARG_POINTER;
-  arg.value.pointer.p = req->resource_quota;
-  arg.value.pointer.vtable = grpc_resource_quota_arg_vtable();
+  grpc_arg arg = grpc_channel_arg_pointer_create(
+      GRPC_ARG_RESOURCE_QUOTA, req->resource_quota,
+      grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &arg};
   grpc_tcp_client_connect(exec_ctx, &req->connected, &req->ep,
                           req->context->pollset_set, &args, addr,
@@ -244,7 +228,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   internal_request *req = arg;
   if (error != GRPC_ERROR_NONE) {
-    finish(exec_ctx, req, error);
+    finish(exec_ctx, req, GRPC_ERROR_REF(error));
     return;
   }
   req->next_address = 0;
@@ -271,8 +255,8 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
   req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
   req->resource_quota = grpc_resource_quota_ref_internal(resource_quota);
-  grpc_closure_init(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&req->done_write, done_write, req,
+  GRPC_CLOSURE_INIT(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&req->done_write, done_write, req,
                     grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&req->incoming);
   grpc_slice_buffer_init(&req->outgoing);
@@ -286,7 +270,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
   grpc_resolve_address(
       exec_ctx, request->host, req->handshaker->default_port,
       req->context->pollset_set,
-      grpc_closure_create(on_resolved, req, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(on_resolved, req, grpc_schedule_on_exec_ctx),
       &req->addresses);
 }
 

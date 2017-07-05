@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,8 +26,16 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/support/mpscq.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
+
+#ifndef NDEBUG
+extern grpc_tracer_flag grpc_trace_closure;
+#endif
 
 typedef struct grpc_closure_list {
   grpc_closure *head;
@@ -53,7 +46,9 @@ typedef struct grpc_closure_list {
  *
  * \param arg Arbitrary input.
  * \param error GRPC_ERROR_NONE if no error occurred, otherwise some grpc_error
- *              describing what went wrong */
+ *              describing what went wrong.
+ *              Error contract: it is not the cb's job to unref this error;
+ *              the closure scheduler will do that after the cb returns */
 typedef void (*grpc_iomgr_cb_func)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_error *error);
 
@@ -99,16 +94,48 @@ struct grpc_closure {
     grpc_error *error;
     uintptr_t scratch;
   } error_data;
+
+// extra tracing and debugging for grpc_closure. This incurs a decent amount of
+// overhead per closure, so it must be enabled at compile time.
+#ifndef NDEBUG
+  bool scheduled;
+  bool run;  // true = run, false = scheduled
+  const char *file_created;
+  int line_created;
+  const char *file_initiated;
+  int line_initiated;
+#endif
 };
 
 /** Initializes \a closure with \a cb and \a cb_arg. Returns \a closure. */
+#ifndef NDEBUG
+grpc_closure *grpc_closure_init(const char *file, int line,
+                                grpc_closure *closure, grpc_iomgr_cb_func cb,
+                                void *cb_arg,
+                                grpc_closure_scheduler *scheduler);
+#define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
+  grpc_closure_init(__FILE__, __LINE__, closure, cb, cb_arg, scheduler)
+#else
 grpc_closure *grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
                                 void *cb_arg,
                                 grpc_closure_scheduler *scheduler);
+#define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
+  grpc_closure_init(closure, cb, cb_arg, scheduler)
+#endif
 
 /* Create a heap allocated closure: try to avoid except for very rare events */
+#ifndef NDEBUG
+grpc_closure *grpc_closure_create(const char *file, int line,
+                                  grpc_iomgr_cb_func cb, void *cb_arg,
+                                  grpc_closure_scheduler *scheduler);
+#define GRPC_CLOSURE_CREATE(cb, cb_arg, scheduler) \
+  grpc_closure_create(__FILE__, __LINE__, cb, cb_arg, scheduler)
+#else
 grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg,
                                   grpc_closure_scheduler *scheduler);
+#define GRPC_CLOSURE_CREATE(cb, cb_arg, scheduler) \
+  grpc_closure_create(cb, cb_arg, scheduler)
+#endif
 
 #define GRPC_CLOSURE_LIST_INIT \
   { NULL, NULL }
@@ -134,16 +161,48 @@ bool grpc_closure_list_empty(grpc_closure_list list);
 /** Run a closure directly. Caller ensures that no locks are being held above.
  *  Note that calling this at the end of a closure callback function itself is
  *  by definition safe. */
+#ifndef NDEBUG
+void grpc_closure_run(const char *file, int line, grpc_exec_ctx *exec_ctx,
+                      grpc_closure *closure, grpc_error *error);
+#define GRPC_CLOSURE_RUN(exec_ctx, closure, error) \
+  grpc_closure_run(__FILE__, __LINE__, exec_ctx, closure, error)
+#else
 void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                       grpc_error *error);
+#define GRPC_CLOSURE_RUN(exec_ctx, closure, error) \
+  grpc_closure_run(exec_ctx, closure, error)
+#endif
 
 /** Schedule a closure to be run. Does not need to be run from a safe point. */
+#ifndef NDEBUG
+void grpc_closure_sched(const char *file, int line, grpc_exec_ctx *exec_ctx,
+                        grpc_closure *closure, grpc_error *error);
+#define GRPC_CLOSURE_SCHED(exec_ctx, closure, error) \
+  grpc_closure_sched(__FILE__, __LINE__, exec_ctx, closure, error)
+#else
 void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                         grpc_error *error);
+#define GRPC_CLOSURE_SCHED(exec_ctx, closure, error) \
+  grpc_closure_sched(exec_ctx, closure, error)
+#endif
 
 /** Schedule all closures in a list to be run. Does not need to be run from a
  * safe point. */
+#ifndef NDEBUG
+void grpc_closure_list_sched(const char *file, int line,
+                             grpc_exec_ctx *exec_ctx,
+                             grpc_closure_list *closure_list);
+#define GRPC_CLOSURE_LIST_SCHED(exec_ctx, closure_list) \
+  grpc_closure_list_sched(__FILE__, __LINE__, exec_ctx, closure_list)
+#else
 void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx,
                              grpc_closure_list *closure_list);
+#define GRPC_CLOSURE_LIST_SCHED(exec_ctx, closure_list) \
+  grpc_closure_list_sched(exec_ctx, closure_list)
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -82,9 +67,10 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
+  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
+                                         grpc_timeout_seconds_to_deadline(5),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -103,6 +89,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void request_for_disabled_algorithm(
@@ -259,8 +246,8 @@ static void request_for_disabled_algorithm(
   grpc_slice_unref(details);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 
@@ -287,11 +274,12 @@ static void request_with_payload_template(
     grpc_compression_algorithm expected_algorithm_from_client,
     grpc_compression_algorithm expected_algorithm_from_server,
     grpc_metadata *client_init_metadata, bool set_server_level,
-    grpc_compression_level server_compression_level) {
+    grpc_compression_level server_compression_level,
+    bool send_message_before_initial_metadata) {
   grpc_call *c;
   grpc_call *s;
   grpc_slice request_payload_slice;
-  grpc_byte_buffer *request_payload;
+  grpc_byte_buffer *request_payload = NULL;
   grpc_channel_args *client_args;
   grpc_channel_args *server_args;
   grpc_end2end_test_fixture f;
@@ -342,6 +330,20 @@ static void request_with_payload_template(
   GPR_ASSERT(c);
 
   grpc_call_details_init(&call_details);
+
+  if (send_message_before_initial_metadata) {
+    request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+    memset(ops, 0, sizeof(ops));
+    op = ops;
+    op->op = GRPC_OP_SEND_MESSAGE;
+    op->data.send_message.send_message = request_payload;
+    op->flags = client_send_flags_bitmask;
+    op->reserved = NULL;
+    op++;
+    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+    CQ_EXPECT_COMPLETION(cqv, tag(2), true);
+  }
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -410,23 +412,21 @@ static void request_with_payload_template(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   for (int i = 0; i < 2; i++) {
-    request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
-    memset(ops, 0, sizeof(ops));
-    op = ops;
-    op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message.send_message = request_payload;
-    op->flags = client_send_flags_bitmask;
-    op->reserved = NULL;
-    op++;
-    op->op = GRPC_OP_RECV_MESSAGE;
-    op->data.recv_message.recv_message = &response_payload_recv;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
-    GPR_ASSERT(GRPC_CALL_OK == error);
+    if (i > 0 || !send_message_before_initial_metadata) {
+      request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+      memset(ops, 0, sizeof(ops));
+      op = ops;
+      op->op = GRPC_OP_SEND_MESSAGE;
+      op->data.send_message.send_message = request_payload;
+      op->flags = client_send_flags_bitmask;
+      op->reserved = NULL;
+      op++;
+      error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
+      GPR_ASSERT(GRPC_CALL_OK == error);
+      CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
+    }
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -437,6 +437,7 @@ static void request_with_payload_template(
     op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
+
     CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
     cq_verify(cqv);
 
@@ -454,8 +455,19 @@ static void request_with_payload_template(
     op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
+
+    memset(ops, 0, sizeof(ops));
+    op = ops;
+    op->op = GRPC_OP_RECV_MESSAGE;
+    op->data.recv_message.recv_message = &response_payload_recv;
+    op->flags = 0;
+    op->reserved = NULL;
+    op++;
+    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
     CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
     cq_verify(cqv);
 
     GPR_ASSERT(response_payload_recv->type == GRPC_BB_RAW);
@@ -485,7 +497,7 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(4), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -502,7 +514,7 @@ static void request_with_payload_template(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
   cq_verify(cqv);
@@ -517,8 +529,8 @@ static void request_with_payload_template(
   grpc_slice_unref(details);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 
@@ -539,7 +551,7 @@ static void test_invoke_request_with_exceptionally_uncompressed_payload(
       config, "test_invoke_request_with_exceptionally_uncompressed_payload",
       GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, NULL, false,
-      /* ignored */ GRPC_COMPRESS_LEVEL_NONE);
+      /* ignored */ GRPC_COMPRESS_LEVEL_NONE, false);
 }
 
 static void test_invoke_request_with_uncompressed_payload(
@@ -547,7 +559,8 @@ static void test_invoke_request_with_uncompressed_payload(
   request_with_payload_template(
       config, "test_invoke_request_with_uncompressed_payload", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
-      GRPC_COMPRESS_NONE, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE);
+      GRPC_COMPRESS_NONE, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
+      false);
 }
 
 static void test_invoke_request_with_compressed_payload(
@@ -555,7 +568,17 @@ static void test_invoke_request_with_compressed_payload(
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
       GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
-      GRPC_COMPRESS_GZIP, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE);
+      GRPC_COMPRESS_GZIP, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
+      false);
+}
+
+static void test_invoke_request_with_send_message_before_initial_metadata(
+    grpc_end2end_test_config config) {
+  request_with_payload_template(
+      config, "test_invoke_request_with_compressed_payload", 0,
+      GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
+      GRPC_COMPRESS_GZIP, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
+      true);
 }
 
 static void test_invoke_request_with_server_level(
@@ -563,7 +586,7 @@ static void test_invoke_request_with_server_level(
   request_with_payload_template(
       config, "test_invoke_request_with_server_level", 0, GRPC_COMPRESS_NONE,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE /* ignored */,
-      NULL, true, GRPC_COMPRESS_LEVEL_HIGH);
+      NULL, true, GRPC_COMPRESS_LEVEL_HIGH, false);
 }
 
 static void test_invoke_request_with_compressed_payload_md_override(
@@ -587,21 +610,21 @@ static void test_invoke_request_with_compressed_payload_md_override(
       config, "test_invoke_request_with_compressed_payload_md_override_1", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, &gzip_compression_override, false,
-      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE);
+      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false);
 
   /* Channel default DEFLATE, call override to GZIP */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_2", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, &gzip_compression_override, false,
-      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE);
+      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false);
 
   /* Channel default DEFLATE, call override to NONE (aka IDENTITY) */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
       GRPC_COMPRESS_NONE, &identity_compression_override, false,
-      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE);
+      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false);
 }
 
 static void test_invoke_request_with_disabled_algorithm(
@@ -615,6 +638,7 @@ void compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);
+  test_invoke_request_with_send_message_before_initial_metadata(config);
   test_invoke_request_with_server_level(config);
   test_invoke_request_with_compressed_payload_md_override(config);
   test_invoke_request_with_disabled_algorithm(config);

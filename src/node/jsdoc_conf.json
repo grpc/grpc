@@ -11,7 +11,7 @@
     "package": "package.json",
     "readme": "src/node/README.md"
   },
-  "plugins": [],
+  "plugins": ["plugins/markdown"],
   "templates": {
     "cleverLinks": false,
     "monospaceLinks": false,

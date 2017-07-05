@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -74,7 +59,8 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   }
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
     /* ping already in-flight: wait */
-    if (grpc_http_trace || grpc_bdp_estimator_trace) {
+    if (GRPC_TRACER_ON(grpc_http_trace) ||
+        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_DEBUG, "Ping delayed [%p]: already pinging", t->peer_string);
     }
     return;
@@ -82,7 +68,8 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   if (t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
     /* need to send something of substance before sending a ping again */
-    if (grpc_http_trace || grpc_bdp_estimator_trace) {
+    if (GRPC_TRACER_ON(grpc_http_trace) ||
+        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_DEBUG, "Ping delayed [%p]: too many recent pings: %d/%d",
               t->peer_string, t->ping_state.pings_before_data_required,
               t->ping_policy.max_pings_without_data);
@@ -96,7 +83,8 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
           (int)t->ping_policy.min_time_between_pings.tv_nsec);*/
   if (gpr_time_cmp(elapsed, t->ping_policy.min_time_between_pings) < 0) {
     /* not enough elapsed time between successive pings */
-    if (grpc_http_trace || grpc_bdp_estimator_trace) {
+    if (GRPC_TRACER_ON(grpc_http_trace) ||
+        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_DEBUG,
               "Ping delayed [%p]: not enough time elapsed since last ping",
               t->peer_string);
@@ -123,7 +111,7 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   }
   pq->inflight_id = t->ping_ctr * GRPC_CHTTP2_PING_TYPE_COUNT + ping_type;
   t->ping_ctr++;
-  grpc_closure_list_sched(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
+  GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
   grpc_closure_list_move(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   grpc_slice_buffer_add(&t->outbuf,
@@ -160,19 +148,36 @@ static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
   return true;
 }
 
+/* How many bytes of incoming flow control would we like to advertise */
 uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
-  return (uint32_t)GPR_MAX(
+  return (uint32_t)GPR_MIN(
       (int64_t)((1u << 31) - 1),
       t->stream_total_over_incoming_window +
-          (int64_t)GPR_MAX(
-              t->settings[GRPC_SENT_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
-                  t->stream_total_under_incoming_window,
-              0));
+          t->settings[GRPC_SENT_SETTINGS]
+                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
 }
 
-bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
-                             grpc_chttp2_transport *t) {
+/* How many bytes would we like to put on the wire during a single syscall */
+static uint32_t target_write_size(grpc_chttp2_transport *t) {
+  return 1024 * 1024;
+}
+
+// Returns true if initial_metadata contains only default headers.
+//
+// TODO(roth): The fact that we hard-code these particular headers here
+// is fairly ugly.  Need some better way to know which headers are
+// default, maybe via a bit in the static metadata table?
+static bool is_default_initial_metadata(grpc_metadata_batch *initial_metadata) {
+  int num_default_fields =
+      (initial_metadata->idx.named.status != NULL) +
+      (initial_metadata->idx.named.content_type != NULL) +
+      (initial_metadata->idx.named.grpc_encoding != NULL) +
+      (initial_metadata->idx.named.grpc_accept_encoding != NULL);
+  return (size_t)num_default_fields == initial_metadata->list.count;
+}
+
+grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
@@ -200,15 +205,25 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     while (grpc_chttp2_list_pop_stalled_by_transport(t, &s)) {
       if (!t->closed && grpc_chttp2_list_add_writable_stream(t, s) &&
           stream_ref_if_not_destroyed(&s->refcount->refs)) {
-        grpc_chttp2_initiate_write(exec_ctx, t, false,
-                                   "transport.read_flow_control");
+        grpc_chttp2_initiate_write(exec_ctx, t, "transport.read_flow_control");
       }
     }
   }
 
+  bool partial_write = false;
+
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
-  while (grpc_chttp2_list_pop_writable_stream(t, &s)) {
+  while (true) {
+    if (t->outbuf.length > target_write_size(t)) {
+      partial_write = true;
+      break;
+    }
+
+    if (!grpc_chttp2_list_pop_writable_stream(t, &s)) {
+      break;
+    }
+
     bool sent_initial_metadata = s->sent_initial_metadata;
     bool now_writing = false;
 
@@ -217,23 +232,59 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
         t->is_client ? "CLIENT" : "SERVER", s->id, sent_initial_metadata,
         s->send_initial_metadata != NULL, s->announce_window));
 
+    grpc_mdelem *extra_headers_for_trailing_metadata[2];
+    size_t num_extra_headers_for_trailing_metadata = 0;
+
     /* send initial metadata if it's available */
-    if (!sent_initial_metadata && s->send_initial_metadata) {
-      grpc_chttp2_encode_header(
-          exec_ctx, &t->hpack_compressor, s->id, s->send_initial_metadata, 0,
-          t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-          &s->stats.outgoing, &t->outbuf);
+    if (!sent_initial_metadata && s->send_initial_metadata != NULL) {
+      // We skip this on the server side if there is no custom initial
+      // metadata, there are no messages to send, and we are also sending
+      // trailing metadata.  This results in a Trailers-Only response,
+      // which is required for retries, as per:
+      // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
+      if (t->is_client || s->fetching_send_message != NULL ||
+          s->flow_controlled_buffer.length != 0 ||
+          s->send_trailing_metadata == NULL ||
+          !is_default_initial_metadata(s->send_initial_metadata)) {
+        grpc_encode_header_options hopt = {
+            .stream_id = s->id,
+            .is_eof = false,
+            .use_true_binary_metadata =
+                t->settings
+                    [GRPC_PEER_SETTINGS]
+                    [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] != 0,
+            .max_frame_size = t->settings[GRPC_PEER_SETTINGS]
+                                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+            .stats = &s->stats.outgoing};
+        grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor, NULL, 0,
+                                  s->send_initial_metadata, &hopt, &t->outbuf);
+        now_writing = true;
+        t->ping_state.pings_before_data_required =
+            t->ping_policy.max_pings_without_data;
+        if (!t->is_client) {
+          t->ping_recv_state.last_ping_recv_time =
+              gpr_inf_past(GPR_CLOCK_MONOTONIC);
+          t->ping_recv_state.ping_strikes = 0;
+        }
+      } else {
+        GRPC_CHTTP2_IF_TRACING(
+            gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
+        // When sending Trailers-Only, we need to move the :status and
+        // content-type headers to the trailers.
+        if (s->send_initial_metadata->idx.named.status != NULL) {
+          extra_headers_for_trailing_metadata
+              [num_extra_headers_for_trailing_metadata++] =
+                  &s->send_initial_metadata->idx.named.status->md;
+        }
+        if (s->send_initial_metadata->idx.named.content_type != NULL) {
+          extra_headers_for_trailing_metadata
+              [num_extra_headers_for_trailing_metadata++] =
+                  &s->send_initial_metadata->idx.named.content_type->md;
+        }
+      }
       s->send_initial_metadata = NULL;
       s->sent_initial_metadata = true;
       sent_initial_metadata = true;
-      now_writing = true;
-      t->ping_state.pings_before_data_required =
-          t->ping_policy.max_pings_without_data;
-      if (!t->is_client) {
-        t->ping_recv_state.last_ping_recv_time =
-            gpr_inf_past(GPR_CLOCK_MONOTONIC);
-        t->ping_recv_state.ping_strikes = 0;
-      }
     }
     /* send any window updates */
     if (s->announce_window > 0) {
@@ -259,7 +310,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                 (int64_t)t->settings[GRPC_PEER_SETTINGS]
                                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
         uint32_t max_outgoing = (uint32_t)GPR_MIN(
-            t->settings[GRPC_ACKED_SETTINGS]
+            t->settings[GRPC_PEER_SETTINGS]
                        [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
             GPR_MIN(stream_outgoing_window, t->outgoing_window));
         if (max_outgoing > 0) {
@@ -311,15 +362,28 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
       if (s->send_trailing_metadata != NULL &&
           s->fetching_send_message == NULL &&
           s->flow_controlled_buffer.length == 0) {
+        GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
         if (grpc_metadata_batch_is_empty(s->send_trailing_metadata)) {
           grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, 0, true,
                                   &s->stats.outgoing, &t->outbuf);
         } else {
-          grpc_chttp2_encode_header(
-              exec_ctx, &t->hpack_compressor, s->id, s->send_trailing_metadata,
-              true, t->settings[GRPC_ACKED_SETTINGS]
-                               [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-              &s->stats.outgoing, &t->outbuf);
+          grpc_encode_header_options hopt = {
+              .stream_id = s->id,
+              .is_eof = true,
+              .use_true_binary_metadata =
+                  t->settings
+                      [GRPC_PEER_SETTINGS]
+                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
+                  0,
+              .max_frame_size =
+                  t->settings[GRPC_PEER_SETTINGS]
+                             [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+              .stats = &s->stats.outgoing};
+          grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor,
+                                    extra_headers_for_trailing_metadata,
+                                    num_extra_headers_for_trailing_metadata,
+                                    s->send_trailing_metadata, &hopt,
+                                    &t->outbuf);
         }
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
@@ -377,7 +441,9 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 
-  return t->outbuf.count > 0;
+  return t->outbuf.count > 0 ? (partial_write ? GRPC_CHTTP2_PARTIAL_WRITE
+                                              : GRPC_CHTTP2_FULL_WRITE)
+                             : GRPC_CHTTP2_NOTHING_TO_WRITE;
 }
 
 void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2017, Google Inc.
- * All rights reserved.
+ * Copyright 2017 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -36,12 +21,15 @@
 
 #include <grpc/support/log.h>
 
-/* TODO (sreek) - Currently this does not use the attributes arg. This will be
-   added in a future PR */
+/*
+ * == Default completion queue factory implementation ==
+ */
+
 static grpc_completion_queue* default_create(
     const grpc_completion_queue_factory* factory,
-    const grpc_completion_queue_attributes* attributes) {
-  return grpc_completion_queue_create(NULL);
+    const grpc_completion_queue_attributes* attr) {
+  return grpc_completion_queue_create_internal(attr->cq_completion_type,
+                                               attr->cq_polling_type);
 }
 
 static grpc_completion_queue_factory_vtable default_vtable = {default_create};
@@ -49,18 +37,23 @@ static grpc_completion_queue_factory_vtable default_vtable = {default_create};
 static const grpc_completion_queue_factory g_default_cq_factory = {
     "Default Factory", NULL, &default_vtable};
 
+/*
+ * == Completion queue factory APIs
+ */
+
 const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
     const grpc_completion_queue_attributes* attributes) {
-  /* As we add more fields to grpc_completion_queue_attributes, we may have to
-     change this assert to:
-         GPR_ASSERT (attributes->version >= 1 &&
-             attributes->version <= GRPC_CQ_CURRENT_VERSION) */
-  GPR_ASSERT(attributes->version == 1);
+  GPR_ASSERT(attributes->version >= 1 &&
+             attributes->version <= GRPC_CQ_CURRENT_VERSION);
 
   /* The default factory can handle version 1 of the attributes structure. We
      may have to change this as more fields are added to the structure */
   return &g_default_cq_factory;
 }
+
+/*
+ * == Completion queue creation APIs ==
+ */
 
 grpc_completion_queue* grpc_completion_queue_create_for_next(void* reserved) {
   GPR_ASSERT(!reserved);
@@ -74,4 +67,11 @@ grpc_completion_queue* grpc_completion_queue_create_for_pluck(void* reserved) {
   grpc_completion_queue_attributes attr = {1, GRPC_CQ_PLUCK,
                                            GRPC_CQ_DEFAULT_POLLING};
   return g_default_cq_factory.vtable->create(&g_default_cq_factory, &attr);
+}
+
+grpc_completion_queue* grpc_completion_queue_create(
+    const grpc_completion_queue_factory* factory,
+    const grpc_completion_queue_attributes* attr, void* reserved) {
+  GPR_ASSERT(!reserved);
+  return factory->vtable->create(factory, attr);
 }

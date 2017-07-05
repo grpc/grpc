@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -58,9 +43,8 @@ typedef struct freereq {
 static void destroy_pops_and_shutdown(grpc_exec_ctx *exec_ctx, void *p,
                                       grpc_error *error) {
   grpc_pollset *pollset = grpc_polling_entity_pollset(p);
-  grpc_pollset_destroy(pollset);
+  grpc_pollset_destroy(exec_ctx, pollset);
   gpr_free(pollset);
-  grpc_shutdown();
 }
 
 static void freed_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
@@ -92,7 +76,7 @@ void grpc_free_port_using_server(int port) {
   grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &pr.mu);
   pr.pops = grpc_polling_entity_create_from_pollset(pollset);
-  shutdown_closure = grpc_closure_create(destroy_pops_and_shutdown, &pr.pops,
+  shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
                                          grpc_schedule_on_exec_ctx);
 
   req.host = GRPC_PORT_SERVER_ADDRESS;
@@ -103,11 +87,12 @@ void grpc_free_port_using_server(int port) {
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("port_server_client/free");
   grpc_httpcli_get(&exec_ctx, &context, &pr.pops, resource_quota, &req,
-                   grpc_timeout_seconds_to_deadline(10),
-                   grpc_closure_create(freed_port_from_server, &pr,
+                   grpc_timeout_seconds_to_deadline(30),
+                   GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                                        grpc_schedule_on_exec_ctx),
                    &rsp);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
+  grpc_exec_ctx_flush(&exec_ctx);
   gpr_mu_lock(pr.mu);
   while (!pr.done) {
     grpc_pollset_worker *worker = NULL;
@@ -122,12 +107,13 @@ void grpc_free_port_using_server(int port) {
   gpr_mu_unlock(pr.mu);
 
   grpc_httpcli_context_destroy(&exec_ctx, &context);
-  grpc_exec_ctx_finish(&exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(path);
   grpc_http_response_destroy(&rsp);
+
+  grpc_shutdown();
 }
 
 typedef struct portreq {
@@ -186,7 +172,7 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_resource_quota_create("port_server_client/pick_retry");
     grpc_httpcli_get(exec_ctx, pr->ctx, &pr->pops, resource_quota, &req,
                      grpc_timeout_seconds_to_deadline(10),
-                     grpc_closure_create(got_port_from_server, pr,
+                     GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                                          grpc_schedule_on_exec_ctx),
                      &pr->response);
     grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
@@ -221,7 +207,7 @@ int grpc_pick_port_using_server(void) {
   grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &pr.mu);
   pr.pops = grpc_polling_entity_create_from_pollset(pollset);
-  shutdown_closure = grpc_closure_create(destroy_pops_and_shutdown, &pr.pops,
+  shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
                                          grpc_schedule_on_exec_ctx);
   pr.port = -1;
   pr.server = GRPC_PORT_SERVER_ADDRESS;
@@ -235,11 +221,11 @@ int grpc_pick_port_using_server(void) {
       grpc_resource_quota_create("port_server_client/pick");
   grpc_httpcli_get(
       &exec_ctx, &context, &pr.pops, resource_quota, &req,
-      grpc_timeout_seconds_to_deadline(10),
-      grpc_closure_create(got_port_from_server, &pr, grpc_schedule_on_exec_ctx),
+      grpc_timeout_seconds_to_deadline(30),
+      GRPC_CLOSURE_CREATE(got_port_from_server, &pr, grpc_schedule_on_exec_ctx),
       &pr.response);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_flush(&exec_ctx);
   gpr_mu_lock(pr.mu);
   while (pr.port == -1) {
     grpc_pollset_worker *worker = NULL;
@@ -258,6 +244,7 @@ int grpc_pick_port_using_server(void) {
   grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_shutdown();
 
   return pr.port;
 }

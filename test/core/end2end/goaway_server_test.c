@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -42,6 +27,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <string.h>
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -57,6 +44,11 @@ static void (*iomgr_resolve_address)(grpc_exec_ctx *exec_ctx, const char *addr,
                                      grpc_pollset_set *interested_parties,
                                      grpc_closure *on_done,
                                      grpc_resolved_addresses **addresses);
+
+static grpc_ares_request *(*iomgr_dns_lookup_ares)(
+    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
+    const char *default_port, grpc_pollset_set *interested_parties,
+    grpc_closure *on_done, grpc_lb_addresses **addresses, bool check_grpclb);
 
 static void set_resolve_port(int port) {
   gpr_mu_lock(&g_mu);
@@ -92,7 +84,37 @@ static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
     (*addrs)->addrs[0].len = sizeof(*sa);
     gpr_mu_unlock(&g_mu);
   }
-  grpc_closure_sched(exec_ctx, on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
+}
+
+static grpc_ares_request *my_dns_lookup_ares(
+    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
+    const char *default_port, grpc_pollset_set *interested_parties,
+    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb) {
+  if (0 != strcmp(addr, "test")) {
+    return iomgr_dns_lookup_ares(exec_ctx, dns_server, addr, default_port,
+                                 interested_parties, on_done, lb_addrs,
+                                 check_grpclb);
+  }
+
+  grpc_error *error = GRPC_ERROR_NONE;
+  gpr_mu_lock(&g_mu);
+  if (g_resolve_port < 0) {
+    gpr_mu_unlock(&g_mu);
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
+  } else {
+    *lb_addrs = grpc_lb_addresses_create(1, NULL);
+    struct sockaddr_in *sa = gpr_zalloc(sizeof(struct sockaddr_in));
+    sa->sin_family = AF_INET;
+    sa->sin_addr.s_addr = htonl(0x7f000001);
+    sa->sin_port = htons((uint16_t)g_resolve_port);
+    grpc_lb_addresses_set_address(*lb_addrs, 0, sa, sizeof(*sa), false, NULL,
+                                  NULL);
+    gpr_free(sa);
+    gpr_mu_unlock(&g_mu);
+  }
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
+  return NULL;
 }
 
 int main(int argc, char **argv) {
@@ -106,7 +128,9 @@ int main(int argc, char **argv) {
   gpr_mu_init(&g_mu);
   grpc_init();
   iomgr_resolve_address = grpc_resolve_address;
+  iomgr_dns_lookup_ares = grpc_dns_lookup_ares;
   grpc_resolve_address = my_resolve_address;
+  grpc_dns_lookup_ares = my_dns_lookup_ares;
 
   int was_cancelled1;
   int was_cancelled2;
@@ -131,7 +155,7 @@ int main(int argc, char **argv) {
 
   grpc_call_details_init(&request_details2);
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   cqv = cq_verifier_create(cq);
 
   /* reserve two ports */
@@ -310,10 +334,10 @@ int main(int argc, char **argv) {
   CQ_EXPECT_COMPLETION(cqv, tag(0xdead2), 1);
   cq_verify(cqv);
 
-  grpc_call_destroy(call1);
-  grpc_call_destroy(call2);
-  grpc_call_destroy(server_call1);
-  grpc_call_destroy(server_call2);
+  grpc_call_unref(call1);
+  grpc_call_unref(call2);
+  grpc_call_unref(server_call1);
+  grpc_call_unref(server_call2);
   grpc_server_destroy(server1);
   grpc_server_destroy(server2);
   grpc_channel_destroy(chan);

@@ -1,32 +1,17 @@
 /*
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -124,6 +109,14 @@ class ShutdownTag : public CompletionQueueTag {
   bool FinalizeResult(void** tag, bool* status) { return false; }
 };
 
+class DummyTag : public CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) {
+    *status = true;
+    return true;
+  }
+};
+
 class Server::SyncRequest final : public CompletionQueueTag {
  public:
   SyncRequest(RpcServiceMethod* method, void* tag)
@@ -142,7 +135,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
     }
   }
 
-  void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
+  void SetupRequest() { cq_ = grpc_completion_queue_create_for_pluck(nullptr); }
 
   void TeardownRequest() {
     grpc_completion_queue_destroy(cq_);
@@ -213,10 +206,15 @@ class Server::SyncRequest final : public CompletionQueueTag {
           MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
-      void* ignored_tag;
-      bool ignored_ok;
+
       cq_.Shutdown();
-      GPR_ASSERT(cq_.Next(&ignored_tag, &ignored_ok) == false);
+
+      CompletionQueueTag* op_tag = ctx_.GetCompletionOpTag();
+      cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
+
+      /* Ensure the cq_ is shutdown */
+      DummyTag ignored_tag;
+      GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
     }
 
    private:
@@ -316,14 +314,18 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     }
   }
 
-  void ShutdownAndDrainCompletionQueue() {
+  void Shutdown() override {
     server_cq_->Shutdown();
+    ThreadManager::Shutdown();
+  }
 
+  void Wait() override {
+    ThreadManager::Wait();
     // Drain any pending items from the queue
     void* tag;
     bool ok;
     while (server_cq_->Next(&tag, &ok)) {
-      // Nothing to be done here
+      // Do nothing
     }
   }
 
@@ -403,7 +405,7 @@ Server::~Server() {
     } else if (!started_) {
       // Shutdown the completion queues
       for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-        (*it)->ShutdownAndDrainCompletionQueue();
+        (*it)->Shutdown();
       }
     }
   }
@@ -491,11 +493,11 @@ int Server::AddListeningPort(const grpc::string& addr,
                              ServerCredentials* creds) {
   GPR_ASSERT(!started_);
   int port = creds->AddPortToServer(addr, server_);
-  global_callbacks_->AddPort(this, port);
+  global_callbacks_->AddPort(this, addr, creds, port);
   return port;
 }
 
-bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
+void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
   global_callbacks_->PreServerStart(this);
   started_ = true;
@@ -505,7 +507,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
     if (sync_server_cqs_->empty()) {
-      gpr_log(GPR_ERROR,
+      gpr_log(GPR_INFO,
               "Default health check service disabled at async-only server.");
     } else {
       auto* default_hc_service = new DefaultHealthCheckService;
@@ -531,8 +533,6 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
     (*it)->Start();
   }
-
-  return true;
 }
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
@@ -569,7 +569,6 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Wait for threads in all ThreadManagers to terminate
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
       (*it)->Wait();
-      (*it)->ShutdownAndDrainCompletionQueue();
     }
 
     // Drain the shutdown queue (if the previous call to AsyncNext() timed out
@@ -594,7 +593,7 @@ void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
-  ops->FillOps(cops, &nops);
+  ops->FillOps(call->call(), cops, &nops);
   auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == result);
 }
@@ -675,6 +674,7 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
         StringFromCopiedSlice(call_details_.method);
     static_cast<GenericServerContext*>(context_)->host_ =
         StringFromCopiedSlice(call_details_.host);
+    context_->deadline_ = call_details_.deadline;
   }
   grpc_slice_unref(call_details_.method);
   grpc_slice_unref(call_details_.host);

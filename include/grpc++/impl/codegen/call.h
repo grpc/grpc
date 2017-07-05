@@ -1,39 +1,25 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #ifndef GRPCXX_IMPL_CODEGEN_CALL_H
 #define GRPCXX_IMPL_CODEGEN_CALL_H
 
+#include <assert.h>
 #include <cstring>
 #include <functional>
 #include <map>
@@ -47,9 +33,9 @@
 #include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/slice.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc++/impl/codegen/status_helper.h>
 #include <grpc++/impl/codegen/string_ref.h>
 
+#include <grpc/impl/codegen/atm.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -246,8 +232,10 @@ class CallOpSendInitialMetadata {
     op->data.send_initial_metadata.metadata = initial_metadata_;
     op->data.send_initial_metadata.maybe_compression_level.is_set =
         maybe_compression_level_.is_set;
-    op->data.send_initial_metadata.maybe_compression_level.level =
-        maybe_compression_level_.level;
+    if (maybe_compression_level_.is_set) {
+      op->data.send_initial_metadata.maybe_compression_level.level =
+          maybe_compression_level_.level;
+    }
   }
   void FinishOp(bool* status) {
     if (!send_) return;
@@ -361,28 +349,6 @@ class CallOpRecvMessage {
   bool allow_not_getting_message_;
 };
 
-namespace CallOpGenericRecvMessageHelper {
-class DeserializeFunc {
- public:
-  virtual Status Deserialize(grpc_byte_buffer* buf) = 0;
-  virtual ~DeserializeFunc() {}
-};
-
-template <class R>
-class DeserializeFuncType final : public DeserializeFunc {
- public:
-  DeserializeFuncType(R* message) : message_(message) {}
-  Status Deserialize(grpc_byte_buffer* buf) override {
-    return SerializationTraits<R>::Deserialize(buf, message_);
-  }
-
-  ~DeserializeFuncType() override {}
-
- private:
-  R* message_;  // Not a managed pointer because management is external to this
-};
-}  // namespace CallOpGenericRecvMessageHelper
-
 class CallOpGenericRecvMessage {
  public:
   CallOpGenericRecvMessage()
@@ -390,11 +356,9 @@ class CallOpGenericRecvMessage {
 
   template <class R>
   void RecvMessage(R* message) {
-    // Use an explicit base class pointer to avoid resolution error in the
-    // following unique_ptr::reset for some old implementations.
-    CallOpGenericRecvMessageHelper::DeserializeFunc* func =
-        new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message);
-    deserialize_.reset(func);
+    deserialize_ = [message](grpc_byte_buffer* buf) -> Status {
+      return SerializationTraits<R>::Deserialize(buf, message);
+    };
   }
 
   // Do not change status if no message is received.
@@ -417,7 +381,7 @@ class CallOpGenericRecvMessage {
     if (recv_buf_) {
       if (*status) {
         got_message = true;
-        *status = deserialize_->Deserialize(recv_buf_).ok();
+        *status = deserialize_(recv_buf_).ok();
       } else {
         got_message = false;
         g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);
@@ -428,11 +392,12 @@ class CallOpGenericRecvMessage {
         *status = false;
       }
     }
-    deserialize_.reset();
+    deserialize_ = DeserializeFunc();
   }
 
  private:
-  std::unique_ptr<CallOpGenericRecvMessageHelper::DeserializeFunc> deserialize_;
+  typedef std::function<Status(grpc_byte_buffer*)> DeserializeFunc;
+  DeserializeFunc deserialize_;
   grpc_byte_buffer* recv_buf_;
   bool allow_not_getting_message_;
 };
@@ -468,7 +433,7 @@ class CallOpServerSendStatus {
     trailing_metadata_ = FillMetadataArray(
         trailing_metadata, &trailing_metadata_count_, send_error_details_);
     send_status_available_ = true;
-    send_status_code_ = static_cast<grpc_status_code>(GetCanonicalCode(status));
+    send_status_code_ = static_cast<grpc_status_code>(status.error_code());
     send_error_message_ = status.error_message();
   }
 
@@ -584,16 +549,10 @@ class CallOpClientRecvStatus {
   grpc_slice error_message_;
 };
 
-/// An abstract collection of CallOpSet's, to be used whenever
-/// CallOpSet objects must be thought of as a group. Each member
-/// of the group should have a shared_ptr back to the collection,
-/// as will the object that instantiates the collection, allowing
-/// for automatic ref-counting. In practice, any actual use should
-/// derive from this base class. This is specifically necessary if
-/// some of the CallOpSet's in the collection are "Sneaky" and don't
-/// report back to the C++ layer CQ operations
-class CallOpSetCollectionInterface
-    : public std::enable_shared_from_this<CallOpSetCollectionInterface> {};
+/// TODO(vjpai): Remove the existence of CallOpSetCollectionInterface
+/// and references to it. This code is deprecated-on-arrival and is
+/// only added for users that bypassed the code-generator.
+class CallOpSetCollectionInterface {};
 
 /// An abstract collection of call ops, used to generate the
 /// grpc_call_op structure to pass down to the lower layers,
@@ -602,17 +561,20 @@ class CallOpSetCollectionInterface
 /// API.
 class CallOpSetInterface : public CompletionQueueTag {
  public:
-  CallOpSetInterface() {}
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.
-  virtual void FillOps(grpc_op* ops, size_t* nops) = 0;
+  virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
 
+  /// TODO(vjpai): Remove the SetCollection method and comment. This is only
+  /// a short-term workaround for users that bypassed the code generator
   /// Mark this as belonging to a collection if needed
   void SetCollection(std::shared_ptr<CallOpSetCollectionInterface> collection) {
     collection_ = collection;
   }
 
  protected:
+  /// TODO(vjpai): Remove the collection_ field once the idea of bypassing the
+  /// code generator is forbidden. This is already deprecated
   std::shared_ptr<CallOpSetCollectionInterface> collection_;
 };
 
@@ -634,13 +596,15 @@ class CallOpSet : public CallOpSetInterface,
                   public Op6 {
  public:
   CallOpSet() : return_tag_(this) {}
-  void FillOps(grpc_op* ops, size_t* nops) override {
+  void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
     this->Op1::AddOp(ops, nops);
     this->Op2::AddOp(ops, nops);
     this->Op3::AddOp(ops, nops);
     this->Op4::AddOp(ops, nops);
     this->Op5::AddOp(ops, nops);
     this->Op6::AddOp(ops, nops);
+    g_core_codegen_interface->grpc_call_ref(call);
+    call_ = call;
   }
 
   bool FinalizeResult(void** tag, bool* status) override {
@@ -651,7 +615,12 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::FinishOp(status);
     this->Op6::FinishOp(status);
     *tag = return_tag_;
-    collection_.reset();  // drop the ref at this point
+
+    // TODO(vjpai): Remove the reference to collection_ once the idea of
+    // bypassing the code generator is forbidden. It is already deprecated
+    collection_.reset();
+
+    g_core_codegen_interface->grpc_call_unref(call_);
     return true;
   }
 
@@ -659,6 +628,7 @@ class CallOpSet : public CallOpSetInterface,
 
  private:
   void* return_tag_;
+  grpc_call* call_;
 };
 
 /// A CallOpSet that does not post completions to the completion queue.
@@ -676,10 +646,10 @@ class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
   }
 };
 
-// Straightforward wrapping of the C call object
+/// Straightforward wrapping of the C call object
 class Call final {
  public:
-  /* call is owned by the caller */
+  /** call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
       : call_hook_(call_hook),
         cq_(cq),

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -49,11 +34,12 @@ static void *tag(intptr_t t) { return (void *)t; }
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
                                             cancellation_mode mode,
+                                            size_t test_ops,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s/%s", test_name, config.name,
-          mode.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s/%s [%" PRIdPTR " ops]", test_name,
+          config.name, mode.name, test_ops);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -78,9 +64,10 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_event ev = grpc_completion_queue_next(
+      f->cq, grpc_timeout_seconds_to_deadline(5), NULL);
+  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(ev.tag == tag(1000));
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -98,6 +85,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 /* Cancel after invoke, no payload */
@@ -106,8 +94,8 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   grpc_op ops[6];
   grpc_op *op;
   grpc_call *c;
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_cancel_after_invoke", mode, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_cancel_after_invoke",
+                                           mode, test_ops, NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_metadata *initial_metadata_recv;
   size_t initial_metadata_recv_count;
@@ -185,7 +173,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   grpc_byte_buffer_destroy(response_payload_recv);
   grpc_slice_unref(details);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
   end_test(&f);
@@ -195,7 +183,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
 void cancel_after_invoke(grpc_end2end_test_config config) {
   unsigned i, j;
 
-  for (j = 2; j < 6; j++) {
+  for (j = 3; j < 6; j++) {
     for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
       test_cancel_after_invoke(config, cancellation_modes[i], j);
     }

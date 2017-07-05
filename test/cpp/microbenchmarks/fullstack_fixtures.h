@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2017, Google Inc.
- * All rights reserved.
+ * Copyright 2017 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -61,29 +46,33 @@ extern "C" {
 namespace grpc {
 namespace testing {
 
-static void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
-  b->SetMaxReceiveMessageSize(INT_MAX);
-  b->SetMaxSendMessageSize(INT_MAX);
-}
+class FixtureConfiguration {
+ public:
+  virtual void ApplyCommonChannelArguments(ChannelArguments* c) const {
+    c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
+    c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+  }
 
-static void ApplyCommonChannelArguments(ChannelArguments* c) {
-  c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
-  c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
-}
+  virtual void ApplyCommonServerBuilderConfig(ServerBuilder* b) const {
+    b->SetMaxReceiveMessageSize(INT_MAX);
+    b->SetMaxSendMessageSize(INT_MAX);
+  }
+};
 
 class BaseFixture : public TrackCounters {};
 
 class FullstackFixture : public BaseFixture {
  public:
-  FullstackFixture(Service* service, const grpc::string& address) {
+  FullstackFixture(Service* service, const FixtureConfiguration& config,
+                   const grpc::string& address) {
     ServerBuilder b;
     b.AddListeningPort(address, InsecureServerCredentials());
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
-    ApplyCommonServerBuilderConfig(&b);
+    config.ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
     ChannelArguments args;
-    ApplyCommonChannelArguments(&args);
+    config.ApplyCommonChannelArguments(&args);
     channel_ = CreateCustomChannel(address, InsecureChannelCredentials(), args);
   }
 
@@ -94,6 +83,12 @@ class FullstackFixture : public BaseFixture {
     bool ok;
     while (cq_->Next(&tag, &ok)) {
     }
+  }
+
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    BaseFixture::AddToLabel(out, state);
+    out << " polls/iter:"
+        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -107,39 +102,52 @@ class FullstackFixture : public BaseFixture {
 
 class TCP : public FullstackFixture {
  public:
-  TCP(Service* service) : FullstackFixture(service, MakeAddress()) {}
+  TCP(Service* service, const FixtureConfiguration& fixture_configuration =
+                            FixtureConfiguration())
+      : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
+
+  ~TCP() { grpc_recycle_unused_port(port_); }
 
  private:
-  static grpc::string MakeAddress() {
-    int port = grpc_pick_unused_port_or_die();
+  int port_;
+
+  static grpc::string MakeAddress(int* port) {
+    *port = grpc_pick_unused_port_or_die();
     std::stringstream addr;
-    addr << "localhost:" << port;
+    addr << "localhost:" << *port;
     return addr.str();
   }
 };
 
 class UDS : public FullstackFixture {
  public:
-  UDS(Service* service) : FullstackFixture(service, MakeAddress()) {}
+  UDS(Service* service, const FixtureConfiguration& fixture_configuration =
+                            FixtureConfiguration())
+      : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
+
+  ~UDS() { grpc_recycle_unused_port(port_); }
 
  private:
-  static grpc::string MakeAddress() {
-    int port = grpc_pick_unused_port_or_die();  // just for a unique id - not a
-                                                // real port
+  int port_;
+
+  static grpc::string MakeAddress(int* port) {
+    *port = grpc_pick_unused_port_or_die();  // just for a unique id - not a
+                                             // real port
     std::stringstream addr;
-    addr << "unix:/tmp/bm_fullstack." << port;
+    addr << "unix:/tmp/bm_fullstack." << *port;
     return addr.str();
   }
 };
 
 class EndpointPairFixture : public BaseFixture {
  public:
-  EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints)
+  EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints,
+                      const FixtureConfiguration& fixture_configuration)
       : endpoint_pair_(endpoints) {
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
-    ApplyCommonServerBuilderConfig(&b);
+    fixture_configuration.ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
 
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -169,7 +177,7 @@ class EndpointPairFixture : public BaseFixture {
     {
       ChannelArguments args;
       args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
-      ApplyCommonChannelArguments(&args);
+      fixture_configuration.ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
       client_transport_ =
@@ -195,6 +203,12 @@ class EndpointPairFixture : public BaseFixture {
     }
   }
 
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    BaseFixture::AddToLabel(out, state);
+    out << " polls/iter:"
+        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
+  }
+
   ServerCompletionQueue* cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
 
@@ -211,20 +225,24 @@ class EndpointPairFixture : public BaseFixture {
 
 class SockPair : public EndpointPairFixture {
  public:
-  SockPair(Service* service)
+  SockPair(Service* service, const FixtureConfiguration& fixture_configuration =
+                                 FixtureConfiguration())
       : EndpointPairFixture(service,
-                            grpc_iomgr_create_endpoint_pair("test", NULL)) {}
+                            grpc_iomgr_create_endpoint_pair("test", NULL),
+                            fixture_configuration) {}
 };
 
 class InProcessCHTTP2 : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service)
-      : EndpointPairFixture(service, MakeEndpoints()) {}
+  InProcessCHTTP2(Service* service,
+                  const FixtureConfiguration& fixture_configuration =
+                      FixtureConfiguration())
+      : EndpointPairFixture(service, MakeEndpoints(), fixture_configuration) {}
 
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << ((double)stats_.num_writes / (double)state.iterations());
+        << (double)stats_.num_writes / (double)state.iterations();
   }
 
  private:
@@ -237,6 +255,32 @@ class InProcessCHTTP2 : public EndpointPairFixture {
     return p;
   }
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// Minimal stack fixtures
+
+class MinStackConfiguration : public FixtureConfiguration {
+  void ApplyCommonChannelArguments(ChannelArguments* a) const override {
+    a->SetInt(GRPC_ARG_MINIMAL_STACK, 1);
+    FixtureConfiguration::ApplyCommonChannelArguments(a);
+  }
+
+  void ApplyCommonServerBuilderConfig(ServerBuilder* b) const override {
+    b->AddChannelArgument(GRPC_ARG_MINIMAL_STACK, 1);
+    FixtureConfiguration::ApplyCommonServerBuilderConfig(b);
+  }
+};
+
+template <class Base>
+class MinStackize : public Base {
+ public:
+  MinStackize(Service* service) : Base(service, MinStackConfiguration()) {}
+};
+
+typedef MinStackize<TCP> MinTCP;
+typedef MinStackize<UDS> MinUDS;
+typedef MinStackize<SockPair> MinSockPair;
+typedef MinStackize<InProcessCHTTP2> MinInProcessCHTTP2;
 
 }  // namespace testing
 }  // namespace grpc

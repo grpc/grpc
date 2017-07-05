@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -56,6 +41,8 @@ struct grpc_tcp_listener {
   int port;
   /* linked list */
   struct grpc_tcp_listener *next;
+
+  bool closed;
 };
 
 struct grpc_tcp_server {
@@ -76,6 +63,8 @@ struct grpc_tcp_server {
 
   /* shutdown callback */
   grpc_closure *shutdown_complete;
+
+  bool shutdown;
 
   grpc_resource_quota *resource_quota;
 };
@@ -109,6 +98,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
   s->shutdown_starting.head = NULL;
   s->shutdown_starting.tail = NULL;
   s->shutdown_complete = shutdown_complete;
+  s->shutdown = false;
   *server = s;
   return GRPC_ERROR_NONE;
 }
@@ -125,8 +115,9 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
+  GPR_ASSERT(s->shutdown);
   if (s->shutdown_complete != NULL) {
-    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   while (s->head) {
@@ -144,21 +135,31 @@ static void handle_close_callback(uv_handle_t *handle) {
   grpc_tcp_listener *sp = (grpc_tcp_listener *)handle->data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   sp->server->open_ports--;
-  if (sp->server->open_ports == 0) {
+  if (sp->server->open_ports == 0 && sp->server->shutdown) {
     finish_shutdown(&exec_ctx, sp->server);
   }
   grpc_exec_ctx_finish(&exec_ctx);
+}
+
+static void close_listener(grpc_tcp_listener *sp) {
+  if (!sp->closed) {
+    sp->closed = true;
+    uv_close((uv_handle_t *)sp->handle, handle_close_callback);
+  }
 }
 
 static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   int immediately_done = 0;
   grpc_tcp_listener *sp;
 
+  GPR_ASSERT(!s->shutdown);
+  s->shutdown = true;
+
   if (s->open_ports == 0) {
     immediately_done = 1;
   }
   for (sp = s->head; sp; sp = sp->next) {
-    uv_close((uv_handle_t *)sp->handle, handle_close_callback);
+    close_listener(sp);
   }
 
   if (immediately_done) {
@@ -170,7 +171,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
     grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_closure_list_sched(&local_exec_ctx, &s->shutdown_starting);
+    GRPC_CLOSURE_LIST_SCHED(&local_exec_ctx, &s->shutdown_starting);
     if (exec_ctx == NULL) {
       grpc_exec_ctx_flush(&local_exec_ctx);
       tcp_server_destroy(&local_exec_ctx, s);
@@ -196,9 +197,14 @@ static void on_connect(uv_stream_t *server, int status) {
   int err;
 
   if (status < 0) {
-    gpr_log(GPR_INFO, "Skipping on_accept due to error: %s",
-            uv_strerror(status));
-    return;
+    switch (status) {
+      case UV_EINTR:
+      case UV_EAGAIN:
+        return;
+      default:
+        close_listener(sp);
+        return;
+    }
   }
 
   client = gpr_malloc(sizeof(uv_tcp_t));
@@ -287,6 +293,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, uv_tcp_t *handle,
   sp->handle = handle;
   sp->port = port;
   sp->port_index = port_index;
+  sp->closed = false;
   handle->data = sp;
   s->open_ports++;
   GPR_ASSERT(sp->handle);

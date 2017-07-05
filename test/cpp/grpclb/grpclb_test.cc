@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -52,6 +37,7 @@
 #include <grpc++/impl/codegen/config.h>
 extern "C" {
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -61,7 +47,6 @@ extern "C" {
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 }
@@ -310,7 +295,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   gpr_log(GPR_INFO, "LB Server[%s](%s) after tag 204. All done. LB server out",
           sf->servers_hostport, sf->balancer_name);
 
-  grpc_call_destroy(s);
+  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 
@@ -456,7 +441,7 @@ static void start_backend_server(server_fixture *sf) {
     gpr_log(GPR_INFO, "Server[%s] DONE. After servicing %d calls",
             sf->servers_hostport, sf->num_calls_serviced);
 
-    grpc_call_destroy(s);
+    grpc_call_unref(s);
     cq_verifier_destroy(cqv);
     grpc_call_details_destroy(&call_details);
   }
@@ -557,7 +542,7 @@ static void perform_request(client_fixture *cf) {
   peer = grpc_call_get_peer(c);
   gpr_log(GPR_INFO, "Client DONE WITH SERVER %s ", peer);
 
-  grpc_call_destroy(c);
+  grpc_call_unref(c);
 
   cq_verify_empty_timeout(cqv, 1 /* seconds */);
   cq_verifier_destroy(cqv);
@@ -571,34 +556,51 @@ static void perform_request(client_fixture *cf) {
 static void setup_client(const server_fixture *lb_server,
                          const server_fixture *backends, client_fixture *cf) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  char *lb_uri;
-  // The grpclb LB policy will be automatically selected by virtue of
-  // the fact that the returned addresses are balancer addresses.
-  gpr_asprintf(&lb_uri, "test:///%s?lb_enabled=1&balancer_names=%s",
-               lb_server->servers_hostport, lb_server->balancer_name);
-
-  grpc_arg expected_target_arg;
-  expected_target_arg.type = GRPC_ARG_STRING;
-  expected_target_arg.key =
-      const_cast<char *>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
 
   char *expected_target_names = NULL;
   const char *backends_name = lb_server->servers_hostport;
   gpr_asprintf(&expected_target_names, "%s;%s", backends_name, BALANCERS_NAME);
 
-  expected_target_arg.value.string = const_cast<char *>(expected_target_names);
+  grpc_fake_resolver_response_generator *response_generator =
+      grpc_fake_resolver_response_generator_create();
+
+  grpc_lb_addresses *addresses = grpc_lb_addresses_create(1, NULL);
+  char *lb_uri_str;
+  gpr_asprintf(&lb_uri_str, "ipv4:%s", lb_server->servers_hostport);
+  grpc_uri *lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
+  GPR_ASSERT(lb_uri != NULL);
+  grpc_lb_addresses_set_address_from_uri(addresses, 0, lb_uri, true,
+                                         lb_server->balancer_name, NULL);
+  grpc_uri_destroy(lb_uri);
+  gpr_free(lb_uri_str);
+
+  gpr_asprintf(&cf->server_uri, "fake:///%s", lb_server->servers_hostport);
+  const grpc_arg fake_addresses =
+      grpc_lb_addresses_create_channel_arg(addresses);
+  grpc_channel_args *fake_result =
+      grpc_channel_args_copy_and_add(NULL, &fake_addresses, 1);
+  grpc_lb_addresses_destroy(&exec_ctx, addresses);
+
+  const grpc_arg new_args[] = {
+      grpc_fake_transport_expected_targets_arg(expected_target_names),
+      grpc_fake_resolver_response_generator_arg(response_generator)};
+
   grpc_channel_args *args =
-      grpc_channel_args_copy_and_add(NULL, &expected_target_arg, 1);
+      grpc_channel_args_copy_and_add(NULL, new_args, GPR_ARRAY_SIZE(new_args));
   gpr_free(expected_target_names);
 
-  cf->cq = grpc_completion_queue_create(NULL);
-  cf->server_uri = lb_uri;
+  cf->cq = grpc_completion_queue_create_for_next(NULL);
   grpc_channel_credentials *fake_creds =
       grpc_fake_transport_security_credentials_create();
   cf->client =
       grpc_secure_channel_create(fake_creds, cf->server_uri, args, NULL);
+  grpc_fake_resolver_response_generator_set_response(
+      &exec_ctx, response_generator, fake_result);
+  grpc_channel_args_destroy(&exec_ctx, fake_result);
   grpc_channel_credentials_unref(&exec_ctx, fake_creds);
   grpc_channel_args_destroy(&exec_ctx, args);
+  grpc_fake_resolver_response_generator_unref(response_generator);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void teardown_client(client_fixture *cf) {
@@ -614,7 +616,7 @@ static void teardown_client(client_fixture *cf) {
 static void setup_server(const char *host, server_fixture *sf) {
   int assigned_port;
 
-  sf->cq = grpc_completion_queue_create(NULL);
+  sf->cq = grpc_completion_queue_create_for_next(NULL);
   const char *colon_idx = strchr(host, ':');
   if (colon_idx) {
     const char *port_str = colon_idx + 1;
@@ -641,10 +643,15 @@ static void teardown_server(server_fixture *sf) {
   if (!sf->server) return;
 
   gpr_log(GPR_INFO, "Server[%s] shutting down", sf->servers_hostport);
-  grpc_server_shutdown_and_notify(sf->server, sf->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 sf->cq, tag(1000), grpc_timeout_seconds_to_deadline(5), NULL)
+
+  grpc_completion_queue *shutdown_cq =
+      grpc_completion_queue_create_for_pluck(NULL);
+  grpc_server_shutdown_and_notify(sf->server, shutdown_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
+                                         grpc_timeout_seconds_to_deadline(5),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
+  grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(sf->server);
   gpr_thd_join(sf->tid);
 
@@ -781,7 +788,6 @@ TEST(GrpclbTest, InvalidAddressInServerlist) {}
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_test_init(argc, argv);
-  grpc_fake_resolver_init();
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

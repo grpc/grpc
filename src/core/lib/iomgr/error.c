@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -45,9 +30,14 @@
 #include <grpc/support/log_windows.h>
 #endif
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_error_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
 
 static const char *error_int_name(grpc_error_ints key) {
   switch (key) {
@@ -134,14 +124,14 @@ bool grpc_error_is_special(grpc_error *err) {
          err == GRPC_ERROR_CANCELLED;
 }
 
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
-grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
-                           const char *func) {
+#ifndef NDEBUG
+grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line) {
   if (grpc_error_is_special(err)) return err;
-  gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          gpr_atm_no_barrier_load(&err->atomics.refs.count),
-          gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line,
-          func);
+  if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+    gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
+            gpr_atm_no_barrier_load(&err->atomics.refs.count),
+            gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line);
+  }
   gpr_ref(&err->atomics.refs);
   return err;
 }
@@ -187,14 +177,14 @@ static void error_destroy(grpc_error *err) {
   gpr_free(err);
 }
 
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
-void grpc_error_unref(grpc_error *err, const char *file, int line,
-                      const char *func) {
+#ifndef NDEBUG
+void grpc_error_unref(grpc_error *err, const char *file, int line) {
   if (grpc_error_is_special(err)) return;
-  gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
-          gpr_atm_no_barrier_load(&err->atomics.refs.count),
-          gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line,
-          func);
+  if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+    gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
+            gpr_atm_no_barrier_load(&err->atomics.refs.count),
+            gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line);
+  }
   if (gpr_unref(&err->atomics.refs)) {
     error_destroy(err);
   }
@@ -217,8 +207,18 @@ static uint8_t get_placement(grpc_error **err, size_t size) {
     if ((*err)->arena_size + slots > (*err)->arena_capacity) {
       return UINT8_MAX;
     }
+#ifndef NDEBUG
+    grpc_error *orig = *err;
+#endif
     *err = gpr_realloc(
         *err, sizeof(grpc_error) + (*err)->arena_capacity * sizeof(intptr_t));
+#ifndef NDEBUG
+    if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+      if (*err != orig) {
+        gpr_log(GPR_DEBUG, "realloc %p -> %p", orig, *err);
+      }
+    }
+#endif
   }
   uint8_t placement = (*err)->arena_size;
   (*err)->arena_size = (uint8_t)((*err)->arena_size + slots);
@@ -313,7 +313,7 @@ static void internal_add_error(grpc_error **err, grpc_error *new) {
 // It is very common to include and extra int and string in an error
 #define SURPLUS_CAPACITY (2 * SLOTS_PER_INT + SLOTS_PER_TIME)
 
-grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
+grpc_error *grpc_error_create(const char *file, int line, grpc_slice desc,
                               grpc_error **referencing,
                               size_t num_referencing) {
   GPR_TIMER_BEGIN("grpc_error_create", 0);
@@ -325,8 +325,10 @@ grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
   if (err == NULL) {  // TODO(ctiller): make gpr_malloc return NULL
     return GRPC_ERROR_OOM;
   }
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
-  gpr_log(GPR_DEBUG, "%p create [%s:%d]", err, file, line);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+    gpr_log(GPR_DEBUG, "%p create [%s:%d]", err, file, line);
+  }
 #endif
 
   err->arena_size = 0;
@@ -339,7 +341,8 @@ grpc_error *grpc_error_create(grpc_slice file, int line, grpc_slice desc,
   memset(err->times, UINT8_MAX, GRPC_ERROR_TIME_MAX);
 
   internal_set_int(&err, GRPC_ERROR_INT_FILE_LINE, line);
-  internal_set_str(&err, GRPC_ERROR_STR_FILE, file);
+  internal_set_str(&err, GRPC_ERROR_STR_FILE,
+                   grpc_slice_from_static_string(file));
   internal_set_str(&err, GRPC_ERROR_STR_DESCRIPTION, desc);
 
   for (size_t i = 0; i < num_referencing; ++i) {
@@ -403,8 +406,10 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
       new_arena_capacity = (uint8_t)(3 * new_arena_capacity / 2);
     }
     out = gpr_malloc(sizeof(*in) + new_arena_capacity * sizeof(intptr_t));
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
-    gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
+#ifndef NDEBUG
+    if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+      gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
+    }
 #endif
     // bulk memcpy of the rest of the struct.
     size_t skip = sizeof(&out->atomics);
@@ -756,13 +761,13 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
   return grpc_error_set_str(
       grpc_error_set_str(
           grpc_error_set_int(
-              grpc_error_create(grpc_slice_from_static_string(file), line,
+              grpc_error_create(file, line,
                                 grpc_slice_from_static_string("OS Error"), NULL,
                                 0),
               GRPC_ERROR_INT_ERRNO, err),
           GRPC_ERROR_STR_OS_ERROR,
           grpc_slice_from_static_string(strerror(err))),
-      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_static_string(call_name));
+      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_copied_string(call_name));
 }
 
 #ifdef GPR_WINDOWS
@@ -772,7 +777,7 @@ grpc_error *grpc_wsa_error(const char *file, int line, int err,
   grpc_error *error = grpc_error_set_str(
       grpc_error_set_str(
           grpc_error_set_int(
-              grpc_error_create(grpc_slice_from_static_string(file), line,
+              grpc_error_create(file, line,
                                 grpc_slice_from_static_string("OS Error"), NULL,
                                 0),
               GRPC_ERROR_INT_WSA_ERROR, err),

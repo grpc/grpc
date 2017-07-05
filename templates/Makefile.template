@@ -7,34 +7,19 @@
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
 
-  # Copyright 2015, Google Inc.
-  # All rights reserved.
+  # Copyright 2015 gRPC authors.
   #
-  # Redistribution and use in source and binary forms, with or without
-  # modification, are permitted provided that the following conditions are
-  # met:
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
   #
-  #     * Redistributions of source code must retain the above copyright
-  # notice, this list of conditions and the following disclaimer.
-  #     * Redistributions in binary form must reproduce the above
-  # copyright notice, this list of conditions and the following disclaimer
-  # in the documentation and/or other materials provided with the
-  # distribution.
-  #     * Neither the name of Google Inc. nor the names of its
-  # contributors may be used to endorse or promote products derived from
-  # this software without specific prior written permission.
+  #     http://www.apache.org/licenses/LICENSE-2.0
   #
-  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-  # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-  # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-  # A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-  # OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-  # SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-  # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-  # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
   <%!
     import re
     import os
@@ -206,10 +191,6 @@
   TMPOUT = `mktemp /tmp/test-out-XXXXXX`
   endif
 
-  # Detect if we can use C++11
-  CXX11_CHECK_CMD = $(CXX) -std=c++11 -o $(TMPOUT) -c test/build/c++11.cc
-  HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
-
   %for warning in CHECK_WARNINGS:
   ${warning_var('CHECK_%s_WORKS_CMD', warning)} = $(CC) -std=c99 -Werror -W${warning} -o $(TMPOUT) -c test/build/${warning}.c
   ${warning_var('HAS_WORKING_%s', warning)} = $(shell $(${warning_var('CHECK_%s_WORKS_CMD', warning)}) 2> /dev/null && echo true || echo false)
@@ -230,10 +211,9 @@
   HOST_LDXX ?= $(LDXX)
 
   CFLAGS += -std=c99 -Wsign-conversion -Wconversion ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
-  ifeq ($(HAS_CXX11),true)
   CXXFLAGS += -std=c++11
-  else
-  CXXFLAGS += -std=c++0x
+  ifeq ($(SYSTEM),Darwin)
+  CXXFLAGS += -stdlib=libc++
   endif
   % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'DEFINES']:
   %  if defaults.get('global', []).get(arg, None) is not None:
@@ -311,7 +291,7 @@
   USE_BUILT_PROTOC = false
   endif
 
-  GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc
+  GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc -Ithird_party/googletest/googlemock/include -Ithird_party/googletest/googlemock third_party/googletest/googlemock/src/gmock-all.cc
   GTEST_LIB += -lgflags
   ifeq ($(V),1)
   E = @:
@@ -435,7 +415,7 @@
   OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
   PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0 protobuf
-  CARES_CHECK_CMD = $(PKG_CONFIG) --exists libcares
+  CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
   else # HAS_PKG_CONFIG
 
   ifeq ($(SYSTEM),MINGW32)
@@ -716,7 +696,7 @@
   PC_REQUIRES_GRPCXX =
   PC_LIBS_GRPCXX =
 
-  CPPFLAGS := -Ithird_party/googletest/googletest/include $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googlemock/include $(CPPFLAGS)
 
   PROTOC_PLUGINS_ALL =\
   % for tgt in targets:
@@ -1240,6 +1220,14 @@
   $(GENDIR)/${p}.pb.cc: protoc_dep_error
   $(GENDIR)/${p}.grpc.pb.cc: protoc_dep_error
   else
+  <%
+    pluginflags=""
+  %>
+  % if p in ["src/proto/grpc/testing/compiler_test", "src/proto/grpc/testing/echo"]:
+  <%
+    pluginflags="generate_mock_code=true:"
+  %>
+  % endif
   $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating protobuf CC file from $<"
   	$(Q) mkdir -p `dirname $@`
@@ -1248,7 +1236,7 @@
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=${pluginflags}$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
   endif
 
   % endfor
@@ -1609,7 +1597,7 @@
   ifeq ($(SYSTEM),Darwin)
   	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
   else
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.core_version.major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
   endif
