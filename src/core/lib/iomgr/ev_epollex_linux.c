@@ -105,19 +105,27 @@ typedef struct pollable {
 
 static const char *polling_obj_type_string(polling_obj_type t) {
   switch (t) {
-   case PO_POLLING_GROUP: return "polling_group";
-   case PO_POLLSET_SET: return "pollset_set";
-   case PO_POLLSET: return "pollset";
-   case PO_FD: return "fd";
-   case PO_EMPTY_POLLABLE: return "empty_pollable";
-   case PO_COUNT: return "<invalid:count>";
+    case PO_POLLING_GROUP:
+      return "polling_group";
+    case PO_POLLSET_SET:
+      return "pollset_set";
+    case PO_POLLSET:
+      return "pollset";
+    case PO_FD:
+      return "fd";
+    case PO_EMPTY_POLLABLE:
+      return "empty_pollable";
+    case PO_COUNT:
+      return "<invalid:count>";
   }
   return "<invalid>";
 }
 
 static char *pollable_desc(pollable *p) {
   char *out;
-  gpr_asprintf(&out, "type=%s group=%p epfd=%d wakeup=%d", polling_obj_type_string(p->po.type), p->po.group, p->epfd, p->wakeup.read_fd);
+  gpr_asprintf(&out, "type=%s group=%p epfd=%d wakeup=%d",
+               polling_obj_type_string(p->po.type), p->po.group, p->epfd,
+               p->wakeup.read_fd);
   return out;
 }
 
@@ -557,13 +565,15 @@ static void do_kick_all(grpc_exec_ctx *exec_ctx, void *arg,
       }
       if (worker->initialized_cv && worker != pollset->root_worker) {
         if (GRPC_TRACER_ON(grpc_polling_trace)) {
-          gpr_log(GPR_DEBUG, "PS:%p kickall_via_cv %p (pollable %p vs %p)", pollset, worker, &pollset->pollable, worker->pollable);
+          gpr_log(GPR_DEBUG, "PS:%p kickall_via_cv %p (pollable %p vs %p)",
+                  pollset, worker, &pollset->pollable, worker->pollable);
         }
         worker->kicked = true;
         gpr_cv_signal(&worker->cv);
       } else {
         if (GRPC_TRACER_ON(grpc_polling_trace)) {
-          gpr_log(GPR_DEBUG, "PS:%p kickall_via_wakeup %p (pollable %p vs %p)", pollset, worker, &pollset->pollable, worker->pollable);
+          gpr_log(GPR_DEBUG, "PS:%p kickall_via_wakeup %p (pollable %p vs %p)",
+                  pollset, worker, &pollset->pollable, worker->pollable);
         }
         append_error(&error, grpc_wakeup_fd_wakeup(&worker->pollable->wakeup),
                      "pollset_shutdown");
