@@ -87,6 +87,7 @@ END2END_TESTS = {
     'cancel_after_accept': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_after_client_done': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_after_invoke': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_after_round_trip': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_before_invoke': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_in_a_vacuum': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_with_status': default_test_options._replace(cpu_cost=LOWCPU),
