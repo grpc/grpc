@@ -83,9 +83,9 @@ static void on_md_processing_done(
     void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
     const grpc_metadata *response_md, size_t num_response_md,
     grpc_status_code status, const char *error_details) {
-  grpc_transport_stream_op_batch *batch = user_data;
-  grpc_call_element *elem = batch->handler_private.extra_arg;
+  grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
+  grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != NULL && num_response_md > 0) {
@@ -130,7 +130,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
           batch->payload->recv_initial_metadata.recv_initial_metadata);
       chand->creds->processor.process(
           chand->creds->processor.state, calld->auth_context,
-          calld->md.metadata, calld->md.count, on_md_processing_done, batch);
+          calld->md.metadata, calld->md.count, on_md_processing_done, elem);
       return;
     }
   }
