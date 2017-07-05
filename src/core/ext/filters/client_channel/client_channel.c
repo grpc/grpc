@@ -1060,8 +1060,7 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
   if (args->cancelled) {
     /* cancelled, do nothing */
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      gpr_log(GPR_DEBUG, "calld=%p: cancelled before resolver result",
-              args->elem->call_data);
+      gpr_log(GPR_DEBUG, "call cancelled before resolver result");
     }
   } else if (error != GRPC_ERROR_NONE) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
