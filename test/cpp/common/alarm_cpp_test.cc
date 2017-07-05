@@ -40,6 +40,37 @@ TEST(AlarmTest, RegularExpiry) {
   EXPECT_EQ(junk, output_tag);
 }
 
+TEST(AlarmTest, MoveConstructor) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  Alarm first(&cq, grpc_timeout_seconds_to_deadline(1), junk);
+  Alarm second(std::move(first));
+  void* output_tag;
+  bool ok;
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+}
+
+TEST(AlarmTest, MoveAssignment) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  Alarm first(&cq, grpc_timeout_seconds_to_deadline(1), junk);
+  Alarm second(std::move(first));
+  first = std::move(second);
+
+  void* output_tag;
+  bool ok;
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+}
+
 TEST(AlarmTest, RegularExpiryChrono) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);

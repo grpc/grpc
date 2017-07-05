@@ -25,6 +25,10 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#ifndef NDEBUG
+extern grpc_tracer_flag grpc_trace_metadata;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -132,9 +136,7 @@ void *grpc_mdelem_get_user_data(grpc_mdelem md,
 void *grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void *),
                                 void *user_data);
 
-/* Reference counting */
-//#define GRPC_METADATA_REFCOUNT_DEBUG
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s), __FILE__, __LINE__)
 #define GRPC_MDELEM_UNREF(exec_ctx, s) \
   grpc_mdelem_unref((exec_ctx), (s), __FILE__, __LINE__)

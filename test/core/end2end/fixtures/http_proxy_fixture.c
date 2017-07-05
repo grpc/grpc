@@ -493,7 +493,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_pollset_shutdown(&exec_ctx, proxy->pollset,
                         GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset,
                                             grpc_schedule_on_exec_ctx));
-  grpc_combiner_unref(&exec_ctx, proxy->combiner);
+  GRPC_COMBINER_UNREF(&exec_ctx, proxy->combiner, "test");
   gpr_free(proxy);
   grpc_exec_ctx_finish(&exec_ctx);
 }

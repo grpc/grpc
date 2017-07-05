@@ -22,6 +22,6 @@
   #ifndef VERSION_H
   #define VERSION_H
 
-  #define PHP_GRPC_VERSION "${settings.php_version.php_composer()}"
+  #define PHP_GRPC_VERSION "${settings.php_version.php()}"
 
   #endif /* VERSION_H */

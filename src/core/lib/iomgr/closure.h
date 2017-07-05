@@ -26,8 +26,16 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/support/mpscq.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
+
+#ifndef NDEBUG
+extern grpc_tracer_flag grpc_trace_closure;
+#endif
 
 typedef struct grpc_closure_list {
   grpc_closure *head;
@@ -38,7 +46,9 @@ typedef struct grpc_closure_list {
  *
  * \param arg Arbitrary input.
  * \param error GRPC_ERROR_NONE if no error occurred, otherwise some grpc_error
- *              describing what went wrong */
+ *              describing what went wrong.
+ *              Error contract: it is not the cb's job to unref this error;
+ *              the closure scheduler will do that after the cb returns */
 typedef void (*grpc_iomgr_cb_func)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_error *error);
 
@@ -58,8 +68,6 @@ typedef struct grpc_closure_scheduler_vtable {
 struct grpc_closure_scheduler {
   const grpc_closure_scheduler_vtable *vtable;
 };
-
-// #define GRPC_CLOSURE_RICH_DEBUG
 
 /** A closure over a grpc_iomgr_cb_func. */
 struct grpc_closure {
@@ -89,7 +97,7 @@ struct grpc_closure {
 
 // extra tracing and debugging for grpc_closure. This incurs a decent amount of
 // overhead per closure, so it must be enabled at compile time.
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
   bool scheduled;
   bool run;  // true = run, false = scheduled
   const char *file_created;
@@ -100,7 +108,7 @@ struct grpc_closure {
 };
 
 /** Initializes \a closure with \a cb and \a cb_arg. Returns \a closure. */
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
 grpc_closure *grpc_closure_init(const char *file, int line,
                                 grpc_closure *closure, grpc_iomgr_cb_func cb,
                                 void *cb_arg,
@@ -116,7 +124,7 @@ grpc_closure *grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
 #endif
 
 /* Create a heap allocated closure: try to avoid except for very rare events */
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
 grpc_closure *grpc_closure_create(const char *file, int line,
                                   grpc_iomgr_cb_func cb, void *cb_arg,
                                   grpc_closure_scheduler *scheduler);
@@ -153,7 +161,7 @@ bool grpc_closure_list_empty(grpc_closure_list list);
 /** Run a closure directly. Caller ensures that no locks are being held above.
  *  Note that calling this at the end of a closure callback function itself is
  *  by definition safe. */
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
 void grpc_closure_run(const char *file, int line, grpc_exec_ctx *exec_ctx,
                       grpc_closure *closure, grpc_error *error);
 #define GRPC_CLOSURE_RUN(exec_ctx, closure, error) \
@@ -166,7 +174,7 @@ void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
 #endif
 
 /** Schedule a closure to be run. Does not need to be run from a safe point. */
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
 void grpc_closure_sched(const char *file, int line, grpc_exec_ctx *exec_ctx,
                         grpc_closure *closure, grpc_error *error);
 #define GRPC_CLOSURE_SCHED(exec_ctx, closure, error) \
@@ -180,7 +188,7 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
 
 /** Schedule all closures in a list to be run. Does not need to be run from a
  * safe point. */
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
 void grpc_closure_list_sched(const char *file, int line,
                              grpc_exec_ctx *exec_ctx,
                              grpc_closure_list *closure_list);
@@ -191,6 +199,10 @@ void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx,
                              grpc_closure_list *closure_list);
 #define GRPC_CLOSURE_LIST_SCHED(exec_ctx, closure_list) \
   grpc_closure_list_sched(exec_ctx, closure_list)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */

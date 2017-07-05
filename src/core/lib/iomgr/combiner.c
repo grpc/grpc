@@ -102,12 +102,14 @@ static void start_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   }
 }
 
-#ifdef GRPC_COMBINER_REFCOUNT_DEBUG
-#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                               \
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                             \
-          "combiner[%p] %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op), \
-          gpr_atm_no_barrier_load(&lock->refs.count),                     \
-          gpr_atm_no_barrier_load(&lock->refs.count) + (delta), reason);
+#ifndef NDEBUG
+#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                                \
+  if (GRPC_TRACER_ON(grpc_combiner_trace)) {                               \
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                            \
+            "C:%p %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op),        \
+            gpr_atm_no_barrier_load(&lock->refs.count),                    \
+            gpr_atm_no_barrier_load(&lock->refs.count) + (delta), reason); \
+  }
 #else
 #define GRPC_COMBINER_DEBUG_SPAM(op, delta)
 #endif
@@ -247,7 +249,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
     GPR_TIMER_BEGIN("combiner.exec1", 0);
     grpc_closure *cl = (grpc_closure *)n;
     grpc_error *cl_err = cl->error_data.error;
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
     cl->scheduled = false;
 #endif
     cl->cb(exec_ctx, cl->cb_arg, cl_err);
@@ -264,7 +266,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
           gpr_log(GPR_DEBUG, "C:%p execute_final[%d] c=%p", lock, loops, c));
       grpc_closure *next = c->next_data.next;
       grpc_error *error = c->error_data.error;
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
       c->scheduled = false;
 #endif
       c->cb(exec_ctx, c->cb_arg, error);

@@ -30,8 +30,10 @@
 extern grpc_tracer_flag grpc_cq_pluck_trace;
 extern grpc_tracer_flag grpc_cq_event_timeout_trace;
 extern grpc_tracer_flag grpc_trace_operation_failures;
+
 #ifndef NDEBUG
 extern grpc_tracer_flag grpc_trace_pending_tags;
+extern grpc_tracer_flag grpc_trace_cq_refcount;
 #endif
 
 #ifdef __cplusplus
@@ -52,9 +54,7 @@ typedef struct grpc_cq_completion {
   uintptr_t next;
 } grpc_cq_completion;
 
-//#define GRPC_CQ_REF_COUNT_DEBUG
-
-#ifdef GRPC_CQ_REF_COUNT_DEBUG
+#ifndef NDEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
                           const char *file, int line);
 void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,

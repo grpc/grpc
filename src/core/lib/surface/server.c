@@ -475,6 +475,7 @@ static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
       *rc->data.registered.deadline = calld->deadline;
       if (rc->data.registered.optional_payload) {
         *rc->data.registered.optional_payload = calld->payload;
+        calld->payload = NULL;
       }
       break;
     default:
@@ -878,6 +879,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_slice_unref_internal(exec_ctx, calld->path);
   }
   grpc_metadata_array_destroy(&calld->initial_metadata);
+  grpc_byte_buffer_destroy(calld->payload);
 
   gpr_mu_destroy(&calld->mu_state);
 
