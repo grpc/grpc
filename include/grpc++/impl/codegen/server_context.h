@@ -273,8 +273,8 @@ class ServerContext {
 
   uint32_t initial_metadata_flags() const { return 0; }
 
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> hanging_ops_;
-  bool has_hanging_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> pending_ops_;
+  bool has_pending_ops_;
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;

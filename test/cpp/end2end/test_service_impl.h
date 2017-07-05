@@ -29,7 +29,6 @@
 namespace grpc {
 namespace testing {
 
-// const int kNumResponseStreamsMsgs = 3;
 const int kServerDefaultResponseStreamsToSend = 3;
 const char* const kServerResponseStreamsToSend = "server_responses_to_send";
 const char* const kServerCancelAfterReads = "cancel_after_reads";
