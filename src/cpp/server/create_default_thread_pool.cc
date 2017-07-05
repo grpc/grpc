@@ -24,10 +24,20 @@
 
 namespace grpc {
 
-ThreadPoolInterface* CreateDefaultThreadPool() {
+static ThreadPoolInterface* CreateDefaultThreadPool() {
   int cores = gpr_cpu_num_cores();
   if (!cores) cores = 4;
   return new DynamicThreadPool(cores);
+}
+
+static CreateThreadPoolFunc g_ctp_impl = CreateDefaultThreadPool;
+
+ThreadPoolInterface* CreateThreadPool() {
+  return g_ctp_impl();
+}
+
+void SetCreateThreadPool(CreateThreadPoolFunc func) {
+  g_ctp_impl = func;
 }
 
 }  // namespace grpc

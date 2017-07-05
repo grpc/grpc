@@ -32,7 +32,11 @@ class ThreadPoolInterface {
   virtual void Add(const std::function<void()>& callback) = 0;
 };
 
-ThreadPoolInterface* CreateDefaultThreadPool();
+// Allows different codebases to use their own thread pool impls
+typedef ThreadPoolInterface* (*CreateThreadPoolFunc)(void);
+void SetCreateThreadPool(CreateThreadPoolFunc func);
+
+ThreadPoolInterface* CreateThreadPool();
 
 }  // namespace grpc
 

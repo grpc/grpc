@@ -207,7 +207,7 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
 
 MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(
     std::unique_ptr<MetadataCredentialsPlugin> plugin)
-    : thread_pool_(CreateDefaultThreadPool()), plugin_(std::move(plugin)) {}
+    : thread_pool_(CreateThreadPool()), plugin_(std::move(plugin)) {}
 
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin) {
