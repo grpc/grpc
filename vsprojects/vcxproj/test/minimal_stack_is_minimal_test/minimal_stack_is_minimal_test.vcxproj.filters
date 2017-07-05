@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\channel\minimal_stack_is_minimal_test.c">
+      <Filter>test\core\channel</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{52e0de0c-9f7d-1497-1339-b0ed30ed41f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{2cd01454-1131-89cc-68a2-10365fa32bb0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\channel">
+      <UniqueIdentifier>{f473b99d-5602-d2df-2d85-99648d00ba4f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -1,7 +1,8 @@
 {
   "minimum-stability": "dev",
   "require": {
-    "grpc/grpc": "dev-master"
+    "grpc/grpc": "dev-master",
+    "google/protobuf": "^v3.3.0"
   },
   "autoload": {
     "psr-4": {

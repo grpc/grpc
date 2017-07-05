@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -50,7 +35,7 @@
 #define NOT_SET (~(size_t)0)
 
 static grpc_uri *bad_uri(const char *uri_text, size_t pos, const char *section,
-                         int suppress_errors) {
+                         bool suppress_errors) {
   char *line_prefix;
   size_t pfx_len;
 
@@ -83,6 +68,11 @@ static char *decode_and_copy_component(grpc_exec_ctx *exec_ctx, const char *src,
   return out;
 }
 
+static bool valid_hex(char c) {
+  return ((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) ||
+         ((c >= '0') && (c <= '9'));
+}
+
 /** Returns how many chars to advance if \a uri_text[i] begins a valid \a pchar
  * production. If \a uri_text[i] introduces an invalid \a pchar (such as percent
  * sign not followed by two hex digits), NOT_SET is returned. */
@@ -93,27 +83,36 @@ static size_t parse_pchar(const char *uri_text, size_t i) {
    * sub-delims = "!" / "$" / "&" / "'" / "(" / ")"
    / "*" / "+" / "," / ";" / "=" */
   char c = uri_text[i];
-  if (((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z')) ||
-      ((c >= '0') && (c <= '9')) ||
-      (c == '-' || c == '.' || c == '_' || c == '~') || /* unreserved */
-      (c == '!' || c == '$' || c == '&' || c == '\'' || c == '$' || c == '&' ||
-       c == '(' || c == ')' || c == '*' || c == '+' || c == ',' || c == ';' ||
-       c == '=') /* sub-delims */) {
-    return 1;
-  }
-  if (c == '%') { /* pct-encoded */
-    size_t j;
-    if (uri_text[i + 1] == 0 || uri_text[i + 2] == 0) {
-      return NOT_SET;
-    }
-    for (j = i + 1; j < 2; j++) {
-      c = uri_text[j];
-      if (!(((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')) ||
-            ((c >= 'A') && (c <= 'F')))) {
-        return NOT_SET;
+  switch (c) {
+    default:
+      if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) ||
+          ((c >= '0') && (c <= '9'))) {
+        return 1;
       }
-    }
-    return 2;
+      break;
+    case ':':
+    case '@':
+    case '-':
+    case '.':
+    case '_':
+    case '~':
+    case '!':
+    case '$':
+    case '&':
+    case '\'':
+    case '(':
+    case ')':
+    case '*':
+    case '+':
+    case ',':
+    case ';':
+    case '=':
+      return 1;
+    case '%': /* pct-encoded */
+      if (valid_hex(uri_text[i + 1]) && valid_hex(uri_text[i + 2])) {
+        return 2;
+      }
+      return NOT_SET;
   }
   return 0;
 }
@@ -183,7 +182,7 @@ static void parse_query_parts(grpc_uri *uri) {
 }
 
 grpc_uri *grpc_uri_parse(grpc_exec_ctx *exec_ctx, const char *uri_text,
-                         int suppress_errors) {
+                         bool suppress_errors) {
   grpc_uri *uri;
   size_t scheme_begin = 0;
   size_t scheme_end = NOT_SET;

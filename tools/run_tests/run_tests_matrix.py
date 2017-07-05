@@ -1,32 +1,17 @@
 #!/usr/bin/env python
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Run test matrix."""
 
@@ -55,6 +40,16 @@ _DEFAULT_INNER_JOBS = 2
 _REPORT_SUFFIX = 'sponge_log.xml'
 
 
+def _report_filename(name):
+  """Generates report file name"""
+  return 'report_%s_%s' % (name, _REPORT_SUFFIX)
+
+
+def _report_filename_internal_ci(name):
+  """Generates report file name that leads to better presentation by internal CI"""
+  return '%s/%s' % (name, _REPORT_SUFFIX)
+
+
 def _docker_jobspec(name, runtests_args=[], runtests_envs={},
                     inner_jobs=_DEFAULT_INNER_JOBS):
   """Run a single instance of run_tests.py in a docker container"""
@@ -63,7 +58,7 @@ def _docker_jobspec(name, runtests_args=[], runtests_envs={},
                    '--use_docker',
                    '-t',
                    '-j', str(inner_jobs),
-                   '-x', 'report_%s_%s' % (name, _REPORT_SUFFIX),
+                   '-x', _report_filename(name),
                    '--report_suite_name', '%s' % name] + runtests_args,
           environ=runtests_envs,
           shortname='run_tests_%s' % name,
@@ -83,7 +78,7 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None,
                    'tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
                    '-t',
                    '-j', str(inner_jobs),
-                   '-x', '../report_%s_%s' % (name, _REPORT_SUFFIX),
+                   '-x', '../%s' % _report_filename(name),
                    '--report_suite_name', '%s' % name] + runtests_args,
           environ=env,
           shortname='run_tests_%s' % name,
@@ -107,6 +102,8 @@ def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
           name += '_%s_%s' % (arch, compiler)
           runtests_args += ['--arch', arch,
                             '--compiler', compiler]
+        if '--build_only' in extra_args:
+          name += '_buildonly'
         for extra_env in extra_envs:
           name += '_%s_%s' % (extra_env, extra_envs[extra_env])
 
@@ -159,7 +156,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
 
   # sanitizers
   test_jobs += _generate_jobs(languages=['c'],
-                              configs=['msan', 'asan', 'tsan'],
+                              configs=['msan', 'asan', 'tsan', 'ubsan'],
                               platforms=['linux'],
                               labels=['sanitizers'],
                               extra_args=extra_args,
@@ -187,20 +184,9 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               inner_jobs=inner_jobs)
 
   # portability C and C++ on x64
-  for compiler in ['gcc4.4', 'gcc4.6', 'gcc5.3',
+  for compiler in ['gcc4.8', 'gcc5.3', 'gcc_musl',
                    'clang3.5', 'clang3.6', 'clang3.7']:
-    test_jobs += _generate_jobs(languages=['c'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                arch='x64',
-                                compiler=compiler,
-                                labels=['portability'],
-                                extra_args=extra_args,
-                                inner_jobs=inner_jobs)
-
-  for compiler in ['gcc4.8', 'gcc5.3',
-                   'clang3.5', 'clang3.6', 'clang3.7']:
-    test_jobs += _generate_jobs(languages=['c++'],
+    test_jobs += _generate_jobs(languages=['c', 'c++'],
                                 configs=['dbg'],
                                 platforms=['linux'],
                                 arch='x64',
@@ -252,7 +238,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               configs=['dbg'],
                               platforms=['linux'],
                               arch='default',
-                              compiler='python3.4',
+                              compiler='python_alpine',
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
@@ -278,15 +264,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               configs=['dbg'],
                               platforms=['linux'],
                               arch='default',
-                              compiler='electron1.3',
-                              labels=['portability'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
-
-  test_jobs += _generate_jobs(languages=['node'],
-                              configs=['dbg'],
-                              platforms=['linux'],
-                              iomgr_platform='uv',
+                              compiler='electron1.6',
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
@@ -305,6 +283,15 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               platforms=['linux'],
                               arch='default',
                               compiler='node6',
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+
+  test_jobs += _generate_jobs(languages=['node'],
+                              configs=['dbg'],
+                              platforms=['linux'],
+                              arch='default',
+                              compiler='node7',
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
@@ -376,7 +363,24 @@ if __name__ == "__main__":
   argp.add_argument('-n', '--runs_per_test', default=1, type=_runs_per_test_type,
                     help='How many times to run each tests. >1 runs implies ' +
                     'omitting passing test from the output & reports.')
+  argp.add_argument('--max_time', default=-1, type=int,
+                    help='Maximum amount of time to run tests for' +
+                         '(other tests will be skipped)')
+  argp.add_argument('--internal_ci',
+                    default=False,
+                    action='store_const',
+                    const=True,
+                    help='Put reports into subdirectories to improve presentation of '
+                    'results by Internal CI.')
+  argp.add_argument('--bq_result_table',
+                    default='',
+                    type=str,
+                    nargs='?',
+                    help='Upload test results to a specified BQ table.')
   args = argp.parse_args()
+
+  if args.internal_ci:
+    _report_filename = _report_filename_internal_ci  # override the function
 
   extra_args = []
   if args.build_only:
@@ -387,6 +391,12 @@ if __name__ == "__main__":
     extra_args.append('-n')
     extra_args.append('%s' % args.runs_per_test)
     extra_args.append('--quiet_success')
+  if args.max_time > 0:
+    extra_args.extend(('--max_time', '%d' % args.max_time))
+  if args.bq_result_table:
+    extra_args.append('--bq_result_table')
+    extra_args.append('%s' % args.bq_result_table)
+    extra_args.append('--measure_cpu_costs')
 
   all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
              _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)
@@ -444,7 +454,7 @@ if __name__ == "__main__":
     ignored_num_skipped_failures, skipped_results = jobset.run(
         skipped_jobs, skip_jobs=True)
     resultset.update(skipped_results)
-  report_utils.render_junit_xml_report(resultset, 'report_%s' % _REPORT_SUFFIX,
+  report_utils.render_junit_xml_report(resultset, _report_filename('aggregate_tests'),
                                        suite_name='aggregate_tests')
 
   if num_failures == 0:

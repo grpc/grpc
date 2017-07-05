@@ -1,31 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Run a group of subprocesses and then finish."""
 
@@ -41,6 +26,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import errno
 
 
 # cpu cost measurement
@@ -132,29 +118,44 @@ _TAG_COLOR = {
 _FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(level=logging.INFO, format=_FORMAT)
 
+
+def eintr_be_gone(fn):
+  """Run fn until it doesn't stop because of EINTR"""
+  while True:
+    try:
+      return fn()
+    except IOError, e:
+      if e.errno != errno.EINTR:
+        raise
+
+
+
 def message(tag, msg, explanatory_text=None, do_newline=False):
   if message.old_tag == tag and message.old_msg == msg and not explanatory_text:
     return
   message.old_tag = tag
   message.old_msg = msg
-  try:
-    if platform_string() == 'windows' or not sys.stdout.isatty():
-      if explanatory_text:
-        logging.info(explanatory_text)
-      logging.info('%s: %s', tag, msg)
-    else:
-      sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
-          _BEGINNING_OF_LINE,
-          _CLEAR_LINE,
-          '\n%s' % explanatory_text if explanatory_text is not None else '',
-          _COLORS[_TAG_COLOR[tag]][1],
-          _COLORS[_TAG_COLOR[tag]][0],
-          tag,
-          msg,
-          '\n' if do_newline or explanatory_text is not None else ''))
-    sys.stdout.flush()
-  except:
-    pass
+  while True:
+    try:
+      if platform_string() == 'windows' or not sys.stdout.isatty():
+        if explanatory_text:
+          logging.info(explanatory_text)
+        logging.info('%s: %s', tag, msg)
+      else:
+        sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
+            _BEGINNING_OF_LINE,
+            _CLEAR_LINE,
+            '\n%s' % explanatory_text if explanatory_text is not None else '',
+            _COLORS[_TAG_COLOR[tag]][1],
+            _COLORS[_TAG_COLOR[tag]][0],
+            tag,
+            msg,
+            '\n' if do_newline or explanatory_text is not None else ''))
+      sys.stdout.flush()
+      return
+    except IOError, e:
+      if e.errno != errno.EINTR:
+        raise
 
 message.old_tag = ''
 message.old_msg = ''
@@ -208,6 +209,11 @@ class JobSpec(object):
   def __repr__(self):
     return 'JobSpec(shortname=%s, cmdline=%s)' % (self.shortname, self.cmdline)
 
+  def __str__(self):
+    return '%s: %s %s' % (self.shortname,
+                          ' '.join('%s=%s' % kv for kv in self.environ.items()),
+                          ' '.join(self.cmdline))
+
 
 class JobResult(object):
   def __init__(self):
@@ -217,6 +223,13 @@ class JobResult(object):
     self.num_failures = 0
     self.retries = 0
     self.message = ''
+    self.cpu_estimated = 1
+    self.cpu_measured = 0
+
+
+def read_from_start(f):
+  f.seek(0)
+  return f.read()
 
 
 class Job(object):
@@ -248,8 +261,13 @@ class Job(object):
     env = sanitized_environment(env)
     self._start = time.time()
     cmdline = self._spec.cmdline
-    if measure_cpu_costs:
-      cmdline = ['time', '--portability'] + cmdline
+    # The Unix time command is finicky when used with MSBuild, so we don't use it
+    # with jobs that run MSBuild.
+    global measure_cpu_costs
+    if measure_cpu_costs and not 'vsprojects\\build' in cmdline[0]:
+      cmdline = ['time', '-p'] + cmdline
+    else:
+      measure_cpu_costs = False
     try_start = lambda: subprocess.Popen(args=cmdline,
                                          stderr=subprocess.STDOUT,
                                          stdout=self._tempfile,
@@ -272,8 +290,7 @@ class Job(object):
   def state(self):
     """Poll current state of the job. Prints messages at completion."""
     def stdout(self=self):
-      self._tempfile.seek(0)
-      stdout = self._tempfile.read()
+      stdout = read_from_start(self._tempfile)
       self.result.message = stdout[-_MAX_RESULT_SIZE:]
       return stdout
     if self._state == _RUNNING and self._process.poll() is not None:
@@ -301,13 +318,15 @@ class Job(object):
         self._state = _SUCCESS
         measurement = ''
         if measure_cpu_costs:
-          m = re.search(r'real ([0-9.]+)\nuser ([0-9.]+)\nsys ([0-9.]+)', stdout())
+          m = re.search(r'real\s+([0-9.]+)\nuser\s+([0-9.]+)\nsys\s+([0-9.]+)', stdout())
           real = float(m.group(1))
           user = float(m.group(2))
           sys = float(m.group(3))
           if real > 0.5:
             cores = (user + sys) / real
-            measurement = '; cpu_cost=%.01f; estimated=%.01f' % (cores, self._spec.cpu_cost)
+            self.result.cpu_measured = float('%.01f' % cores)
+            self.result.cpu_estimated = float('%.01f' % self._spec.cpu_cost)
+            measurement = '; cpu_cost=%.01f; estimated=%.01f' % (self.result.cpu_measured, self.result.cpu_estimated)
         if not self._quiet_success:
           message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
               self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
@@ -348,7 +367,7 @@ class Jobset(object):
   """Manages one run of jobs."""
 
   def __init__(self, check_cancelled, maxjobs, newline_on_success, travis,
-               stop_on_failure, add_env, quiet_success):
+               stop_on_failure, add_env, quiet_success, max_time):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
@@ -360,6 +379,7 @@ class Jobset(object):
     self._stop_on_failure = stop_on_failure
     self._add_env = add_env
     self._quiet_success = quiet_success
+    self._max_time = max_time
     self.resultset = {}
     self._remaining = None
     self._start_time = time.time()
@@ -379,6 +399,12 @@ class Jobset(object):
   def start(self, spec):
     """Start a job. Return True on success, False on failure."""
     while True:
+      if self._max_time > 0 and time.time() - self._start_time > self._max_time:
+        skipped_job_result = JobResult()
+        skipped_job_result.state = 'SKIPPED'
+        message('SKIPPED', spec.shortname, do_newline=True)
+        self.resultset[spec.shortname] = [skipped_job_result]
+        return True
       if self.cancelled(): return False
       current_cpu_cost = self.cpu_cost()
       if current_cpu_cost == 0: break
@@ -400,7 +426,7 @@ class Jobset(object):
     while self._running:
       dead = set()
       for job in self._running:
-        st = job.state()
+        st = eintr_be_gone(lambda: job.state())
         if st == _RUNNING: continue
         if st == _FAILURE or st == _KILLED:
           self._failures += 1
@@ -447,6 +473,8 @@ class Jobset(object):
     while self._running:
       if self.cancelled(): pass  # poll cancellation
       self.reap()
+    if platform_string() != 'windows':
+      signal.alarm(0)
     return not self.cancelled() and self._failures == 0
 
 
@@ -474,7 +502,8 @@ def run(cmdlines,
         stop_on_failure=False,
         add_env={},
         skip_jobs=False,
-        quiet_success=False):
+        quiet_success=False,
+        max_time=-1):
   if skip_jobs:
     resultset = {}
     skipped_job_result = JobResult()
@@ -486,7 +515,7 @@ def run(cmdlines,
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure, add_env,
-              quiet_success)
+              quiet_success, max_time)
   for cmdline, remaining in tag_remaining(cmdlines):
     if not js.start(cmdline):
       break

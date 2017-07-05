@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
- * All rights reserved.
+ * Copyright 2015-2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -102,10 +87,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
-  CompletionQueue() {
-    cq_ = g_core_codegen_interface->grpc_completion_queue_create(nullptr);
-    InitialAvalanching();  // reserve this for the future shutdown
-  }
+  CompletionQueue()
+      : CompletionQueue(grpc_completion_queue_attributes{
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING}) {}
 
   /// Wrap \a take, taking ownership of the instance.
   ///
@@ -160,7 +144,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// will start to return false and \a AsyncNext will return \a
   /// NextStatus::SHUTDOWN. Only once either one of these methods does that
   /// (that is, once the queue has been \em drained) can an instance of this
-  /// class be destroyed.
+  /// class be destroyed. Also note that applications must ensure that
+  /// no work is enqueued on this completion queue after this method is called.
   void Shutdown();
 
   /// Returns a \em raw pointer to the underlying \a grpc_completion_queue
@@ -182,8 +167,18 @@ class CompletionQueue : private GrpcLibraryCodegen {
   void RegisterAvalanching() {
     gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
                                  static_cast<gpr_atm>(1));
-  };
+  }
   void CompleteAvalanching();
+
+ protected:
+  /// Private constructor of CompletionQueue only visible to friend classes
+  CompletionQueue(const grpc_completion_queue_attributes& attributes) {
+    cq_ = g_core_codegen_interface->grpc_completion_queue_create(
+        g_core_codegen_interface->grpc_completion_queue_factory_lookup(
+            &attributes),
+        &attributes, NULL);
+    InitialAvalanching();  // reserve this for the future shutdown
+  }
 
  private:
   // Friend synchronous wrappers so that they can access Pluck(), which is
@@ -237,6 +232,12 @@ class CompletionQueue : private GrpcLibraryCodegen {
 
   /// Performs a single polling pluck on \a tag.
   /// \warning Must not be mixed with calls to \a Next.
+  ///
+  /// TODO: sreek - This calls tag->FinalizeResult() even if the cq_ is already
+  /// shutdown. This is most likely a bug and if it is a bug, then change this
+  /// implementation to simple call the other TryPluck function with a zero
+  /// timeout. i.e:
+  ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
   void TryPluck(CompletionQueueTag* tag) {
     auto deadline = g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
@@ -245,6 +246,23 @@ class CompletionQueue : private GrpcLibraryCodegen {
     bool ok = ev.success != 0;
     void* ignored = tag;
     // the tag must be swallowed if using TryPluck
+    GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
+  }
+
+  /// Performs a single polling pluck on \a tag. Calls tag->FinalizeResult if
+  /// the pluck() was successful and returned the tag.
+  ///
+  /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
+  /// that the tag is internal not something that is returned to the user.
+  void TryPluck(CompletionQueueTag* tag, gpr_timespec deadline) {
+    auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
+        cq_, tag, deadline, nullptr);
+    if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
+      return;
+    }
+
+    bool ok = ev.success != 0;
+    void* ignored = tag;
     GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
 
@@ -257,17 +275,19 @@ class CompletionQueue : private GrpcLibraryCodegen {
 /// by servers. Instantiated by \a ServerBuilder.
 class ServerCompletionQueue : public CompletionQueue {
  public:
-  bool IsFrequentlyPolled() { return is_frequently_polled_; }
+  bool IsFrequentlyPolled() { return polling_type_ != GRPC_CQ_NON_LISTENING; }
 
  private:
-  bool is_frequently_polled_;
+  grpc_cq_polling_type polling_type_;
   friend class ServerBuilder;
   /// \param is_frequently_polled Informs the GRPC library about whether the
   /// server completion queue would be actively polled (by calling Next() or
   /// AsyncNext()). By default all server completion queues are assumed to be
   /// frequently polled.
-  ServerCompletionQueue(bool is_frequently_polled = true)
-      : is_frequently_polled_(is_frequently_polled) {}
+  ServerCompletionQueue(grpc_cq_polling_type polling_type)
+      : CompletionQueue(grpc_completion_queue_attributes{
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type}),
+        polling_type_(polling_type) {}
 };
 
 }  // namespace grpc

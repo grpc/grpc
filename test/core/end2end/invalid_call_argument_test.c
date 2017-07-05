@@ -1,35 +1,22 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
+
+#include <grpc/impl/codegen/port_platform.h>
 
 #include <limits.h>
 #include <string.h>
@@ -72,8 +59,8 @@ static void prepare_test(int is_client) {
   g_state.is_client = is_client;
   grpc_metadata_array_init(&g_state.initial_metadata_recv);
   grpc_metadata_array_init(&g_state.trailing_metadata_recv);
-  g_state.deadline = grpc_timeout_seconds_to_deadline(2);
-  g_state.cq = grpc_completion_queue_create(NULL);
+  g_state.deadline = grpc_timeout_seconds_to_deadline(5);
+  g_state.cq = grpc_completion_queue_create_for_next(NULL);
   g_state.cqv = cq_verifier_create(g_state.cq);
   g_state.details = grpc_empty_slice();
   memset(g_state.ops, 0, sizeof(g_state.ops));
@@ -123,7 +110,8 @@ static void prepare_test(int is_client) {
 }
 
 static void cleanup_test() {
-  grpc_call_destroy(g_state.call);
+  grpc_completion_queue *shutdown_cq;
+  grpc_call_unref(g_state.call);
   cq_verifier_destroy(g_state.cqv);
   grpc_channel_destroy(g_state.chan);
   grpc_slice_unref(g_state.details);
@@ -131,12 +119,14 @@ static void cleanup_test() {
   grpc_metadata_array_destroy(&g_state.trailing_metadata_recv);
 
   if (!g_state.is_client) {
-    grpc_call_destroy(g_state.server_call);
-    grpc_server_shutdown_and_notify(g_state.server, g_state.cq, tag(1000));
-    GPR_ASSERT(grpc_completion_queue_pluck(g_state.cq, tag(1000),
+    shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+    grpc_call_unref(g_state.server_call);
+    grpc_server_shutdown_and_notify(g_state.server, shutdown_cq, tag(1000));
+    GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
                                            grpc_timeout_seconds_to_deadline(5),
                                            NULL)
                    .type == GRPC_OP_COMPLETE);
+    grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(g_state.server);
     grpc_call_details_destroy(&g_state.call_details);
     grpc_metadata_array_destroy(&g_state.server_initial_metadata_recv);

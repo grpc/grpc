@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -48,81 +33,90 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+bool grpc_parse_unix(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
+  if (strcmp("unix", uri->scheme) != 0) {
+    gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'", uri->scheme);
+    return false;
+  }
   struct sockaddr_un *un = (struct sockaddr_un *)resolved_addr->addr;
   const size_t maxlen = sizeof(un->sun_path);
   const size_t path_len = strnlen(uri->path, maxlen);
-  if (path_len == maxlen) return 0;
+  if (path_len == maxlen) return false;
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, uri->path);
   resolved_addr->len = sizeof(*un);
-  return 1;
+  return true;
 }
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
 
-int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) { abort(); }
+bool grpc_parse_unix(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
+  abort();
+}
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
-int parse_ipv4(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
-  const char *host_port = uri->path;
+bool grpc_parse_ipv4_hostport(const char *hostport, grpc_resolved_address *addr,
+                              bool log_errors) {
+  bool success = false;
+  // Split host and port.
   char *host;
   char *port;
-  int port_num;
-  int result = 0;
-  struct sockaddr_in *in = (struct sockaddr_in *)resolved_addr->addr;
-
-  if (*host_port == '/') ++host_port;
-  if (!gpr_split_host_port(host_port, &host, &port)) {
-    return 0;
-  }
-
-  memset(resolved_addr, 0, sizeof(grpc_resolved_address));
-  resolved_addr->len = sizeof(struct sockaddr_in);
+  if (!gpr_split_host_port(hostport, &host, &port)) return false;
+  // Parse IP address.
+  memset(addr, 0, sizeof(*addr));
+  addr->len = sizeof(struct sockaddr_in);
+  struct sockaddr_in *in = (struct sockaddr_in *)addr->addr;
   in->sin_family = AF_INET;
   if (inet_pton(AF_INET, host, &in->sin_addr) == 0) {
-    gpr_log(GPR_ERROR, "invalid ipv4 address: '%s'", host);
+    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv4 address: '%s'", host);
     goto done;
   }
-
-  if (port != NULL) {
-    if (sscanf(port, "%d", &port_num) != 1 || port_num < 0 ||
-        port_num > 65535) {
-      gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port);
-      goto done;
-    }
-    in->sin_port = htons((uint16_t)port_num);
-  } else {
-    gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
+  // Parse port.
+  if (port == NULL) {
+    if (log_errors) gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
     goto done;
   }
-
-  result = 1;
+  int port_num;
+  if (sscanf(port, "%d", &port_num) != 1 || port_num < 0 || port_num > 65535) {
+    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port);
+    goto done;
+  }
+  in->sin_port = htons((uint16_t)port_num);
+  success = true;
 done:
   gpr_free(host);
   gpr_free(port);
-  return result;
+  return success;
 }
 
-int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+bool grpc_parse_ipv4(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
+  if (strcmp("ipv4", uri->scheme) != 0) {
+    gpr_log(GPR_ERROR, "Expected 'ipv4' scheme, got '%s'", uri->scheme);
+    return false;
+  }
   const char *host_port = uri->path;
+  if (*host_port == '/') ++host_port;
+  return grpc_parse_ipv4_hostport(host_port, resolved_addr,
+                                  true /* log_errors */);
+}
+
+bool grpc_parse_ipv6_hostport(const char *hostport, grpc_resolved_address *addr,
+                              bool log_errors) {
+  bool success = false;
+  // Split host and port.
   char *host;
   char *port;
-  int port_num;
-  int result = 0;
-  struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)resolved_addr->addr;
-
-  if (*host_port == '/') ++host_port;
-  if (!gpr_split_host_port(host_port, &host, &port)) {
-    return 0;
-  }
-
-  memset(in6, 0, sizeof(*in6));
-  resolved_addr->len = sizeof(*in6);
+  if (!gpr_split_host_port(hostport, &host, &port)) return false;
+  // Parse IP address.
+  memset(addr, 0, sizeof(*addr));
+  addr->len = sizeof(struct sockaddr_in6);
+  struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)addr->addr;
   in6->sin6_family = AF_INET6;
-
-  /* Handle the RFC6874 syntax for IPv6 zone identifiers. */
+  // Handle the RFC6874 syntax for IPv6 zone identifiers.
   char *host_end = (char *)gpr_memrchr(host, '%', strlen(host));
   if (host_end != NULL) {
     GPR_ASSERT(host_end >= host);
@@ -141,7 +135,7 @@ int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
       gpr_log(GPR_ERROR, "invalid ipv6 scope id: '%s'", host_end + 1);
       goto done;
     }
-    // Handle "sin6_scope_id" being type "u_long". See grpc issue ##10027.
+    // Handle "sin6_scope_id" being type "u_long". See grpc issue #10027.
     in6->sin6_scope_id = sin6_scope_id;
   } else {
     if (inet_pton(AF_INET6, host, &in6->sin6_addr) == 0) {
@@ -149,22 +143,44 @@ int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
       goto done;
     }
   }
-
-  if (port != NULL) {
-    if (sscanf(port, "%d", &port_num) != 1 || port_num < 0 ||
-        port_num > 65535) {
-      gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port);
-      goto done;
-    }
-    in6->sin6_port = htons((uint16_t)port_num);
-  } else {
-    gpr_log(GPR_ERROR, "no port given for ipv6 scheme");
+  // Parse port.
+  if (port == NULL) {
+    if (log_errors) gpr_log(GPR_ERROR, "no port given for ipv6 scheme");
     goto done;
   }
-
-  result = 1;
+  int port_num;
+  if (sscanf(port, "%d", &port_num) != 1 || port_num < 0 || port_num > 65535) {
+    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port);
+    goto done;
+  }
+  in6->sin6_port = htons((uint16_t)port_num);
+  success = true;
 done:
   gpr_free(host);
   gpr_free(port);
-  return result;
+  return success;
+}
+
+bool grpc_parse_ipv6(const grpc_uri *uri,
+                     grpc_resolved_address *resolved_addr) {
+  if (strcmp("ipv6", uri->scheme) != 0) {
+    gpr_log(GPR_ERROR, "Expected 'ipv6' scheme, got '%s'", uri->scheme);
+    return false;
+  }
+  const char *host_port = uri->path;
+  if (*host_port == '/') ++host_port;
+  return grpc_parse_ipv6_hostport(host_port, resolved_addr,
+                                  true /* log_errors */);
+}
+
+bool grpc_parse_uri(const grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+  if (strcmp("unix", uri->scheme) == 0) {
+    return grpc_parse_unix(uri, resolved_addr);
+  } else if (strcmp("ipv4", uri->scheme) == 0) {
+    return grpc_parse_ipv4(uri, resolved_addr);
+  } else if (strcmp("ipv6", uri->scheme) == 0) {
+    return grpc_parse_ipv6(uri, resolved_addr);
+  }
+  gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri->scheme);
+  return false;
 }

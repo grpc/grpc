@@ -1,40 +1,25 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include <ruby/ruby.h>
 
-#include "rb_grpc_imports.generated.h"
 #include "rb_channel_args.h"
+#include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
 
@@ -42,9 +27,12 @@
 
 static rb_data_type_t grpc_rb_channel_args_data_type = {
     "grpc_channel_args",
-    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE,
+    {GRPC_RB_GC_NOT_MARKED,
+     GRPC_RB_GC_DONT_FREE,
+     GRPC_RB_MEMSIZE_UNAVAILABLE,
      {NULL, NULL}},
-    NULL, NULL,
+    NULL,
+    NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
     RUBY_TYPED_FREE_IMMEDIATELY
 #endif
@@ -137,11 +125,10 @@ static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
     params->dst->num_args = num_args;
     params->dst->args = ALLOC_N(grpc_arg, num_args);
     MEMZERO(params->dst->args, grpc_arg, num_args);
-    rb_hash_foreach(params->src_hash,
-                    grpc_rb_channel_create_in_process_add_args_hash_cb,
-                    TypedData_Wrap_Struct(grpc_rb_cChannelArgs,
-                                          &grpc_rb_channel_args_data_type,
-                                          params->dst));
+    rb_hash_foreach(
+        params->src_hash, grpc_rb_channel_create_in_process_add_args_hash_cb,
+        TypedData_Wrap_Struct(grpc_rb_cChannelArgs,
+                              &grpc_rb_channel_args_data_type, params->dst));
     /* reset num_args as grpc_rb_channel_create_in_process_add_args_hash_cb
      * decrements it during has processing */
     params->dst->num_args = num_args;
@@ -157,7 +144,7 @@ void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
   /* Make a protected call to grpc_rb_hash_convert_channel_args */
   params.src_hash = src_hash;
   params.dst = dst;
-  rb_protect(grpc_rb_hash_convert_to_channel_args0, (VALUE) & params, &status);
+  rb_protect(grpc_rb_hash_convert_to_channel_args0, (VALUE)&params, &status);
   if (status != 0) {
     if (dst->args != NULL) {
       /* Free any allocated memory before propagating the error */

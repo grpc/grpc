@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -37,11 +22,6 @@
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
-
-/* This is here for grpc_is_binary_header
- * TODO(murgatroid99): Remove this
- */
-#include <grpc/grpc.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -55,13 +35,9 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-/* TODO(ctiller): remove before submission */
-#include "src/core/lib/slice/slice_string_helpers.h"
-
-extern int grpc_http_trace;
-
 typedef enum {
   NOT_BINARY,
+  BINARY_BEGIN,
   B64_BYTE0,
   B64_BYTE1,
   B64_BYTE2,
@@ -673,7 +649,7 @@ static const uint8_t inverse_base64[256] = {
 /* emission helpers */
 static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
                           grpc_mdelem md, int add_to_table) {
-  if (grpc_http_trace && !GRPC_MDELEM_IS_INTERNED(md)) {
+  if (GRPC_TRACER_ON(grpc_http_trace) && !GRPC_MDELEM_IS_INTERNED(md)) {
     char *k = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char *v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
     gpr_log(
@@ -1059,7 +1035,7 @@ static grpc_error *parse_lithdr_nvridx_v(grpc_exec_ctx *exec_ctx,
 static grpc_error *finish_max_tbl_size(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_hpack_parser *p,
                                        const uint8_t *cur, const uint8_t *end) {
-  if (grpc_http_trace) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
   }
   grpc_error *err =
@@ -1325,6 +1301,19 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
     case NOT_BINARY:
       append_bytes(str, cur, (size_t)(end - cur));
       return GRPC_ERROR_NONE;
+    case BINARY_BEGIN:
+      if (cur == end) {
+        p->binary = BINARY_BEGIN;
+        return GRPC_ERROR_NONE;
+      }
+      if (*cur == 0) {
+        /* 'true-binary' case */
+        ++cur;
+        p->binary = NOT_BINARY;
+        append_bytes(str, cur, (size_t)(end - cur));
+        return GRPC_ERROR_NONE;
+      }
+    /* fallthrough */
     b64_byte0:
     case B64_BYTE0:
       if (cur == end) {
@@ -1408,6 +1397,8 @@ static grpc_error *finish_str(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_hpack_parser_string *str = p->parsing.str;
   switch ((binary_state)p->binary) {
     case NOT_BINARY:
+      break;
+    case BINARY_BEGIN:
       break;
     case B64_BYTE0:
       break;
@@ -1571,7 +1562,7 @@ static grpc_error *parse_value_string(grpc_exec_ctx *exec_ctx,
                                       const uint8_t *cur, const uint8_t *end,
                                       bool is_binary) {
   return begin_parse_string(exec_ctx, p, cur, end,
-                            is_binary ? B64_BYTE0 : NOT_BINARY, &p->value);
+                            is_binary ? BINARY_BEGIN : NOT_BINARY, &p->value);
 }
 
 static grpc_error *parse_value_string_with_indexed_key(
@@ -1658,7 +1649,7 @@ static void force_client_rst_stream(grpc_exec_ctx *exec_ctx, void *sp,
     grpc_slice_buffer_add(
         &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_HTTP2_NO_ERROR,
                                                 &s->stats.outgoing));
-    grpc_chttp2_initiate_write(exec_ctx, t, false, "force_rst_stream");
+    grpc_chttp2_initiate_write(exec_ctx, t, "force_rst_stream");
     grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, GRPC_ERROR_NONE);
   }
   GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "final_rst");
@@ -1705,10 +1696,10 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
              however -- it might be that we receive a RST_STREAM following this
              and can avoid the extra write */
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
-          grpc_closure_sched(
-              exec_ctx, grpc_closure_create(force_client_rst_stream, s,
-                                            grpc_combiner_finally_scheduler(
-                                                t->combiner, false)),
+          GRPC_CLOSURE_SCHED(
+              exec_ctx,
+              GRPC_CLOSURE_CREATE(force_client_rst_stream, s,
+                                  grpc_combiner_finally_scheduler(t->combiner)),
               GRPC_ERROR_NONE);
         }
         grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,

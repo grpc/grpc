@@ -13,7 +13,7 @@
     s.homepage      = 'https://github.com/google/grpc/tree/master/src/ruby'
     s.summary       = 'GRPC system in Ruby'
     s.description   = 'Send RPCs from Ruby using GRPC'
-    s.license       = 'BSD-3-Clause'
+    s.license       = 'Apache-2.0'
 
     s.required_ruby_version = '>= 2.0.0'
 
@@ -26,7 +26,7 @@
     s.files += Dir.glob('include/grpc/**/*')
     s.test_files = Dir.glob('src/ruby/spec/**/*')
     s.bindir = 'src/ruby/bin'
-    s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
+    s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
     s.platform      = Gem::Platform::RUBY
 
     s.add_dependency 'google-protobuf', '~> 3.1'

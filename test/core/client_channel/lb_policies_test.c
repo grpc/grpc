@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -59,6 +44,7 @@ typedef struct servers_fixture {
   grpc_server **servers;
   grpc_call **server_calls;
   grpc_completion_queue *cq;
+  grpc_completion_queue *shutdown_cq;
   char **servers_hostports;
   grpc_metadata_array *request_metadata_recv;
 } servers_fixture;
@@ -146,10 +132,10 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void kill_server(const servers_fixture *f, size_t i) {
   gpr_log(GPR_INFO, "KILLING SERVER %" PRIuPTR, i);
   GPR_ASSERT(f->servers[i] != NULL);
-  grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-  GPR_ASSERT(
-      grpc_completion_queue_pluck(f->cq, tag(10000), n_millis_time(5000), NULL)
-          .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->servers[i], f->shutdown_cq, tag(10000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(10000),
+                                         n_millis_time(5000), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->servers[i]);
   f->servers[i] = NULL;
 }
@@ -196,7 +182,8 @@ static servers_fixture *setup_servers(const char *server_host,
   /* Create servers. */
   f->servers = gpr_malloc(sizeof(grpc_server *) * num_servers);
   f->servers_hostports = gpr_malloc(sizeof(char *) * num_servers);
-  f->cq = grpc_completion_queue_create(NULL);
+  f->cq = grpc_completion_queue_create_for_next(NULL);
+  f->shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
   for (i = 0; i < num_servers; i++) {
     grpc_metadata_array_init(&f->request_metadata_recv[i]);
     gpr_join_host_port(&f->servers_hostports[i], server_host,
@@ -212,8 +199,8 @@ static void teardown_servers(servers_fixture *f) {
   /* Destroy server. */
   for (i = 0; i < f->num_servers; i++) {
     if (f->servers[i] == NULL) continue;
-    grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-    GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000),
+    grpc_server_shutdown_and_notify(f->servers[i], f->shutdown_cq, tag(10000));
+    GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(10000),
                                            n_millis_time(5000), NULL)
                    .type == GRPC_OP_COMPLETE);
     grpc_server_destroy(f->servers[i]);
@@ -221,6 +208,7 @@ static void teardown_servers(servers_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 
   gpr_free(f->servers);
 
@@ -391,7 +379,7 @@ static request_sequences perform_request(servers_fixture *f,
                                          "foo.test.google.fr"));
       GPR_ASSERT(was_cancelled == 1);
 
-      grpc_call_destroy(f->server_calls[s_idx]);
+      grpc_call_unref(f->server_calls[s_idx]);
 
       /* ask for the next request on this server */
       GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -417,7 +405,7 @@ static request_sequences perform_request(servers_fixture *f,
 
     cq_verifier_destroy(cqv);
 
-    grpc_call_destroy(c);
+    grpc_call_unref(c);
 
     for (i = 0; i < f->num_servers; i++) {
       grpc_call_details_destroy(&rdata->call_details[i]);
@@ -613,7 +601,7 @@ static void test_pending_calls(size_t concurrent_calls) {
   /* destroy the calls after the channel so that they are still around for the
    * LB's shutdown func to process */
   for (i = 0; i < concurrent_calls; i++) {
-    grpc_call_destroy(calls[i]);
+    grpc_call_unref(calls[i]);
   }
   gpr_free(calls);
   teardown_servers(f);

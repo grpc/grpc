@@ -28,14 +28,36 @@ If you plan to build from source and run tests, install the following as well:
  $ [sudo] apt-get install clang libc++-dev
 ```
 
-## Mac OSX
+## macOS 
 
-For a Mac system, git is not available by default. You will first need to
-install Xcode from the Mac AppStore and then run the following command from a
-terminal:
+On a Mac, you will first need to
+install Xcode or
+[Command Line Tools for Xcode](https://developer.apple.com/download/more/)
+and then run the following command from a terminal:
 
 ```sh
  $ [sudo] xcode-select --install
+```
+
+To build gRPC from source, you may also need to install the following
+packages, which you can get from [Homebrew](https://brew.sh):
+
+```sh
+ $ brew install autoconf automake libtool shtool
+```
+
+If you plan to build from source and run tests, install the following as well:
+```sh
+ $ brew install gflags
+```
+
+*Tip*: when building, 
+you *may* want to explicitly set the `LIBTOOL` and `LIBTOOLIZE`
+environment variables when running `make` to ensure the version
+installed by `brew` is being used:
+
+```sh
+ $ LIBTOOL=glibtool LIBTOOLIZE=glibtoolize make
 ```
 
 ## Protoc
@@ -67,17 +89,19 @@ gRPC C Core library.
 There are several ways to build under Windows, of varying complexity depending
 on experience with the tools involved.
 
-### Pre-generated Visual Studio solution
 
-The pre-generated VS projects & solution are checked into the repository under the [vsprojects](/vsprojects) directory.
 
-### Building using CMake (with BoringSSL)
+### Building using CMake (RECOMMENDED)
+
+Builds gRPC C and C++ with boringssl.
 - Install [CMake](https://cmake.org/download/).
 - Install [Active State Perl](http://www.activestate.com/activeperl/) (`choco install activeperl`)
 - Install [Ninja](https://ninja-build.org/) (`choco install ninja`)
 - Install [Go](https://golang.org/dl/) (`choco install golang`)
 - Install [yasm](http://yasm.tortall.net/) and add it to `PATH` (`choco install yasm`)
 - Run these commands in the repo root directory
+
+Using Ninja (faster build, supports boringssl's assembly optimizations)
 ```
 > md .build
 > cd .build
@@ -85,7 +109,14 @@ The pre-generated VS projects & solution are checked into the repository under t
 > cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
 > cmake --build .
 ```
-NOTE: Currently you can only use Ninja to build using cmake on Windows (because of the boringssl dependency).
+
+Using Visual Studio 2015 (can only build with OPENSSL_NO_ASM)
+```
+> md .build
+> cd .build
+> cmake .. -G "Visual Studio 14 2015" -DCMAKE_BUILD_TYPE=Release
+> cmake --build .
+```
 
 ### msys2 (with mingw)
 
@@ -109,3 +140,9 @@ MINGW64$ make
 
 NOTE: While most of the make targets are buildable under Mingw, some haven't been ported to Windows yet
 and may fail to build (mostly trying to include POSIX headers not available on Mingw).
+
+### Pre-generated Visual Studio solution (DEPRECATED)
+
+*WARNING: This used to be the recommended way to build on Windows, but because of significant limitations (hard to build dependencies including boringssl, .proto codegen is hard to support, ..), it is no longer recommended. Use cmake to build on Windows instead.*
+
+The pre-generated VS projects & solution are checked into the repository under the [vsprojects](/vsprojects) directory.

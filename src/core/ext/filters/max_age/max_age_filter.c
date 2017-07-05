@@ -1,37 +1,22 @@
 /*
  *
- * Copyright 2017, Google Inc.
- * All rights reserved.
+ * Copyright 2017 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
-#include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/ext/filters/max_age/max_age_filter.h"
 
 #include <limits.h>
 #include <string.h>
@@ -41,12 +26,16 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/service_config.h"
 
 #define DEFAULT_MAX_CONNECTION_AGE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_AGE_GRACE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_IDLE_MS INT_MAX
 #define MAX_CONNECTION_AGE_JITTER 0.1
+
+#define MAX_CONNECTION_AGE_INTEGER_OPTIONS \
+  (grpc_integer_options) { DEFAULT_MAX_CONNECTION_AGE_MS, 1, INT_MAX }
+#define MAX_CONNECTION_IDLE_INTEGER_OPTIONS \
+  (grpc_integer_options) { DEFAULT_MAX_CONNECTION_IDLE_MS, 1, INT_MAX }
 
 typedef struct channel_data {
   /* We take a reference to the channel stack for the timer callback */
@@ -168,8 +157,9 @@ static void start_max_age_grace_timer_after_goaway_op(grpc_exec_ctx* exec_ctx,
 static void close_max_idle_channel(grpc_exec_ctx* exec_ctx, void* arg,
                                    grpc_error* error) {
   channel_data* chand = arg;
-  gpr_atm_no_barrier_fetch_add(&chand->call_count, 1);
   if (error == GRPC_ERROR_NONE) {
+    /* Prevent the max idle timer from being set again */
+    gpr_atm_no_barrier_fetch_add(&chand->call_count, 1);
     grpc_transport_op* op = grpc_make_transport_op(NULL);
     op->goaway_error =
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_idle"),
@@ -315,8 +305,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
     if (0 == strcmp(args->channel_args->args[i].key,
                     GRPC_ARG_MAX_CONNECTION_AGE_MS)) {
       const int value = grpc_channel_arg_get_integer(
-          &args->channel_args->args[i],
-          (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_MS, 1, INT_MAX});
+          &args->channel_args->args[i], MAX_CONNECTION_AGE_INTEGER_OPTIONS);
       chand->max_connection_age =
           value == INT_MAX
               ? gpr_inf_future(GPR_TIMESPAN)
@@ -334,30 +323,29 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
     } else if (0 == strcmp(args->channel_args->args[i].key,
                            GRPC_ARG_MAX_CONNECTION_IDLE_MS)) {
       const int value = grpc_channel_arg_get_integer(
-          &args->channel_args->args[i],
-          (grpc_integer_options){DEFAULT_MAX_CONNECTION_IDLE_MS, 1, INT_MAX});
+          &args->channel_args->args[i], MAX_CONNECTION_IDLE_INTEGER_OPTIONS);
       chand->max_connection_idle =
           value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
                            : gpr_time_from_millis(value, GPR_TIMESPAN);
     }
   }
-  grpc_closure_init(&chand->close_max_idle_channel, close_max_idle_channel,
+  GRPC_CLOSURE_INIT(&chand->close_max_idle_channel, close_max_idle_channel,
                     chand, grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->close_max_age_channel, close_max_age_channel, chand,
+  GRPC_CLOSURE_INIT(&chand->close_max_age_channel, close_max_age_channel, chand,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->force_close_max_age_channel,
+  GRPC_CLOSURE_INIT(&chand->force_close_max_age_channel,
                     force_close_max_age_channel, chand,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->start_max_idle_timer_after_init,
+  GRPC_CLOSURE_INIT(&chand->start_max_idle_timer_after_init,
                     start_max_idle_timer_after_init, chand,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->start_max_age_timer_after_init,
+  GRPC_CLOSURE_INIT(&chand->start_max_age_timer_after_init,
                     start_max_age_timer_after_init, chand,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->start_max_age_grace_timer_after_goaway_op,
+  GRPC_CLOSURE_INIT(&chand->start_max_age_grace_timer_after_goaway_op,
                     start_max_age_grace_timer_after_goaway_op, chand,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&chand->channel_connectivity_changed,
+  GRPC_CLOSURE_INIT(&chand->channel_connectivity_changed,
                     channel_connectivity_changed, chand,
                     grpc_schedule_on_exec_ctx);
 
@@ -372,7 +360,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
        initialization is done. */
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_age_timer_after_init");
-    grpc_closure_sched(exec_ctx, &chand->start_max_age_timer_after_init,
+    GRPC_CLOSURE_SCHED(exec_ctx, &chand->start_max_age_timer_after_init,
                        GRPC_ERROR_NONE);
   }
 
@@ -383,7 +371,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
       0) {
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_idle_timer_after_init");
-    grpc_closure_sched(exec_ctx, &chand->start_max_idle_timer_after_init,
+    GRPC_CLOSURE_SCHED(exec_ctx, &chand->start_max_idle_timer_after_init,
                        GRPC_ERROR_NONE);
   }
   return GRPC_ERROR_NONE;
@@ -412,16 +400,13 @@ static bool maybe_add_max_age_filter(grpc_exec_ctx* exec_ctx,
                                      void* arg) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  const grpc_arg* a =
-      grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS);
-  bool enable = false;
-  if (a != NULL && a->type == GRPC_ARG_INTEGER && a->value.integer != INT_MAX) {
-    enable = true;
-  }
-  a = grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS);
-  if (a != NULL && a->type == GRPC_ARG_INTEGER && a->value.integer != INT_MAX) {
-    enable = true;
-  }
+  bool enable =
+      grpc_channel_arg_get_integer(
+          grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS),
+          MAX_CONNECTION_AGE_INTEGER_OPTIONS) != INT_MAX &&
+      grpc_channel_arg_get_integer(
+          grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS),
+          MAX_CONNECTION_IDLE_INTEGER_OPTIONS) != INT_MAX;
   if (enable) {
     return grpc_channel_stack_builder_prepend_filter(
         builder, &grpc_max_age_filter, NULL, NULL);

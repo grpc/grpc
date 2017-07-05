@@ -73,9 +73,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.c">
-      <Filter>src\core\lib\support</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
@@ -260,6 +257,15 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\arena.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\atomic.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\atomic_with_atm.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\atomic_with_std.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\backoff.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
@@ -269,6 +275,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\memory.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
@@ -276,9 +285,6 @@
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\spinlock.h">
-      <Filter>src\core\lib\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string.h">

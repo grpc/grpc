@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2017, Google Inc.
- * All rights reserved.
+ * Copyright 2017 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -46,14 +31,15 @@
 
 extern "C" {
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/deadline/deadline_filter.h"
+#include "src/core/ext/filters/http/client/http_client_filter.h"
+#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/deadline_filter.h"
-#include "src/core/lib/channel/http_client_filter.h"
-#include "src/core/lib/channel/http_server_filter.h"
-#include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
 }
@@ -67,10 +53,12 @@ auto &force_library_initialization = Library::get();
 void BM_Zalloc(benchmark::State &state) {
   // speed of light for call creation is zalloc, so benchmark a few interesting
   // sizes
+  TrackCounters track_counters;
   size_t sz = state.range(0);
   while (state.KeepRunning()) {
     gpr_free(gpr_zalloc(sz));
   }
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_Zalloc)
     ->Arg(64)
@@ -118,12 +106,12 @@ template <class Fixture>
 static void BM_CallCreateDestroy(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture fixture;
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   void *method_hdl =
       grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);
   while (state.KeepRunning()) {
-    grpc_call_destroy(grpc_channel_create_registered_call(
+    grpc_call_unref(grpc_channel_create_registered_call(
         fixture.channel(), NULL, GRPC_PROPAGATE_DEFAULTS, cq, method_hdl,
         deadline, NULL));
   }
@@ -152,6 +140,7 @@ static void BM_LameChannelCallCreateCpp(benchmark::State &state) {
   grpc::testing::EchoResponse recv_response;
   grpc::Status recv_status;
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc::ClientContext cli_ctx;
     auto reader = stub->AsyncEcho(&cli_ctx, send_request, &cq);
     reader->Finish(&recv_response, &recv_status, tag(0));
@@ -163,6 +152,165 @@ static void BM_LameChannelCallCreateCpp(benchmark::State &state) {
   track_counters.Finish(state);
 }
 BENCHMARK(BM_LameChannelCallCreateCpp);
+
+static void do_nothing(void *ignored) {}
+
+static void BM_LameChannelCallCreateCore(benchmark::State &state) {
+  TrackCounters track_counters;
+
+  grpc_channel *channel;
+  grpc_completion_queue *cq;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_byte_buffer *response_payload_recv = NULL;
+  grpc_status_code status;
+  grpc_slice details;
+  grpc::testing::EchoRequest send_request;
+  grpc_slice send_request_slice =
+      grpc_slice_new(&send_request, sizeof(send_request), do_nothing);
+
+  channel = grpc_lame_client_channel_create(
+      "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah");
+  cq = grpc_completion_queue_create_for_next(NULL);
+  void *rc = grpc_channel_register_call(
+      channel, "/grpc.testing.EchoTestService/Echo", NULL, NULL);
+  while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    grpc_call *call = grpc_channel_create_registered_call(
+        channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq, rc,
+        gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    grpc_metadata_array_init(&initial_metadata_recv);
+    grpc_metadata_array_init(&trailing_metadata_recv);
+    grpc_byte_buffer *request_payload_send =
+        grpc_raw_byte_buffer_create(&send_request_slice, 1);
+
+    // Fill in call ops
+    grpc_op ops[6];
+    memset(ops, 0, sizeof(ops));
+    grpc_op *op = ops;
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 0;
+    op++;
+    op->op = GRPC_OP_SEND_MESSAGE;
+    op->data.send_message.send_message = request_payload_send;
+    op++;
+    op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+    op++;
+    op->op = GRPC_OP_RECV_INITIAL_METADATA;
+    op->data.recv_initial_metadata.recv_initial_metadata =
+        &initial_metadata_recv;
+    op++;
+    op->op = GRPC_OP_RECV_MESSAGE;
+    op->data.recv_message.recv_message = &response_payload_recv;
+    op++;
+    op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+    op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+    op->data.recv_status_on_client.status = &status;
+    op->data.recv_status_on_client.status_details = &details;
+    op++;
+
+    GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
+                                                     (size_t)(op - ops),
+                                                     (void *)1, NULL));
+    grpc_event ev = grpc_completion_queue_next(
+        cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    GPR_ASSERT(ev.type != GRPC_QUEUE_SHUTDOWN);
+    GPR_ASSERT(ev.success != 0);
+    grpc_call_unref(call);
+    grpc_byte_buffer_destroy(request_payload_send);
+    grpc_byte_buffer_destroy(response_payload_recv);
+    grpc_metadata_array_destroy(&initial_metadata_recv);
+    grpc_metadata_array_destroy(&trailing_metadata_recv);
+  }
+  grpc_channel_destroy(channel);
+  grpc_completion_queue_destroy(cq);
+  grpc_slice_unref(send_request_slice);
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_LameChannelCallCreateCore);
+
+static void BM_LameChannelCallCreateCoreSeparateBatch(benchmark::State &state) {
+  TrackCounters track_counters;
+
+  grpc_channel *channel;
+  grpc_completion_queue *cq;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_byte_buffer *response_payload_recv = NULL;
+  grpc_status_code status;
+  grpc_slice details;
+  grpc::testing::EchoRequest send_request;
+  grpc_slice send_request_slice =
+      grpc_slice_new(&send_request, sizeof(send_request), do_nothing);
+
+  channel = grpc_lame_client_channel_create(
+      "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah");
+  cq = grpc_completion_queue_create_for_next(NULL);
+  void *rc = grpc_channel_register_call(
+      channel, "/grpc.testing.EchoTestService/Echo", NULL, NULL);
+  while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    grpc_call *call = grpc_channel_create_registered_call(
+        channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq, rc,
+        gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    grpc_metadata_array_init(&initial_metadata_recv);
+    grpc_metadata_array_init(&trailing_metadata_recv);
+    grpc_byte_buffer *request_payload_send =
+        grpc_raw_byte_buffer_create(&send_request_slice, 1);
+
+    // Fill in call ops
+    grpc_op ops[3];
+    memset(ops, 0, sizeof(ops));
+    grpc_op *op = ops;
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 0;
+    op++;
+    op->op = GRPC_OP_SEND_MESSAGE;
+    op->data.send_message.send_message = request_payload_send;
+    op++;
+    op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+    op++;
+    GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
+                                                     (size_t)(op - ops),
+                                                     (void *)0, NULL));
+    memset(ops, 0, sizeof(ops));
+    op = ops;
+    op->op = GRPC_OP_RECV_INITIAL_METADATA;
+    op->data.recv_initial_metadata.recv_initial_metadata =
+        &initial_metadata_recv;
+    op++;
+    op->op = GRPC_OP_RECV_MESSAGE;
+    op->data.recv_message.recv_message = &response_payload_recv;
+    op++;
+    op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+    op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+    op->data.recv_status_on_client.status = &status;
+    op->data.recv_status_on_client.status_details = &details;
+    op++;
+
+    GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
+                                                     (size_t)(op - ops),
+                                                     (void *)1, NULL));
+    grpc_event ev = grpc_completion_queue_next(
+        cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    GPR_ASSERT(ev.type != GRPC_QUEUE_SHUTDOWN);
+    GPR_ASSERT(ev.success == 0);
+    ev = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    NULL);
+    GPR_ASSERT(ev.type != GRPC_QUEUE_SHUTDOWN);
+    GPR_ASSERT(ev.success != 0);
+    grpc_call_unref(call);
+    grpc_byte_buffer_destroy(request_payload_send);
+    grpc_byte_buffer_destroy(response_payload_recv);
+    grpc_metadata_array_destroy(&initial_metadata_recv);
+    grpc_metadata_array_destroy(&trailing_metadata_recv);
+  }
+  grpc_channel_destroy(channel);
+  grpc_completion_queue_destroy(cq);
+  grpc_slice_unref(send_request_slice);
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_LameChannelCallCreateCoreSeparateBatch);
 
 static void FilterDestroy(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_error *error) {
@@ -297,7 +445,7 @@ void SetPollsetSet(grpc_exec_ctx *exec_ctx, grpc_transport *self,
 /* implementation of grpc_transport_perform_stream_op */
 void PerformStreamOp(grpc_exec_ctx *exec_ctx, grpc_transport *self,
                      grpc_stream *stream, grpc_transport_stream_op_batch *op) {
-  grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }
 
 /* implementation of grpc_transport_perform_op */
@@ -344,7 +492,7 @@ class SendEmptyMetadata {
  public:
   SendEmptyMetadata() {
     memset(&op_, 0, sizeof(op_));
-    op_.on_complete = grpc_closure_init(&closure_, DoNothing, nullptr,
+    op_.on_complete = GRPC_CLOSURE_INIT(&closure_, DoNothing, nullptr,
                                         grpc_schedule_on_exec_ctx);
     op_.send_initial_metadata = true;
     op_.payload = &op_payload_;
@@ -400,7 +548,8 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   }
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  size_t channel_size = grpc_channel_stack_size(&filters[0], filters.size());
+  size_t channel_size = grpc_channel_stack_size(
+      filters.size() == 0 ? NULL : &filters[0], filters.size());
   grpc_channel_stack *channel_stack =
       static_cast<grpc_channel_stack *>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -429,6 +578,7 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   const int kArenaSize = 4096;
   call_args.arena = gpr_arena_create(kArenaSize);
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(grpc_call_stack_init(&exec_ctx, channel_stack, 1,
                                           DoNothing, NULL, &call_args));
     typename TestOp::Op op(&exec_ctx, &test_op_data, call_stack);
@@ -458,7 +608,7 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, DummyFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, DummyFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientChannelFilter, NoOp);
-typedef Fixture<&grpc_compress_filter, CHECKS_NOT_LAST> CompressFilter;
+typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
@@ -493,16 +643,16 @@ static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
                                    grpc_transport_stream_op_batch *op) {
   if (op->recv_initial_metadata) {
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx,
         op->payload->recv_initial_metadata.recv_initial_metadata_ready,
         GRPC_ERROR_NONE);
   }
   if (op->recv_message) {
-    grpc_closure_sched(exec_ctx, op->payload->recv_message.recv_message_ready,
+    GRPC_CLOSURE_SCHED(exec_ctx, op->payload->recv_message.recv_message_ready,
                        GRPC_ERROR_NONE);
   }
-  grpc_closure_sched(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }
 
 static void StartTransportOp(grpc_exec_ctx *exec_ctx,
@@ -511,7 +661,7 @@ static void StartTransportOp(grpc_exec_ctx *exec_ctx,
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
-  grpc_closure_sched(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
 }
 
 static grpc_error *InitCallElem(grpc_exec_ctx *exec_ctx,
@@ -527,7 +677,7 @@ static void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
 static void DestroyCallElem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             const grpc_call_final_info *final_info,
                             grpc_closure *then_sched_closure) {
-  grpc_closure_sched(exec_ctx, then_sched_closure, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, then_sched_closure, GRPC_ERROR_NONE);
 }
 
 grpc_error *InitChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
@@ -557,7 +707,7 @@ static const grpc_channel_filter isolated_call_filter = {
     GetPeer,
     GetChannelInfo,
     "isolated_call_filter"};
-}
+}  // namespace isolated_call_filter
 
 class IsolatedCallFixture : public TrackCounters {
  public:
@@ -573,7 +723,7 @@ class IsolatedCallFixture : public TrackCounters {
                                                   GRPC_CLIENT_CHANNEL);
       grpc_exec_ctx_finish(&exec_ctx);
     }
-    cq_ = grpc_completion_queue_create(NULL);
+    cq_ = grpc_completion_queue_create_for_next(NULL);
   }
 
   void Finish(benchmark::State &state) {
@@ -596,7 +746,8 @@ static void BM_IsolatedCall_NoOp(benchmark::State &state) {
   void *method_hdl =
       grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);
   while (state.KeepRunning()) {
-    grpc_call_destroy(grpc_channel_create_registered_call(
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    grpc_call_unref(grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, NULL));
   }
@@ -634,13 +785,14 @@ static void BM_IsolatedCall_Unary(benchmark::State &state) {
   ops[5].data.recv_status_on_client.status_details = &status_details;
   ops[5].data.recv_status_on_client.trailing_metadata = &recv_trailing_metadata;
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call *call = grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, NULL);
     grpc_call_start_batch(call, ops, 6, tag(1), NULL);
     grpc_completion_queue_next(fixture.cq(),
                                gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
-    grpc_call_destroy(call);
+    grpc_call_unref(call);
   }
   fixture.Finish(state);
   grpc_metadata_array_destroy(&recv_initial_metadata);
@@ -676,11 +828,12 @@ static void BM_IsolatedCall_StreamingSend(benchmark::State &state) {
   ops[0].op = GRPC_OP_SEND_MESSAGE;
   ops[0].data.send_message.send_message = send_message;
   while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call_start_batch(call, ops, 1, tag(2), NULL);
     grpc_completion_queue_next(fixture.cq(),
                                gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
   }
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   fixture.Finish(state);
   grpc_metadata_array_destroy(&recv_initial_metadata);
   grpc_metadata_array_destroy(&recv_trailing_metadata);

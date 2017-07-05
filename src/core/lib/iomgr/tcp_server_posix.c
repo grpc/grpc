@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -59,6 +44,7 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -90,7 +76,6 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
 
   grpc_tcp_server *s = gpr_zalloc(sizeof(grpc_tcp_server));
   s->so_reuseport = has_so_reuseport;
-  s->resource_quota = grpc_resource_quota_create(NULL);
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
@@ -98,27 +83,14 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
         s->so_reuseport =
             has_so_reuseport && (args->args[i].value.integer != 0);
       } else {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
                                                     " must be an integer");
-      }
-    } else if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
-        s->resource_quota =
-            grpc_resource_quota_ref_internal(args->args[i].value.pointer.p);
-      } else {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            GRPC_ARG_RESOURCE_QUOTA " must be a pointer to a buffer pool");
       }
     } else if (0 == strcmp(GRPC_ARG_EXPAND_WILDCARD_ADDRS, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
         s->expand_wildcard_addrs = (args->args[i].value.integer != 0);
       } else {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
@@ -138,6 +110,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
   s->head = NULL;
   s->tail = NULL;
   s->nports = 0;
+  s->channel_args = grpc_channel_args_copy(args);
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
   return GRPC_ERROR_NONE;
@@ -148,7 +121,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   GPR_ASSERT(s->shutdown);
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != NULL) {
-    grpc_closure_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -158,8 +131,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     s->head = sp->next;
     gpr_free(sp);
   }
-
-  grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
+  grpc_channel_args_destroy(exec_ctx, s->channel_args);
 
   gpr_free(s);
 }
@@ -191,7 +163,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
       grpc_unlink_if_unix_domain_socket(&sp->addr);
-      grpc_closure_init(&sp->destroyed_closure, destroyed_port, s,
+      GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
                         grpc_schedule_on_exec_ctx);
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
                      "tcp_listener_shutdown");
@@ -270,7 +242,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
     addr_str = grpc_sockaddr_to_uri(&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
-    if (grpc_tcp_trace) {
+    if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 
@@ -286,8 +258,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
 
     sp->server->on_accept_cb(
         exec_ctx, sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, sp->server->resource_quota,
-                        GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
+        grpc_tcp_create(exec_ctx, fdobj, sp->server->channel_args, addr_str),
         read_notifier_pollset, acceptor);
 
     gpr_free(name);
@@ -532,7 +503,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
           "clone_port", clone_port(sp, (unsigned)(pollset_count - 1))));
       for (i = 0; i < pollset_count; i++) {
         grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
-        grpc_closure_init(&sp->read_closure, on_read, sp,
+        GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
                           grpc_schedule_on_exec_ctx);
         grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
         s->active_ports++;
@@ -542,7 +513,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
       for (i = 0; i < pollset_count; i++) {
         grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
       }
-      grpc_closure_init(&sp->read_closure, on_read, sp,
+      GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
                         grpc_schedule_on_exec_ctx);
       grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
       s->active_ports++;
@@ -569,7 +540,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(exec_ctx, s);
     gpr_mu_lock(&s->mu);
-    grpc_closure_list_sched(exec_ctx, &s->shutdown_starting);
+    GRPC_CLOSURE_LIST_SCHED(exec_ctx, &s->shutdown_starting);
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(exec_ctx, s);
   }

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -582,7 +567,7 @@ static void on_oauth2_creds_get_metadata_failure(
 static void validate_compute_engine_http_request(
     const grpc_httpcli_request *request) {
   GPR_ASSERT(request->handshaker != &grpc_httpcli_ssl);
-  GPR_ASSERT(strcmp(request->host, "metadata") == 0);
+  GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
   GPR_ASSERT(
       strcmp(request->http.path,
              "/computeMetadata/v1/instance/service-accounts/default/token") ==
@@ -598,7 +583,7 @@ static int compute_engine_httpcli_get_success_override(
     grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
   *response = http_response(200, valid_oauth2_json_response);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -608,7 +593,7 @@ static int compute_engine_httpcli_get_failure_override(
     grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
   *response = http_response(403, "Not Authorized.");
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -701,7 +686,7 @@ static int refresh_token_httpcli_post_success(
     grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(200, valid_oauth2_json_response);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -711,7 +696,7 @@ static int refresh_token_httpcli_post_failure(
     grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(403, "Not Authorized.");
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -954,7 +939,7 @@ static int default_creds_gce_detection_httpcli_get_success_override(
   response->hdrs = headers;
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -1012,7 +997,7 @@ static int default_creds_gce_detection_httpcli_get_failure_override(
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
   *response = http_response(200, "");
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 

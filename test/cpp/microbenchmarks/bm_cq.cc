@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -62,7 +47,8 @@ BENCHMARK(BM_CreateDestroyCpp);
 static void BM_CreateDestroyCpp2(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
-    grpc_completion_queue* core_cq = grpc_completion_queue_create(NULL);
+    grpc_completion_queue* core_cq =
+        grpc_completion_queue_create_for_next(NULL);
     CompletionQueue cq(core_cq);
   }
   track_counters.Finish(state);
@@ -72,7 +58,9 @@ BENCHMARK(BM_CreateDestroyCpp2);
 static void BM_CreateDestroyCore(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
-    grpc_completion_queue_destroy(grpc_completion_queue_create(NULL));
+    // TODO: sreek Templatize this benchmark and pass completion type and
+    // polling type as parameters
+    grpc_completion_queue_destroy(grpc_completion_queue_create_for_next(NULL));
   }
   track_counters.Finish(state);
 }
@@ -108,7 +96,8 @@ BENCHMARK(BM_Pass1Cpp);
 
 static void BM_Pass1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
+  // TODO: sreek Templatize this benchmark and pass polling_type as a param
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
@@ -126,7 +115,8 @@ BENCHMARK(BM_Pass1Core);
 
 static void BM_Pluck1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
+  // TODO: sreek Templatize this benchmark and pass polling_type as a param
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(NULL);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
@@ -144,7 +134,8 @@ BENCHMARK(BM_Pluck1Core);
 
 static void BM_EmptyCore(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
+  // TODO: sreek Templatize this benchmark and pass polling_type as a param
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_completion_queue_next(cq, deadline, NULL);
