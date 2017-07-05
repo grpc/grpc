@@ -38,6 +38,7 @@
 grpc_tracer_flag grpc_trace_operation_failures = GRPC_TRACER_INITIALIZER(false);
 #ifndef NDEBUG
 grpc_tracer_flag grpc_trace_pending_tags = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_cq_refcount = GRPC_TRACER_INITIALIZER(false);
 #endif
 
 typedef struct {
@@ -472,11 +473,15 @@ int grpc_get_cq_poll_num(grpc_completion_queue *cq) {
   return cur_num_polls;
 }
 
-#ifdef GRPC_CQ_REF_COUNT_DEBUG
+#ifndef NDEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cq, const char *reason,
                           const char *file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p   ref %d -> %d %s", cq,
-          (int)cq->owning_refs.count, (int)cq->owning_refs.count + 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_cq_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&cq->owning_refs.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "CQ:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", cq, val, val + 1,
+            reason);
+  }
 #else
 void grpc_cq_internal_ref(grpc_completion_queue *cq) {
 #endif
@@ -489,12 +494,15 @@ static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_CQ_INTERNAL_UNREF(exec_ctx, cq, "pollset_destroy");
 }
 
-#ifdef GRPC_CQ_REF_COUNT_DEBUG
-void grpc_cq_internal_unref(grpc_completion_queue *cq, const char *reason,
-                            const char *file, int line) {
-  cq_data *cqd = &cq->data;
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p unref %d -> %d %s", cq,
-          (int)cqd->owning_refs.count, (int)cqd->owning_refs.count - 1, reason);
+#ifndef NDEBUG
+void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cq,
+                            const char *reason, const char *file, int line) {
+  if (GRPC_TRACER_ON(grpc_trace_cq_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&cq->owning_refs.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "CQ:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", cq, val, val - 1,
+            reason);
+  }
 #else
 void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx,
                             grpc_completion_queue *cq) {
@@ -563,7 +571,8 @@ static void cq_check_tag(grpc_completion_queue *cq, void *tag, bool lock_cq) {
 static void cq_check_tag(grpc_completion_queue *cq, void *tag, bool lock_cq) {}
 #endif
 
-/* Queue a GRPC_OP_COMPLETED operation to a completion queue (with a completion
+/* Queue a GRPC_OP_COMPLETED operation to a completion queue (with a
+ * completion
  * type of GRPC_CQ_NEXT) */
 static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
                                grpc_completion_queue *cq, void *tag,
@@ -639,7 +648,8 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(error);
 }
 
-/* Queue a GRPC_OP_COMPLETED operation to a completion queue (with a completion
+/* Queue a GRPC_OP_COMPLETED operation to a completion queue (with a
+ * completion
  * type of GRPC_CQ_PLUCK) */
 static void cq_end_op_for_pluck(grpc_exec_ctx *exec_ctx,
                                 grpc_completion_queue *cq, void *tag,
@@ -743,7 +753,8 @@ static bool cq_is_next_finished(grpc_exec_ctx *exec_ctx, void *arg) {
         gpr_atm_no_barrier_load(&cqd->things_queued_ever);
 
     /* Pop a cq_completion from the queue. Returns NULL if the queue is empty
-     * might return NULL in some cases even if the queue is not empty; but that
+     * might return NULL in some cases even if the queue is not empty; but
+     * that
      * is ok and doesn't affect correctness. Might effect the tail latencies a
      * bit) */
     a->stolen_completion = cq_event_queue_pop(&cqd->queue);
@@ -838,7 +849,8 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
       /* If c == NULL it means either the queue is empty OR in an transient
          inconsistent state. If it is the latter, we shold do a 0-timeout poll
          so that the thread comes back quickly from poll to make a second
-         attempt at popping. Not doing this can potentially deadlock this thread
+         attempt at popping. Not doing this can potentially deadlock this
+         thread
          forever (if the deadline is infinity) */
       if (cq_event_queue_num_items(&cqd->queue) > 0) {
         iteration_deadline = gpr_time_0(GPR_CLOCK_MONOTONIC);
@@ -851,8 +863,10 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
          empty. If so, keep retrying but do not return GRPC_QUEUE_SHUTDOWN */
       if (cq_event_queue_num_items(&cqd->queue) > 0) {
         /* Go to the beginning of the loop. No point doing a poll because
-           (cq->shutdown == true) is only possible when there is no pending work
-           (i.e cq->pending_events == 0) and any outstanding grpc_cq_completion
+           (cq->shutdown == true) is only possible when there is no pending
+           work
+           (i.e cq->pending_events == 0) and any outstanding
+           grpc_cq_completion
            events are already queued on this cq */
         continue;
       }

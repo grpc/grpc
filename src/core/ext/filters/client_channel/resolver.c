@@ -19,6 +19,10 @@
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/iomgr/combiner.h"
 
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_resolver_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
+
 void grpc_resolver_init(grpc_resolver *resolver,
                         const grpc_resolver_vtable *vtable,
                         grpc_combiner *combiner) {
@@ -27,25 +31,30 @@ void grpc_resolver_init(grpc_resolver *resolver,
   gpr_ref_init(&resolver->refs, 1);
 }
 
-#ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
-void grpc_resolver_ref(grpc_resolver *resolver, grpc_closure_list *closure_list,
-                       const char *file, int line, const char *reason) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "RESOLVER:%p   ref %d -> %d %s",
-          resolver, (int)resolver->refs.count, (int)resolver->refs.count + 1,
-          reason);
+#ifndef NDEBUG
+void grpc_resolver_ref(grpc_resolver *resolver, const char *file, int line,
+                       const char *reason) {
+  if (GRPC_TRACER_ON(grpc_trace_resolver_refcount)) {
+    gpr_atm old_refs = gpr_atm_no_barrier_load(&resolver->refs.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "RESOLVER:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", resolver,
+            old_refs, old_refs + 1, reason);
+  }
 #else
 void grpc_resolver_ref(grpc_resolver *resolver) {
 #endif
   gpr_ref(&resolver->refs);
 }
 
-#ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
-void grpc_resolver_unref(grpc_resolver *resolver,
-                         grpc_closure_list *closure_list, const char *file,
-                         int line, const char *reason) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "RESOLVER:%p unref %d -> %d %s",
-          resolver, (int)resolver->refs.count, (int)resolver->refs.count - 1,
-          reason);
+#ifndef NDEBUG
+void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
+                         const char *file, int line, const char *reason) {
+  if (GRPC_TRACER_ON(grpc_trace_resolver_refcount)) {
+    gpr_atm old_refs = gpr_atm_no_barrier_load(&resolver->refs.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "RESOLVER:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", resolver,
+            old_refs, old_refs - 1, reason);
+  }
 #else
 void grpc_resolver_unref(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
 #endif

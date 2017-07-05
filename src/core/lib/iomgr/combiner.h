@@ -35,8 +35,7 @@
 // necessary
 grpc_combiner *grpc_combiner_create(void);
 
-//#define GRPC_COMBINER_REFCOUNT_DEBUG
-#ifdef GRPC_COMBINER_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_COMBINER_DEBUG_ARGS \
   , const char *file, int line, const char *reason
 #define GRPC_COMBINER_REF(combiner, reason) \

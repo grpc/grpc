@@ -93,20 +93,18 @@ static void fd_global_shutdown(void);
  * epoll set Declarations
  */
 
-//#define EPS_REFCOUNT_DEBUG
-
-#ifdef EPS_REFCOUNT_DEBUG
+#ifndef NDEBUG
 
 #define EPS_ADD_REF(p, r) eps_add_ref_dbg((p), (r), __FILE__, __LINE__)
 #define EPS_UNREF(exec_ctx, p, r) \
   eps_unref_dbg((exec_ctx), (p), (r), __FILE__, __LINE__)
 
-#else /* defined(EPS_REFCOUNT_DEBUG) */
+#else
 
 #define EPS_ADD_REF(p, r) eps_add_ref((p))
 #define EPS_UNREF(exec_ctx, p, r) eps_unref((exec_ctx), (p))
 
-#endif /* !defined(GRPC_EPS_REF_COUNT_DEBUG) */
+#endif
 
 typedef struct epoll_set {
   /* Mutex poller should acquire to poll this. This enforces that only one
@@ -226,21 +224,27 @@ gpr_atm g_epoll_sync;
 static void eps_add_ref(epoll_set *eps);
 static void eps_unref(grpc_exec_ctx *exec_ctx, epoll_set *eps);
 
-#ifdef EPS_REFCOUNT_DEBUG
+#ifndef NDEBUG
 static void eps_add_ref_dbg(epoll_set *eps, const char *reason,
                             const char *file, int line) {
-  long old_cnt = gpr_atm_acq_load(&eps->ref_count);
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    gpr_atm old_cnt = gpr_atm_acq_load(&eps->ref_count);
+    gpr_log(GPR_DEBUG, "Add ref eps: %p, old:%" PRIdPTR " -> new:%" PRIdPTR
+                       " (%s) - (%s, %d)",
+            eps, old_cnt, old_cnt + 1, reason, file, line);
+  }
   eps_add_ref(eps);
-  gpr_log(GPR_DEBUG, "Add ref eps: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
-          (void *)eps, old_cnt, old_cnt + 1, reason, file, line);
 }
 
 static void eps_unref_dbg(grpc_exec_ctx *exec_ctx, epoll_set *eps,
                           const char *reason, const char *file, int line) {
-  long old_cnt = gpr_atm_acq_load(&eps->ref_count);
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    gpr_atm old_cnt = gpr_atm_acq_load(&eps->ref_count);
+    gpr_log(GPR_DEBUG, "Unref eps: %p, old:%" PRIdPTR " -> new:%" PRIdPTR
+                       " (%s) - (%s, %d)",
+            eps, old_cnt, (old_cnt - 1), reason, file, line);
+  }
   eps_unref(exec_ctx, eps);
-  gpr_log(GPR_DEBUG, "Unref eps: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
-          (void *)eps, old_cnt, (old_cnt - 1), reason, file, line);
 }
 #endif
 

@@ -25,6 +25,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
@@ -157,7 +158,6 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
                           gpr_timespec deadline,
                           void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
                                           grpc_endpoint *endpoint)) {
-  grpc_channel_security_connector *sc = NULL;
   on_done_closure *c = gpr_malloc(sizeof(*c));
   const char *pem_root_certs = grpc_get_default_ssl_roots();
   if (pem_root_certs == NULL) {
@@ -168,11 +168,13 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
   }
   c->func = on_done;
   c->arg = arg;
-  c->handshake_mgr = grpc_handshake_manager_create();
+  grpc_channel_security_connector *sc = NULL;
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
                  exec_ctx, pem_root_certs, host, &sc) == GRPC_SECURITY_OK);
-  grpc_channel_security_connector_add_handshakers(exec_ctx, sc,
-                                                  c->handshake_mgr);
+  grpc_arg channel_arg = grpc_security_connector_to_arg(&sc->base);
+  grpc_channel_args args = {1, &channel_arg};
+  c->handshake_mgr = grpc_handshake_manager_create();
+  grpc_handshakers_add(exec_ctx, HANDSHAKER_CLIENT, &args, c->handshake_mgr);
   grpc_handshake_manager_do_handshake(
       exec_ctx, c->handshake_mgr, tcp, NULL /* channel_args */, deadline,
       NULL /* acceptor */, on_handshake_done, c /* user_data */);

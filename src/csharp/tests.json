@@ -42,6 +42,7 @@
     "Grpc.HealthCheck.Tests.HealthServiceImplTest"
   ],
   "Grpc.IntegrationTesting": [
+    "Grpc.IntegrationTesting.CustomErrorDetailsTest",
     "Grpc.IntegrationTesting.GeneratedClientTest",
     "Grpc.IntegrationTesting.GeneratedServiceBaseTest",
     "Grpc.IntegrationTesting.HistogramTest",

@@ -108,9 +108,10 @@ class Benchmark:
       mdn_diff = abs(_median(new) - _median(old))
       _maybe_print('%s: %s=%r %s=%r mdn_diff=%r' %
              (f, new_name, new, old_name, old, mdn_diff))
-      s = bm_speedup.speedup(new, old)
-      if abs(s) > 3 and mdn_diff > 0.5:
-        self.final[f] = '%+d%%' % s
+      s = bm_speedup.speedup(new, old, 1e-5)
+      if abs(s) > 3:
+        if mdn_diff > 0.5 or 'trickle' in f:
+          self.final[f] = '%+d%%' % s
     return self.final.keys()
 
   def skip(self):
@@ -172,18 +173,16 @@ def diff(bms, loops, track, old, new, counters):
           js_new_ctr = None
           js_old_ctr = None
 
-        if js_new_ctr:
-          for row in bm_json.expand_json(js_new_ctr, js_new_opt):
-            name = row['cpp_name']
-            if name.endswith('_mean') or name.endswith('_stddev'):
-              continue
-            benchmarks[name].add_sample(track, row, True)
-        if js_old_ctr:
-          for row in bm_json.expand_json(js_old_ctr, js_old_opt):
-            name = row['cpp_name']
-            if name.endswith('_mean') or name.endswith('_stddev'):
-              continue
-            benchmarks[name].add_sample(track, row, False)
+        for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+          name = row['cpp_name']
+          if name.endswith('_mean') or name.endswith('_stddev'):
+            continue
+          benchmarks[name].add_sample(track, row, True)
+        for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+          name = row['cpp_name']
+          if name.endswith('_mean') or name.endswith('_stddev'):
+            continue
+          benchmarks[name].add_sample(track, row, False)
 
   really_interesting = set()
   for name, bm in benchmarks.items():
