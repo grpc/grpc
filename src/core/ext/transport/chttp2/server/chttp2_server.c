@@ -209,7 +209,7 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
     goto error;
   }
   state = gpr_zalloc(sizeof(*state));
-  grpc_closure_init(&state->tcp_server_shutdown_complete,
+  GRPC_CLOSURE_INIT(&state->tcp_server_shutdown_complete,
                     tcp_server_shutdown_complete, state,
                     grpc_schedule_on_exec_ctx);
   err = grpc_tcp_server_create(exec_ctx, &state->tcp_server_shutdown_complete,

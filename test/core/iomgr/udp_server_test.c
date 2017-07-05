@@ -311,7 +311,7 @@ int main(int argc, char **argv) {
   test_receive(1);
   test_receive(10);
 
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);

@@ -134,9 +134,7 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *rec,
 /* Return 1 if this fd is orphaned, 0 otherwise */
 static bool fd_is_orphaned(grpc_fd *fd);
 
-/* Reference counting for fds */
-//#define GRPC_FD_REF_COUNT_DEBUG
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
 static void fd_unref(grpc_fd *fd, const char *reason, const char *file,
                      int line);
@@ -263,14 +261,17 @@ cv_fd_table g_cvfds;
  * fd_posix.c
  */
 
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 #define REF_BY(fd, n, reason) ref_by(fd, n, reason, __FILE__, __LINE__)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                    int line) {
-  gpr_log(GPR_DEBUG, "FD %d %p   ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-          (int)gpr_atm_no_barrier_load(&fd->refst),
-          (int)gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+    gpr_log(GPR_DEBUG,
+            "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+  }
 #else
 #define REF_BY(fd, n, reason) ref_by(fd, n)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n)
@@ -279,18 +280,19 @@ static void ref_by(grpc_fd *fd, int n) {
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&fd->refst, n) > 0);
 }
 
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                      int line) {
-  gpr_atm old;
-  gpr_log(GPR_DEBUG, "FD %d %p unref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-          (int)gpr_atm_no_barrier_load(&fd->refst),
-          (int)gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+    gpr_log(GPR_DEBUG,
+            "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+  }
 #else
 static void unref_by(grpc_fd *fd, int n) {
-  gpr_atm old;
 #endif
-  old = gpr_atm_full_fetch_add(&fd->refst, -n);
+  gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     gpr_mu_destroy(&fd->mu);
     grpc_iomgr_unregister_object(&fd->iomgr_object);
@@ -321,9 +323,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_asprintf(&name2, "%s fd=%d", name, fd);
   grpc_iomgr_register_object(&r->iomgr_object, name2);
   gpr_free(name2);
-#ifdef GRPC_FD_REF_COUNT_DEBUG
-  gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, r, name);
-#endif
   return r;
 }
 
@@ -386,7 +385,7 @@ static void close_fd_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   if (!fd->released) {
     close(fd->fd);
   }
-  grpc_closure_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, fd->on_done_closure, GRPC_ERROR_NONE);
 }
 
 static int fd_wrapped_fd(grpc_fd *fd) {
@@ -417,7 +416,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 /* increment refcount by two to avoid changing the orphan bit */
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file,
                    int line) {
   ref_by(fd, 2, reason, file, line);
@@ -445,7 +444,7 @@ static grpc_error *fd_shutdown_error(grpc_fd *fd) {
 static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure **st, grpc_closure *closure) {
   if (fd->shutdown) {
-    grpc_closure_sched(exec_ctx, closure,
+    GRPC_CLOSURE_SCHED(exec_ctx, closure,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
@@ -453,7 +452,7 @@ static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   } else if (*st == CLOSURE_READY) {
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
-    grpc_closure_sched(exec_ctx, closure, fd_shutdown_error(fd));
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, fd_shutdown_error(fd));
     maybe_wake_one_watcher_locked(fd);
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
@@ -476,7 +475,7 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     return 0;
   } else {
     /* waiting ==> queue closure */
-    grpc_closure_sched(exec_ctx, *st, fd_shutdown_error(fd));
+    GRPC_CLOSURE_SCHED(exec_ctx, *st, fd_shutdown_error(fd));
     *st = CLOSURE_NOT_READY;
     return 1;
   }
@@ -632,8 +631,6 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
 
   GRPC_FD_UNREF(fd, "poll");
 }
-
-static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { return NULL; }
 
 /*******************************************************************************
  * pollset_posix.c
@@ -836,7 +833,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
     GRPC_FD_UNREF(pollset->fds[i], "multipoller");
   }
   pollset->fd_count = 0;
-  grpc_closure_sched(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE);
 }
 
 static void work_combine_error(grpc_error **composite, grpc_error *error) {
@@ -885,7 +882,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (!pollset_has_workers(pollset) &&
       !grpc_closure_list_empty(pollset->idle_jobs)) {
     GPR_TIMER_MARK("pollset_work.idle_jobs", 0);
-    grpc_closure_list_sched(exec_ctx, &pollset->idle_jobs);
+    GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pollset->idle_jobs);
     goto done;
   }
   /* If we're shutting down then we don't execute any extended work */
@@ -1058,7 +1055,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
        * TODO(dklempner): Can we refactor the shutdown logic to avoid this? */
       gpr_mu_lock(&pollset->mu);
     } else if (!grpc_closure_list_empty(pollset->idle_jobs)) {
-      grpc_closure_list_sched(exec_ctx, &pollset->idle_jobs);
+      GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pollset->idle_jobs);
       gpr_mu_unlock(&pollset->mu);
       grpc_exec_ctx_flush(exec_ctx);
       gpr_mu_lock(&pollset->mu);
@@ -1077,7 +1074,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset->shutdown_done = closure;
   pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset_has_workers(pollset)) {
-    grpc_closure_list_sched(exec_ctx, &pollset->idle_jobs);
+    GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pollset->idle_jobs);
   }
   if (!pollset->called_shutdown && !pollset_has_observers(pollset)) {
     pollset->called_shutdown = 1;
@@ -1271,30 +1268,6 @@ static void pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
     pollset_set_del_fd(exec_ctx, pollset_set->pollset_sets[i], fd);
   }
   gpr_mu_unlock(&pollset_set->mu);
-}
-
-/*******************************************************************************
- * workqueue stubs
- */
-
-#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
-                                     const char *file, int line,
-                                     const char *reason) {
-  return workqueue;
-}
-static void workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                            const char *file, int line, const char *reason) {}
-#else
-static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue) {
-  return workqueue;
-}
-static void workqueue_unref(grpc_exec_ctx *exec_ctx,
-                            grpc_workqueue *workqueue) {}
-#endif
-
-static grpc_closure_scheduler *workqueue_scheduler(grpc_workqueue *workqueue) {
-  return grpc_schedule_on_exec_ctx;
 }
 
 /*******************************************************************************
@@ -1514,7 +1487,6 @@ static const grpc_event_engine_vtable vtable = {
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
     .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
-    .fd_get_workqueue = fd_get_workqueue,
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,
@@ -1531,10 +1503,6 @@ static const grpc_event_engine_vtable vtable = {
     .pollset_set_del_pollset_set = pollset_set_del_pollset_set,
     .pollset_set_add_fd = pollset_set_add_fd,
     .pollset_set_del_fd = pollset_set_del_fd,
-
-    .workqueue_ref = workqueue_ref,
-    .workqueue_unref = workqueue_unref,
-    .workqueue_scheduler = workqueue_scheduler,
 
     .shutdown_engine = shutdown_engine,
 };

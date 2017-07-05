@@ -26,6 +26,8 @@
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/debug/trace.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -35,6 +37,10 @@ extern "C" {
 /// full write up of this object.
 
 typedef struct grpc_error grpc_error;
+
+#ifndef NDEBUG
+extern grpc_tracer_flag grpc_trace_error_refcount;
+#endif
 
 typedef enum {
   /// 'errno' from the operating system
@@ -149,15 +155,11 @@ grpc_error *grpc_error_create(const char *file, int line, grpc_slice desc,
   grpc_error_create(__FILE__, __LINE__, grpc_slice_from_copied_string(desc), \
                     errs, count)
 
-//#define GRPC_ERROR_REFCOUNT_DEBUG
-#ifdef GRPC_ERROR_REFCOUNT_DEBUG
-grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
-                           const char *func);
-void grpc_error_unref(grpc_error *err, const char *file, int line,
-                      const char *func);
-#define GRPC_ERROR_REF(err) grpc_error_ref(err, __FILE__, __LINE__, __func__)
-#define GRPC_ERROR_UNREF(err) \
-  grpc_error_unref(err, __FILE__, __LINE__, __func__)
+#ifndef NDEBUG
+grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line);
+void grpc_error_unref(grpc_error *err, const char *file, int line);
+#define GRPC_ERROR_REF(err) grpc_error_ref(err, __FILE__, __LINE__)
+#define GRPC_ERROR_UNREF(err) grpc_error_unref(err, __FILE__, __LINE__)
 #else
 grpc_error *grpc_error_ref(grpc_error *err);
 void grpc_error_unref(grpc_error *err);

@@ -15,37 +15,37 @@
 
 # Source this rc script to prepare the environment for macos builds
 
-# TODO(jtattermusch): remove all deps once installed on MacOS workers
+ulimit -n 1000
 
-# brew and C++ deps
-yes | ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-brew install autoconf automake libtool ccache cmake gflags gpg wget
+# show current limits
+ulimit -a
 
-# TODO(jtattermusch): install rvm & ruby
-# TODO(jtattermusch): install cocoapods 
+
+# required to build protobuf
+brew install gflags
+
+set +ex  # rvm script is very verbose and exits with errorcode
+source $HOME/.rvm/scripts/rvm
+set -e  # rvm commands are very verbose  
+rvm install ruby-2.4
+rvm osx-ssl-certs status all
+rvm osx-ssl-certs update all
+set -ex
+
+gem install bundler
+
+# cocoapods
+export LANG=en_US.UTF-8
+gem install cocoapods
+pod repo update  # needed by python
 
 # python
-wget -q https://bootstrap.pypa.io/get-pip.py
-sudo python get-pip.py
+brew install coreutils  # we need grealpath
 sudo pip install virtualenv
+sudo pip install -U six tox setuptools
 
-# TODO(jtattermusch): install python3
-
-# mono
-wget -q https://download.mono-project.com/archive/5.0.1/macos-10-universal/MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg
-sudo installer -pkg MonoFramework-MDK-5.0.1.1.macos10.xamarin.universal.pkg -target /
-ln -s /Library/Frameworks/Mono.framework/Versions/Current/bin/mono /usr/local/bin/mono
- 
-# dotnet SDK
-brew install openssl
-wget -q https://go.microsoft.com/fwlink/?linkid=843444 -O dotnet-dev-osx-x64.1.0.1.pkg
-sudo installer -pkg dotnet-dev-osx-x64.1.0.1.pkg -target /
-ln -s /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet
-dotnet --version  # bootstrap dotnet SDK
-
-# nvm
-wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.30.2/install.sh | bash
-
-# TODO(jtattermusch): install node if needed
+# python 3.4
+wget -q https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg
+sudo installer -pkg python-3.4.4-macosx10.6.pkg -target /
 
 git submodule update --init

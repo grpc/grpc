@@ -335,7 +335,6 @@ grpc_cc_library(
         "src/core/lib/support/log_windows.c",
         "src/core/lib/support/mpscq.c",
         "src/core/lib/support/murmur_hash.c",
-        "src/core/lib/support/stack_lockfree.c",
         "src/core/lib/support/string.c",
         "src/core/lib/support/string_posix.c",
         "src/core/lib/support/string_util_windows.c",
@@ -371,7 +370,6 @@ grpc_cc_library(
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
         "src/core/lib/support/spinlock.h",
-        "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
         "src/core/lib/support/thd_internal.h",
@@ -521,8 +519,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_nospecial.c",
         "src/core/lib/iomgr/wakeup_fd_pipe.c",
         "src/core/lib/iomgr/wakeup_fd_posix.c",
-        "src/core/lib/iomgr/workqueue_uv.c",
-        "src/core/lib/iomgr/workqueue_windows.c",
         "src/core/lib/json/json.c",
         "src/core/lib/json/json_reader.c",
         "src/core/lib/json/json_string.c",
@@ -640,9 +636,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_cv.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
-        "src/core/lib/iomgr/workqueue.h",
-        "src/core/lib/iomgr/workqueue_uv.h",
-        "src/core/lib/iomgr/workqueue_windows.h",
         "src/core/lib/json/json.h",
         "src/core/lib/json/json_common.h",
         "src/core/lib/json/json_reader.h",
@@ -935,8 +928,8 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
-        "grpc_secure",
         "grpc_resolver_fake",
+        "grpc_secure",
     ],
 )
 
@@ -998,6 +991,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
@@ -1029,8 +1023,8 @@ grpc_cc_library(
     name = "grpc_resolver_fake",
     srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c"],
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
-    visibility = ["//test:__subpackages__"],
     language = "c",
+    visibility = ["//test:__subpackages__"],
     deps = [
         "grpc_base",
         "grpc_client_channel",

@@ -58,7 +58,6 @@ typedef enum {
   GRPC_CHTTP2_WRITE_STATE_IDLE,
   GRPC_CHTTP2_WRITE_STATE_WRITING,
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
-  GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER,
 } grpc_chttp2_write_state;
 
 typedef enum {
@@ -443,12 +442,12 @@ struct grpc_chttp2_stream {
   grpc_slice fetching_slice;
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
-  bool complete_fetch_covered_by_poller;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
 
   grpc_metadata_batch *recv_initial_metadata;
   grpc_closure *recv_initial_metadata_ready;
+  bool *trailing_metadata_available;
   grpc_byte_stream **recv_message;
   grpc_closure *recv_message_ready;
   grpc_metadata_batch *recv_trailing_metadata;
@@ -534,8 +533,7 @@ struct grpc_chttp2_stream {
     The actual call chain is documented in the implementation of this function.
     */
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t,
-                                bool covered_by_poller, const char *reason);
+                                grpc_chttp2_transport *t, const char *reason);
 
 typedef enum {
   GRPC_CHTTP2_NOTHING_TO_WRITE,
@@ -751,7 +749,7 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_start_writing(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_CHTTP2_STREAM_REF(stream, reason) \
   grpc_chttp2_stream_ref(stream, reason)
 #define GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream, reason) \
@@ -767,8 +765,7 @@ void grpc_chttp2_stream_ref(grpc_chttp2_stream *s);
 void grpc_chttp2_stream_unref(grpc_exec_ctx *exec_ctx, grpc_chttp2_stream *s);
 #endif
 
-//#define GRPC_CHTTP2_REFCOUNTING_DEBUG 1
-#ifdef GRPC_CHTTP2_REFCOUNTING_DEBUG
+#ifndef NDEBUG
 #define GRPC_CHTTP2_REF_TRANSPORT(t, r) \
   grpc_chttp2_ref_transport(t, r, __FILE__, __LINE__)
 #define GRPC_CHTTP2_UNREF_TRANSPORT(cl, t, r) \

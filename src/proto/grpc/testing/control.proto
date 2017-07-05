@@ -102,6 +102,9 @@ message ClientConfig {
 
   repeated ChannelArg channel_args = 16;
 
+  // Number of threads that share each completion queue
+  int32 threads_per_cq = 17;
+
   // Number of messages on a stream before it gets finished/restarted
   int32 messages_per_stream = 18;
 }
@@ -141,6 +144,9 @@ message ServerConfig {
 
   // If we use an OTHER_SERVER client_type, this string gives more detail
   string other_server_api = 11;
+
+  // Number of threads that share each completion queue
+  int32 threads_per_cq = 12;
 
   // c++-only options (for now) --------------------------------
 

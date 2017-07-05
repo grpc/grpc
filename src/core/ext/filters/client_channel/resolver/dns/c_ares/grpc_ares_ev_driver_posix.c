@@ -19,6 +19,8 @@
 #include "src/core/lib/iomgr/port.h"
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET)
 
+#include <ares.h>
+
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 
 #include <grpc/support/alloc.h>
@@ -99,9 +101,12 @@ static void fd_node_destroy(grpc_exec_ctx *exec_ctx, fd_node *fdn) {
   GPR_ASSERT(!fdn->writable_registered);
   gpr_mu_destroy(&fdn->mu);
   grpc_pollset_set_del_fd(exec_ctx, fdn->ev_driver->pollset_set, fdn->grpc_fd);
-  grpc_fd_shutdown(exec_ctx, fdn->grpc_fd,
-                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("fd node destroyed"));
-  grpc_fd_orphan(exec_ctx, fdn->grpc_fd, NULL, NULL, "c-ares query finished");
+  /* c-ares library has closed the fd inside grpc_fd. This fd may be picked up
+     immediately by another thread, and should not be closed by the following
+     grpc_fd_orphan. To prevent this fd from being closed by grpc_fd_orphan,
+     a fd pointer is provided. */
+  int fd;
+  grpc_fd_orphan(exec_ctx, fdn->grpc_fd, NULL, &fd, "c-ares query finished");
   gpr_free(fdn);
 }
 
@@ -138,6 +143,20 @@ void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver *ev_driver) {
   ev_driver->shutting_down = true;
   gpr_mu_unlock(&ev_driver->mu);
   grpc_ares_ev_driver_unref(ev_driver);
+}
+
+void grpc_ares_ev_driver_shutdown(grpc_exec_ctx *exec_ctx,
+                                  grpc_ares_ev_driver *ev_driver) {
+  gpr_mu_lock(&ev_driver->mu);
+  ev_driver->shutting_down = true;
+  fd_node *fn = ev_driver->fds;
+  while (fn != NULL) {
+    grpc_fd_shutdown(
+        exec_ctx, fn->grpc_fd,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("grpc_ares_ev_driver_shutdown"));
+    fn = fn->next;
+  }
+  gpr_mu_unlock(&ev_driver->mu);
 }
 
 // Search fd in the fd_node list head. This is an O(n) search, the max possible
@@ -240,9 +259,9 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
           fdn->readable_registered = false;
           fdn->writable_registered = false;
           gpr_mu_init(&fdn->mu);
-          grpc_closure_init(&fdn->read_closure, on_readable_cb, fdn,
+          GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable_cb, fdn,
                             grpc_schedule_on_exec_ctx);
-          grpc_closure_init(&fdn->write_closure, on_writable_cb, fdn,
+          GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable_cb, fdn,
                             grpc_schedule_on_exec_ctx);
           grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set,
                                   fdn->grpc_fd);

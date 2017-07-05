@@ -46,7 +46,7 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_NONE);
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
@@ -60,7 +60,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);
   }
-  grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_NONE);
 }
 
 static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -74,7 +74,7 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
   gpr_mu_lock(&m->mu);
   if (m->on_read) {
-    grpc_closure_sched(exec_ctx, m->on_read,
+    GRPC_CLOSURE_SCHED(exec_ctx, m->on_read,
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "Endpoint Shutdown", &why, 1));
     m->on_read = NULL;
@@ -102,18 +102,9 @@ static grpc_resource_user *me_get_resource_user(grpc_endpoint *ep) {
 
 static int me_get_fd(grpc_endpoint *ep) { return -1; }
 
-static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
-
 static const grpc_endpoint_vtable vtable = {
-    me_read,
-    me_write,
-    me_get_workqueue,
-    me_add_to_pollset,
-    me_add_to_pollset_set,
-    me_shutdown,
-    me_destroy,
-    me_get_resource_user,
-    me_get_peer,
+    me_read,     me_write,   me_add_to_pollset,    me_add_to_pollset_set,
+    me_shutdown, me_destroy, me_get_resource_user, me_get_peer,
     me_get_fd,
 };
 
@@ -138,7 +129,7 @@ void grpc_mock_endpoint_put_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_lock(&m->mu);
   if (m->on_read != NULL) {
     grpc_slice_buffer_add(m->on_read_out, slice);
-    grpc_closure_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, m->on_read, GRPC_ERROR_NONE);
     m->on_read = NULL;
   } else {
     grpc_slice_buffer_add(&m->read_buffer, slice);

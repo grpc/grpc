@@ -85,6 +85,8 @@ typedef struct {
 
 void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_hpack_compressor *c,
+                               grpc_mdelem **extra_headers,
+                               size_t extra_headers_size,
                                grpc_metadata_batch *metadata,
                                const grpc_encode_header_options *options,
                                grpc_slice_buffer *outbuf);

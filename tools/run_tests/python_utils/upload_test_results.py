@@ -30,6 +30,9 @@ import big_query_utils
 
 _DATASET_ID = 'jenkins_test_results'
 _DESCRIPTION = 'Test results from master job run on Jenkins'
+# 90 days in milliseconds
+_EXPIRATION_MS = 90 * 24 * 60 * 60 * 1000
+_PARTITION_TYPE = 'DAY'
 _PROJECT_ID = 'grpc-testing'
 _RESULTS_SCHEMA = [
   ('job_name', 'STRING', 'Name of Jenkins job'),
@@ -46,14 +49,17 @@ _RESULTS_SCHEMA = [
   ('elapsed_time', 'FLOAT', 'How long test took to run'),
   ('cpu_estimated', 'FLOAT', 'Estimated CPU usage of test'),
   ('cpu_measured', 'FLOAT', 'Actual CPU usage of test'),
+  ('return_code', 'INTEGER', 'Exit code of test'),
 ]
 
 
 def _get_build_metadata(test_results):
-  """Add Jenkins build metadata to test_results based on environment variables set by Jenkins."""
-  build_id = os.getenv('BUILD_ID')
-  build_url = os.getenv('BUILD_URL')
-  job_name = os.getenv('JOB_BASE_NAME')
+  """Add Jenkins/Kokoro build metadata to test_results based on environment
+  variables set by Jenkins/Kokoro.
+  """
+  build_id = os.getenv('BUILD_ID') or os.getenv('KOKORO_BUILD_NUMBER')
+  build_url = os.getenv('BUILD_URL') or os.getenv('KOKORO_BUILD_URL')
+  job_name = os.getenv('JOB_BASE_NAME') or os.getenv('KOKORO_JOB_NAME')
 
   if build_id:
     test_results['build_id'] = build_id
@@ -61,6 +67,7 @@ def _get_build_metadata(test_results):
     test_results['build_url'] = build_url
   if job_name:
     test_results['job_name'] = job_name
+
 
 def upload_results_to_bq(resultset, bq_table, args, platform):
   """Upload test results to a BQ table.
@@ -72,7 +79,8 @@ def upload_results_to_bq(resultset, bq_table, args, platform):
       platform: string name of platform tests were run on
   """
   bq = big_query_utils.create_big_query()
-  big_query_utils.create_table(bq, _PROJECT_ID, _DATASET_ID, bq_table, _RESULTS_SCHEMA, _DESCRIPTION)
+  big_query_utils.create_partitioned_table(bq, _PROJECT_ID, _DATASET_ID, bq_table, _RESULTS_SCHEMA, _DESCRIPTION,
+                                           partition_type=_PARTITION_TYPE, expiration_ms= _EXPIRATION_MS)
 
   for shortname, results in six.iteritems(resultset):
     for result in results:
@@ -89,6 +97,7 @@ def upload_results_to_bq(resultset, bq_table, args, platform):
       test_results['language'] = args.language[0]
       test_results['platform'] = platform
       test_results['result'] = result.state
+      test_results['return_code'] = result.returncode
       test_results['test_name'] = shortname
       test_results['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 

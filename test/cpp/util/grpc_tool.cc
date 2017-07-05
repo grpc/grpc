@@ -445,12 +445,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   bool print_mode = false;
 
   std::shared_ptr<grpc::Channel> channel =
-      FLAGS_remotedb
-          ? grpc::CreateChannel(server_address, cred.GetCredentials())
-          : nullptr;
+      grpc::CreateChannel(server_address, cred.GetCredentials());
 
-  parser.reset(new grpc::testing::ProtoFileParser(channel, FLAGS_proto_path,
-                                                  FLAGS_protofiles));
+  parser.reset(new grpc::testing::ProtoFileParser(
+      FLAGS_remotedb ? channel : nullptr, FLAGS_proto_path, FLAGS_protofiles));
 
   if (FLAGS_binary_input) {
     formatted_method_name = method_name;

@@ -255,6 +255,23 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static void handle_send_message_batch(grpc_exec_ctx *exec_ctx,
+                                      grpc_call_element *elem,
+                                      grpc_transport_stream_op_batch *op,
+                                      bool has_compression_algorithm) {
+  call_data *calld = elem->call_data;
+  if (!skip_compression(elem, op->payload->send_message.send_message->flags,
+                        has_compression_algorithm)) {
+    calld->send_op = op;
+    calld->send_length = op->payload->send_message.send_message->length;
+    calld->send_flags = op->payload->send_message.send_message->flags;
+    continue_send_message(exec_ctx, elem);
+  } else {
+    /* pass control down the stack */
+    grpc_call_next_op(exec_ctx, elem, op);
+  }
+}
+
 static void compress_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
@@ -307,8 +324,9 @@ static void compress_start_transport_stream_op_batch(
         goto retry_send_im;
       }
       if (cur != INITIAL_METADATA_UNSEEN) {
-        grpc_call_next_op(exec_ctx, elem,
-                          (grpc_transport_stream_op_batch *)cur);
+        handle_send_message_batch(exec_ctx, elem,
+                                  (grpc_transport_stream_op_batch *)cur,
+                                  has_compression_algorithm);
       }
     }
   }
@@ -325,17 +343,8 @@ static void compress_start_transport_stream_op_batch(
         break;
       case HAS_COMPRESSION_ALGORITHM:
       case NO_COMPRESSION_ALGORITHM:
-        if (!skip_compression(elem,
-                              op->payload->send_message.send_message->flags,
-                              cur == HAS_COMPRESSION_ALGORITHM)) {
-          calld->send_op = op;
-          calld->send_length = op->payload->send_message.send_message->length;
-          calld->send_flags = op->payload->send_message.send_message->flags;
-          continue_send_message(exec_ctx, elem);
-        } else {
-          /* pass control down the stack */
-          grpc_call_next_op(exec_ctx, elem, op);
-        }
+        handle_send_message_batch(exec_ctx, elem, op,
+                                  cur == HAS_COMPRESSION_ALGORITHM);
         break;
       default:
         if (cur & CANCELLED_BIT) {
@@ -364,9 +373,9 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 
   /* initialize members */
   grpc_slice_buffer_init(&calld->slices);
-  grpc_closure_init(&calld->got_slice, got_slice, elem,
+  GRPC_CLOSURE_INIT(&calld->got_slice, got_slice, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&calld->send_done, send_done, elem,
+  GRPC_CLOSURE_INIT(&calld->send_done, send_done, elem,
                     grpc_schedule_on_exec_ctx);
 
   return GRPC_ERROR_NONE;

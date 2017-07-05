@@ -124,7 +124,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   }
   grpc_closure *notify = c->notify;
   c->notify = NULL;
-  grpc_closure_sched(exec_ctx, notify, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, notify, error);
   grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
   c->handshake_mgr = NULL;
   gpr_mu_unlock(&c->mu);
@@ -156,7 +156,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     memset(c->result, 0, sizeof(*c->result));
     grpc_closure *notify = c->notify;
     c->notify = NULL;
-    grpc_closure_sched(exec_ctx, notify, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, notify, error);
     if (c->endpoint != NULL) {
       grpc_endpoint_shutdown(exec_ctx, c->endpoint, GRPC_ERROR_REF(error));
     }
@@ -184,7 +184,7 @@ static void chttp2_connector_connect(grpc_exec_ctx *exec_ctx,
   c->result = result;
   GPR_ASSERT(c->endpoint == NULL);
   chttp2_connector_ref(con);  // Ref taken for callback.
-  grpc_closure_init(&c->connected, connected, c, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&c->connected, connected, c, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(!c->connecting);
   c->connecting = true;
   grpc_tcp_client_connect(exec_ctx, &c->connected, &c->endpoint,

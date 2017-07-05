@@ -42,18 +42,20 @@ typedef struct grpc_transport grpc_transport;
    for a stream. */
 typedef struct grpc_stream grpc_stream;
 
-//#define GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
+extern grpc_tracer_flag grpc_trace_stream_refcount;
+#endif
 
 typedef struct grpc_stream_refcount {
   gpr_refcount refs;
   grpc_closure destroy;
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
   const char *object_type;
 #endif
   grpc_slice_refcount slice_refcount;
 } grpc_stream_refcount;
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg,
                           const char *object_type);
@@ -112,10 +114,6 @@ typedef struct grpc_transport_stream_op_batch {
   /** Values for the stream op (fields set are determined by flags above) */
   grpc_transport_stream_op_batch_payload *payload;
 
-  /** Is the completion of this op covered by a poller (if false: the op should
-      complete independently of some pollset being polled) */
-  bool covered_by_poller : 1;
-
   /** Send initial metadata to the peer, from the provided metadata batch. */
   bool send_initial_metadata : 1;
 
@@ -169,6 +167,10 @@ struct grpc_transport_stream_op_batch_payload {
     uint32_t *recv_flags;
     /** Should be enqueued when initial metadata is ready to be processed. */
     grpc_closure *recv_initial_metadata_ready;
+    // If not NULL, will be set to true if trailing metadata is
+    // immediately available.  This may be a signal that we received a
+    // Trailers-Only response.
+    bool *trailing_metadata_available;
   } recv_initial_metadata;
 
   struct {
@@ -196,6 +198,8 @@ struct grpc_transport_stream_op_batch_payload {
         grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
         error. */
   struct {
+    // Error contract: the transport that gets this op must cause cancel_error
+    //                 to be unref'ed after processing it
     grpc_error *cancel_error;
   } cancel_stream;
 
@@ -210,9 +214,13 @@ typedef struct grpc_transport_op {
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
   grpc_closure *on_connectivity_state_change;
   grpc_connectivity_state *connectivity_state;
-  /** should the transport be disconnected */
+  /** should the transport be disconnected
+   * Error contract: the transport that gets this op must cause
+   *                 disconnect_with_error to be unref'ed after processing it */
   grpc_error *disconnect_with_error;
-  /** what should the goaway contain? */
+  /** what should the goaway contain?
+   * Error contract: the transport that gets this op must cause
+   *                 goaway_error to be unref'ed after processing it */
   grpc_error *goaway_error;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.

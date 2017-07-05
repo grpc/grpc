@@ -18,6 +18,7 @@
 
 #include <string.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -27,6 +28,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_auth_context_refcount =
+    GRPC_TRACER_INITIALIZER(false);
+#endif
 
 /* --- grpc_call --- */
 
@@ -121,14 +127,17 @@ grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained) {
   return ctx;
 }
 
-#ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
+#ifndef NDEBUG
 grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *ctx,
                                          const char *file, int line,
                                          const char *reason) {
   if (ctx == NULL) return NULL;
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "AUTH_CONTEXT:%p   ref %d -> %d %s", ctx, (int)ctx->refcount.count,
-          (int)ctx->refcount.count + 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_auth_context_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&ctx->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "AUTH_CONTEXT:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", ctx, val,
+            val + 1, reason);
+  }
 #else
 grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *ctx) {
   if (ctx == NULL) return NULL;
@@ -137,13 +146,16 @@ grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *ctx) {
   return ctx;
 }
 
-#ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_auth_context_unref(grpc_auth_context *ctx, const char *file, int line,
                              const char *reason) {
   if (ctx == NULL) return;
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "AUTH_CONTEXT:%p unref %d -> %d %s", ctx, (int)ctx->refcount.count,
-          (int)ctx->refcount.count - 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_auth_context_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&ctx->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "AUTH_CONTEXT:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", ctx, val,
+            val - 1, reason);
+  }
 #else
 void grpc_auth_context_unref(grpc_auth_context *ctx) {
   if (ctx == NULL) return;
@@ -304,13 +316,8 @@ static const grpc_arg_pointer_vtable auth_context_pointer_vtable = {
     auth_context_pointer_cmp};
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context *p) {
-  grpc_arg arg;
-  memset(&arg, 0, sizeof(grpc_arg));
-  arg.type = GRPC_ARG_POINTER;
-  arg.key = GRPC_AUTH_CONTEXT_ARG;
-  arg.value.pointer.p = p;
-  arg.value.pointer.vtable = &auth_context_pointer_vtable;
-  return arg;
+  return grpc_channel_arg_pointer_create(GRPC_AUTH_CONTEXT_ARG, p,
+                                         &auth_context_pointer_vtable);
 }
 
 grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg) {

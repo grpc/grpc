@@ -24,14 +24,30 @@
 
 #include "src/core/lib/profiling/timers.h"
 
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_closure = GRPC_TRACER_INITIALIZER(false);
+#endif
+
+#ifndef NDEBUG
+grpc_closure *grpc_closure_init(const char *file, int line,
+                                grpc_closure *closure, grpc_iomgr_cb_func cb,
+                                void *cb_arg,
+                                grpc_closure_scheduler *scheduler) {
+#else
 grpc_closure *grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
                                 void *cb_arg,
                                 grpc_closure_scheduler *scheduler) {
+#endif
   closure->cb = cb;
   closure->cb_arg = cb_arg;
   closure->scheduler = scheduler;
 #ifndef NDEBUG
   closure->scheduled = false;
+  closure->file_initiated = NULL;
+  closure->line_initiated = 0;
+  closure->run = false;
+  closure->file_created = file;
+  closure->line_created = line;
 #endif
   return closure;
 }
@@ -100,19 +116,39 @@ static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg,
   cb(exec_ctx, cb_arg, error);
 }
 
+#ifndef NDEBUG
+grpc_closure *grpc_closure_create(const char *file, int line,
+                                  grpc_iomgr_cb_func cb, void *cb_arg,
+                                  grpc_closure_scheduler *scheduler) {
+#else
 grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg,
                                   grpc_closure_scheduler *scheduler) {
+#endif
   wrapped_closure *wc = gpr_malloc(sizeof(*wc));
   wc->cb = cb;
   wc->cb_arg = cb_arg;
+#ifndef NDEBUG
+  grpc_closure_init(file, line, &wc->wrapper, closure_wrapper, wc, scheduler);
+#else
   grpc_closure_init(&wc->wrapper, closure_wrapper, wc, scheduler);
+#endif
   return &wc->wrapper;
 }
 
+#ifndef NDEBUG
+void grpc_closure_run(const char *file, int line, grpc_exec_ctx *exec_ctx,
+                      grpc_closure *c, grpc_error *error) {
+#else
 void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
                       grpc_error *error) {
+#endif
   GPR_TIMER_BEGIN("grpc_closure_run", 0);
   if (c != NULL) {
+#ifndef NDEBUG
+    c->file_initiated = file;
+    c->line_initiated = line;
+    c->run = true;
+#endif
     assert(c->cb);
     c->scheduler->vtable->run(exec_ctx, c, error);
   } else {
@@ -121,13 +157,21 @@ void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
   GPR_TIMER_END("grpc_closure_run", 0);
 }
 
+#ifndef NDEBUG
+void grpc_closure_sched(const char *file, int line, grpc_exec_ctx *exec_ctx,
+                        grpc_closure *c, grpc_error *error) {
+#else
 void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
                         grpc_error *error) {
+#endif
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
   if (c != NULL) {
 #ifndef NDEBUG
     GPR_ASSERT(!c->scheduled);
     c->scheduled = true;
+    c->file_initiated = file;
+    c->line_initiated = line;
+    c->run = false;
 #endif
     assert(c->cb);
     c->scheduler->vtable->sched(exec_ctx, c, error);
@@ -137,13 +181,21 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
   GPR_TIMER_END("grpc_closure_sched", 0);
 }
 
+#ifndef NDEBUG
+void grpc_closure_list_sched(const char *file, int line,
+                             grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
+#else
 void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
+#endif
   grpc_closure *c = list->head;
   while (c != NULL) {
     grpc_closure *next = c->next_data.next;
 #ifndef NDEBUG
     GPR_ASSERT(!c->scheduled);
     c->scheduled = true;
+    c->file_initiated = file;
+    c->line_initiated = line;
+    c->run = false;
 #endif
     assert(c->cb);
     c->scheduler->vtable->sched(exec_ctx, c, c->error_data.error);

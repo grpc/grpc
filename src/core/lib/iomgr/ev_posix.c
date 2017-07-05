@@ -41,6 +41,10 @@
 grpc_tracer_flag grpc_polling_trace =
     GRPC_TRACER_INITIALIZER(false); /* Disabled by default */
 
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
+#endif
+
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
 grpc_poll_function_type grpc_poll_function = poll;
@@ -59,13 +63,13 @@ typedef struct {
 } event_engine_factory;
 
 static const event_engine_factory g_factories[] = {
-    {"epollex", grpc_init_epollex_linux},
     {"epollsig", grpc_init_epollsig_linux},
     {"epoll1", grpc_init_epoll1_linux},
     {"epoll-threadpool", grpc_init_epoll_thread_pool_linux},
     {"epoll-limited", grpc_init_epoll_limited_pollers_linux},
     {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
+    {"epollex", grpc_init_epollex_linux},
 };
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
@@ -154,10 +158,6 @@ void grpc_event_engine_shutdown(void) {
 
 grpc_fd *grpc_fd_create(int fd, const char *name) {
   return g_event_engine->fd_create(fd, name);
-}
-
-grpc_workqueue *grpc_fd_get_workqueue(grpc_fd *fd) {
-  return g_event_engine->fd_get_workqueue(fd);
 }
 
 int grpc_fd_wrapped_fd(grpc_fd *fd) {
@@ -259,28 +259,6 @@ void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
 void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd) {
   g_event_engine->pollset_set_del_fd(exec_ctx, pollset_set, fd);
-}
-
-#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
-                                   int line, const char *reason) {
-  return g_event_engine->workqueue_ref(workqueue, file, line, reason);
-}
-void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                          const char *file, int line, const char *reason) {
-  g_event_engine->workqueue_unref(exec_ctx, workqueue, file, line, reason);
-}
-#else
-grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue) {
-  return g_event_engine->workqueue_ref(workqueue);
-}
-void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
-  g_event_engine->workqueue_unref(exec_ctx, workqueue);
-}
-#endif
-
-grpc_closure_scheduler *grpc_workqueue_scheduler(grpc_workqueue *workqueue) {
-  return g_event_engine->workqueue_scheduler(workqueue);
 }
 
 #endif  // GRPC_POSIX_SOCKET

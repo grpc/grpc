@@ -38,7 +38,7 @@ HISTOGRAM_PARAMS = {
 # actual target will be slightly higher)
 OUTSTANDING_REQUESTS={
     'async': 6400,
-    'async-1core': 800,
+    'async-limited': 800,
     'sync': 1000
 }
 
@@ -93,6 +93,8 @@ def _ping_pong_scenario(name, rpc_type,
                         client_language=None,
                         server_language=None,
                         async_server_threads=0,
+                        server_threads_per_cq=0,
+                        client_threads_per_cq=0,
                         warmup_seconds=WARMUP_SECONDS,
                         categories=DEFAULT_CATEGORIES,
                         channels=None,
@@ -112,6 +114,7 @@ def _ping_pong_scenario(name, rpc_type,
       'outstanding_rpcs_per_channel': 1,
       'client_channels': 1,
       'async_client_threads': 1,
+      'threads_per_cq': client_threads_per_cq,
       'rpc_type': rpc_type,
       'load_params': {
         'closed_loop': {}
@@ -122,6 +125,7 @@ def _ping_pong_scenario(name, rpc_type,
       'server_type': server_type,
       'security_params': _get_secargs(secure),
       'async_server_threads': async_server_threads,
+      'threads_per_cq': server_threads_per_cq,
     },
     'warmup_seconds': warmup_seconds,
     'benchmark_seconds': BENCHMARK_SECONDS
@@ -265,12 +269,73 @@ class CXXLanguage:
           secure=secure,
           categories=smoketest_categories+[SCALABLE])
 
+      # TODO(https://github.com/grpc/grpc/issues/11500) Re-enable this test
+      #yield _ping_pong_scenario(
+      #    'cpp_generic_async_streaming_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='STREAMING',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_GENERIC_SERVER',
+      #    unconstrained_client='async-limited', use_generic_payload=True,
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_qps_unconstrained_2waysharedcq_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='async', use_generic_payload=True,
+          secure=secure,
+          client_threads_per_cq=2, server_threads_per_cq=2,
+          categories=smoketest_categories+[SCALABLE])
+
+      #yield _ping_pong_scenario(
+      #    'cpp_protobuf_async_streaming_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='STREAMING',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_SERVER',
+      #    unconstrained_client='async-limited',
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_streaming_qps_unconstrained_2waysharedcq_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_SERVER',
+          unconstrained_client='async',
+          secure=secure,
+          client_threads_per_cq=2, server_threads_per_cq=2,
+          categories=smoketest_categories+[SCALABLE])
+
+      #yield _ping_pong_scenario(
+      #    'cpp_protobuf_async_unary_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='UNARY',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_SERVER',
+      #    unconstrained_client='async-limited',
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_unary_qps_unconstrained_2waysharedcq_%s' % secstr,
+          rpc_type='UNARY',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_SERVER',
+          unconstrained_client='async',
+          secure=secure,
+          client_threads_per_cq=2, server_threads_per_cq=2,
+          categories=smoketest_categories+[SCALABLE])
+
       yield _ping_pong_scenario(
           'cpp_generic_async_streaming_qps_one_server_core_%s' % secstr,
           rpc_type='STREAMING',
           client_type='ASYNC_CLIENT',
           server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async-1core', use_generic_payload=True,
+          unconstrained_client='async-limited', use_generic_payload=True,
           async_server_threads=1,
           secure=secure)
 
@@ -753,7 +818,7 @@ class JavaLanguage:
       yield _ping_pong_scenario(
           'java_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async-1core', use_generic_payload=True,
+          unconstrained_client='async-limited', use_generic_payload=True,
           async_server_threads=1,
           secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
 

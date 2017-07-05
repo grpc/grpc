@@ -229,7 +229,7 @@ int run_concurrent_connectivity_test() {
   gpr_thd_join(server);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_shutdown(&exec_ctx, args.pollset,
-                        grpc_closure_create(done_pollset_shutdown, args.pollset,
+                        GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
                                             grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_finish(&exec_ctx);
 

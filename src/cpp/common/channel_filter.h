@@ -208,38 +208,45 @@ class TransportStreamOpBatch {
 /// Represents channel data.
 class ChannelData {
  public:
+  ChannelData() {}
   virtual ~ChannelData() {}
 
-  /// Initializes the call data.
-  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx,
+  // TODO(roth): Come up with a more C++-like API for the channel element.
+
+  /// Initializes the channel data.
+  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                            grpc_channel_element_args *args) {
     return GRPC_ERROR_NONE;
   }
 
-  // TODO(roth): Find a way to avoid passing elem into these methods.
+  // Called before destruction.
+  virtual void Destroy(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem) {}
 
   virtual void StartTransportOp(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem, TransportOp *op);
 
   virtual void GetInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                        const grpc_channel_info *channel_info);
-
- protected:
-  ChannelData() {}
 };
 
 /// Represents call data.
 class CallData {
  public:
+  CallData() {}
   virtual ~CallData() {}
 
+  // TODO(roth): Come up with a more C++-like API for the call element.
+
   /// Initializes the call data.
-  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, ChannelData *channel_data,
+  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            const grpc_call_element_args *args) {
     return GRPC_ERROR_NONE;
   }
 
-  // TODO(roth): Find a way to avoid passing elem into these methods.
+  // Called before destruction.
+  virtual void Destroy(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                       const grpc_call_final_info *final_info,
+                       grpc_closure *then_call_closure) {}
 
   /// Starts a new stream operation.
   virtual void StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
@@ -253,9 +260,6 @@ class CallData {
 
   /// Gets the peer name.
   virtual char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
-
- protected:
-  CallData() {}
 };
 
 namespace internal {
@@ -271,19 +275,24 @@ class ChannelFilter final {
   static grpc_error *InitChannelElement(grpc_exec_ctx *exec_ctx,
                                         grpc_channel_element *elem,
                                         grpc_channel_element_args *args) {
+    // Construct the object in the already-allocated memory.
     ChannelDataType *channel_data = new (elem->channel_data) ChannelDataType();
-    return channel_data->Init(exec_ctx, args);
+    return channel_data->Init(exec_ctx, elem, args);
   }
 
   static void DestroyChannelElement(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_element *elem) {
-    reinterpret_cast<ChannelDataType *>(elem->channel_data)->~ChannelDataType();
+    ChannelDataType *channel_data =
+        reinterpret_cast<ChannelDataType *>(elem->channel_data);
+    channel_data->Destroy(exec_ctx, elem);
+    channel_data->~ChannelDataType();
   }
 
   static void StartTransportOp(grpc_exec_ctx *exec_ctx,
                                grpc_channel_element *elem,
                                grpc_transport_op *op) {
-    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
+    ChannelDataType *channel_data =
+        reinterpret_cast<ChannelDataType *>(elem->channel_data);
     TransportOp op_wrapper(op);
     channel_data->StartTransportOp(exec_ctx, elem, &op_wrapper);
   }
@@ -291,7 +300,8 @@ class ChannelFilter final {
   static void GetChannelInfo(grpc_exec_ctx *exec_ctx,
                              grpc_channel_element *elem,
                              const grpc_channel_info *channel_info) {
-    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
+    ChannelDataType *channel_data =
+        reinterpret_cast<ChannelDataType *>(elem->channel_data);
     channel_data->GetInfo(exec_ctx, elem, channel_info);
   }
 
@@ -300,24 +310,24 @@ class ChannelFilter final {
   static grpc_error *InitCallElement(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      const grpc_call_element_args *args) {
-    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
     // Construct the object in the already-allocated memory.
     CallDataType *call_data = new (elem->call_data) CallDataType();
-    return call_data->Init(exec_ctx, channel_data, args);
+    return call_data->Init(exec_ctx, elem, args);
   }
 
   static void DestroyCallElement(grpc_exec_ctx *exec_ctx,
                                  grpc_call_element *elem,
                                  const grpc_call_final_info *final_info,
                                  grpc_closure *then_call_closure) {
-    GPR_ASSERT(then_call_closure == NULL);
-    reinterpret_cast<CallDataType *>(elem->call_data)->~CallDataType();
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
+    call_data->Destroy(exec_ctx, elem, final_info, then_call_closure);
+    call_data->~CallDataType();
   }
 
   static void StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
                                           grpc_call_element *elem,
                                           grpc_transport_stream_op_batch *op) {
-    CallDataType *call_data = (CallDataType *)elem->call_data;
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
     TransportStreamOpBatch op_wrapper(op);
     call_data->StartTransportStreamOpBatch(exec_ctx, elem, &op_wrapper);
   }
@@ -325,12 +335,12 @@ class ChannelFilter final {
   static void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_polling_entity *pollent) {
-    CallDataType *call_data = (CallDataType *)elem->call_data;
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
     call_data->SetPollsetOrPollsetSet(exec_ctx, elem, pollent);
   }
 
   static char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-    CallDataType *call_data = (CallDataType *)elem->call_data;
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
     return call_data->GetPeer(exec_ctx, elem);
   }
 };

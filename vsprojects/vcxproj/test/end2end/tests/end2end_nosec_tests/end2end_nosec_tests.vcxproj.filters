@@ -28,6 +28,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_after_invoke.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_after_round_trip.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_before_invoke.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

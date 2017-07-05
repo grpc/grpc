@@ -205,7 +205,7 @@ static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
   se->sv = sv;
   se->em_fd = grpc_fd_create(fd, "listener");
   grpc_pollset_add_fd(exec_ctx, g_pollset, se->em_fd);
-  grpc_closure_init(&se->session_read_closure, session_read_cb, se,
+  GRPC_CLOSURE_INIT(&se->session_read_closure, session_read_cb, se,
                     grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_read(exec_ctx, se->em_fd, &se->session_read_closure);
 
@@ -235,7 +235,7 @@ static int server_start(grpc_exec_ctx *exec_ctx, server *sv) {
   sv->em_fd = grpc_fd_create(fd, "server");
   grpc_pollset_add_fd(exec_ctx, g_pollset, sv->em_fd);
   /* Register to be interested in reading from listen_fd. */
-  grpc_closure_init(&sv->listen_closure, listen_cb, sv,
+  GRPC_CLOSURE_INIT(&sv->listen_closure, listen_cb, sv,
                     grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_read(exec_ctx, sv->em_fd, &sv->listen_closure);
 
@@ -319,7 +319,7 @@ static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
   if (errno == EAGAIN) {
     gpr_mu_lock(g_mu);
     if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
-      grpc_closure_init(&cl->write_closure, client_session_write, cl,
+      GRPC_CLOSURE_INIT(&cl->write_closure, client_session_write, cl,
                         grpc_schedule_on_exec_ctx);
       grpc_fd_notify_on_write(exec_ctx, cl->em_fd, &cl->write_closure);
       cl->client_write_cnt++;
@@ -445,9 +445,9 @@ static void test_grpc_fd_change(void) {
   grpc_closure second_closure;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  grpc_closure_init(&first_closure, first_read_callback, &a,
+  GRPC_CLOSURE_INIT(&first_closure, first_read_callback, &a,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&second_closure, second_read_callback, &b,
+  GRPC_CLOSURE_INIT(&second_closure, second_read_callback, &b,
                     grpc_schedule_on_exec_ctx);
 
   init_change_data(&a);
@@ -527,13 +527,13 @@ int main(int argc, char **argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
-  grpc_iomgr_start();
+  grpc_iomgr_init(&exec_ctx);
+  grpc_iomgr_start(&exec_ctx);
   g_pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
   test_grpc_fd();
   test_grpc_fd_change();
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_flush(&exec_ctx);

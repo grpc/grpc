@@ -26,7 +26,6 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/iomgr/workqueue.h"
 
 extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
 
@@ -45,7 +44,6 @@ typedef struct grpc_event_engine_vtable {
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
   bool (*fd_is_shutdown)(grpc_fd *fd);
-  grpc_workqueue *(*fd_get_workqueue)(grpc_fd *fd);
   grpc_pollset *(*fd_get_read_notifier_pollset)(grpc_exec_ctx *exec_ctx,
                                                 grpc_fd *fd);
 
@@ -82,17 +80,6 @@ typedef struct grpc_event_engine_vtable {
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 
   void (*shutdown_engine)(void);
-
-#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-  grpc_workqueue *(*workqueue_ref)(grpc_workqueue *workqueue, const char *file,
-                                   int line, const char *reason);
-  void (*workqueue_unref)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                          const char *file, int line, const char *reason);
-#else
-  grpc_workqueue *(*workqueue_ref)(grpc_workqueue *workqueue);
-  void (*workqueue_unref)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
-#endif
-  grpc_closure_scheduler *(*workqueue_scheduler)(grpc_workqueue *workqueue);
 } grpc_event_engine_vtable;
 
 void grpc_event_engine_init(void);
@@ -105,9 +92,6 @@ const char *grpc_get_poll_strategy_name();
    Requires fd is a non-blocking file descriptor.
    This takes ownership of closing fd. */
 grpc_fd *grpc_fd_create(int fd, const char *name);
-
-/* Get a workqueue that's associated with this fd */
-grpc_workqueue *grpc_fd_get_workqueue(grpc_fd *fd);
 
 /* Return the wrapped fd, or -1 if it has been released or closed. */
 int grpc_fd_wrapped_fd(grpc_fd *fd);

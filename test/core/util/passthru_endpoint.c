@@ -60,11 +60,11 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   half *m = (half *)ep;
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
   } else if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
-    grpc_closure_sched(exec_ctx, cb, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_NONE);
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
@@ -89,7 +89,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     for (size_t i = 0; i < slices->count; i++) {
       grpc_slice_buffer_add(m->on_read_out, grpc_slice_copy(slices->slices[i]));
     }
-    grpc_closure_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, m->on_read, GRPC_ERROR_NONE);
     m->on_read = NULL;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
@@ -98,7 +98,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     }
   }
   gpr_mu_unlock(&m->parent->mu);
-  grpc_closure_sched(exec_ctx, cb, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
 }
 
 static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -113,14 +113,14 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_lock(&m->parent->mu);
   m->parent->shutdown = true;
   if (m->on_read) {
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, m->on_read,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = NULL;
   }
   m = other_half(m);
   if (m->on_read) {
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, m->on_read,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = NULL;
@@ -154,23 +154,14 @@ static char *me_get_peer(grpc_endpoint *ep) {
 
 static int me_get_fd(grpc_endpoint *ep) { return -1; }
 
-static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
-
 static grpc_resource_user *me_get_resource_user(grpc_endpoint *ep) {
   half *m = (half *)ep;
   return m->resource_user;
 }
 
 static const grpc_endpoint_vtable vtable = {
-    me_read,
-    me_write,
-    me_get_workqueue,
-    me_add_to_pollset,
-    me_add_to_pollset_set,
-    me_shutdown,
-    me_destroy,
-    me_get_resource_user,
-    me_get_peer,
+    me_read,     me_write,   me_add_to_pollset,    me_add_to_pollset_set,
+    me_shutdown, me_destroy, me_get_resource_user, me_get_peer,
     me_get_fd,
 };
 

@@ -55,7 +55,7 @@ static void maybe_call_write_cb_locked(grpc_exec_ctx *exec_ctx,
                                        trickle_endpoint *te) {
   if (te->write_cb != NULL && (te->error != GRPC_ERROR_NONE ||
                                te->write_buffer.length <= WRITE_BUFFER_SIZE)) {
-    grpc_closure_sched(exec_ctx, te->write_cb, GRPC_ERROR_REF(te->error));
+    GRPC_CLOSURE_SCHED(exec_ctx, te->write_cb, GRPC_ERROR_REF(te->error));
     te->write_cb = NULL;
   }
 }
@@ -75,11 +75,6 @@ static void te_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   te->write_cb = cb;
   maybe_call_write_cb_locked(exec_ctx, te);
   gpr_mu_unlock(&te->mu);
-}
-
-static grpc_workqueue *te_get_workqueue(grpc_endpoint *ep) {
-  trickle_endpoint *te = (trickle_endpoint *)ep;
-  return grpc_endpoint_get_workqueue(te->wrapped);
 }
 
 static void te_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -140,16 +135,10 @@ static void te_finish_write(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&te->mu);
 }
 
-static const grpc_endpoint_vtable vtable = {te_read,
-                                            te_write,
-                                            te_get_workqueue,
-                                            te_add_to_pollset,
-                                            te_add_to_pollset_set,
-                                            te_shutdown,
-                                            te_destroy,
-                                            te_get_resource_user,
-                                            te_get_peer,
-                                            te_get_fd};
+static const grpc_endpoint_vtable vtable = {
+    te_read,     te_write,   te_add_to_pollset,    te_add_to_pollset_set,
+    te_shutdown, te_destroy, te_get_resource_user, te_get_peer,
+    te_get_fd};
 
 grpc_endpoint *grpc_trickle_endpoint_create(grpc_endpoint *wrap,
                                             double bytes_per_second) {
@@ -187,7 +176,7 @@ size_t grpc_trickle_endpoint_trickle(grpc_exec_ctx *exec_ctx,
       te->last_write = now;
       grpc_endpoint_write(
           exec_ctx, te->wrapped, &te->writing_buffer,
-          grpc_closure_create(te_finish_write, te, grpc_schedule_on_exec_ctx));
+          GRPC_CLOSURE_CREATE(te_finish_write, te, grpc_schedule_on_exec_ctx));
       maybe_call_write_cb_locked(exec_ctx, te);
     }
   }

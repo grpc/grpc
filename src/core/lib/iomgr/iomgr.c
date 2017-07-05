@@ -29,6 +29,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -41,11 +42,12 @@ static gpr_cv g_rcv;
 static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 
-void grpc_iomgr_init(void) {
+void grpc_iomgr_init(grpc_exec_ctx *exec_ctx) {
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_exec_ctx_global_init();
+  grpc_executor_init(exec_ctx);
   grpc_timer_list_init(gpr_now(GPR_CLOCK_MONOTONIC));
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = "root";
@@ -53,7 +55,7 @@ void grpc_iomgr_init(void) {
   grpc_iomgr_platform_init();
 }
 
-void grpc_iomgr_start(void) { grpc_timer_manager_init(); }
+void grpc_iomgr_start(grpc_exec_ctx *exec_ctx) { grpc_timer_manager_init(); }
 
 static size_t count_objects(void) {
   grpc_iomgr_object *obj;
@@ -78,6 +80,7 @@ void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx) {
 
   grpc_timer_manager_shutdown();
   grpc_iomgr_platform_flush();
+  grpc_executor_shutdown(exec_ctx);
 
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;

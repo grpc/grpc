@@ -418,7 +418,7 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
   GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
                                    incoming_frame_size);
   if (t->incoming_window <= target_incoming_window / 2) {
-    grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
+    grpc_chttp2_initiate_write(exec_ctx, t, "flow_control");
   }
 
   return GRPC_ERROR_NONE;
@@ -681,9 +681,19 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
   t->parser_data = &t->hpack_parser;
   switch (s->header_frames_received) {
     case 0:
-      t->hpack_parser.on_header = on_initial_header;
+      if (t->is_client && t->header_eof) {
+        GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing Trailers-Only"));
+        if (s->trailing_metadata_available != NULL) {
+          *s->trailing_metadata_available = true;
+        }
+        t->hpack_parser.on_header = on_trailing_header;
+      } else {
+        GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing initial_metadata"));
+        t->hpack_parser.on_header = on_initial_header;
+      }
       break;
     case 1:
+      GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing trailing_metadata"));
       t->hpack_parser.on_header = on_trailing_header;
       break;
     case 2:

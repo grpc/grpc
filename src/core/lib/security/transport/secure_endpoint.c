@@ -75,18 +75,20 @@ static void destroy(grpc_exec_ctx *exec_ctx, secure_endpoint *secure_ep) {
   gpr_free(ep);
 }
 
-/*#define GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG*/
-#ifdef GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define SECURE_ENDPOINT_UNREF(exec_ctx, ep, reason) \
   secure_endpoint_unref((exec_ctx), (ep), (reason), __FILE__, __LINE__)
 #define SECURE_ENDPOINT_REF(ep, reason) \
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
-static void secure_endpoint_unref(secure_endpoint *ep,
-                                  grpc_closure_list *closure_list,
+static void secure_endpoint_unref(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
                                   const char *reason, const char *file,
                                   int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SECENDP unref %p : %s %d -> %d",
-          ep, reason, ep->ref.count, ep->ref.count - 1);
+  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
+            val - 1);
+  }
   if (gpr_unref(&ep->ref)) {
     destroy(exec_ctx, ep);
   }
@@ -94,8 +96,12 @@ static void secure_endpoint_unref(secure_endpoint *ep,
 
 static void secure_endpoint_ref(secure_endpoint *ep, const char *reason,
                                 const char *file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SECENDP   ref %p : %s %d -> %d",
-          ep, reason, ep->ref.count, ep->ref.count + 1);
+  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
+            val + 1);
+  }
   gpr_ref(&ep->ref);
 }
 #else
@@ -132,7 +138,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
     }
   }
   ep->read_buffer = NULL;
-  grpc_closure_sched(exec_ctx, ep->read_cb, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, ep->read_cb, error);
   SECURE_ENDPOINT_UNREF(exec_ctx, ep, "read");
 }
 
@@ -317,7 +323,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   if (result != TSI_OK) {
     /* TODO(yangg) do different things according to the error type? */
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &ep->output_buffer);
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb,
         grpc_set_tsi_error_result(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Wrap failed"), result));
@@ -365,11 +371,6 @@ static int endpoint_get_fd(grpc_endpoint *secure_ep) {
   return grpc_endpoint_get_fd(ep->wrapped_ep);
 }
 
-static grpc_workqueue *endpoint_get_workqueue(grpc_endpoint *secure_ep) {
-  secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  return grpc_endpoint_get_workqueue(ep->wrapped_ep);
-}
-
 static grpc_resource_user *endpoint_get_resource_user(
     grpc_endpoint *secure_ep) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
@@ -378,7 +379,6 @@ static grpc_resource_user *endpoint_get_resource_user(
 
 static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_write,
-                                            endpoint_get_workqueue,
                                             endpoint_add_to_pollset,
                                             endpoint_add_to_pollset_set,
                                             endpoint_shutdown,
@@ -405,7 +405,7 @@ grpc_endpoint *grpc_secure_endpoint_create(
   grpc_slice_buffer_init(&ep->output_buffer);
   grpc_slice_buffer_init(&ep->source_buffer);
   ep->read_buffer = NULL;
-  grpc_closure_init(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
   gpr_mu_init(&ep->protector_mu);
   gpr_ref_init(&ep->ref, 1);
   return &ep->base;

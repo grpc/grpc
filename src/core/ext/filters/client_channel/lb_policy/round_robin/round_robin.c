@@ -126,6 +126,8 @@ struct rr_subchannel_list {
   size_t num_ready;
   /** how many subchannels are in state TRANSIENT_FAILURE */
   size_t num_transient_failures;
+  /** how many subchannels are in state SHUTDOWN */
+  size_t num_shutdown;
   /** how many subchannels are in state IDLE */
   size_t num_idle;
 
@@ -288,7 +290,7 @@ static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while ((pp = p->pending_picks)) {
     p->pending_picks = pp->next;
     *pp->target = NULL;
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, pp->on_complete,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
     gpr_free(pp);
@@ -311,7 +313,7 @@ static void rr_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       *target = NULL;
-      grpc_closure_sched(exec_ctx, pp->on_complete,
+      GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick cancelled", &error, 1));
       gpr_free(pp);
@@ -336,7 +338,7 @@ static void rr_cancel_picks_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       *pp->target = NULL;
-      grpc_closure_sched(exec_ctx, pp->on_complete,
+      GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick cancelled", &error, 1));
       gpr_free(pp);
@@ -425,6 +427,9 @@ static void update_state_counters_locked(subchannel_data *sd) {
   } else if (sd->prev_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     GPR_ASSERT(subchannel_list->num_transient_failures > 0);
     --subchannel_list->num_transient_failures;
+  } else if (sd->prev_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
+    GPR_ASSERT(subchannel_list->num_shutdown > 0);
+    --subchannel_list->num_shutdown;
   } else if (sd->prev_connectivity_state == GRPC_CHANNEL_IDLE) {
     GPR_ASSERT(subchannel_list->num_idle > 0);
     --subchannel_list->num_idle;
@@ -433,6 +438,8 @@ static void update_state_counters_locked(subchannel_data *sd) {
     ++subchannel_list->num_ready;
   } else if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     ++subchannel_list->num_transient_failures;
+  } else if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
+    ++subchannel_list->num_shutdown;
   } else if (sd->curr_connectivity_state == GRPC_CHANNEL_IDLE) {
     ++subchannel_list->num_idle;
   }
@@ -455,7 +462,8 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
    *    CHECK: sd->curr_connectivity_state == CONNECTING.
    *
    * 3) RULE: ALL subchannels are SHUTDOWN => policy is SHUTDOWN.
-   *    CHECK: p->subchannel_list->num_subchannels = 0.
+   *    CHECK: p->subchannel_list->num_shutdown ==
+   *           p->subchannel_list->num_subchannels.
    *
    * 4) RULE: ALL subchannels are TRANSIENT_FAILURE => policy is
    *    TRANSIENT_FAILURE.
@@ -464,37 +472,39 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
    * 5) RULE: ALL subchannels are IDLE => policy is IDLE.
    *    CHECK: p->num_idle == p->subchannel_list->num_subchannels.
    */
+  grpc_connectivity_state new_state = sd->curr_connectivity_state;
   rr_subchannel_list *subchannel_list = sd->subchannel_list;
   round_robin_lb_policy *p = subchannel_list->policy;
   if (subchannel_list->num_ready > 0) { /* 1) READY */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_READY,
                                 GRPC_ERROR_NONE, "rr_ready");
-    return GRPC_CHANNEL_READY;
+    new_state = GRPC_CHANNEL_READY;
   } else if (sd->curr_connectivity_state ==
              GRPC_CHANNEL_CONNECTING) { /* 2) CONNECTING */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
                                 "rr_connecting");
-    return GRPC_CHANNEL_CONNECTING;
-  } else if (p->subchannel_list->num_subchannels == 0) { /* 3) SHUTDOWN */
+    new_state = GRPC_CHANNEL_CONNECTING;
+  } else if (p->subchannel_list->num_shutdown ==
+             p->subchannel_list->num_subchannels) { /* 3) SHUTDOWN */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
                                 "rr_shutdown");
-    return GRPC_CHANNEL_SHUTDOWN;
+    new_state = GRPC_CHANNEL_SHUTDOWN;
   } else if (subchannel_list->num_transient_failures ==
              p->subchannel_list->num_subchannels) { /* 4) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_TRANSIENT_FAILURE,
                                 GRPC_ERROR_REF(error), "rr_transient_failure");
-    return GRPC_CHANNEL_TRANSIENT_FAILURE;
+    new_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   } else if (subchannel_list->num_idle ==
              p->subchannel_list->num_subchannels) { /* 5) IDLE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
                                 GRPC_ERROR_NONE, "rr_idle");
-    return GRPC_CHANNEL_IDLE;
+    new_state = GRPC_CHANNEL_IDLE;
   }
-  /* no change */
-  return sd->curr_connectivity_state;
+  GRPC_ERROR_UNREF(error);
+  return new_state;
 }
 
 static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -553,7 +563,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
       while ((pp = p->pending_picks)) {
         p->pending_picks = pp->next;
         *pp->target = NULL;
-        grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
+        GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
         gpr_free(pp);
       }
     }
@@ -571,13 +581,15 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         GPR_ASSERT(sd->subchannel_list == p->latest_pending_subchannel_list);
         GPR_ASSERT(!sd->subchannel_list->shutting_down);
         if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
+          const unsigned long num_subchannels =
+              p->subchannel_list != NULL
+                  ? (unsigned long)p->subchannel_list->num_subchannels
+                  : 0;
           gpr_log(GPR_DEBUG,
                   "[RR %p] phasing out subchannel list %p (size %lu) in favor "
                   "of %p (size %lu)",
-                  (void *)p, (void *)p->subchannel_list,
-                  (unsigned long)p->subchannel_list->num_subchannels,
-                  (void *)sd->subchannel_list,
-                  (unsigned long)sd->subchannel_list->num_subchannels);
+                  (void *)p, (void *)p->subchannel_list, num_subchannels,
+                  (void *)sd->subchannel_list, num_subchannels);
         }
         if (p->subchannel_list != NULL) {
           // dispose of the current subchannel_list
@@ -614,7 +626,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                   (void *)selected->subchannel,
                   (unsigned long)next_ready_index);
         }
-        grpc_closure_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
+        GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
         gpr_free(pp);
       }
     }
@@ -655,7 +667,7 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     grpc_connected_subchannel_ping(exec_ctx, target, closure);
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, target, "rr_picked");
   } else {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                               "Round Robin not connected"));
   }
 }
@@ -747,9 +759,9 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     subchannel_data *sd = &subchannel_list->subchannels[subchannel_index++];
     sd->subchannel_list = subchannel_list;
     sd->subchannel = subchannel;
-    grpc_closure_init(&sd->connectivity_changed_closure,
+    GRPC_CLOSURE_INIT(&sd->connectivity_changed_closure,
                       rr_connectivity_changed_locked, sd,
-                      grpc_combiner_scheduler(args->combiner, false));
+                      grpc_combiner_scheduler(args->combiner));
     /* use some sentinel value outside of the range of
      * grpc_connectivity_state to signal an undefined previous state. We
      * won't be referring to this value again and it'll be overwritten after
