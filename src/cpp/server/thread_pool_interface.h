@@ -36,7 +36,7 @@ class ThreadPoolInterface {
 typedef ThreadPoolInterface* (*CreateThreadPoolFunc)(void);
 void SetCreateThreadPool(CreateThreadPoolFunc func);
 
-ThreadPoolInterface* CreateThreadPool();
+ThreadPoolInterface* CreateDefaultThreadPool();
 
 }  // namespace grpc
 

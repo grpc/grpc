@@ -24,21 +24,17 @@
 
 namespace grpc {
 
-static ThreadPoolInterface* CreateDefaultThreadPool() {
+static ThreadPoolInterface* CreateDefaultThreadPoolImpl() {
   int cores = gpr_cpu_num_cores();
   if (!cores) cores = 4;
   return new DynamicThreadPool(cores);
 }
 
-static CreateThreadPoolFunc g_ctp_impl = CreateDefaultThreadPool;
+static CreateThreadPoolFunc g_ctp_impl = CreateDefaultThreadPoolImpl;
 
-ThreadPoolInterface* CreateThreadPool() {
-  return g_ctp_impl();
-}
+ThreadPoolInterface* CreateDefaultThreadPool() { return g_ctp_impl(); }
 
-void SetCreateThreadPool(CreateThreadPoolFunc func) {
-  g_ctp_impl = func;
-}
+void SetCreateThreadPool(CreateThreadPoolFunc func) { g_ctp_impl = func; }
 
 }  // namespace grpc
 
