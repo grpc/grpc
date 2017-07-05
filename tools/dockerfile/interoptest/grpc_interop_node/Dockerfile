@@ -70,10 +70,11 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
 RUN touch .profile
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
 # Install all versions of node that we want to test
-RUN /bin/bash -l -c "nvm install 0.12 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm alias default 4"
+RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache && npm install -g npm"
+RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache && npm install -g npm"
+RUN /bin/bash -l -c "nvm install 6 && npm config set cache /tmp/npm-cache && npm install -g npm"
+RUN /bin/bash -l -c "nvm install 8 && npm config set cache /tmp/npm-cache && npm install -g npm"
+RUN /bin/bash -l -c "nvm alias default 8"
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++
