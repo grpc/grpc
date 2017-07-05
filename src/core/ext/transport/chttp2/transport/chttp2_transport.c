@@ -52,7 +52,7 @@
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
-#define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
+#define DEFAULT_MAX_HEADER_LIST_SIZE (8 * 1024)
 
 #define DEFAULT_CLIENT_KEEPALIVE_TIME_MS INT_MAX
 #define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS 20000 /* 20 seconds */
@@ -1417,6 +1417,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         op_payload->recv_initial_metadata.recv_initial_metadata_ready;
     s->recv_initial_metadata =
         op_payload->recv_initial_metadata.recv_initial_metadata;
+    s->trailing_metadata_available =
+        op_payload->recv_initial_metadata.trailing_metadata_available;
     grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
   }
 

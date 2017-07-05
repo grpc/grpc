@@ -849,7 +849,10 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
                     _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
                         connectivity])
                 if not state.delivering:
-                    callbacks = _deliveries(state)
+                    # NOTE(nathaniel): The field is only ever used as a
+                    # sequence so it's fine that both lists and tuples are
+                    # assigned to it.
+                    callbacks = _deliveries(state)  # pylint: disable=redefined-variable-type
                     if callbacks:
                         _spawn_delivery(state, callbacks)
 

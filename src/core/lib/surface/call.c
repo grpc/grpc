@@ -929,33 +929,6 @@ static grpc_compression_algorithm decode_compression(grpc_mdelem md) {
   return algorithm;
 }
 
-static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                               grpc_metadata_batch *b) {
-  if (b->idx.named.grpc_status != NULL) {
-    uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
-    grpc_error *error =
-        status_code == GRPC_STATUS_OK
-            ? GRPC_ERROR_NONE
-            : grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "Error received from peer"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 (intptr_t)status_code);
-
-    if (b->idx.named.grpc_message != NULL) {
-      error = grpc_error_set_str(
-          error, GRPC_ERROR_STR_GRPC_MESSAGE,
-          grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_message->md)));
-      grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
-    } else if (error != GRPC_ERROR_NONE) {
-      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                                 grpc_empty_slice());
-    }
-
-    set_status_from_error(exec_ctx, call, STATUS_FROM_WIRE, error);
-    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_status);
-  }
-}
-
 static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
                                  int is_trailing) {
   if (b->list.count == 0) return;
@@ -980,8 +953,6 @@ static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
 
 static void recv_initial_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                 grpc_metadata_batch *b) {
-  recv_common_filter(exec_ctx, call, b);
-
   if (b->idx.named.grpc_encoding != NULL) {
     GPR_TIMER_BEGIN("incoming_compression_algorithm", 0);
     set_incoming_compression_algorithm(
@@ -989,7 +960,6 @@ static void recv_initial_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
     GPR_TIMER_END("incoming_compression_algorithm", 0);
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_encoding);
   }
-
   if (b->idx.named.grpc_accept_encoding != NULL) {
     GPR_TIMER_BEGIN("encodings_accepted_by_peer", 0);
     set_encodings_accepted_by_peer(exec_ctx, call,
@@ -997,14 +967,33 @@ static void recv_initial_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_accept_encoding);
     GPR_TIMER_END("encodings_accepted_by_peer", 0);
   }
-
   publish_app_metadata(call, b, false);
 }
 
 static void recv_trailing_filter(grpc_exec_ctx *exec_ctx, void *args,
                                  grpc_metadata_batch *b) {
   grpc_call *call = args;
-  recv_common_filter(exec_ctx, call, b);
+  if (b->idx.named.grpc_status != NULL) {
+    uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
+    grpc_error *error =
+        status_code == GRPC_STATUS_OK
+            ? GRPC_ERROR_NONE
+            : grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                     "Error received from peer"),
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 (intptr_t)status_code);
+    if (b->idx.named.grpc_message != NULL) {
+      error = grpc_error_set_str(
+          error, GRPC_ERROR_STR_GRPC_MESSAGE,
+          grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_message->md)));
+      grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
+    } else if (error != GRPC_ERROR_NONE) {
+      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                                 grpc_empty_slice());
+    }
+    set_status_from_error(exec_ctx, call, STATUS_FROM_WIRE, error);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_status);
+  }
   publish_app_metadata(call, b, true);
 }
 
