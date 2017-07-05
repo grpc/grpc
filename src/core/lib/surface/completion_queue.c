@@ -946,6 +946,7 @@ static void cq_shutdown_next(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(cq->mu);
   if (cqd->shutdown_called) {
     gpr_mu_unlock(cq->mu);
+    GRPC_CQ_INTERNAL_UNREF(exec_ctx, cq, "shutting_down");
     GPR_TIMER_END("grpc_completion_queue_shutdown", 0);
     return;
   }
