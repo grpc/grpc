@@ -58,7 +58,7 @@ static size_t run_closures(grpc_exec_ctx *exec_ctx, grpc_closure_list list) {
   while (c != NULL) {
     grpc_closure *next = c->next_data.next;
     grpc_error *error = c->error_data.error;
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
     c->scheduled = false;
 #endif
     c->cb(exec_ctx, c->cb_arg, error);

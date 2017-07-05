@@ -62,7 +62,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
         grpc_closure *next = c->next_data.next;
         grpc_error *error = c->error_data.error;
         did_something = true;
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
         c->scheduled = false;
 #endif
         c->cb(exec_ctx, c->cb_arg, error);
@@ -85,10 +85,21 @@ void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
 
 static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                          grpc_error *error) {
-#ifdef GRPC_CLOSURE_RICH_DEBUG
+#ifndef NDEBUG
   closure->scheduled = false;
+  if (GRPC_TRACER_ON(grpc_trace_closure)) {
+    gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
+            closure, closure->file_created, closure->line_created,
+            closure->run ? "run" : "scheduled", closure->file_initiated,
+            closure->line_initiated);
+  }
 #endif
   closure->cb(exec_ctx, closure->cb_arg, error);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_closure)) {
+    gpr_log(GPR_DEBUG, "closure %p finished", closure);
+  }
+#endif
   GRPC_ERROR_UNREF(error);
 }
 

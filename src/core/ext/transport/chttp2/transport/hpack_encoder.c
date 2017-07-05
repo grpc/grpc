@@ -608,15 +608,14 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
 
 void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_hpack_compressor *c,
+                               grpc_mdelem **extra_headers,
+                               size_t extra_headers_size,
                                grpc_metadata_batch *metadata,
                                const grpc_encode_header_options *options,
                                grpc_slice_buffer *outbuf) {
-  framer_state st;
-  grpc_linked_mdelem *l;
-  gpr_timespec deadline;
-
   GPR_ASSERT(options->stream_id != 0);
 
+  framer_state st;
   st.seen_regular_header = 0;
   st.stream_id = options->stream_id;
   st.output = outbuf;
@@ -633,11 +632,14 @@ void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
   if (c->advertise_table_size_change != 0) {
     emit_advertise_table_size_change(c, &st);
   }
+  for (size_t i = 0; i < extra_headers_size; ++i) {
+    hpack_enc(exec_ctx, c, *extra_headers[i], &st);
+  }
   grpc_metadata_batch_assert_ok(metadata);
-  for (l = metadata->list.head; l; l = l->next) {
+  for (grpc_linked_mdelem *l = metadata->list.head; l; l = l->next) {
     hpack_enc(exec_ctx, c, l->md, &st);
   }
-  deadline = metadata->deadline;
+  gpr_timespec deadline = metadata->deadline;
   if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) != 0) {
     deadline_enc(exec_ctx, c, deadline, &st);
   }

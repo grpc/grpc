@@ -93,7 +93,7 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
                       (((uint32_t)p->reason_bytes[2]) << 8) |
                       (((uint32_t)p->reason_bytes[3]));
     grpc_error *error = GRPC_ERROR_NONE;
-    if (reason != GRPC_HTTP2_NO_ERROR || s->header_frames_received < 2) {
+    if (reason != GRPC_HTTP2_NO_ERROR || s->metadata_buffer[1].size == 0) {
       char *message;
       gpr_asprintf(&message, "Received RST_STREAM with error code %d", reason);
       error = grpc_error_set_int(

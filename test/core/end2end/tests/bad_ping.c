@@ -81,7 +81,10 @@ static void test_bad_ping(grpc_end2end_test_config config) {
        .value.integer = 300000 /* 5 minutes */},
       {.type = GRPC_ARG_INTEGER,
        .key = GRPC_ARG_HTTP2_MAX_PING_STRIKES,
-       .value.integer = MAX_PING_STRIKES}};
+       .value.integer = MAX_PING_STRIKES},
+      {.type = GRPC_ARG_INTEGER,
+       .key = GRPC_ARG_HTTP2_BDP_PROBE,
+       .value.integer = 0}};
   grpc_channel_args client_args = {.num_args = GPR_ARRAY_SIZE(client_a),
                                    .args = client_a};
   grpc_channel_args server_args = {.num_args = GPR_ARRAY_SIZE(server_a),

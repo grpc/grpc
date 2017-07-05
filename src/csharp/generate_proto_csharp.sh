@@ -37,4 +37,4 @@ $PROTOC --plugin=$PLUGIN --csharp_out=$REFLECTION_DIR --grpc_out=$REFLECTION_DIR
 # don't match the package names. Setting -I to the correct value src/proto
 # breaks the code generation.
 $PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
-    -I . src/proto/grpc/testing/{control,empty,messages,metrics,payloads,services,stats,test}.proto 
+    -I . src/proto/grpc/testing/{control,echo_messages,empty,messages,metrics,payloads,services,stats,test}.proto

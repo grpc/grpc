@@ -56,6 +56,10 @@ typedef struct {
   // grpc_resolver_next_locked()'s closure.
   grpc_channel_args* next_results;
 
+  // Results to use for the pretended re-resolution in
+  // fake_resolver_channel_saw_error_locked().
+  grpc_channel_args* results_upon_error;
+
   // pending next completion, or NULL
   grpc_closure* next_completion;
   // target result address for next completion
@@ -65,6 +69,7 @@ typedef struct {
 static void fake_resolver_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   fake_resolver* r = (fake_resolver*)gr;
   grpc_channel_args_destroy(exec_ctx, r->next_results);
+  grpc_channel_args_destroy(exec_ctx, r->results_upon_error);
   grpc_channel_args_destroy(exec_ctx, r->channel_args);
   gpr_free(r);
 }
@@ -74,7 +79,9 @@ static void fake_resolver_shutdown_locked(grpc_exec_ctx* exec_ctx,
   fake_resolver* r = (fake_resolver*)resolver;
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    GRPC_CLOSURE_SCHED(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(
+        exec_ctx, r->next_completion,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     r->next_completion = NULL;
   }
 }
@@ -85,15 +92,19 @@ static void fake_resolver_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
     *r->target_result =
         grpc_channel_args_union(r->next_results, r->channel_args);
     grpc_channel_args_destroy(exec_ctx, r->next_results);
+    r->next_results = NULL;
     GRPC_CLOSURE_SCHED(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
-    r->next_results = NULL;
   }
 }
 
 static void fake_resolver_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
                                                    grpc_resolver* resolver) {
   fake_resolver* r = (fake_resolver*)resolver;
+  if (r->next_results == NULL && r->results_upon_error != NULL) {
+    // Pretend we re-resolved.
+    r->next_results = grpc_channel_args_copy(r->results_upon_error);
+  }
   fake_resolver_maybe_finish_next_locked(exec_ctx, r);
 }
 
@@ -149,6 +160,10 @@ static void set_response_cb(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_channel_args_destroy(exec_ctx, r->next_results);
   }
   r->next_results = generator->next_response;
+  if (r->results_upon_error != NULL) {
+    grpc_channel_args_destroy(exec_ctx, r->results_upon_error);
+  }
+  r->results_upon_error = grpc_channel_args_copy(generator->next_response);
   fake_resolver_maybe_finish_next_locked(exec_ctx, r);
 }
 

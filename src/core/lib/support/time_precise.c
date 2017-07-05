@@ -22,26 +22,26 @@
 
 #ifdef GRPC_TIMERS_RDTSC
 #if defined(__i386__)
-static void gpr_get_cycle_counter(long long int *clk) {
-  long long int ret;
+static void gpr_get_cycle_counter(int64_t int *clk) {
+  int64_t int ret;
   __asm__ volatile("rdtsc" : "=A"(ret));
   *clk = ret;
 }
 
 // ----------------------------------------------------------------
 #elif defined(__x86_64__) || defined(__amd64__)
-static void gpr_get_cycle_counter(long long int *clk) {
-  unsigned long long low, high;
+static void gpr_get_cycle_counter(int64_t *clk) {
+  uint64_t low, high;
   __asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
-  *clk = (long long)(high << 32) | (long long)low;
+  *clk = (int64_t)(high << 32) | (int64_t)low;
 }
 #endif
 
 static double cycles_per_second = 0;
-static long long int start_cycle;
+static int64_t start_cycle;
 void gpr_precise_clock_init(void) {
   time_t start;
-  long long end_cycle;
+  int64_t end_cycle;
   gpr_log(GPR_DEBUG, "Calibrating timers");
   start = time(NULL);
   while (time(NULL) == start)
@@ -55,7 +55,7 @@ void gpr_precise_clock_init(void) {
 }
 
 void gpr_precise_clock_now(gpr_timespec *clk) {
-  long long int counter;
+  int64_t counter;
   double secs;
   gpr_get_cycle_counter(&counter);
   secs = (double)(counter - start_cycle) / cycles_per_second;

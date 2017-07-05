@@ -140,25 +140,13 @@ struct grpc_subchannel_call {
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *subchannel,
                                  grpc_error *error);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define REF_REASON reason
-#define REF_LOG(name, p)                                                  \
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "%s: %p   ref %d -> %d %s", \
-          (name), (p), (p)->refs.count, (p)->refs.count + 1, reason)
-#define UNREF_LOG(name, p)                                                \
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "%s: %p unref %d -> %d %s", \
-          (name), (p), (p)->refs.count, (p)->refs.count - 1, reason)
 #define REF_MUTATE_EXTRA_ARGS \
   GRPC_SUBCHANNEL_REF_EXTRA_ARGS, const char *purpose
 #define REF_MUTATE_PURPOSE(x) , file, line, reason, x
 #else
 #define REF_REASON ""
-#define REF_LOG(name, p) \
-  do {                   \
-  } while (0)
-#define UNREF_LOG(name, p) \
-  do {                     \
-  } while (0)
 #define REF_MUTATE_EXTRA_ARGS
 #define REF_MUTATE_PURPOSE(x)
 #endif
@@ -207,10 +195,12 @@ static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta,
                           int barrier REF_MUTATE_EXTRA_ARGS) {
   gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta)
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "SUBCHANNEL: %p %s 0x%08" PRIxPTR " -> 0x%08" PRIxPTR " [%s]", c,
-          purpose, old_val, old_val + delta, reason);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "SUBCHANNEL: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
+            purpose, old_val, old_val + delta, reason);
+  }
 #endif
   return old_val;
 }
