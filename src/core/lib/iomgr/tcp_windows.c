@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -62,6 +47,8 @@
 #else
 #define GRPC_FIONBIO FIONBIO
 #endif
+
+grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false);
 
 static grpc_error *set_non_block(SOCKET sock) {
   int status;
@@ -130,15 +117,18 @@ static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   gpr_free(tcp);
 }
 
-/*#define GRPC_TCP_REFCOUNT_DEBUG*/
-#ifdef GRPC_TCP_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define TCP_UNREF(exec_ctx, tcp, reason) \
   tcp_unref((exec_ctx), (tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
                       const char *reason, const char *file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp,
-          reason, tcp->refcount.count, tcp->refcount.count - 1);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
+            val - 1);
+  }
   if (gpr_unref(&tcp->refcount)) {
     tcp_free(exec_ctx, tcp);
   }
@@ -146,8 +136,12 @@ static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 
 static void tcp_ref(grpc_tcp *tcp, const char *reason, const char *file,
                     int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP   ref %p : %s %d -> %d", tcp,
-          reason, tcp->refcount.count, tcp->refcount.count + 1);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
+            val + 1);
+  }
   gpr_ref(&tcp->refcount);
 }
 #else
@@ -194,7 +188,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
 
   tcp->read_cb = NULL;
   TCP_UNREF(exec_ctx, tcp, "read");
-  grpc_closure_sched(exec_ctx, cb, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
 }
 
 static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -208,7 +202,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   WSABUF buffer;
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "TCP socket is shutting down", &tcp->shutdown_error, 1));
@@ -235,7 +229,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   /* Did we get data immediately ? Yay. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
     info->bytes_transfered = bytes_read;
-    grpc_closure_sched(exec_ctx, &tcp->on_read, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, &tcp->on_read, GRPC_ERROR_NONE);
     return;
   }
 
@@ -248,7 +242,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       info->wsa_error = wsa_error;
-      grpc_closure_sched(exec_ctx, &tcp->on_read,
+      GRPC_CLOSURE_SCHED(exec_ctx, &tcp->on_read,
                          GRPC_WSA_ERROR(info->wsa_error, "WSARecv"));
       return;
     }
@@ -280,7 +274,7 @@ static void on_write(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
   }
 
   TCP_UNREF(exec_ctx, tcp, "write");
-  grpc_closure_sched(exec_ctx, cb, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
 }
 
 /* Initiates a write. */
@@ -298,7 +292,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   size_t len;
 
   if (tcp->shutting_down) {
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "TCP socket is shutting down", &tcp->shutdown_error, 1));
@@ -332,7 +326,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     grpc_error *error = status == 0
                             ? GRPC_ERROR_NONE
                             : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
-    grpc_closure_sched(exec_ctx, cb, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
     if (allocated) gpr_free(allocated);
     return;
   }
@@ -350,7 +344,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       TCP_UNREF(exec_ctx, tcp, "write");
-      grpc_closure_sched(exec_ctx, cb, GRPC_WSA_ERROR(wsa_error, "WSASend"));
+      GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_WSA_ERROR(wsa_error, "WSASend"));
       return;
     }
   }
@@ -410,8 +404,6 @@ static char *win_get_peer(grpc_endpoint *ep) {
   return gpr_strdup(tcp->peer_string);
 }
 
-static grpc_workqueue *win_get_workqueue(grpc_endpoint *ep) { return NULL; }
-
 static grpc_resource_user *win_get_resource_user(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   return tcp->resource_user;
@@ -419,16 +411,10 @@ static grpc_resource_user *win_get_resource_user(grpc_endpoint *ep) {
 
 static int win_get_fd(grpc_endpoint *ep) { return -1; }
 
-static grpc_endpoint_vtable vtable = {win_read,
-                                      win_write,
-                                      win_get_workqueue,
-                                      win_add_to_pollset,
-                                      win_add_to_pollset_set,
-                                      win_shutdown,
-                                      win_destroy,
-                                      win_get_resource_user,
-                                      win_get_peer,
-                                      win_get_fd};
+static grpc_endpoint_vtable vtable = {
+    win_read,     win_write,   win_add_to_pollset,    win_add_to_pollset_set,
+    win_shutdown, win_destroy, win_get_resource_user, win_get_peer,
+    win_get_fd};
 
 grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
                                grpc_channel_args *channel_args,
@@ -449,8 +435,8 @@ grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
   tcp->socket = socket;
   gpr_mu_init(&tcp->mu);
   gpr_ref_init(&tcp->refcount, 1);
-  grpc_closure_init(&tcp->on_read, on_read, tcp, grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&tcp->on_write, on_write, tcp, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&tcp->on_read, on_read, tcp, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&tcp->on_write, on_write, tcp, grpc_schedule_on_exec_ctx);
   tcp->peer_string = gpr_strdup(peer_string);
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   /* Tell network status tracking code about the new endpoint */

@@ -5,34 +5,19 @@
 # This file can be regenerated from the template by running
 # tools/buildgen/generate_projects.sh
 
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Some of this file is built with the help of
 # https://n8.io/converting-a-c-library-to-gyp/
@@ -130,6 +115,15 @@
         ]
       }, {
         'conditions': [
+          ["target_arch=='ia32'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+          }],
+          ["target_arch=='x64'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+          }],
+          ["target_arch=='arm'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+          }],
           ['grpc_alpn=="true"', {
             'defines': [
               'TSI_OPENSSL_ALPN_SUPPORT=1'
@@ -142,17 +136,6 @@
         ],
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',
-        ],
-        'conditions': [
-         ["target_arch=='ia32'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
-         }],
-         ["target_arch=='x64'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
-         }],
-         ["target_arch=='arm'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
-         }]
         ]
       }],
       ['OS == "win"', {
@@ -189,6 +172,7 @@
       'targets': [
         {
           'cflags': [
+            '-std=c++11',
             '-std=c99',
             '-Wall',
             '-Werror'
@@ -201,6 +185,7 @@
           'sources': [
             'src/boringssl/err_data.c',
             'third_party/boringssl/crypto/aes/aes.c',
+            'third_party/boringssl/crypto/aes/key_wrap.c',
             'third_party/boringssl/crypto/aes/mode_wrappers.c',
             'third_party/boringssl/crypto/asn1/a_bitstr.c',
             'third_party/boringssl/crypto/asn1/a_bool.c',
@@ -232,12 +217,12 @@
             'third_party/boringssl/crypto/asn1/tasn_new.c',
             'third_party/boringssl/crypto/asn1/tasn_typ.c',
             'third_party/boringssl/crypto/asn1/tasn_utl.c',
+            'third_party/boringssl/crypto/asn1/time_support.c',
             'third_party/boringssl/crypto/asn1/x_bignum.c',
             'third_party/boringssl/crypto/asn1/x_long.c',
             'third_party/boringssl/crypto/base64/base64.c',
             'third_party/boringssl/crypto/bio/bio.c',
             'third_party/boringssl/crypto/bio/bio_mem.c',
-            'third_party/boringssl/crypto/bio/buffer.c',
             'third_party/boringssl/crypto/bio/connect.c',
             'third_party/boringssl/crypto/bio/fd.c',
             'third_party/boringssl/crypto/bio/file.c',
@@ -344,12 +329,7 @@
             'third_party/boringssl/crypto/modes/ctr.c',
             'third_party/boringssl/crypto/modes/gcm.c',
             'third_party/boringssl/crypto/modes/ofb.c',
-            'third_party/boringssl/crypto/newhope/error_correction.c',
-            'third_party/boringssl/crypto/newhope/newhope.c',
-            'third_party/boringssl/crypto/newhope/ntt.c',
-            'third_party/boringssl/crypto/newhope/poly.c',
-            'third_party/boringssl/crypto/newhope/precomp.c',
-            'third_party/boringssl/crypto/newhope/reduce.c',
+            'third_party/boringssl/crypto/modes/polyval.c',
             'third_party/boringssl/crypto/obj/obj.c',
             'third_party/boringssl/crypto/obj/obj_xref.c',
             'third_party/boringssl/crypto/pem/pem_all.c',
@@ -360,14 +340,15 @@
             'third_party/boringssl/crypto/pem/pem_pkey.c',
             'third_party/boringssl/crypto/pem/pem_x509.c',
             'third_party/boringssl/crypto/pem/pem_xaux.c',
-            'third_party/boringssl/crypto/pkcs8/p5_pbe.c',
             'third_party/boringssl/crypto/pkcs8/p5_pbev2.c',
             'third_party/boringssl/crypto/pkcs8/p8_pkey.c',
             'third_party/boringssl/crypto/pkcs8/pkcs8.c',
             'third_party/boringssl/crypto/poly1305/poly1305.c',
             'third_party/boringssl/crypto/poly1305/poly1305_arm.c',
             'third_party/boringssl/crypto/poly1305/poly1305_vec.c',
+            'third_party/boringssl/crypto/pool/pool.c',
             'third_party/boringssl/crypto/rand/deterministic.c',
+            'third_party/boringssl/crypto/rand/fuchsia.c',
             'third_party/boringssl/crypto/rand/rand.c',
             'third_party/boringssl/crypto/rand/urandom.c',
             'third_party/boringssl/crypto/rand/windows.c',
@@ -379,6 +360,7 @@
             'third_party/boringssl/crypto/rsa/rsa.c',
             'third_party/boringssl/crypto/rsa/rsa_asn1.c',
             'third_party/boringssl/crypto/rsa/rsa_impl.c',
+            'third_party/boringssl/crypto/sha/sha1-altivec.c',
             'third_party/boringssl/crypto/sha/sha1.c',
             'third_party/boringssl/crypto/sha/sha256.c',
             'third_party/boringssl/crypto/sha/sha512.c',
@@ -387,7 +369,6 @@
             'third_party/boringssl/crypto/thread_none.c',
             'third_party/boringssl/crypto/thread_pthread.c',
             'third_party/boringssl/crypto/thread_win.c',
-            'third_party/boringssl/crypto/time_support.c',
             'third_party/boringssl/crypto/x509/a_digest.c',
             'third_party/boringssl/crypto/x509/a_sign.c',
             'third_party/boringssl/crypto/x509/a_strex.c',
@@ -471,6 +452,7 @@
             'third_party/boringssl/crypto/x509v3/v3_skey.c',
             'third_party/boringssl/crypto/x509v3/v3_sxnet.c',
             'third_party/boringssl/crypto/x509v3/v3_utl.c',
+            'third_party/boringssl/ssl/bio_ssl.c',
             'third_party/boringssl/ssl/custom_extensions.c',
             'third_party/boringssl/ssl/d1_both.c',
             'third_party/boringssl/ssl/d1_lib.c',
@@ -481,7 +463,6 @@
             'third_party/boringssl/ssl/handshake_client.c',
             'third_party/boringssl/ssl/handshake_server.c',
             'third_party/boringssl/ssl/s3_both.c',
-            'third_party/boringssl/ssl/s3_enc.c',
             'third_party/boringssl/ssl/s3_lib.c',
             'third_party/boringssl/ssl/s3_pkt.c',
             'third_party/boringssl/ssl/ssl_aead_ctx.c',
@@ -492,9 +473,12 @@
             'third_party/boringssl/ssl/ssl_ecdh.c',
             'third_party/boringssl/ssl/ssl_file.c',
             'third_party/boringssl/ssl/ssl_lib.c',
-            'third_party/boringssl/ssl/ssl_rsa.c',
+            'third_party/boringssl/ssl/ssl_privkey.c',
+            'third_party/boringssl/ssl/ssl_privkey_cc.cc',
             'third_party/boringssl/ssl/ssl_session.c',
             'third_party/boringssl/ssl/ssl_stat.c',
+            'third_party/boringssl/ssl/ssl_transcript.c',
+            'third_party/boringssl/ssl/ssl_x509.c',
             'third_party/boringssl/ssl/t1_enc.c',
             'third_party/boringssl/ssl/t1_lib.c',
             'third_party/boringssl/ssl/tls13_both.c',
@@ -503,9 +487,20 @@
             'third_party/boringssl/ssl/tls13_server.c',
             'third_party/boringssl/ssl/tls_method.c',
             'third_party/boringssl/ssl/tls_record.c',
-          ]
+          ],
+          'conditions': [
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'MACOSX_DEPLOYMENT_TARGET': '10.9',
+                'OTHER_CPLUSPLUSFLAGS': [
+                  '-stdlib=libc++',
+                  '-std=c++11'
+                ],
+              }
+            }],
+          ],
         },
-      ]
+      ],
     }],
     ['OS == "win" and runtime!="electron"', {
       'targets': [
@@ -609,7 +604,6 @@
         'src/core/lib/support/log_windows.c',
         'src/core/lib/support/mpscq.c',
         'src/core/lib/support/murmur_hash.c',
-        'src/core/lib/support/stack_lockfree.c',
         'src/core/lib/support/string.c',
         'src/core/lib/support/string_posix.c',
         'src/core/lib/support/string_util_windows.c',
@@ -735,8 +729,6 @@
         'src/core/lib/iomgr/wakeup_fd_nospecial.c',
         'src/core/lib/iomgr/wakeup_fd_pipe.c',
         'src/core/lib/iomgr/wakeup_fd_posix.c',
-        'src/core/lib/iomgr/workqueue_uv.c',
-        'src/core/lib/iomgr/workqueue_windows.c',
         'src/core/lib/json/json.c',
         'src/core/lib/json/json_reader.c',
         'src/core/lib/json/json_string.c',
@@ -873,11 +865,13 @@
         'third_party/nanopb/pb_common.c',
         'third_party/nanopb/pb_decode.c',
         'third_party/nanopb/pb_encode.c',
+        'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c',
         'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c',
         'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c',
+        'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c',
         'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c',
         'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c',
         'src/core/ext/filters/load_reporting/load_reporting.c',
@@ -890,6 +884,7 @@
         'src/core/ext/census/grpc_filter.c',
         'src/core/ext/census/grpc_plugin.c',
         'src/core/ext/census/initialize.c',
+        'src/core/ext/census/intrusive_hash_map.c',
         'src/core/ext/census/mlog.c',
         'src/core/ext/census/operation.c',
         'src/core/ext/census/placeholders.c',

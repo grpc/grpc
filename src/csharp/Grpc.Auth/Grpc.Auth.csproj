@@ -16,6 +16,9 @@
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.5' ">1.6.0</NetStandardImplicitPackageVersion>
+    <IncludeSymbols>true</IncludeSymbols>
+    <IncludeSource>true</IncludeSource>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,7 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj">
+      <PrivateAssets>None</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

@@ -5,43 +5,28 @@
 
 # gRPC Core CocoaPods podspec
 #
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.4.0-dev'
+  version = '1.5.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
-  s.license  = 'New BSD'
+  s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   s.source = {
@@ -208,7 +193,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
                       'src/core/lib/support/spinlock.h',
-                      'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
                       'src/core/lib/support/thd_internal.h',
@@ -238,7 +222,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/log_windows.c',
                       'src/core/lib/support/mpscq.c',
                       'src/core/lib/support/murmur_hash.c',
-                      'src/core/lib/support/stack_lockfree.c',
                       'src/core/lib/support/string.c',
                       'src/core/lib/support/string_posix.c',
                       'src/core/lib/support/string_util_windows.c',
@@ -333,9 +316,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/wakeup_fd_cv.h',
                       'src/core/lib/iomgr/wakeup_fd_pipe.h',
                       'src/core/lib/iomgr/wakeup_fd_posix.h',
-                      'src/core/lib/iomgr/workqueue.h',
-                      'src/core/lib/iomgr/workqueue_uv.h',
-                      'src/core/lib/iomgr/workqueue_windows.h',
                       'src/core/lib/json/json.h',
                       'src/core/lib/json/json_common.h',
                       'src/core/lib/json/json_reader.h',
@@ -452,6 +432,7 @@ Pod::Spec.new do |s|
                       'third_party/nanopb/pb_common.h',
                       'third_party/nanopb/pb_decode.h',
                       'third_party/nanopb/pb_encode.h',
+                      'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                       'src/core/ext/filters/load_reporting/load_reporting.h',
@@ -463,6 +444,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/gen/census.pb.h',
                       'src/core/ext/census/gen/trace_context.pb.h',
                       'src/core/ext/census/grpc_filter.h',
+                      'src/core/ext/census/intrusive_hash_map.h',
+                      'src/core/ext/census/intrusive_hash_map_internal.h',
                       'src/core/ext/census/mlog.h',
                       'src/core/ext/census/resource.h',
                       'src/core/ext/census/rpc_metric_id.h',
@@ -558,8 +541,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/wakeup_fd_nospecial.c',
                       'src/core/lib/iomgr/wakeup_fd_pipe.c',
                       'src/core/lib/iomgr/wakeup_fd_posix.c',
-                      'src/core/lib/iomgr/workqueue_uv.c',
-                      'src/core/lib/iomgr/workqueue_windows.c',
                       'src/core/lib/json/json.c',
                       'src/core/lib/json/json_reader.c',
                       'src/core/lib/json/json_string.c',
@@ -696,11 +677,13 @@ Pod::Spec.new do |s|
                       'third_party/nanopb/pb_common.c',
                       'third_party/nanopb/pb_decode.c',
                       'third_party/nanopb/pb_encode.c',
+                      'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c',
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c',
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c',
                       'src/core/ext/filters/load_reporting/load_reporting.c',
@@ -713,6 +696,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/grpc_filter.c',
                       'src/core/ext/census/grpc_plugin.c',
                       'src/core/ext/census/initialize.c',
+                      'src/core/ext/census/intrusive_hash_map.c',
                       'src/core/ext/census/mlog.c',
                       'src/core/ext/census/operation.c',
                       'src/core/ext/census/placeholders.c',
@@ -737,7 +721,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
                               'src/core/lib/support/spinlock.h',
-                              'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
                               'src/core/lib/support/thd_internal.h',
@@ -816,9 +799,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/wakeup_fd_cv.h',
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
-                              'src/core/lib/iomgr/workqueue.h',
-                              'src/core/lib/iomgr/workqueue_uv.h',
-                              'src/core/lib/iomgr/workqueue_windows.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/json/json_common.h',
                               'src/core/lib/json/json_reader.h',
@@ -935,6 +915,7 @@ Pod::Spec.new do |s|
                               'third_party/nanopb/pb_common.h',
                               'third_party/nanopb/pb_decode.h',
                               'third_party/nanopb/pb_encode.h',
+                              'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                               'src/core/ext/filters/load_reporting/load_reporting.h',
@@ -946,6 +927,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/gen/census.pb.h',
                               'src/core/ext/census/gen/trace_context.pb.h',
                               'src/core/ext/census/grpc_filter.h',
+                              'src/core/ext/census/intrusive_hash_map.h',
+                              'src/core/ext/census/intrusive_hash_map_internal.h',
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/resource.h',
                               'src/core/ext/census/rpc_metric_id.h',

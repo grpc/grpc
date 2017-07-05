@@ -247,12 +247,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_uv.c">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.c">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json.c">
       <Filter>src\core\lib\json</Filter>
     </ClCompile>
@@ -661,6 +655,9 @@
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
       <Filter>third_party\nanopb</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\fake</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\pick_first\pick_first.c">
       <Filter>src\core\ext\filters\client_channel\lb_policy\pick_first</Filter>
     </ClCompile>
@@ -674,6 +671,9 @@
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.c">
+      <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper_fallback.c">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\native\dns_resolver.c">
@@ -710,6 +710,9 @@
       <Filter>src\core\ext\census</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\initialize.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\intrusive_hash_map.c">
       <Filter>src\core\ext\census</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\mlog.c">
@@ -1064,15 +1067,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_uv.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json.h">
       <Filter>src\core\lib\json</Filter>
     </ClInclude>
@@ -1421,6 +1415,9 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
       <Filter>third_party\nanopb</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.h">
+      <Filter>src\core\ext\filters\client_channel\resolver\fake</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver.h">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClInclude>
@@ -1452,6 +1449,12 @@
       <Filter>src\core\ext\census\gen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\intrusive_hash_map.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\intrusive_hash_map_internal.h">
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\mlog.h">
@@ -1567,6 +1570,9 @@
     </Filter>
     <Filter Include="src\core\ext\filters\client_channel\resolver\dns\native">
       <UniqueIdentifier>{9b2d7e1f-b78a-2e7a-3000-944e46a5fab9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\filters\client_channel\resolver\fake">
+      <UniqueIdentifier>{e75d1482-9a43-5fdf-03a5-e2b2833715fb}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\filters\client_channel\resolver\sockaddr">
       <UniqueIdentifier>{bd317dd5-323e-5b27-4c05-d85786be36ab}</UniqueIdentifier>
