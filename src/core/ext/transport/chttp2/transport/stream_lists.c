@@ -20,6 +20,11 @@
 
 #include <grpc/support/log.h>
 
+#ifdef GPR_LOW_LEVEL_COUNTERS
+gpr_atm g_transport_stalls_count;
+gpr_atm g_stream_stalls_count;
+#endif
+
 /* core list management */
 
 static bool stream_list_empty(grpc_chttp2_transport *t,
@@ -150,6 +155,9 @@ void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport *t,
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s) {
+#ifdef GPR_LOW_LEVEL_COUNTERS
+  __atomic_fetch_add(&g_transport_stalls_count, 1, __ATOMIC_RELAXED);
+#endif
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
 }
 
@@ -165,6 +173,9 @@ void grpc_chttp2_list_remove_stalled_by_transport(grpc_chttp2_transport *t,
 
 void grpc_chttp2_list_add_stalled_by_stream(grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s) {
+#ifdef GPR_LOW_LEVEL_COUNTERS
+  __atomic_fetch_add(&g_stream_stalls_count, 1, __ATOMIC_RELAXED);
+#endif
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
 }
 

@@ -58,6 +58,8 @@ extern "C" gpr_atm gpr_mu_locks;
 extern "C" gpr_atm gpr_counter_atm_cas;
 extern "C" gpr_atm gpr_counter_atm_add;
 extern "C" gpr_atm gpr_now_call_count;
+extern "C" gpr_atm g_transport_stalls_count;
+extern "C" gpr_atm g_stream_stalls_count;
 #endif
 
 class TrackCounters {
@@ -74,6 +76,10 @@ class TrackCounters {
       gpr_atm_no_barrier_load(&gpr_counter_atm_add);
   const size_t now_calls_at_start_ =
       gpr_atm_no_barrier_load(&gpr_now_call_count);
+  const size_t transport_stalls_at_start_ =
+      gpr_atm_no_barrier_load(&g_transport_stalls_count);
+  const size_t stream_stalls_at_start_ =
+      gpr_atm_no_barrier_load(&g_stream_stalls_count);
   grpc_memory_counters counters_at_start_ = grpc_memory_counters_snapshot();
 #endif
 };
