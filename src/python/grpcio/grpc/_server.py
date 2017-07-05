@@ -16,9 +16,10 @@
 import collections
 import enum
 import logging
-import six
 import threading
 import time
+
+import six
 
 import grpc
 from grpc import _common

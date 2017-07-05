@@ -955,28 +955,6 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 7, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
-    "name": "gpr_stack_lockfree_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
@@ -4252,7 +4230,9 @@
     ]
   }, 
   {
-    "args": [], 
+    "args": [
+      "third_party/boringssl/crypto/aes/aes_tests.txt"
+    ], 
     "boringssl": true, 
     "ci_platforms": [
       "linux", 
@@ -4404,62 +4384,9 @@
     ]
   }, 
   {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_chacha_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
     "args": [
       "aes-128-gcm", 
       "third_party/boringssl/crypto/cipher/test/aes_128_gcm_tests.txt"
-    ], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_aead_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [
-      "aes-128-key-wrap", 
-      "third_party/boringssl/crypto/cipher/test/aes_128_key_wrap_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -4514,8 +4441,36 @@
   }, 
   {
     "args": [
-      "aes-256-key-wrap", 
-      "third_party/boringssl/crypto/cipher/test/aes_256_key_wrap_tests.txt"
+      "aes-128-gcm-siv", 
+      "third_party/boringssl/crypto/cipher/test/aes_128_gcm_siv_tests.txt"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan", 
+      "ubsan"
+    ], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "boringssl_aead_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [
+      "aes-256-gcm-siv", 
+      "third_party/boringssl/crypto/cipher/test/aes_256_gcm_siv_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -4544,34 +4499,6 @@
     "args": [
       "chacha20-poly1305", 
       "third_party/boringssl/crypto/cipher/test/chacha20_poly1305_tests.txt"
-    ], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_aead_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [
-      "chacha20-poly1305-old", 
-      "third_party/boringssl/crypto/cipher/test/chacha20_poly1305_old_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -5159,31 +5086,6 @@
     ], 
     "flaky": false, 
     "language": "c++", 
-    "name": "boringssl_dh_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
     "name": "boringssl_digest_test", 
     "platforms": [
       "linux", 
@@ -5209,57 +5111,34 @@
     ], 
     "flaky": false, 
     "language": "c++", 
-    "name": "boringssl_dsa_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_ec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
     "name": "boringssl_example_mul", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [
+      "third_party/boringssl/crypto/ec/p256-x86_64_tests.txt"
+    ], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan", 
+      "ubsan"
+    ], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "boringssl_p256-x86_64_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -5366,31 +5245,6 @@
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_ecdsa_verify_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_err_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -5594,83 +5448,6 @@
     ], 
     "flaky": false, 
     "language": "c++", 
-    "name": "boringssl_newhope_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_newhope_statistical_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [
-      "third_party/boringssl/crypto/newhope/newhope_tests.txt"
-    ], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_newhope_vectors_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
     "name": "boringssl_obj_test", 
     "platforms": [
       "linux", 
@@ -5773,7 +5550,7 @@
     ], 
     "flaky": false, 
     "language": "c++", 
-    "name": "boringssl_refcount_test", 
+    "name": "boringssl_pool_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -5798,7 +5575,7 @@
     ], 
     "flaky": false, 
     "language": "c++", 
-    "name": "boringssl_rsa_test", 
+    "name": "boringssl_refcount_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -5932,31 +5709,6 @@
     ]
   }, 
   {
-    "args": [], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_ssl_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
     "args": [
       "authority_not_supported"
     ], 
@@ -6120,6 +5872,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -7388,6 +7163,29 @@
   }, 
   {
     "args": [
+      "cancel_after_round_trip"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "cancel_before_invoke"
     ], 
     "ci_platforms": [
@@ -8603,6 +8401,28 @@
   }, 
   {
     "args": [
+      "cancel_after_round_trip"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fakesec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "cancel_before_invoke"
     ], 
     "ci_platforms": [
@@ -9780,6 +9600,29 @@
   }, 
   {
     "args": [
+      "cancel_after_round_trip"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fd_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "cancel_before_invoke"
     ], 
     "ci_platforms": [
@@ -10862,6 +10705,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -12098,6 +11964,25 @@
   }, 
   {
     "args": [
+      "cancel_after_round_trip"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
       "cancel_before_invoke"
     ], 
     "ci_platforms": [
@@ -13156,6 +13041,29 @@
   }, 
   {
     "args": [
+      "cancel_after_round_trip"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "cancel_before_invoke"
     ], 
     "ci_platforms": [
@@ -14334,6 +14242,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+workarounds_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -15587,6 +15518,30 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_http_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -16876,6 +16831,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_load_reporting_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -18129,6 +18107,30 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_oauth2_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -19401,6 +19403,30 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -20457,6 +20483,30 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -21585,6 +21635,30 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair+trace_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -22653,6 +22727,32 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "msan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -23854,6 +23954,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -25100,6 +25223,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -26329,6 +26475,30 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -27402,6 +27572,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "linux", 
@@ -28598,6 +28791,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -29821,6 +30037,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -30998,6 +31237,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fd_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "linux", 
@@ -32079,6 +32341,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -33278,6 +33563,25 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "linux"
@@ -34309,6 +34613,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -35486,6 +35813,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+workarounds_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -36715,6 +37065,30 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_http_proxy_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -37981,6 +38355,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_load_reporting_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -39186,6 +39583,30 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_proxy_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -40218,6 +40639,30 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -41322,6 +41767,30 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -42364,6 +42833,32 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "msan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "windows", 
@@ -43542,6 +44037,29 @@
   {
     "args": [
       "cancel_after_invoke"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "cancel_after_round_trip"
     ], 
     "ci_platforms": [
       "linux", 

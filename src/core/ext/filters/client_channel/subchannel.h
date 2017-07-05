@@ -37,7 +37,7 @@ typedef struct grpc_subchannel_call grpc_subchannel_call;
 typedef struct grpc_subchannel_args grpc_subchannel_args;
 typedef struct grpc_subchannel_key grpc_subchannel_key;
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
   grpc_subchannel_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) \

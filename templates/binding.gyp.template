@@ -105,6 +105,15 @@
           ]
         }, {
           'conditions': [
+            ["target_arch=='ia32'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+            }],
+            ["target_arch=='x64'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+            }],
+            ["target_arch=='arm'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+            }],
             ['grpc_alpn=="true"', {
               'defines': [
                 'TSI_OPENSSL_ALPN_SUPPORT=1'
@@ -117,17 +126,6 @@
           ],
           'include_dirs': [
             '<(node_root_dir)/deps/openssl/openssl/include',
-          ],
-          'conditions': [
-           ["target_arch=='ia32'", {
-               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
-           }],
-           ["target_arch=='x64'", {
-               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
-           }],
-           ["target_arch=='arm'", {
-               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
-           }]
           ]
         }],
         ['OS == "win"', {
@@ -167,6 +165,7 @@
           % if lib.name in module.transitive_deps and lib.name == 'boringssl':
           {
             'cflags': [
+              '-std=c++11',
               '-std=c99',
               '-Wall',
               '-Werror'
@@ -183,12 +182,23 @@
               % for source in lib.src:
               '${source}',
               % endfor
-            ]
+            ],
+            'conditions': [
+              ['OS=="mac"', {
+                'xcode_settings': {
+                  'MACOSX_DEPLOYMENT_TARGET': '10.9',
+                  'OTHER_CPLUSPLUSFLAGS': [
+                    '-stdlib=libc++',
+                    '-std=c++11'
+                  ],
+                }
+              }],
+            ],
           },
           % endif
           % endfor
           % endfor
-        ]
+        ],
       }],
       ['OS == "win" and runtime!="electron"', {
         'targets': [

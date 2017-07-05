@@ -246,6 +246,10 @@ static char *roots_filename;
   [self testIndividualCase:"cancel_after_invoke"];
 }
 
+- (void)testCancelAfterRoundTrip {
+  [self testIndividualCase:"cancel_after_round_trip"];
+}
+
 - (void)testCancelBeforeInvoke {
   [self testIndividualCase:"cancel_before_invoke"];
 }

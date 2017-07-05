@@ -52,13 +52,15 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
   vars["input_type_id"] = MessageIdentifierName(input_type->full_name());
   vars["output_type_id"] = MessageIdentifierName(output_type->full_name());
 
-  out->Print(GetPHPComments(method, " //").c_str());
+  out->Print("/**\n");
+  out->Print(GetPHPComments(method, " *").c_str());
   if (method->client_streaming()) {
     out->Print(vars,
-               " // @param array $$metadata metadata\n"
-               " // @param array $$options call options\n"
+               " * @param array $$metadata metadata\n"
+               " * @param array $$options call options\n */\n"
                "public function $name$($$metadata = [], "
                "$$options = []) {\n");
+    out->Indent();
     out->Indent();
     if (method->server_streaming()) {
       out->Print("return $$this->_bidiRequest(");
@@ -71,11 +73,12 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
                "$$metadata, $$options);\n");
   } else {
     out->Print(vars,
-               " // @param \\$input_type_id$ $$argument input argument\n"
-               " // @param array $$metadata metadata\n"
-               " // @param array $$options call options\n"
+               " * @param \\$input_type_id$ $$argument input argument\n"
+               " * @param array $$metadata metadata\n"
+               " * @param array $$options call options\n */\n"
                "public function $name$(\\$input_type_id$ $$argument,\n"
                "  $$metadata = [], $$options = []) {\n");
+    out->Indent();
     out->Indent();
     if (method->server_streaming()) {
       out->Print("return $$this->_serverStreamRequest(");
@@ -89,25 +92,31 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
                "$$metadata, $$options);\n");
   }
   out->Outdent();
+  out->Outdent();
   out->Print("}\n\n");
 }
 
 // Prints out the service descriptor object
 void PrintService(const ServiceDescriptor *service, Printer *out) {
   map<grpc::string, grpc::string> vars;
-  out->Print(GetPHPComments(service, "//").c_str());
+  out->Print("/**\n");
+  out->Print(GetPHPComments(service, " *").c_str());
+  out->Print(" */\n");
   vars["name"] = service->name();
   out->Print(vars, "class $name$Client extends \\Grpc\\BaseStub {\n\n");
   out->Indent();
+  out->Indent();
   out->Print(
-      " // @param string $$hostname hostname\n"
-      " // @param array $$opts channel options\n"
-      " // @param \\Grpc\\Channel $$channel (optional) re-use channel "
-      "object\n"
+      "/**\n * @param string $$hostname hostname\n"
+      " * @param array $$opts channel options\n"
+      " * @param \\Grpc\\Channel $$channel (optional) re-use channel "
+      "object\n */\n"
       "public function __construct($$hostname, $$opts, "
       "$$channel = null) {\n");
   out->Indent();
+  out->Indent();
   out->Print("parent::__construct($$hostname, $$opts, $$channel);\n");
+  out->Outdent();
   out->Outdent();
   out->Print("}\n\n");
   for (int i = 0; i < service->method_count(); i++) {
@@ -116,7 +125,8 @@ void PrintService(const ServiceDescriptor *service, Printer *out) {
     PrintMethod(service->method(i), out);
   }
   out->Outdent();
-  out->Print("}\n\n");
+  out->Outdent();
+  out->Print("}\n");
 }
 }
 
@@ -138,13 +148,9 @@ grpc::string GenerateFile(const FileDescriptor *file,
 
     map<grpc::string, grpc::string> vars;
     vars["package"] = MessageIdentifierName(file->package());
-    out.Print(vars, "namespace $package$ {\n\n");
-    out.Indent();
+    out.Print(vars, "namespace $package$;\n\n");
 
     PrintService(service, &out);
-
-    out.Outdent();
-    out.Print("}\n");
   }
   return output;
 }
