@@ -49,6 +49,7 @@ typedef struct call_data {
   /** Closure to call when we retrieve read message from the path URI
    */
   grpc_closure *recv_message_ready;
+  grpc_closure recv_message_ready_in_call_combiner;
   grpc_closure *on_complete;
   grpc_byte_stream **pp_recv_message;
   grpc_slice_buffer read_slice_buffer;
@@ -274,6 +275,12 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   GRPC_CLOSURE_RUN(exec_ctx, calld->on_done_recv, err);
 }
 
+static void run_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
+                                 grpc_error *error) {
+  grpc_closure *closure = arg;
+  GRPC_CLOSURE_RUN(exec_ctx, closure, GRPC_ERROR_REF(error));
+}
+
 static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
                            grpc_error *err) {
   grpc_call_element *elem = user_data;
@@ -283,7 +290,14 @@ static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
     *calld->pp_recv_message = calld->payload_bin_delivered
                                   ? NULL
                                   : (grpc_byte_stream *)&calld->read_stream;
-    GRPC_CLOSURE_RUN(exec_ctx, calld->recv_message_ready, GRPC_ERROR_REF(err));
+    // Re-enter call combiner for recv_message ready, since the surface
+    // code will release the call combiner for each callback it receives.
+    GRPC_CLOSURE_SCHED(
+        exec_ctx,
+        GRPC_CLOSURE_INIT(&calld->recv_message_ready_in_call_combiner,
+                          run_in_call_combiner, calld->recv_message_ready,
+                          &calld->call_combiner->scheduler),
+        GRPC_ERROR_REF(err));
     calld->recv_message_ready = NULL;
     calld->payload_bin_delivered = true;
   }
@@ -295,8 +309,11 @@ static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (calld->seen_path_with_query) {
-    /* do nothing. This is probably a GET request, and payload will be returned
-    in hs_on_complete callback. */
+    // Do nothing. This is probably a GET request, and payload will be
+    // returned in hs_on_complete callback.
+    // Note that we release the call combiner here, so that other
+    // callbacks can run.
+    grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
   } else {
     GRPC_CLOSURE_RUN(exec_ctx, calld->recv_message_ready, GRPC_ERROR_REF(err));
   }
