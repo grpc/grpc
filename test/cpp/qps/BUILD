@@ -141,6 +141,7 @@ grpc_cc_binary(
         ":benchmark_config",
         ":driver_impl",
         "//:grpc++",
+        "//:grpc",
     ],
     external_deps = [
         "gflags",
@@ -179,6 +180,7 @@ grpc_cc_binary(
     srcs = ["worker.cc"],
     deps = [
         ":qps_worker_impl",
+        "//:grpc",
         "//:grpc++",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
