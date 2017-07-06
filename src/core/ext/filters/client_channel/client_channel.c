@@ -1155,9 +1155,9 @@ static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
             chand, calld);
   }
   GPR_ASSERT(calld->lb_policy != NULL);
-  subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
   GRPC_LB_POLICY_UNREF(exec_ctx, calld->lb_policy, "pick_subchannel");
   calld->lb_policy = NULL;
+  subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
 }
 
 // Takes a ref to chand->lb_policy and calls grpc_lb_policy_pick_locked().
