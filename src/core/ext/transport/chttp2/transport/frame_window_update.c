@@ -95,8 +95,8 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
 
     if (t->incoming_stream_id != 0) {
       if (s != NULL) {
-        GRPC_CHTTP2_FLOW_CONTROL_CREDIT_REMOTE_STREAM(
-            &s->flow_control, received_update, "recv'd stream window update");
+        grpc_chttp2_flow_control_recv_update(&s->flow_control, received_update);
+        // TODO(ncteisen): pull these control bits out
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
           grpc_chttp2_become_writable(
               exec_ctx, t, s, GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
@@ -105,9 +105,9 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
       }
     } else {
       bool was_zero = t->flow_control.remote_window <= 0;
-      GRPC_CHTTP2_FLOW_CONTROL_CREDIT_REMOTE_TRANSPORT(
-          &t->flow_control, received_update, "recv'd transport window update");
+      grpc_chttp2_flow_control_recv_update(&t->flow_control, received_update);
       bool is_zero = t->flow_control.remote_window <= 0;
+      // TODO(ncteisen): pull these control bits out
       if (was_zero && !is_zero) {
         grpc_chttp2_initiate_write(exec_ctx, t, "new_global_flow_control");
       }

@@ -739,15 +739,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GRPC_ERROR_UNREF(s->write_closed_error);
   GRPC_ERROR_UNREF(s->byte_stream_error);
 
-  if (s->flow_control.local_window_delta > 0) {
-    GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_STREAM(
-        &s->flow_control, (uint32_t)(s->flow_control.local_window_delta),
-        "destroy stream");
-  } else if (s->flow_control.local_window_delta < 0) {
-    GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_STREAM(
-        &s->flow_control, (uint32_t)(-s->flow_control.local_window_delta),
-        "destroy stream");
-  }
+  grpc_chttp2_flow_control_destroy_stream(&s->flow_control);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "stream");
 
@@ -2543,11 +2535,8 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
       !s->read_closed) {
     uint32_t add_max_recv_bytes = (uint32_t)(
         max_recv_bytes - s->flow_control.announced_local_window_delta);
-    GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_STREAM(
-        &s->flow_control, add_max_recv_bytes, "bytes pulled out of transport");
-    GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_TRANSPORT(
-        &t->flow_control, add_max_recv_bytes, "bytes pulled out of transport");
-
+    grpc_chttp2_flow_control_set_app_recv(&t->flow_control, &s->flow_control, add_max_recv_bytes);
+    // TODO(ncteisen): for now this is unconditional, tune it
     grpc_chttp2_become_writable(exec_ctx, t, s,
                                 GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
                                 "read_incoming_stream");

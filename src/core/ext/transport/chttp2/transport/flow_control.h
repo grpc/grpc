@@ -105,117 +105,26 @@ uint32_t grpc_chttp2_flow_control_get_stream_announce(
 uint32_t grpc_chttp2_flow_control_get_transport_announce(
     grpc_chttp2_transport_flow_control_data* tfc, int64_t initial_window);
 
-// All of the ugliness below is in the interest of having a consistent,
-// malleable tracing system to examine flow control intricacies. For a quick
-// overview of the flow control API, read the lowercase function prototypes
-// below all these macros.
-#ifndef NDEBUG
-#define GRPC_FLOW_CONTROL_DEBUG_ARGS \
-  , const char *file, int line, const char *reason
-#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_credit_local_transport((fc), (val), __FILE__, \
-                                                  __LINE__, (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_debit_local_transport((fc), (val), __FILE__, \
-                                                 __LINE__, (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_credit_local_stream((fc), (val), __FILE__, \
-                                               __LINE__, (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_STREAM(fc, val, reason)           \
-  grpc_chttp2_flow_control_debit_local_stream((fc), (val), __FILE__, __LINE__, \
-                                              (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_CREDIT_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_announce_credit_transport((fc), (val), __FILE__, \
-                                                     __LINE__, (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_DEBIT_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_announce_debit_transport((fc), (val), __FILE__, \
-                                                    __LINE__, (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_CREDIT_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_announce_credit_stream((fc), (val), __FILE__, \
-                                                  __LINE__, (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_DEBIT_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_announce_debit_stream((fc), (val), __FILE__, \
-                                                 __LINE__, (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_REMOTE_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_credit_remote_transport((fc), (val), __FILE__, \
-                                                   __LINE__, (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_REMOTE_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_debit_remote_transport((fc), (val), __FILE__, \
-                                                  __LINE__, (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_REMOTE_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_credit_remote_stream((fc), (val), __FILE__, \
-                                                __LINE__, (reason))
-#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_REMOTE_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_debit_remote_stream((fc), (val), __FILE__, \
-                                               __LINE__, (reason))
-#else
-#define GRPC_FLOW_CONTROL_DEBUG_ARGS
-#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_credit_local_transport((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_debit_local_transport((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_LOCAL_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_credit_local_stream((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_LOCAL_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_debit_local_stream((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_CREDIT_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_announce_credit_transport((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_DEBIT_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_announce_debit_transport((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_CREDIT_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_announce_credit_stream((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_ANNOUNCE_DEBIT_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_announce_debit_stream((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_REMOTE_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_credit_remote_transport((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_REMOTE_TRANSPORT(fc, val, reason) \
-  grpc_chttp2_flow_control_debit_remote_transport((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_CREDIT_REMOTE_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_credit_remote_stream((fc), (val))
-#define GRPC_CHTTP2_FLOW_CONTROL_DEBIT_REMOTE_STREAM(fc, val, reason) \
-  grpc_chttp2_flow_control_debit_remote_stream((fc), (val))
-#endif
+// we have sent data on the wire
+void grpc_chttp2_flow_control_sent_data(grpc_chttp2_transport_flow_control_data* tfc, grpc_chttp2_stream_flow_control_data* sfc, int64_t size);
 
-void grpc_chttp2_flow_control_transport_init(
-    grpc_chttp2_transport_flow_control_data* tfc);
-void grpc_chttp2_flow_control_stream_init(
-    grpc_chttp2_stream_flow_control_data* sfc);
+// we have received data from the wire
+grpc_error* grpc_chttp2_flow_control_recv_data(grpc_chttp2_transport_flow_control_data* tfc, grpc_chttp2_stream_flow_control_data* sfc, int64_t size);
 
-void grpc_chttp2_flow_control_credit_local_transport(
-    grpc_chttp2_transport_flow_control_data* tfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_debit_local_transport(
-    grpc_chttp2_transport_flow_control_data* tfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_credit_local_stream(
-    grpc_chttp2_stream_flow_control_data* sfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_debit_local_stream(
-    grpc_chttp2_stream_flow_control_data* sfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_announce_credit_transport(
-    grpc_chttp2_transport_flow_control_data* tfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_announce_debit_transport(
-    grpc_chttp2_transport_flow_control_data* tfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_announce_credit_stream(
-    grpc_chttp2_stream_flow_control_data* sfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_announce_debit_stream(
-    grpc_chttp2_stream_flow_control_data* sfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_credit_remote_transport(
-    grpc_chttp2_transport_flow_control_data* tfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_debit_remote_transport(
-    grpc_chttp2_transport_flow_control_data* tfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_credit_remote_stream(
-    grpc_chttp2_stream_flow_control_data* sfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
-void grpc_chttp2_flow_control_debit_remote_stream(
-    grpc_chttp2_stream_flow_control_data* sfc,
-    uint32_t val GRPC_FLOW_CONTROL_DEBUG_ARGS);
+uint32_t grpc_chttp2_flow_control_maybe_send_update(grpc_chttp2_transport_flow_control_data* tfc);
+uint32_t grpc_chttp2_flow_control_maybe_send_update(grpc_chttp2_stream_flow_control_data* sfc);
+
+// we have received a WINDOW_UPDATE frame for a transport
+void grpc_chttp2_flow_control_recv_update(grpc_chttp2_transport_flow_control_data* tfc, uint32_t size);
+
+// we have received a WINDOW_UPDATE frame for a stream
+void grpc_chttp2_flow_control_recv_update(grpc_chttp2_stream_flow_control_data* sfc, uint32_t size);
+
+// the application is asking for a certain amount of bytes
+void grpc_chttp2_flow_control_set_app_recv(grpc_chttp2_stream_flow_control_data *sfc, int64_t amt);
+
+void grpc_chttp2_flow_control_destroy_stream(grpc_chttp2_stream_flow_control_data *sfc);
+
+
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H */
