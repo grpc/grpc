@@ -87,7 +87,7 @@ DECLARE_bool(l);
 
 namespace {
 
-const int kNumResponseStreamsMsgs = 3;
+const int kServerDefaultResponseStreamsToSend = 3;
 
 class TestCliCredentials final : public grpc::testing::CliCredentials {
  public:
@@ -159,7 +159,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     context->AddTrailingMetadata("trailing_key", "trailing_value");
 
     EchoResponse response;
-    for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+    for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       response.set_message(request->message() + grpc::to_string(i));
       writer->Write(response);
     }
@@ -463,7 +463,7 @@ TEST_F(GrpcToolTest, CallCommandResponseStream) {
                                              std::placeholders::_1)));
 
   // Expected output: "message: \"Hello{n}\""
-  for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+  for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
     grpc::string expected_response_text =
         "message: \"Hello" + grpc::to_string(i) + "\"\n";
     EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
