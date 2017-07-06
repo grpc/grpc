@@ -87,9 +87,9 @@ static void on_md_processing_done(
     void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
     const grpc_metadata *response_md, size_t num_response_md,
     grpc_status_code status, const char *error_details) {
-  grpc_transport_stream_op_batch *batch = user_data;
-  grpc_call_element *elem = batch->handler_private.extra_arg;
+  grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
+  grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != NULL && num_response_md > 0) {
@@ -108,9 +108,9 @@ static void on_md_processing_done(
     if (error_details == NULL) {
       error_details = "Authentication metadata processing failed.";
     }
-    error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
-        GRPC_ERROR_INT_GRPC_STATUS, status);
+    error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
+                           GRPC_ERROR_INT_GRPC_STATUS, status);
   }
   for (size_t i = 0; i < calld->md.count; i++) {
     grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
@@ -128,8 +128,8 @@ static void run_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_CLOSURE_RUN(exec_ctx, closure, GRPC_ERROR_REF(error));
 }
 
-static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
-                                        void *arg, grpc_error *error) {
+static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error) {
   grpc_call_element *elem = arg;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
@@ -150,7 +150,7 @@ gpr_log(GPR_INFO, "INTERCEPTING recv_initial_metadata CLOSURE ON call_combiner=%
           batch->payload->recv_initial_metadata.recv_initial_metadata);
       chand->creds->processor.process(
           chand->creds->processor.state, calld->auth_context,
-          calld->md.metadata, calld->md.count, on_md_processing_done, batch);
+          calld->md.metadata, calld->md.count, on_md_processing_done, elem);
 gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
       grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
       return;
