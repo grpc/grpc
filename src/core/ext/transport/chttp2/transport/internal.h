@@ -61,12 +61,6 @@ typedef enum {
 } grpc_chttp2_write_state;
 
 typedef enum {
-  GRPC_CHTTP2_PING_ON_NEXT_WRITE = 0,
-  GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
-  GRPC_CHTTP2_PING_TYPE_COUNT /* must be last */
-} grpc_chttp2_ping_type;
-
-typedef enum {
   GRPC_CHTTP2_PCL_INITIATE = 0,
   GRPC_CHTTP2_PCL_NEXT,
   GRPC_CHTTP2_PCL_INFLIGHT,
@@ -296,7 +290,7 @@ struct grpc_chttp2_transport {
   uint32_t last_new_stream_id;
 
   /** ping queues for various ping insertion points */
-  grpc_chttp2_ping_queue ping_queues[GRPC_CHTTP2_PING_TYPE_COUNT];
+  grpc_chttp2_ping_queue ping_queue;
   grpc_chttp2_repeated_ping_policy ping_policy;
   grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr; /* unique id for pings */
