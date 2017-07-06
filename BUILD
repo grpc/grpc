@@ -36,7 +36,7 @@ load(
 # This should be updated along with build.yaml
 g_stands_for = "gregarious"
 
-core_version = "4.0.0-dev"
+core_version = "5.0.0-dev"
 
 version = "1.5.0-dev"
 
