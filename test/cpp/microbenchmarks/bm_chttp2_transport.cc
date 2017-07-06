@@ -391,8 +391,8 @@ static void BM_TransportStreamSend(benchmark::State &state) {
       MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
         if (!state.KeepRunning()) return;
         // force outgoing window to be yuge
-        s.chttp2_stream()->outgoing_window_delta = 1024 * 1024 * 1024;
-        f.chttp2_transport()->outgoing_window = 1024 * 1024 * 1024;
+        s.chttp2_stream()->remote_window_delta = 1024 * 1024 * 1024;
+        f.chttp2_transport()->remote_window = 1024 * 1024 * 1024;
         grpc_slice_buffer_stream_init(&send_stream, &send_buffer, 0);
         reset_op();
         op.on_complete = c.get();
@@ -521,8 +521,10 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
       MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
         if (!state.KeepRunning()) return;
         // force outgoing window to be yuge
-        s.chttp2_stream()->incoming_window_delta = 1024 * 1024 * 1024;
-        f.chttp2_transport()->incoming_window = 1024 * 1024 * 1024;
+        s.chttp2_stream()->local_window_delta = 1024 * 1024 * 1024;
+        f.chttp2_transport()->local_window = 1024 * 1024 * 1024;
+        s.chttp2_stream()->announced_window_delta = 1024 * 1024 * 1024;
+        f.chttp2_transport()->announced_window = 1024 * 1024 * 1024;
         received = 0;
         reset_op();
         op.on_complete = do_nothing.get();

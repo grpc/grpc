@@ -114,11 +114,6 @@ static void connectivity_state_set(grpc_exec_ctx *exec_ctx,
                                    grpc_connectivity_state state,
                                    grpc_error *error, const char *reason);
 
-static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
-                                                     grpc_chttp2_transport *t,
-                                                     grpc_chttp2_stream *s,
-                                                     size_t max_size_hint,
-                                                     size_t have_already);
 static void incoming_byte_stream_destroy_locked(grpc_exec_ctx *exec_ctx,
                                                 void *byte_stream,
                                                 grpc_error *error_ignored);
@@ -270,8 +265,9 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->endpoint_reading = 1;
   t->next_stream_id = is_client ? 1 : 2;
   t->is_client = is_client;
-  t->outgoing_window = DEFAULT_WINDOW;
-  t->incoming_window = DEFAULT_WINDOW;
+  t->local_window = DEFAULT_WINDOW;
+  t->remote_window = DEFAULT_WINDOW;
+  t->announced_window = DEFAULT_WINDOW;
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
   grpc_connectivity_state_init(
@@ -758,13 +754,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GRPC_ERROR_UNREF(s->write_closed_error);
   GRPC_ERROR_UNREF(s->byte_stream_error);
 
-  if (s->incoming_window_delta > 0) {
-    GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA(
-        "destroy", t, s, s->incoming_window_delta);
-  } else if (s->incoming_window_delta < 0) {
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA(
-        "destroy", t, s, -s->incoming_window_delta);
-  }
+  grpc_chttp2_flowctl_destroy_stream(s);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "stream");
 
@@ -1460,7 +1450,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         already_received = s->frame_storage.length +
                            s->unprocessed_incoming_frames_buffer.length;
       }
-      incoming_byte_stream_update_flow_control(exec_ctx, t, s, 5,
+      grpc_chttp2_flowctl_incoming_bs_update(exec_ctx, t, s, 5,
                                                already_received);
     }
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
@@ -2159,9 +2149,10 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   if (delta == 0 || (delta > -bdp / 10 && delta < bdp / 10)) {
     return;
   }
-  if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
-    gpr_log(GPR_DEBUG, "%s: update initial window size to %d", t->peer_string,
-            (int)bdp);
+  if (GRPC_TRACER_ON(grpc_bdp_estimator_trace) ||
+      GRPC_TRACER_ON(grpc_flowctl_trace)) {
+    gpr_log(GPR_DEBUG, "%s | %p[%s] | update initial window size to %d",
+            t->peer_string, t, t->is_client ? "cli" : "svr", (int)bdp);
   }
   queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
                        (uint32_t)bdp);
@@ -2544,54 +2535,6 @@ static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
-                                                     grpc_chttp2_transport *t,
-                                                     grpc_chttp2_stream *s,
-                                                     size_t max_size_hint,
-                                                     size_t have_already) {
-  uint32_t max_recv_bytes;
-  uint32_t initial_window_size =
-      t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-
-  /* clamp max recv hint to an allowable size */
-  if (max_size_hint >= UINT32_MAX - initial_window_size) {
-    max_recv_bytes = UINT32_MAX - initial_window_size;
-  } else {
-    max_recv_bytes = (uint32_t)max_size_hint;
-  }
-
-  /* account for bytes already received but unknown to higher layers */
-  if (max_recv_bytes >= have_already) {
-    max_recv_bytes -= (uint32_t)have_already;
-  } else {
-    max_recv_bytes = 0;
-  }
-
-  /* add some small lookahead to keep pipelines flowing */
-  GPR_ASSERT(max_recv_bytes <= UINT32_MAX - initial_window_size);
-  if (s->incoming_window_delta < max_recv_bytes && !s->read_closed) {
-    uint32_t add_max_recv_bytes =
-        (uint32_t)(max_recv_bytes - s->incoming_window_delta);
-    grpc_chttp2_stream_write_type write_type =
-        GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED;
-    if (s->incoming_window_delta + initial_window_size <
-        (int64_t)have_already) {
-      write_type = GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
-    }
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA("op", t, s,
-                                                         add_max_recv_bytes);
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
-                                   add_max_recv_bytes);
-    if ((int64_t)s->incoming_window_delta + (int64_t)initial_window_size -
-            (int64_t)s->announce_window >
-        (int64_t)initial_window_size / 2) {
-      write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
-    }
-    grpc_chttp2_become_writable(exec_ctx, t, s, write_type,
-                                "read_incoming_stream");
-  }
-}
-
 static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
                                              void *argp,
                                              grpc_error *error_ignored) {
@@ -2600,7 +2543,7 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s = bs->stream;
 
   size_t cur_length = s->frame_storage.length;
-  incoming_byte_stream_update_flow_control(
+  grpc_chttp2_flowctl_incoming_bs_update(
       exec_ctx, t, s, bs->next_action.max_size_hint, cur_length);
 
   GPR_ASSERT(s->unprocessed_incoming_frames_buffer.length == 0);
@@ -2872,83 +2815,6 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
         exec_ctx, grpc_endpoint_get_resource_user(t->ep));
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "destructive_reclaimer");
-}
-
-/*******************************************************************************
- * TRACING
- */
-
-static char *format_flowctl_context_var(const char *context, const char *var,
-                                        int64_t val, uint32_t id) {
-  char *name;
-  if (context == NULL) {
-    name = gpr_strdup(var);
-  } else if (0 == strcmp(context, "t")) {
-    GPR_ASSERT(id == 0);
-    gpr_asprintf(&name, "TRANSPORT:%s", var);
-  } else if (0 == strcmp(context, "s")) {
-    GPR_ASSERT(id != 0);
-    gpr_asprintf(&name, "STREAM[%d]:%s", id, var);
-  } else {
-    gpr_asprintf(&name, "BAD_CONTEXT[%s][%d]:%s", context, id, var);
-  }
-  char *name_fld = gpr_leftpad(name, ' ', 64);
-  char *value;
-  gpr_asprintf(&value, "%" PRId64, val);
-  char *value_fld = gpr_leftpad(value, ' ', 8);
-  char *result;
-  gpr_asprintf(&result, "%s %s", name_fld, value_fld);
-  gpr_free(name);
-  gpr_free(name_fld);
-  gpr_free(value);
-  gpr_free(value_fld);
-  return result;
-}
-
-void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
-                               grpc_chttp2_flowctl_op op, const char *context1,
-                               const char *var1, const char *context2,
-                               const char *var2, int is_client,
-                               uint32_t stream_id, int64_t val1, int64_t val2) {
-  char *tmp_phase;
-  char *label1 = format_flowctl_context_var(context1, var1, val1, stream_id);
-  char *label2 = format_flowctl_context_var(context2, var2, val2, stream_id);
-  char *clisvr = is_client ? "client" : "server";
-  char *prefix;
-
-  tmp_phase = gpr_leftpad(phase, ' ', 8);
-  gpr_asprintf(&prefix, "FLOW %s: %s ", tmp_phase, clisvr);
-  gpr_free(tmp_phase);
-
-  switch (op) {
-    case GRPC_CHTTP2_FLOWCTL_MOVE:
-      if (val2 != 0) {
-        gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sMOVE   %s <- %s giving %" PRId64, prefix, label1, label2,
-                val1 + val2);
-      }
-      break;
-    case GRPC_CHTTP2_FLOWCTL_CREDIT:
-      GPR_ASSERT(val2 >= 0);
-      if (val2 != 0) {
-        gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sCREDIT %s by %s giving %" PRId64, prefix, label1, label2,
-                val1 + val2);
-      }
-      break;
-    case GRPC_CHTTP2_FLOWCTL_DEBIT:
-      GPR_ASSERT(val2 >= 0);
-      if (val2 != 0) {
-        gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sDEBIT  %s by %s giving %" PRId64, prefix, label1, label2,
-                val1 - val2);
-      }
-      break;
-  }
-
-  gpr_free(label1);
-  gpr_free(label2);
-  gpr_free(prefix);
 }
 
 /*******************************************************************************

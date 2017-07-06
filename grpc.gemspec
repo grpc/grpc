@@ -527,6 +527,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/bin_encoder.c )
   s.files += %w( src/core/ext/transport/chttp2/transport/chttp2_plugin.c )
   s.files += %w( src/core/ext/transport/chttp2/transport/chttp2_transport.c )
+  s.files += %w( src/core/ext/transport/chttp2/transport/flow_control.c )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_data.c )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_goaway.c )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_ping.c )
