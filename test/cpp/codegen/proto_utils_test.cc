@@ -16,7 +16,8 @@
  *
  */
 
-#include <grpc++/impl/codegen/proto_utils.h>
+// #include <grpc++/impl/codegen/proto_utils.h>
+#include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/grpc_library.h>
 #include <gtest/gtest.h>
 
