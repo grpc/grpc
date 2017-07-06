@@ -1,0 +1,31 @@
+From 2d47f8756448769ebad10c66c48a1c06d58f2ff2 Mon Sep 17 00:00:00 2001
+From: thomas <thomas@thoughtmachine.net>
+Date: Thu, 6 Jul 2017 16:29:11 +0100
+Subject: [PATCH] Add TLS 1.2 ECDSA ciphersuites to defaults
+
+More and more PKI frameworks are generating certificates using
+ECDSA keypairs, enabling the ciphersuites in gRPC avoids having
+to define the environment variable.
+---
+ src/core/lib/security/transport/security_connector.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/lib/security/transport/security_connector.c b/src/core/lib/security/transport/security_connector.c
+index 3c0c242..cc1c3e5 100644
+--- a/src/core/lib/security/transport/security_connector.c
++++ b/src/core/lib/security/transport/security_connector.c
+@@ -70,7 +70,10 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
+ /* Defines the cipher suites that we accept by default. All these cipher suites
+    are compliant with HTTP2. */
+ #define GRPC_SSL_CIPHER_SUITES \
+-  "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384"
++  "ECDHE-ECDSA-AES128-GCM-SHA256:"\
++  "ECDHE-ECDSA-AES256-GCM-SHA384:"\
++  "ECDHE-RSA-AES128-GCM-SHA256:"\
++  "ECDHE-RSA-AES256-GCM-SHA384"
+ 
+ static gpr_once cipher_suites_once = GPR_ONCE_INIT;
+ static const char *cipher_suites = NULL;
+-- 
+2.7.4
+
