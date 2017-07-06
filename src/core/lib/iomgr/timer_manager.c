@@ -51,7 +51,7 @@ static bool g_kicked;
 // is there a thread waiting until the next timer should fire?
 static bool g_has_timed_waiter;
 // the deadline of the current timed waiter thread (only relevant if
-// g_has_timed_watier is true)
+// g_has_timed_waiter is true)
 static gpr_timespec g_timed_waiter_deadline;
 // generation counter to track which thread is waiting for the next timer
 static uint64_t g_timed_waiter_generation;
@@ -137,7 +137,7 @@ static bool wait_until(gpr_timespec next) {
 
   // If g_kicked is true at this point, it means there was a kick from the timer
   // system that the timer-manager threads here missed. We cannot trust 'next'
-  // here any longer (since there might be an eariler deadline). So if g_kicked
+  // here any longer (since there might be an earlier deadline). So if g_kicked
   // is true at this point, we should quickly exit this and get the next
   // deadline from the timer system
 
@@ -146,7 +146,7 @@ static bool wait_until(gpr_timespec next) {
     // only until the next timer should expire. All other timers wait forever
     //
     // 'g_timed_waiter_generation' is a global generation counter. The idea here
-    // is that the thread becoming a timed-waiter icrements and stores this
+    // is that the thread becoming a timed-waiter increments and stores this
     // global counter locally in 'my_timed_waiter_generation' before going to
     // sleep. After waking up, if my_timed_waiter_generation ==
     // g_timed_waiter_generation, it can be sure that it was the timed_waiter
