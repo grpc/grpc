@@ -463,6 +463,11 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
 }
 
+TEST_F(ClientLbEnd2endTest, RoundRobinConcurrentUpdates) {
+  // TODO(dgq): replicate the way internal testing exercises the concurrent
+  // update provisions of RR.
+}
+
 TEST_F(ClientLbEnd2endTest, RoundRobinReconnect) {
   // Start servers and send one RPC per server.
   const int kNumServers = 1;
