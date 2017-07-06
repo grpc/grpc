@@ -1024,7 +1024,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: failed to create subchannel: error=%s", chand,
-              calld, grpc_error_string(failure));
+              calld, grpc_error_string(calld->error));
     }
     waiting_for_pick_batches_fail(exec_ctx, elem,
                                   GRPC_ERROR_REF(calld->error));
@@ -1309,7 +1309,7 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
     calld->error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: recording cancel_error=%s", chand,
-              calld, grpc_error_string(error));
+              calld, grpc_error_string(calld->error));
     }
     /* Stash a copy of cancel_error in our call data, so that we can use
        it for subsequent operations.  This ensures that if the call is
@@ -1420,7 +1420,7 @@ gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->deadline_state.cal
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: sending batch to subchannel_call=%p", chand,
-              calld, coe.subchannel_call);
+              calld, calld->subchannel_call);
     }
     grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call, batch);
     goto done;
