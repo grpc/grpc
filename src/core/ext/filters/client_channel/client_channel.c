@@ -895,10 +895,13 @@ gpr_log(GPR_INFO, "scheduling in call_combiner");
     GRPC_CLOSURE_SCHED(exec_ctx, &calld->handle_pending_batch_in_call_combiner,
                        GRPC_ERROR_REF(error));
   }
-  GPR_ASSERT(calld->initial_metadata_batch != NULL);
-  grpc_transport_stream_op_batch_finish_with_failure(
-      exec_ctx, calld->initial_metadata_batch, GRPC_ERROR_REF(error),
-      calld->deadline_state.call_combiner);
+  if (calld->initial_metadata_batch != NULL) {
+    grpc_transport_stream_op_batch_finish_with_failure(
+        exec_ctx, calld->initial_metadata_batch, GRPC_ERROR_REF(error),
+        calld->deadline_state.call_combiner);
+  } else {
+    grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
+  }
   GRPC_ERROR_UNREF(error);
 }
 
