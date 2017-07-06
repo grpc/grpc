@@ -273,8 +273,6 @@ class ServerContext {
 
   uint32_t initial_metadata_flags() const { return 0; }
 
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> pending_ops_;
-  bool has_pending_ops_;
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
@@ -291,6 +289,9 @@ class ServerContext {
   bool compression_level_set_;
   grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
+
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> pending_ops_;
+  bool has_pending_ops_;
 };
 
 }  // namespace grpc
