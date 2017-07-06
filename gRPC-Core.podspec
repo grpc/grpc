@@ -47,8 +47,6 @@ Pod::Spec.new do |s|
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
     :tag => "v#{version}",
-    # TODO(jcanizales): Depend explicitly on the nanopb pod, and disable submodules.
-    :submodules => true,
   }
 
   s.ios.deployment_target = '7.0'
@@ -194,6 +192,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL', '~> 8.0'
+    ss.dependency 'nanopb', '~> 0.3'
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
@@ -448,10 +447,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
-                      'third_party/nanopb/pb.h',
-                      'third_party/nanopb/pb_common.h',
-                      'third_party/nanopb/pb_decode.h',
-                      'third_party/nanopb/pb_encode.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                       'src/core/ext/filters/load_reporting/load_reporting.h',
@@ -695,9 +690,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
-                      'third_party/nanopb/pb_common.c',
-                      'third_party/nanopb/pb_decode.c',
-                      'third_party/nanopb/pb_encode.c',
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c',
@@ -934,10 +926,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
-                              'third_party/nanopb/pb.h',
-                              'third_party/nanopb/pb_common.h',
-                              'third_party/nanopb/pb_decode.h',
-                              'third_party/nanopb/pb_encode.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                               'src/core/ext/filters/load_reporting/load_reporting.h',
