@@ -104,9 +104,9 @@ static void on_md_processing_done(
     if (error_details == NULL) {
       error_details = "Authentication metadata processing failed.";
     }
-    error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
-        GRPC_ERROR_INT_GRPC_STATUS, status);
+    error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
+                           GRPC_ERROR_INT_GRPC_STATUS, status);
   }
   for (size_t i = 0; i < calld->md.count; i++) {
     grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
@@ -118,8 +118,8 @@ static void on_md_processing_done(
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
-                                        void *arg, grpc_error *error) {
+static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error) {
   grpc_call_element *elem = arg;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
