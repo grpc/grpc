@@ -27,6 +27,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 #include <openssl/pem.h>
+#include <openssl/engine.h>
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -480,16 +481,18 @@ static EVP_PKEY *pkey_from_jwk(grpc_exec_ctx *exec_ctx, const grpc_json *json,
   }
   for (key_prop = json->child; key_prop != NULL; key_prop = key_prop->next) {
     if (strcmp(key_prop->key, "n") == 0) {
-      rsa->n =
-          bignum_from_base64(exec_ctx, validate_string_field(key_prop, "n"));
-      if (rsa->n == NULL) goto end;
+      if (!RSA_set0_key(rsa, bignum_from_base64(exec_ctx, validate_string_field(key_prop, "n")), NULL, NULL)) {
+        goto end;
+      }
     } else if (strcmp(key_prop->key, "e") == 0) {
-      rsa->e =
-          bignum_from_base64(exec_ctx, validate_string_field(key_prop, "e"));
-      if (rsa->e == NULL) goto end;
+      if (!RSA_set0_key(rsa, NULL, bignum_from_base64(exec_ctx, validate_string_field(key_prop, "e")), NULL)) {
+        goto end;
+      }
     }
   }
-  if (rsa->e == NULL || rsa->n == NULL) {
+  const BIGNUM *n, *e;
+  RSA_get0_key(rsa, &n, &e, NULL);
+  if (n == NULL || e == NULL) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
     goto end;
   }
