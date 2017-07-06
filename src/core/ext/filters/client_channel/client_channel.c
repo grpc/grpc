@@ -244,8 +244,8 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
     }
   }
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-    gpr_log(GPR_DEBUG, "chand=%p: setting connectivity state to %s",
-            chand, grpc_connectivity_state_name(state));
+    gpr_log(GPR_DEBUG, "chand=%p: setting connectivity state to %s", chand,
+            grpc_connectivity_state_name(state));
   }
   grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state, error,
                               reason);
@@ -258,8 +258,8 @@ static void on_lb_policy_state_changed_locked(grpc_exec_ctx *exec_ctx,
   /* check if the notification is for the latest policy */
   if (w->lb_policy == w->chand->lb_policy) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      gpr_log(GPR_DEBUG, "chand=%p: lb_policy=%p state changed to %s",
-              w->chand, w->lb_policy, grpc_connectivity_state_name(w->state));
+      gpr_log(GPR_DEBUG, "chand=%p: lb_policy=%p state changed to %s", w->chand,
+              w->lb_policy, grpc_connectivity_state_name(w->state));
     }
     if (publish_state == GRPC_CHANNEL_SHUTDOWN && w->chand->resolver != NULL) {
       publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
@@ -1023,8 +1023,8 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
                   "Failed to create subchannel", &error, 1);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: failed to create subchannel: error=%s",
-              chand, calld, grpc_error_string(calld->error));
+              "chand=%p calld=%p: failed to create subchannel: error=%s", chand,
+              calld, grpc_error_string(failure));
     }
     waiting_for_pick_batches_fail(exec_ctx, elem,
                                   GRPC_ERROR_REF(calld->error));
@@ -1203,9 +1203,9 @@ gpr_log(GPR_INFO, "pick done: error=%s", grpc_error_string(error));
   grpc_call_combiner_set_notify_on_cancel(calld->deadline_state.call_combiner,
                                           NULL);
   GPR_ASSERT(calld->lb_policy != NULL);
-  subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
   GRPC_LB_POLICY_UNREF(exec_ctx, calld->lb_policy, "pick_subchannel");
   calld->lb_policy = NULL;
+  subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
 }
 
 // Takes a ref to chand->lb_policy and calls grpc_lb_policy_pick_locked().
@@ -1308,8 +1308,8 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
     if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      gpr_log(GPR_DEBUG, "chand=%p calld=%p: recording cancel_error=%s",
-              chand, calld, grpc_error_string(calld->error));
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: recording cancel_error=%s", chand,
+              calld, grpc_error_string(error));
     }
     /* Stash a copy of cancel_error in our call data, so that we can use
        it for subsequent operations.  This ensures that if the call is
@@ -1419,8 +1419,8 @@ gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->deadline_state.cal
   if (calld->subchannel_call != NULL) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: sending batch to subchannel_call=%p",
-              chand, calld, calld->subchannel_call);
+              "chand=%p calld=%p: sending batch to subchannel_call=%p", chand,
+              calld, coe.subchannel_call);
     }
     grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call, batch);
     goto done;
