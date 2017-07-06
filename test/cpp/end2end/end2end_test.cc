@@ -776,6 +776,27 @@ TEST_P(End2endTest, ResponseStreamWithCoalescingApi) {
   EXPECT_TRUE(s.ok());
 }
 
+TEST_P(End2endTest, ResponseStreamWithCoalescingApiFailed) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+  context.AddMetadata(kServerUseCoalescingApi, "1");
+
+  auto stream = stub_->ResponseStream(&context, request);
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message() + "0");
+  // EXPECT_TRUE(stream->Read(&response));
+  // EXPECT_EQ(response.message(), request.message() + "1");
+  // EXPECT_TRUE(stream->Read(&response));
+  // EXPECT_EQ(response.message(), request.message() + "2");
+  // EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+}
+
 TEST_P(End2endTest, BidiStream) {
   ResetStub();
   EchoRequest request;
@@ -1661,7 +1682,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
 
 INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                true)));
+                                                                false)));
 
 INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, true,
