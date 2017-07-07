@@ -27,14 +27,14 @@
 namespace grpc {
 
 ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
-    : thd_mgr_(thd_mgr), thd_(&ThreadManager::WorkerThread::Run, this) {}
+    : thd_mgr_(thd_mgr), thd_(&ThreadManager::WorkerThread::Run, this) {
+  thd_.detach();
+}
 
 void ThreadManager::WorkerThread::Run() {
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
 }
-
-ThreadManager::WorkerThread::~WorkerThread() { thd_.join(); }
 
 ThreadManager::ThreadManager(int min_pollers, int max_pollers)
     : shutdown_(false),
@@ -44,12 +44,8 @@ ThreadManager::ThreadManager(int min_pollers, int max_pollers)
       num_threads_(0) {}
 
 ThreadManager::~ThreadManager() {
-  {
-    std::unique_lock<std::mutex> lock(mu_);
-    GPR_ASSERT(num_threads_ == 0);
-  }
-
-  CleanupCompletedThreads();
+  std::unique_lock<std::mutex> lock(mu_);
+  GPR_ASSERT(num_threads_ == 0);
 }
 
 void ThreadManager::Wait() {
@@ -70,23 +66,10 @@ bool ThreadManager::IsShutdown() {
 }
 
 void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
-  {
-    std::unique_lock<std::mutex> list_lock(list_mu_);
-    completed_threads_.push_back(thd);
-  }
-
   std::unique_lock<std::mutex> lock(mu_);
   num_threads_--;
   if (num_threads_ == 0) {
     shutdown_cv_.notify_one();
-  }
-}
-
-void ThreadManager::CleanupCompletedThreads() {
-  std::unique_lock<std::mutex> lock(list_mu_);
-  for (auto thd = completed_threads_.begin(); thd != completed_threads_.end();
-       thd = completed_threads_.erase(thd)) {
-    delete *thd;
   }
 }
 
@@ -152,9 +135,6 @@ void ThreadManager::MainWorkLoop() {
     // some thrashing starting up and shutting down threads
     num_pollers_++;
   };
-
-  CleanupCompletedThreads();
-
   // If we are here, either ThreadManager is shutting down or it already has
   // enough threads.
 }
