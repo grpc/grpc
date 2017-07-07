@@ -83,14 +83,11 @@ void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
 }
 
 void ThreadManager::CleanupCompletedThreads() {
-  std::list<WorkerThread*> completed_threads;
-  {
-    // swap out the completed threads list: allows other threads to clean up
-    // more quickly
-    std::unique_lock<std::mutex> lock(list_mu_);
-    completed_threads.swap(completed_threads_);
+  std::unique_lock<std::mutex> lock(list_mu_);
+  for (auto thd = completed_threads_.begin(); thd != completed_threads_.end();
+       thd = completed_threads_.erase(thd)) {
+    delete *thd;
   }
-  for (auto thd : completed_threads) delete thd;
 }
 
 void ThreadManager::Initialize() {
