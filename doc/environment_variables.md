@@ -42,6 +42,8 @@ some configuration as environment variables that can be set.
   - bdp_estimator - traces behavior of bdp estimation logic
   - call_error - traces the possible errors contributing to final call status
   - channel - traces operations on the C core channel stack
+  - client_channel - traces client channel activity, including resolver
+    and load balancing policy interaction
   - combiner - traces combiner lock state
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
