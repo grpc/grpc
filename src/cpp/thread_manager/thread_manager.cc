@@ -28,12 +28,12 @@ namespace grpc {
 
 ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
     : thd_mgr_(thd_mgr), thd_(&ThreadManager::WorkerThread::Run, this) {
-  thd_.detach();
 }
 
 ThreadManager::WorkerThread::~WorkerThread() {}
 
 void ThreadManager::WorkerThread::Run() {
+  thd_.detach();
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
 }
