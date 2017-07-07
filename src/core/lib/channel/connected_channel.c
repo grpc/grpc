@@ -39,8 +39,7 @@ typedef struct connected_channel_channel_data {
 typedef struct connected_channel_call_data {
   grpc_call_combiner *call_combiner;
   // Closures used for returning results on the call combiner.
-  grpc_closure on_complete[6];  // Max number of pending batches.
-  size_t num_on_completes;
+  grpc_closure on_complete[7];  // Max number of pending batches.
   grpc_closure recv_initial_metadata_ready;
   grpc_closure recv_message_ready;
 } call_data;
@@ -49,6 +48,18 @@ static void intercepted_closure_run(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_error *error) {
   grpc_closure *original_closure = arg;
   GRPC_CLOSURE_RUN(exec_ctx, original_closure, GRPC_ERROR_REF(error));
+}
+
+static grpc_closure *get_closure_for_batch(
+    call_data *calld, grpc_transport_stream_op_batch *batch) {
+  if (batch->send_initial_metadata) return &calld->on_complete[0];
+  if (batch->send_message) return &calld->on_complete[1];
+  if (batch->send_trailing_metadata) return &calld->on_complete[2];
+  if (batch->recv_initial_metadata) return &calld->on_complete[3];
+  if (batch->recv_message) return &calld->on_complete[4];
+  if (batch->recv_trailing_metadata) return &calld->on_complete[5];
+  if (batch->cancel_stream) return &calld->on_complete[6];
+  GPR_UNREACHABLE_CODE(return NULL);
 }
 
 /* We perform a small hack to locate transport data alongside the connected
@@ -62,31 +73,32 @@ static void intercepted_closure_run(grpc_exec_ctx *exec_ctx, void *arg,
    into transport stream operations */
 static void con_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-    grpc_transport_stream_op_batch *op) {
+    grpc_transport_stream_op_batch *batch) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  if (op->recv_initial_metadata) {
-    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
+  GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
+  if (batch->recv_initial_metadata) {
+    batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
         GRPC_CLOSURE_INIT(
             &calld->recv_initial_metadata_ready, intercepted_closure_run,
-            op->payload->recv_initial_metadata.recv_initial_metadata_ready,
+            batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
             &calld->call_combiner->scheduler);
-gpr_log(GPR_INFO, "INTERCEPTING recv_initial_metadata: closure=%p call_combiner=%p", op->payload->recv_initial_metadata.recv_initial_metadata_ready, calld->call_combiner);
+gpr_log(GPR_INFO, "INTERCEPTING recv_initial_metadata: closure=%p call_combiner=%p", batch->payload->recv_initial_metadata.recv_initial_metadata_ready, calld->call_combiner);
   }
-  if (op->recv_message) {
-    op->payload->recv_message.recv_message_ready = GRPC_CLOSURE_INIT(
+  if (batch->recv_message) {
+    batch->payload->recv_message.recv_message_ready = GRPC_CLOSURE_INIT(
         &calld->recv_message_ready, intercepted_closure_run,
-        op->payload->recv_message.recv_message_ready,
+        batch->payload->recv_message.recv_message_ready,
         &calld->call_combiner->scheduler);
-gpr_log(GPR_INFO, "INTERCEPTING recv_message: closure=%p call_combiner=%p", op->payload->recv_message.recv_message_ready, calld->call_combiner);
+gpr_log(GPR_INFO, "INTERCEPTING recv_message: closure=%p call_combiner=%p", batch->payload->recv_message.recv_message_ready, calld->call_combiner);
   }
-  op->on_complete = GRPC_CLOSURE_INIT(
-      &calld->on_complete[calld->num_on_completes++], intercepted_closure_run,
-      op->on_complete, &calld->call_combiner->scheduler);
-gpr_log(GPR_INFO, "INTERCEPTING on_complete: closure=%p call_combiner=%p", op->on_complete, calld->call_combiner);
+  batch->on_complete = GRPC_CLOSURE_INIT(
+      get_closure_for_batch(calld, batch), intercepted_closure_run,
+      batch->on_complete, &calld->call_combiner->scheduler);
+gpr_log(GPR_INFO, "INTERCEPTING on_complete: closure=%p call_combiner=%p", batch->on_complete, calld->call_combiner);
   grpc_transport_perform_stream_op(exec_ctx, chand->transport,
-                                   TRANSPORT_STREAM_FROM_CALL_DATA(calld), op);
+                                   TRANSPORT_STREAM_FROM_CALL_DATA(calld),
+                                   batch);
 gpr_log(GPR_INFO, "STOPPING call_combiner %p", calld->call_combiner);
   grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
 }
