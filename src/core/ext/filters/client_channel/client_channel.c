@@ -830,7 +830,7 @@ typedef struct client_channel_call_data {
 
   grpc_transport_stream_op_batch *waiting_for_pick_batches[MAX_WAITING_BATCHES];
   size_t waiting_for_pick_batches_count;
-  grpc_closure handle_pending_batch_in_call_combiner;
+  grpc_closure handle_pending_batch_in_call_combiner[MAX_WAITING_BATCHES];
 
   grpc_transport_stream_op_batch *initial_metadata_batch;
 
@@ -868,12 +868,6 @@ gpr_log(GPR_INFO, "==> %s(): calld->waiting_for_pick_batches_count=%zu", __func_
       exec_ctx,
       calld->waiting_for_pick_batches[calld->waiting_for_pick_batches_count],
       GRPC_ERROR_REF(error), calld->deadline_state.call_combiner);
-  if (calld->waiting_for_pick_batches_count > 0) {
-gpr_log(GPR_INFO, "scheduling recursively");
-    GRPC_CLOSURE_SCHED(exec_ctx,
-                       &calld->handle_pending_batch_in_call_combiner,
-                       GRPC_ERROR_REF(error));
-  }
 }
 
 static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
@@ -887,12 +881,13 @@ gpr_log(GPR_INFO, "==> %s(): call_combiner=%p", __func__, calld->deadline_state.
             elem->channel_data, calld, calld->waiting_for_pick_batches_count,
             grpc_error_string(error));
   }
-  if (calld->waiting_for_pick_batches_count > 0) {
-gpr_log(GPR_INFO, "scheduling in call_combiner");
-    GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner,
+  for (size_t i = 0; i < calld->waiting_for_pick_batches_count; ++i) {
+gpr_log(GPR_INFO, "scheduling waiting_for_pick_batches[%zu] in call_combiner", i);
+    GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner[i],
                       fail_pending_batch_in_call_combiner, calld,
                       &calld->deadline_state.call_combiner->scheduler);
-    GRPC_CLOSURE_SCHED(exec_ctx, &calld->handle_pending_batch_in_call_combiner,
+    GRPC_CLOSURE_SCHED(exec_ctx,
+                       &calld->handle_pending_batch_in_call_combiner[i],
                        GRPC_ERROR_REF(error));
   }
   if (calld->initial_metadata_batch != NULL) {
@@ -913,12 +908,6 @@ gpr_log(GPR_INFO, "==> %s(): calld->waiting_for_pick_batches_count=%zu", __func_
   grpc_subchannel_call_process_op(
       exec_ctx, calld->subchannel_call,
       calld->waiting_for_pick_batches[calld->waiting_for_pick_batches_count]);
-  if (calld->waiting_for_pick_batches_count > 0) {
-gpr_log(GPR_INFO, "scheduling recursively");
-    GRPC_CLOSURE_SCHED(exec_ctx,
-                       &calld->handle_pending_batch_in_call_combiner,
-                       GRPC_ERROR_NONE);
-  }
 }
 
 static void waiting_for_pick_batches_resume(grpc_exec_ctx *exec_ctx,
@@ -932,12 +921,13 @@ gpr_log(GPR_INFO, "==> %s(): call_combiner=%p", __func__, calld->deadline_state.
             chand, calld, calld->waiting_for_pick_batches_count,
             calld->subchannel_call);
   }
-  if (calld->waiting_for_pick_batches_count > 0) {
-gpr_log(GPR_INFO, "scheduling in call_combiner");
-    GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner,
+  for (size_t i = 0; i < calld->waiting_for_pick_batches_count; ++i) {
+gpr_log(GPR_INFO, "scheduling waiting_for_pick_batches[%zu] in call_combiner", i);
+    GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner[i],
                       run_pending_batch_in_call_combiner, calld,
                       &calld->deadline_state.call_combiner->scheduler);
-    GRPC_CLOSURE_SCHED(exec_ctx, &calld->handle_pending_batch_in_call_combiner,
+    GRPC_CLOSURE_SCHED(exec_ctx,
+                       &calld->handle_pending_batch_in_call_combiner[i],
                        GRPC_ERROR_NONE);
   }
   GPR_ASSERT(calld->initial_metadata_batch != NULL);
