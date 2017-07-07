@@ -48,6 +48,7 @@ typedef struct grpc_uv_tcp_connect {
 static void uv_tcp_connect_cleanup(grpc_exec_ctx *exec_ctx,
                                    grpc_uv_tcp_connect *connect) {
   grpc_resource_quota_unref_internal(exec_ctx, connect->resource_quota);
+  gpr_free(connect->addr_name);
   gpr_free(connect);
 }
 
@@ -105,6 +106,7 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
   }
   done = (--connect->refs == 0);
   if (done) {
+    grpc_exec_ctx_flush(&exec_ctx);
     uv_tcp_connect_cleanup(&exec_ctx, connect);
   }
   GRPC_CLOSURE_SCHED(&exec_ctx, closure, error);
@@ -140,6 +142,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   connect->resource_quota = resource_quota;
   uv_tcp_init(uv_default_loop(), connect->tcp_handle);
   connect->connect_req.data = connect;
+  connect->refs = 1;
 
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
