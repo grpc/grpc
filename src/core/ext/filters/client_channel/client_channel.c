@@ -1234,7 +1234,7 @@ gpr_log(GPR_INFO, "starting pick");
     grpc_call_combiner_set_notify_on_cancel(
         calld->deadline_state.call_combiner,
         GRPC_CLOSURE_INIT(&calld->cancel_closure, pick_callback_cancel_locked,
-                          calld, grpc_combiner_scheduler(chand->combiner)));
+                          elem, grpc_combiner_scheduler(chand->combiner)));
   }
   return pick_done;
 }

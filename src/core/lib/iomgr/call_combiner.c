@@ -107,6 +107,7 @@ void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
                                grpc_call_combiner* call_combiner,
                                grpc_error* error) {
   if (call_combiner->notify_on_cancel != NULL) {
+gpr_log(GPR_INFO, "scheduling notify_on_cancel callback=%p", call_combiner->notify_on_cancel);
     GRPC_CLOSURE_SCHED(exec_ctx, call_combiner->notify_on_cancel,
                        GRPC_ERROR_REF(error));
   }

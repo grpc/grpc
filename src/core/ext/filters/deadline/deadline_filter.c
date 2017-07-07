@@ -61,7 +61,7 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_call_element* elem = arg;
   grpc_deadline_state* deadline_state = elem->call_data;
   if (error != GRPC_ERROR_CANCELLED) {
-gpr_log(GPR_INFO, "TIMER POPPED; CANCELLING VIA call_combiner=%p", deadline_state->call_combiner);
+gpr_log(GPR_INFO, "TIMER POPPED; CANCELLING VIA call_combiner=%p closure=%p", deadline_state->call_combiner, &deadline_state->timer_callback);
     error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
