@@ -75,7 +75,6 @@ static bool g_default_keepalive_permit_without_calls =
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false);
-grpc_tracer_flag grpc_flowctl_trace = GRPC_TRACER_INITIALIZER(false);
 
 #ifndef NDEBUG
 grpc_tracer_flag grpc_trace_chttp2_refcount = GRPC_TRACER_INITIALIZER(false);
@@ -268,8 +267,10 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->endpoint_reading = 1;
   t->next_stream_id = is_client ? 1 : 2;
   t->is_client = is_client;
-  t->outgoing_window = DEFAULT_WINDOW;
-  t->incoming_window = DEFAULT_WINDOW;
+  grpc_chttp2_flow_control_transport_init(&t->flow_control);
+#ifndef NDEBUG
+  t->flow_control.is_client = is_client;
+#endif
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
   grpc_connectivity_state_init(
@@ -306,10 +307,10 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                     keepalive_watchdog_fired_locked, t,
                     grpc_combiner_scheduler(t->combiner));
 
-  grpc_bdp_estimator_init(&t->bdp_estimator, t->peer_string);
-  t->last_pid_update = gpr_now(GPR_CLOCK_MONOTONIC);
+  grpc_bdp_estimator_init(&t->flow_control.bdp_estimator, t->peer_string);
+  t->flow_control.last_pid_update = gpr_now(GPR_CLOCK_MONOTONIC);
   grpc_pid_controller_init(
-      &t->pid_controller,
+      &t->flow_control.pid_controller,
       (grpc_pid_controller_args){.gain_p = 4,
                                  .gain_i = 8,
                                  .gain_d = 0,
@@ -690,6 +691,11 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
   grpc_chttp2_data_parser_init(&s->data_parser);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
+  grpc_chttp2_flow_control_stream_init(&s->flow_control);
+  s->flow_control.tfc = &t->flow_control;
+#ifndef NDEBUG
+  s->flow_control.is_client = t->is_client;
+#endif
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   GRPC_CLOSURE_INIT(&s->complete_fetch_locked, complete_fetch_locked, s,
                     grpc_schedule_on_exec_ctx);
@@ -756,13 +762,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GRPC_ERROR_UNREF(s->write_closed_error);
   GRPC_ERROR_UNREF(s->byte_stream_error);
 
-  if (s->incoming_window_delta > 0) {
-    GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA(
-        "destroy", t, s, s->incoming_window_delta);
-  } else if (s->incoming_window_delta < 0) {
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA(
-        "destroy", t, s, -s->incoming_window_delta);
-  }
+  grpc_chttp2_flow_control_destroy_stream(&s->flow_control);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "stream");
 
@@ -2225,7 +2225,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
                              GRPC_ERROR_NONE};
     for (; i < t->read_buffer.count && errors[1] == GRPC_ERROR_NONE; i++) {
       if (grpc_bdp_estimator_add_incoming_bytes(
-              &t->bdp_estimator,
+              &t->flow_control.bdp_estimator,
               (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]))) {
         need_bdp_ping = true;
       }
@@ -2244,8 +2244,8 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     GPR_TIMER_END("reading_action.parse", 0);
 
     GPR_TIMER_BEGIN("post_parse_locked", 0);
-    if (t->initial_window_update != 0) {
-      if (t->initial_window_update > 0) {
+    if (t->flow_control.initial_window_update != 0) {
+      if (t->flow_control.initial_window_update > 0) {
         grpc_chttp2_stream *s;
         while (grpc_chttp2_list_pop_stalled_by_stream(t, &s)) {
           grpc_chttp2_become_writable(
@@ -2253,7 +2253,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
               "unstalled");
         }
       }
-      t->initial_window_update = 0;
+      t->flow_control.initial_window_update = 0;
     }
     GPR_TIMER_END("post_parse_locked", 0);
   }
@@ -2279,7 +2279,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     if (t->enable_bdp_probe) {
       if (need_bdp_ping) {
         GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
-        grpc_bdp_estimator_schedule_ping(&t->bdp_estimator);
+        grpc_bdp_estimator_schedule_ping(&t->flow_control.bdp_estimator);
         send_ping_locked(exec_ctx, t,
                          GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
                          &t->start_bdp_ping_locked, &t->finish_bdp_ping_locked);
@@ -2287,7 +2287,8 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
       int64_t estimate = -1;
       double bdp_guess = -1;
-      if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
+      if (grpc_bdp_estimator_get_estimate(&t->flow_control.bdp_estimator,
+                                          &estimate)) {
         double target = 1 + log2((double)estimate);
         double memory_pressure = grpc_resource_quota_get_memory_pressure(
             grpc_resource_user_quota(grpc_endpoint_get_resource_user(t->ep)));
@@ -2295,22 +2296,23 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
           target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
         }
         double bdp_error =
-            target - grpc_pid_controller_last(&t->pid_controller);
+            target - grpc_pid_controller_last(&t->flow_control.pid_controller);
         gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-        gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
+        gpr_timespec dt_timespec =
+            gpr_time_sub(now, t->flow_control.last_pid_update);
         double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
         if (dt > 0.1) {
           dt = 0.1;
         }
-        double log2_bdp_guess =
-            grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
+        double log2_bdp_guess = grpc_pid_controller_update(
+            &t->flow_control.pid_controller, bdp_error, dt);
         bdp_guess = pow(2, log2_bdp_guess);
         update_bdp(exec_ctx, t, bdp_guess);
-        t->last_pid_update = now;
+        t->flow_control.last_pid_update = now;
       }
 
       double bw = -1;
-      if (grpc_bdp_estimator_get_bw(&t->bdp_estimator, &bw)) {
+      if (grpc_bdp_estimator_get_bw(&t->flow_control.bdp_estimator, &bw)) {
         update_frame(exec_ctx, t, bw, bdp_guess);
       }
     }
@@ -2336,7 +2338,7 @@ static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
     grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
   }
-  grpc_bdp_estimator_start_ping(&t->bdp_estimator);
+  grpc_bdp_estimator_start_ping(&t->flow_control.bdp_estimator);
 }
 
 static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
@@ -2345,7 +2347,7 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (GRPC_TRACER_ON(grpc_http_trace)) {
     gpr_log(GPR_DEBUG, "%s: Complete BDP ping", t->peer_string);
   }
-  grpc_bdp_estimator_complete_ping(&t->bdp_estimator);
+  grpc_bdp_estimator_complete_ping(&t->flow_control.bdp_estimator);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
 }
@@ -2552,25 +2554,14 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
 
   /* add some small lookahead to keep pipelines flowing */
   GPR_ASSERT(max_recv_bytes <= UINT32_MAX - initial_window_size);
-  if (s->incoming_window_delta < max_recv_bytes && !s->read_closed) {
-    uint32_t add_max_recv_bytes =
-        (uint32_t)(max_recv_bytes - s->incoming_window_delta);
-    grpc_chttp2_stream_write_type write_type =
-        GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED;
-    if (s->incoming_window_delta + initial_window_size <
-        (int64_t)have_already) {
-      write_type = GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
-    }
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA("op", t, s,
-                                                         add_max_recv_bytes);
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
-                                   add_max_recv_bytes);
-    if ((int64_t)s->incoming_window_delta + (int64_t)initial_window_size -
-            (int64_t)s->announce_window >
-        (int64_t)initial_window_size / 2) {
-      write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
-    }
-    grpc_chttp2_become_writable(exec_ctx, t, s, write_type,
+  if (s->flow_control.announced_local_window_delta < max_recv_bytes &&
+      !s->read_closed) {
+    uint32_t add_max_recv_bytes = (uint32_t)(
+        max_recv_bytes - s->flow_control.announced_local_window_delta);
+    grpc_chttp2_flow_control_set_app_recv(&t->flow_control, &s->flow_control, add_max_recv_bytes);
+    // TODO(ncteisen): for now this is unconditional, tune it
+    grpc_chttp2_become_writable(exec_ctx, t, s,
+                                GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
                                 "read_incoming_stream");
   }
 }
@@ -2855,83 +2846,6 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
         exec_ctx, grpc_endpoint_get_resource_user(t->ep));
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "destructive_reclaimer");
-}
-
-/*******************************************************************************
- * TRACING
- */
-
-static char *format_flowctl_context_var(const char *context, const char *var,
-                                        int64_t val, uint32_t id) {
-  char *name;
-  if (context == NULL) {
-    name = gpr_strdup(var);
-  } else if (0 == strcmp(context, "t")) {
-    GPR_ASSERT(id == 0);
-    gpr_asprintf(&name, "TRANSPORT:%s", var);
-  } else if (0 == strcmp(context, "s")) {
-    GPR_ASSERT(id != 0);
-    gpr_asprintf(&name, "STREAM[%d]:%s", id, var);
-  } else {
-    gpr_asprintf(&name, "BAD_CONTEXT[%s][%d]:%s", context, id, var);
-  }
-  char *name_fld = gpr_leftpad(name, ' ', 64);
-  char *value;
-  gpr_asprintf(&value, "%" PRId64, val);
-  char *value_fld = gpr_leftpad(value, ' ', 8);
-  char *result;
-  gpr_asprintf(&result, "%s %s", name_fld, value_fld);
-  gpr_free(name);
-  gpr_free(name_fld);
-  gpr_free(value);
-  gpr_free(value_fld);
-  return result;
-}
-
-void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
-                               grpc_chttp2_flowctl_op op, const char *context1,
-                               const char *var1, const char *context2,
-                               const char *var2, int is_client,
-                               uint32_t stream_id, int64_t val1, int64_t val2) {
-  char *tmp_phase;
-  char *label1 = format_flowctl_context_var(context1, var1, val1, stream_id);
-  char *label2 = format_flowctl_context_var(context2, var2, val2, stream_id);
-  char *clisvr = is_client ? "client" : "server";
-  char *prefix;
-
-  tmp_phase = gpr_leftpad(phase, ' ', 8);
-  gpr_asprintf(&prefix, "FLOW %s: %s ", tmp_phase, clisvr);
-  gpr_free(tmp_phase);
-
-  switch (op) {
-    case GRPC_CHTTP2_FLOWCTL_MOVE:
-      if (val2 != 0) {
-        gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sMOVE   %s <- %s giving %" PRId64, prefix, label1, label2,
-                val1 + val2);
-      }
-      break;
-    case GRPC_CHTTP2_FLOWCTL_CREDIT:
-      GPR_ASSERT(val2 >= 0);
-      if (val2 != 0) {
-        gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sCREDIT %s by %s giving %" PRId64, prefix, label1, label2,
-                val1 + val2);
-      }
-      break;
-    case GRPC_CHTTP2_FLOWCTL_DEBIT:
-      GPR_ASSERT(val2 >= 0);
-      if (val2 != 0) {
-        gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sDEBIT  %s by %s giving %" PRId64, prefix, label1, label2,
-                val1 - val2);
-      }
-      break;
-  }
-
-  gpr_free(label1);
-  gpr_free(label2);
-  gpr_free(prefix);
 }
 
 /*******************************************************************************

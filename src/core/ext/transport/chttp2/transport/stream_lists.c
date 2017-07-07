@@ -22,6 +22,16 @@
 
 /* core list management */
 
+#ifndef NDEBUG
+#define GRPC_FLOW_CONTROL_IF_TRACING(stmt)   \
+  if (!(GRPC_TRACER_ON(grpc_flowctl_trace))) \
+    ;                                        \
+  else                                       \
+  stmt
+#else
+#define GRPC_FLOW_CONTROL_IF_TRACING(stmt)
+#endif
+
 static bool stream_list_empty(grpc_chttp2_transport *t,
                               grpc_chttp2_stream_list_id id) {
   return t->lists[id].head == NULL;
@@ -150,12 +160,17 @@ void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport *t,
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s) {
+  GRPC_FLOW_CONTROL_IF_TRACING(
+      gpr_log(GPR_DEBUG, "stream %p stalled by transport", s));
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
 }
 
 bool grpc_chttp2_list_pop_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream **s) {
-  return stream_list_pop(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
+  bool ret = stream_list_pop(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
+  GRPC_FLOW_CONTROL_IF_TRACING(if (ret)
+      gpr_log(GPR_DEBUG, "stream %p un-stalled by transport", *s));
+  return ret;
 }
 
 void grpc_chttp2_list_remove_stalled_by_transport(grpc_chttp2_transport *t,
@@ -165,12 +180,17 @@ void grpc_chttp2_list_remove_stalled_by_transport(grpc_chttp2_transport *t,
 
 void grpc_chttp2_list_add_stalled_by_stream(grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s) {
+  GRPC_FLOW_CONTROL_IF_TRACING(
+      gpr_log(GPR_DEBUG, "stream %p stalled by stream", s));
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
 }
 
 bool grpc_chttp2_list_pop_stalled_by_stream(grpc_chttp2_transport *t,
                                             grpc_chttp2_stream **s) {
-  return stream_list_pop(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
+  bool ret = stream_list_pop(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
+  GRPC_FLOW_CONTROL_IF_TRACING(if(ret)
+      gpr_log(GPR_DEBUG, "stream %p un-stalled by stream", *s));
+  return ret;
 }
 
 bool grpc_chttp2_list_remove_stalled_by_stream(grpc_chttp2_transport *t,

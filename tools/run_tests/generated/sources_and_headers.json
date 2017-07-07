@@ -4784,24 +4784,6 @@
   }, 
   {
     "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "window_overflow_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/window_overflow.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
       "bad_ssl_test_server", 
       "gpr", 
       "gpr_test_util", 
@@ -8535,6 +8517,7 @@
       "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
+      "src/core/ext/transport/chttp2/transport/flow_control.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
       "src/core/ext/transport/chttp2/transport/frame_data.h", 
       "src/core/ext/transport/chttp2/transport/frame_goaway.h", 
@@ -8563,6 +8546,8 @@
       "src/core/ext/transport/chttp2/transport/chttp2_plugin.c", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.c", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
+      "src/core/ext/transport/chttp2/transport/flow_control.c", 
+      "src/core/ext/transport/chttp2/transport/flow_control.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
       "src/core/ext/transport/chttp2/transport/frame_data.c", 
       "src/core/ext/transport/chttp2/transport/frame_data.h", 

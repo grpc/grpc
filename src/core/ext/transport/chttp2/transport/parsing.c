@@ -349,28 +349,32 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_exec_ctx *exec_ctx,
                          t->parser == grpc_chttp2_header_parser_parse);
 }
 
-static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
-                                          grpc_chttp2_transport *t,
-                                          grpc_chttp2_stream *s) {
+static grpc_error *update_local_window(grpc_exec_ctx *exec_ctx,
+                                       grpc_chttp2_transport *t,
+                                       grpc_chttp2_stream *s) {
   uint32_t incoming_frame_size = t->incoming_frame_size;
-  if (incoming_frame_size > t->incoming_window) {
+  if (incoming_frame_size > t->flow_control.announced_local_window) {
     char *msg;
-    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %" PRId64,
-                 t->incoming_frame_size, t->incoming_window);
+    gpr_asprintf(&msg, "frame of size %d overflows local window of %" PRId64,
+                 t->incoming_frame_size,
+                 t->flow_control.announced_local_window);
     grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
   }
 
+  // TODO(ncteisen): why can this ever be null??
   if (s != NULL) {
-    if (incoming_frame_size >
-        s->incoming_window_delta +
-            t->settings[GRPC_ACKED_SETTINGS]
-                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
-      if (incoming_frame_size <=
-          s->incoming_window_delta +
-              t->settings[GRPC_SENT_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
+    int64_t acked_stream_window =
+        s->flow_control.announced_local_window_delta +
+        t->settings[GRPC_ACKED_SETTINGS]
+                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+    int64_t sent_stream_window =
+        s->flow_control.announced_local_window_delta +
+        t->settings[GRPC_SENT_SETTINGS]
+                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+    if (incoming_frame_size > acked_stream_window) {
+      if (incoming_frame_size <= sent_stream_window) {
         gpr_log(
             GPR_ERROR,
             "Incoming frame of size %d exceeds incoming window size of %" PRId64
@@ -380,46 +384,25 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
             "This would usually cause a disconnection, but allowing it due to "
             "broken HTTP2 implementations in the wild.\n"
             "See (for example) https://github.com/netty/netty/issues/6520.",
-            t->incoming_frame_size,
-            s->incoming_window_delta +
-                t->settings[GRPC_ACKED_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-            s->incoming_window_delta +
-                t->settings[GRPC_SENT_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+            t->incoming_frame_size, acked_stream_window, sent_stream_window);
       } else {
         char *msg;
-        gpr_asprintf(&msg,
-                     "frame of size %d overflows incoming window of %" PRId64,
-                     t->incoming_frame_size,
-                     s->incoming_window_delta +
-                         t->settings[GRPC_ACKED_SETTINGS]
-                                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+        gpr_asprintf(
+            &msg,
+            "frame of size %d overflows local stream[%d] window of %" PRId64,
+            t->incoming_frame_size, s->id, acked_stream_window);
         grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
         gpr_free(msg);
         return err;
       }
     }
-
-    GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA("parse", t, s,
-                                                        incoming_frame_size);
-    if ((int64_t)s->incoming_window_delta - (int64_t)s->announce_window <=
-        -(int64_t)t->settings[GRPC_SENT_SETTINGS]
-                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
-            2) {
-      grpc_chttp2_become_writable(exec_ctx, t, s,
-                                  GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
-                                  "window-update-required");
-    }
     s->received_bytes += incoming_frame_size;
   }
 
-  uint32_t target_incoming_window = grpc_chttp2_target_incoming_window(t);
-  GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
-                                   incoming_frame_size);
-  if (t->incoming_window <= target_incoming_window / 2) {
-    grpc_chttp2_initiate_write(exec_ctx, t, "flow_control");
-  }
+  grpc_chttp2_flow_control_recv_data(&t->flow_control, &s->flow_control, incoming_frame_size);
+  // TODO(ncteisen): here we are unconditionally initiating a write to avoid
+  // hangs. Obviously this needs to be smarter
+  grpc_chttp2_initiate_write(exec_ctx, t, "flow_control");
 
   return GRPC_ERROR_NONE;
 }
@@ -429,7 +412,7 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   grpc_error *err = GRPC_ERROR_NONE;
-  err = update_incoming_window(exec_ctx, t, s);
+  err = update_local_window(exec_ctx, t, s);
   if (err != GRPC_ERROR_NONE) {
     goto error_handler;
   }

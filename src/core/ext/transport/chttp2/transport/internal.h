@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -36,10 +37,16 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/pid_controller.h"
 #include "src/core/lib/transport/transport_impl.h"
+
+extern grpc_tracer_flag grpc_http_trace;
+
+#define GRPC_CHTTP2_IF_TRACING(stmt)      \
+  if (!(GRPC_TRACER_ON(grpc_http_trace))) \
+    ;                                     \
+  else                                    \
+  stmt
 
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
@@ -270,7 +277,6 @@ struct grpc_chttp2_transport {
   grpc_slice_buffer outbuf;
   /** hpack encoding */
   grpc_chttp2_hpack_compressor hpack_compressor;
-  int64_t outgoing_window;
   /** is this a client? */
   uint8_t is_client;
 
@@ -327,22 +333,6 @@ struct grpc_chttp2_transport {
   /** parser for goaway frames */
   grpc_chttp2_goaway_parser goaway_parser;
 
-  /** initial window change */
-  int64_t initial_window_update;
-
-  /** window available for peer to send to us */
-  int64_t incoming_window;
-  /** calculating what we should give for incoming window:
-      we track the total amount of flow control over initial window size
-      across all streams: this is data that we want to receive right now (it
-      has an outstanding read)
-      and the total amount of flow control under initial window size across all
-      streams: this is data we've read early
-      we want to adjust incoming_window such that:
-      incoming_window = total_over - max(bdp - total_under, 0) */
-  int64_t stream_total_over_incoming_window;
-  int64_t stream_total_under_incoming_window;
-
   /* deframing */
   grpc_chttp2_deframe_transport_state deframe_state;
   uint8_t incoming_frame_type;
@@ -367,12 +357,12 @@ struct grpc_chttp2_transport {
 
   grpc_chttp2_write_cb *write_cb_pool;
 
-  /* bdp estimator */
-  grpc_bdp_estimator bdp_estimator;
-  grpc_pid_controller pid_controller;
+  /* flow control */
+  grpc_chttp2_transport_flow_control_data flow_control;
+
+  /* closures for the bdp estimator */
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
-  gpr_timespec last_pid_update;
 
   /* if non-NULL, close the transport with this error when writes are finished
    */
@@ -434,10 +424,6 @@ struct grpc_chttp2_stream {
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint32_t id;
 
-  /** window available for us to send to peer, over or under the initial window
-   * size of the transport... ie:
-   * outgoing_window = outgoing_window_delta + transport.initial_window_size */
-  int64_t outgoing_window_delta;
   /** things the upper layers would like to send */
   grpc_metadata_batch *send_initial_metadata;
   grpc_closure *send_initial_metadata_finished;
@@ -504,10 +490,6 @@ struct grpc_chttp2_stream {
   grpc_error *forced_close_error;
   /** how many header frames have we received? */
   uint8_t header_frames_received;
-  /** window available for peer to send to us (as a delta on
-   * transport.initial_window_size)
-   * incoming_window = incoming_window_delta + transport.initial_window_size */
-  int64_t incoming_window_delta;
   /** parsing state for data frames */
   /* Accessed only by transport thread when stream->pending_byte_stream == false
    * Accessed only by application thread when stream->pending_byte_stream ==
@@ -516,11 +498,12 @@ struct grpc_chttp2_stream {
   /** number of bytes received - reset at end of parse thread execution */
   int64_t received_bytes;
 
+  /* flow control */
+  grpc_chttp2_stream_flow_control_data flow_control;
+  grpc_slice_buffer flow_controlled_buffer;
+
   bool sent_initial_metadata;
   bool sent_trailing_metadata;
-  /** how much window should we announce? */
-  uint32_t announce_window;
-  grpc_slice_buffer flow_controlled_buffer;
 
   grpc_chttp2_write_cb *on_write_finished_cbs;
   grpc_chttp2_write_cb *finish_after_write;
@@ -625,127 +608,6 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
 extern grpc_tracer_flag grpc_http_trace;
-extern grpc_tracer_flag grpc_flowctl_trace;
-
-#define GRPC_CHTTP2_IF_TRACING(stmt)      \
-  if (!(GRPC_TRACER_ON(grpc_http_trace))) \
-    ;                                     \
-  else                                    \
-  stmt
-
-typedef enum {
-  GRPC_CHTTP2_FLOWCTL_MOVE,
-  GRPC_CHTTP2_FLOWCTL_CREDIT,
-  GRPC_CHTTP2_FLOWCTL_DEBIT
-} grpc_chttp2_flowctl_op;
-
-#define GRPC_CHTTP2_FLOW_MOVE_COMMON(phase, transport, id1, id2, dst_context, \
-                                     dst_var, src_context, src_var)           \
-  do {                                                                        \
-    assert(id1 == id2);                                                       \
-    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                 \
-      grpc_chttp2_flowctl_trace(                                              \
-          __FILE__, __LINE__, phase, GRPC_CHTTP2_FLOWCTL_MOVE, #dst_context,  \
-          #dst_var, #src_context, #src_var, transport->is_client, id1,        \
-          dst_context->dst_var, src_context->src_var);                        \
-    }                                                                         \
-    dst_context->dst_var += src_context->src_var;                             \
-    src_context->src_var = 0;                                                 \
-  } while (0)
-
-#define GRPC_CHTTP2_FLOW_MOVE_STREAM(phase, transport, dst_context, dst_var, \
-                                     src_context, src_var)                   \
-  GRPC_CHTTP2_FLOW_MOVE_COMMON(phase, transport, dst_context->id,            \
-                               src_context->id, dst_context, dst_var,        \
-                               src_context, src_var)
-#define GRPC_CHTTP2_FLOW_MOVE_TRANSPORT(phase, dst_context, dst_var,           \
-                                        src_context, src_var)                  \
-  GRPC_CHTTP2_FLOW_MOVE_COMMON(phase, dst_context, 0, 0, dst_context, dst_var, \
-                               src_context, src_var)
-
-#define GRPC_CHTTP2_FLOW_CREDIT_COMMON(phase, transport, id, dst_context,      \
-                                       dst_var, amount)                        \
-  do {                                                                         \
-    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                  \
-      grpc_chttp2_flowctl_trace(__FILE__, __LINE__, phase,                     \
-                                GRPC_CHTTP2_FLOWCTL_CREDIT, #dst_context,      \
-                                #dst_var, NULL, #amount, transport->is_client, \
-                                id, dst_context->dst_var, amount);             \
-    }                                                                          \
-    dst_context->dst_var += amount;                                            \
-  } while (0)
-
-#define GRPC_CHTTP2_FLOW_CREDIT_STREAM(phase, transport, dst_context, dst_var, \
-                                       amount)                                 \
-  GRPC_CHTTP2_FLOW_CREDIT_COMMON(phase, transport, dst_context->id,            \
-                                 dst_context, dst_var, amount)
-#define GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT(phase, dst_context, dst_var, amount) \
-  GRPC_CHTTP2_FLOW_CREDIT_COMMON(phase, dst_context, 0, dst_context, dst_var,  \
-                                 amount)
-
-#define GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_PREUPDATE( \
-    phase, transport, dst_context)                               \
-  if (dst_context->incoming_window_delta < 0) {                  \
-    transport->stream_total_under_incoming_window +=             \
-        dst_context->incoming_window_delta;                      \
-  } else if (dst_context->incoming_window_delta > 0) {           \
-    transport->stream_total_over_incoming_window -=              \
-        dst_context->incoming_window_delta;                      \
-  }
-
-#define GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_POSTUPDATE( \
-    phase, transport, dst_context)                                \
-  if (dst_context->incoming_window_delta < 0) {                   \
-    transport->stream_total_under_incoming_window -=              \
-        dst_context->incoming_window_delta;                       \
-  } else if (dst_context->incoming_window_delta > 0) {            \
-    transport->stream_total_over_incoming_window +=               \
-        dst_context->incoming_window_delta;                       \
-  }
-
-#define GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA(                 \
-    phase, transport, dst_context, amount)                                   \
-  GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_PREUPDATE(phase, transport,  \
-                                                          dst_context);      \
-  GRPC_CHTTP2_FLOW_DEBIT_STREAM(phase, transport, dst_context,               \
-                                incoming_window_delta, amount);              \
-  GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_POSTUPDATE(phase, transport, \
-                                                           dst_context);
-
-#define GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA(                \
-    phase, transport, dst_context, amount)                                   \
-  GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_PREUPDATE(phase, transport,  \
-                                                          dst_context);      \
-  GRPC_CHTTP2_FLOW_CREDIT_STREAM(phase, transport, dst_context,              \
-                                 incoming_window_delta, amount);             \
-  GRPC_CHTTP2_FLOW_STREAM_INCOMING_WINDOW_DELTA_POSTUPDATE(phase, transport, \
-                                                           dst_context);
-
-#define GRPC_CHTTP2_FLOW_DEBIT_COMMON(phase, transport, id, dst_context,       \
-                                      dst_var, amount)                         \
-  do {                                                                         \
-    if (GRPC_TRACER_ON(grpc_flowctl_trace)) {                                  \
-      grpc_chttp2_flowctl_trace(__FILE__, __LINE__, phase,                     \
-                                GRPC_CHTTP2_FLOWCTL_DEBIT, #dst_context,       \
-                                #dst_var, NULL, #amount, transport->is_client, \
-                                id, dst_context->dst_var, amount);             \
-    }                                                                          \
-    dst_context->dst_var -= amount;                                            \
-  } while (0)
-
-#define GRPC_CHTTP2_FLOW_DEBIT_STREAM(phase, transport, dst_context, dst_var, \
-                                      amount)                                 \
-  GRPC_CHTTP2_FLOW_DEBIT_COMMON(phase, transport, dst_context->id,            \
-                                dst_context, dst_var, amount)
-#define GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT(phase, dst_context, dst_var, amount) \
-  GRPC_CHTTP2_FLOW_DEBIT_COMMON(phase, dst_context, 0, dst_context, dst_var,  \
-                                amount)
-
-void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
-                               grpc_chttp2_flowctl_op op, const char *context1,
-                               const char *var1, const char *context2,
-                               const char *var2, int is_client,
-                               uint32_t stream_id, int64_t val1, int64_t val2);
 
 void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_chttp2_stream *stream, grpc_error *error);
@@ -847,8 +709,6 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      grpc_chttp2_stream *s, grpc_error *error);
-
-uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t);
 
 /** Set the default keepalive configurations, must only be called at
     initialization */
