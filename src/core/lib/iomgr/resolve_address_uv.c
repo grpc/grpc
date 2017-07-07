@@ -54,7 +54,7 @@ static int retry_named_port_failure(int status, request *r,
         int retry_status;
         uv_getaddrinfo_t *req = gpr_malloc(sizeof(uv_getaddrinfo_t));
         req->data = r;
-        r->port = svc[i][1];
+        r->port = gpr_strdup(svc[i][1]);
         retry_status = uv_getaddrinfo(uv_default_loop(), req, getaddrinfo_cb,
                                       r->host, r->port, r->hints);
         if (retry_status < 0 || getaddrinfo_cb == NULL) {
@@ -127,6 +127,8 @@ static void getaddrinfo_callback(uv_getaddrinfo_t *req, int status,
   GRPC_CLOSURE_SCHED(&exec_ctx, r->on_done, error);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(r->hints);
+  gpr_free(r->host);
+  gpr_free(r->port);
   gpr_free(r);
   uv_freeaddrinfo(res);
 }
