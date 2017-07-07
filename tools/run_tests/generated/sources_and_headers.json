@@ -3811,6 +3811,7 @@
       "grpc++_codegen_base", 
       "grpc++_codegen_proto", 
       "grpc++_test_util", 
+      "grpc_plugin_support", 
       "grpc_test_util"
     ], 
     "headers": [

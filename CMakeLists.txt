@@ -12111,6 +12111,7 @@ target_include_directories(serialization_traits_test
 target_link_libraries(serialization_traits_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_plugin_support
   grpc++_test_util
   grpc_test_util
   grpc++
