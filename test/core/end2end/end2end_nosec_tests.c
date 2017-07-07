@@ -44,6 +44,8 @@ extern void cancel_after_client_done(grpc_end2end_test_config config);
 extern void cancel_after_client_done_pre_init(void);
 extern void cancel_after_invoke(grpc_end2end_test_config config);
 extern void cancel_after_invoke_pre_init(void);
+extern void cancel_after_round_trip(grpc_end2end_test_config config);
+extern void cancel_after_round_trip_pre_init(void);
 extern void cancel_before_invoke(grpc_end2end_test_config config);
 extern void cancel_before_invoke_pre_init(void);
 extern void cancel_in_a_vacuum(grpc_end2end_test_config config);
@@ -148,6 +150,7 @@ void grpc_end2end_tests_pre_init(void) {
   cancel_after_accept_pre_init();
   cancel_after_client_done_pre_init();
   cancel_after_invoke_pre_init();
+  cancel_after_round_trip_pre_init();
   cancel_before_invoke_pre_init();
   cancel_in_a_vacuum_pre_init();
   cancel_with_status_pre_init();
@@ -210,6 +213,7 @@ void grpc_end2end_tests(int argc, char **argv,
     cancel_after_accept(config);
     cancel_after_client_done(config);
     cancel_after_invoke(config);
+    cancel_after_round_trip(config);
     cancel_before_invoke(config);
     cancel_in_a_vacuum(config);
     cancel_with_status(config);
@@ -286,6 +290,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("cancel_after_invoke", argv[i])) {
       cancel_after_invoke(config);
+      continue;
+    }
+    if (0 == strcmp("cancel_after_round_trip", argv[i])) {
+      cancel_after_round_trip(config);
       continue;
     }
     if (0 == strcmp("cancel_before_invoke", argv[i])) {

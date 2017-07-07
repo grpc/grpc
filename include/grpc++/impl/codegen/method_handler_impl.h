@@ -141,6 +141,9 @@ class ServerStreamingHandler : public MethodHandler {
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
+    if (param.server_context->has_pending_ops_) {
+      param.call->cq()->Pluck(&param.server_context->pending_ops_);
+    }
     param.call->cq()->Pluck(&ops);
   }
 
@@ -185,6 +188,9 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
+    if (param.server_context->has_pending_ops_) {
+      param.call->cq()->Pluck(&param.server_context->pending_ops_);
+    }
     param.call->cq()->Pluck(&ops);
   }
 

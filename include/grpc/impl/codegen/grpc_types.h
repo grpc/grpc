@@ -287,6 +287,14 @@ typedef struct {
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"
+/** String defining the optimization target for a channel.
+    Can be: "latency"    - attempt to minimize latency at the cost of throughput
+            "blend"      - try to balance latency and throughput
+            "throughput" - attempt to maximize throughput at the expense of
+                           latency
+    Defaults to "blend". In the current implementation "blend" is equivalent to
+    "latency". */
+#define GRPC_ARG_OPTIMIZATION_TARGET "grpc.optimization_target"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

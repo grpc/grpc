@@ -19,15 +19,12 @@
 #include <atomic>
 #include <thread>
 
-#include <grpc++/resource_quota.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
-#include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
-#include <grpc/support/log.h>
 
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/server.h"
@@ -166,10 +163,7 @@ class SynchronousServer final : public grpc::testing::Server {
                              Server::CreateServerCredentials(config));
     gpr_free(server_address);
 
-    if (config.resource_quota_size() > 0) {
-      builder.SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
-                                   .Resize(config.resource_quota_size()));
-    }
+    ApplyConfigToBuilder(config, &builder);
 
     builder.RegisterService(&service_);
 

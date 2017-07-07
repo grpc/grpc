@@ -57,9 +57,6 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
-/* Uncomment the following to enable extra checks on poll_object operations */
-/* #define PO_DEBUG */
-
 /* The maximum number of polling threads per polling island. By default no
    limit */
 static int g_max_pollers_per_pi = INT_MAX;
@@ -92,7 +89,7 @@ typedef enum {
 } poll_obj_type;
 
 typedef struct poll_obj {
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   poll_obj_type obj_type;
 #endif
   gpr_mu mu;
@@ -893,7 +890,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
    * would be holding a lock to it anyway. */
   gpr_mu_lock(&new_fd->po.mu);
   new_fd->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   new_fd->po.obj_type = POLL_OBJ_FD;
 #endif
 
@@ -1171,7 +1168,7 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->po.mu);
   *mu = &pollset->po.mu;
   pollset->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   pollset->po.obj_type = POLL_OBJ_POLLSET;
 #endif
 
@@ -1625,7 +1622,7 @@ static void add_poll_object(grpc_exec_ctx *exec_ctx, poll_obj *bag,
                             poll_obj_type item_type) {
   GPR_TIMER_BEGIN("add_poll_object", 0);
 
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   GPR_ASSERT(item->obj_type == item_type);
   GPR_ASSERT(bag->obj_type == bag_type);
 #endif
@@ -1784,7 +1781,7 @@ static grpc_pollset_set *pollset_set_create(void) {
   grpc_pollset_set *pss = gpr_malloc(sizeof(*pss));
   gpr_mu_init(&pss->po.mu);
   pss->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   pss->po.obj_type = POLL_OBJ_POLLSET_SET;
 #endif
   return pss;

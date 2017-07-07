@@ -1088,8 +1088,9 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
     pick_after_resolver_result_args *args = closure->cb_arg;
     if (!args->cancelled && args->elem == elem) {
       if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-        gpr_log(GPR_DEBUG, "chand=%p calld=%p: "
-                           "cancelling pick waiting for resolver result",
+        gpr_log(GPR_DEBUG,
+                "chand=%p calld=%p: "
+                "cancelling pick waiting for resolver result",
                 chand, calld);
       }
       args->cancelled = true;
