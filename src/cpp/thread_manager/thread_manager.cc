@@ -71,6 +71,8 @@ void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
   if (num_threads_ == 0) {
     shutdown_cv_.notify_one();
   }
+
+  delete thd;
 }
 
 void ThreadManager::Initialize() {
