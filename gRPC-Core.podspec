@@ -966,4 +966,9 @@ Pod::Spec.new do |s|
                       'test/core/util/port.c',
                       'test/core/util/port_server_client.{c,h}'
   end
+
+  # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
+  s.prepare_command = <<-END_OF_COMMAND
+    find src/core/ -type f -exec sed -E -i '.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+  END_OF_COMMAND
 end
