@@ -31,6 +31,8 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
   thd_.detach();
 }
 
+ThreadManager::WorkerThread::~WorkerThread() {}
+
 void ThreadManager::WorkerThread::Run() {
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
