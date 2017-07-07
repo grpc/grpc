@@ -21,4 +21,10 @@ message EchoMessage {
 
 service EchoService {
   rpc Echo (EchoMessage) returns (EchoMessage);
+
+  rpc EchoClientStream (stream EchoMessage) returns (EchoMessage);
+
+  rpc EchoServerStream (EchoMessage) returns (stream EchoMessage);
+
+  rpc EchoBidiStream (stream EchoMessage) returns (stream EchoMessage);
 }
