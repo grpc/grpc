@@ -52,6 +52,15 @@ class CallData {
     void setOwned(bool owned_);
 };
 
+void *cq_pluck_async(void *params_ptr);
+
+typedef struct cq_pluck_async_params {
+  grpc_completion_queue* cq;
+  void* tag;
+  gpr_timespec deadline;
+  void* reserved;
+} cq_pluck_async_params;
+
 void HHVM_METHOD(Call, __construct,
   const Object& channel_obj,
   const String& method,

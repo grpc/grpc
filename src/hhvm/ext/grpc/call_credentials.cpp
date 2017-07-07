@@ -32,11 +32,13 @@
 #include "hphp/runtime/vm/native-data.h"
 #include "hphp/runtime/base/builtin-functions.h"
 #include "hphp/runtime/base/array-init.h"
+#include "hphp/util/process.h"
 
 #include "call.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 
 namespace HPHP {
 
@@ -100,8 +102,9 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
   }
 
   plugin_state *state;
-  state = (plugin_state *)req::calloc(1, sizeof(plugin_state));
+  state = (plugin_state *)gpr_zalloc(sizeof(plugin_state));
   state->callback = callback;
+  state->req_thread_id = Process::GetThreadId();
 
   grpc_metadata_credentials_plugin plugin;
   plugin.get_metadata = plugin_get_metadata;
@@ -116,9 +119,10 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
   return newCallCredentialsObj;
 }
 
-void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
-                         grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data) {
+// This work done in this function MUST be done on the same thread as the HHVM request
+void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
+                             grpc_credentials_plugin_metadata_cb cb,
+                             void *user_data) {
   Object returnObj = SystemLib::AllocStdClassObject();
   returnObj.o_set("service_url", String(context.service_url, CopyString));
   returnObj.o_set("method_name", String(context.method_name, CopyString));
@@ -128,6 +132,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   Variant retval = vm_call_user_func(state->callback, make_packed_array(returnObj));
   if (!retval.isArray()) {
     throw_invalid_argument("Callback return value expected an array.");
+    return;
   }
 
   grpc_status_code code = GRPC_STATUS_OK;
@@ -135,9 +140,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   grpc_metadata_array metadata;
   grpc_metadata_array_init(&metadata);
 
-  if (!retval.isArray()) {
-    code = GRPC_STATUS_INVALID_ARGUMENT;
-  } else if (!hhvm_create_metadata_array(retval.toArray(), &metadata)) {
+  if (!hhvm_create_metadata_array(retval.toArray(), &metadata)) {
     code = GRPC_STATUS_INVALID_ARGUMENT;
   }
 
@@ -151,10 +154,25 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   grpc_metadata_array_destroy(&metadata);
 }
 
+void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
+                         grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data) {
+  plugin_state *state = (plugin_state *)ptr;
+
+  plugin_get_metadata_params *params = (plugin_get_metadata_params *)gpr_zalloc(sizeof(plugin_get_metadata_params));
+
+  params->ptr = ptr;
+  params->context = context;
+  params->cb = cb;
+  params->user_data = user_data;
+
+  PluginGetMetadataHandler::getInstance().set(state->req_thread_id, params);
+}
+
 
 void plugin_destroy_state(void *ptr) {
   plugin_state *state = (plugin_state *)ptr;
-  req::free(state);
+  gpr_free(state);
 }
 
 } // namespace HPHP

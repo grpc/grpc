@@ -47,8 +47,60 @@ class CallCredentialsData {
     grpc_call_credentials* getWrapped();
 };
 
+typedef struct plugin_get_metadata_params {
+  void *ptr;
+  grpc_auth_metadata_context context;
+  grpc_credentials_plugin_metadata_cb cb;
+  void *user_data;
+} plugin_get_metadata_params;
+
+class PluginGetMetadataHandler {
+  private:
+    std::map<pthread_t, plugin_get_metadata_params *> thread_map;
+    Mutex thread_map_mutex;
+  public:
+    static PluginGetMetadataHandler& getInstance() {
+      static PluginGetMetadataHandler instance;
+      return instance;
+    }
+
+    PluginGetMetadataHandler() { }
+
+    void set(pthread_t thread_id, plugin_get_metadata_params *params) {
+      // TODO: reduce contention and make this a lock per-request
+      Lock l(thread_map_mutex);
+      thread_map[thread_id] = params;
+
+      std::map<pthread_t, plugin_get_metadata_params *>::iterator it;
+      it = thread_map.find(thread_id);
+      if (it == thread_map.end()) {
+        return;
+      }
+
+      return;
+    }
+
+    plugin_get_metadata_params *getAndClear(pthread_t thread_id) {
+      Lock l(thread_map_mutex);
+
+      std::map<pthread_t, plugin_get_metadata_params *>::iterator it;
+      it = thread_map.find(thread_id);
+      if (it == thread_map.end()) {
+        return NULL;
+      }
+
+      plugin_get_metadata_params *params = it->second;
+      thread_map.erase(thread_id);
+      return params;
+    }
+
+    PluginGetMetadataHandler(PluginGetMetadataHandler const&) = delete;
+    void operator=(PluginGetMetadataHandler const&)           = delete;
+};
+
 typedef struct plugin_state {
   Variant callback;
+  pthread_t req_thread_id;
 } plugin_state;
 
 Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
@@ -58,6 +110,9 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
 Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
   const Variant& callback);
 
+void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
+                          grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data);
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data);

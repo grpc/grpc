@@ -33,6 +33,7 @@
 #include "hphp/runtime/vm/native-data.h"
 #include "hphp/runtime/base/builtin-functions.h"
 #include "hphp/runtime/base/type-variant.h"
+#include "hphp/util/process.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/grpc_security.h>
@@ -143,6 +144,8 @@ Object HHVM_METHOD(Call, startBatch,
   grpc_metadata_array_init(&recv_trailing_metadata);
   memset(ops, 0, sizeof(ops));
 
+  bool send_initial_metadata = false;
+
   for (ArrayIter iter(actions); iter; ++iter) {
     Variant key = iter.first();
     if (!key.isInteger()) {
@@ -168,6 +171,7 @@ Object HHVM_METHOD(Call, startBatch,
 
         ops[op_num].data.send_initial_metadata.count = metadata.count;
         ops[op_num].data.send_initial_metadata.metadata = metadata.metadata;
+        send_initial_metadata = true;
         break;
       case GRPC_OP_SEND_MESSAGE:
         {
@@ -289,9 +293,31 @@ Object HHVM_METHOD(Call, startBatch,
     goto cleanup;
   }
 
-  // This doesn't need a lock b/c we use a completion queue per-thread
-  grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), callData->getWrapped(),
-                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  cq_pluck_async_params *cq_pluck_params;
+  cq_pluck_params = (cq_pluck_async_params *)gpr_zalloc(sizeof(cq_pluck_async_params));
+  cq_pluck_params->cq = CompletionQueue::tl_obj.get()->getQueue();
+  cq_pluck_params->tag = callData->getWrapped();
+  cq_pluck_params->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  cq_pluck_params->reserved = NULL;
+
+  if (send_initial_metadata == false) {
+    // If we don't actually expect a metadata callback then just run this in the same thread
+    cq_pluck_async((void *)cq_pluck_params);
+  } else {
+    pthread_t cq_pluck_thread_id;
+    pthread_create(&cq_pluck_thread_id, NULL, cq_pluck_async, (void *)cq_pluck_params);
+
+    plugin_get_metadata_params *params;
+    for (;;) {
+      params = PluginGetMetadataHandler::getInstance().getAndClear(Process::GetThreadId());
+      if (params != NULL) {
+        plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
+        break;
+      }
+    }
+
+    pthread_join(cq_pluck_thread_id, NULL);
+  }
 
   for (int i = 0; i < op_num; i++) {
     switch(ops[i].op) {
@@ -341,6 +367,7 @@ Object HHVM_METHOD(Call, startBatch,
   }
 
   cleanup:
+    gpr_free(cq_pluck_params);
     for (int i = 0; i < metadata.count; i++) {
       grpc_slice_unref(metadata.metadata[i].key);
       grpc_slice_unref(metadata.metadata[i].value);
@@ -364,6 +391,15 @@ Object HHVM_METHOD(Call, startBatch,
       }
     }
     return resultObj;
+}
+
+void *cq_pluck_async(void *params_ptr) {
+  cq_pluck_async_params *params = (cq_pluck_async_params *)params_ptr;
+
+  // This doesn't need a lock b/c we use a completion queue per HHVM request thread
+  grpc_completion_queue_pluck(params->cq, params->tag, params->deadline, params->reserved);
+
+  return NULL;
 }
 
 String HHVM_METHOD(Call, getPeer) {
