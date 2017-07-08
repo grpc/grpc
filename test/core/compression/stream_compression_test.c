@@ -72,7 +72,7 @@ static void test_stream_compression_simple_compress_decompress() {
   size_t output_size;
   GPR_ASSERT(grpc_stream_decompress(decompress_ctx, &relay, &sink, &output_size,
                                     ~(size_t)0, &end_of_context));
-  GPR_ASSERT(output_size = sizeof(test_str) - 1);
+  GPR_ASSERT(output_size == sizeof(test_str) - 1);
   grpc_stream_compression_context_destroy(compress_ctx);
   grpc_stream_compression_context_destroy(decompress_ctx);
 
@@ -107,7 +107,7 @@ test_stream_compression_simple_compress_decompress_with_output_size_constraint()
   size_t max_output_size = 2;
   GPR_ASSERT(grpc_stream_decompress(decompress_ctx, &relay, &sink, &output_size,
                                     max_output_size, &end_of_context));
-  GPR_ASSERT(output_size = max_output_size);
+  GPR_ASSERT(output_size == max_output_size);
   GPR_ASSERT(end_of_context == false);
   grpc_slice slice_recv = grpc_slice_buffer_take_first(&sink);
   char *str_recv = (char *)GRPC_SLICE_START_PTR(slice_recv);
@@ -118,8 +118,8 @@ test_stream_compression_simple_compress_decompress_with_output_size_constraint()
   size_t remaining_size = sizeof(test_str) - 1 - max_output_size;
   GPR_ASSERT(grpc_stream_decompress(decompress_ctx, &relay, &sink, &output_size,
                                     remaining_size, &end_of_context));
-  GPR_ASSERT(output_size = remaining_size);
-  GPR_ASSERT(end_of_context = true);
+  GPR_ASSERT(output_size == remaining_size);
+  GPR_ASSERT(end_of_context == true);
 
   GPR_ASSERT(slice_buffer_equals_string(&sink, test_str + max_output_size));
 
@@ -152,7 +152,7 @@ test_stream_compression_simple_compress_decompress_with_large_data() {
   size_t output_size;
   GPR_ASSERT(grpc_stream_decompress(decompress_ctx, &relay, &sink, &output_size,
                                     ~(size_t)0, &end_of_context));
-  GPR_ASSERT(output_size = sizeof(test_str) - 1);
+  GPR_ASSERT(output_size == sizeof(test_str) - 1);
   grpc_stream_compression_context_destroy(compress_ctx);
   grpc_stream_compression_context_destroy(decompress_ctx);
 

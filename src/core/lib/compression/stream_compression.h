@@ -31,14 +31,15 @@ typedef struct grpc_stream_compression_context {
 } grpc_stream_compression_context;
 
 typedef enum grpc_stream_compression_method {
-  GRPC_STREAM_COMPRESSION_COMPRESS,
+  GRPC_STREAM_COMPRESSION_COMPRESS = 0,
   GRPC_STREAM_COMPRESSION_DECOMPRESS
 } grpc_stream_compression_method;
 
 typedef enum grpc_stream_compression_flush {
-  GRPC_STREAM_COMPRESSION_FLUSH_NONE,
+  GRPC_STREAM_COMPRESSION_FLUSH_NONE = 0,
   GRPC_STREAM_COMPRESSION_FLUSH_SYNC,
-  GRPC_STREAM_COMPRESSION_FLUSH_FINISH
+  GRPC_STREAM_COMPRESSION_FLUSH_FINISH,
+  GRPC_STREAM_COMPRESSION_FLUSH_COUNT
 } grpc_stream_compression_flush;
 
 /**
@@ -47,6 +48,12 @@ typedef enum grpc_stream_compression_flush {
  * into \a out. If all the bytes in input buffer \a in are depleted and \a flush
  * is not GRPC_STREAM_COMPRESSION_FLUSH_NONE, the corresponding flush method is
  * executed. The total number of bytes emitted is outputed in \a output_size.
+ *
+ * A SYNC flush indicates that the entire messages in \a in can be decompressed
+ * from \a out. A FINISH flush implies a SYNC flush, and that any further
+ * compression will not be dependent on the state of the current context and any
+ * previous compressed bytes. It allows corresponding decompression context to
+ * be dropped when reaching this boundary.
  */
 bool grpc_stream_compress(grpc_stream_compression_context *ctx,
                           grpc_slice_buffer *in, grpc_slice_buffer *out,
