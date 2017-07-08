@@ -26,6 +26,10 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/support/mpscq.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
 
@@ -195,6 +199,10 @@ void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx,
                              grpc_closure_list *closure_list);
 #define GRPC_CLOSURE_LIST_SCHED(exec_ctx, closure_list) \
   grpc_closure_list_sched(exec_ctx, closure_list)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */

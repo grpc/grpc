@@ -7892,6 +7892,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/cancel_after_accept.c \
     test/core/end2end/tests/cancel_after_client_done.c \
     test/core/end2end/tests/cancel_after_invoke.c \
+    test/core/end2end/tests/cancel_after_round_trip.c \
     test/core/end2end/tests/cancel_before_invoke.c \
     test/core/end2end/tests/cancel_in_a_vacuum.c \
     test/core/end2end/tests/cancel_with_status.c \
@@ -7985,6 +7986,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/cancel_after_accept.c \
     test/core/end2end/tests/cancel_after_client_done.c \
     test/core/end2end/tests/cancel_after_invoke.c \
+    test/core/end2end/tests/cancel_after_round_trip.c \
     test/core/end2end/tests/cancel_before_invoke.c \
     test/core/end2end/tests/cancel_in_a_vacuum.c \
     test/core/end2end/tests/cancel_with_status.c \

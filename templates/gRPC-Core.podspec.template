@@ -28,7 +28,7 @@
       if lib.name in ("grpc", "gpr"):
         out += lib.get('headers', [])
         out += lib.get('src', [])
-    return out;
+    return [f for f in out if not f.startswith("third_party/nanopb/")]
 
   def grpc_public_headers(libs):
     out = []
@@ -42,7 +42,7 @@
     for lib in libs:
       if lib.name in ("grpc", "gpr"):
         out += lib.get('headers', [])
-    return out
+    return [f for f in out if not f.startswith("third_party/nanopb/")]
 
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
@@ -59,8 +59,6 @@
     s.source = {
       :git => 'https://github.com/grpc/grpc.git',
       :tag => "v#{version}",
-      # TODO(jcanizales): Depend explicitly on the nanopb pod, and disable submodules.
-      :submodules => true,
     }
 
     s.ios.deployment_target = '7.0'
@@ -138,6 +136,7 @@
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'BoringSSL', '~> 8.0'
+      ss.dependency 'nanopb', '~> 0.3'
 
       # To save you from scrolling, this is the last part of the podspec.
       ss.source_files = ${ruby_multiline_list(grpc_private_files(libs), 22)}

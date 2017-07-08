@@ -21,8 +21,6 @@
 #include <mutex>
 #include <thread>
 
-#include <gtest/gtest.h>
-
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -43,6 +41,8 @@ extern "C" {
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+
+#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -97,9 +97,12 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  void StartServers(int num_servers) {
-    for (int i = 0; i < num_servers; ++i) {
-      servers_.emplace_back(new ServerData(server_host_));
+  void StartServers(size_t num_servers,
+                    std::vector<int> ports = std::vector<int>()) {
+    for (size_t i = 0; i < num_servers; ++i) {
+      int port = 0;
+      if (ports.size() == num_servers) port = ports[i];
+      servers_.emplace_back(new ServerData(server_host_, port));
     }
   }
 
@@ -146,14 +149,18 @@ class ClientLbEnd2endTest : public ::testing::Test {
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  void SendRpc() {
+  void SendRpc(bool expect_ok = true) {
     EchoRequest request;
     EchoResponse response;
     request.set_message("Live long and prosper.");
     ClientContext context;
     Status status = stub_->Echo(&context, request, &response);
-    EXPECT_TRUE(status.ok());
-    EXPECT_EQ(response.message(), request.message());
+    if (expect_ok) {
+      EXPECT_TRUE(status.ok());
+      EXPECT_EQ(response.message(), request.message());
+    } else {
+      EXPECT_FALSE(status.ok());
+    }
   }
 
   struct ServerData {
@@ -162,8 +169,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     MyTestServiceImpl service_;
     std::unique_ptr<std::thread> thread_;
 
-    explicit ServerData(const grpc::string& server_host) {
-      port_ = grpc_pick_unused_port_or_die();
+    explicit ServerData(const grpc::string& server_host, int port = 0) {
+      port_ = port > 0 ? port : grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::mutex mu;
       std::condition_variable cond;
@@ -187,9 +194,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
       cond->notify_one();
     }
 
-    void Shutdown() {
+    void Shutdown(bool join = true) {
       server_->Shutdown();
-      thread_->join();
+      if (join) thread_->join();
     }
   };
 
@@ -454,6 +461,44 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinConcurrentUpdates) {
+  // TODO(dgq): replicate the way internal testing exercises the concurrent
+  // update provisions of RR.
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinReconnect) {
+  // Start servers and send one RPC per server.
+  const int kNumServers = 1;
+  std::vector<int> ports;
+  ports.push_back(grpc_pick_unused_port_or_die());
+  StartServers(kNumServers, ports);
+  ResetStub("round_robin");
+  SetNextResolution(ports);
+  // Send one RPC per backend and make sure they are used in order.
+  // Note: This relies on the fact that the subchannels are reported in
+  // state READY in the order in which the addresses are specified,
+  // which is only true because the backends are all local.
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    SendRpc();
+    EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
+
+  // Kill all servers
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    servers_[i]->Shutdown(false);
+  }
+  // Client request should fail.
+  SendRpc(false);
+
+  // Bring servers back up on the same port (we aren't recreating the channel).
+  StartServers(kNumServers, ports);
+
+  // Client request should succeed.
+  SendRpc();
 }
 
 }  // namespace

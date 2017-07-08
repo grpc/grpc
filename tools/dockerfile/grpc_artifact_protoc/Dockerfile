@@ -45,10 +45,9 @@ RUN yum install -y devtoolset-1.1 \
                    devtoolset-1.1-libstdc++-devel.i686 || true
 
 # Update Git to version >1.7 to allow cloning submodules with --reference arg.
-RUN yum remove -y git
-RUN yum install -y epel-release
-RUN yum install -y https://centos6.iuscommunity.org/ius-release.rpm
-RUN yum install -y git2u
+RUN yum remove -y git && yum clean all
+RUN yum install -y https://centos6.iuscommunity.org/ius-release.rpm && yum clean all
+RUN yum install -y git2u && yum clean all
 
 # Start in devtoolset environment that uses GCC 4.7
 CMD ["scl", "enable", "devtoolset-1.1", "bash"]

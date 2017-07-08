@@ -19,8 +19,11 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
+#include <grpc++/resource_quota.h>
 #include <grpc++/security/server_credentials.h>
+#include <grpc++/server_builder.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
 #include <vector>
 
 #include "src/core/lib/surface/completion_queue.h"
@@ -100,6 +103,31 @@ class Server {
   virtual int GetPollCount() {
     // For sync server.
     return 0;
+  }
+
+ protected:
+  static void ApplyConfigToBuilder(const ServerConfig& config,
+                                   ServerBuilder* builder) {
+    if (config.resource_quota_size() > 0) {
+      builder->SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
+                                    .Resize(config.resource_quota_size()));
+    }
+    for (const auto& channel_arg : config.channel_args()) {
+      switch (channel_arg.value_case()) {
+        case ChannelArg::kStrValue:
+          builder->AddChannelArgument(channel_arg.name(),
+                                      channel_arg.str_value());
+          break;
+        case ChannelArg::kIntValue:
+          builder->AddChannelArgument(channel_arg.name(),
+                                      channel_arg.int_value());
+          break;
+        case ChannelArg::VALUE_NOT_SET:
+          gpr_log(GPR_ERROR, "Channel arg '%s' does not have a value",
+                  channel_arg.name().c_str());
+          break;
+      }
+    }
   }
 
  private:

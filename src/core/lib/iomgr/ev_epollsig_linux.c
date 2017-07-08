@@ -54,9 +54,6 @@
     gpr_log(GPR_INFO, __VA_ARGS__);         \
   }
 
-/* Uncomment the following to enable extra checks on poll_object operations */
-/* #define PO_DEBUG */
-
 static int grpc_wakeup_signal = -1;
 static bool is_grpc_wakeup_signal_initialized = false;
 
@@ -85,7 +82,7 @@ typedef enum {
 } poll_obj_type;
 
 typedef struct poll_obj {
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   poll_obj_type obj_type;
 #endif
   gpr_mu mu;
@@ -821,7 +818,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
    * would be holding a lock to it anyway. */
   gpr_mu_lock(&new_fd->po.mu);
   new_fd->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   new_fd->po.obj_type = POLL_OBJ_FD;
 #endif
 
@@ -840,11 +837,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
   char *fd_name;
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name);
-#ifndef NDEBUG
-  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
-    gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, new_fd, fd_name);
-  }
-#endif
   gpr_free(fd_name);
   return new_fd;
 }
@@ -1084,7 +1076,7 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->po.mu);
   *mu = &pollset->po.mu;
   pollset->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   pollset->po.obj_type = POLL_OBJ_POLLSET;
 #endif
 
@@ -1421,7 +1413,7 @@ static void add_poll_object(grpc_exec_ctx *exec_ctx, poll_obj *bag,
                             poll_obj_type item_type) {
   GPR_TIMER_BEGIN("add_poll_object", 0);
 
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   GPR_ASSERT(item->obj_type == item_type);
   GPR_ASSERT(bag->obj_type == bag_type);
 #endif
@@ -1580,7 +1572,7 @@ static grpc_pollset_set *pollset_set_create(void) {
   grpc_pollset_set *pss = gpr_malloc(sizeof(*pss));
   gpr_mu_init(&pss->po.mu);
   pss->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   pss->po.obj_type = POLL_OBJ_POLLSET_SET;
 #endif
   return pss;

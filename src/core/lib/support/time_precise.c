@@ -31,7 +31,7 @@ static void gpr_get_cycle_counter(int64_t int *clk) {
 // ----------------------------------------------------------------
 #elif defined(__x86_64__) || defined(__amd64__)
 static void gpr_get_cycle_counter(int64_t *clk) {
-  unsigned int64_t low, high;
+  uint64_t low, high;
   __asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
   *clk = (int64_t)(high << 32) | (int64_t)low;
 }

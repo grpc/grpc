@@ -120,12 +120,14 @@ def _ping_pong_scenario(name, rpc_type,
         'closed_loop': {}
       },
       'histogram_params': HISTOGRAM_PARAMS,
+      'channel_args': [],
     },
     'server_config': {
       'server_type': server_type,
       'security_params': _get_secargs(secure),
       'async_server_threads': async_server_threads,
       'threads_per_cq': server_threads_per_cq,
+      'channel_args': [],
     },
     'warmup_seconds': warmup_seconds,
     'benchmark_seconds': BENCHMARK_SECONDS
@@ -138,6 +140,8 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['server_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
 
   scenario['client_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
+
+  optimization_target = 'blend'
 
   if unconstrained_client:
     outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
@@ -152,10 +156,19 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
     scenario['client_config']['client_channels'] = wide
     scenario['client_config']['async_client_threads'] = 0
+    optimization_target = 'throughput'
   else:
     scenario['client_config']['outstanding_rpcs_per_channel'] = 1
     scenario['client_config']['client_channels'] = 1
     scenario['client_config']['async_client_threads'] = 1
+    optimization_target = 'latency'
+
+  optimization_channel_arg = {
+    'name': 'grpc.optimization_target',
+    'str_value': optimization_target
+  }
+  scenario['client_config']['channel_args'].append(optimization_channel_arg)
+  scenario['server_config']['channel_args'].append(optimization_channel_arg)
 
   if messages_per_stream:
     scenario['client_config']['messages_per_stream'] = messages_per_stream

@@ -264,11 +264,12 @@ class NodeExtArtifact:
         return create_docker_jobspec(
             self.name,
             'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
-            'tools/run_tests/artifacts/build_artifact_node.sh {}'.format(self.gyp_arch))
+            'tools/run_tests/artifacts/build_artifact_node.sh {} {}'.format(
+                self.gyp_arch, self.platform))
       else:
         return create_jobspec(self.name,
                               ['tools/run_tests/artifacts/build_artifact_node.sh',
-                               self.gyp_arch],
+                               self.gyp_arch, self.platform],
                                use_workspace=True)
 
 class PHPArtifact:
@@ -328,7 +329,7 @@ class ProtocArtifact:
             environ=environ,
             use_workspace=True)
     else:
-      generator = 'Visual Studio 12 Win64' if self.arch == 'x64' else 'Visual Studio 12' 
+      generator = 'Visual Studio 12 Win64' if self.arch == 'x64' else 'Visual Studio 12'
       vcplatform = 'x64' if self.arch == 'x64' else 'Win32'
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_protoc.bat'],

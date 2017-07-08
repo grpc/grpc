@@ -323,11 +323,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_asprintf(&name2, "%s fd=%d", name, fd);
   grpc_iomgr_register_object(&r->iomgr_object, name2);
   gpr_free(name2);
-#ifndef NDEBUG
-  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
-    gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, r, name);
-  }
-#endif
   return r;
 }
 

@@ -107,6 +107,11 @@
         "name": "timeSystem",
         "type": "FLOAT",
         "mode": "NULLABLE"
+      },
+      {
+        "name": "cqPollCount",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
       }
     ]
   },
@@ -128,6 +133,11 @@
       {
         "name": "timeSystem",
         "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "cqPollCount",
+        "type": "INTEGER",
         "mode": "NULLABLE"
       }
     ]
@@ -194,6 +204,16 @@
       },
       {
         "name": "latency999",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "clientPollsPerRequest",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "serverPollsPerRequest",
         "type": "FLOAT",
         "mode": "NULLABLE"
       }

@@ -521,7 +521,7 @@ class SplitResponseStreamDupPkg
     stream->NextMessageSize(&next_msg_sz);
     gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
-    for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+    for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + grpc::to_string(i) + "_dup");
       GPR_ASSERT(stream->Write(resp));
     }
@@ -561,7 +561,7 @@ class FullySplitStreamedDupPkg
     stream->NextMessageSize(&next_msg_sz);
     gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
-    for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+    for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + grpc::to_string(i) + "_dup");
       GPR_ASSERT(stream->Write(resp));
     }
@@ -613,7 +613,7 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     stream->NextMessageSize(&next_msg_sz);
     gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
-    for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+    for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + grpc::to_string(i) + "_dup");
       GPR_ASSERT(stream->Write(resp));
     }
