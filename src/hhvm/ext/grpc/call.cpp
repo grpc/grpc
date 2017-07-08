@@ -35,6 +35,8 @@
 #include "hphp/runtime/base/type-variant.h"
 #include "hphp/util/process.h"
 
+#include <sys/eventfd.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc.h>
@@ -144,7 +146,7 @@ Object HHVM_METHOD(Call, startBatch,
   grpc_metadata_array_init(&recv_trailing_metadata);
   memset(ops, 0, sizeof(ops));
 
-  bool send_initial_metadata = false;
+  bool expect_send_initial_metadata = false;
 
   for (ArrayIter iter(actions); iter; ++iter) {
     Variant key = iter.first();
@@ -171,7 +173,7 @@ Object HHVM_METHOD(Call, startBatch,
 
         ops[op_num].data.send_initial_metadata.count = metadata.count;
         ops[op_num].data.send_initial_metadata.metadata = metadata.metadata;
-        send_initial_metadata = true;
+        expect_send_initial_metadata = true;
         break;
       case GRPC_OP_SEND_MESSAGE:
         {
@@ -283,6 +285,12 @@ Object HHVM_METHOD(Call, startBatch,
     op_num++;
   }
 
+  int fd;
+  if (expect_send_initial_metadata == true) {
+    fd = eventfd(0, EFD_CLOEXEC);
+    PluginGetMetdataFd::tl_obj.get()->setFd(fd);
+  }
+
   {
     Lock l1(s_grpc_call_start_batch_mutex);
     error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
@@ -298,25 +306,32 @@ Object HHVM_METHOD(Call, startBatch,
   cq_pluck_params->cq = CompletionQueue::tl_obj.get()->getQueue();
   cq_pluck_params->tag = callData->getWrapped();
   cq_pluck_params->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-  cq_pluck_params->reserved = NULL;
+  cq_pluck_params->reserved = nullptr;
 
-  if (send_initial_metadata == false) {
-    // If we don't actually expect a metadata callback then just run this in the same thread
-    cq_pluck_async((void *)cq_pluck_params);
-  } else {
+  if (expect_send_initial_metadata == true) {
+    // This might look weird but it's required due to the way HHVM works. Each request in HHVM
+    // has it's own thread and you cannot run application code on a single request in more than
+    // one thread. However gRPC calls call_credentials.cpp:plugin_get_metadata in a different thread
+    // in many cases and that violates the thread safety within a request in HHVM and causes segfaults
+    // at any reasonable concurrency. Our workaround here is to use pass in a file descriptor that can be
+    // used by the concurrent thread to send back the parameters to this main thread so we can execute
+    // it here.
+
     pthread_t cq_pluck_thread_id;
     pthread_create(&cq_pluck_thread_id, NULL, cq_pluck_async, (void *)cq_pluck_params);
 
+    // Block, wait for signal from callback
     plugin_get_metadata_params *params;
-    for (;;) {
-      params = PluginGetMetadataHandler::getInstance().getAndClear(Process::GetThreadId());
-      if (params != NULL) {
-        plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
-        break;
-      }
-    }
+    read(fd, &params, sizeof(plugin_get_metadata_params *));
+    PluginGetMetdataFd::tl_obj.get()->setFd(-1);
+    close(fd);
+
+    plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
 
     pthread_join(cq_pluck_thread_id, NULL);
+  } else {
+    // If we don't actually expect a metadata callback then just run this in the same thread
+    cq_pluck_async((void *)cq_pluck_params);
   }
 
   for (int i = 0; i < op_num; i++) {

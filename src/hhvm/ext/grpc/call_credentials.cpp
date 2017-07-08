@@ -16,14 +16,14 @@
  *
  */
 
-#include "channel_credentials.h"
-#include "call_credentials.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include "call_credentials.h"
+#include "channel_credentials.h"
 #include "common.h"
+#include "call.h"
 
 #include "hphp/runtime/ext/extension.h"
 #include "hphp/runtime/base/req-containers.h"
@@ -34,7 +34,7 @@
 #include "hphp/runtime/base/array-init.h"
 #include "hphp/util/process.h"
 
-#include "call.h"
+#include <sys/eventfd.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -64,6 +64,12 @@ void CallCredentialsData::sweep() {
 grpc_call_credentials* CallCredentialsData::getWrapped() {
   return wrapped;
 }
+
+IMPLEMENT_THREAD_LOCAL(PluginGetMetdataFd, PluginGetMetdataFd::tl_obj);
+
+PluginGetMetdataFd::PluginGetMetdataFd() {}
+void PluginGetMetdataFd::setFd(int fd_) { fd = fd_; }
+int PluginGetMetdataFd::getFd() { return fd; }
 
 /**
  * Create composite credentials from two existing credentials.
@@ -104,7 +110,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
   plugin_state *state;
   state = (plugin_state *)gpr_zalloc(sizeof(plugin_state));
   state->callback = callback;
-  state->req_thread_id = Process::GetThreadId();
+  state->fd_obj = PluginGetMetdataFd::tl_obj.get();
 
   grpc_metadata_credentials_plugin plugin;
   plugin.get_metadata = plugin_get_metadata;
@@ -158,15 +164,15 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data) {
   plugin_state *state = (plugin_state *)ptr;
+  PluginGetMetdataFd *fd_obj = state->fd_obj;
 
   plugin_get_metadata_params *params = (plugin_get_metadata_params *)gpr_zalloc(sizeof(plugin_get_metadata_params));
-
   params->ptr = ptr;
   params->context = context;
   params->cb = cb;
   params->user_data = user_data;
 
-  PluginGetMetadataHandler::getInstance().set(state->req_thread_id, params);
+  write(fd_obj->getFd(), &params, sizeof(plugin_get_metadata_params *));
 }
 
 
