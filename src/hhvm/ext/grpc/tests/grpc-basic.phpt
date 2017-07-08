@@ -1,9 +1,9 @@
 --TEST--
 Check for grpc presence
 --SKIPIF--
-<?php if (!extension_loaded("grpc")) print "skip"; ?>
+<?hh if (!extension_loaded("grpc")) print "skip"; ?>
 --FILE--
-<?php 
+<?hh 
 echo "grpc extension is available";
 ?>
 --EXPECT--

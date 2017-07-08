@@ -124,6 +124,18 @@ $ make
 $ sudo make install
 ```
 
+### gRPC HHVM extension
+
+Compile the gRPC HHVM extension
+
+```sh
+$ cd grpc/src/php/ext/grpc/hhvm/
+$ hphpize
+$ ./configure
+$ make
+$ sudo make install
+```
+
 ## Unit Tests
 
 You will need the source code to run tests
