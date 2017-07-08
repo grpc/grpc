@@ -34,6 +34,7 @@ ThreadManager::WorkerThread::~WorkerThread() {}
 
 void ThreadManager::WorkerThread::Run() {
   thd_.detach();
+  GPR_ASSERT(!thd_.joinable());
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
 }
