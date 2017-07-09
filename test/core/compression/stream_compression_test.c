@@ -129,10 +129,10 @@ test_stream_compression_simple_compress_decompress_with_output_size_constraint()
   grpc_slice_buffer_destroy(&sink);
 }
 
-#define LARGE_DATA_SIZE 1024 * 1024
+#define LARGE_DATA_SIZE (1024 * 1024)
 static void
 test_stream_compression_simple_compress_decompress_with_large_data() {
-  char test_str[LARGE_DATA_SIZE];
+  char *test_str = gpr_malloc(LARGE_DATA_SIZE * sizeof(char));
   generate_random_payload(test_str, LARGE_DATA_SIZE);
   grpc_slice_buffer source, relay, sink;
   grpc_slice_buffer_init(&source);
@@ -152,7 +152,7 @@ test_stream_compression_simple_compress_decompress_with_large_data() {
   size_t output_size;
   GPR_ASSERT(grpc_stream_decompress(decompress_ctx, &relay, &sink, &output_size,
                                     ~(size_t)0, &end_of_context));
-  GPR_ASSERT(output_size == sizeof(test_str) - 1);
+  GPR_ASSERT(output_size == LARGE_DATA_SIZE - 1);
   grpc_stream_compression_context_destroy(compress_ctx);
   grpc_stream_compression_context_destroy(decompress_ctx);
 
@@ -161,6 +161,7 @@ test_stream_compression_simple_compress_decompress_with_large_data() {
   grpc_slice_buffer_destroy(&source);
   grpc_slice_buffer_destroy(&relay);
   grpc_slice_buffer_destroy(&sink);
+  gpr_free(test_str);
 }
 
 static void test_stream_compression_drop_context() {
