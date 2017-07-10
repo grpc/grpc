@@ -611,11 +611,12 @@ class CallOpSet : public CallOpSetInterface,
     this->Op6::FinishOp(status);
     *tag = return_tag_;
 
+    g_core_codegen_interface->grpc_call_unref(call_);
+
     // TODO(vjpai): Remove the reference to collection_ once the idea of
     // bypassing the code generator is forbidden. It is already deprecated
     collection_.reset();
 
-    g_core_codegen_interface->grpc_call_unref(call_);
     return true;
   }
 
