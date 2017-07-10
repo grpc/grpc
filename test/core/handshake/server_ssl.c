@@ -34,9 +34,14 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
-#define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define SSL_RSA_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SSL_RSA_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define SSL_EC_CERT_PATH "src/core/tsi/test_creds/server2.pem"
+#define SSL_EC_KEY_PATH "src/core/tsi/test_creds/server2.key"
 #define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
+
+// Static var to switch between EC/RSA certs
+static bool load_ecdsa = false;
 
 // Handshake completed signal to server thread.
 static gpr_event client_handshake_complete;
@@ -73,9 +78,15 @@ static void server_thread(void *arg) {
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
+                               grpc_load_file(
+                                 ((load_ecdsa) ? SSL_EC_CERT_PATH: SSL_RSA_CERT_PATH),
+                                 1,
+                                 &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
+                               grpc_load_file(
+                               ((load_ecdsa) ? SSL_EC_KEY_PATH: SSL_RSA_KEY_PATH),
+                               1,
+                               &key_slice)));
   const char *ca_cert = (const char *)GRPC_SLICE_START_PTR(ca_slice);
   pem_key_cert_pair.private_key = (const char *)GRPC_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain = (const char *)GRPC_SLICE_START_PTR(cert_slice);
@@ -149,20 +160,22 @@ static bool server_ssl_test(const char *alpn_list[], unsigned int alpn_list_len,
   }
 
   // Load key pair.
-  if (SSL_CTX_use_certificate_file(ctx, SSL_CERT_PATH, SSL_FILETYPE_PEM) < 0) {
+  if (SSL_CTX_use_certificate_file(ctx, ((load_ecdsa) ? SSL_EC_CERT_PATH:SSL_RSA_CERT_PATH) , SSL_FILETYPE_PEM) < 0) {
     ERR_print_errors_fp(stderr);
     abort();
   }
-  if (SSL_CTX_use_PrivateKey_file(ctx, SSL_KEY_PATH, SSL_FILETYPE_PEM) < 0) {
+  if (SSL_CTX_use_PrivateKey_file(ctx, ((load_ecdsa) ? SSL_EC_KEY_PATH:SSL_RSA_KEY_PATH), SSL_FILETYPE_PEM) < 0) {
     ERR_print_errors_fp(stderr);
     abort();
   }
 
   // Set the cipher list to match the one expressed in
   // src/core/tsi/ssl_transport_security.c.
-  const char *cipher_list =
-      "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
-      "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
+  const char *cipher_list = "ECDHE-ECDSA-AES128-GCM-SHA256:"\
+      "ECDHE-ECDSA-AES256-GCM-SHA384:"\
+      "ECDHE-RSA-AES128-GCM-SHA256:"\
+      "ECDHE-RSA-AES128-SHA256:"\
+      "ECDHE-RSA-AES256-SHA384";
   if (!SSL_CTX_set_cipher_list(ctx, cipher_list)) {
     ERR_print_errors_fp(stderr);
     gpr_log(GPR_ERROR, "Couldn't set server cipher list.");
@@ -250,6 +263,11 @@ int main(int argc, char *argv[]) {
   // preference. This validates the server is correctly validating ALPN
   // and sanity checks the server_ssl_test.
   const char *fake_alpn_list[] = {"foo"};
+  GPR_ASSERT(!server_ssl_test(fake_alpn_list, 1, "foo"));
+  // Redo tests with ECDSA certs
+  load_ecdsa = true;
+  GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
+  GPR_ASSERT(server_ssl_test(extra_alpn_list, 4, "h2"));
   GPR_ASSERT(!server_ssl_test(fake_alpn_list, 1, "foo"));
   return 0;
 }
