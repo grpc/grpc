@@ -178,7 +178,7 @@ class JavaLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_COMPRESSION
+    return []
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
@@ -203,7 +203,7 @@ class JavaOkHttpClient:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+    return _SKIP_DATA_FRAME_PADDING
 
   def __str__(self):
     return 'javaokhttp'
