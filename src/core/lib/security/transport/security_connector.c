@@ -136,15 +136,17 @@ void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_channel_security_connector_check_call_host(
+bool grpc_channel_security_connector_check_call_host(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
     const char *host, grpc_auth_context *auth_context,
-    grpc_security_call_host_check_cb cb, void *user_data) {
+    grpc_closure *on_call_host_checked, grpc_error **error) {
   if (sc == NULL || sc->check_call_host == NULL) {
-    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR);
-  } else {
-    sc->check_call_host(exec_ctx, sc, host, auth_context, cb, user_data);
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                 "cannot check call host -- no security connector");
+    return true;
   }
+  return sc->check_call_host(exec_ctx, sc, host, auth_context,
+                             on_call_host_checked, error);
 }
 
 #ifndef NDEBUG
@@ -368,13 +370,13 @@ static void fake_server_check_peer(grpc_exec_ctx *exec_ctx,
   fake_check_peer(exec_ctx, sc, peer, auth_context, on_peer_checked);
 }
 
-static void fake_channel_check_call_host(grpc_exec_ctx *exec_ctx,
+static bool fake_channel_check_call_host(grpc_exec_ctx *exec_ctx,
                                          grpc_channel_security_connector *sc,
                                          const char *host,
                                          grpc_auth_context *auth_context,
-                                         grpc_security_call_host_check_cb cb,
-                                         void *user_data) {
-  cb(exec_ctx, user_data, GRPC_SECURITY_OK);
+                                         grpc_closure *on_call_host_checked,
+                                         grpc_error **error) {
+  return true;
 }
 
 static void fake_channel_add_handshakers(
@@ -665,26 +667,29 @@ void tsi_shallow_peer_destruct(tsi_peer *peer) {
   if (peer->properties != NULL) gpr_free(peer->properties);
 }
 
-static void ssl_channel_check_call_host(grpc_exec_ctx *exec_ctx,
+static bool ssl_channel_check_call_host(grpc_exec_ctx *exec_ctx,
                                         grpc_channel_security_connector *sc,
                                         const char *host,
                                         grpc_auth_context *auth_context,
-                                        grpc_security_call_host_check_cb cb,
-                                        void *user_data) {
+                                        grpc_closure *on_call_host_checked,
+                                        grpc_error **error) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = tsi_shallow_peer_from_ssl_auth_context(auth_context);
   if (ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
-
   /* If the target name was overridden, then the original target_name was
      'checked' transitively during the previous peer check at the end of the
      handshake. */
   if (c->overridden_target_name != NULL && strcmp(host, c->target_name) == 0) {
     status = GRPC_SECURITY_OK;
   }
-  cb(exec_ctx, user_data, status);
+  if (status != GRPC_SECURITY_OK) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "call host does not match SSL server name");
+  }
   tsi_shallow_peer_destruct(&peer);
+  return true;
 }
 
 static grpc_security_connector_vtable ssl_channel_vtable = {

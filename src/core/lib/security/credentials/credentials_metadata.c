@@ -24,65 +24,34 @@
 
 #include "src/core/lib/slice/slice_internal.h"
 
-static void store_ensure_capacity(grpc_credentials_md_store *store) {
-  if (store->num_entries == store->allocated) {
-    store->allocated = (store->allocated == 0) ? 1 : store->allocated * 2;
-    store->entries = gpr_realloc(
-        store->entries, store->allocated * sizeof(grpc_credentials_md));
+static void mdelem_list_ensure_capacity(grpc_credentials_mdelem_list *list,
+                                        size_t space_needed) {
+  size_t target_size = list->size + space_needed;
+  size_t new_size = list->size == 0 ? 2 : list->size * 2;
+  while (new_size < target_size) {
+    new_size *= 2;
+  }
+  list->md = gpr_realloc(list->md, sizeof(grpc_mdelem) * new_size);
+}
+
+void grpc_credentials_mdelem_list_add(grpc_credentials_mdelem_list *list,
+                                      grpc_mdelem md) {
+  mdelem_list_ensure_capacity(list, 1);
+  list->md[list->size++] = GRPC_MDELEM_REF(md);
+}
+
+void grpc_credentials_mdelem_list_append(grpc_credentials_mdelem_list *dst,
+                                         grpc_credentials_mdelem_list *src) {
+  mdelem_list_ensure_capacity(dst, src->size);
+  for (size_t i = 0; i < src->size; ++i) {
+    dst->md[dst->size++] = GRPC_MDELEM_REF(src->md[i]);
   }
 }
 
-grpc_credentials_md_store *grpc_credentials_md_store_create(
-    size_t initial_capacity) {
-  grpc_credentials_md_store *store =
-      gpr_zalloc(sizeof(grpc_credentials_md_store));
-  if (initial_capacity > 0) {
-    store->entries = gpr_malloc(initial_capacity * sizeof(grpc_credentials_md));
-    store->allocated = initial_capacity;
+void grpc_credentials_mdelem_list_destroy(grpc_exec_ctx *exec_ctx,
+                                          grpc_credentials_mdelem_list *list) {
+  for (size_t i = 0; i < list->size; ++i) {
+    GRPC_MDELEM_UNREF(exec_ctx, list->md[i]);
   }
-  gpr_ref_init(&store->refcount, 1);
-  return store;
-}
-
-void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
-                                   grpc_slice key, grpc_slice value) {
-  if (store == NULL) return;
-  store_ensure_capacity(store);
-  store->entries[store->num_entries].key = grpc_slice_ref_internal(key);
-  store->entries[store->num_entries].value = grpc_slice_ref_internal(value);
-  store->num_entries++;
-}
-
-void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
-                                            const char *key,
-                                            const char *value) {
-  if (store == NULL) return;
-  store_ensure_capacity(store);
-  store->entries[store->num_entries].key = grpc_slice_from_copied_string(key);
-  store->entries[store->num_entries].value =
-      grpc_slice_from_copied_string(value);
-  store->num_entries++;
-}
-
-grpc_credentials_md_store *grpc_credentials_md_store_ref(
-    grpc_credentials_md_store *store) {
-  if (store == NULL) return NULL;
-  gpr_ref(&store->refcount);
-  return store;
-}
-
-void grpc_credentials_md_store_unref(grpc_exec_ctx *exec_ctx,
-                                     grpc_credentials_md_store *store) {
-  if (store == NULL) return;
-  if (gpr_unref(&store->refcount)) {
-    if (store->entries != NULL) {
-      size_t i;
-      for (i = 0; i < store->num_entries; i++) {
-        grpc_slice_unref_internal(exec_ctx, store->entries[i].key);
-        grpc_slice_unref_internal(exec_ctx, store->entries[i].value);
-      }
-      gpr_free(store->entries);
-    }
-    gpr_free(store);
-  }
+  gpr_free(list->md);
 }

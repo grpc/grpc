@@ -24,7 +24,6 @@
 typedef struct {
   grpc_call_credentials base;
   grpc_metadata_credentials_plugin plugin;
-  grpc_credentials_md_store *plugin_md;
 } grpc_plugin_credentials;
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H */

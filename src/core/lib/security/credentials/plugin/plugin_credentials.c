@@ -32,8 +32,8 @@
 #include "src/core/lib/surface/validate_metadata.h"
 
 typedef struct {
-  void *user_data;
-  grpc_credentials_metadata_cb cb;
+  grpc_credentials_mdelem_list *md_list;
+  grpc_closure *on_request_metadata;
 } grpc_metadata_plugin_request;
 
 static void plugin_destruct(grpc_exec_ctx *exec_ctx,
@@ -55,17 +55,15 @@ static void plugin_md_request_metadata_ready(void *request,
       NULL, NULL);
   grpc_metadata_plugin_request *r = (grpc_metadata_plugin_request *)request;
   if (status != GRPC_STATUS_OK) {
-    if (error_details != NULL) {
-      gpr_log(GPR_ERROR, "Getting metadata from plugin failed with error: %s",
-              error_details);
-    }
-    r->cb(&exec_ctx, r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR,
-          error_details);
+    char *msg;
+    gpr_asprintf(&msg, "Getting metadata from plugin failed with error: %s",
+                 error_details);
+    GRPC_CLOSURE_SCHED(&exec_ctx, r->on_request_metadata,
+                       GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+    gpr_free(msg);
   } else {
-    size_t i;
     bool seen_illegal_header = false;
-    grpc_credentials_md *md_array = NULL;
-    for (i = 0; i < num_md; i++) {
+    for (size_t i = 0; i < num_md; ++i) {
       if (!GRPC_LOG_IF_ERROR("validate_metadata_from_plugin",
                              grpc_validate_header_key_is_legal(md[i].key))) {
         seen_illegal_header = true;
@@ -80,45 +78,40 @@ static void plugin_md_request_metadata_ready(void *request,
       }
     }
     if (seen_illegal_header) {
-      r->cb(&exec_ctx, r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR,
-            "Illegal metadata");
-    } else if (num_md > 0) {
-      md_array = gpr_malloc(num_md * sizeof(grpc_credentials_md));
-      for (i = 0; i < num_md; i++) {
-        md_array[i].key = grpc_slice_ref_internal(md[i].key);
-        md_array[i].value = grpc_slice_ref_internal(md[i].value);
+      GRPC_CLOSURE_SCHED(&exec_ctx, r->on_request_metadata,
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                             "Illegal metadata"));
+    } else {
+      for (size_t i = 0; i < num_md; ++i) {
+        grpc_mdelem mdelem =
+            grpc_mdelem_from_slices(&exec_ctx, md[i].key, md[i].value);
+        grpc_credentials_mdelem_list_add(r->md_list, mdelem);
+        GRPC_MDELEM_UNREF(&exec_ctx, mdelem);
       }
-      r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK,
-            NULL);
-      for (i = 0; i < num_md; i++) {
-        grpc_slice_unref_internal(&exec_ctx, md_array[i].key);
-        grpc_slice_unref_internal(&exec_ctx, md_array[i].value);
-      }
-      gpr_free(md_array);
-    } else if (num_md == 0) {
-      r->cb(&exec_ctx, r->user_data, NULL, 0, GRPC_CREDENTIALS_OK, NULL);
+      GRPC_CLOSURE_SCHED(&exec_ctx, r->on_request_metadata, GRPC_ERROR_NONE);
     }
   }
   gpr_free(r);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
+static bool plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                         grpc_call_credentials *creds,
                                         grpc_polling_entity *pollent,
                                         grpc_auth_metadata_context context,
-                                        grpc_credentials_metadata_cb cb,
-                                        void *user_data) {
+                                        grpc_credentials_mdelem_list *md_list,
+                                        grpc_closure *on_request_metadata,
+                                        grpc_error **error) {
   grpc_plugin_credentials *c = (grpc_plugin_credentials *)creds;
   if (c->plugin.get_metadata != NULL) {
     grpc_metadata_plugin_request *request = gpr_zalloc(sizeof(*request));
-    request->user_data = user_data;
-    request->cb = cb;
+    request->md_list = md_list;
+    request->on_request_metadata = on_request_metadata;
     c->plugin.get_metadata(c->plugin.state, context,
                            plugin_md_request_metadata_ready, request);
-  } else {
-    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK, NULL);
+    return false;
   }
+  return true;
 }
 
 static grpc_call_credentials_vtable plugin_vtable = {
