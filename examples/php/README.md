@@ -60,4 +60,4 @@ TUTORIAL
 You can find a more detailed tutorial in [gRPC Basics: PHP][]
 
 [Node]:https://github.com/grpc/grpc/tree/master/examples/node
-[gRPC Basics: PHP]:http://www.grpc.io/docs/tutorials/basic/php.html
+[gRPC Basics: PHP]:https://grpc.io/docs/tutorials/basic/php.html

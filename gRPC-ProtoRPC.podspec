@@ -24,7 +24,7 @@ Pod::Spec.new do |s|
   version = '1.5.0-dev'
   s.version  = version
   s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
-  s.homepage = 'http://www.grpc.io'
+  s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
