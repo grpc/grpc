@@ -176,7 +176,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL', '~> 8.0'
+    ss.dependency 'BoringSSL', '~> 9.0'
     ss.dependency 'nanopb', '~> 0.3'
 
     # To save you from scrolling, this is the last part of the podspec.
