@@ -127,6 +127,16 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "stack_lockfree_test",
+    srcs = ["stack_lockfree_test.c"],
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "string_test",
     srcs = ["string_test.c"],
     language = "C",
