@@ -1,0 +1,101 @@
+api_common_version:
+  java:
+    lower: 1.1.0
+auth_version:
+  nodejs:
+    lower: 0.9.8
+  python:
+    lower: 2.0.0
+    upper: 4.0dev
+  ruby:
+    lower: 0.5.1
+author: Google Inc
+dependency_type: local
+email: googleapis-packages@google.com
+gapic_config_name: test_gapic.yaml
+gax_grpc_version:
+  java:
+    lower: 0.21.1
+gax_version:
+  java:
+    lower: 1.4.1
+  nodejs:
+    lower: 0.13.2
+  php:
+    lower: 0.8.*
+  python:
+    lower: 0.15.7
+    upper: 0.16dev
+  ruby:
+    lower: 0.8.4
+generated_package_version:
+  java:
+    lower: 0.1.12
+  nodejs:
+    lower: 0.7.1
+  php:
+    lower: 0.1.0
+  python:
+    lower: 0.15.4
+    upper: 0.16dev
+  ruby:
+    lower: 0.6.8
+google-common-protos_version:
+  java:
+    lower: 0.1.12
+  nodejs:
+    lower: 0.12.0
+    name_override: google-proto-files
+  python:
+    lower: 1.5.2
+    name_override: googleapis-common-protos
+    upper: 2.0dev
+  ruby:
+    lower: 1.3.1
+    name_override: googleapis-common-protos
+google-iam-v1_version:
+  java:
+    lower: 0.1.12
+  python:
+    lower: 0.11.1
+    name_override: grpc-google-iam-v1
+    upper: 0.12dev
+  ruby:
+    lower: 0.6.8
+    name_override: grpc-google-iam-v1
+grpc_version:
+  java:
+    lower: 1.4.0
+  nodejs:
+    lower: 1.1.2
+  php:
+    lower: 0.14.1
+  python:
+    lower: 1.0.2
+    upper: 2.0dev
+  ruby:
+    lower: '1.0'
+homepage: https://github.com/googleapis/googleapis
+license: Apache-2.0
+major_version: v1beta1
+package_name:
+  default: google-cloud-error-reporting-v1beta1
+package_type: grpc_client
+proto_deps:
+- google-common-protos
+proto_path: test
+proto_version:
+  java:
+    lower: 3.3.0
+  nodejs:
+    lower: 5.0.1
+  php:
+    lower: 0.9.*
+  python:
+    lower: 3.0.0
+    upper: 4.0dev
+  ruby:
+    lower: '3.0'
+release_level:
+  python: alpha
+short_name: test

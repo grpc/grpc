@@ -1,0 +1,64 @@
+# Run:
+# ./gradlew runCodeGen
+#   '-Pclargs=--descriptor_set=/path/to/grpc/src/proto/grpc/testing/test.desc,
+#   --service_yaml=/path/to/grpc/src/proto/grpc/testing/test.yaml,
+#   --gapic_yaml=/path/to/googleapis/gapic/lang/python_gapic.yaml,
+#   --package_yaml=/path/to/grpc/src/proto/grpc/testing/test_pkg.yaml,
+#   --gapic_yaml=/path/to/grpc/src/proto/grpc/testing/test_gapic.yaml,
+#   --output=/path/to/grpc/src/python/grpcio_tests/gapic'
+
+type: com.google.api.codegen.ConfigProto
+language_settings:
+  python:
+    package_name: grpc.testing.gapic
+  go:
+    package_name: google.golang.org/grpc/benchmark/gapic_testing
+license_header:
+  copyright_file: copyright-google.txt
+  license_file: license-header-apache-2.0.txt
+interfaces:
+- name: grpc.testing.BenchmarkService
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  - name: pull
+    retry_codes:
+    - DEADLINE_EXCEEDED
+    - INTERNAL
+    - CANCELLED
+    - RESOURCE_EXHAUSTED
+    - UNAVAILABLE
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000 # 60 seconds
+    initial_rpc_timeout_millis: 60000 # 60 seconds
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000 # 60 seconds
+    total_timeout_millis: 600000 # 10 minutes
+  methods:
+  - name: UnaryCall
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: StreamingCall
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: StreamingFromClient
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: StreamingFromServer
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: StreamingBothWays
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000

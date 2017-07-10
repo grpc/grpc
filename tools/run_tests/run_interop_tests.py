@@ -219,7 +219,7 @@ class GoLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['go', 'run', 'client.go'] + args
+    return ['go', 'run', 'client.go', '-client', 'gapic'] + args
 
   def client_cmd_http2interop(self, args):
     return ['go', 'run', 'negative_http2_client.go'] + args

@@ -1,0 +1,4 @@
+googleapis-common-protos>=1.5.2, <2.0dev
+google-gax>=0.15.7, <0.16dev
+proto-google-cloud-error-reporting-v1beta1>=0.15.4, <0.16dev
+oauth2client>=2.0.0, <4.0dev
