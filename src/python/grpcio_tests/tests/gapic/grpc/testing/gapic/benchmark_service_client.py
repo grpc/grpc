@@ -34,8 +34,8 @@ from google.gax import config
 from google.gax import path_template
 import google.gax
 
-from grpc.testing import messages_pb2
-from grpc.testing.gapic import enums
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import services_pb2
 
 
 class BenchmarkServiceClient(object):
@@ -123,9 +123,9 @@ class BenchmarkServiceClient(object):
             metrics_headers[lib_name] = lib_version
 
         # Finally, track the GAPIC package version.
-        metrics_headers['gapic'] = pkg_resources.get_distribution(
-            'gapic-google-cloud-error-reporting-v1beta1',
-        ).version
+        # metrics_headers['gapic'] = pkg_resources.get_distribution(
+        #     'gapic-testing-v0beta1',
+        # ).version
 
         # Load the configuration defaults.
         default_client_config = json.loads(pkg_resources.resource_string(

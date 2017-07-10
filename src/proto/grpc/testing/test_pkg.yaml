@@ -79,7 +79,7 @@ homepage: https://github.com/googleapis/googleapis
 license: Apache-2.0
 major_version: v1beta1
 package_name:
-  default: google-cloud-error-reporting-v1beta1
+  default: testing-v0beta1
 package_type: grpc_client
 proto_deps:
 - google-common-protos

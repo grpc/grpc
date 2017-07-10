@@ -42,7 +42,8 @@ INSTALL_REQUIRES = (
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
     'oauth2client>=1.4.7', 'protobuf>=3.3.0', 'six>=1.10', 'google-auth>=1.0.0',
-    'requests>=2.14.2')
+    'requests>=2.14.2',
+    'google-gax>=0.15.7, <0.16dev', 'oauth2client>=2.0.0, <4.0dev', 'googleapis-common-protos[grpc]>=1.5.2, <2.0dev')
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!

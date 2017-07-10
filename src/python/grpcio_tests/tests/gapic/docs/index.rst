@@ -1,12 +1,12 @@
-.. gapic-google-cloud-error-reporting-v1beta1 sphinx documentation master file
+.. gapic-testing-v0beta1 sphinx documentation master file
 
 
 GAPIC library for the gRPC Benchmark API
 =============================================================================================================
 
-This is the API documentation for ``gapic-google-cloud-error-reporting-v1beta1``.
+This is the API documentation for ``gapic-testing-v0beta1``.
 
-gapic-google-cloud-error-reporting-v1beta1 uses google-gax_ (Google API extensions) to provide an
+gapic-testing-v0beta1 uses google-gax_ (Google API extensions) to provide an
 easy-to-use client library for the `gRPC Benchmark API`_ (v1beta1) defined in the googleapis_ git repository
 
 

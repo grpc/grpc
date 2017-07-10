@@ -47,7 +47,7 @@ Mac/Linux
     pip install virtualenv
     virtualenv <your-env>
     source <your-env>/bin/activate
-    <your-env>/bin/pip install gapic-google-cloud-error-reporting-v1beta1
+    <your-env>/bin/pip install gapic-testing-v0beta1
 
 
 Windows
@@ -58,7 +58,7 @@ Windows
     pip install virtualenv
     virtualenv <your-env>
     <your-env>\Scripts\activate
-    <your-env>\Scripts\pip.exe install gapic-google-cloud-error-reporting-v1beta1
+    <your-env>\Scripts\pip.exe install gapic-testing-v0beta1
 
 Next Steps
 ~~~~~~~~~~
