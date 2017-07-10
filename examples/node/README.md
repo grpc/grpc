@@ -47,4 +47,4 @@ TUTORIAL
 You can find a more detailed tutorial in [gRPC Basics: Node.js][]
 
 [Install gRPC Node]:../../src/node
-[gRPC Basics: Node.js]:http://www.grpc.io/docs/tutorials/basic/node.html
+[gRPC Basics: Node.js]:https://grpc.io/docs/tutorials/basic/node.html

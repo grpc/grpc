@@ -46,7 +46,7 @@ setuptools.setup(
     description='Standard Health Checking Service for gRPC',
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
-    url='http://www.grpc.io',
+    url='https://grpc.io',
     license='Apache License 2.0',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),

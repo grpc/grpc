@@ -53,7 +53,7 @@
       The generated code will have a dependency on the gRPC Objective-C Proto runtime of the same
       version. The runtime can be obtained as the "gRPC-ProtoRPC" pod.
     DESC
-    s.homepage = 'http://www.grpc.io'
+    s.homepage = 'https://grpc.io'
     s.license  = {
       :type => 'Apache License, Version 2.0',
       :text => <<-LICENSE

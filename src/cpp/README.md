@@ -60,14 +60,14 @@ You can find out how to build and run our simplest gRPC C++ example in our
 [C++ quick start](../../examples/cpp).
 
 For more detailed documentation on using gRPC in C++ , see our main
-documentation site at [grpc.io](http://grpc.io), specifically:
+documentation site at [grpc.io](https://grpc.io), specifically:
 
-* [Overview](http://www.grpc.io/docs/): An introduction to gRPC with a simple
+* [Overview](https://grpc.io/docs/): An introduction to gRPC with a simple
   Hello World example in all our supported languages, including C++.
-* [gRPC Basics - C++](http://www.grpc.io/docs/tutorials/basic/c.html):
+* [gRPC Basics - C++](https://grpc.io/docs/tutorials/basic/c.html):
   A tutorial that steps you through creating a simple gRPC C++ example
   application.
-* [Asynchronous Basics - C++](http://www.grpc.io/docs/tutorials/async/helloasync-cpp.html):
+* [Asynchronous Basics - C++](https://grpc.io/docs/tutorials/async/helloasync-cpp.html):
   A tutorial that shows you how to use gRPC C++'s asynchronous/non-blocking
   APIs.
 
