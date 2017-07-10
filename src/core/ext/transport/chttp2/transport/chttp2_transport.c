@@ -74,11 +74,11 @@ static bool g_default_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
-grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false);
-grpc_tracer_flag grpc_flowctl_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false, "http");
+grpc_tracer_flag grpc_flowctl_trace = GRPC_TRACER_INITIALIZER(false, "flowctl");
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_chttp2_refcount = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_chttp2_refcount = GRPC_TRACER_INITIALIZER(false, "chttp2_refcount");
 #endif
 
 static const grpc_transport_vtable vtable;

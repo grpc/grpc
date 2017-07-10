@@ -48,7 +48,7 @@
  */
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_metadata = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_metadata = GRPC_TRACER_INITIALIZER(false, "metadata");
 #define DEBUG_ARGS , const char *file, int line
 #define FWD_DEBUG_ARGS , file, line
 #define REF_MD_LOCKED(shard, s) ref_md_locked((shard), (s), __FILE__, __LINE__)

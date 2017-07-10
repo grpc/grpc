@@ -27,7 +27,6 @@
 int grpc_tracer_set_enabled(const char *name, int enabled);
 
 typedef struct tracer {
-  const char *name;
   grpc_tracer_flag *flag;
   struct tracer *next;
 } tracer;
@@ -39,9 +38,8 @@ static tracer *tracers;
 #define TRACER_SET(flag, on) (flag).value = (on)
 #endif
 
-void grpc_register_tracer(const char *name, grpc_tracer_flag *flag) {
+void grpc_register_tracer(grpc_tracer_flag *flag) {
   tracer *t = gpr_malloc(sizeof(*t));
-  t->name = name;
   t->flag = flag;
   t->next = tracers;
   TRACER_SET(*flag, false);
@@ -118,7 +116,7 @@ int grpc_tracer_set_enabled(const char *name, int enabled) {
   } else {
     int found = 0;
     for (t = tracers; t; t = t->next) {
-      if (0 == strcmp(name, t->name)) {
+      if (0 == strcmp(name, t->flag->name)) {
         TRACER_SET(*t->flag, enabled);
         found = 1;
       }

@@ -41,8 +41,8 @@
 #define MIN_QUEUE_WINDOW_DURATION 0.01
 #define MAX_QUEUE_WINDOW_DURATION 1
 
-grpc_tracer_flag grpc_timer_trace = GRPC_TRACER_INITIALIZER(false);
-grpc_tracer_flag grpc_timer_check_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_timer_trace = GRPC_TRACER_INITIALIZER(false, "timer");
+grpc_tracer_flag grpc_timer_check_trace = GRPC_TRACER_INITIALIZER(false, "timer_check");
 
 /* A "timer shard". Contains a 'heap' and a 'list' of timers. All timers with
  * deadlines earlier than 'queue_deadline" cap are maintained in the heap and
@@ -160,8 +160,8 @@ void grpc_timer_list_init(gpr_timespec now) {
   g_shared_mutables.min_timer = timespec_to_atm_round_down(now);
   gpr_tls_init(&g_last_seen_min_timer);
   gpr_tls_set(&g_last_seen_min_timer, 0);
-  grpc_register_tracer("timer", &grpc_timer_trace);
-  grpc_register_tracer("timer_check", &grpc_timer_check_trace);
+  grpc_register_tracer(&grpc_timer_trace);
+  grpc_register_tracer(&grpc_timer_check_trace);
 
   for (i = 0; i < NUM_SHARDS; i++) {
     timer_shard *shard = &g_shards[i];

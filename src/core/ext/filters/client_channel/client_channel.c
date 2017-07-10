@@ -52,7 +52,7 @@
 
 /* Client channel implementation */
 
-grpc_tracer_flag grpc_client_channel_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_client_channel_trace = GRPC_TRACER_INITIALIZER(false, "client_channel");
 
 /*************************************************************************
  * METHOD-CONFIG TABLE
