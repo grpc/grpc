@@ -360,10 +360,10 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\health\health.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\thread_manager\thread_manager.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_common.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_decode.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_encode.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
@@ -438,11 +438,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time_cc.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_common.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_decode.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_encode.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
     </ClCompile>

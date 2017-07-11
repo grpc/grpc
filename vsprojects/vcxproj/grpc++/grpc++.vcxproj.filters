@@ -124,14 +124,14 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time_cc.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
-      <Filter>third_party\nanopb</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_common.c">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
-      <Filter>third_party\nanopb</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_decode.c">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
-      <Filter>third_party\nanopb</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_encode.c">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
       <Filter>src\cpp\codegen</Filter>
@@ -458,17 +458,17 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\thread_manager\thread_manager.h">
       <Filter>src\cpp\thread_manager</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h">
-      <Filter>third_party\nanopb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb.h">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h">
-      <Filter>third_party\nanopb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_common.h">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h">
-      <Filter>third_party\nanopb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_decode.h">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
-      <Filter>third_party\nanopb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_encode.h">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClInclude>
   </ItemGroup>
 
@@ -541,6 +541,9 @@
     </Filter>
     <Filter Include="third_party\nanopb">
       <UniqueIdentifier>{abc9bbec-57f7-141f-8616-e2d3aa8b2e6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\nanopb\nanopb">
+      <UniqueIdentifier>{e8dd9255-cf27-a606-b796-ae8f580fc863}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

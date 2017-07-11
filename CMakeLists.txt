@@ -1139,9 +1139,9 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  third_party/nanopb/nanopb/pb_common.c
+  third_party/nanopb/nanopb/pb_decode.c
+  third_party/nanopb/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
@@ -2038,9 +2038,9 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  third_party/nanopb/nanopb/pb_common.c
+  third_party/nanopb/nanopb/pb_decode.c
+  third_party/nanopb/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c
   src/core/ext/census/base_resources.c
@@ -2277,9 +2277,9 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  third_party/nanopb/nanopb/pb_common.c
+  third_party/nanopb/nanopb/pb_decode.c
+  third_party/nanopb/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -2471,9 +2471,9 @@ add_library(grpc++_cronet
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  third_party/nanopb/nanopb/pb_common.c
+  third_party/nanopb/nanopb/pb_decode.c
+  third_party/nanopb/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
@@ -3250,9 +3250,9 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  third_party/nanopb/nanopb/pb_common.c
+  third_party/nanopb/nanopb/pb_decode.c
+  third_party/nanopb/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
 )
 

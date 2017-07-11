@@ -586,14 +586,14 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.c">
       <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
-      <Filter>third_party\nanopb</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_common.c">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
-      <Filter>third_party\nanopb</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_decode.c">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
-      <Filter>third_party\nanopb</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_encode.c">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\pick_first\pick_first.c">
       <Filter>src\core\ext\filters\client_channel\lb_policy\pick_first</Filter>
@@ -1259,17 +1259,17 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h">
       <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h">
-      <Filter>third_party\nanopb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb.h">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h">
-      <Filter>third_party\nanopb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_common.h">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h">
-      <Filter>third_party\nanopb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_decode.h">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
-      <Filter>third_party\nanopb</Filter>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\nanopb\pb_encode.h">
+      <Filter>third_party\nanopb\nanopb</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h">
       <Filter>src\core\ext\census</Filter>
@@ -1504,6 +1504,9 @@
     </Filter>
     <Filter Include="third_party\nanopb">
       <UniqueIdentifier>{6511f77d-f28c-80e0-0889-8975e688e344}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\nanopb\nanopb">
+      <UniqueIdentifier>{1fd99f33-9417-bf78-c75c-48217a2a328f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
