@@ -63,6 +63,15 @@ _TEST_TIMEOUT = 3*60
 # see https://github.com/grpc/grpc/issues/9779
 _SKIP_DATA_FRAME_PADDING = ['data_frame_padding']
 
+# report suffix is important for reports to get picked up by internal CI
+_INTERNAL_CL_REPORT_SUFFIX = 'sponge_log.xml'
+
+
+def _report_filename_internal_ci(name):
+  """Generates report file name that leads to better presentation by internal CI"""
+  return '%s/%s' % (name, _INTERNAL_CL_REPORT_SUFFIX)
+
+
 class CXXLanguage:
 
   def __init__(self):
@@ -943,7 +952,12 @@ argp.add_argument('--insecure',
                   action='store_const',
                   const=True,
                   help='Whether to use secure channel.')
-
+argp.add_argument('--internal_ci',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help=('Put reports into subdirectories to improve '
+                        'presentation of results by Internal CI.'))
 args = argp.parse_args()
 
 servers = set(s for s in itertools.chain.from_iterable(_SERVERS
@@ -1201,7 +1215,10 @@ try:
   write_cmdlog_maybe(server_manual_cmd_log, 'interop_server_cmds.sh')
   write_cmdlog_maybe(client_manual_cmd_log, 'interop_client_cmds.sh')
 
-  report_utils.render_junit_xml_report(resultset, 'report.xml')
+  xml_report_name = 'report.xml'
+  if args.internal_ci:
+    xml_report_name = _report_filename_internal_ci(xml_report_name)
+  report_utils.render_junit_xml_report(resultset, xml_report_name)
 
   for name, job in resultset.items():
     if "http2" in name:
