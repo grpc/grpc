@@ -163,8 +163,9 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
     state->status = status;
     state->error_details = error_details;
     GRPC_CLOSURE_INIT(&state->closure, on_credentials_metadata_in_call_combiner,
-                      state, &calld->call_combiner->scheduler);
-    GRPC_CLOSURE_SCHED(exec_ctx, &state->closure, GRPC_ERROR_NONE);
+                      state, grpc_schedule_on_exec_ctx);
+    grpc_call_combiner_start(exec_ctx, calld->call_combiner, &state->closure,
+                             GRPC_ERROR_NONE);
   } else {
     on_credentials_metadata_inner(exec_ctx, batch, md_elems, num_md, status,
                                   error_details);

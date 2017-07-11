@@ -227,8 +227,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   // If we're not in the call combiner, schedule a closure on the
   // call combiner to send the op down.
   if (!in_call_combiner) {
-    GRPC_CLOSURE_SCHED(exec_ctx, &calld->send_in_call_combiner,
-                       GRPC_ERROR_NONE);
+    grpc_call_combiner_start(exec_ctx, calld->call_combiner,
+                             &calld->send_in_call_combiner, GRPC_ERROR_NONE);
   }
 }
 
@@ -309,10 +309,11 @@ static void compress_start_transport_stream_op_batch(
     calld->cancel_error =
         GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (calld->pending_send_message_batch != NULL) {
-      GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(
-                                       fail_send_message_batch_in_call_combiner,
-                                       calld, &calld->call_combiner->scheduler),
-                         GRPC_ERROR_REF(calld->cancel_error));
+      grpc_call_combiner_start(
+          exec_ctx, calld->call_combiner,
+          GRPC_CLOSURE_CREATE(fail_send_message_batch_in_call_combiner, calld,
+                              grpc_schedule_on_exec_ctx),
+          GRPC_ERROR_REF(calld->cancel_error));
     }
   } else if (calld->cancel_error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
@@ -389,7 +390,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->cancel_error = GRPC_ERROR_NONE;
   grpc_slice_buffer_init(&calld->slices);
   GRPC_CLOSURE_INIT(&calld->send_in_call_combiner, send_in_call_combiner, elem,
-                    &calld->call_combiner->scheduler);
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&calld->got_slice, got_slice, elem,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&calld->send_done, send_done, elem,

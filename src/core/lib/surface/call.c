@@ -592,10 +592,12 @@ gpr_log(GPR_INFO, "calling start_transport_stream_op_batch() for \"%s\" filter",
 static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
                           grpc_transport_stream_op_batch *batch) {
   batch->handler_private.extra_arg = call;
+// FIXME: don't allocate here
   grpc_closure *closure = GRPC_CLOSURE_CREATE(
-      execute_batch_in_call_combiner, batch, &call->call_combiner.scheduler);
+      execute_batch_in_call_combiner, batch, grpc_schedule_on_exec_ctx);
 gpr_log(GPR_INFO, "EXECUTING BATCH: batch={send_initial_metadata=%d, send_message=%d, send_trailing_metadata=%d, recv_initial_metadata=%d, recv_message=%d, recv_trailing_metadata=%d, cancel_stream=%d, collect_stats=%d}, closure=%p, call_combiner=%p", batch->send_initial_metadata, batch->send_message, batch->send_trailing_metadata, batch->recv_initial_metadata, batch->recv_message, batch->recv_trailing_metadata, batch->cancel_stream, batch->collect_stats, closure, &call->call_combiner);
-  GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
+  grpc_call_combiner_start(exec_ctx, &call->call_combiner, closure,
+                           GRPC_ERROR_NONE);
 }
 
 typedef struct {
@@ -617,10 +619,12 @@ char *grpc_call_get_peer(grpc_call *call) {
   get_peer_state state = {NULL, elem, &call->call_combiner};
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE("grpc_call_get_peer(%p)", 1, (call));
-  GRPC_CLOSURE_SCHED(&exec_ctx,
-                     GRPC_CLOSURE_CREATE(get_peer_in_call_combiner, &state,
-                                         &call->call_combiner.scheduler),
-                     GRPC_ERROR_NONE);
+  grpc_call_combiner_start(&exec_ctx, &call->call_combiner,
+// FIXME: don't allocate here?
+                           GRPC_CLOSURE_CREATE(get_peer_in_call_combiner,
+                                               &state,
+                                               grpc_schedule_on_exec_ctx),
+                           GRPC_ERROR_NONE);
   grpc_exec_ctx_finish(&exec_ctx);  // Ensures callback is complete.
   if (state.result == NULL) {
     state.result = grpc_channel_get_target(call->channel);

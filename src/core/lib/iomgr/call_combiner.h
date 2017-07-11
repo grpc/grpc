@@ -39,7 +39,6 @@
 typedef struct {
   gpr_atm size;  // size_t, num closures in queue or currently executing
   gpr_mpscq queue;
-  grpc_closure_scheduler scheduler;
   grpc_closure* notify_on_cancel;
 } grpc_call_combiner;
 

@@ -36,21 +36,40 @@ typedef struct connected_channel_channel_data {
   grpc_transport *transport;
 } channel_data;
 
+typedef struct {
+  grpc_closure closure;
+  grpc_closure *original_closure;
+  grpc_call_combiner *call_combiner;
+  bool free_when_done;
+} callback_state;
+
 typedef struct connected_channel_call_data {
   grpc_call_combiner *call_combiner;
   // Closures used for returning results on the call combiner.
-  grpc_closure on_complete[6];  // Max number of pending batches.
-  grpc_closure recv_initial_metadata_ready;
-  grpc_closure recv_message_ready;
+  callback_state on_complete[6];  // Max number of pending batches.
+  callback_state recv_initial_metadata_ready;
+  callback_state recv_message_ready;
 } call_data;
 
-static void intercepted_closure_run(grpc_exec_ctx *exec_ctx, void *arg,
-                                    grpc_error *error) {
-  grpc_closure *original_closure = arg;
-  GRPC_CLOSURE_RUN(exec_ctx, original_closure, GRPC_ERROR_REF(error));
+static void run_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
+                                 grpc_error *error) {
+  callback_state *state = (callback_state *)arg;
+  grpc_call_combiner_start(exec_ctx, state->call_combiner,
+                           state->original_closure, GRPC_ERROR_REF(error));
+  if (state->free_when_done) gpr_free(state);
 }
 
-static grpc_closure *get_closure_for_batch(
+static void intercept_callback(call_data *calld, callback_state *state,
+                               bool free_when_done,
+                               grpc_closure **original_closure) {
+  state->original_closure = *original_closure;
+  state->call_combiner = calld->call_combiner;
+  state->free_when_done = free_when_done;
+  *original_closure = GRPC_CLOSURE_INIT(&state->closure, run_in_call_combiner,
+                                        state, grpc_schedule_on_exec_ctx);
+}
+
+static callback_state *get_state_for_batch(
     call_data *calld, grpc_transport_stream_op_batch *batch) {
   if (batch->send_initial_metadata) return &calld->on_complete[0];
   if (batch->send_message) return &calld->on_complete[1];
@@ -77,18 +96,16 @@ static void con_start_transport_stream_op_batch(
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
   if (batch->recv_initial_metadata) {
-    batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        GRPC_CLOSURE_INIT(
-            &calld->recv_initial_metadata_ready, intercepted_closure_run,
-            batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
-            &calld->call_combiner->scheduler);
+    callback_state *state = &calld->recv_initial_metadata_ready;
+    intercept_callback(
+        calld, state, false,
+        &batch->payload->recv_initial_metadata.recv_initial_metadata_ready);
 gpr_log(GPR_INFO, "INTERCEPTING recv_initial_metadata: closure=%p call_combiner=%p", batch->payload->recv_initial_metadata.recv_initial_metadata_ready, calld->call_combiner);
   }
   if (batch->recv_message) {
-    batch->payload->recv_message.recv_message_ready = GRPC_CLOSURE_INIT(
-        &calld->recv_message_ready, intercepted_closure_run,
-        batch->payload->recv_message.recv_message_ready,
-        &calld->call_combiner->scheduler);
+    callback_state *state = &calld->recv_message_ready;
+    intercept_callback(calld, state, false,
+                       &batch->payload->recv_message.recv_message_ready);
 gpr_log(GPR_INFO, "INTERCEPTING recv_message: closure=%p call_combiner=%p", batch->payload->recv_message.recv_message_ready, calld->call_combiner);
   }
   if (batch->cancel_stream) {
@@ -97,13 +114,11 @@ gpr_log(GPR_INFO, "INTERCEPTING recv_message: closure=%p call_combiner=%p", batc
     // calld->on_complete like we can for the other ops.  However,
     // cancellation isn't in the fast path, so we just allocate a new
     // closure for each one.
-    batch->on_complete = GRPC_CLOSURE_CREATE(
-        intercepted_closure_run, batch->on_complete,
-        &calld->call_combiner->scheduler);
+    callback_state *state = (callback_state *)gpr_malloc(sizeof(*state));
+    intercept_callback(calld, state, true, &batch->on_complete);
   } else {
-    batch->on_complete = GRPC_CLOSURE_INIT(
-        get_closure_for_batch(calld, batch), intercepted_closure_run,
-        batch->on_complete, &calld->call_combiner->scheduler);
+    callback_state *state = get_state_for_batch(calld, batch);
+    intercept_callback(calld, state, false, &batch->on_complete);
   }
 gpr_log(GPR_INFO, "INTERCEPTING on_complete: closure=%p call_combiner=%p", batch->on_complete, calld->call_combiner);
   grpc_transport_perform_stream_op(exec_ctx, chand->transport,

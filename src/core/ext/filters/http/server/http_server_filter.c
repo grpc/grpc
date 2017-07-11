@@ -275,12 +275,6 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   GRPC_CLOSURE_RUN(exec_ctx, calld->on_done_recv, err);
 }
 
-static void run_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
-                                 grpc_error *error) {
-  grpc_closure *closure = arg;
-  GRPC_CLOSURE_RUN(exec_ctx, closure, GRPC_ERROR_REF(error));
-}
-
 static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
                            grpc_error *err) {
   grpc_call_element *elem = user_data;
@@ -290,14 +284,10 @@ static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
     *calld->pp_recv_message = calld->payload_bin_delivered
                                   ? NULL
                                   : (grpc_byte_stream *)&calld->read_stream;
-    // Re-enter call combiner for recv_message ready, since the surface
+    // Re-enter call combiner for recv_message_ready, since the surface
     // code will release the call combiner for each callback it receives.
-    GRPC_CLOSURE_SCHED(
-        exec_ctx,
-        GRPC_CLOSURE_INIT(&calld->recv_message_ready_in_call_combiner,
-                          run_in_call_combiner, calld->recv_message_ready,
-                          &calld->call_combiner->scheduler),
-        GRPC_ERROR_REF(err));
+    grpc_call_combiner_start(exec_ctx, calld->call_combiner,
+                             calld->recv_message_ready, GRPC_ERROR_REF(err));
     calld->recv_message_ready = NULL;
     calld->payload_bin_delivered = true;
   }

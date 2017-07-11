@@ -885,10 +885,10 @@ gpr_log(GPR_INFO, "==> %s(): call_combiner=%p", __func__, calld->deadline_state.
 gpr_log(GPR_INFO, "scheduling waiting_for_pick_batches[%zu] in call_combiner", i);
     GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner[i],
                       fail_pending_batch_in_call_combiner, calld,
-                      &calld->deadline_state.call_combiner->scheduler);
-    GRPC_CLOSURE_SCHED(exec_ctx,
-                       &calld->handle_pending_batch_in_call_combiner[i],
-                       GRPC_ERROR_REF(error));
+                      grpc_schedule_on_exec_ctx);
+    grpc_call_combiner_start(exec_ctx, calld->deadline_state.call_combiner,
+                             &calld->handle_pending_batch_in_call_combiner[i],
+                             GRPC_ERROR_REF(error));
   }
   if (calld->initial_metadata_batch != NULL) {
     grpc_transport_stream_op_batch_finish_with_failure(
@@ -925,10 +925,10 @@ gpr_log(GPR_INFO, "==> %s(): call_combiner=%p", __func__, calld->deadline_state.
 gpr_log(GPR_INFO, "scheduling waiting_for_pick_batches[%zu] in call_combiner", i);
     GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner[i],
                       run_pending_batch_in_call_combiner, calld,
-                      &calld->deadline_state.call_combiner->scheduler);
-    GRPC_CLOSURE_SCHED(exec_ctx,
-                       &calld->handle_pending_batch_in_call_combiner[i],
-                       GRPC_ERROR_NONE);
+                      grpc_schedule_on_exec_ctx);
+    grpc_call_combiner_start(exec_ctx, calld->deadline_state.call_combiner,
+                             &calld->handle_pending_batch_in_call_combiner[i],
+                             GRPC_ERROR_NONE);
   }
   GPR_ASSERT(calld->initial_metadata_batch != NULL);
   grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,

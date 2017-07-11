@@ -20,50 +20,25 @@
 
 #include <grpc/support/log.h>
 
-#define CALL_COMBINER_FROM_CLOSURE_SCHEDULER(closure)             \
-  ((grpc_call_combiner*)(((char*)((closure)->scheduler)) -        \
-                        offsetof(grpc_call_combiner, scheduler)))
-
-static void cc_scheduler_start(grpc_exec_ctx *exec_ctx, grpc_closure* closure,
-                               grpc_error* error) {
-  grpc_call_combiner* call_combiner =
-      CALL_COMBINER_FROM_CLOSURE_SCHEDULER(closure);
-  grpc_call_combiner_start(exec_ctx, call_combiner, closure, error);
-}
-
-static const grpc_closure_scheduler_vtable cc_scheduler_vtable = {
-    cc_scheduler_start, cc_scheduler_start, "call_combiner"};
-
 void grpc_call_combiner_init(grpc_call_combiner* call_combiner) {
   gpr_mpscq_init(&call_combiner->queue);
-  call_combiner->scheduler.vtable = &cc_scheduler_vtable;
 }
 
 void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner) {
   gpr_mpscq_destroy(&call_combiner->queue);
 }
 
-static void execute_closure(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
-                            grpc_error* error) {
-#ifdef GRPC_CLOSURE_RICH_DEBUG
-  closure->scheduled = false;
-#endif
-  closure->cb(exec_ctx, closure->cb_arg, error);
-  GRPC_ERROR_UNREF(error);
-}
-
 void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
                               grpc_call_combiner* call_combiner,
                               grpc_closure *closure, grpc_error* error) {
 gpr_log(GPR_INFO, "==> grpc_call_combiner_start() [%p] closure=%p", call_combiner, closure);
-  closure->scheduler = &call_combiner->scheduler;
   size_t prev_size =
       (size_t)gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)1);
 gpr_log(GPR_INFO, "  size: %zu -> %zu", prev_size, prev_size + 1);
   if (prev_size == 0) {
 gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
     // Queue was empty, so execute this closure immediately.
-    execute_closure(exec_ctx, closure, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
   } else {
 gpr_log(GPR_INFO, "  QUEUING");
     // Queue was not empty, so add closure to queue.
@@ -90,7 +65,7 @@ gpr_log(GPR_INFO, "  checking queue");
 gpr_log(GPR_INFO, "  queue empty");
       } else {
 gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p", closure);
-        execute_closure(exec_ctx, closure, closure->error_data.error);
+        GRPC_CLOSURE_SCHED(exec_ctx, closure, closure->error_data.error);
       }
       break;
     }
