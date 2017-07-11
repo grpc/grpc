@@ -35,7 +35,7 @@
 
 #ifndef GRPC_CORE_EXT_CENSUS_GEN_CENSUS_PB_H
 #define GRPC_CORE_EXT_CENSUS_GEN_CENSUS_PB_H
-#include "third_party/nanopb/pb.h"
+#include <nanopb/pb.h>
 #if PB_PROTO_HEADER_VERSION != 30
 #error Regenerate this file with the current version of nanopb generator.
 #endif

@@ -847,14 +847,14 @@ filegroups:
   - grpc_server_backward_compatibility
 - name: nanopb
   headers:
-  - third_party/nanopb/pb.h
-  - third_party/nanopb/pb_common.h
-  - third_party/nanopb/pb_decode.h
-  - third_party/nanopb/pb_encode.h
+  - third_party/nanopb/nanopb/pb.h
+  - third_party/nanopb/nanopb/pb_common.h
+  - third_party/nanopb/nanopb/pb_decode.h
+  - third_party/nanopb/nanopb/pb_encode.h
   src:
-  - third_party/nanopb/pb_common.c
-  - third_party/nanopb/pb_decode.c
-  - third_party/nanopb/pb_encode.c
+  - third_party/nanopb/nanopb/pb_common.c
+  - third_party/nanopb/nanopb/pb_decode.c
+  - third_party/nanopb/nanopb/pb_encode.c
 - name: tsi
   headers:
   - src/core/tsi/fake_transport_security.h

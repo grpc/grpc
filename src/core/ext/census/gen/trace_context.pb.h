@@ -35,7 +35,7 @@
 
 #ifndef GRPC_CORE_EXT_CENSUS_GEN_TRACE_CONTEXT_PB_H
 #define GRPC_CORE_EXT_CENSUS_GEN_TRACE_CONTEXT_PB_H
-#include "third_party/nanopb/pb.h"
+#include <nanopb/pb.h>
 
 /* @@protoc_insertion_point(includes) */
 #if PB_PROTO_HEADER_VERSION != 30

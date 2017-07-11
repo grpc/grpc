@@ -44,8 +44,8 @@
 
 #include "src/core/ext/census/gen/trace_context.pb.h"
 #include "src/core/ext/census/trace_context.h"
-#include "third_party/nanopb/pb_decode.h"
-#include "third_party/nanopb/pb_encode.h"
+#include <nanopb/pb_decode.h>
+#include <nanopb/pb_encode.h>
 
 #define BUF_SIZE 256
 
