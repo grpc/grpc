@@ -2152,8 +2152,8 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 static void update_frame(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          double bw_dbl, double bdp_dbl) {
-  int32_t bdp = GPR_CLAMP((int32_t)bdp_dbl, 128, INT32_MAX);
-  int32_t target = GPR_MAX((int32_t)bw_dbl / 1000, bdp);
+  int32_t bdp = (int32_t)GPR_CLAMP(bdp_dbl, 128.0, INT32_MAX);
+  int32_t target = (int32_t)GPR_MAX(bw_dbl / 1000, bdp);
   // frame size is bounded [2^14,2^24-1]
   int32_t frame_size = GPR_CLAMP(target, 16384, 16777215);
   int64_t delta = (int64_t)frame_size -
