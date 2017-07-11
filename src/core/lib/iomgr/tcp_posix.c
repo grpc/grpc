@@ -145,7 +145,9 @@ static void run_poller(grpc_exec_ctx *exec_ctx, void *bp,
 
 static void cover_self(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   backup_poller *p;
-  if (gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, 1)) {
+  gpr_atm old_count =
+      gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, 1);
+  if (old_count == 0) {
     p = (backup_poller *)gpr_malloc(sizeof(*p) + grpc_pollset_size());
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p, grpc_executor_scheduler);
@@ -176,9 +178,11 @@ static void drop_uncovered(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   backup_poller *p = (backup_poller *)gpr_atm_no_barrier_load(&g_backup_poller);
   if (gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, -1) ==
       1) {
+    gpr_mu_lock(p->pollset_mu);
     gpr_atm_no_barrier_cas(&g_backup_poller, (gpr_atm)p, 0);
     GRPC_LOG_IF_ERROR("backup_poller:pollset_kick",
                       grpc_pollset_kick(BACKUP_POLLER_POLLSET(p), NULL));
+    gpr_mu_unlock(p->pollset_mu);
   }
 }
 
