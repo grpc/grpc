@@ -176,8 +176,8 @@ static void send_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
                                   grpc_error *ignored) {
   grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
-  calld->pending_send_message_batch = NULL;
   grpc_call_next_op(exec_ctx, elem, calld->pending_send_message_batch);
+  calld->pending_send_message_batch = NULL;
 }
 
 static void finish_send_message(grpc_exec_ctx *exec_ctx,
@@ -337,16 +337,12 @@ static void compress_start_transport_stream_op_batch(
                                              ? HAS_COMPRESSION_ALGORITHM
                                              : NO_COMPRESSION_ALGORITHM;
     // If we had previously received a batch containing a send_message op,
-    // send it down now.  Note that we need to re-enter the call combiner
+    // handle it now.  Note that we need to re-enter the call combiner
     // for this, since we can't send two batches down while holding the
     // call combiner, since the connected_channel filter (at the bottom of
     // the call stack) will release the call combiner for each batch it sees.
     if (calld->pending_send_message_batch != NULL) {
-      if (start_send_message_batch(exec_ctx, elem,
-                                   false /* in_call_combiner */)) {
-        GRPC_CLOSURE_SCHED(exec_ctx, &calld->send_in_call_combiner,
-                           GRPC_ERROR_NONE);
-      }
+      start_send_message_batch(exec_ctx, elem, false /* in_call_combiner */);
     }
   }
   // Handle send_message.
