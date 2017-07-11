@@ -64,13 +64,13 @@ T *array_end(T (&array)[N]) {
 
 void PrintIncludes(grpc_generator::Printer *printer,
                    const std::vector<grpc::string> &headers,
-                   const Parameters &params) {
+                   const Parameters &params, const grpc::string &search_path) {
   std::map<grpc::string, grpc::string> vars;
 
   vars["l"] = params.use_system_headers ? '<' : '"';
   vars["r"] = params.use_system_headers ? '>' : '"';
 
-  auto &s = params.grpc_search_path;
+  auto &s = search_path;
   if (!s.empty()) {
     vars["l"] += s;
     if (s[s.size() - 1] != '/') {
@@ -135,7 +135,7 @@ grpc::string GetHeaderIncludes(grpc_generator::File *file,
         "grpc++/impl/codegen/stub_options.h",
         "grpc++/impl/codegen/sync_stream.h"};
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
-    PrintIncludes(printer.get(), headers, params);
+    PrintIncludes(printer.get(), headers, params, params.grpc_search_path);
     printer->Print(vars, "\n");
     printer->Print(vars, "namespace grpc {\n");
     printer->Print(vars, "class CompletionQueue;\n");
@@ -1063,7 +1063,7 @@ grpc::string GetSourceIncludes(grpc_generator::File *file,
         "grpc++/impl/codegen/service_type.h",
         "grpc++/impl/codegen/sync_stream.h"};
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
-    PrintIncludes(printer.get(), headers, params);
+    PrintIncludes(printer.get(), headers, params, params.grpc_search_path);
 
     if (!file->package().empty()) {
       std::vector<grpc::string> parts = file->package_parts();
@@ -1410,9 +1410,8 @@ grpc::string GetSourceEpilogue(grpc_generator::File *file,
   return temp;
 }
 
-// TODO(mmukhi): Make sure we need parameters or not.
 grpc::string GetMockPrologue(grpc_generator::File *file,
-                             const Parameters & /*params*/) {
+                             const Parameters &params) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -1429,6 +1428,11 @@ grpc::string GetMockPrologue(grpc_generator::File *file,
                    "// If you make any local change, they will be lost.\n");
     printer->Print(vars, "// source: $filename$\n\n");
 
+    std::vector<grpc::string> headers;
+    headers.push_back("gmock.h");
+    PrintIncludes(
+        printer.get(), headers, params,
+        params.gmock_search_path.empty() ? "gmock/" : params.gmock_search_path);
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
     printer->Print(vars, "#include \"$filename_base$$service_header_ext$\"\n");
     printer->Print(vars, file->additional_headers().c_str());
@@ -1448,10 +1452,10 @@ grpc::string GetMockIncludes(grpc_generator::File *file,
 
     static const char *headers_strs[] = {
         "grpc++/impl/codegen/async_stream.h",
-        "grpc++/impl/codegen/sync_stream.h", "gmock/gmock.h",
+        "grpc++/impl/codegen/sync_stream.h",
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
-    PrintIncludes(printer.get(), headers, params);
+    PrintIncludes(printer.get(), headers, params, params.grpc_search_path);
 
     if (!file->package().empty()) {
       std::vector<grpc::string> parts = file->package_parts();

@@ -78,6 +78,8 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
             *error = grpc::string("Invalid parameter: ") + *parameter_string;
             return false;
           }
+        } else if (param[0] == "gmock_search_path") {
+          generator_parameters.gmock_search_path = param[1];
         } else {
           *error = grpc::string("Unknown parameter: ") + *parameter_string;
           return false;
