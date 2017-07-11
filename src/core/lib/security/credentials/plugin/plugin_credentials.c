@@ -83,8 +83,9 @@ static void plugin_md_request_metadata_ready(void *request,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal metadata"));
     } else {
       for (size_t i = 0; i < num_md; ++i) {
-        grpc_mdelem mdelem =
-            grpc_mdelem_from_slices(&exec_ctx, md[i].key, md[i].value);
+        grpc_mdelem mdelem = grpc_mdelem_from_slices(
+            &exec_ctx, grpc_slice_ref_internal(md[i].key),
+            grpc_slice_ref_internal(md[i].value));
         grpc_credentials_mdelem_list_add(r->md_list, mdelem);
         GRPC_MDELEM_UNREF(&exec_ctx, mdelem);
       }

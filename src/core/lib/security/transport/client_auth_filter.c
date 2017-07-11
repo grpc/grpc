@@ -101,9 +101,9 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_metadata_batch *mdb =
         batch->payload->send_initial_metadata.send_initial_metadata;
     for (size_t i = 0; i < calld->md_list.size; ++i) {
-      add_error(&error,
-                grpc_metadata_batch_add_tail(exec_ctx, mdb, &calld->md_links[i],
-                                             calld->md_list.md[i]));
+      add_error(&error, grpc_metadata_batch_add_tail(
+                            exec_ctx, mdb, &calld->md_links[i],
+                            GRPC_MDELEM_REF(calld->md_list.md[i])));
     }
   }
   if (error == GRPC_ERROR_NONE) {
@@ -319,6 +319,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               grpc_closure *ignored) {
   call_data *calld = elem->call_data;
+  grpc_credentials_mdelem_list_destroy(exec_ctx, &calld->md_list);
   grpc_call_credentials_unref(exec_ctx, calld->creds);
   if (calld->have_host) {
     grpc_slice_unref_internal(exec_ctx, calld->host);

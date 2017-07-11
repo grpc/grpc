@@ -62,17 +62,18 @@ grpc_call_credentials *grpc_google_iam_credentials_create(
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_IAM;
   c->base.vtable = &iam_vtable;
   gpr_ref_init(&c->base.refcount, 1);
-  grpc_credentials_mdelem_list_add(
-      &c->md_list,
-      grpc_mdelem_from_slices(&exec_ctx,
-                              grpc_slice_from_static_string(
-                                  GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY),
-                              grpc_slice_from_copied_string(token)));
-  grpc_credentials_mdelem_list_add(
-      &c->md_list, grpc_mdelem_from_slices(
-                       &exec_ctx, grpc_slice_from_static_string(
-                                      GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY),
-                       grpc_slice_from_copied_string(authority_selector)));
+  grpc_mdelem md = grpc_mdelem_from_slices(
+      &exec_ctx,
+      grpc_slice_from_static_string(GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY),
+      grpc_slice_from_copied_string(token));
+  grpc_credentials_mdelem_list_add(&c->md_list, md);
+  GRPC_MDELEM_UNREF(&exec_ctx, md);
+  md = grpc_mdelem_from_slices(
+      &exec_ctx,
+      grpc_slice_from_static_string(GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY),
+      grpc_slice_from_copied_string(authority_selector));
+  grpc_credentials_mdelem_list_add(&c->md_list, md);
+  GRPC_MDELEM_UNREF(&exec_ctx, md);
   grpc_exec_ctx_finish(&exec_ctx);
   return &c->base;
 }
