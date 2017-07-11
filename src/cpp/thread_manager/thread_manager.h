@@ -108,7 +108,6 @@ class ThreadManager {
   void MainWorkLoop();
 
   void MarkAsCompleted(WorkerThread* thd);
-  void CleanupCompletedThreads();
 
   // Protects shutdown_, num_pollers_ and num_threads_
   // TODO: sreek - Change num_pollers and num_threads_ to atomics
@@ -127,9 +126,6 @@ class ThreadManager {
   // The total number of threads (includes threads includes the threads that are
   // currently polling i.e num_pollers_)
   int num_threads_;
-
-  std::mutex list_mu_;
-  std::list<WorkerThread*> completed_threads_;
 };
 
 }  // namespace grpc
