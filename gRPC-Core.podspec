@@ -25,7 +25,7 @@ Pod::Spec.new do |s|
   version = '1.5.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
-  s.homepage = 'http://www.grpc.io'
+  s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
@@ -192,6 +192,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
                       'src/core/lib/support/spinlock.h',
+                      'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
                       'src/core/lib/support/thd_internal.h',
@@ -221,6 +222,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/log_windows.c',
                       'src/core/lib/support/mpscq.c',
                       'src/core/lib/support/murmur_hash.c',
+                      'src/core/lib/support/stack_lockfree.c',
                       'src/core/lib/support/string.c',
                       'src/core/lib/support/string_posix.c',
                       'src/core/lib/support/string_util_windows.c',
@@ -715,6 +717,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
                               'src/core/lib/support/spinlock.h',
+                              'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
                               'src/core/lib/support/thd_internal.h',

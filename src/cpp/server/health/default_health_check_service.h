@@ -41,7 +41,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
    private:
     const DefaultHealthCheckService* const service_;
-    RpcServiceMethod* method_;
+    internal::RpcServiceMethod* method_;
   };
 
   DefaultHealthCheckService();

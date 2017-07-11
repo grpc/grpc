@@ -67,6 +67,8 @@ typedef struct {
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_slice_unref_internal(exec_ctx, tcp->read_slice);
   grpc_resource_user_unref(exec_ctx, tcp->resource_user);
+  gpr_free(tcp->handle);
+  gpr_free(tcp->peer_string);
   gpr_free(tcp);
 }
 

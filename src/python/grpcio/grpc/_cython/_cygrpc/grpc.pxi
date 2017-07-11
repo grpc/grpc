@@ -518,7 +518,6 @@ cdef extern from "grpc/compression.h":
 
   ctypedef struct grpc_compression_options:
     uint32_t enabled_algorithms_bitset
-    grpc_compression_algorithm default_compression_algorithm
 
   int grpc_compression_algorithm_parse(
       grpc_slice value, grpc_compression_algorithm *algorithm) nogil

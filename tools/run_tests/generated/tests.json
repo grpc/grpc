@@ -955,6 +955,28 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 7, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "gpr_stack_lockfree_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
@@ -126134,6 +126156,29 @@
   {
     "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/clusterfuzz-testcase-5298216461402112"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/clusterfuzz-testcase-minimized-4857057310146560"
     ], 
     "ci_platforms": [
       "linux"

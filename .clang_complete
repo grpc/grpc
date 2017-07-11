@@ -1,3 +1,5 @@
+-Wall
+-Wc++-compat
 -Ithird_party/googletest/include
 -Ithird_party/googletest
 -Iinclude

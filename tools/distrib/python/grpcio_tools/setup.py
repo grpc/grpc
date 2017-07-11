@@ -191,7 +191,7 @@ setuptools.setup(
   description='Protobuf code generator for gRPC',
   author='The gRPC Authors',
   author_email='grpc-io@googlegroups.com',
-  url='http://www.grpc.io',
+  url='https://grpc.io',
   license='Apache License 2.0',
   ext_modules=extension_modules(),
   packages=setuptools.find_packages('.'),
