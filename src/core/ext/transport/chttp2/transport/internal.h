@@ -450,7 +450,6 @@ struct grpc_chttp2_stream {
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
   int64_t flow_controlled_bytes_flowed;
-  bool complete_fetch_covered_by_poller;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
 
@@ -545,10 +544,13 @@ struct grpc_chttp2_stream {
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_transport *t, const char *reason);
 
-typedef enum {
-  GRPC_CHTTP2_NOTHING_TO_WRITE,
-  GRPC_CHTTP2_PARTIAL_WRITE,
-  GRPC_CHTTP2_FULL_WRITE,
+typedef struct {
+  /** are we writing? */
+  bool writing;
+  /** if writing: was it a complete flush (false) or a partial flush (true) */
+  bool partial;
+  /** did we queue any completions as part of beginning the write */
+  bool early_results_scheduled;
 } grpc_chttp2_begin_write_result;
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(

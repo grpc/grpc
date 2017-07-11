@@ -121,16 +121,18 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
       (t->ping_state.pings_before_data_required != 0);
 }
 
-static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+static bool update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                         grpc_chttp2_stream *s, int64_t send_bytes,
                         grpc_chttp2_write_cb **list, int64_t *ctr,
                         grpc_error *error) {
+  bool sched_any = false;
   grpc_chttp2_write_cb *cb = *list;
   *list = NULL;
   *ctr += send_bytes;
   while (cb) {
     grpc_chttp2_write_cb *next = cb->next;
     if (cb->call_at_byte <= s->flow_controlled_bytes_written) {
+      sched_any = true;
       finish_write_cb(exec_ctx, t, s, cb, GRPC_ERROR_REF(error));
     } else {
       add_to_write_list(list, cb);
@@ -138,6 +140,7 @@ static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     cb = next;
   }
   GRPC_ERROR_UNREF(error);
+  return sched_any;
 }
 
 static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
@@ -211,13 +214,13 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
   }
 
-  bool partial_write = false;
+  grpc_chttp2_begin_write_result result = {false, false, false};
 
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
   while (true) {
     if (t->outbuf.length > target_write_size(t)) {
-      partial_write = true;
+      result.partial = true;
       break;
     }
 
@@ -347,8 +350,9 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             }
           }
           s->sending_bytes += send_bytes;
-          update_list(exec_ctx, t, s, send_bytes, &s->on_flow_controlled_cbs,
-                      &s->flow_controlled_bytes_flowed, GRPC_ERROR_NONE);
+          result.early_results_scheduled |= update_list(
+              exec_ctx, t, s, send_bytes, &s->on_flow_controlled_cbs,
+              &s->flow_controlled_bytes_flowed, GRPC_ERROR_NONE);
           now_writing = true;
           if (s->flow_controlled_buffer.length > 0) {
             GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:fork");
@@ -444,9 +448,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 
-  return t->outbuf.count > 0 ? (partial_write ? GRPC_CHTTP2_PARTIAL_WRITE
-                                              : GRPC_CHTTP2_FULL_WRITE)
-                             : GRPC_CHTTP2_NOTHING_TO_WRITE;
+  result.writing = t->outbuf.count > 0;
+  return result;
 }
 
 void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
