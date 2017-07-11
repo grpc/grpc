@@ -187,9 +187,6 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     // call stack initialization is finished.  To avoid that problem, we
     // create a closure to start the timer, and we schedule that closure
     // to be run after call stack initialization is done.
-// FIXME: in server code, we will already be in the call combiner, so
-// we should set state->in_call_combiner=true here somehow to avoid the
-// unnecessary level of redirection in start_timer_after_init() above
     struct start_timer_after_init_state* state = gpr_zalloc(sizeof(*state));
     state->elem = elem;
     state->deadline = deadline;
