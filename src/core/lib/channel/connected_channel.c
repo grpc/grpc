@@ -39,7 +39,7 @@ typedef struct connected_channel_channel_data {
 typedef struct connected_channel_call_data {
   grpc_call_combiner *call_combiner;
   // Closures used for returning results on the call combiner.
-  grpc_closure on_complete[7];  // Max number of pending batches.
+  grpc_closure on_complete[6];  // Max number of pending batches.
   grpc_closure recv_initial_metadata_ready;
   grpc_closure recv_message_ready;
 } call_data;
@@ -58,7 +58,6 @@ static grpc_closure *get_closure_for_batch(
   if (batch->recv_initial_metadata) return &calld->on_complete[3];
   if (batch->recv_message) return &calld->on_complete[4];
   if (batch->recv_trailing_metadata) return &calld->on_complete[5];
-  if (batch->cancel_stream) return &calld->on_complete[6];
   GPR_UNREACHABLE_CODE(return NULL);
 }
 
@@ -92,9 +91,20 @@ gpr_log(GPR_INFO, "INTERCEPTING recv_initial_metadata: closure=%p call_combiner=
         &calld->call_combiner->scheduler);
 gpr_log(GPR_INFO, "INTERCEPTING recv_message: closure=%p call_combiner=%p", batch->payload->recv_message.recv_message_ready, calld->call_combiner);
   }
-  batch->on_complete = GRPC_CLOSURE_INIT(
-      get_closure_for_batch(calld, batch), intercepted_closure_run,
-      batch->on_complete, &calld->call_combiner->scheduler);
+  if (batch->cancel_stream) {
+    // There can be more than one cancellation batch in flight at any
+    // given time, so we can't just pick out a fixed index into
+    // calld->on_complete like we can for the other ops.  However,
+    // cancellation isn't in the fast path, so we just allocate a new
+    // closure for each one.
+    batch->on_complete = GRPC_CLOSURE_CREATE(
+        intercepted_closure_run, batch->on_complete,
+        &calld->call_combiner->scheduler);
+  } else {
+    batch->on_complete = GRPC_CLOSURE_INIT(
+        get_closure_for_batch(calld, batch), intercepted_closure_run,
+        batch->on_complete, &calld->call_combiner->scheduler);
+  }
 gpr_log(GPR_INFO, "INTERCEPTING on_complete: closure=%p call_combiner=%p", batch->on_complete, calld->call_combiner);
   grpc_transport_perform_stream_op(exec_ctx, chand->transport,
                                    TRANSPORT_STREAM_FROM_CALL_DATA(calld),
