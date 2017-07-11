@@ -52,6 +52,8 @@ struct Parameters {
   grpc::string grpc_search_path;
   // Generate GMOCK code to facilitate unit testing.
   bool generate_mock_code;
+  // Prefix to gmock.h
+  grpc::string gmock_search_path;
 };
 
 // Return the prologue of the generated header file.
