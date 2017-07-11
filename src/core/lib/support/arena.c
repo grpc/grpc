@@ -32,24 +32,29 @@ typedef struct zone {
 } zone;
 
 struct gpr_arena {
-  gpr_atm size_so_far;
   zone initial_zone;
+  gpr_atm size_so_far;
 };
 
 gpr_arena *gpr_arena_create(size_t initial_size) {
   initial_size = ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
-  gpr_arena *a = gpr_zalloc(sizeof(gpr_arena) + initial_size);
+  char *p = gpr_zalloc(sizeof(gpr_arena) + initial_size);
+  gpr_arena *a = (gpr_arena *)(p + initial_size);
   a->initial_zone.size_end = initial_size;
   return a;
+}
+
+static void *zone_start_ptr(zone *z) {
+  return ((char *)z) - (z->size_end - z->size_begin);
 }
 
 size_t gpr_arena_destroy(gpr_arena *arena) {
   gpr_atm size = gpr_atm_no_barrier_load(&arena->size_so_far);
   zone *z = (zone *)gpr_atm_no_barrier_load(&arena->initial_zone.next_atm);
-  gpr_free(arena);
+  gpr_free(zone_start_ptr(&arena->initial_zone));
   while (z) {
     zone *next_z = (zone *)gpr_atm_no_barrier_load(&z->next_atm);
-    gpr_free(z);
+    gpr_free(zone_start_ptr(z));
     z = next_z;
   }
   return (size_t)size;
@@ -64,11 +69,12 @@ void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
     zone *next_z = (zone *)gpr_atm_acq_load(&z->next_atm);
     if (next_z == NULL) {
       size_t next_z_size = (size_t)gpr_atm_no_barrier_load(&arena->size_so_far);
-      next_z = gpr_zalloc(sizeof(zone) + next_z_size);
+      char *p = gpr_zalloc(sizeof(zone) + next_z_size);
+      next_z = (zone *)(p + next_z_size);
       next_z->size_begin = z->size_end;
       next_z->size_end = z->size_end + next_z_size;
       if (!gpr_atm_rel_cas(&z->next_atm, (gpr_atm)NULL, (gpr_atm)next_z)) {
-        gpr_free(next_z);
+        gpr_free(zone_start_ptr(next_z));
         next_z = (zone *)gpr_atm_acq_load(&z->next_atm);
       }
     }
@@ -79,5 +85,5 @@ void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
   }
   GPR_ASSERT(start >= z->size_begin);
   GPR_ASSERT(start + size <= z->size_end);
-  return ((char *)(z + 1)) + start - z->size_begin;
+  return zone_start_ptr(z) + start - z->size_begin;
 }
