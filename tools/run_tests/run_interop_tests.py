@@ -64,12 +64,10 @@ _TEST_TIMEOUT = 3*60
 _SKIP_DATA_FRAME_PADDING = ['data_frame_padding']
 
 # report suffix is important for reports to get picked up by internal CI
-_INTERNAL_CL_REPORT_SUFFIX = 'sponge_log.xml'
+_INTERNAL_CL_XML_REPORT = 'sponge_log.xml'
 
-
-def _report_filename_internal_ci(name):
-  """Generates report file name that leads to better presentation by internal CI"""
-  return '%s/%s' % (name, _INTERNAL_CL_REPORT_SUFFIX)
+# report suffix is important for reports to get picked up by internal CI
+_XML_REPORT = 'report.xml'
 
 
 class CXXLanguage:
@@ -1215,9 +1213,9 @@ try:
   write_cmdlog_maybe(server_manual_cmd_log, 'interop_server_cmds.sh')
   write_cmdlog_maybe(client_manual_cmd_log, 'interop_client_cmds.sh')
 
-  xml_report_name = 'report.xml'
+  xml_report_name = _XML_REPORT
   if args.internal_ci:
-    xml_report_name = _report_filename_internal_ci(xml_report_name)
+    xml_report_name = _INTERNAL_CL_XML_REPORT
   report_utils.render_junit_xml_report(resultset, xml_report_name)
 
   for name, job in resultset.items():
