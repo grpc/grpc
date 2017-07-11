@@ -1,32 +1,17 @@
 /*
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -173,7 +158,7 @@ static void hc_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
   } else {
     GRPC_ERROR_REF(error);
   }
-  grpc_closure_run(exec_ctx, calld->on_done_recv_initial_metadata, error);
+  GRPC_CLOSURE_RUN(exec_ctx, calld->on_done_recv_initial_metadata, error);
 }
 
 static void hc_on_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
@@ -186,7 +171,7 @@ static void hc_on_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
   } else {
     GRPC_ERROR_REF(error);
   }
-  grpc_closure_run(exec_ctx, calld->on_done_recv_trailing_metadata, error);
+  GRPC_CLOSURE_RUN(exec_ctx, calld->on_done_recv_trailing_metadata, error);
 }
 
 static void hc_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
@@ -460,17 +445,17 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->payload_bytes = NULL;
   calld->send_message_blocked = false;
   grpc_slice_buffer_init(&calld->slices);
-  grpc_closure_init(&calld->hc_on_recv_initial_metadata,
+  GRPC_CLOSURE_INIT(&calld->hc_on_recv_initial_metadata,
                     hc_on_recv_initial_metadata, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&calld->hc_on_recv_trailing_metadata,
+  GRPC_CLOSURE_INIT(&calld->hc_on_recv_trailing_metadata,
                     hc_on_recv_trailing_metadata, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&calld->hc_on_complete, hc_on_complete, elem,
+  GRPC_CLOSURE_INIT(&calld->hc_on_complete, hc_on_complete, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&calld->got_slice, got_slice, elem,
+  GRPC_CLOSURE_INIT(&calld->got_slice, got_slice, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&calld->send_done, send_done, elem,
+  GRPC_CLOSURE_INIT(&calld->send_done, send_done, elem,
                     grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }

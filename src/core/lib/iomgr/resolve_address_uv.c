@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -69,7 +54,7 @@ static int retry_named_port_failure(int status, request *r,
         int retry_status;
         uv_getaddrinfo_t *req = gpr_malloc(sizeof(uv_getaddrinfo_t));
         req->data = r;
-        r->port = svc[i][1];
+        r->port = gpr_strdup(svc[i][1]);
         retry_status = uv_getaddrinfo(uv_default_loop(), req, getaddrinfo_cb,
                                       r->host, r->port, r->hints);
         if (retry_status < 0 || getaddrinfo_cb == NULL) {
@@ -139,9 +124,11 @@ static void getaddrinfo_callback(uv_getaddrinfo_t *req, int status,
   /* Either no retry was attempted, or the retry failed. Either way, the
      original error probably has more interesting information */
   error = handle_addrinfo_result(status, res, r->addresses);
-  grpc_closure_sched(&exec_ctx, r->on_done, error);
+  GRPC_CLOSURE_SCHED(&exec_ctx, r->on_done, error);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(r->hints);
+  gpr_free(r->host);
+  gpr_free(r->port);
   gpr_free(r);
   uv_freeaddrinfo(res);
 }
@@ -240,7 +227,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   int s;
   err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
-    grpc_closure_sched(exec_ctx, on_done, err);
+    GRPC_CLOSURE_SCHED(exec_ctx, on_done, err);
     return;
   }
   r = gpr_malloc(sizeof(request));
@@ -267,7 +254,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
     err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("getaddrinfo failed");
     err = grpc_error_set_str(err, GRPC_ERROR_STR_OS_ERROR,
                              grpc_slice_from_static_string(uv_strerror(s)));
-    grpc_closure_sched(exec_ctx, on_done, err);
+    GRPC_CLOSURE_SCHED(exec_ctx, on_done, err);
     gpr_free(r);
     gpr_free(req);
     gpr_free(hints);

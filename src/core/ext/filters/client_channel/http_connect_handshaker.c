@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -133,13 +118,13 @@ static void handshake_failed_locked(grpc_exec_ctx* exec_ctx,
     handshaker->shutdown = true;
   }
   // Invoke callback.
-  grpc_closure_sched(exec_ctx, handshaker->on_handshake_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, handshaker->on_handshake_done, error);
 }
 
 // Callback invoked when finished writing HTTP CONNECT request.
 static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                           grpc_error* error) {
-  http_connect_handshaker* handshaker = arg;
+  http_connect_handshaker* handshaker = (http_connect_handshaker*)arg;
   gpr_mu_lock(&handshaker->mu);
   if (error != GRPC_ERROR_NONE || handshaker->shutdown) {
     // If the write failed or we're shutting down, clean up and invoke the
@@ -151,7 +136,7 @@ static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
     // Otherwise, read the response.
     // The read callback inherits our ref to the handshaker.
     grpc_endpoint_read(exec_ctx, handshaker->args->endpoint,
-                       handshaker->args->read_buffer, true,
+                       handshaker->args->read_buffer,
                        &handshaker->response_read_closure);
     gpr_mu_unlock(&handshaker->mu);
   }
@@ -160,7 +145,7 @@ static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
 // Callback invoked for reading HTTP CONNECT response.
 static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                          grpc_error* error) {
-  http_connect_handshaker* handshaker = arg;
+  http_connect_handshaker* handshaker = (http_connect_handshaker*)arg;
   gpr_mu_lock(&handshaker->mu);
   if (error != GRPC_ERROR_NONE || handshaker->shutdown) {
     // If the read failed or we're shutting down, clean up and invoke the
@@ -215,7 +200,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                                handshaker->args->read_buffer);
     grpc_endpoint_read(exec_ctx, handshaker->args->endpoint,
-                       handshaker->args->read_buffer, true,
+                       handshaker->args->read_buffer,
                        &handshaker->response_read_closure);
     gpr_mu_unlock(&handshaker->mu);
     return;
@@ -232,7 +217,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
     goto done;
   }
   // Success.  Invoke handshake-done callback.
-  grpc_closure_sched(exec_ctx, handshaker->on_handshake_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, handshaker->on_handshake_done, error);
 done:
   // Set shutdown to true so that subsequent calls to
   // http_connect_handshaker_shutdown() do nothing.
@@ -281,7 +266,7 @@ static void http_connect_handshaker_do_handshake(
     gpr_mu_lock(&handshaker->mu);
     handshaker->shutdown = true;
     gpr_mu_unlock(&handshaker->mu);
-    grpc_closure_sched(exec_ctx, on_handshake_done, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, on_handshake_done, GRPC_ERROR_NONE);
     return;
   }
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
@@ -296,7 +281,8 @@ static void http_connect_handshaker_do_handshake(
     GPR_ASSERT(arg->type == GRPC_ARG_STRING);
     gpr_string_split(arg->value.string, "\n", &header_strings,
                      &num_header_strings);
-    headers = gpr_malloc(sizeof(grpc_http_header) * num_header_strings);
+    headers = (grpc_http_header*)gpr_malloc(sizeof(grpc_http_header) *
+                                            num_header_strings);
     for (size_t i = 0; i < num_header_strings; ++i) {
       char* sep = strchr(header_strings[i], ':');
       if (sep == NULL) {
@@ -323,7 +309,7 @@ static void http_connect_handshaker_do_handshake(
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(request));
   request.host = server_name;
-  request.http.method = "CONNECT";
+  request.http.method = (char*)"CONNECT";
   request.http.path = server_name;
   request.http.hdrs = headers;
   request.http.hdr_count = num_headers;
@@ -338,7 +324,7 @@ static void http_connect_handshaker_do_handshake(
   gpr_free(header_strings);
   // Take a new ref to be held by the write callback.
   gpr_ref(&handshaker->refcount);
-  grpc_endpoint_write(exec_ctx, args->endpoint, &handshaker->write_buffer, true,
+  grpc_endpoint_write(exec_ctx, args->endpoint, &handshaker->write_buffer,
                       &handshaker->request_done_closure);
   gpr_mu_unlock(&handshaker->mu);
 }
@@ -348,15 +334,16 @@ static const grpc_handshaker_vtable http_connect_handshaker_vtable = {
     http_connect_handshaker_do_handshake};
 
 static grpc_handshaker* grpc_http_connect_handshaker_create() {
-  http_connect_handshaker* handshaker = gpr_malloc(sizeof(*handshaker));
+  http_connect_handshaker* handshaker =
+      (http_connect_handshaker*)gpr_malloc(sizeof(*handshaker));
   memset(handshaker, 0, sizeof(*handshaker));
   grpc_handshaker_init(&http_connect_handshaker_vtable, &handshaker->base);
   gpr_mu_init(&handshaker->mu);
   gpr_ref_init(&handshaker->refcount, 1);
   grpc_slice_buffer_init(&handshaker->write_buffer);
-  grpc_closure_init(&handshaker->request_done_closure, on_write_done,
+  GRPC_CLOSURE_INIT(&handshaker->request_done_closure, on_write_done,
                     handshaker, grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&handshaker->response_read_closure, on_read_done,
+  GRPC_CLOSURE_INIT(&handshaker->response_read_closure, on_read_done,
                     handshaker, grpc_schedule_on_exec_ctx);
   grpc_http_parser_init(&handshaker->http_parser, GRPC_HTTP_RESPONSE,
                         &handshaker->http_response);

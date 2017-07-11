@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -77,15 +62,12 @@ typedef size_t msg_iovlen_type;
 
 grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false);
 
-typedef enum { READ = 0, WRITE } read_or_write;
-
 typedef struct {
   grpc_endpoint base;
   grpc_fd *em_fd;
   int fd;
   bool finished_edge;
-  bool covered_by_poller[2]; /* read, write */
-  msg_iovlen_type iov_size;  /* Number of slices to allocate per read attempt */
+  msg_iovlen_type iov_size; /* Number of slices to allocate per read attempt */
   double target_length;
   double bytes_read_this_round;
   gpr_refcount refcount;
@@ -109,7 +91,8 @@ typedef struct {
   grpc_closure *release_fd_cb;
   int *release_fd;
 
-  grpc_closure done_closures[2];
+  grpc_closure read_done_closure;
+  grpc_closure write_done_closure;
 
   char *peer_string;
 
@@ -131,31 +114,20 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                             grpc_error *error);
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                              grpc_error *error);
-static void tcp_drop_uncovered_then_handle_read(grpc_exec_ctx *exec_ctx,
-                                                void *arg /* grpc_tcp */,
-                                                grpc_error *error);
 static void tcp_drop_uncovered_then_handle_write(grpc_exec_ctx *exec_ctx,
                                                  void *arg /* grpc_tcp */,
                                                  grpc_error *error);
 
-static void (*notify_on_func[])(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
-                                grpc_closure *closure) = {
-    grpc_fd_notify_on_read, grpc_fd_notify_on_write};
-
-static grpc_iomgr_cb_func notify_cb[] = {tcp_handle_read, tcp_handle_write};
-static grpc_iomgr_cb_func drop_uncovered_poller_count_and_notify_cb[] = {
-    tcp_drop_uncovered_then_handle_read, tcp_drop_uncovered_then_handle_write};
-
 static void done_poller(grpc_exec_ctx *exec_ctx, void *bp,
                         grpc_error *error_ignored) {
-  backup_poller *p = bp;
+  backup_poller *p = (backup_poller *)bp;
   grpc_pollset_destroy(exec_ctx, BACKUP_POLLER_POLLSET(p));
   gpr_free(p);
 }
 
 static void run_poller(grpc_exec_ctx *exec_ctx, void *bp,
                        grpc_error *error_ignored) {
-  backup_poller *p = bp;
+  backup_poller *p = (backup_poller *)bp;
   gpr_mu_lock(p->pollset_mu);
   GRPC_LOG_IF_ERROR("backup_poller:pollset_work",
                     grpc_pollset_work(exec_ctx, BACKUP_POLLER_POLLSET(p), NULL,
@@ -163,23 +135,22 @@ static void run_poller(grpc_exec_ctx *exec_ctx, void *bp,
                                       gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   gpr_mu_unlock(p->pollset_mu);
   if (gpr_atm_no_barrier_load(&g_backup_poller) == (gpr_atm)p) {
-    grpc_closure_sched(exec_ctx, &p->run_poller, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, &p->run_poller, GRPC_ERROR_NONE);
   } else {
     grpc_pollset_shutdown(exec_ctx, BACKUP_POLLER_POLLSET(p),
-                          grpc_closure_init(&p->run_poller, done_poller, p,
+                          GRPC_CLOSURE_INIT(&p->run_poller, done_poller, p,
                                             grpc_schedule_on_exec_ctx));
   }
 }
 
-static void cover_self(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
-                       read_or_write which) {
+static void cover_self(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   backup_poller *p;
   if (gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, 1)) {
-    p = gpr_malloc(sizeof(*p) + grpc_pollset_size());
+    p = (backup_poller *)gpr_malloc(sizeof(*p) + grpc_pollset_size());
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
-    grpc_closure_init(&p->run_poller, run_poller, p, grpc_executor_scheduler);
+    GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p, grpc_executor_scheduler);
     gpr_atm_no_barrier_store(&g_backup_poller, (gpr_atm)p);
-    grpc_closure_sched(exec_ctx, &p->run_poller, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, &p->run_poller, GRPC_ERROR_NONE);
   } else {
     p = (backup_poller *)gpr_atm_no_barrier_load(&g_backup_poller);
     GPR_ASSERT(p != NULL);
@@ -187,22 +158,21 @@ static void cover_self(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
   grpc_pollset_add_fd(exec_ctx, BACKUP_POLLER_POLLSET(p), tcp->em_fd);
 }
 
-static void notify_on(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
-                      read_or_write which) {
-  if (!tcp->covered_by_poller[which]) {
-    cover_self(exec_ctx, tcp, which);
-    grpc_closure_init(&tcp->done_closures[which],
-                      drop_uncovered_poller_count_and_notify_cb[which], tcp,
-                      grpc_schedule_on_exec_ctx);
-  } else {
-    grpc_closure_init(&tcp->done_closures[which], notify_cb[which], tcp,
-                      grpc_schedule_on_exec_ctx);
-  }
-  notify_on_func[which](exec_ctx, tcp->em_fd, &tcp->done_closures[which]);
+static void notify_on_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+  GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
+                    grpc_schedule_on_exec_ctx);
+  grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_done_closure);
 }
 
-static void drop_uncovered(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
-                           read_or_write which) {
+static void notify_on_write(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+  cover_self(exec_ctx, tcp);
+  GRPC_CLOSURE_INIT(&tcp->write_done_closure,
+                    tcp_drop_uncovered_then_handle_write, tcp,
+                    grpc_schedule_on_exec_ctx);
+  grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_done_closure);
+}
+
+static void drop_uncovered(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   backup_poller *p = (backup_poller *)gpr_atm_no_barrier_load(&g_backup_poller);
   if (gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, -1) ==
       1) {
@@ -212,15 +182,9 @@ static void drop_uncovered(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
   }
 }
 
-static void tcp_drop_uncovered_then_handle_read(grpc_exec_ctx *exec_ctx,
-                                                void *arg, grpc_error *error) {
-  drop_uncovered(exec_ctx, arg, READ);
-  tcp_handle_read(exec_ctx, arg, error);
-}
-
 static void tcp_drop_uncovered_then_handle_write(grpc_exec_ctx *exec_ctx,
                                                  void *arg, grpc_error *error) {
-  drop_uncovered(exec_ctx, arg, WRITE);
+  drop_uncovered(exec_ctx, (grpc_tcp *)arg);
   tcp_handle_write(exec_ctx, arg, error);
 }
 
@@ -288,15 +252,18 @@ static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   gpr_free(tcp);
 }
 
-/*#define GRPC_TCP_REFCOUNT_DEBUG*/
-#ifdef GRPC_TCP_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define TCP_UNREF(cl, tcp, reason) \
   tcp_unref((cl), (tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
                       const char *reason, const char *file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp,
-          reason, tcp->refcount.count, tcp->refcount.count - 1);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
+            val - 1);
+  }
   if (gpr_unref(&tcp->refcount)) {
     tcp_free(exec_ctx, tcp);
   }
@@ -304,8 +271,12 @@ static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 
 static void tcp_ref(grpc_tcp *tcp, const char *reason, const char *file,
                     int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP   ref %p : %s %d -> %d", tcp,
-          reason, tcp->refcount.count, tcp->refcount.count + 1);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
+            val + 1);
+  }
   gpr_ref(&tcp->refcount);
 }
 #else
@@ -346,7 +317,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 
   tcp->read_cb = NULL;
   tcp->incoming_buffer = NULL;
-  grpc_closure_run(exec_ctx, cb, error);
+  GRPC_CLOSURE_RUN(exec_ctx, cb, error);
 }
 
 #define MAX_READ_IOVEC 4
@@ -386,7 +357,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
     if (errno == EAGAIN) {
       finish_estimate(tcp);
       /* We've consumed the edge, request a new one */
-      notify_on(exec_ctx, tcp, READ);
+      notify_on_read(exec_ctx, tcp);
     } else {
       grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                                  tcp->incoming_buffer);
@@ -421,7 +392,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 
 static void tcp_read_allocation_done(grpc_exec_ctx *exec_ctx, void *tcpp,
                                      grpc_error *error) {
-  grpc_tcp *tcp = tcpp;
+  grpc_tcp *tcp = (grpc_tcp *)tcpp;
   if (error != GRPC_ERROR_NONE) {
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx, tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
@@ -461,21 +432,19 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 }
 
 static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                     grpc_slice_buffer *incoming_buffer, bool covered_by_poller,
-                     grpc_closure *cb) {
+                     grpc_slice_buffer *incoming_buffer, grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
-  tcp->covered_by_poller[READ] = covered_by_poller;
   tcp->incoming_buffer = incoming_buffer;
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
   if (tcp->finished_edge) {
     tcp->finished_edge = false;
-    notify_on(exec_ctx, tcp, READ);
+    notify_on_read(exec_ctx, tcp);
   } else {
-    grpc_closure_sched(exec_ctx, &tcp->done_closures[READ], GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, &tcp->read_done_closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -583,7 +552,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "write: delayed");
     }
-    notify_on(exec_ctx, tcp, WRITE);
+    notify_on_write(exec_ctx, tcp);
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
@@ -592,14 +561,13 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
       gpr_log(GPR_DEBUG, "write: %s", str);
     }
 
-    grpc_closure_run(exec_ctx, cb, error);
+    GRPC_CLOSURE_RUN(exec_ctx, cb, error);
     TCP_UNREF(exec_ctx, tcp, "write");
   }
 }
 
 static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                      grpc_slice_buffer *buf, bool covered_by_poller,
-                      grpc_closure *cb) {
+                      grpc_slice_buffer *buf, grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_error *error = GRPC_ERROR_NONE;
 
@@ -619,7 +587,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb,
         grpc_fd_is_shutdown(tcp->em_fd)
             ? tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"),
@@ -630,7 +598,6 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   tcp->outgoing_buffer = buf;
   tcp->outgoing_slice_idx = 0;
   tcp->outgoing_byte_idx = 0;
-  tcp->covered_by_poller[WRITE] = covered_by_poller;
 
   if (!tcp_flush(tcp, &error)) {
     TCP_REF(tcp, "write");
@@ -638,13 +605,13 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "write: delayed");
     }
-    notify_on(exec_ctx, tcp, WRITE);
+    notify_on_write(exec_ctx, tcp);
   } else {
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       const char *str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "write: %s", str);
     }
-    grpc_closure_sched(exec_ctx, cb, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
   }
 
   GPR_TIMER_END("tcp_write", 0);
@@ -672,26 +639,15 @@ static int tcp_get_fd(grpc_endpoint *ep) {
   return tcp->fd;
 }
 
-static grpc_workqueue *tcp_get_workqueue(grpc_endpoint *ep) {
-  grpc_tcp *tcp = (grpc_tcp *)ep;
-  return grpc_fd_get_workqueue(tcp->em_fd);
-}
-
 static grpc_resource_user *tcp_get_resource_user(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   return tcp->resource_user;
 }
 
-static const grpc_endpoint_vtable vtable = {tcp_read,
-                                            tcp_write,
-                                            tcp_get_workqueue,
-                                            tcp_add_to_pollset,
-                                            tcp_add_to_pollset_set,
-                                            tcp_shutdown,
-                                            tcp_destroy,
-                                            tcp_get_resource_user,
-                                            tcp_get_peer,
-                                            tcp_get_fd};
+static const grpc_endpoint_vtable vtable = {
+    tcp_read,     tcp_write,   tcp_add_to_pollset,    tcp_add_to_pollset_set,
+    tcp_shutdown, tcp_destroy, tcp_get_resource_user, tcp_get_peer,
+    tcp_get_fd};
 
 #define MAX_CHUNK_SIZE 32 * 1024 * 1024
 
@@ -726,7 +682,7 @@ grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *em_fd,
                  strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
         resource_quota = grpc_resource_quota_ref_internal(
-            channel_args->args[i].value.pointer.p);
+            (grpc_resource_quota *)channel_args->args[i].value.pointer.p);
       }
     }
   }

@@ -1,33 +1,18 @@
 #!/usr/bin/env ruby
 
-# Copyright 2016, Google Inc.
-# All rights reserved.
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 require_relative './end2end_common'
 
@@ -38,29 +23,40 @@ def main
                             call_credentials
                             compression_options )
 
-  native_grpc_classes.each do |grpc_class|
-    STDERR.puts 'start client'
-    this_dir = File.expand_path(File.dirname(__FILE__))
-    client_path = File.join(this_dir, 'grpc_class_init_client.rb')
-    client_pid = Process.spawn(RbConfig.ruby,
-                               client_path,
-                               "--grpc_class=#{grpc_class}")
-    begin
-      Timeout.timeout(10) do
-        Process.wait(client_pid)
-      end
-    rescue Timeout::Error
-      STDERR.puts "timeout waiting for client pid #{client_pid}"
-      Process.kill('SIGKILL', client_pid)
-      Process.wait(client_pid)
-      STDERR.puts 'killed client child'
-      raise 'Timed out waiting for client process. ' \
-        'It likely hangs when the first constructed gRPC object has ' \
-        "type: #{grpc_class}"
-    end
+  # there is room for false positives in this test,
+  # do a few runs for each config
+  4.times do
+    native_grpc_classes.each do |grpc_class|
+      ['', 'gc', 'concurrency'].each do |stress_test_type|
+        STDERR.puts 'start client'
+        this_dir = File.expand_path(File.dirname(__FILE__))
+        client_path = File.join(this_dir, 'grpc_class_init_client.rb')
+        client_pid = Process.spawn(RbConfig.ruby,
+                                   client_path,
+                                   "--grpc_class=#{grpc_class}",
+                                   "--stress_test=#{stress_test_type}")
+        begin
+          Timeout.timeout(10) do
+            Process.wait(client_pid)
+          end
+        rescue Timeout::Error
+          STDERR.puts "timeout waiting for client pid #{client_pid}"
+          Process.kill('SIGKILL', client_pid)
+          Process.wait(client_pid)
+          STDERR.puts 'killed client child'
+          raise 'Timed out waiting for client process. ' \
+            'It likely hangs when the first constructed gRPC object has ' \
+            "type: #{grpc_class}"
+        end
 
-    client_exit_code = $CHILD_STATUS
-    fail "client failed, exit code #{client_exit_code}" if client_exit_code != 0
+        client_exit_code = $CHILD_STATUS
+        # concurrency stress test type is expected to exit with a
+        # non-zero status due to an exception being raised
+        if client_exit_code != 0 && stress_test_type != 'concurrency'
+          fail "client failed, exit code #{client_exit_code}"
+        end
+      end
+    end
   end
 end
 

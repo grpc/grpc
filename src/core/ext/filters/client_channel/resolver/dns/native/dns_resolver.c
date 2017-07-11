@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -114,7 +99,7 @@ static void dns_shutdown_locked(grpc_exec_ctx *exec_ctx,
   }
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, r->next_completion,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     r->next_completion = NULL;
@@ -193,8 +178,8 @@ static void dns_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
-    grpc_closure_init(&r->on_retry, dns_on_retry_timer_locked, r,
-                      grpc_combiner_scheduler(r->base.combiner, false));
+    GRPC_CLOSURE_INIT(&r->on_retry, dns_on_retry_timer_locked, r,
+                      grpc_combiner_scheduler(r->base.combiner));
     grpc_timer_init(exec_ctx, &r->retry_timer, next_try, &r->on_retry, now);
   }
   if (r->resolved_result != NULL) {
@@ -215,8 +200,8 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   r->addresses = NULL;
   grpc_resolve_address(
       exec_ctx, r->name_to_resolve, r->default_port, r->interested_parties,
-      grpc_closure_create(dns_on_resolved_locked, r,
-                          grpc_combiner_scheduler(r->base.combiner, false)),
+      GRPC_CLOSURE_CREATE(dns_on_resolved_locked, r,
+                          grpc_combiner_scheduler(r->base.combiner)),
       &r->addresses);
 }
 
@@ -227,7 +212,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     *r->target_result = r->resolved_result == NULL
                             ? NULL
                             : grpc_channel_args_copy(r->resolved_result);
-    grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }

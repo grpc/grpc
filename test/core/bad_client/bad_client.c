@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -60,34 +45,27 @@ typedef struct {
 } thd_args;
 
 static void thd_func(void *arg) {
-  thd_args *a = arg;
+  thd_args *a = (thd_args *)arg;
   a->validator(a->server, a->cq, a->registered_method);
   gpr_event_set(&a->done_thd, (void *)1);
 }
 
 static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  thd_args *a = arg;
+  thd_args *a = (thd_args *)arg;
   gpr_event_set(&a->done_write, (void *)1);
 }
 
 static void server_setup_transport(void *ts, grpc_transport *transport) {
-  thd_args *a = ts;
+  thd_args *a = (thd_args *)ts;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_server_setup_transport(&exec_ctx, a->server, transport, NULL,
                               grpc_server_get_channel_args(a->server));
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-typedef struct {
-  grpc_bad_client_client_stream_validator validator;
-  grpc_slice_buffer incoming;
-  gpr_event read_done;
-} read_args;
-
 static void read_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  read_args *a = arg;
-  a->validator(&a->incoming);
-  gpr_event_set(&a->read_done, (void *)1);
+  gpr_event *read_done = (gpr_event *)arg;
+  gpr_event_set(read_done, (void *)1);
 }
 
 void grpc_run_bad_client_test(
@@ -149,12 +127,11 @@ void grpc_run_bad_client_test(
 
   grpc_slice_buffer_init(&outgoing);
   grpc_slice_buffer_add(&outgoing, slice);
-  grpc_closure_init(&done_write_closure, done_write, &a,
+  GRPC_CLOSURE_INIT(&done_write_closure, done_write, &a,
                     grpc_schedule_on_exec_ctx);
 
   /* Write data */
-  grpc_endpoint_write(&exec_ctx, sfd.client, &outgoing, true,
-                      &done_write_closure);
+  grpc_endpoint_write(&exec_ctx, sfd.client, &outgoing, &done_write_closure);
   grpc_exec_ctx_finish(&exec_ctx);
 
   /* Await completion */
@@ -175,19 +152,31 @@ void grpc_run_bad_client_test(
   if (sfd.client != NULL) {
     // Validate client stream, if requested.
     if (client_validator != NULL) {
-      read_args args;
-      args.validator = client_validator;
-      grpc_slice_buffer_init(&args.incoming);
-      gpr_event_init(&args.read_done);
-      grpc_closure read_done_closure;
-      grpc_closure_init(&read_done_closure, read_done, &args,
-                        grpc_schedule_on_exec_ctx);
-      grpc_endpoint_read(&exec_ctx, sfd.client, &args.incoming, true,
-                         &read_done_closure);
-      grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(
-          gpr_event_wait(&args.read_done, grpc_timeout_seconds_to_deadline(5)));
-      grpc_slice_buffer_destroy_internal(&exec_ctx, &args.incoming);
+      gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+      grpc_slice_buffer incoming;
+      grpc_slice_buffer_init(&incoming);
+      // We may need to do multiple reads to read the complete server response.
+      while (true) {
+        gpr_event read_done_event;
+        gpr_event_init(&read_done_event);
+        grpc_closure read_done_closure;
+        GRPC_CLOSURE_INIT(&read_done_closure, read_done, &read_done_event,
+                          grpc_schedule_on_exec_ctx);
+        grpc_endpoint_read(&exec_ctx, sfd.client, &incoming,
+                           &read_done_closure);
+        grpc_exec_ctx_finish(&exec_ctx);
+        do {
+          GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
+          GPR_ASSERT(grpc_completion_queue_next(
+                         a.cq, grpc_timeout_milliseconds_to_deadline(100), NULL)
+                         .type == GRPC_QUEUE_TIMEOUT);
+        } while (!gpr_event_get(&read_done_event));
+        if (client_validator(&incoming)) break;
+        gpr_log(GPR_INFO,
+                "client validator failed; trying additional read "
+                "in case we didn't get all the data");
+      }
+      grpc_slice_buffer_destroy_internal(&exec_ctx, &incoming);
     }
     // Shutdown.
     grpc_endpoint_shutdown(

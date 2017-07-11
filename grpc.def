@@ -65,6 +65,7 @@ EXPORTS
     grpc_alarm_cancel
     grpc_alarm_destroy
     grpc_channel_check_connectivity_state
+    grpc_channel_num_external_connectivity_watchers
     grpc_channel_watch_connectivity_state
     grpc_channel_create_call
     grpc_channel_ping
@@ -232,6 +233,7 @@ EXPORTS
     gpr_histogram_merge_contents
     gpr_join_host_port
     gpr_split_host_port
+    gpr_log_severity_string
     gpr_log
     gpr_log_message
     gpr_set_log_verbosity

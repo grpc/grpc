@@ -1,32 +1,17 @@
 #!/usr/bin/env python
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Run tests in parallel."""
 
@@ -65,6 +50,10 @@ try:
 except (ImportError):
   pass # It's ok to not import because this is only necessary to upload results to BQ.
 
+gcp_utils_dir = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '../gcp/utils'))
+sys.path.append(gcp_utils_dir)
+
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
@@ -73,11 +62,39 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
   'GRPC_VERBOSITY': 'DEBUG',
 }
 
-
 _POLLING_STRATEGIES = {
-  'linux': ['epollsig', 'poll', 'poll-cv']
+  'linux': ['epollsig', 'poll', 'poll-cv'],
 # TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
+  'mac': ['poll'],
 }
+
+
+def get_flaky_tests(limit=None):
+  import big_query_utils
+
+  bq = big_query_utils.create_big_query()
+  query = """
+    SELECT
+      test_name,
+      SUM(result != 'PASSED'
+        AND result != 'SKIPPED') AS count_failed,
+    FROM
+      [grpc-testing:jenkins_test_results.aggregate_results]
+    WHERE
+      timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
+      AND NOT REGEXP_MATCH(job_name, '.*portability.*')
+    GROUP BY
+      test_name
+    HAVING
+      count_failed > 0"""
+  if limit:
+    query += " limit {}".format(limit)
+  query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
+  page = bq.jobs().getQueryResults(
+      pageToken=None,
+      **query_job['jobReference']).execute(num_retries=3)
+  flake_names = [row['f'][0]['v'] for row in page['rows']]
+  return flake_names
 
 
 def platform_string():
@@ -118,6 +135,9 @@ class Config(object):
     actual_environ = self.environ.copy()
     for k, v in environ.items():
       actual_environ[k] = v
+    if not flaky and shortname and shortname in flaky_tests:
+      print('Setting %s to flaky' % shortname)
+      flaky = True
     return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
@@ -340,7 +360,8 @@ class CLanguage(object):
     if self.platform == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
-    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
+    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target,
+            'check_epollexclusive']
 
   def make_options(self):
     return self._make_options;
@@ -429,10 +450,11 @@ class NodeLanguage(object):
     # we should specify in the compiler argument
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         'node7', 'electron1.3', 'electron1.6'])
+                                         'node7', 'node8',
+                                         'electron1.3', 'electron1.6'])
     if self.args.compiler == 'default':
       self.runtime = 'node'
-      self.node_version = '7'
+      self.node_version = '8'
     else:
       if self.args.compiler.startswith('electron'):
         self.runtime = 'electron'
@@ -670,7 +692,7 @@ class PythonLanguage(object):
 
     if args.compiler == 'default':
       if os.name == 'nt':
-        return (python27_config,)
+        return (python35_config,)
       else:
         return (python27_config, python34_config,)
     elif args.compiler == 'python2.7':
@@ -1171,7 +1193,7 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
-                           'node0.12', 'node4', 'node5', 'node6', 'node7',
+                           'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
                            'cmake'],
@@ -1210,7 +1232,16 @@ argp.add_argument('--bq_result_table',
                   type=str,
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
+argp.add_argument('--auto_set_flakes', default=True, type=bool,
+                  help='Set flakiness data from historic data')
 args = argp.parse_args()
+
+flaky_tests = set()
+if args.auto_set_flakes:
+  try:
+    flaky_tests = set(get_flaky_tests())
+  except:
+    print("Unexpected error getting flaky tests:", sys.exc_info()[0])
 
 if args.force_default_poller:
   _POLLING_STRATEGIES = {}
@@ -1438,6 +1469,9 @@ def _has_epollexclusive():
     return True
   except subprocess.CalledProcessError, e:
     return False
+  except OSError, e:
+    # For languages other than C and Windows the binary won't exist
+    return False
 
 
 # returns a list of things that failed (or an empty list on success)
@@ -1457,7 +1491,7 @@ def _build_and_run(
                                            suite_name=args.report_suite_name)
     return []
 
-  if not args.travis and not _has_epollexclusive() and 'epollex' in _POLLING_STRATEGIES[platform_string()]:
+  if not args.travis and not _has_epollexclusive() and platform_string() in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[platform_string()]:
     print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
     _POLLING_STRATEGIES[platform_string()].remove('epollex')
 

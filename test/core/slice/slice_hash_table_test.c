@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2017, Google Inc.
- * All rights reserved.
+ * Copyright 2017 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -77,6 +62,19 @@ static void destroy_string(grpc_exec_ctx* exec_ctx, void* value) {
   gpr_free(value);
 }
 
+static grpc_slice_hash_table* create_table_from_entries(
+    const test_entry* test_entries, size_t num_test_entries,
+    int (*value_cmp_fn)(void*, void*)) {
+  // Construct table.
+  grpc_slice_hash_table_entry* entries =
+      gpr_zalloc(sizeof(*entries) * num_test_entries);
+  populate_entries(test_entries, num_test_entries, entries);
+  grpc_slice_hash_table* table = grpc_slice_hash_table_create(
+      num_test_entries, entries, destroy_string, value_cmp_fn);
+  gpr_free(entries);
+  return table;
+}
+
 static void test_slice_hash_table() {
   const test_entry test_entries[] = {
       {"key_0", "value_0"},   {"key_1", "value_1"},   {"key_2", "value_2"},
@@ -115,13 +113,8 @@ static void test_slice_hash_table() {
       {"key_99", "value_99"},
   };
   const size_t num_entries = GPR_ARRAY_SIZE(test_entries);
-  // Construct table.
-  grpc_slice_hash_table_entry* entries =
-      gpr_zalloc(sizeof(*entries) * num_entries);
-  populate_entries(test_entries, num_entries, entries);
   grpc_slice_hash_table* table =
-      grpc_slice_hash_table_create(num_entries, entries, destroy_string);
-  gpr_free(entries);
+      create_table_from_entries(test_entries, num_entries, NULL);
   // Check contents of table.
   check_values(test_entries, num_entries, table);
   check_non_existent_value("XX", table);
@@ -131,8 +124,118 @@ static void test_slice_hash_table() {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+static int value_cmp_fn(void* a, void* b) {
+  const char* a_str = a;
+  const char* b_str = b;
+  return strcmp(a_str, b_str);
+}
+
+static int pointer_cmp_fn(void* a, void* b) { return GPR_ICMP(a, b); }
+
+static void test_slice_hash_table_eq() {
+  const test_entry test_entries_a[] = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_a = GPR_ARRAY_SIZE(test_entries_a);
+  grpc_slice_hash_table* table_a =
+      create_table_from_entries(test_entries_a, num_entries_a, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_a) == 0);
+
+  const test_entry test_entries_b[] = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_b = GPR_ARRAY_SIZE(test_entries_b);
+  grpc_slice_hash_table* table_b =
+      create_table_from_entries(test_entries_b, num_entries_b, value_cmp_fn);
+
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b) == 0);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice_hash_table_unref(&exec_ctx, table_a);
+  grpc_slice_hash_table_unref(&exec_ctx, table_b);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
+static void test_slice_hash_table_not_eq() {
+  const test_entry test_entries_a[] = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_a = GPR_ARRAY_SIZE(test_entries_a);
+  grpc_slice_hash_table* table_a =
+      create_table_from_entries(test_entries_a, num_entries_a, value_cmp_fn);
+
+  // Different sizes.
+  const test_entry test_entries_b_smaller[] = {{"key_0", "value_0"},
+                                               {"key_1", "value_1"}};
+  const size_t num_entries_b_smaller = GPR_ARRAY_SIZE(test_entries_b_smaller);
+  grpc_slice_hash_table* table_b_smaller = create_table_from_entries(
+      test_entries_b_smaller, num_entries_b_smaller, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b_smaller) > 0);
+
+  const test_entry test_entries_b_larger[] = {{"key_0", "value_0"},
+                                              {"key_1", "value_1"},
+                                              {"key_2", "value_2"},
+                                              {"key_3", "value_3"}};
+  const size_t num_entries_b_larger = GPR_ARRAY_SIZE(test_entries_b_larger);
+  grpc_slice_hash_table* table_b_larger = create_table_from_entries(
+      test_entries_b_larger, num_entries_b_larger, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b_larger) < 0);
+
+  // One key doesn't match and is lexicographically "smaller".
+  const test_entry test_entries_c[] = {
+      {"key_zz", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_c = GPR_ARRAY_SIZE(test_entries_c);
+  grpc_slice_hash_table* table_c =
+      create_table_from_entries(test_entries_c, num_entries_c, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_c) > 0);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_c, table_a) < 0);
+
+  // One value doesn't match.
+  const test_entry test_entries_d[] = {
+      {"key_0", "value_z"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_d = GPR_ARRAY_SIZE(test_entries_d);
+  grpc_slice_hash_table* table_d =
+      create_table_from_entries(test_entries_d, num_entries_d, value_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_d) < 0);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_d, table_a) > 0);
+
+  // Same values but different "equals" functions.
+  const test_entry test_entries_e[] = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_e = GPR_ARRAY_SIZE(test_entries_e);
+  grpc_slice_hash_table* table_e =
+      create_table_from_entries(test_entries_e, num_entries_e, value_cmp_fn);
+  const test_entry test_entries_f[] = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  const size_t num_entries_f = GPR_ARRAY_SIZE(test_entries_f);
+  grpc_slice_hash_table* table_f =
+      create_table_from_entries(test_entries_f, num_entries_f, pointer_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_e, table_f) != 0);
+
+  // Same (empty) key, different values.
+  const test_entry test_entries_g[] = {{"", "value_0"}};
+  const size_t num_entries_g = GPR_ARRAY_SIZE(test_entries_g);
+  grpc_slice_hash_table* table_g =
+      create_table_from_entries(test_entries_g, num_entries_g, value_cmp_fn);
+  const test_entry test_entries_h[] = {{"", "value_1"}};
+  const size_t num_entries_h = GPR_ARRAY_SIZE(test_entries_h);
+  grpc_slice_hash_table* table_h =
+      create_table_from_entries(test_entries_h, num_entries_h, pointer_cmp_fn);
+  GPR_ASSERT(grpc_slice_hash_table_cmp(table_g, table_h) != 0);
+
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice_hash_table_unref(&exec_ctx, table_a);
+  grpc_slice_hash_table_unref(&exec_ctx, table_b_larger);
+  grpc_slice_hash_table_unref(&exec_ctx, table_b_smaller);
+  grpc_slice_hash_table_unref(&exec_ctx, table_c);
+  grpc_slice_hash_table_unref(&exec_ctx, table_d);
+  grpc_slice_hash_table_unref(&exec_ctx, table_e);
+  grpc_slice_hash_table_unref(&exec_ctx, table_f);
+  grpc_slice_hash_table_unref(&exec_ctx, table_g);
+  grpc_slice_hash_table_unref(&exec_ctx, table_h);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_slice_hash_table();
+  test_slice_hash_table_eq();
+  test_slice_hash_table_not_eq();
   return 0;
 }

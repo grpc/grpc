@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
- * All rights reserved.
+ * Copyright 2015-2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -71,7 +56,19 @@ class ServerWriter;
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
-}
+}  // namespace internal
+
+class Channel;
+class ChannelInterface;
+class ClientContext;
+class CompletionQueue;
+class Server;
+class ServerBuilder;
+class ServerContext;
+
+namespace internal {
+class CompletionQueueTag;
+class RpcMethod;
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -81,16 +78,13 @@ class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
 class UnknownMethodHandler;
-
-class Channel;
-class ChannelInterface;
-class ClientContext;
-class CompletionQueueTag;
-class CompletionQueue;
-class RpcMethod;
-class Server;
-class ServerBuilder;
-class ServerContext;
+template <class Streamer, bool WriteNeeded>
+class TemplatedBidiStreamingHandler;
+template <class InputMessage, class OutputMessage>
+Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
+                         ClientContext* context, const InputMessage& request,
+                         OutputMessage* result);
+}  // namespace internal
 
 extern CoreCodegenInterface* g_core_codegen_interface;
 
@@ -159,7 +153,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// will start to return false and \a AsyncNext will return \a
   /// NextStatus::SHUTDOWN. Only once either one of these methods does that
   /// (that is, once the queue has been \em drained) can an instance of this
-  /// class be destroyed.
+  /// class be destroyed. Also note that applications must ensure that
+  /// no work is enqueued on this completion queue after this method is called.
   void Shutdown();
 
   /// Returns a \em raw pointer to the underlying \a grpc_completion_queue
@@ -181,7 +176,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   void RegisterAvalanching() {
     gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
                                  static_cast<gpr_atm>(1));
-  };
+  }
   void CompleteAvalanching();
 
  protected:
@@ -210,28 +205,27 @@ class CompletionQueue : private GrpcLibraryCodegen {
   template <class W, class R>
   friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class RpcMethodHandler;
+  friend class ::grpc::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ClientStreamingHandler;
+  friend class ::grpc::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ServerStreamingHandler;
+  friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class TemplatedBidiStreamingHandler;
-  friend class UnknownMethodHandler;
+  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
+  friend class ::grpc::internal::UnknownMethodHandler;
   friend class ::grpc::Server;
   friend class ::grpc::ServerContext;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(ChannelInterface* channel,
-                                  const RpcMethod& method,
-                                  ClientContext* context,
-                                  const InputMessage& request,
-                                  OutputMessage* result);
+  friend Status(::grpc::internal::BlockingUnaryCall)(
+      ChannelInterface* channel, const internal::RpcMethod& method,
+      ClientContext* context, const InputMessage& request,
+      OutputMessage* result);
 
   NextStatus AsyncNextInternal(void** tag, bool* ok, gpr_timespec deadline);
 
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
-  bool Pluck(CompletionQueueTag* tag) {
+  bool Pluck(internal::CompletionQueueTag* tag) {
     auto deadline =
         g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
@@ -252,7 +246,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// implementation to simple call the other TryPluck function with a zero
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
-  void TryPluck(CompletionQueueTag* tag) {
+  void TryPluck(internal::CompletionQueueTag* tag) {
     auto deadline = g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
@@ -268,7 +262,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   ///
   /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
   /// that the tag is internal not something that is returned to the user.
-  void TryPluck(CompletionQueueTag* tag, gpr_timespec deadline) {
+  void TryPluck(internal::CompletionQueueTag* tag, gpr_timespec deadline) {
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {

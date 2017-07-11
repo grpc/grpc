@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -60,23 +45,26 @@ class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
 
-/// Models a gRPC server.
+/// Represents a gRPC server.
 ///
-/// Servers are configured and started via \a grpc::ServerBuilder.
+/// Use a \a grpc::ServerBuilder to create, configure, and start
+/// \a Server instances.
 class Server final : public ServerInterface, private GrpcLibraryCodegen {
  public:
   ~Server();
 
-  /// Block waiting for all work to complete.
+  /// Block until the server shuts down.
   ///
   /// \warning The server must be either shutting down or some other thread must
   /// call \a Shutdown for this function to ever return.
   void Wait() override;
 
-  /// Global Callbacks
-  ///
-  /// Can be set exactly once per application to install hooks whenever
-  /// a server event occurs
+  /// Global callbacks are a set of hooks that are called when server
+  /// events occur.  \a SetGlobalCallbacks method is used to register
+  /// the hooks with gRPC.  Note that
+  /// the \a GlobalCallbacks instance will be shared among all
+  /// \a Server instances in an application and can be set exactly
+  /// once per application.
   class GlobalCallbacks {
    public:
     virtual ~GlobalCallbacks() {}
@@ -92,12 +80,14 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
     virtual void AddPort(Server* server, const grpc::string& addr,
                          ServerCredentials* creds, int port) {}
   };
-  /// Set the global callback object. Can only be called once. Does not take
-  /// ownership of callbacks, and expects the pointed to object to be alive
-  /// until all server objects in the process have been destroyed.
+  /// Set the global callback object. Can only be called once per application.
+  /// Does not take ownership of callbacks, and expects the pointed to object
+  /// to be alive until all server objects in the process have been destroyed.
+  /// The same \a GlobalCallbacks object will be used throughout the
+  /// application and is shared among all \a Server objects.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
-  // Returns a \em raw pointer to the underlying grpc_server instance.
+  // Returns a \em raw pointer to the underlying \a grpc_server instance.
   grpc_server* c_server();
 
   /// Returns the health check service.
@@ -158,17 +148,19 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// service. The service must exist for the lifetime of the Server instance.
   void RegisterAsyncGenericService(AsyncGenericService* service) override;
 
-  /// Tries to bind \a server to the given \a addr.
+  /// Try binding the server to the given \a addr endpoint
+  /// (port, and optionally including IP address to bind to).
   ///
-  /// It can be invoked multiple times.
+  /// It can be invoked multiple times. Should be used before
+  /// starting the server.
   ///
   /// \param addr The address to try to bind to the server (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.).
   /// \params creds The credentials associated with the server.
   ///
-  /// \return bound port number on sucess, 0 on failure.
+  /// \return bound port number on success, 0 on failure.
   ///
-  /// \warning It's an error to call this method on an already started server.
+  /// \warning It is an error to call this method on an already started server.
   int AddListeningPort(const grpc::string& addr,
                        ServerCredentials* creds) override;
 
@@ -180,7 +172,8 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// \param num_cqs How many completion queues does \a cqs hold.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
-  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
+  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
+                        internal::Call* call) override;
 
   void ShutdownInternal(gpr_timespec deadline) override;
 
@@ -194,13 +187,14 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
 
   const int max_receive_message_size_;
 
-  /// The following completion queues are ONLY used in case of Sync API i.e if
-  /// the server has any services with sync methods. The server uses these
-  /// completion queues to poll for new RPCs
+  /// The following completion queues are ONLY used in case of Sync API
+  /// i.e. if the server has any services with sync methods. The server uses
+  /// these completion queues to poll for new RPCs
   std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
       sync_server_cqs_;
 
-  /// List of ThreadManager instances (one for each cq in the sync_server_cqs)
+  /// List of \a ThreadManager instances (one for each cq in
+  /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
   // Sever status

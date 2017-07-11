@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -50,6 +35,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -71,6 +57,8 @@ struct grpc_end2end_http_proxy {
   gpr_mu* mu;
   grpc_pollset* pollset;
   gpr_refcount users;
+
+  grpc_combiner* combiner;
 };
 
 //
@@ -170,7 +158,7 @@ static void on_client_write_done(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_slice_buffer_move_into(&conn->client_deferred_write_buffer,
                                 &conn->client_write_buffer);
     grpc_endpoint_write(exec_ctx, conn->client_endpoint,
-                        &conn->client_write_buffer, true,
+                        &conn->client_write_buffer,
                         &conn->on_client_write_done);
   } else {
     // No more writes.  Unref the connection.
@@ -195,7 +183,7 @@ static void on_server_write_done(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_slice_buffer_move_into(&conn->server_deferred_write_buffer,
                                 &conn->server_write_buffer);
     grpc_endpoint_write(exec_ctx, conn->server_endpoint,
-                        &conn->server_write_buffer, true,
+                        &conn->server_write_buffer,
                         &conn->on_server_write_done);
   } else {
     // No more writes.  Unref the connection.
@@ -227,12 +215,12 @@ static void on_client_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                 &conn->server_write_buffer);
     proxy_connection_ref(conn, "client_read");
     grpc_endpoint_write(exec_ctx, conn->server_endpoint,
-                        &conn->server_write_buffer, true,
+                        &conn->server_write_buffer,
                         &conn->on_server_write_done);
   }
   // Read more data.
   grpc_endpoint_read(exec_ctx, conn->client_endpoint, &conn->client_read_buffer,
-                     true, &conn->on_client_read_done);
+                     &conn->on_client_read_done);
 }
 
 // Callback for reading data from the backend server, which will be
@@ -259,12 +247,12 @@ static void on_server_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                 &conn->client_write_buffer);
     proxy_connection_ref(conn, "server_read");
     grpc_endpoint_write(exec_ctx, conn->client_endpoint,
-                        &conn->client_write_buffer, true,
+                        &conn->client_write_buffer,
                         &conn->on_client_write_done);
   }
   // Read more data.
   grpc_endpoint_read(exec_ctx, conn->server_endpoint, &conn->server_read_buffer,
-                     true, &conn->on_server_read_done);
+                     &conn->on_server_read_done);
 }
 
 // Callback to write the HTTP response for the CONNECT request.
@@ -285,9 +273,9 @@ static void on_write_response_done(grpc_exec_ctx* exec_ctx, void* arg,
   proxy_connection_ref(conn, "server_read");
   proxy_connection_unref(exec_ctx, conn, "write_response");
   grpc_endpoint_read(exec_ctx, conn->client_endpoint, &conn->client_read_buffer,
-                     true, &conn->on_client_read_done);
+                     &conn->on_client_read_done);
   grpc_endpoint_read(exec_ctx, conn->server_endpoint, &conn->server_read_buffer,
-                     true, &conn->on_server_read_done);
+                     &conn->on_server_read_done);
 }
 
 // Callback to connect to the backend server specified by the HTTP
@@ -312,7 +300,7 @@ static void on_server_connect_done(grpc_exec_ctx* exec_ctx, void* arg,
       grpc_slice_from_copied_string("HTTP/1.0 200 connected\r\n\r\n");
   grpc_slice_buffer_add(&conn->client_write_buffer, slice);
   grpc_endpoint_write(exec_ctx, conn->client_endpoint,
-                      &conn->client_write_buffer, true,
+                      &conn->client_write_buffer,
                       &conn->on_write_response_done);
 }
 
@@ -349,8 +337,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   // If we're not done reading the request, read more data.
   if (conn->http_parser.state != GRPC_HTTP_BODY) {
     grpc_endpoint_read(exec_ctx, conn->client_endpoint,
-                       &conn->client_read_buffer, true,
-                       &conn->on_read_request_done);
+                       &conn->client_read_buffer, &conn->on_read_request_done);
     return;
   }
   // Make sure we got a CONNECT request.
@@ -400,20 +387,20 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   conn->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(exec_ctx, conn->pollset_set, proxy->pollset);
   grpc_endpoint_add_to_pollset_set(exec_ctx, endpoint, conn->pollset_set);
-  grpc_closure_init(&conn->on_read_request_done, on_read_request_done, conn,
-                    grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&conn->on_server_connect_done, on_server_connect_done, conn,
-                    grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&conn->on_write_response_done, on_write_response_done, conn,
-                    grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&conn->on_client_read_done, on_client_read_done, conn,
-                    grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&conn->on_client_write_done, on_client_write_done, conn,
-                    grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&conn->on_server_read_done, on_server_read_done, conn,
-                    grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&conn->on_server_write_done, on_server_write_done, conn,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&conn->on_read_request_done, on_read_request_done, conn,
+                    grpc_combiner_scheduler(conn->proxy->combiner));
+  GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
+                    grpc_combiner_scheduler(conn->proxy->combiner));
+  GRPC_CLOSURE_INIT(&conn->on_write_response_done, on_write_response_done, conn,
+                    grpc_combiner_scheduler(conn->proxy->combiner));
+  GRPC_CLOSURE_INIT(&conn->on_client_read_done, on_client_read_done, conn,
+                    grpc_combiner_scheduler(conn->proxy->combiner));
+  GRPC_CLOSURE_INIT(&conn->on_client_write_done, on_client_write_done, conn,
+                    grpc_combiner_scheduler(conn->proxy->combiner));
+  GRPC_CLOSURE_INIT(&conn->on_server_read_done, on_server_read_done, conn,
+                    grpc_combiner_scheduler(conn->proxy->combiner));
+  GRPC_CLOSURE_INIT(&conn->on_server_write_done, on_server_write_done, conn,
+                    grpc_combiner_scheduler(conn->proxy->combiner));
   grpc_slice_buffer_init(&conn->client_read_buffer);
   grpc_slice_buffer_init(&conn->client_deferred_write_buffer);
   grpc_slice_buffer_init(&conn->client_write_buffer);
@@ -423,7 +410,7 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_http_parser_init(&conn->http_parser, GRPC_HTTP_REQUEST,
                         &conn->http_request);
   grpc_endpoint_read(exec_ctx, conn->client_endpoint, &conn->client_read_buffer,
-                     true, &conn->on_read_request_done);
+                     &conn->on_read_request_done);
 }
 
 //
@@ -454,6 +441,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(void) {
   grpc_end2end_http_proxy* proxy =
       (grpc_end2end_http_proxy*)gpr_malloc(sizeof(*proxy));
   memset(proxy, 0, sizeof(*proxy));
+  proxy->combiner = grpc_combiner_create();
   gpr_ref_init(&proxy->users, 1);
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
@@ -503,8 +491,9 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   gpr_free(proxy->proxy_name);
   grpc_channel_args_destroy(&exec_ctx, proxy->channel_args);
   grpc_pollset_shutdown(&exec_ctx, proxy->pollset,
-                        grpc_closure_create(destroy_pollset, proxy->pollset,
+                        GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset,
                                             grpc_schedule_on_exec_ctx));
+  GRPC_COMBINER_UNREF(&exec_ctx, proxy->combiner, "test");
   gpr_free(proxy);
   grpc_exec_ctx_finish(&exec_ctx);
 }

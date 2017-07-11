@@ -1,32 +1,17 @@
 #!/usr/bin/env python
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Run interop (cross-language) tests in parallel."""
 
@@ -200,6 +185,28 @@ class JavaLanguage:
 
   def __str__(self):
     return 'java'
+
+
+class JavaOkHttpClient:
+
+  def __init__(self):
+    self.client_cwd = '../grpc-java'
+    self.safename = 'java'
+
+  def client_cmd(self, args):
+    return ['./run-test-client.sh', '--use_okhttp=true'] + args
+
+  def cloud_to_prod_env(self):
+    return {}
+
+  def global_env(self):
+    return {}
+
+  def unimplemented_test_cases(self):
+    return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+
+  def __str__(self):
+    return 'javaokhttp'
 
 
 class GoLanguage:
@@ -489,6 +496,7 @@ _LANGUAGES = {
     'csharpcoreclr' : CSharpCoreCLRLanguage(),
     'go' : GoLanguage(),
     'java' : JavaLanguage(),
+    'javaokhttp' : JavaOkHttpClient(),
     'node' : NodeLanguage(),
     'php' :  PHPLanguage(),
     'php7' :  PHP7Language(),
@@ -544,12 +552,14 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   return docker_cmdline
 
 
-def manual_cmdline(docker_cmdline):
+def manual_cmdline(docker_cmdline, docker_image):
   """Returns docker cmdline adjusted for manual invocation."""
   print_cmdline = []
   for item in docker_cmdline:
     if item.startswith('--name='):
       continue
+    if item == docker_image:
+      item = "$docker_image"
     # add quotes when necessary
     if any(character.isspace() for character in item):
       item = "\"%s\"" % item
@@ -581,7 +591,7 @@ def auth_options(language, test_case):
   env = {}
 
   # TODO(jtattermusch): this file path only works inside docker
-  key_filepath = '/root/service_account/stubbyCloudTestingTest-ee3fce360ac5.json'
+  key_filepath = '/root/service_account/GrpcTesting-726eb1347f15.json'
   oauth_scope_arg = '--oauth_scope=https://www.googleapis.com/auth/xapi.zoo'
   key_file_arg = '--service_account_key_file=%s' % key_filepath
   default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
@@ -644,7 +654,9 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
                                  docker_args=['--net=host',
                                               '--name=%s' % container_name])
     if manual_cmd_log is not None:
-      manual_cmd_log.append(manual_cmdline(cmdline))
+      if manual_cmd_log == []:
+        manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' % docker_image)
+      manual_cmd_log.append(manual_cmdline(cmdline, docker_image))
     cwd = None
     environ = None
 
@@ -710,7 +722,9 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                                  docker_args=['--net=host',
                                               '--name=%s' % container_name])
     if manual_cmd_log is not None:
-      manual_cmd_log.append(manual_cmdline(cmdline))
+      if manual_cmd_log == []:
+        manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' % docker_image)
+      manual_cmd_log.append(manual_cmdline(cmdline, docker_iamge))
     cwd = None
 
   test_job = jobset.JobSpec(
@@ -770,7 +784,9 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
                                       environ=environ,
                                       docker_args=docker_args)
   if manual_cmd_log is not None:
-      manual_cmd_log.append(manual_cmdline(docker_cmdline))
+      if manual_cmd_log == []:
+        manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' % docker_image)
+      manual_cmd_log.append(manual_cmdline(docker_cmdline, docker_iamge))
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
           environ=environ,

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -92,7 +77,7 @@ static void end_test(grpc_endpoint_test_config config) { config.clean_up(); }
 static grpc_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
                                    size_t *num_blocks, uint8_t *current_data) {
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
-  grpc_slice *slices = gpr_malloc(sizeof(grpc_slice) * nslices);
+  grpc_slice *slices = (grpc_slice *)gpr_malloc(sizeof(grpc_slice) * nslices);
   size_t num_bytes_left = num_bytes;
   size_t i;
   size_t j;
@@ -132,7 +117,8 @@ struct read_and_write_test_state {
 
 static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
                                              void *data, grpc_error *error) {
-  struct read_and_write_test_state *state = data;
+  struct read_and_write_test_state *state =
+      (struct read_and_write_test_state *)data;
 
   state->bytes_read += count_slices(
       state->incoming.slices, state->incoming.count, &state->current_read_data);
@@ -143,14 +129,15 @@ static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
     GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL));
     gpr_mu_unlock(g_mu);
   } else if (error == GRPC_ERROR_NONE) {
-    grpc_endpoint_read(exec_ctx, state->read_ep, &state->incoming, true,
+    grpc_endpoint_read(exec_ctx, state->read_ep, &state->incoming,
                        &state->done_read);
   }
 }
 
 static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
                                               void *data, grpc_error *error) {
-  struct read_and_write_test_state *state = data;
+  struct read_and_write_test_state *state =
+      (struct read_and_write_test_state *)data;
   grpc_slice *slices = NULL;
   size_t nslices;
 
@@ -165,7 +152,7 @@ static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
                                &state->current_write_data);
       grpc_slice_buffer_reset_and_unref(&state->outgoing);
       grpc_slice_buffer_addn(&state->outgoing, slices, nslices);
-      grpc_endpoint_write(exec_ctx, state->write_ep, &state->outgoing, true,
+      grpc_endpoint_write(exec_ctx, state->write_ep, &state->outgoing,
                           &state->done_write);
       gpr_free(slices);
       return;
@@ -213,9 +200,9 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   state.write_done = 0;
   state.current_read_data = 0;
   state.current_write_data = 0;
-  grpc_closure_init(&state.done_read, read_and_write_test_read_handler, &state,
+  GRPC_CLOSURE_INIT(&state.done_read, read_and_write_test_read_handler, &state,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&state.done_write, read_and_write_test_write_handler,
+  GRPC_CLOSURE_INIT(&state.done_write, read_and_write_test_write_handler,
                     &state, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.outgoing);
   grpc_slice_buffer_init(&state.incoming);
@@ -228,7 +215,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   read_and_write_test_write_handler(&exec_ctx, &state, GRPC_ERROR_NONE);
   grpc_exec_ctx_flush(&exec_ctx);
 
-  grpc_endpoint_read(&exec_ctx, state.read_ep, &state.incoming, true,
+  grpc_endpoint_read(&exec_ctx, state.read_ep, &state.incoming,
                      &state.done_read);
 
   if (shutdown) {
@@ -265,25 +252,30 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 
 static void inc_on_failure(grpc_exec_ctx *exec_ctx, void *arg,
                            grpc_error *error) {
+  gpr_mu_lock(g_mu);
   *(int *)arg += (error != GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, NULL)));
+  gpr_mu_unlock(g_mu);
 }
 
 static void wait_for_fail_count(grpc_exec_ctx *exec_ctx, int *fail_count,
                                 int want_fail_count) {
   grpc_exec_ctx_flush(exec_ctx);
-  for (int i = 0; i < 5 && *fail_count < want_fail_count; i++) {
+  gpr_mu_lock(g_mu);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  while (gpr_time_cmp(gpr_now(deadline.clock_type), deadline) < 0 &&
+         *fail_count < want_fail_count) {
     grpc_pollset_worker *worker = NULL;
-    gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-    gpr_timespec deadline =
-        gpr_time_add(now, gpr_time_from_seconds(1, GPR_TIMESPAN));
-    gpr_mu_lock(g_mu);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(exec_ctx, g_pollset, &worker, now, deadline)));
+        grpc_pollset_work(exec_ctx, g_pollset, &worker,
+                          gpr_now(deadline.clock_type), deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(exec_ctx);
+    gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(*fail_count == want_fail_count);
+  gpr_mu_unlock(g_mu);
 }
 
 static void multiple_shutdown_test(grpc_endpoint_test_config config) {
@@ -296,20 +288,20 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_add_to_pollset(&exec_ctx, f.client_ep, g_pollset);
-  grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer, true,
-                     grpc_closure_create(inc_on_failure, &fail_count,
+  grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer,
+                     GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 0);
   grpc_endpoint_shutdown(&exec_ctx, f.client_ep,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   wait_for_fail_count(&exec_ctx, &fail_count, 1);
-  grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer, true,
-                     grpc_closure_create(inc_on_failure, &fail_count,
+  grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer,
+                     GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 2);
   grpc_slice_buffer_add(&slice_buffer, grpc_slice_from_copied_string("a"));
-  grpc_endpoint_write(&exec_ctx, f.client_ep, &slice_buffer, true,
-                      grpc_closure_create(inc_on_failure, &fail_count,
+  grpc_endpoint_write(&exec_ctx, f.client_ep, &slice_buffer,
+                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                           grpc_schedule_on_exec_ctx));
   wait_for_fail_count(&exec_ctx, &fail_count, 3);
   grpc_endpoint_shutdown(&exec_ctx, f.client_ep,

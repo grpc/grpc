@@ -100,7 +100,7 @@ the `composer` and `protoc` binaries. You can find out how to get these
 Clone this repository
 
 ```sh
-$ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
+$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 ```
 
 Build and install the gRPC C core library
@@ -129,7 +129,7 @@ $ sudo make install
 You will need the source code to run tests
 
 ```sh
-$ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
+$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 $ cd grpc
 $ git pull --recurse-submodules && git submodule update --init --recursive
 ```
@@ -172,6 +172,28 @@ $ cd grpc/third_party/protobuf
 $ ./autogen.sh && ./configure && make
 $ sudo make install
 ```
+
+
+### Protobuf Runtime library
+
+There are two protobuf runtime libraries to choose from. They are idenfical in terms of APIs offered.
+
+1. C implementation (for better performance)
+
+``` sh
+$ sudo pecl install protobuf
+```
+
+2. PHP implementation (for easier installation)
+
+
+Add this to your `composer.json` file:
+
+```
+  "require": {
+    "google/protobuf": "^v3.3.0"
+  }
+``` 
 
 
 ### PHP Protoc Plugin

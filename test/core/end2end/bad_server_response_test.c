@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -120,8 +105,7 @@ static void handle_write(grpc_exec_ctx *exec_ctx) {
 
   grpc_slice_buffer_reset_and_unref(&state.outgoing_buffer);
   grpc_slice_buffer_add(&state.outgoing_buffer, slice);
-  grpc_endpoint_write(exec_ctx, state.tcp, &state.outgoing_buffer, true,
-                      &on_write);
+  grpc_endpoint_write(exec_ctx, state.tcp, &state.outgoing_buffer, &on_write);
 }
 
 static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -143,7 +127,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD) {
     handle_write(exec_ctx);
   } else {
-    grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer, true,
+    grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,
                        &on_read);
   }
 }
@@ -152,16 +136,15 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
   gpr_free(acceptor);
-  test_tcp_server *server = arg;
-  grpc_closure_init(&on_read, handle_read, NULL, grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&on_write, done_write, NULL, grpc_schedule_on_exec_ctx);
+  test_tcp_server *server = (test_tcp_server *)arg;
+  GRPC_CLOSURE_INIT(&on_read, handle_read, NULL, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_write, done_write, NULL, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
   grpc_slice_buffer_init(&state.outgoing_buffer);
   state.tcp = tcp;
   state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(exec_ctx, tcp, server->pollset);
-  grpc_endpoint_read(exec_ctx, tcp, &state.temp_incoming_buffer, true,
-                     &on_read);
+  grpc_endpoint_read(exec_ctx, tcp, &state.temp_incoming_buffer, &on_read);
 }
 
 static gpr_timespec n_sec_deadline(int seconds) {
@@ -254,7 +237,7 @@ typedef struct {
 } poll_args;
 
 static void actually_poll_server(void *arg) {
-  poll_args *pa = arg;
+  poll_args *pa = (poll_args *)arg;
   gpr_timespec deadline = n_sec_deadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&state.done_atm) != 0;
@@ -276,7 +259,7 @@ static void poll_server_until_read_done(test_tcp_server *server,
   gpr_atm_rel_store(&state.done_atm, 0);
   state.write_done = 0;
   gpr_thd_id id;
-  poll_args *pa = gpr_malloc(sizeof(*pa));
+  poll_args *pa = (poll_args *)gpr_malloc(sizeof(*pa));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
   gpr_thd_new(&id, actually_poll_server, pa, NULL);
