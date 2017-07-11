@@ -637,8 +637,7 @@ void grpc_chttp2_flowctl_sent_data(grpc_chttp2_transport *t,
                                    grpc_chttp2_stream *s, int64_t size);
 
 // we have received data from the wire
-grpc_error *grpc_chttp2_flowctl_recv_data(grpc_exec_ctx *exec_ctx,
-                                          grpc_chttp2_transport *t,
+grpc_error *grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s,
                                           int64_t incoming_frame_size);
 
@@ -656,11 +655,33 @@ void grpc_chttp2_flowctl_recv_stream_update(grpc_chttp2_stream *s,
                                             uint32_t size);
 
 // the application is asking for a certain amount of bytes
-void grpc_chttp2_flowctl_incoming_bs_update(grpc_exec_ctx *exec_ctx,
-                                                     grpc_chttp2_transport *t,
-                                                     grpc_chttp2_stream *s,
-                                                     size_t max_size_hint,
-                                                     size_t have_already);
+void grpc_chttp2_flowctl_incoming_bs_update(grpc_chttp2_transport *t,
+                                            grpc_chttp2_stream *s,
+                                            size_t max_size_hint,
+                                            size_t have_already);
+
+typedef enum {
+  // Nothing to be done.
+  GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED = 0,
+  // Initiate a write to update the initial window immediately.
+  GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY,
+  // Push the flow control update into a send buffer, to be sent
+  // out the next time a write is initiated.
+  GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE,
+} grpc_chttp2_flowctl_urgency;
+
+typedef struct {
+  grpc_chttp2_flowctl_urgency send_stream_update;
+  grpc_chttp2_flowctl_urgency send_transport_update;
+} grpc_chttp2_flowctl_action;
+
+grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
+    const grpc_chttp2_transport *t, const grpc_chttp2_stream *s);
+
+void grpc_chttp2_flowctl_act_on_action(grpc_exec_ctx *exec_ctx,
+                                       grpc_chttp2_flowctl_action action,
+                                       grpc_chttp2_transport *t,
+                                       grpc_chttp2_stream *s);
 
 void grpc_chttp2_flowctl_destroy_stream(grpc_chttp2_stream *s);
 

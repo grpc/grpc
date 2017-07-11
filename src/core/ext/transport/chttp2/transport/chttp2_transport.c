@@ -1450,8 +1450,9 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         already_received = s->frame_storage.length +
                            s->unprocessed_incoming_frames_buffer.length;
       }
-      grpc_chttp2_flowctl_incoming_bs_update(exec_ctx, t, s, 5,
-                                               already_received);
+      grpc_chttp2_flowctl_incoming_bs_update(t, s, 5, already_received);
+      grpc_chttp2_flowctl_act_on_action(
+          exec_ctx, grpc_chttp2_flowctl_get_action(t, s), t, s);
     }
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   }
@@ -2543,8 +2544,10 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s = bs->stream;
 
   size_t cur_length = s->frame_storage.length;
-  grpc_chttp2_flowctl_incoming_bs_update(
-      exec_ctx, t, s, bs->next_action.max_size_hint, cur_length);
+  grpc_chttp2_flowctl_incoming_bs_update(t, s, bs->next_action.max_size_hint,
+                                         cur_length);
+  grpc_chttp2_flowctl_act_on_action(exec_ctx,
+                                    grpc_chttp2_flowctl_get_action(t, s), t, s);
 
   GPR_ASSERT(s->unprocessed_incoming_frames_buffer.length == 0);
   if (s->frame_storage.length > 0) {

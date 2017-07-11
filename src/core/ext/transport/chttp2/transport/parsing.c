@@ -354,7 +354,9 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   grpc_error *err = GRPC_ERROR_NONE;
-  err = grpc_chttp2_flowctl_recv_data(exec_ctx, t, s, t->incoming_frame_size);
+  err = grpc_chttp2_flowctl_recv_data(t, s, t->incoming_frame_size);
+  grpc_chttp2_flowctl_act_on_action(exec_ctx,
+                                    grpc_chttp2_flowctl_get_action(t, s), t, s);
   if (err != GRPC_ERROR_NONE) {
     goto error_handler;
   }

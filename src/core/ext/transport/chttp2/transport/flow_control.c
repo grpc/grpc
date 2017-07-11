@@ -98,18 +98,41 @@ static void posttrace(shadow_flow_control* sfc, grpc_chttp2_transport* t,
   gpr_free(saw_str);
 }
 
+static char* urgency_to_string(grpc_chttp2_flowctl_urgency urgency) {
+  switch (urgency) {
+    case GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED:
+      return "no action";
+    case GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY:
+      return "update immediately";
+    case GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE:
+      return "queue update";
+    default:
+      GPR_UNREACHABLE_CODE(return "unknown");
+  }
+  GPR_UNREACHABLE_CODE(return "unknown");
+}
+
+static void trace_action(grpc_chttp2_flowctl_action action) {
+  gpr_log(GPR_DEBUG, "transport: %s,  stream: %s",
+          urgency_to_string(action.send_transport_update),
+          urgency_to_string(action.send_stream_update));
+}
+
 #define PRETRACE(t, s)     \
   shadow_flow_control sfc; \
   GRPC_FLOW_CONTROL_IF_TRACING(pretrace(&sfc, t, s))
 #define POSTTRACE(t, s, reason) \
   GRPC_FLOW_CONTROL_IF_TRACING(posttrace(&sfc, t, s, reason))
+#define TRACEACTION(action) GRPC_FLOW_CONTROL_IF_TRACING(trace_action(action))
 #else
 #define PRETRACE(t, s)
-#define POSTTRACE(t, s, reason) ;
+#define POSTTRACE(t, s, reason)
+#define TRACEACTION(action)
 #endif
 
 /* How many bytes of incoming flow control would we like to advertise */
-static uint32_t grpc_chttp2_target_announced_window(grpc_chttp2_transport* t) {
+static uint32_t grpc_chttp2_target_announced_window(
+    const grpc_chttp2_transport* t) {
   return (uint32_t)GPR_MIN(
       (int64_t)((1u << 31) - 1),
       t->announced_stream_total_over_incoming_window +
@@ -150,8 +173,7 @@ static void announced_window_delta_postupdate(grpc_chttp2_transport* t,
 // We have received data from the wire. We must track this in our own flow
 // control bookkeeping.
 // Returns an error if the incoming frame violates our flow control.
-grpc_error* grpc_chttp2_flowctl_recv_data(grpc_exec_ctx* exec_ctx,
-                                          grpc_chttp2_transport* t,
+grpc_error* grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s,
                                           int64_t incoming_frame_size) {
   PRETRACE(t, s);
@@ -203,34 +225,10 @@ grpc_error* grpc_chttp2_flowctl_recv_data(grpc_exec_ctx* exec_ctx,
     announced_window_delta_postupdate(t, s);
     s->local_window_delta -= incoming_frame_size;
     s->received_bytes += incoming_frame_size;
-
-    if (s->announced_window_delta > 0) {
-      t->announced_stream_total_over_incoming_window +=
-          s->announced_window_delta;
-    } else {
-      t->announced_stream_total_under_incoming_window -=
-          -s->announced_window_delta;
-    }
-
-    // TODO(control bit)
-    if ((int64_t)s->local_window_delta > (int64_t)s->announced_window_delta && (int64_t)s->announced_window_delta <=
-        (int64_t)t->settings[GRPC_SENT_SETTINGS]
-                            [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
-            2) {
-      grpc_chttp2_become_writable(exec_ctx, t, s,
-                                  GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
-                                  "window-update-required");
-    }
   }
 
   t->announced_window -= incoming_frame_size;
   t->local_window -= incoming_frame_size;
-
-  // TODO(control bit)
-  uint32_t target_announced_window = grpc_chttp2_target_announced_window(t);
-  if (t->announced_window <= target_announced_window / 2) {
-    grpc_chttp2_initiate_write(exec_ctx, t, "flow_control");
-  }
 
   POSTTRACE(t, s, "  data recv");
   return GRPC_ERROR_NONE;
@@ -256,14 +254,6 @@ uint32_t grpc_chttp2_flowctl_maybe_send_transport_update(
     POSTTRACE(t, NULL, "t updt sent");
     return announce;
   }
-
-  // uint32_t announce = 0;
-  // if (t->local_window > t->announced_window) {
-  //   announce = (uint32_t)GPR_CLAMP(
-  //       t->local_window - t->announced_window, 0, UINT32_MAX);
-  //   t->announced_window += announce;
-  //   POSTTRACE(t, NULL, "t updt sent");
-  // }
   GRPC_FLOW_CONTROL_IF_TRACING(
       gpr_log(GPR_DEBUG, "%p[0][%s] will not to send transport update", t,
               t->is_client ? "cli" : "svr"));
@@ -304,11 +294,10 @@ void grpc_chttp2_flowctl_recv_stream_update(grpc_chttp2_stream* s,
   POSTTRACE(s->t, s, "s updt recv");
 }
 
-void grpc_chttp2_flowctl_incoming_bs_update(grpc_exec_ctx *exec_ctx,
-                                                     grpc_chttp2_transport *t,
-                                                     grpc_chttp2_stream *s,
-                                                     size_t max_size_hint,
-                                                     size_t have_already) {
+void grpc_chttp2_flowctl_incoming_bs_update(grpc_chttp2_transport* t,
+                                            grpc_chttp2_stream* s,
+                                            size_t max_size_hint,
+                                            size_t have_already) {
   PRETRACE(t, s);
   uint32_t max_recv_bytes;
   uint32_t initial_window_size =
@@ -333,32 +322,66 @@ void grpc_chttp2_flowctl_incoming_bs_update(grpc_exec_ctx *exec_ctx,
   if (s->local_window_delta < max_recv_bytes && !s->read_closed) {
     uint32_t add_max_recv_bytes =
         (uint32_t)(max_recv_bytes - s->local_window_delta);
-    grpc_chttp2_stream_write_type write_type =
-        GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED;
     s->local_window_delta += add_max_recv_bytes;
     s->t->local_window += add_max_recv_bytes;
-    // TODO(control bits)
-    if ((int64_t)initial_window_size + (int64_t)s->announced_window_delta >
-            (int64_t)initial_window_size / 2 &&
-        t->announced_window > (int64_t)initial_window_size / 2) {
-      write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;  // TODO(contol bits)
-    }
-    GRPC_FLOW_CONTROL_IF_TRACING(gpr_log(
-        GPR_DEBUG, "%p[%u][%s] becoming writable, %sinitiating read", t, s->id,
-        t->is_client ? "cli" : "svr",
-        write_type == GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK ? "not " : ""));
-    grpc_chttp2_become_writable(exec_ctx, t, s, write_type,
-                                "read_incoming_stream");
   }
   POSTTRACE(t, s, "app st recv");
 }
 
 void grpc_chttp2_flowctl_destroy_stream(grpc_chttp2_stream* s) {
-  if (s->announced_window_delta > 0) {
-    s->t->announced_stream_total_over_incoming_window -=
-        s->announced_window_delta;
-  } else {
-    s->t->announced_stream_total_under_incoming_window +=
-        -s->announced_window_delta;
+  announced_window_delta_preupdate(s->t, s);
+}
+
+grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
+    const grpc_chttp2_transport* t, const grpc_chttp2_stream* s) {
+  grpc_chttp2_flowctl_action action;
+  memset(&action, 0, sizeof(action));
+  uint32_t target_announced_window = grpc_chttp2_target_announced_window(t);
+  int64_t init_window =
+      t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+  if (t->announced_window < target_announced_window &&
+      t->announced_window < init_window / 2) {
+    action.send_transport_update = GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY;
+  }
+  if (s != NULL && !s->read_closed) {
+    if ((int64_t)s->local_window_delta > (int64_t)s->announced_window_delta &&
+        (int64_t)s->announced_window_delta + init_window <= init_window / 2) {
+      action.send_stream_update = GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY;
+    } else if (s->local_window_delta > s->announced_window_delta) {
+      action.send_stream_update = GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE;
+    }
+  }
+  TRACEACTION(action);
+  return action;
+}
+
+void grpc_chttp2_flowctl_act_on_action(grpc_exec_ctx* exec_ctx,
+                                       grpc_chttp2_flowctl_action action,
+                                       grpc_chttp2_transport* t,
+                                       grpc_chttp2_stream* s) {
+  switch (action.send_stream_update) {
+    case GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED:
+      break;
+    case GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY:
+      grpc_chttp2_become_writable(exec_ctx, t, s,
+                                  GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED,
+                                  "immediate stream flowctl");
+      break;
+    case GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE:
+      grpc_chttp2_become_writable(exec_ctx, t, s,
+                                  GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK,
+                                  "queue stream flowctl");
+      break;
+  }
+  switch (action.send_transport_update) {
+    case GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED:
+      break;
+    case GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY:
+      grpc_chttp2_initiate_write(exec_ctx, t, "immediate transport flowctl");
+      break;
+    // this is the same as no action b/c every time the transport enters the
+    // writing path it will maybe do an update
+    case GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE:
+      break;
   }
 }
