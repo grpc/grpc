@@ -5,7 +5,7 @@ graft src/core
 graft src/boringssl
 graft include/grpc
 graft third_party/boringssl
-graft third_party/nanopb
+graft third_party/nanopb/nanopb
 graft third_party/zlib
 graft third_party/cares
 include src/python/grpcio/_spawn_patch.py

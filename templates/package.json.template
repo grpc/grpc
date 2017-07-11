@@ -75,7 +75,7 @@
       "src/core",
       "src/boringssl",
       "src/zlib",
-      "third_party/nanopb",
+      "third_party/nanopb/nanopb",
       "third_party/zlib",
       "third_party/boringssl",
       "binding.gyp"

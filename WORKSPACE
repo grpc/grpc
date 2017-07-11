@@ -1,6 +1,6 @@
 bind(
     name = "nanopb",
-    actual = "//third_party/nanopb",
+    actual = "//third_party/nanopb/nanopb",
 )
 
 bind(

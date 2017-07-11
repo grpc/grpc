@@ -88,8 +88,8 @@ pip install protobuf==3.2.0
 pushd "$(dirname $INPUT_PROTO)" > /dev/null
 
 protoc \
---plugin=protoc-gen-nanopb="$GRPC_ROOT/third_party/nanopb/generator/protoc-gen-nanopb" \
---nanopb_out='-T -L#include\ \"third_party/nanopb/pb.h\"'":$OUTPUT_DIR" \
+--plugin=protoc-gen-nanopb="$GRPC_ROOT/third_party/nanopb/nanopb/generator/protoc-gen-nanopb" \
+--nanopb_out='-T -L#include\ \"third_party/nanopb/nanopb/pb.h\"'":$OUTPUT_DIR" \
 "$(basename $INPUT_PROTO)"
 
 readonly PROTO_BASENAME=$(basename $INPUT_PROTO .proto)

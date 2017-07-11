@@ -49,7 +49,7 @@ if [ ! -x "$PROTOBUF_INSTALL_PREFIX/bin/protoc" ]; then
 fi
 
 # stack up and change to nanopb's proto generator directory
-pushd third_party/nanopb/generator/proto
+pushd third_party/nanopb/nanopb/generator/proto
 export PATH="$PROTOC_BIN_PATH:$PATH"
 make -j 8
 # back to the root directory
