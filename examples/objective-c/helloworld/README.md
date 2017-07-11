@@ -55,4 +55,4 @@ responds with a `HLWHelloResponse`, which contains a string that is then output 
 
 ## Tutorial
 
-You can find a more detailed tutorial in [gRPC Basics: Objective-C](http://www.grpc.io/docs/tutorials/basic/objective-c.html).
+You can find a more detailed tutorial in [gRPC Basics: Objective-C](https://grpc.io/docs/tutorials/basic/objective-c.html).

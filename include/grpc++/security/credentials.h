@@ -41,7 +41,7 @@ class SecureCallCredentials;
 /// It can make various assertions, e.g., about the client’s identity, role
 /// for all the calls on that channel.
 ///
-/// \see http://www.grpc.io/docs/guides/auth.html
+/// \see https://grpc.io/docs/guides/auth.html
 class ChannelCredentials : private GrpcLibraryCodegen {
  public:
   ChannelCredentials();
@@ -67,7 +67,7 @@ class ChannelCredentials : private GrpcLibraryCodegen {
 /// A call credentials object encapsulates the state needed by a client to
 /// authenticate with a server for a given call on a channel.
 ///
-/// \see http://www.grpc.io/docs/guides/auth.html
+/// \see https://grpc.io/docs/guides/auth.html
 class CallCredentials : private GrpcLibraryCodegen {
  public:
   CallCredentials();
