@@ -121,6 +121,7 @@ typedef struct batch_control {
       bool is_closure;
     } notify_tag;
   } completion_data;
+  grpc_closure start_batch;
   grpc_closure finish_batch;
   gpr_refcount steps_to_complete;
 
@@ -241,7 +242,8 @@ grpc_tracer_flag grpc_compression_trace = GRPC_TRACER_INITIALIZER(false);
   CALL_FROM_CALL_STACK(grpc_call_stack_from_top_element(top_elem))
 
 static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                          grpc_transport_stream_op_batch *op);
+                          grpc_transport_stream_op_batch *op,
+                          grpc_closure *start_batch_closure);
 static void cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                status_source source, grpc_status_code status,
                                const char *description);
@@ -588,13 +590,15 @@ static void execute_batch_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_TIMER_END("execute_batch", 0);
 }
 
+// start_batch_closure points to a caller-allocated closure to be used
+// for entering the call combiner.
 static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                          grpc_transport_stream_op_batch *batch) {
+                          grpc_transport_stream_op_batch *batch,
+                          grpc_closure *start_batch_closure) {
   batch->handler_private.extra_arg = call;
-// FIXME: don't allocate here
-  grpc_closure *closure = GRPC_CLOSURE_CREATE(
-      execute_batch_in_call_combiner, batch, grpc_schedule_on_exec_ctx);
-  GRPC_CALL_COMBINER_START(exec_ctx, &call->call_combiner, closure,
+  GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner,
+                    batch, grpc_schedule_on_exec_ctx);
+  GRPC_CALL_COMBINER_START(exec_ctx, &call->call_combiner, start_batch_closure,
                            GRPC_ERROR_NONE, "executing batch");
 }
 
@@ -602,6 +606,7 @@ typedef struct {
   char *result;
   grpc_call_element *elem;
   grpc_call_combiner *call_combiner;
+  grpc_closure closure;
 } get_peer_state;
 
 static void get_peer_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
@@ -614,14 +619,15 @@ static void get_peer_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
 
 char *grpc_call_get_peer(grpc_call *call) {
   grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
-  get_peer_state state = {NULL, elem, &call->call_combiner};
+  get_peer_state state;
+  state.result = NULL;
+  state.elem = elem;
+  state.call_combiner = &call->call_combiner;
+  GRPC_CLOSURE_INIT(&state.closure, get_peer_in_call_combiner, &state,
+                    grpc_schedule_on_exec_ctx);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE("grpc_call_get_peer(%p)", 1, (call));
-  GRPC_CALL_COMBINER_START(&exec_ctx, &call->call_combiner,
-// FIXME: don't allocate here?
-                           GRPC_CLOSURE_CREATE(get_peer_in_call_combiner,
-                                               &state,
-                                               grpc_schedule_on_exec_ctx),
+  GRPC_CALL_COMBINER_START(&exec_ctx, &call->call_combiner, &state.closure,
                            GRPC_ERROR_NONE, "starting get_peer");
   grpc_exec_ctx_finish(&exec_ctx);  // Ensures callback is complete.
   if (state.result == NULL) {
@@ -657,23 +663,34 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   return GRPC_CALL_OK;
 }
 
+typedef struct {
+  grpc_call *call;
+  grpc_closure start_batch;
+  grpc_closure finish_batch;
+} cancel_state;
+
 static void done_termination(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
-  grpc_call* call = arg;
-  GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner,
+  cancel_state *state = (cancel_state *)arg;
+  GRPC_CALL_COMBINER_STOP(exec_ctx, &state->call->call_combiner,
                           "on_complete for cancel_stream op");
-  GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "termination");
+  GRPC_CALL_INTERNAL_UNREF(exec_ctx, state->call, "termination");
+  gpr_free(state);
 }
 
 static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
                               status_source source, grpc_error *error) {
   GRPC_CALL_INTERNAL_REF(c, "termination");
   set_status_from_error(exec_ctx, c, source, GRPC_ERROR_REF(error));
-  grpc_transport_stream_op_batch *op = grpc_make_transport_stream_op(
-      GRPC_CLOSURE_CREATE(done_termination, c, grpc_schedule_on_exec_ctx));
+  cancel_state *state = (cancel_state *)gpr_malloc(sizeof(*state));
+  state->call = c;
+  GRPC_CLOSURE_INIT(&state->finish_batch, done_termination, state,
+                    grpc_schedule_on_exec_ctx);
+  grpc_transport_stream_op_batch *op =
+      grpc_make_transport_stream_op(&state->finish_batch);
   op->cancel_stream = true;
   op->payload->cancel_stream.cancel_error = error;
-  execute_batch(exec_ctx, c, op);
+  execute_batch(exec_ctx, c, op, &state->start_batch);
 }
 
 static grpc_error *error_from_status(grpc_status_code status,
@@ -1770,7 +1787,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   stream_op->on_complete = &bctl->finish_batch;
   gpr_atm_rel_store(&call->any_ops_sent_atm, 1);
 
-  execute_batch(exec_ctx, call, stream_op);
+  execute_batch(exec_ctx, call, stream_op, &bctl->start_batch);
 
 done:
   GPR_TIMER_END("grpc_call_start_batch", 0);
