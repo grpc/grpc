@@ -233,7 +233,6 @@ void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
 void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                        grpc_transport_stream_op_batch *op) {
   grpc_call_element *next_elem = elem + 1;
-gpr_log(GPR_INFO, "calling start_transport_stream_op_batch() for \"%s\" filter", next_elem->filter->name);
   next_elem->filter->start_transport_stream_op_batch(exec_ctx, next_elem, op);
 }
 

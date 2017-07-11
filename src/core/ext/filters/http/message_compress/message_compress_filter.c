@@ -227,8 +227,9 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   // If we're not in the call combiner, schedule a closure on the
   // call combiner to send the op down.
   if (!in_call_combiner) {
-    grpc_call_combiner_start(exec_ctx, calld->call_combiner,
-                             &calld->send_in_call_combiner, GRPC_ERROR_NONE);
+    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                             &calld->send_in_call_combiner, GRPC_ERROR_NONE,
+                             "sending send_message op");
   }
 }
 
@@ -309,11 +310,12 @@ static void compress_start_transport_stream_op_batch(
     calld->cancel_error =
         GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (calld->pending_send_message_batch != NULL) {
-      grpc_call_combiner_start(
+      GRPC_CALL_COMBINER_START(
           exec_ctx, calld->call_combiner,
           GRPC_CLOSURE_CREATE(fail_send_message_batch_in_call_combiner, calld,
                               grpc_schedule_on_exec_ctx),
-          GRPC_ERROR_REF(calld->cancel_error));
+          GRPC_ERROR_REF(calld->cancel_error),
+          "failing pending send_message batch");
     }
   } else if (calld->cancel_error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
@@ -366,7 +368,9 @@ static void compress_start_transport_stream_op_batch(
                                   true /* in_call_combiner */)) {
       // Cases 1 and 3.
       // Not processing further right now, so give up call combiner.
-      grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
+      GRPC_CALL_COMBINER_STOP(
+          exec_ctx, calld->call_combiner,
+          "send_message batch pending send_initial_metadata");
       goto done;
     }
     // Case 2 (fallthrough).

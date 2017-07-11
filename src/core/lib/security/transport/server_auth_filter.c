@@ -117,9 +117,10 @@ static void on_md_processing_done(
     grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
   }
   grpc_metadata_array_destroy(&calld->md);
-gpr_log(GPR_INFO, "RUNNING recv_initial_metadata_ready IN call_combiner=%p", calld->call_combiner);
-  grpc_call_combiner_start(&exec_ctx, calld->call_combiner,
-                           calld->original_recv_initial_metadata_ready, error);
+  GRPC_CALL_COMBINER_START(
+      &exec_ctx, calld->call_combiner,
+      calld->original_recv_initial_metadata_ready, error,
+      "recv_initial_metadata_ready: back from external credentials processor");
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -138,8 +139,9 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
       chand->creds->processor.process(
           chand->creds->processor.state, calld->auth_context,
           calld->md.metadata, calld->md.count, on_md_processing_done, elem);
-gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->call_combiner);
-      grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
+      GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
+                              "recv_initial_metadata_ready: "
+                              "calling external credentials processor");
       return;
     }
   }

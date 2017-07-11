@@ -37,8 +37,8 @@
 static void yield_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
                                 grpc_error* ignored) {
   grpc_deadline_state* deadline_state = arg;
-gpr_log(GPR_INFO, "CANCEL BATCH FINISHED; STOPPING call_combiner=%p", deadline_state->call_combiner);
-  grpc_call_combiner_stop(exec_ctx, deadline_state->call_combiner);
+  GRPC_CALL_COMBINER_STOP(exec_ctx, deadline_state->call_combiner,
+                          "got on_complete from cancel_stream batch");
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }
 
@@ -46,7 +46,6 @@ static void send_cancel_op_in_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
                                             grpc_error* error) {
   grpc_call_element* elem = arg;
   grpc_deadline_state* deadline_state = elem->call_data;
-gpr_log(GPR_INFO, "SENDING ERROR DOWN CALL STACK IN CALL COMBINER: call_combiner=%p", deadline_state->call_combiner);
   grpc_transport_stream_op_batch *batch = grpc_make_transport_stream_op(
       GRPC_CLOSURE_INIT(&deadline_state->timer_callback, yield_call_combiner,
                         deadline_state, grpc_schedule_on_exec_ctx));
@@ -61,7 +60,6 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_call_element* elem = arg;
   grpc_deadline_state* deadline_state = elem->call_data;
   if (error != GRPC_ERROR_CANCELLED) {
-gpr_log(GPR_INFO, "TIMER POPPED; CANCELLING VIA call_combiner=%p closure=%p", deadline_state->call_combiner, &deadline_state->timer_callback);
     error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
@@ -70,8 +68,9 @@ gpr_log(GPR_INFO, "TIMER POPPED; CANCELLING VIA call_combiner=%p closure=%p", de
     GRPC_CLOSURE_INIT(&deadline_state->timer_callback,
                       send_cancel_op_in_call_combiner, elem,
                       grpc_schedule_on_exec_ctx);
-    grpc_call_combiner_start(exec_ctx, deadline_state->call_combiner,
-                             &deadline_state->timer_callback, error);
+    GRPC_CALL_COMBINER_START(exec_ctx, deadline_state->call_combiner,
+                             &deadline_state->timer_callback, error,
+                             "deadline exceeded -- sending cancel_stream op");
   } else {
     GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack,
                           "deadline_timer");
@@ -109,7 +108,6 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
   }
   GPR_ASSERT(closure != NULL);
   GRPC_CALL_STACK_REF(deadline_state->call_stack, "deadline_timer");
-gpr_log(GPR_INFO, "SCHEDULING TIMER: closure=%p call_combiner=%p", closure, deadline_state->call_combiner);
   grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, closure,
                   gpr_now(GPR_CLOCK_MONOTONIC));
 }
@@ -160,14 +158,15 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
     // We are initially called without holding the call combiner, so we
     // need to bounce ourselves into it.
     state->in_call_combiner = true;
-    grpc_call_combiner_start(exec_ctx, deadline_state->call_combiner,
-                             &state->closure, GRPC_ERROR_REF(error));
+    GRPC_CALL_COMBINER_START(exec_ctx, deadline_state->call_combiner,
+                             &state->closure, GRPC_ERROR_REF(error),
+                             "scheduling deadline timer");
     return;
   }
   start_timer_if_needed(exec_ctx, state->elem, state->deadline);
   gpr_free(state);
-gpr_log(GPR_INFO, "STOPPING call_combiner=%p", deadline_state->call_combiner);
-  grpc_call_combiner_stop(exec_ctx, deadline_state->call_combiner);
+  GRPC_CALL_COMBINER_STOP(exec_ctx, deadline_state->call_combiner,
+                          "done scheduling deadline timer");
 }
 
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
@@ -196,7 +195,6 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     state->deadline = deadline;
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
-gpr_log(GPR_INFO, "SCHEDULING TIMER START: closure=%p call_combiner=%p", &state->closure, deadline_state->call_combiner);
     GRPC_CLOSURE_SCHED(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
 }

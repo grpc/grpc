@@ -364,7 +364,6 @@ static void parse_retry_throttle_params(const grpc_json *field, void *arg) {
 
 static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
                                               void *arg, grpc_error *error) {
-gpr_log(GPR_INFO, "==> on_resolver_result_changed_locked()");
   channel_data *chand = arg;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG, "chand=%p: got resolver result: error=%s", chand,
@@ -378,7 +377,6 @@ gpr_log(GPR_INFO, "==> on_resolver_result_changed_locked()");
   grpc_server_retry_throttle_data *retry_throttle_data = NULL;
   grpc_slice_hash_table *method_params_table = NULL;
   if (chand->resolver_result != NULL) {
-gpr_log(GPR_INFO, "chand->resolver_result != NULL");
     // Find LB policy name.
     const grpc_arg *channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
@@ -862,7 +860,6 @@ static void fail_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                 void *arg,
                                                 grpc_error *error) {
   call_data *calld = arg;
-gpr_log(GPR_INFO, "==> %s(): calld->waiting_for_pick_batches_count=%zu", __func__, calld->waiting_for_pick_batches_count);
   --calld->waiting_for_pick_batches_count;
   grpc_transport_stream_op_batch_finish_with_failure(
       exec_ctx,
@@ -874,7 +871,6 @@ static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
                                           grpc_call_element *elem,
                                           grpc_error *error) {
   call_data *calld = elem->call_data;
-gpr_log(GPR_INFO, "==> %s(): call_combiner=%p", __func__, calld->deadline_state.call_combiner);
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG,
             "chand=%p calld=%p: failing %" PRIdPTR " pending batches: %s",
@@ -882,20 +878,21 @@ gpr_log(GPR_INFO, "==> %s(): call_combiner=%p", __func__, calld->deadline_state.
             grpc_error_string(error));
   }
   for (size_t i = 0; i < calld->waiting_for_pick_batches_count; ++i) {
-gpr_log(GPR_INFO, "scheduling waiting_for_pick_batches[%zu] in call_combiner", i);
     GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner[i],
                       fail_pending_batch_in_call_combiner, calld,
                       grpc_schedule_on_exec_ctx);
-    grpc_call_combiner_start(exec_ctx, calld->deadline_state.call_combiner,
+    GRPC_CALL_COMBINER_START(exec_ctx, calld->deadline_state.call_combiner,
                              &calld->handle_pending_batch_in_call_combiner[i],
-                             GRPC_ERROR_REF(error));
+                             GRPC_ERROR_REF(error),
+                             "waiting_for_pick_batches_fail");
   }
   if (calld->initial_metadata_batch != NULL) {
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, calld->initial_metadata_batch, GRPC_ERROR_REF(error),
         calld->deadline_state.call_combiner);
   } else {
-    grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
+    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->deadline_state.call_combiner,
+                            "waiting_for_pick_batches_fail");
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -903,7 +900,6 @@ gpr_log(GPR_INFO, "scheduling waiting_for_pick_batches[%zu] in call_combiner", i
 static void run_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                void *arg, grpc_error *ignored) {
   call_data *calld = arg;
-gpr_log(GPR_INFO, "==> %s(): calld->waiting_for_pick_batches_count=%zu", __func__, calld->waiting_for_pick_batches_count);
   --calld->waiting_for_pick_batches_count;
   grpc_subchannel_call_process_op(
       exec_ctx, calld->subchannel_call,
@@ -914,7 +910,6 @@ static void waiting_for_pick_batches_resume(grpc_exec_ctx *exec_ctx,
                                             grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-gpr_log(GPR_INFO, "==> %s(): call_combiner=%p", __func__, calld->deadline_state.call_combiner);
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: sending %" PRIdPTR
                        " pending batches to subchannel_call=%p",
@@ -922,13 +917,13 @@ gpr_log(GPR_INFO, "==> %s(): call_combiner=%p", __func__, calld->deadline_state.
             calld->subchannel_call);
   }
   for (size_t i = 0; i < calld->waiting_for_pick_batches_count; ++i) {
-gpr_log(GPR_INFO, "scheduling waiting_for_pick_batches[%zu] in call_combiner", i);
     GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner[i],
                       run_pending_batch_in_call_combiner, calld,
                       grpc_schedule_on_exec_ctx);
-    grpc_call_combiner_start(exec_ctx, calld->deadline_state.call_combiner,
+    GRPC_CALL_COMBINER_START(exec_ctx, calld->deadline_state.call_combiner,
                              &calld->handle_pending_batch_in_call_combiner[i],
-                             GRPC_ERROR_NONE);
+                             GRPC_ERROR_NONE,
+                             "waiting_for_pick_batches_resume");
   }
   GPR_ASSERT(calld->initial_metadata_batch != NULL);
   grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
@@ -1104,10 +1099,8 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
 static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
                                                    void *arg,
                                                    grpc_error *error) {
-gpr_log(GPR_INFO, "==> pick_after_resolver_result_done_locked()");
   pick_after_resolver_result_args *args = arg;
   if (args->cancelled) {
-gpr_log(GPR_INFO, "  cancelled");
     /* cancelled, do nothing */
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "call cancelled before resolver result");
@@ -1119,20 +1112,17 @@ gpr_log(GPR_INFO, "  cancelled");
     grpc_call_combiner_set_notify_on_cancel(
         calld->deadline_state.call_combiner, NULL);
     if (error != GRPC_ERROR_NONE) {
-gpr_log(GPR_INFO, "  error: %s", grpc_error_string(error));
       if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
         gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver failed to return data",
                 chand, calld);
       }
       subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
     } else {
-gpr_log(GPR_INFO, "  calling pick_subchannel_locked()");
       if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
         gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver returned, doing pick",
                 chand, calld);
       }
       if (pick_subchannel_locked(exec_ctx, elem)) {
-gpr_log(GPR_INFO, "  pick_subchannel_locked() returned true");
         subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_NONE);
       }
     }
@@ -1186,7 +1176,6 @@ static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx,
 // Unrefs the LB policy after invoking subchannel_ready_locked().
 static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
-gpr_log(GPR_INFO, "pick done: error=%s", grpc_error_string(error));
   grpc_call_element *elem = arg;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
@@ -1208,7 +1197,6 @@ gpr_log(GPR_INFO, "pick done: error=%s", grpc_error_string(error));
 static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
                                        grpc_call_element *elem,
                                        const grpc_lb_policy_pick_args *inputs) {
-gpr_log(GPR_INFO, "starting pick");
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
@@ -1275,10 +1263,8 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
     pick_done = pick_callback_start_locked(exec_ctx, elem, &inputs);
   } else if (chand->resolver != NULL) {
     if (!chand->started_resolving) {
-gpr_log(GPR_INFO, "querying resolver");
       start_resolving_locked(exec_ctx, chand);
     }
-gpr_log(GPR_INFO, "waiting for resolver result");
     pick_after_resolver_result_start_locked(exec_ctx, elem);
   } else {
     subchannel_ready_locked(
@@ -1400,7 +1386,6 @@ static void cc_start_transport_stream_op_batch(
   // Check if we've already gotten a subchannel call.
   GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
   if (calld->error != GRPC_ERROR_NONE) {
-gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->deadline_state.call_combiner);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: failing batch with error: %s",
               chand, calld, grpc_error_string(calld->error));
@@ -1438,13 +1423,13 @@ gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->deadline_state.cal
         GRPC_ERROR_NONE);
   } else {
     // For all other batches, release the call combiner.
-gpr_log(GPR_INFO, "STOPPING call_combiner=%p", calld->deadline_state.call_combiner);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: saved batch, yeilding call combiner",
               chand, calld);
     }
-    grpc_call_combiner_stop(exec_ctx, calld->deadline_state.call_combiner);
+    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->deadline_state.call_combiner,
+                            "batch does not include send_initial_metadata");
   }
 done:
   GPR_TIMER_END("cc_start_transport_stream_op_batch", 0);

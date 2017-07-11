@@ -286,8 +286,9 @@ static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
                                   : (grpc_byte_stream *)&calld->read_stream;
     // Re-enter call combiner for recv_message_ready, since the surface
     // code will release the call combiner for each callback it receives.
-    grpc_call_combiner_start(exec_ctx, calld->call_combiner,
-                             calld->recv_message_ready, GRPC_ERROR_REF(err));
+    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                             calld->recv_message_ready, GRPC_ERROR_REF(err),
+                             "resuming recv_message_ready from on_complete");
     calld->recv_message_ready = NULL;
     calld->payload_bin_delivered = true;
   }
@@ -303,7 +304,8 @@ static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
     // returned in hs_on_complete callback.
     // Note that we release the call combiner here, so that other
     // callbacks can run.
-    grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
+    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
+                            "pausing recv_message_ready until on_complete");
   } else {
     GRPC_CLOSURE_RUN(exec_ctx, calld->recv_message_ready, GRPC_ERROR_REF(err));
   }
@@ -380,7 +382,6 @@ static void hs_start_transport_stream_op_batch(
   GPR_TIMER_BEGIN("hs_start_transport_stream_op_batch", 0);
   grpc_error *error = hs_mutate_op(exec_ctx, elem, op);
   if (error != GRPC_ERROR_NONE) {
-gpr_log(GPR_INFO, "FAILING BATCH ON call_combiner=%p", calld->call_combiner);
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error,
                                                        calld->call_combiner);
   } else {

@@ -164,8 +164,9 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
     state->error_details = error_details;
     GRPC_CLOSURE_INIT(&state->closure, on_credentials_metadata_in_call_combiner,
                       state, grpc_schedule_on_exec_ctx);
-    grpc_call_combiner_start(exec_ctx, calld->call_combiner, &state->closure,
-                             GRPC_ERROR_NONE);
+    GRPC_CALL_COMBINER_START(
+        exec_ctx, calld->call_combiner, &state->closure, GRPC_ERROR_NONE,
+        "send_initial_metadata: got request metadata from call creds");
   } else {
     on_credentials_metadata_inner(exec_ctx, batch, md_elems, num_md, status,
                                   error_details);
@@ -249,7 +250,9 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
   // credentials), then give up the call combiner here.  We will
   // reacquire it when the callback returns.
   if (grpc_call_credentials_calls_outside_of_core(calld->creds)) {
-    grpc_call_combiner_stop(exec_ctx, calld->call_combiner);
+    GRPC_CALL_COMBINER_STOP(
+        exec_ctx, calld->call_combiner,
+        "send_initial_metadata: getting request metadata from call creds");
   }
 }
 
