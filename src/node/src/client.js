@@ -48,7 +48,6 @@
 'use strict';
 
 var _ = require('lodash');
-var arguejs = require('arguejs');
 
 var grpc = require('./grpc_extension');
 
@@ -515,14 +514,33 @@ exports.Client = Client;
 Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
                                              argument, metadata, options,
                                              callback) {
-  /* While the arguments are listed in the function signature, those variables
-   * are not used directly. Instead, ArgueJS processes the arguments
-   * object. This allows for simple handling of optional arguments in the
-   * middle of the argument list, and also provides type checking. */
-  var args = arguejs({method: String, serialize: Function,
-                      deserialize: Function,
-                      argument: null, metadata: [Metadata, new Metadata()],
-                      options: [Object], callback: Function}, arguments);
+  /* Remove argue.js and parse arguments array explicitly as it reduces overhead by almost 40% */
+  /* Required function arguments. */
+  var args = {
+    method: arguments[0],
+    serialize: arguments[1],
+    deserialize: arguments[2],
+    argument: arguments[3],
+    callback: arguments[arguments.length -1]
+  };
+
+  if (arguments.length >= 7) {
+    args.metadata = arguments[4];
+    args.options =  arguments[5];
+    args.callback = arguments[6];
+  } else if (arguments.length === 6) {
+    if (arguments[4] instanceof Metadata) {
+      args.metadata = arguments[4]
+      args.options = {};
+    } else {
+      args.options = arguments[4];
+      args.metadata = new Metadata();
+    }
+  } else {
+    args.options = {};
+    args.metadata = new Metadata();
+  }
+
   var call = getCall(this.$channel, method, args.options);
   var emitter = new ClientUnaryCall(call);
   metadata = args.metadata.clone();
@@ -597,14 +615,31 @@ Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
 Client.prototype.makeClientStreamRequest = function(method, serialize,
                                                       deserialize, metadata,
                                                       options, callback) {
-  /* While the arguments are listed in the function signature, those variables
-   * are not used directly. Instead, ArgueJS processes the arguments
-   * object. This allows for simple handling of optional arguments in the
-   * middle of the argument list, and also provides type checking. */
-  var args = arguejs({method:String, serialize: Function,
-                      deserialize: Function,
-                      metadata: [Metadata, new Metadata()],
-                      options: [Object], callback: Function}, arguments);
+  /* Required function arguments. */
+  var args = {
+    method: arguments[0],
+    serialize: arguments[1],
+    deserialize: arguments[2],
+    callback: arguments[arguments.length - 1]
+  };
+
+  if (arguments.length >= 6) {
+    args.metadata = arguments[3];
+    args.options =  arguments[4];
+    args.callback = arguments[5];
+  } else if (arguments.length === 5) {
+    if (arguments[3] instanceof Metadata) {
+      args.metadata = arguments[3]
+      args.options = {};
+    } else {
+      args.options = arguments[3];
+      args.metadata = new Metadata();
+    }
+  } else {
+    args.options = {};
+    args.metadata = new Metadata();
+  }
+  
   var call = getCall(this.$channel, method, args.options);
   metadata = args.metadata.clone();
   var stream = new ClientWritableStream(call, serialize);
@@ -679,13 +714,30 @@ Client.prototype.makeClientStreamRequest = function(method, serialize,
 Client.prototype.makeServerStreamRequest = function(method, serialize,
                                                     deserialize, argument,
                                                     metadata, options) {
-  /* While the arguments are listed in the function signature, those variables
-   * are not used directly. Instead, ArgueJS processes the arguments
-   * object. */
-  var args = arguejs({method:String, serialize: Function,
-                      deserialize: Function,
-                      argument: null, metadata: [Metadata, new Metadata()],
-                      options: [Object]}, arguments);
+  /* Required function arguments. */
+  var args = {
+    method: arguments[0],
+    serialize: arguments[1],
+    deserialize: arguments[2],
+    argument: arguments[3]
+  };
+
+  if (arguments.length >= 6) {
+    args.metadata = arguments[4];
+    args.options =  arguments[5];
+  } else if (arguments.length === 5) {
+    if (arguments[4] instanceof Metadata) {
+      args.metadata = arguments[4]
+      args.options = {};
+    } else {
+      args.options = arguments[4];
+      args.metadata = new Metadata();
+    }
+  } else {
+    args.options = {};
+    args.metadata = new Metadata();
+  }
+  
   var call = getCall(this.$channel, method, args.options);
   metadata = args.metadata.clone();
   var stream = new ClientReadableStream(call, deserialize);
@@ -737,13 +789,29 @@ Client.prototype.makeServerStreamRequest = function(method, serialize,
 Client.prototype.makeBidiStreamRequest = function(method, serialize,
                                                   deserialize, metadata,
                                                   options) {
-  /* While the arguments are listed in the function signature, those variables
-   * are not used directly. Instead, ArgueJS processes the arguments
-   * object. */
-  var args = arguejs({method:String, serialize: Function,
-                      deserialize: Function,
-                      metadata: [Metadata, new Metadata()],
-                      options: [Object]}, arguments);
+  /* Required function arguments. */
+  var args = {
+    method: arguments[0],
+    serialize: arguments[1],
+    deserialize: arguments[2],
+  };
+
+  if (arguments.length >= 5) {
+    args.metadata = arguments[3];
+    args.options =  arguments[4];
+  } else if (arguments.length === 4) {
+    if (arguments[3] instanceof Metadata) {
+      args.metadata = arguments[3]
+      args.options = {};
+    } else {
+      args.options = arguments[3];
+      args.metadata = new Metadata();
+    }
+  } else {
+    args.options = {};
+    args.metadata = new Metadata();
+  }
+
   var call = getCall(this.$channel, method, args.options);
   metadata = args.metadata.clone();
   var stream = new ClientDuplexStream(call, serialize, deserialize);
