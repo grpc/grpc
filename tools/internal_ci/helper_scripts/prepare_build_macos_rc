@@ -42,6 +42,7 @@ gem install bundler
 # cocoapods
 export LANG=en_US.UTF-8
 gem install cocoapods
+gem install xcpretty
 pod repo update  # needed by python
 
 # python
@@ -52,5 +53,8 @@ sudo pip install -U six tox setuptools
 # python 3.4
 wget -q https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg
 sudo installer -pkg python-3.4.4-macosx10.6.pkg -target /
+
+# set xcode version for Obj-C tests
+sudo xcode-select -switch /Applications/Xcode_8.2.1.app/Contents/Developer
 
 git submodule update --init
