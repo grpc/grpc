@@ -159,9 +159,9 @@ static void test_add_to_empty_md_list(void) {
   memset(&md_list, 0, sizeof(md_list));
   const char *key = "hello";
   const char *value = "there blah blah blah blah blah blah blah";
-  grpc_mdelem md = grpc_mdelem_from_slices(
-      &exec_ctx, grpc_slice_from_copied_string(key),
-      grpc_slice_from_copied_string(value));
+  grpc_mdelem md =
+      grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_copied_string(key),
+                              grpc_slice_from_copied_string(value));
   grpc_credentials_mdelem_list_add(&md_list, md);
   GPR_ASSERT(md_list.size == 1);
   GPR_ASSERT(grpc_mdelem_eq(md, md_list.md[0]));
@@ -176,9 +176,9 @@ static void test_add_abunch_to_md_list(void) {
   memset(&md_list, 0, sizeof(md_list));
   const char *key = "hello";
   const char *value = "there blah blah blah blah blah blah blah";
-  grpc_mdelem md = grpc_mdelem_from_slices(
-      &exec_ctx, grpc_slice_from_copied_string(key),
-      grpc_slice_from_copied_string(value));
+  grpc_mdelem md =
+      grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_copied_string(key),
+                              grpc_slice_from_copied_string(value));
   size_t num_entries = 1000;
   for (size_t i = 0; i < num_entries; ++i) {
     grpc_credentials_mdelem_list_add(&md_list, md);
@@ -318,8 +318,8 @@ static void check_metadata(const expected_md *expected,
   for (size_t i = 0; i < md_list->size; ++i) {
     size_t j;
     for (j = 0; j < md_list->size; ++j) {
-      if (0 == grpc_slice_str_cmp(GRPC_MDKEY(md_list->md[j]),
-                                  expected[i].key)) {
+      if (0 ==
+          grpc_slice_str_cmp(GRPC_MDKEY(md_list->md[j]), expected[i].key)) {
         GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(md_list->md[j]),
                                       expected[i].value) == 0);
         break;
@@ -346,8 +346,8 @@ static void check_request_metadata(grpc_exec_ctx *exec_ctx, void *arg,
     GPR_ASSERT(grpc_error_get_str(state->expected_error,
                                   GRPC_ERROR_STR_DESCRIPTION, &expected_error));
     grpc_slice actual_error;
-    GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                                  &actual_error));
+    GPR_ASSERT(
+        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
     GPR_ASSERT(grpc_slice_cmp(expected_error, actual_error) == 0);
   }
   GPR_ASSERT(state->md_list.size == state->expected_size);
@@ -356,7 +356,7 @@ static void check_request_metadata(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static request_metadata_state *make_request_metadata_state(
-    grpc_error *expected_error, const expected_md* expected,
+    grpc_error *expected_error, const expected_md *expected,
     size_t expected_size) {
   request_metadata_state *state = gpr_zalloc(sizeof(*state));
   state->expected_error = expected_error;
@@ -468,8 +468,8 @@ static void test_oauth2_google_iam_composite_creds(void) {
                                              NULL);
   grpc_call_credentials_unref(&exec_ctx, oauth2_creds);
   grpc_call_credentials_unref(&exec_ctx, google_iam_creds);
-  GPR_ASSERT(strcmp(composite_creds->type,
-                    GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
+  GPR_ASSERT(
+      strcmp(composite_creds->type, GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
   const grpc_call_credentials_array *creds_array =
       grpc_composite_call_credentials_get_credentials(composite_creds);
   GPR_ASSERT(creds_array->num_creds == 2);
@@ -1070,7 +1070,7 @@ static void test_metadata_plugin_failure(void) {
   plugin.destroy = plugin_destroy;
 
   grpc_call_credentials *creds =
-       grpc_metadata_credentials_create_from_plugin(plugin, NULL);
+      grpc_metadata_credentials_create_from_plugin(plugin, NULL);
   GPR_ASSERT(state == PLUGIN_INITIAL_STATE);
   run_request_metadata_test(&exec_ctx, creds, auth_md_ctx, md_state);
   GPR_ASSERT(state == PLUGIN_GET_METADATA_CALLED_STATE);

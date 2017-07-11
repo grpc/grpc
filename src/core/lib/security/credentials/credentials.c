@@ -112,9 +112,8 @@ bool grpc_call_credentials_get_request_metadata(
   if (creds == NULL || creds->vtable->get_request_metadata == NULL) {
     return true;
   }
-  return creds->vtable->get_request_metadata(exec_ctx, creds, pollent, context,
-                                             md_list, on_request_metadata,
-                                             error);
+  return creds->vtable->get_request_metadata(
+      exec_ctx, creds, pollent, context, md_list, on_request_metadata, error);
 }
 
 grpc_security_status grpc_channel_credentials_create_security_connector(

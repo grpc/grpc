@@ -165,7 +165,7 @@ typedef struct {
                                grpc_polling_entity *pollent,
                                grpc_auth_metadata_context context,
                                grpc_credentials_mdelem_list *md_list,
-                               grpc_closure* on_request_metadata,
+                               grpc_closure *on_request_metadata,
                                grpc_error **error);
 } grpc_call_credentials_vtable;
 

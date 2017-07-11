@@ -78,9 +78,9 @@ static void plugin_md_request_metadata_ready(void *request,
       }
     }
     if (seen_illegal_header) {
-      GRPC_CLOSURE_SCHED(&exec_ctx, r->on_request_metadata,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                             "Illegal metadata"));
+      GRPC_CLOSURE_SCHED(
+          &exec_ctx, r->on_request_metadata,
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal metadata"));
     } else {
       for (size_t i = 0; i < num_md; ++i) {
         grpc_mdelem mdelem =

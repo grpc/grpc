@@ -90,8 +90,7 @@ static void add_error(grpc_error **combined, grpc_error *error) {
 
 static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_error *input_error) {
-  grpc_transport_stream_op_batch *batch =
-      (grpc_transport_stream_op_batch *)arg;
+  grpc_transport_stream_op_batch *batch = (grpc_transport_stream_op_batch *)arg;
   grpc_call_element *elem = batch->handler_private.extra_arg;
   call_data *calld = elem->call_data;
   reset_auth_metadata_context(&calld->auth_md_context);
@@ -199,8 +198,7 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
 
 static void on_host_checked(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
-  grpc_transport_stream_op_batch *batch =
-      (grpc_transport_stream_op_batch *)arg;
+  grpc_transport_stream_op_batch *batch = (grpc_transport_stream_op_batch *)arg;
   grpc_call_element *elem = batch->handler_private.extra_arg;
   call_data *calld = elem->call_data;
 

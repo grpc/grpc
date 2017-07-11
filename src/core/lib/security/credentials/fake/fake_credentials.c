@@ -126,9 +126,9 @@ grpc_call_credentials *grpc_md_only_test_credentials_create(
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
   c->base.vtable = &md_only_test_vtable;
   gpr_ref_init(&c->base.refcount, 1);
-  c->md = grpc_mdelem_from_slices(exec_ctx,
-                                  grpc_slice_from_copied_string(md_key),
-                                  grpc_slice_from_copied_string(md_value));
+  c->md =
+      grpc_mdelem_from_slices(exec_ctx, grpc_slice_from_copied_string(md_key),
+                              grpc_slice_from_copied_string(md_value));
   c->is_async = is_async;
   return &c->base;
 }

@@ -142,7 +142,7 @@ bool grpc_channel_security_connector_check_call_host(
     grpc_closure *on_call_host_checked, grpc_error **error) {
   if (sc == NULL || sc->check_call_host == NULL) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                 "cannot check call host -- no security connector");
+        "cannot check call host -- no security connector");
     return true;
   }
   return sc->check_call_host(exec_ctx, sc, host, auth_context,
