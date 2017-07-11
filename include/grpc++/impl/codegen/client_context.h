@@ -60,7 +60,18 @@ class Channel;
 class ChannelInterface;
 class CompletionQueue;
 class CallCredentials;
+class ClientContext;
+
+namespace internal {
 class RpcMethod;
+class CallOpClientRecvStatus;
+class CallOpRecvInitialMetadata;
+template <class InputMessage, class OutputMessage>
+Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
+                         ClientContext* context, const InputMessage& request,
+                         OutputMessage* result);
+}  // namespace internal
+
 template <class R>
 class ClientReader;
 template <class W>
@@ -345,8 +356,8 @@ class ClientContext {
   ClientContext& operator=(const ClientContext&);
 
   friend class ::grpc::testing::InteropClientContextInspector;
-  friend class CallOpClientRecvStatus;
-  friend class CallOpRecvInitialMetadata;
+  friend class ::grpc::internal::CallOpClientRecvStatus;
+  friend class ::grpc::internal::CallOpRecvInitialMetadata;
   friend class Channel;
   template <class R>
   friend class ::grpc::ClientReader;
@@ -363,11 +374,10 @@ class ClientContext {
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(ChannelInterface* channel,
-                                  const RpcMethod& method,
-                                  ClientContext* context,
-                                  const InputMessage& request,
-                                  OutputMessage* result);
+  friend Status(::grpc::internal::BlockingUnaryCall)(
+      ChannelInterface* channel, const internal::RpcMethod& method,
+      ClientContext* context, const InputMessage& request,
+      OutputMessage* result);
 
   grpc_call* call() const { return call_; }
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
@@ -399,8 +409,8 @@ class ClientContext {
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
-  MetadataMap recv_initial_metadata_;
-  MetadataMap trailing_metadata_;
+  internal::MetadataMap recv_initial_metadata_;
+  internal::MetadataMap trailing_metadata_;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;

@@ -28,13 +28,14 @@
 
 namespace grpc {
 
-class Call;
 class CompletionQueue;
 class Server;
 class ServerInterface;
 class ServerCompletionQueue;
 class ServerContext;
 
+namespace internal {
+class Call;
 class ServerAsyncStreamingInterface {
  public:
   virtual ~ServerAsyncStreamingInterface() {}
@@ -48,9 +49,10 @@ class ServerAsyncStreamingInterface {
   virtual void SendInitialMetadata(void* tag) = 0;
 
  private:
-  friend class ServerInterface;
+  friend class ::grpc::ServerInterface;
   virtual void BindCall(Call* call) = 0;
 };
+}  // namespace internal
 
 /// Desriptor of an RPC service and its various RPC methods
 class Service {
@@ -88,40 +90,38 @@ class Service {
  protected:
   template <class Message>
   void RequestAsyncUnary(int index, ServerContext* context, Message* request,
-                         ServerAsyncStreamingInterface* stream,
+                         internal::ServerAsyncStreamingInterface* stream,
                          CompletionQueue* call_cq,
                          ServerCompletionQueue* notification_cq, void* tag) {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag, request);
   }
-  void RequestAsyncClientStreaming(int index, ServerContext* context,
-                                   ServerAsyncStreamingInterface* stream,
-                                   CompletionQueue* call_cq,
-                                   ServerCompletionQueue* notification_cq,
-                                   void* tag) {
+  void RequestAsyncClientStreaming(
+      int index, ServerContext* context,
+      internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+      ServerCompletionQueue* notification_cq, void* tag) {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag);
   }
   template <class Message>
-  void RequestAsyncServerStreaming(int index, ServerContext* context,
-                                   Message* request,
-                                   ServerAsyncStreamingInterface* stream,
-                                   CompletionQueue* call_cq,
-                                   ServerCompletionQueue* notification_cq,
-                                   void* tag) {
+  void RequestAsyncServerStreaming(
+      int index, ServerContext* context, Message* request,
+      internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+      ServerCompletionQueue* notification_cq, void* tag) {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag, request);
   }
-  void RequestAsyncBidiStreaming(int index, ServerContext* context,
-                                 ServerAsyncStreamingInterface* stream,
-                                 CompletionQueue* call_cq,
-                                 ServerCompletionQueue* notification_cq,
-                                 void* tag) {
+  void RequestAsyncBidiStreaming(
+      int index, ServerContext* context,
+      internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+      ServerCompletionQueue* notification_cq, void* tag) {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag);
   }
 
-  void AddMethod(RpcServiceMethod* method) { methods_.emplace_back(method); }
+  void AddMethod(internal::RpcServiceMethod* method) {
+    methods_.emplace_back(method);
+  }
 
   void MarkMethodAsync(int index) {
     GPR_CODEGEN_ASSERT(
@@ -139,7 +139,7 @@ class Service {
     methods_[index].reset();
   }
 
-  void MarkMethodStreamed(int index, MethodHandler* streamed_method) {
+  void MarkMethodStreamed(int index, internal::MethodHandler* streamed_method) {
     GPR_CODEGEN_ASSERT(methods_[index] && methods_[index]->handler() &&
                        "Cannot mark an async or generic method Streamed");
     methods_[index]->SetHandler(streamed_method);
@@ -148,14 +148,14 @@ class Service {
     // case of BIDI_STREAMING that has 1 read and 1 write, in that order,
     // and split server-side streaming is BIDI_STREAMING with 1 read and
     // any number of writes, in that order.
-    methods_[index]->SetMethodType(::grpc::RpcMethod::BIDI_STREAMING);
+    methods_[index]->SetMethodType(internal::RpcMethod::BIDI_STREAMING);
   }
 
  private:
   friend class Server;
   friend class ServerInterface;
   ServerInterface* server_;
-  std::vector<std::unique_ptr<RpcServiceMethod>> methods_;
+  std::vector<std::unique_ptr<internal::RpcServiceMethod>> methods_;
 };
 
 }  // namespace grpc
