@@ -1492,6 +1492,21 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
 
+  if (!t->is_client) {
+    if (op->send_initial_metadata) {
+      gpr_timespec deadline =
+          op->payload->send_initial_metadata.send_initial_metadata->deadline;
+      GPR_ASSERT(0 ==
+                 gpr_time_cmp(gpr_inf_future(deadline.clock_type), deadline));
+    }
+    if (op->send_trailing_metadata) {
+      gpr_timespec deadline =
+          op->payload->send_trailing_metadata.send_trailing_metadata->deadline;
+      GPR_ASSERT(0 ==
+                 gpr_time_cmp(gpr_inf_future(deadline.clock_type), deadline));
+    }
+  }
+
   if (GRPC_TRACER_ON(grpc_http_trace)) {
     char *str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_DEBUG, "perform_stream_op[s=%p]: %s", s, str);
@@ -2167,8 +2182,8 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 static void update_frame(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          double bw_dbl, double bdp_dbl) {
-  int32_t bdp = GPR_CLAMP((int32_t)bdp_dbl, 128, INT32_MAX);
-  int32_t target = GPR_MAX((int32_t)bw_dbl / 1000, bdp);
+  int32_t bdp = (int32_t)GPR_CLAMP(bdp_dbl, 128.0, INT32_MAX);
+  int32_t target = (int32_t)GPR_MAX(bw_dbl / 1000, bdp);
   // frame size is bounded [2^14,2^24-1]
   int32_t frame_size = GPR_CLAMP(target, 16384, 16777215);
   int64_t delta = (int64_t)frame_size -
