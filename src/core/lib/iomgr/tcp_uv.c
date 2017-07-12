@@ -307,6 +307,10 @@ static void uv_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                  grpc_error *why) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   if (!tcp->shutting_down) {
+    if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+      const char *str = grpc_error_string(why);
+      gpr_log(GPR_DEBUG, "TCP %p shutdown why=%s", tcp->handle, str);
+    }
     tcp->shutting_down = true;
     uv_shutdown_t *req = &tcp->shutdown_req;
     uv_shutdown(req, (uv_stream_t *)tcp->handle, shutdown_callback);

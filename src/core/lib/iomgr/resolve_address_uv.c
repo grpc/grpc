@@ -114,11 +114,14 @@ static void getaddrinfo_callback(uv_getaddrinfo_t *req, int status,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_error *error;
   int retry_status;
+  char *port = r->port;
 
   gpr_free(req);
   retry_status = retry_named_port_failure(status, r, getaddrinfo_callback);
   if (retry_status == 0) {
-    // The request is being retried. Nothing should be done here
+    /* The request is being retried. It is using its own port string, so we free
+     * the original one */
+    gpr_free(port);
     return;
   }
   /* Either no retry was attempted, or the retry failed. Either way, the
@@ -218,16 +221,18 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  grpc_pollset_set *interested_parties,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addrs) {
-  uv_getaddrinfo_t *req;
-  request *r;
-  struct addrinfo *hints;
-  char *host;
-  char *port;
+  uv_getaddrinfo_t *req = NULL;
+  request *r = NULL;
+  struct addrinfo *hints = NULL;
+  char *host = NULL;
+  char *port = NULL;
   grpc_error *err;
   int s;
   err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
     GRPC_CLOSURE_SCHED(exec_ctx, on_done, err);
+    gpr_free(host);
+    gpr_free(port);
     return;
   }
   r = gpr_malloc(sizeof(request));
