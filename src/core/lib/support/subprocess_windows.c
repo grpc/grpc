@@ -110,6 +110,10 @@ getExitCode:
   }
 }
 
+void gpr_subprocess_interrupt_aggressively(gpr_subprocess *p) {
+  gpr_subprocess_interrupt(p);
+}
+
 void gpr_subprocess_interrupt(gpr_subprocess *p) {
   DWORD dwExitCode;
   if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)) {

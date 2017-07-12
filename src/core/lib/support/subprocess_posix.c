@@ -96,4 +96,10 @@ void gpr_subprocess_interrupt(gpr_subprocess *p) {
   }
 }
 
+void gpr_subprocess_interrupt_aggressively(gpr_subprocess *p) {
+  if (!p->joined) {
+    kill(p->pid, SIGKILL);
+  }
+}
+
 #endif /* GPR_POSIX_SUBPROCESS */

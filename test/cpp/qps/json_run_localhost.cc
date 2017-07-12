@@ -36,6 +36,7 @@ constexpr auto kNumWorkers = 2;
 
 static SubProcess* g_driver;
 static SubProcess* g_workers[kNumWorkers];
+static bool g_interrupted = false;
 
 template <class T>
 std::string as_string(const T& val) {
@@ -46,9 +47,10 @@ std::string as_string(const T& val) {
 
 static void sighandler(int sig) {
   const int errno_saved = errno;
-  if (g_driver != NULL) g_driver->Interrupt();
+  const bool interrupt_aggressively = sig == SIGTERM || sig == SIGKILL;
+  if (g_driver != NULL) g_driver->Interrupt(interrupt_aggressively);
   for (int i = 0; i < kNumWorkers; ++i) {
-    if (g_workers[i]) g_workers[i]->Interrupt();
+    if (g_workers[i]) g_workers[i]->Interrupt(interrupt_aggressively);
   }
   errno = errno_saved;
 }
@@ -83,7 +85,7 @@ int main(int argc, char** argv) {
   std::ostringstream env;
   bool first = true;
 
-  for (int i = 0; i < kNumWorkers; i++) {
+  for (int i = 0; i < kNumWorkers && !g_interrupted; i++) {
     const auto port = grpc_pick_unused_port_or_die();
     std::vector<std::string> args = {bin_dir + "/qps_worker", "-driver_port",
                                      as_string(port)};
@@ -99,11 +101,15 @@ int main(int argc, char** argv) {
     args.push_back(argv[i]);
   }
 
-  g_driver = new SubProcess(args);
-  const int driver_join_status = g_driver->Join();
-  if (driver_join_status != 0) {
-    LogStatus(driver_join_status, "driver");
+  int driver_join_status = -1;
+  if (!g_interrupted) {
+    g_driver = new SubProcess(args);
+    driver_join_status = g_driver->Join();
+    if (driver_join_status != 0) {
+      LogStatus(driver_join_status, "driver");
+    }
   }
+
   for (int i = 0; i < kNumWorkers; ++i) {
     if (g_workers[i]) g_workers[i]->Interrupt();
   }

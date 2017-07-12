@@ -36,6 +36,7 @@ GPRAPI void gpr_subprocess_destroy(gpr_subprocess *p);
 /** returns exit status; can be called at most once */
 GPRAPI int gpr_subprocess_join(gpr_subprocess *p);
 GPRAPI void gpr_subprocess_interrupt(gpr_subprocess *p);
+GPRAPI void gpr_subprocess_interrupt_aggressively(gpr_subprocess *p);
 
 #ifdef __cplusplus
 }  // extern "C"

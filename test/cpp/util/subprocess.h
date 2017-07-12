@@ -33,7 +33,7 @@ class SubProcess {
   ~SubProcess();
 
   int Join();
-  void Interrupt();
+  void Interrupt(bool aggressively = false);
 
  private:
   SubProcess(const SubProcess& other);
