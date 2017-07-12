@@ -125,6 +125,10 @@ struct grpc_channel_security_connector {
                           grpc_auth_context *auth_context,
                           grpc_closure *on_call_host_checked,
                           grpc_error **error);
+  void (*cancel_check_call_host)(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_security_connector *sc,
+                                 grpc_closure *on_call_host_checked,
+                                 grpc_error *error);
   void (*add_handshakers)(grpc_exec_ctx *exec_ctx,
                           grpc_channel_security_connector *sc,
                           grpc_handshake_manager *handshake_mgr);
@@ -138,6 +142,13 @@ bool grpc_channel_security_connector_check_call_host(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
     const char *host, grpc_auth_context *auth_context,
     grpc_closure *on_call_host_checked, grpc_error **error);
+
+/// Cancels a pending asychronous call to
+/// grpc_channel_security_connector_check_call_host() with
+/// \a on_call_host_checked as its callback.
+void grpc_channel_security_connector_cancel_check_call_host(
+    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
+    grpc_closure *on_call_host_checked, grpc_error *error);
 
 /* Registers handshakers with \a handshake_mgr. */
 void grpc_channel_security_connector_add_handshakers(

@@ -149,6 +149,15 @@ bool grpc_channel_security_connector_check_call_host(
                              on_call_host_checked, error);
 }
 
+void grpc_channel_security_connector_cancel_check_call_host(
+    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
+    grpc_closure *on_call_host_checked, grpc_error *error) {
+  if (sc == NULL || sc->cancel_check_call_host == NULL) {
+    return;
+  }
+  sc->cancel_check_call_host(exec_ctx, sc, on_call_host_checked, error);
+}
+
 #ifndef NDEBUG
 grpc_security_connector *grpc_security_connector_ref(
     grpc_security_connector *sc, const char *file, int line,
@@ -379,6 +388,12 @@ static bool fake_channel_check_call_host(grpc_exec_ctx *exec_ctx,
   return true;
 }
 
+static void fake_channel_cancel_check_call_host(
+    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
+    grpc_closure *on_call_host_checked, grpc_error *error) {
+  GRPC_ERROR_UNREF(error);
+}
+
 static void fake_channel_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
     grpc_handshake_manager *handshake_mgr) {
@@ -417,6 +432,7 @@ grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
   c->base.request_metadata_creds =
       grpc_call_credentials_ref(request_metadata_creds);
   c->base.check_call_host = fake_channel_check_call_host;
+  c->base.cancel_check_call_host = fake_channel_cancel_check_call_host;
   c->base.add_handshakers = fake_channel_add_handshakers;
   c->target = gpr_strdup(target);
   const char *expected_targets = grpc_fake_transport_get_expected_targets(args);
@@ -692,6 +708,12 @@ static bool ssl_channel_check_call_host(grpc_exec_ctx *exec_ctx,
   return true;
 }
 
+static void ssl_channel_cancel_check_call_host(
+    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
+    grpc_closure *on_call_host_checked, grpc_error *error) {
+  GRPC_ERROR_UNREF(error);
+}
+
 static grpc_security_connector_vtable ssl_channel_vtable = {
     ssl_channel_destroy, ssl_channel_check_peer};
 
@@ -818,6 +840,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   c->base.request_metadata_creds =
       grpc_call_credentials_ref(request_metadata_creds);
   c->base.check_call_host = ssl_channel_check_call_host;
+  c->base.cancel_check_call_host = ssl_channel_cancel_check_call_host;
   c->base.add_handshakers = ssl_channel_add_handshakers;
   gpr_split_host_port(target_name, &c->target_name, &port);
   gpr_free(port);
