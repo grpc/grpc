@@ -49,7 +49,6 @@ class CallTest extends PHPUnit_Framework_TestCase
 
     public function testAddEmptyMetadata()
     {
-        $this->markTestSkipped();
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => [],
         ];
@@ -59,7 +58,6 @@ class CallTest extends PHPUnit_Framework_TestCase
 
     public function testAddSingleMetadata()
     {
-        $this->markTestSkipped();
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => ['key' => ['value']],
         ];
@@ -69,7 +67,6 @@ class CallTest extends PHPUnit_Framework_TestCase
 
     public function testAddMultiValueMetadata()
     {
-        $this->markTestSkipped();
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => ['key' => ['value1', 'value2']],
         ];
@@ -79,7 +76,6 @@ class CallTest extends PHPUnit_Framework_TestCase
 
     public function testAddSingleAndMultiValueMetadata()
     {
-        $this->markTestSkipped();
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1'],
                                               'key2' => ['value2',

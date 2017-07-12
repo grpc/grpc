@@ -51,7 +51,6 @@ class ServerTest extends PHPUnit_Framework_TestCase
 
     public function testRequestCall()
     {
-        $this->markTestSkipped();
         $this->server = new Grpc\Server();
         $port = $this->server->addHttp2Port('0.0.0.0:0');
         $this->server->start();

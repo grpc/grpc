@@ -34,7 +34,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
 
     public function testSimpleRequestBody()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
         $call = new Grpc\Call($this->channel,
@@ -83,7 +82,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
 
     public function testMessageWriteFlags()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'message_write_flags_test';
         $status_text = 'xyz';
@@ -130,7 +128,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
 
     public function testClientServerFullRequestResponse()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
@@ -194,7 +191,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidClientMessageArray()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
@@ -216,7 +212,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidClientMessageString()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
@@ -238,7 +233,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidClientMessageFlags()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
@@ -262,7 +256,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidServerStatusMetadata()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
@@ -304,7 +297,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidServerStatusCode()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
@@ -346,7 +338,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
      */
     public function testMissingServerStatusCode()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
@@ -387,7 +378,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidServerStatusDetails()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
@@ -429,7 +419,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
      */
     public function testMissingServerStatusDetails()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
@@ -470,7 +459,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidStartBatchKey()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
@@ -490,7 +478,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidStartBatch()
     {
-        $this->markTestSkipped();
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';

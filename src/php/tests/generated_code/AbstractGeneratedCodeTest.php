@@ -55,27 +55,24 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    /*public function testClose()
+    public function testClose()
     {
-        $this->markTestSkipped();
         self::$client->close();
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
-    }*/
+    }
 
     /**
      * @expectedException InvalidArgumentException
      */
-    /*public function testInvalidMetadata()
+    public function testInvalidMetadata()
     {
-        $this->markTestSkipped();
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, [' ' => 'abc123']);
     }
 
     public function testGetCallMetadata()
     {
-        $this->markTestSkipped();
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
         $this->assertTrue(is_array($call->getMetadata()));
@@ -83,7 +80,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testTimeout()
     {
-        $this->markTestSkipped();
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, [], ['timeout' => 1]);
         list($response, $status) = $call->wait();
@@ -92,7 +88,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testCancel()
     {
-        $this->markTestSkipped();
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
         $call->cancel();
@@ -102,7 +97,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testCallCredentialsCallback()
     {
-        $this->markTestSkipped();
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, array(), array(
             'call_credentials_callback' => function ($context) {
@@ -116,7 +110,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testCallCredentialsCallback2()
     {
-        $this->markTestSkipped();
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
@@ -128,20 +121,19 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $call->cancel();
         list($response, $status) = $call->wait();
         $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
-    }*/
+    }
 
     /**
      * @expectedException InvalidArgumentException
      */
-    /*public function testInvalidMethodName()
+    public function testInvalidMethodName()
     {
-        $this->markTestSkipped();
         $invalid_client = new DummyInvalidClient('host', [
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
         ]);
         $div_arg = new Math\DivArgs();
         $invalid_client->InvalidUnaryCall($div_arg);
-    }*/
+    }
 
     /**
      * @expectedException Exception
@@ -160,9 +152,8 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         ]);
     }
 
-    /*public function testWriteFlags()
+    public function testWriteFlags()
     {
-        $this->markTestSkipped();
         $div_arg = new Math\DivArgs();
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
@@ -177,7 +168,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testWriteFlagsServerStreaming()
     {
-        $this->markTestSkipped();
         $fib_arg = new Math\FibArgs();
         $fib_arg->setLimit(7);
         $call = self::$client->Fib($fib_arg, [],
@@ -189,7 +179,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testWriteFlagsClientStreaming()
     {
-        $this->markTestSkipped();
         $call = self::$client->Sum();
         $num = new Math\Num();
         $num->setNum(1);
@@ -200,7 +189,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testWriteFlagsBidiStreaming()
     {
-        $this->markTestSkipped();
         $call = self::$client->DivMany();
         $div_arg = new Math\DivArgs();
         $div_arg->setDividend(7);
@@ -214,7 +202,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testSimpleRequest()
     {
-        $this->markTestSkipped();
         $div_arg = new Math\DivArgs();
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
@@ -228,7 +215,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testServerStreaming()
     {
-        $this->markTestSkipped();
         $fib_arg = new Math\FibArgs();
         $fib_arg->setLimit(7);
         $call = self::$client->Fib($fib_arg);
@@ -245,7 +231,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testClientStreaming()
     {
-        $this->markTestSkipped();
         $call = self::$client->Sum();
         $this->assertTrue(is_string($call->getPeer()));
         for ($i = 0; $i < 7; ++$i) {
@@ -260,7 +245,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 
     public function testBidiStreaming()
     {
-        $this->markTestSkipped();
         $call = self::$client->DivMany();
         $this->assertTrue(is_string($call->getPeer()));
         for ($i = 0; $i < 7; ++$i) {
@@ -275,7 +259,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $call->writesDone();
         $status = $call->getStatus();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
-    }*/
+    }
 }
 
 class DummyInvalidClient extends \Grpc\BaseStub
