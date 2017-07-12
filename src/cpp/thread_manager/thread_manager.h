@@ -20,10 +20,10 @@
 #define GRPC_INTERNAL_CPP_THREAD_MANAGER_H
 
 #include <condition_variable>
-#include <list>
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 #include <grpc++/support/config.h>
 
@@ -129,7 +129,7 @@ class ThreadManager {
   int num_threads_;
 
   std::mutex list_mu_;
-  std::list<WorkerThread*> completed_threads_;
+  std::vector<WorkerThread*> completed_threads_;
 };
 
 }  // namespace grpc
