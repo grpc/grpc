@@ -214,7 +214,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
                       sp->server->user_data);
       }
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
-                     "udp_listener_shutdown");
+                     false /* already_closed */, "udp_listener_shutdown");
     }
     gpr_mu_unlock(&s->mu);
   } else {
