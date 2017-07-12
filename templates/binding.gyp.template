@@ -64,6 +64,14 @@
       ],
       %  endif
       % endfor
+      'cflags_c': [
+        '-Werror',
+        '-std=c99'
+      ],
+      'cflags_cc': [
+        '-Werror',
+        '-std=c++11'
+      ],
       'include_dirs': [
         '.',
         'include'
@@ -154,6 +162,22 @@
             '<(node_root_dir)/deps/zlib',
             '<(node_root_dir)/deps/cares/include'
           ]
+        }],
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          },
+          % if defaults['global'].get('CPPFLAGS', None) is not None:
+          'OTHER_CFLAGS': [
+            % for item in defaults['global'].get('CPPFLAGS').split():
+              '${item}',
+            % endfor
+          ],
+          'OTHER_CPLUSPLUSFLAGS': [
+            '-stdlib=libc++',
+            '-std=c++11'
+          ],
+          % endif
         }]
       ]
     },
@@ -164,12 +188,6 @@
           % for lib in libs:
           % if lib.name in module.transitive_deps and lib.name == 'boringssl':
           {
-            'cflags': [
-              '-std=c++11',
-              '-std=c99',
-              '-Wall',
-              '-Werror'
-            ],
             'target_name': '${lib.name}',
             'product_prefix': 'lib',
             'type': 'static_library',
@@ -182,17 +200,6 @@
               % for source in lib.src:
               '${source}',
               % endfor
-            ],
-            'conditions': [
-              ['OS=="mac"', {
-                'xcode_settings': {
-                  'MACOSX_DEPLOYMENT_TARGET': '10.9',
-                  'OTHER_CPLUSPLUSFLAGS': [
-                    '-stdlib=libc++',
-                    '-std=c++11'
-                  ],
-                }
-              }],
             ],
           },
           % endif
@@ -237,11 +244,6 @@
           % for lib in libs:
           % if lib.name in module.transitive_deps and lib.name == 'z':
           {
-            'cflags': [
-              '-std=c99',
-              '-Wall',
-              '-Werror'
-            ],
             'target_name': '${lib.name}',
             'product_prefix': 'lib',
             'type': 'static_library',
@@ -267,11 +269,6 @@
       % for lib in libs:
       % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):
       {
-        'cflags': [
-          '-std=c99',
-          '-Wall',
-          '-Werror'
-        ],
         'target_name': '${lib.name}',
         'product_prefix': 'lib',
         'type': 'static_library',
@@ -285,13 +282,6 @@
           '${source}',
           % endfor
         ],
-        "conditions": [
-          ['OS == "mac"', {
-            'xcode_settings': {
-              'MACOSX_DEPLOYMENT_TARGET': '10.9'
-            }
-          }]
-        ]
       },
       % endif
       % endfor
@@ -300,7 +290,6 @@
           "<!(node -e \"require('nan')\")"
         ],
         'cflags': [
-          '-std=c++11',
           '-pthread',
           '-zdefs',
           '-Wno-error=deprecated-declarations'
@@ -314,15 +303,6 @@
               % endif
               % endfor
             ]
-          }],
-          ['OS=="mac"', {
-            'xcode_settings': {
-              'MACOSX_DEPLOYMENT_TARGET': '10.9',
-              'OTHER_CFLAGS': [
-                '-stdlib=libc++',
-                '-std=c++11'
-              ]
-            }
           }],
           ['OS=="win"', {
             'dependencies': [

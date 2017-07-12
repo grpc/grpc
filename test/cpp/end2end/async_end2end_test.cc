@@ -1752,7 +1752,9 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
     messages.push_back(big_msg);
   }
 
-  for (auto health_check_service : {false, true}) {
+  // TODO (sreek) Renable tests with health check service after the issue
+  // https://github.com/grpc/grpc/issues/11223 is resolved
+  for (auto health_check_service : {false}) {
     for (auto cred = credentials_types.begin(); cred != credentials_types.end();
          ++cred) {
       for (auto msg = messages.begin(); msg != messages.end(); msg++) {

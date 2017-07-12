@@ -38,8 +38,10 @@ static grpc_pollset *g_pollset;
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, grpc_slice *leftover_slices, size_t leftover_nslices) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  tsi_frame_protector *fake_read_protector = tsi_create_fake_protector(NULL);
-  tsi_frame_protector *fake_write_protector = tsi_create_fake_protector(NULL);
+  tsi_frame_protector *fake_read_protector =
+      tsi_create_fake_frame_protector(NULL);
+  tsi_frame_protector *fake_write_protector =
+      tsi_create_fake_frame_protector(NULL);
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair tcp;
 

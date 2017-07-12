@@ -76,7 +76,7 @@ static gpr_avl_node *assert_invariants(gpr_avl_node *n) { return n; }
 
 gpr_avl_node *new_node(void *key, void *value, gpr_avl_node *left,
                        gpr_avl_node *right) {
-  gpr_avl_node *node = gpr_malloc(sizeof(*node));
+  gpr_avl_node *node = (gpr_avl_node *)gpr_malloc(sizeof(*node));
   gpr_ref_init(&node->refs, 1);
   node->key = key;
   node->value = value;
