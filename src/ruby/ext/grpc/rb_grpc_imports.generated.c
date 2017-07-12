@@ -61,6 +61,7 @@ census_delete_resource_type census_delete_resource_import;
 census_resource_id_type census_resource_id_import;
 census_record_values_type census_record_values_import;
 grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_import;
+grpc_stream_compression_algorithm_parse_type grpc_stream_compression_algorithm_parse_import;
 grpc_compression_algorithm_name_type grpc_compression_algorithm_name_import;
 grpc_compression_algorithm_for_level_type grpc_compression_algorithm_for_level_import;
 grpc_compression_options_init_type grpc_compression_options_init_import;
@@ -364,6 +365,7 @@ void grpc_rb_load_imports(HMODULE library) {
   census_resource_id_import = (census_resource_id_type) GetProcAddress(library, "census_resource_id");
   census_record_values_import = (census_record_values_type) GetProcAddress(library, "census_record_values");
   grpc_compression_algorithm_parse_import = (grpc_compression_algorithm_parse_type) GetProcAddress(library, "grpc_compression_algorithm_parse");
+  grpc_stream_compression_algorithm_parse_import = (grpc_stream_compression_algorithm_parse_type) GetProcAddress(library, "grpc_stream_compression_algorithm_parse");
   grpc_compression_algorithm_name_import = (grpc_compression_algorithm_name_type) GetProcAddress(library, "grpc_compression_algorithm_name");
   grpc_compression_algorithm_for_level_import = (grpc_compression_algorithm_for_level_type) GetProcAddress(library, "grpc_compression_algorithm_for_level");
   grpc_compression_options_init_import = (grpc_compression_options_init_type) GetProcAddress(library, "grpc_compression_options_init");

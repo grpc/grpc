@@ -4336,6 +4336,9 @@ add_library(end2end_tests
   test/core/end2end/tests/simple_delayed_request.c
   test/core/end2end/tests/simple_metadata.c
   test/core/end2end/tests/simple_request.c
+  test/core/end2end/tests/stream_compressed_payload.c
+  test/core/end2end/tests/stream_payload.c
+  test/core/end2end/tests/stream_ping_pong_streaming.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
   test/core/end2end/tests/workaround_cronet_compression.c
@@ -4434,6 +4437,9 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/simple_delayed_request.c
   test/core/end2end/tests/simple_metadata.c
   test/core/end2end/tests/simple_request.c
+  test/core/end2end/tests/stream_compressed_payload.c
+  test/core/end2end/tests/stream_payload.c
+  test/core/end2end/tests/stream_ping_pong_streaming.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
   test/core/end2end/tests/workaround_cronet_compression.c

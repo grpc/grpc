@@ -119,6 +119,7 @@ END2END_TESTS = {
     'simple_metadata': test_options(),
     'simple_request': test_options(),
     'streaming_error_response': test_options(),
+    'stream_compression': test_options(),
     'trailing_metadata': test_options(),
     'authority_not_supported': test_options(),
     'filter_latency': test_options(),
