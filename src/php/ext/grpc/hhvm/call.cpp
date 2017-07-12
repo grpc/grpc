@@ -94,7 +94,7 @@ void HHVM_METHOD(Call, __construct,
   auto channelData = Native::data<ChannelData>(channel_obj);
 
   if (channelData->getWrapped() == nullptr) {
-    throw_invalid_argument("Call cannot be constructed from a closed Channel");
+    SystemLib::throwInvalidArgumentExceptionObject("Call cannot be constructed from a closed Channel");
     return;
   }
 
@@ -120,7 +120,7 @@ Object HHVM_METHOD(Call, startBatch,
   auto resultObj = SystemLib::AllocStdClassObject();
 
   if (actions.size() > 8) {
-    throw_invalid_argument("actions array must not be longer than 8 operations");
+    SystemLib::throwInvalidArgumentExceptionObject("actions array must not be longer than 8 operations");
     return resultObj;
   }
 
@@ -151,7 +151,7 @@ Object HHVM_METHOD(Call, startBatch,
   for (ArrayIter iter(actions); iter; ++iter) {
     Variant key = iter.first();
     if (!key.isInteger()) {
-      throw_invalid_argument("batch keys must be integers");
+      SystemLib::throwInvalidArgumentExceptionObject("batch keys must be integers");
       goto cleanup;
     }
 
@@ -162,12 +162,12 @@ Object HHVM_METHOD(Call, startBatch,
     switch(index) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         if (!value.isArray()) {
-          throw_invalid_argument("Expected an array value for the metadata");
+          SystemLib::throwInvalidArgumentExceptionObject("Expected an array value for the metadata");
           goto cleanup;
         }
 
         if (!hhvm_create_metadata_array(value.toArray(), &metadata)) {
-          throw_invalid_argument("Bad metadata value given");
+          SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
           goto cleanup;
         }
 
@@ -178,7 +178,7 @@ Object HHVM_METHOD(Call, startBatch,
       case GRPC_OP_SEND_MESSAGE:
         {
           if (!value.isArray()) {
-            throw_invalid_argument("Expected an array for send message");
+            SystemLib::throwInvalidArgumentExceptionObject("Expected an array for send message");
             goto cleanup;
           }
 
@@ -186,7 +186,7 @@ Object HHVM_METHOD(Call, startBatch,
           if (messageArr.exists(String("flags"), true)) {
             auto messageFlags = messageArr[String("flags")];
             if (!messageFlags.isInteger()) {
-              throw_invalid_argument("Expected an int for message flags");
+              SystemLib::throwInvalidArgumentExceptionObject("Expected an int for message flags");
               goto cleanup;
             }
             ops[op_num].flags = messageFlags.toInt32() & GRPC_WRITE_USED_MASK;
@@ -195,7 +195,7 @@ Object HHVM_METHOD(Call, startBatch,
           if (messageArr.exists(String("message"), true)) {
             auto messageValue = messageArr[String("message")];
             if (!messageValue.isString()) {
-              throw_invalid_argument("Expected a string for send message");
+              SystemLib::throwInvalidArgumentExceptionObject("Expected a string for send message");
               goto cleanup;
             }
             String messageValueString = messageValue.toString();
@@ -209,7 +209,7 @@ Object HHVM_METHOD(Call, startBatch,
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
         {
           if (!value.isArray()) {
-            throw_invalid_argument("Expected an array for server status");
+            SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status");
             goto cleanup;
           }
 
@@ -217,12 +217,12 @@ Object HHVM_METHOD(Call, startBatch,
           if (statusArr.exists(String("metadata"), true)) {
             auto innerMetadata = statusArr[String("metadata")];
             if (!innerMetadata.isArray()) {
-              throw_invalid_argument("Expected an array for server status metadata value");
+              SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status metadata value");
               goto cleanup;
             }
 
             if (!hhvm_create_metadata_array(innerMetadata.toArray(), &trailing_metadata)) {
-              throw_invalid_argument("Bad trailing metadata value given");
+              SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
               goto cleanup;
             }
 
@@ -233,26 +233,26 @@ Object HHVM_METHOD(Call, startBatch,
           }
 
           if (!statusArr.exists(String("code"), true)) {
-            throw_invalid_argument("Integer status code is required");
+            SystemLib::throwInvalidArgumentExceptionObject("Integer status code is required");
           }
 
           auto innerCode = statusArr[String("code")];
 
           if (!innerCode.isInteger()) {
-            throw_invalid_argument("Status code must be an integer");
+            SystemLib::throwInvalidArgumentExceptionObject("Status code must be an integer");
             goto cleanup;
           }
 
           ops[op_num].data.send_status_from_server.status = (grpc_status_code)innerCode.toInt32();
 
           if (!statusArr.exists(String("details"), true)) {
-            throw_invalid_argument("String status details is required");
+            SystemLib::throwInvalidArgumentExceptionObject("String status details is required");
             goto cleanup;
           }
 
           auto innerDetails = statusArr[String("details")];
           if (!innerDetails.isString()) {
-            throw_invalid_argument("Status details must be a string");
+            SystemLib::throwInvalidArgumentExceptionObject("Status details must be a string");
             goto cleanup;
           }
 
@@ -275,7 +275,7 @@ Object HHVM_METHOD(Call, startBatch,
         ops[op_num].data.recv_close_on_server.cancelled = &cancelled;
         break;
       default:
-        throw_invalid_argument("Unrecognized key in batch");
+        SystemLib::throwInvalidArgumentExceptionObject("Unrecognized key in batch");
         goto cleanup;
     }
 
@@ -297,7 +297,7 @@ Object HHVM_METHOD(Call, startBatch,
   }
 
   if (error != GRPC_CALL_OK) {
-    throw_invalid_argument("start_batch was called incorrectly: %d" PRId64, (int)error);
+    SystemLib::throwInvalidArgumentExceptionObject("start_batch was called incorrectly: %d" PRId64, (int)error);
     goto cleanup;
   }
 
@@ -475,7 +475,7 @@ Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
 
     Variant current = array[key];
     if (!current.isArray()) {
-      throw_invalid_argument("Metadata hash somehow contains wrong types.");
+      SystemLib::throwInvalidArgumentExceptionObject("Metadata hash somehow contains wrong types.");
       return Variant();
     }
 

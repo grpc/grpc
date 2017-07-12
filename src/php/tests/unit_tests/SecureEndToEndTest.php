@@ -18,7 +18,7 @@
  */
 class SecureEndToEndTest extends PHPUnit_Framework_TestCase
 {
-    public function setUp()
+    /*public function setUp()
     {
         $credentials = Grpc\ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
@@ -43,8 +43,8 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase
 
     public function tearDown()
     {
-        unset($this->channel);
-        unset($this->server);
+        //unset($this->channel);
+        //unset($this->server);
     }
 
     public function testSimpleRequestBody()
@@ -204,5 +204,5 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase
 
         unset($call);
         unset($server_call);
-    }
+    }*/
 }

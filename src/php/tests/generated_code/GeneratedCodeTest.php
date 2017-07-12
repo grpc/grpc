@@ -20,7 +20,7 @@ require_once dirname(__FILE__).'/AbstractGeneratedCodeTest.php';
 
 class GeneratedCodeTest extends AbstractGeneratedCodeTest
 {
-    public function setUp()
+    /*public function setUp()
     {
         self::$client = new Math\MathClient(
             getenv('GRPC_TEST_HOST'), [
@@ -31,5 +31,5 @@ class GeneratedCodeTest extends AbstractGeneratedCodeTest
     public function tearDown()
     {
         self::$client->close();
-    }
+    }*/
 }

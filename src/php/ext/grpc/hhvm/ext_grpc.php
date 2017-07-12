@@ -31,7 +31,7 @@ class Call {
    * @param string $host_override The host is set by user (optional)
    */
   <<__Native>>
-  public function __construct(Channel $channel, string $method, Timeval $deadlineTimeval, ?string $host_override = null): void;
+  public function __construct(protected Channel $channel, string $method, Timeval $deadlineTimeval, ?string $host_override = null): void;
 
   /**
    * Start a batch of RPC actions.
