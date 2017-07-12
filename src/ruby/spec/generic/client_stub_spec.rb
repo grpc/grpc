@@ -60,6 +60,7 @@ describe 'ClientStub' do
     @method = 'an_rpc_method'
     @pass = OK
     @fail = INTERNAL
+    @metadata = { k1: 'v1', k2: 'v2' }
   end
 
   after(:each) do
@@ -122,7 +123,7 @@ describe 'ClientStub' do
     end
   end
 
-  describe '#request_response' do
+  describe '#request_response', request_response: true do
     before(:each) do
       @sent_msg, @resp = 'a_msg', 'a_reply'
     end
@@ -202,13 +203,24 @@ describe 'ClientStub' do
         # Kill the server thread so tests can complete
         th.kill
       end
+
+      it 'should raise ArgumentError if metadata contains invalid values' do
+        @metadata.merge!(k3: 3)
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+        expect do
+          get_response(stub)
+        end.to raise_error(ArgumentError,
+                           /Header values must be of type string or array/)
+      end
     end
 
     describe 'without a call operation' do
       def get_response(stub, credentials: nil)
         puts credentials.inspect
         stub.request_response(@method, @sent_msg, noop, noop,
-                              metadata: { k1: 'v1', k2: 'v2' },
+                              metadata: @metadata,
                               credentials: credentials)
       end
 
@@ -216,16 +228,19 @@ describe 'ClientStub' do
     end
 
     describe 'via a call operation' do
+      after(:each) do
+        # make sure op.wait doesn't hang, even if there's a bad status
+        @op.wait
+      end
       def get_response(stub, run_start_call_first: false, credentials: nil)
-        op = stub.request_response(@method, @sent_msg, noop, noop,
-                                   return_op: true,
-                                   metadata: { k1: 'v1', k2: 'v2' },
-                                   deadline: from_relative_time(2),
-                                   credentials: credentials)
-        expect(op).to be_a(GRPC::ActiveCall::Operation)
-        op.start_call if run_start_call_first
-        result = op.execute
-        op.wait # make sure wait doesn't hang
+        @op = stub.request_response(@method, @sent_msg, noop, noop,
+                                    return_op: true,
+                                    metadata: @metadata,
+                                    deadline: from_relative_time(2),
+                                    credentials: credentials)
+        expect(@op).to be_a(GRPC::ActiveCall::Operation)
+        @op.start_call if run_start_call_first
+        result = @op.execute
         result
       end
 
@@ -243,13 +258,12 @@ describe 'ClientStub' do
     end
   end
 
-  describe '#client_streamer' do
+  describe '#client_streamer', client_streamer: true do
     before(:each) do
       Thread.abort_on_exception = true
       server_port = create_test_server
       host = "localhost:#{server_port}"
       @stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
-      @metadata = { k1: 'v1', k2: 'v2' }
       @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
       @resp = 'a_reply'
     end
@@ -293,13 +307,16 @@ describe 'ClientStub' do
     end
 
     describe 'via a call operation' do
+      after(:each) do
+        # make sure op.wait doesn't hang, even if there's a bad status
+        @op.wait
+      end
       def get_response(stub, run_start_call_first: false)
-        op = stub.client_streamer(@method, @sent_msgs, noop, noop,
-                                  return_op: true, metadata: @metadata)
-        expect(op).to be_a(GRPC::ActiveCall::Operation)
-        op.start_call if run_start_call_first
-        result = op.execute
-        op.wait # make sure wait doesn't hang
+        @op = stub.client_streamer(@method, @sent_msgs, noop, noop,
+                                   return_op: true, metadata: @metadata)
+        expect(@op).to be_a(GRPC::ActiveCall::Operation)
+        @op.start_call if run_start_call_first
+        result = @op.execute
         result
       end
 
@@ -313,7 +330,7 @@ describe 'ClientStub' do
     end
   end
 
-  describe '#server_streamer' do
+  describe '#server_streamer', server_streamer: true do
     before(:each) do
       @sent_msg = 'a_msg'
       @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
@@ -349,12 +366,36 @@ describe 'ClientStub' do
         expect { e.collect { |r| r } }.to raise_error(GRPC::BadStatus)
         th.join
       end
+
+      it 'should raise ArgumentError if metadata contains invalid values' do
+        @metadata.merge!(k3: 3)
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+        expect do
+          get_responses(stub)
+        end.to raise_error(ArgumentError,
+                           /Header values must be of type string or array/)
+      end
+
+      it 'the call terminates when there is an unmarshalling error' do
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
+        th = run_server_streamer(@sent_msg, @replys, @pass)
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+
+        unmarshal = proc { fail(ArgumentError, 'test unmarshalling error') }
+        expect do
+          get_responses(stub, unmarshal: unmarshal).collect { |r| r }
+        end.to raise_error(ArgumentError, 'test unmarshalling error')
+        th.join
+      end
     end
 
-    describe 'without a call operation' do
-      def get_responses(stub)
-        e = stub.server_streamer(@method, @sent_msg, noop, noop,
-                                 metadata: { k1: 'v1', k2: 'v2' })
+    describe 'without a call operation', test2: true do
+      def get_responses(stub, unmarshal: noop)
+        e = stub.server_streamer(@method, @sent_msg, noop, unmarshal,
+                                 metadata: @metadata)
         expect(e).to be_a(Enumerator)
         e
       end
@@ -366,10 +407,10 @@ describe 'ClientStub' do
       after(:each) do
         @op.wait # make sure wait doesn't hang
       end
-      def get_responses(stub, run_start_call_first: false)
-        @op = stub.server_streamer(@method, @sent_msg, noop, noop,
+      def get_responses(stub, run_start_call_first: false, unmarshal: noop)
+        @op = stub.server_streamer(@method, @sent_msg, noop, unmarshal,
                                    return_op: true,
-                                   metadata: { k1: 'v1', k2: 'v2' })
+                                   metadata: @metadata)
         expect(@op).to be_a(GRPC::ActiveCall::Operation)
         @op.start_call if run_start_call_first
         e = @op.execute
@@ -392,7 +433,7 @@ describe 'ClientStub' do
     end
   end
 
-  describe '#bidi_streamer' do
+  describe '#bidi_streamer', bidi: true do
     before(:each) do
       @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
       @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
@@ -401,7 +442,7 @@ describe 'ClientStub' do
     end
 
     shared_examples 'bidi streaming' do
-      it 'supports sending all the requests first', bidi: true do
+      it 'supports sending all the requests first' do
         th = run_bidi_streamer_handle_inputs_first(@sent_msgs, @replys,
                                                    @pass)
         stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
@@ -410,7 +451,7 @@ describe 'ClientStub' do
         th.join
       end
 
-      it 'supports client-initiated ping pong', bidi: true do
+      it 'supports client-initiated ping pong' do
         th = run_bidi_streamer_echo_ping_pong(@sent_msgs, @pass, true)
         stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
         e = get_responses(stub)
@@ -418,8 +459,28 @@ describe 'ClientStub' do
         th.join
       end
 
-      it 'supports a server-initiated ping pong', bidi: true do
+      it 'supports a server-initiated ping pong' do
         th = run_bidi_streamer_echo_ping_pong(@sent_msgs, @pass, false)
+        stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
+        e = get_responses(stub)
+        expect(e.collect { |r| r }).to eq(@sent_msgs)
+        th.join
+      end
+
+      it 'should raise an error if the status is not ok' do
+        th = run_bidi_streamer_echo_ping_pong(@sent_msgs, @fail, false)
+        stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
+        e = get_responses(stub)
+        expect { e.collect { |r| r } }.to raise_error(GRPC::BadStatus)
+        th.join
+      end
+
+      # TODO: add test for metadata-related ArgumentError in a bidi call once
+      # issue mentioned in https://github.com/grpc/grpc/issues/10526 is fixed
+
+      it 'should send metadata to the server ok' do
+        th = run_bidi_streamer_echo_ping_pong(@sent_msgs, @pass, true,
+                                              **@metadata)
         stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
         e = get_responses(stub)
         expect(e.collect { |r| r }).to eq(@sent_msgs)
@@ -429,7 +490,8 @@ describe 'ClientStub' do
 
     describe 'without a call operation' do
       def get_responses(stub)
-        e = stub.bidi_streamer(@method, @sent_msgs, noop, noop)
+        e = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
+                               metadata: @metadata)
         expect(e).to be_a(Enumerator)
         e
       end
@@ -443,7 +505,8 @@ describe 'ClientStub' do
       end
       def get_responses(stub, run_start_call_first: false)
         @op = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
-                                 return_op: true)
+                                 return_op: true,
+                                 metadata: @metadata)
         expect(@op).to be_a(GRPC::ActiveCall::Operation)
         @op.start_call if run_start_call_first
         e = @op.execute
@@ -487,9 +550,14 @@ describe 'ClientStub' do
     end
   end
 
-  def run_bidi_streamer_echo_ping_pong(expected_inputs, status, client_starts)
+  def run_bidi_streamer_echo_ping_pong(expected_inputs, status, client_starts,
+                                       **kw)
+    wanted_metadata = kw.clone
     wakey_thread do |notifier|
       c = expect_server_to_be_invoked(notifier)
+      wanted_metadata.each do |k, v|
+        expect(c.metadata[k.to_s]).to eq(v)
+      end
       expected_inputs.each do |i|
         if client_starts
           expect(c.remote_read).to eq(i)
