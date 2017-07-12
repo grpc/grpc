@@ -14,7 +14,7 @@
 # limitations under the License.
 
 source ~/.nvm/nvm.sh
-nvm use 7
+nvm use 8
 
 set -ex
 

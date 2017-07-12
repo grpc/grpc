@@ -100,31 +100,34 @@ class Server {
     }
   }
 
-  static void ApplyServerConfig(const ServerConfig& config,
-                                ServerBuilder* builder) {
-    if (config.resource_quota_size() > 0) {
-      builder->SetResourceQuota(
-          ResourceQuota("QpsServerTest").Resize(config.resource_quota_size()));
-    }
-
-    for (auto arg : config.channel_args()) {
-      switch (arg.value_case()) {
-        case ChannelArg::kStrValue:
-          builder->AddChannelArgument(arg.name(), arg.str_value());
-          break;
-        case ChannelArg::kIntValue:
-          builder->AddChannelArgument(arg.name(), arg.int_value());
-          break;
-        default:
-          gpr_log(GPR_ERROR, "Channel arg '%s' ignored due to unknown type",
-                  arg.name().c_str());
-      }
-    }
-  }
-
   virtual int GetPollCount() {
     // For sync server.
     return 0;
+  }
+
+ protected:
+  static void ApplyConfigToBuilder(const ServerConfig& config,
+                                   ServerBuilder* builder) {
+    if (config.resource_quota_size() > 0) {
+      builder->SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
+                                    .Resize(config.resource_quota_size()));
+    }
+    for (const auto& channel_arg : config.channel_args()) {
+      switch (channel_arg.value_case()) {
+        case ChannelArg::kStrValue:
+          builder->AddChannelArgument(channel_arg.name(),
+                                      channel_arg.str_value());
+          break;
+        case ChannelArg::kIntValue:
+          builder->AddChannelArgument(channel_arg.name(),
+                                      channel_arg.int_value());
+          break;
+        case ChannelArg::VALUE_NOT_SET:
+          gpr_log(GPR_ERROR, "Channel arg '%s' does not have a value",
+                  channel_arg.name().c_str());
+          break;
+      }
+    }
   }
 
  private:

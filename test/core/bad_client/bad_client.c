@@ -63,16 +63,9 @@ static void server_setup_transport(void *ts, grpc_transport *transport) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-typedef struct {
-  grpc_bad_client_client_stream_validator validator;
-  grpc_slice_buffer incoming;
-  gpr_event read_done;
-} read_args;
-
 static void read_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  read_args *a = arg;
-  a->validator(&a->incoming);
-  gpr_event_set(&a->read_done, (void *)1);
+  gpr_event *read_done = arg;
+  gpr_event_set(read_done, (void *)1);
 }
 
 void grpc_run_bad_client_test(
@@ -159,24 +152,31 @@ void grpc_run_bad_client_test(
   if (sfd.client != NULL) {
     // Validate client stream, if requested.
     if (client_validator != NULL) {
-      read_args args;
-      args.validator = client_validator;
-      grpc_slice_buffer_init(&args.incoming);
-      gpr_event_init(&args.read_done);
-      grpc_closure read_done_closure;
-      GRPC_CLOSURE_INIT(&read_done_closure, read_done, &args,
-                        grpc_schedule_on_exec_ctx);
-      grpc_endpoint_read(&exec_ctx, sfd.client, &args.incoming,
-                         &read_done_closure);
-      grpc_exec_ctx_finish(&exec_ctx);
       gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-      while (!gpr_event_get(&args.read_done)) {
-        GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
-        GPR_ASSERT(grpc_completion_queue_next(
-                       a.cq, grpc_timeout_milliseconds_to_deadline(100), NULL)
-                       .type == GRPC_QUEUE_TIMEOUT);
+      grpc_slice_buffer incoming;
+      grpc_slice_buffer_init(&incoming);
+      // We may need to do multiple reads to read the complete server response.
+      while (true) {
+        gpr_event read_done_event;
+        gpr_event_init(&read_done_event);
+        grpc_closure read_done_closure;
+        GRPC_CLOSURE_INIT(&read_done_closure, read_done, &read_done_event,
+                          grpc_schedule_on_exec_ctx);
+        grpc_endpoint_read(&exec_ctx, sfd.client, &incoming,
+                           &read_done_closure);
+        grpc_exec_ctx_finish(&exec_ctx);
+        do {
+          GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
+          GPR_ASSERT(grpc_completion_queue_next(
+                         a.cq, grpc_timeout_milliseconds_to_deadline(100), NULL)
+                         .type == GRPC_QUEUE_TIMEOUT);
+        } while (!gpr_event_get(&read_done_event));
+        if (client_validator(&incoming)) break;
+        gpr_log(GPR_INFO,
+                "client validator failed; trying additional read "
+                "in case we didn't get all the data");
       }
-      grpc_slice_buffer_destroy_internal(&exec_ctx, &args.incoming);
+      grpc_slice_buffer_destroy_internal(&exec_ctx, &incoming);
     }
     // Shutdown.
     grpc_endpoint_shutdown(

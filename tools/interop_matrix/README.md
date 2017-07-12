@@ -11,7 +11,7 @@ from specific releases/tag, are used to test version compatiblity between gRPC r
   - `--git_checkout` enables git checkout grpc release branch/tag.
   - `--release` specifies a git release tag.  Make sure it is a valid tag in the grpc github rep.
   - `--language` specifies a language.
-  For examle, To build all languages for all gRPC releases across all runtimes, do `tools/interop_matrix/create_matrix_images.py --git_checkout --release=all`.
+  For example, To build all languages for all gRPC releases across all runtimes, do `tools/interop_matrix/create_matrix_images.py --git_checkout --release=all`.
 - Verify the newly created docker images are uploaded to GCR.  For example:
   - `gcloud beta container images list --repository gcr.io/grpc-testing` shows image repos.
   - `gcloud beta container images list-tags gcr.io/grpc-testing/grpc_interop_go1.7` show tags for a image repo.
@@ -30,11 +30,18 @@ from specific releases/tag, are used to test version compatiblity between gRPC r
   - `LANG=go KEEP_IMAGE=1 ./create_testcases.sh` will generate `./testcases/go__master` and keep the local docker image so it can be invoked simply via `./testcases/go__master`.  Note: remove local docker images manually afterwards with `docker rmi <image_id>`.
 - Stage and commit the generated test case file `./testcases/<lang>__<release>`.
 
-## Instructions for running test cases against a GCR image
+## Instructions for running test cases against GCR images
+- Run `tools/interop_matrix/run_interop_matrix_tests.py`.  Useful options:
+  - `--release` specifies a git release tag.  Defaults to `--release=master`.  Make sure the GCR images with the tag have been created using `create_matrix_images.py` above.
+  - `--language` specifies a language.  Defaults to `--language=all`.
+  For example, To test all languages for all gRPC releases across all runtimes, do `tools/interop_matrix/run_interop_matrix_test.py --release=all`.
+- The output for all the test cases is recorded in a junit style xml file (default to 'report.xml').
+
+## Instructions for running test cases against a GCR image manually
+- Download docker image from GCR.  For example: `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_go1.7:master`.
 - Run test cases by specifying `docker_image` variable inline with the test case script created above.
 For example:
   - `docker_image=gcr.io/grpc-testing/grpc_interop_go1.7:master ./testcases/go__master` will run go__master test cases against `go1.7` with gRPC release `master` docker image in GCR.
-
 
 Note:
 - File path starting with `tools/` or `template/` are relative to the grpc repo root dir.  File path starting with `./` are relative to current directory (`tools/interop_matrix`).

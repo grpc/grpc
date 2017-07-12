@@ -48,7 +48,7 @@ setuptools.setup(
     description='Standard Protobuf Reflection Service for gRPC',
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
-    url='http://www.grpc.io',
+    url='https://grpc.io',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),
     install_requires=INSTALL_REQUIRES,

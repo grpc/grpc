@@ -60,7 +60,18 @@ class Channel;
 class ChannelInterface;
 class CompletionQueue;
 class CallCredentials;
+class ClientContext;
+
+namespace internal {
 class RpcMethod;
+class CallOpClientRecvStatus;
+class CallOpRecvInitialMetadata;
+template <class InputMessage, class OutputMessage>
+Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
+                         ClientContext* context, const InputMessage& request,
+                         OutputMessage* result);
+}  // namespace internal
+
 template <class R>
 class ClientReader;
 template <class W>
@@ -146,7 +157,7 @@ class InteropClientContextInspector;
 ///
 /// Context settings are only relevant to the call they are invoked with, that
 /// is to say, they aren't sticky. Some of these settings, such as the
-/// compression options, can be made persistant at channel construction time
+/// compression options, can be made persistent at channel construction time
 /// (see \a grpc::CreateCustomChannel).
 ///
 /// \warning ClientContext instances should \em not be reused across rpcs.
@@ -229,7 +240,7 @@ class ClientContext {
 
   /// EXPERIMENTAL: Set this request to be cacheable.
   /// If set, grpc is free to use the HTTP GET verb for sending the request,
-  /// with the possibility of receiving a cached respone.
+  /// with the possibility of receiving a cached response.
   void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
 
   /// EXPERIMENTAL: Trigger wait-for-ready or not on this request.
@@ -275,7 +286,7 @@ class ClientContext {
   /// client’s identity, role, or whether it is authorized to make a particular
   /// call.
   ///
-  /// \see  http://www.grpc.io/docs/guides/auth.html
+  /// \see  https://grpc.io/docs/guides/auth.html
   void set_credentials(const std::shared_ptr<CallCredentials>& creds) {
     creds_ = creds;
   }
@@ -345,8 +356,8 @@ class ClientContext {
   ClientContext& operator=(const ClientContext&);
 
   friend class ::grpc::testing::InteropClientContextInspector;
-  friend class CallOpClientRecvStatus;
-  friend class CallOpRecvInitialMetadata;
+  friend class ::grpc::internal::CallOpClientRecvStatus;
+  friend class ::grpc::internal::CallOpRecvInitialMetadata;
   friend class Channel;
   template <class R>
   friend class ::grpc::ClientReader;
@@ -363,11 +374,10 @@ class ClientContext {
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(ChannelInterface* channel,
-                                  const RpcMethod& method,
-                                  ClientContext* context,
-                                  const InputMessage& request,
-                                  OutputMessage* result);
+  friend Status(::grpc::internal::BlockingUnaryCall)(
+      ChannelInterface* channel, const internal::RpcMethod& method,
+      ClientContext* context, const InputMessage& request,
+      OutputMessage* result);
 
   grpc_call* call() const { return call_; }
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
@@ -399,8 +409,8 @@ class ClientContext {
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
-  MetadataMap recv_initial_metadata_;
-  MetadataMap trailing_metadata_;
+  internal::MetadataMap recv_initial_metadata_;
+  internal::MetadataMap trailing_metadata_;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;

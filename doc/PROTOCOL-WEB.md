@@ -3,14 +3,14 @@
 gRPC-Web provides a JS client library that supports the same API
 as gRPC-Node to access a gRPC service. Due to browser limitation,
 the Web client library implements a different protocol than the
-[native gRPC protocol](http://www.grpc.io/docs/guides/wire.html).
+[native gRPC protocol](https://grpc.io/docs/guides/wire.html).
 This protocol is designed to make it easy for a proxy to translate
 between the protocols as this is the most likely deployment model.
 
 This document lists the differences between the two protocols.
 To help tracking future revisions, this document describes a delta
 with the protocol details specified in the
-[native gRPC protocol](http://www.grpc.io/docs/guides/wire.html).
+[native gRPC protocol](https://grpc.io/docs/guides/wire.html).
 
 # Design goals
 
@@ -31,7 +31,7 @@ web-specific features such as CORS, XSRF
 * become optional (in 1-2 years) when browsers are able to speak the native
 gRPC protocol via the new [whatwg fetch/streams API](https://github.com/whatwg/fetch)
 
-# Protocol differences vs [gRPC over HTTP2](http://www.grpc.io/docs/guides/wire.html)
+# Protocol differences vs [gRPC over HTTP2](https://grpc.io/docs/guides/wire.html)
 
 Content-Type
 
@@ -53,14 +53,14 @@ HTTP wire protocols
 
 ---
 
-HTTP/2 related behavior (specified in [gRPC over HTTP2](http://www.grpc.io/docs/guides/wire.html))
+HTTP/2 related behavior (specified in [gRPC over HTTP2](https://grpc.io/docs/guides/wire.html))
 
 1. stream-id is not supported or used
 2. go-away is not supported or used
 
 ---
 
-Message framing (vs. [http2-transport-mapping](http://www.grpc.io/docs/guides/wire.html#http2-transport-mapping))
+Message framing (vs. [http2-transport-mapping](https://grpc.io/docs/guides/wire.html#http2-transport-mapping))
 
 1. Response status encoded as part of the response body
   * Key-value pairs encoded as a HTTP/1 headers block (without the terminating newline), per https://tools.ietf.org/html/rfc7230#section-3.2
@@ -86,7 +86,7 @@ in the body.
 User Agent
 
 * Do NOT use User-Agent header (which is to be set by browsers, by default)
-* Use X-User-Agent: grpc-web-javascript/0.1 (follow the same format as specified in [gRPC over HTTP2](http://www.grpc.io/docs/guides/wire.html))
+* Use X-User-Agent: grpc-web-javascript/0.1 (follow the same format as specified in [gRPC over HTTP2](https://grpc.io/docs/guides/wire.html))
 
 ---
 

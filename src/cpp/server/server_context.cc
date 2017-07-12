@@ -37,7 +37,7 @@ namespace grpc {
 
 // CompletionOp
 
-class ServerContext::CompletionOp final : public CallOpSetInterface {
+class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
   CompletionOp()
@@ -120,7 +120,8 @@ ServerContext::ServerContext()
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false),
-      compression_level_set_(false) {}
+      compression_level_set_(false),
+      has_pending_ops_(false) {}
 
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
     : completion_op_(nullptr),
@@ -130,7 +131,8 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false),
-      compression_level_set_(false) {
+      compression_level_set_(false),
+      has_pending_ops_(false) {
   std::swap(*client_metadata_.arr(), *arr);
   client_metadata_.FillMap();
 }
@@ -144,7 +146,7 @@ ServerContext::~ServerContext() {
   }
 }
 
-void ServerContext::BeginCompletionOp(Call* call) {
+void ServerContext::BeginCompletionOp(internal::Call* call) {
   GPR_ASSERT(!completion_op_);
   completion_op_ = new CompletionOp();
   if (has_notify_when_done_tag_) {
@@ -153,8 +155,8 @@ void ServerContext::BeginCompletionOp(Call* call) {
   call->PerformOps(completion_op_);
 }
 
-CompletionQueueTag* ServerContext::GetCompletionOpTag() {
-  return static_cast<CompletionQueueTag*>(completion_op_);
+internal::CompletionQueueTag* ServerContext::GetCompletionOpTag() {
+  return static_cast<internal::CompletionQueueTag*>(completion_op_);
 }
 
 void ServerContext::AddInitialMetadata(const grpc::string& key,

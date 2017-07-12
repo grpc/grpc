@@ -21,8 +21,6 @@
 #include <mutex>
 #include <thread>
 
-#include <gtest/gtest.h>
-
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -43,6 +41,8 @@ extern "C" {
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+
+#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -461,6 +461,11 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinConcurrentUpdates) {
+  // TODO(dgq): replicate the way internal testing exercises the concurrent
+  // update provisions of RR.
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinReconnect) {

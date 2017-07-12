@@ -25,6 +25,7 @@
 
 namespace grpc {
 
+namespace internal {
 /// A wrapper class of an application provided rpc method handler.
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler : public MethodHandler {
@@ -141,6 +142,9 @@ class ServerStreamingHandler : public MethodHandler {
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
+    if (param.server_context->has_pending_ops_) {
+      param.call->cq()->Pluck(&param.server_context->pending_ops_);
+    }
     param.call->cq()->Pluck(&ops);
   }
 
@@ -185,6 +189,9 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
+    if (param.server_context->has_pending_ops_) {
+      param.call->cq()->Pluck(&param.server_context->pending_ops_);
+    }
     param.call->cq()->Pluck(&ops);
   }
 
@@ -259,6 +266,7 @@ class UnknownMethodHandler : public MethodHandler {
   }
 };
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H

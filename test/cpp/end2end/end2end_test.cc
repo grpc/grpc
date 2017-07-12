@@ -437,7 +437,7 @@ class End2endServerTryCancelTest : public End2endTest {
     auto stream = stub_->ResponseStream(&context, request);
 
     int num_msgs_read = 0;
-    while (num_msgs_read < kNumResponseStreamsMsgs) {
+    while (num_msgs_read < kServerDefaultResponseStreamsToSend) {
       if (!stream->Read(&response)) {
         break;
       }
@@ -463,14 +463,14 @@ class End2endServerTryCancelTest : public End2endTest {
       case CANCEL_DURING_PROCESSING:
         // Server cancelled while writing messages. Client must have read less
         // than or equal to the expected number of messages
-        EXPECT_LE(num_msgs_read, kNumResponseStreamsMsgs);
+        EXPECT_LE(num_msgs_read, kServerDefaultResponseStreamsToSend);
         break;
 
       case CANCEL_AFTER_PROCESSING:
         // Even though the Server cancelled after writing all messages, the RPC
         // may be cancelled before the Client got a chance to read all the
         // messages.
-        EXPECT_LE(num_msgs_read, kNumResponseStreamsMsgs);
+        EXPECT_LE(num_msgs_read, kServerDefaultResponseStreamsToSend);
         break;
 
       default: {
@@ -743,12 +743,10 @@ TEST_P(End2endTest, ResponseStream) {
   request.set_message("hello");
 
   auto stream = stub_->ResponseStream(&context, request);
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message() + "0");
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message() + "1");
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message() + "2");
+  for (int i = 0; i < kServerDefaultResponseStreamsToSend; ++i) {
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + grpc::to_string(i));
+  }
   EXPECT_FALSE(stream->Read(&response));
 
   Status s = stream->Finish();
@@ -764,12 +762,33 @@ TEST_P(End2endTest, ResponseStreamWithCoalescingApi) {
   context.AddMetadata(kServerUseCoalescingApi, "1");
 
   auto stream = stub_->ResponseStream(&context, request);
+  for (int i = 0; i < kServerDefaultResponseStreamsToSend; ++i) {
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + grpc::to_string(i));
+  }
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+}
+
+// This was added to prevent regression from issue:
+// https://github.com/grpc/grpc/issues/11546
+TEST_P(End2endTest, ResponseStreamWithEverythingCoalesced) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+  context.AddMetadata(kServerUseCoalescingApi, "1");
+  // We will only send one message, forcing everything (init metadata, message,
+  // trailing) to be coalesced together.
+  context.AddMetadata(kServerResponseStreamsToSend, "1");
+
+  auto stream = stub_->ResponseStream(&context, request);
   EXPECT_TRUE(stream->Read(&response));
   EXPECT_EQ(response.message(), request.message() + "0");
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message() + "1");
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message() + "2");
+
   EXPECT_FALSE(stream->Read(&response));
 
   Status s = stream->Finish();
@@ -785,20 +804,12 @@ TEST_P(End2endTest, BidiStream) {
 
   auto stream = stub_->BidiStream(&context);
 
-  request.set_message(msg + "0");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message());
-
-  request.set_message(msg + "1");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message());
-
-  request.set_message(msg + "2");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message());
+  for (int i = 0; i < kServerDefaultResponseStreamsToSend; ++i) {
+    request.set_message(msg + grpc::to_string(i));
+    EXPECT_TRUE(stream->Write(request));
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message());
+  }
 
   stream->WritesDone();
   EXPECT_FALSE(stream->Read(&response));
@@ -830,6 +841,31 @@ TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
   EXPECT_EQ(response.message(), request.message());
 
   request.set_message(msg + "2");
+  stream->WriteLast(request, WriteOptions());
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message());
+
+  EXPECT_FALSE(stream->Read(&response));
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+}
+
+// This was added to prevent regression from issue:
+// https://github.com/grpc/grpc/issues/11546
+TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.AddMetadata(kServerFinishAfterNReads, "1");
+  context.set_initial_metadata_corked(true);
+  grpc::string msg("hello");
+
+  auto stream = stub_->BidiStream(&context);
+
+  request.set_message(msg + "0");
   stream->WriteLast(request, WriteOptions());
   EXPECT_TRUE(stream->Read(&response));
   EXPECT_EQ(response.message(), request.message());

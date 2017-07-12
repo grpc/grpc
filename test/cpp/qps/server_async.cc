@@ -99,7 +99,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       cq_.emplace_back(i % srv_cqs_.size());
     }
 
-    ApplyServerConfig(config, &builder);
+    ApplyConfigToBuilder(config, &builder);
 
     server_ = builder.BuildAndStart();
 
