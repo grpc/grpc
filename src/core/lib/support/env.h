@@ -36,6 +36,8 @@ char *gpr_getenv(const char *name);
 /* Sets the the environment with the specified name to the specified value. */
 void gpr_setenv(const char *name, const char *value);
 
+char *gpr_getenv_silent(const char *name, char** dst);
+
 #ifdef __cplusplus
 }
 #endif

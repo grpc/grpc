@@ -30,6 +30,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+char *gpr_getenv_silent(const char *name, char **dst) {
+  *dst = gpr_getenv(name);
+  return NULL;
+}
+
 char *gpr_getenv(const char *name) {
   char *result = NULL;
   DWORD size;
