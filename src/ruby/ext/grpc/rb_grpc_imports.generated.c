@@ -270,6 +270,7 @@ gpr_subprocess_create_type gpr_subprocess_create_import;
 gpr_subprocess_destroy_type gpr_subprocess_destroy_import;
 gpr_subprocess_join_type gpr_subprocess_join_import;
 gpr_subprocess_interrupt_type gpr_subprocess_interrupt_import;
+gpr_subprocess_interrupt_aggressively_type gpr_subprocess_interrupt_aggressively_import;
 gpr_mu_init_type gpr_mu_init_import;
 gpr_mu_destroy_type gpr_mu_destroy_import;
 gpr_mu_lock_type gpr_mu_lock_import;
@@ -573,6 +574,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_subprocess_destroy_import = (gpr_subprocess_destroy_type) GetProcAddress(library, "gpr_subprocess_destroy");
   gpr_subprocess_join_import = (gpr_subprocess_join_type) GetProcAddress(library, "gpr_subprocess_join");
   gpr_subprocess_interrupt_import = (gpr_subprocess_interrupt_type) GetProcAddress(library, "gpr_subprocess_interrupt");
+  gpr_subprocess_interrupt_aggressively_import = (gpr_subprocess_interrupt_aggressively_type) GetProcAddress(library, "gpr_subprocess_interrupt_aggressively");
   gpr_mu_init_import = (gpr_mu_init_type) GetProcAddress(library, "gpr_mu_init");
   gpr_mu_destroy_import = (gpr_mu_destroy_type) GetProcAddress(library, "gpr_mu_destroy");
   gpr_mu_lock_import = (gpr_mu_lock_type) GetProcAddress(library, "gpr_mu_lock");

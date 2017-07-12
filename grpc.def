@@ -247,6 +247,7 @@ EXPORTS
     gpr_subprocess_destroy
     gpr_subprocess_join
     gpr_subprocess_interrupt
+    gpr_subprocess_interrupt_aggressively
     gpr_mu_init
     gpr_mu_destroy
     gpr_mu_lock

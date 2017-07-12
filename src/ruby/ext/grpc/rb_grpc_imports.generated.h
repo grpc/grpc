@@ -791,6 +791,9 @@ extern gpr_subprocess_join_type gpr_subprocess_join_import;
 typedef void(*gpr_subprocess_interrupt_type)(gpr_subprocess *p);
 extern gpr_subprocess_interrupt_type gpr_subprocess_interrupt_import;
 #define gpr_subprocess_interrupt gpr_subprocess_interrupt_import
+typedef void(*gpr_subprocess_interrupt_aggressively_type)(gpr_subprocess *p);
+extern gpr_subprocess_interrupt_aggressively_type gpr_subprocess_interrupt_aggressively_import;
+#define gpr_subprocess_interrupt_aggressively gpr_subprocess_interrupt_aggressively_import
 typedef void(*gpr_mu_init_type)(gpr_mu *mu);
 extern gpr_mu_init_type gpr_mu_init_import;
 #define gpr_mu_init gpr_mu_init_import
