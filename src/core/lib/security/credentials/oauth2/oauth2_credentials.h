@@ -58,11 +58,20 @@ typedef void (*grpc_fetch_oauth2_func)(grpc_exec_ctx *exec_ctx,
                                        grpc_polling_entity *pollent,
                                        grpc_iomgr_cb_func cb,
                                        gpr_timespec deadline);
+
+typedef struct grpc_oauth2_pending_get_request_metadata {
+  grpc_credentials_mdelem_list *md_list;
+  grpc_closure *on_request_metadata;
+  struct grpc_oauth2_pending_get_request_metadata *next;
+} grpc_oauth2_pending_get_request_metadata;
+
 typedef struct {
   grpc_call_credentials base;
   gpr_mu mu;
   grpc_mdelem access_token_md;
   gpr_timespec token_expiration;
+  bool token_fetch_pending;
+  grpc_oauth2_pending_get_request_metadata *pending_requests;
   grpc_httpcli_context httpcli_context;
   grpc_fetch_oauth2_func fetch_func;
 } grpc_oauth2_token_fetcher_credentials;

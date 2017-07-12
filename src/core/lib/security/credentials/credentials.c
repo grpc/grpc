@@ -38,13 +38,10 @@
 /* -- Common. -- */
 
 grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
-    grpc_call_credentials *creds, grpc_credentials_mdelem_list *md_list,
-    grpc_closure *on_request_metadata) {
+    grpc_call_credentials *creds) {
   grpc_credentials_metadata_request *r =
       gpr_zalloc(sizeof(grpc_credentials_metadata_request));
   r->creds = grpc_call_credentials_ref(creds);
-  r->md_list = md_list;
-  r->on_request_metadata = on_request_metadata;
   return r;
 }
 
@@ -114,6 +111,15 @@ bool grpc_call_credentials_get_request_metadata(
   }
   return creds->vtable->get_request_metadata(
       exec_ctx, creds, pollent, context, md_list, on_request_metadata, error);
+}
+
+void grpc_call_credentials_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
+    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+  if (creds == NULL || creds->vtable->cancel_get_request_metadata == NULL) {
+    return;
+  }
+  creds->vtable->cancel_get_request_metadata(exec_ctx, creds, md_list, error);
 }
 
 grpc_security_status grpc_channel_credentials_create_security_connector(

@@ -115,8 +115,15 @@ static bool md_only_test_get_request_metadata(
   return true;
 }
 
+static void md_only_test_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
+    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+  GRPC_ERROR_UNREF(error);
+}
+
 static grpc_call_credentials_vtable md_only_test_vtable = {
-    md_only_test_destruct, md_only_test_get_request_metadata};
+    md_only_test_destruct, md_only_test_get_request_metadata,
+    md_only_test_cancel_get_request_metadata};
 
 grpc_call_credentials *grpc_md_only_test_credentials_create(
     grpc_exec_ctx *exec_ctx, const char *md_key, const char *md_value,

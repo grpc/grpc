@@ -107,8 +107,14 @@ static bool jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
   return true;
 }
 
-static grpc_call_credentials_vtable jwt_vtable = {jwt_destruct,
-                                                  jwt_get_request_metadata};
+static void jwt_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
+    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+  GRPC_ERROR_UNREF(error);
+}
+
+static grpc_call_credentials_vtable jwt_vtable = {
+    jwt_destruct, jwt_get_request_metadata, jwt_cancel_get_request_metadata};
 
 grpc_call_credentials *
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(

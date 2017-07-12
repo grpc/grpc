@@ -167,6 +167,10 @@ typedef struct {
                                grpc_credentials_mdelem_list *md_list,
                                grpc_closure *on_request_metadata,
                                grpc_error **error);
+  void (*cancel_get_request_metadata)(grpc_exec_ctx *exec_ctx,
+                                      grpc_call_credentials *c,
+                                      grpc_credentials_mdelem_list *md_list,
+                                      grpc_error *error);
 } grpc_call_credentials_vtable;
 
 struct grpc_call_credentials {
@@ -187,6 +191,13 @@ bool grpc_call_credentials_get_request_metadata(
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
     grpc_credentials_mdelem_list *md_list, grpc_closure *on_request_metadata,
     grpc_error **error);
+
+/// Cancels a pending asynchronous operation started by
+/// grpc_call_credentials_get_request_metadata() with the corresponding
+/// value of \a md_list.
+void grpc_call_credentials_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
+    grpc_credentials_mdelem_list *md_list, grpc_error *error);
 
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */
@@ -231,14 +242,11 @@ grpc_server_credentials *grpc_find_server_credentials_in_args(
 
 typedef struct {
   grpc_call_credentials *creds;
-  grpc_credentials_mdelem_list *md_list;
-  grpc_closure *on_request_metadata;
   grpc_http_response response;
 } grpc_credentials_metadata_request;
 
 grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
-    grpc_call_credentials *creds, grpc_credentials_mdelem_list *md_list,
-    grpc_closure *on_request_metadata);
+    grpc_call_credentials *creds);
 
 void grpc_credentials_metadata_request_destroy(
     grpc_exec_ctx *exec_ctx, grpc_credentials_metadata_request *r);

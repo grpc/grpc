@@ -110,8 +110,20 @@ static bool composite_call_get_request_metadata(
   return false;
 }
 
+static void composite_call_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
+    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+  grpc_composite_call_credentials *c = (grpc_composite_call_credentials *)creds;
+  for (size_t i = 0; i < c->inner.num_creds; ++i) {
+    grpc_call_credentials_cancel_get_request_metadata(
+        exec_ctx, c->inner.creds_array[i], md_list, GRPC_ERROR_REF(error));
+  }
+  GRPC_ERROR_UNREF(error);
+}
+
 static grpc_call_credentials_vtable composite_call_credentials_vtable = {
-    composite_call_destruct, composite_call_get_request_metadata};
+    composite_call_destruct, composite_call_get_request_metadata,
+    composite_call_cancel_get_request_metadata};
 
 static grpc_call_credentials_array get_creds_array(
     grpc_call_credentials **creds_addr) {

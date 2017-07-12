@@ -45,8 +45,14 @@ static bool iam_get_request_metadata(grpc_exec_ctx *exec_ctx,
   return true;
 }
 
-static grpc_call_credentials_vtable iam_vtable = {iam_destruct,
-                                                  iam_get_request_metadata};
+static void iam_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
+    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+  GRPC_ERROR_UNREF(error);
+}
+
+static grpc_call_credentials_vtable iam_vtable = {
+    iam_destruct, iam_get_request_metadata, iam_cancel_get_request_metadata};
 
 grpc_call_credentials *grpc_google_iam_credentials_create(
     const char *token, const char *authority_selector, void *reserved) {
