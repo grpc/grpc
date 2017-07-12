@@ -297,7 +297,7 @@ Object HHVM_METHOD(Call, startBatch,
   }
 
   if (error != GRPC_CALL_OK) {
-    SystemLib::throwInvalidArgumentExceptionObject(folly::sformat("start_batch was called incorrectly: {}" (int)error));
+    SystemLib::throwInvalidArgumentExceptionObject(folly::sformat("start_batch was called incorrectly: {}", (int)error));
     goto cleanup;
   }
 
