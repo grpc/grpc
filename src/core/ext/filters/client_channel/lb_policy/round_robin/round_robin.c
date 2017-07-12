@@ -158,6 +158,7 @@ static void rr_subchannel_list_destroy(grpc_exec_ctx *exec_ctx,
     if (sd->user_data != NULL) {
       GPR_ASSERT(sd->user_data_vtable != NULL);
       sd->user_data_vtable->destroy(exec_ctx, sd->user_data);
+      sd->user_data = NULL;
     }
   }
   gpr_free(subchannel_list->subchannels);
@@ -578,6 +579,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     if (sd->user_data != NULL) {
       GPR_ASSERT(sd->user_data_vtable != NULL);
       sd->user_data_vtable->destroy(exec_ctx, sd->user_data);
+      sd->user_data = NULL;
     }
     if (new_policy_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
       /* the policy is shutting down. Flush all the pending picks... */
