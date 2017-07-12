@@ -37,6 +37,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 # TODO(jtattermusch): install ruby on the internal_ci worker
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-curl -sSL https://get.rvm.io | bash -s stable --ruby
+# TODO(jtattermusch): grep works around https://github.com/rvm/rvm/issues/4068
+curl -sSL https://get.rvm.io | grep -v __rvm_print_headline | bash -s stable --ruby
 
 tools/run_tests/task_runner.py -f artifact linux
