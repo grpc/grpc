@@ -975,8 +975,6 @@ static void register_completion_queue(grpc_server *server,
     if (server->cqs[i] == cq) return;
   }
 
-  grpc_cq_mark_server_cq(cq);
-
   GRPC_CQ_INTERNAL_REF(cq, "server");
   n = server->cq_count++;
   server->cqs = gpr_realloc(server->cqs,
@@ -1156,9 +1154,8 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   chand->channel = channel;
 
   size_t cq_idx;
-  grpc_completion_queue *accepting_cq = grpc_cq_from_pollset(accepting_pollset);
   for (cq_idx = 0; cq_idx < s->cq_count; cq_idx++) {
-    if (s->cqs[cq_idx] == accepting_cq) break;
+    if (grpc_cq_pollset(s->cqs[cq_idx]) == accepting_pollset) break;
   }
   if (cq_idx == s->cq_count) {
     /* completion queue not found: pick a random one to publish new calls to */
