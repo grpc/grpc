@@ -328,6 +328,8 @@ Object HHVM_METHOD(Call, startBatch,
 
     plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
 
+    gpr_free(params);
+
     pthread_join(cq_pluck_thread_id, NULL);
   } else {
     // If we don't actually expect a metadata callback then just run this in the same thread
