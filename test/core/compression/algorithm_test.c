@@ -42,15 +42,29 @@ static void test_algorithm_mesh(void) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(
         grpc_compression_algorithm_name((grpc_compression_algorithm)i, &name));
-    GPR_ASSERT(grpc_compression_algorithm_parse(
-        grpc_slice_from_static_string(name), &parsed));
+    if (GRPC_IS_MESSAGE_COMPRESSION_ALGORITHM(i) || i == GRPC_COMPRESS_NONE) {
+      GPR_ASSERT(grpc_compression_algorithm_parse(
+          grpc_slice_from_static_string(name), &parsed));
+    } else {
+      GPR_ASSERT(grpc_stream_compression_algorithm_parse(
+          grpc_slice_from_static_string(name), &parsed));
+    }
     GPR_ASSERT((int)parsed == i);
     mdstr = grpc_slice_from_copied_string(name);
     GPR_ASSERT(grpc_slice_eq(mdstr, grpc_compression_algorithm_slice(parsed)));
-    GPR_ASSERT(parsed == grpc_compression_algorithm_from_slice(mdstr));
+    if (GRPC_IS_MESSAGE_COMPRESSION_ALGORITHM(i) || i == GRPC_COMPRESS_NONE) {
+      GPR_ASSERT(parsed == grpc_compression_algorithm_from_slice(mdstr));
+    } else {
+      GPR_ASSERT(parsed == grpc_stream_compression_algorithm_from_slice(mdstr));
+    }
     mdelem = grpc_compression_encoding_mdelem(parsed);
     GPR_ASSERT(grpc_slice_eq(GRPC_MDVALUE(mdelem), mdstr));
-    GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
+    if (GRPC_IS_MESSAGE_COMPRESSION_ALGORITHM(i) || i == GRPC_COMPRESS_NONE) {
+      GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
+    } else {
+      GPR_ASSERT(
+          grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_CONTENT_ENCODING));
+    }
     grpc_slice_unref_internal(&exec_ctx, mdstr);
     GRPC_MDELEM_UNREF(&exec_ctx, mdelem);
     grpc_exec_ctx_finish(&exec_ctx);

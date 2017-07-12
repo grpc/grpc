@@ -58,8 +58,20 @@ typedef enum {
   GRPC_COMPRESS_DEFLATE,
   GRPC_COMPRESS_GZIP,
   /* TODO(ctiller): snappy */
+  GRPC_STREAM_COMPRESS_GZIP,
   GRPC_COMPRESS_ALGORITHMS_COUNT
 } grpc_compression_algorithm;
+
+#define GRPC_IS_STREAM_COMPRESSION_ALGORITHM(x) \
+  ((x) >= GRPC_STREAM_COMPRESS_GZIP && (x) < GRPC_COMPRESS_ALGORITHMS_COUNT)
+#define GRPC_IS_MESSAGE_COMPRESSION_ALGORITHM(x) \
+  ((x) >= GRPC_COMPRESS_DEFLATE && (x) <= GRPC_COMPRESS_GZIP)
+#define GRPC_STREAM_COMPRESS_FLAG_OFFSET \
+  (GRPC_STREAM_COMPRESS_GZIP - GRPC_COMPRESS_DEFLATE)
+#define GRPC_MESSAGE_COMPRESSION_ALGORITHM_MASK \
+  ((1u << GRPC_COMPRESS_DEFLATE) | (1u << GRPC_COMPRESS_GZIP))
+#define GRPC_STREAM_COMPRESSION_ALGORITHM_MASK \
+  ((1u << GRPC_STREAM_COMPRESS_GZIP))
 
 /** Compression levels allow a party with knowledge of its peer's accepted
  * encodings to request compression in an abstract way. The level-algorithm
@@ -70,8 +82,17 @@ typedef enum {
   GRPC_COMPRESS_LEVEL_LOW,
   GRPC_COMPRESS_LEVEL_MED,
   GRPC_COMPRESS_LEVEL_HIGH,
+  GRPC_STREAM_COMPRESS_LEVEL_LOW,
+  GRPC_STREAM_COMPRESS_LEVEL_MED,
+  GRPC_STREAM_COMPRESS_LEVEL_HIGH,
   GRPC_COMPRESS_LEVEL_COUNT
 } grpc_compression_level;
+
+#define GRPC_IS_STREAM_COMPRESSION_LEVEL(x)   \
+  (((x) >= GRPC_STREAM_COMPRESS_LEVEL_LOW) && \
+   ((x) <= GRPC_STREAM_COMPRESS_LEVEL_HIGH))
+#define GRPC_IS_MESSAGE_COMPRESSION_LEVEL(x) \
+  (((x) >= GRPC_COMPRESS_LEVEL_LOW) && ((x) <= GRPC_COMPRESS_LEVEL_HIGH))
 
 typedef struct grpc_compression_options {
   /** All algs are enabled by default. This option corresponds to the channel
