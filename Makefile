@@ -3509,6 +3509,8 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/data/client_certs.c \
     test/core/end2end/data/server1_cert.c \
     test/core/end2end/data/server1_key.c \
+    test/core/end2end/data/server2_cert.c \
+    test/core/end2end/data/server2_key.c \
     test/core/end2end/data/test_root_cert.c \
     test/core/security/oauth2_utils.c \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c \
@@ -19055,6 +19057,8 @@ test/core/bad_ssl/server_common.c: $(OPENSSL_DEP)
 test/core/end2end/data/client_certs.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
+test/core/end2end/data/server2_cert.c: $(OPENSSL_DEP)
+test/core/end2end/data/server2_key.c: $(OPENSSL_DEP)
 test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)
 test/core/end2end/end2end_tests.c: $(OPENSSL_DEP)
 test/core/end2end/tests/call_creds.c: $(OPENSSL_DEP)

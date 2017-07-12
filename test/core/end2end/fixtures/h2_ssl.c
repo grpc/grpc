@@ -136,9 +136,32 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
 }
 
+// Create ECDSA fullstack test
+static void chttp2_init_server_ecdsa_simple_ssl_secure_fullstack(
+    grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
+  grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server2_key,
+                                                  test_server2_cert};
+  grpc_server_credentials *ssl_creds =
+      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0, NULL);
+  if (fail_server_auth_check(server_args)) {
+    grpc_auth_metadata_processor processor = {process_auth_failure, NULL, NULL};
+    grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);
+  }
+  chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
+}
+
 /* All test configurations */
 
 static grpc_end2end_test_config configs[] = {
+    {"chttp2/simple_ecdsa_ssl_fullstack",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+     chttp2_create_fixture_secure_fullstack,
+     chttp2_init_client_simple_ssl_secure_fullstack,
+     chttp2_init_server_ecdsa_simple_ssl_secure_fullstack,
+     chttp2_tear_down_secure_fullstack},
     {"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
