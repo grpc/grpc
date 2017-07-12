@@ -668,6 +668,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
   grpc_chttp2_data_parser_init(&s->data_parser);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
+  grpc_slice_buffer_init(&s->decompressed_data_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   GRPC_CLOSURE_INIT(&s->complete_fetch_locked, complete_fetch_locked, s,
                     grpc_schedule_on_exec_ctx);
@@ -706,6 +707,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   grpc_slice_buffer_destroy_internal(exec_ctx,
                                      &s->unprocessed_incoming_frames_buffer);
   grpc_slice_buffer_destroy_internal(exec_ctx, &s->frame_storage);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &s->decompressed_data_buffer);
 
   grpc_chttp2_list_remove_stalled_by_transport(t, s);
   grpc_chttp2_list_remove_stalled_by_stream(t, s);
@@ -755,6 +757,11 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   GPR_TIMER_BEGIN("destroy_stream", 0);
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
+
+  if (s->stream_decompression_ctx != NULL) {
+    grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
+    s->stream_decompression_ctx = NULL;
+  }
 
   s->destroy_stream_arg = then_schedule_closure;
   GRPC_CLOSURE_SCHED(
@@ -1430,12 +1437,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     s->recv_message_ready = op_payload->recv_message.recv_message_ready;
     s->recv_message = op_payload->recv_message.recv_message;
     if (s->id != 0) {
-      if (s->pending_byte_stream) {
-        already_received = s->frame_storage.length;
-      } else {
-        already_received = s->frame_storage.length +
-                           s->unprocessed_incoming_frames_buffer.length;
-      }
+      already_received = s->frame_storage.length;
       incoming_byte_stream_update_flow_control(exec_ctx, t, s, 5,
                                                already_received);
     }
@@ -1659,10 +1661,42 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
         if (s->unprocessed_incoming_frames_buffer.length == 0) {
           grpc_slice_buffer_swap(&s->unprocessed_incoming_frames_buffer,
                                  &s->frame_storage);
+          s->unprocessed_incoming_frames_decompressed = false;
         }
-        error = grpc_deframe_unprocessed_incoming_frames(
-            exec_ctx, &s->data_parser, s,
-            &s->unprocessed_incoming_frames_buffer, NULL, s->recv_message);
+        if (s->stream_compression_recv_enabled &&
+            !s->unprocessed_incoming_frames_decompressed) {
+          grpc_slice_buffer decompressed_data;
+          bool end_of_context;
+          grpc_slice_buffer_init(&decompressed_data);
+          if (!s->stream_decompression_ctx) {
+            s->stream_decompression_ctx =
+                grpc_stream_compression_context_create(
+                    GRPC_STREAM_COMPRESSION_DECOMPRESS);
+          }
+          if (!grpc_stream_decompress(s->stream_decompression_ctx,
+                                      &s->unprocessed_incoming_frames_buffer,
+                                      &decompressed_data, NULL, 5,
+                                      &end_of_context)) {
+            grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                                       &s->frame_storage);
+            grpc_slice_buffer_reset_and_unref_internal(
+                exec_ctx, &s->unprocessed_incoming_frames_buffer);
+            s->seen_error = true;
+          } else {
+            error = grpc_deframe_unprocessed_incoming_frames(
+                exec_ctx, &s->data_parser, s, &decompressed_data, NULL,
+                s->recv_message);
+            if (end_of_context) {
+              grpc_stream_compression_context_destroy(
+                  s->stream_decompression_ctx);
+              s->stream_decompression_ctx = NULL;
+            }
+          }
+        } else {
+          error = grpc_deframe_unprocessed_incoming_frames(
+              exec_ctx, &s->data_parser, s,
+              &s->unprocessed_incoming_frames_buffer, NULL, s->recv_message);
+        }
         if (error != GRPC_ERROR_NONE) {
           s->seen_error = true;
           grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
@@ -2568,6 +2602,7 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   if (s->frame_storage.length > 0) {
     grpc_slice_buffer_swap(&s->frame_storage,
                            &s->unprocessed_incoming_frames_buffer);
+    s->unprocessed_incoming_frames_decompressed = false;
     GRPC_CLOSURE_SCHED(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
   } else if (s->byte_stream_error != GRPC_ERROR_NONE) {
     GRPC_CLOSURE_SCHED(exec_ctx, bs->next_action.on_complete,
@@ -2629,17 +2664,41 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_incoming_byte_stream *bs =
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
   grpc_chttp2_stream *s = bs->stream;
+  grpc_error *error;
 
   if (s->unprocessed_incoming_frames_buffer.length > 0) {
-    grpc_error *error = grpc_deframe_unprocessed_incoming_frames(
+    if (s->stream_compression_recv_enabled &&
+        !s->unprocessed_incoming_frames_decompressed) {
+      bool end_of_context;
+      if (!s->stream_decompression_ctx) {
+        s->stream_decompression_ctx = grpc_stream_compression_context_create(
+            GRPC_STREAM_COMPRESSION_DECOMPRESS);
+      }
+      if (!grpc_stream_decompress(s->stream_decompression_ctx,
+                                  &s->unprocessed_incoming_frames_buffer,
+                                  &s->decompressed_data_buffer, NULL,
+                                  ~(size_t)0, &end_of_context)) {
+        error =
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream decompression error.");
+        return error;
+      }
+      GPR_ASSERT(s->unprocessed_incoming_frames_buffer.length == 0);
+      grpc_slice_buffer_swap(&s->unprocessed_incoming_frames_buffer,
+                             &s->decompressed_data_buffer);
+      s->unprocessed_incoming_frames_decompressed = true;
+      if (end_of_context) {
+        grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
+        s->stream_decompression_ctx = NULL;
+      }
+    }
+    error = grpc_deframe_unprocessed_incoming_frames(
         exec_ctx, &s->data_parser, s, &s->unprocessed_incoming_frames_buffer,
         slice, NULL);
     if (error != GRPC_ERROR_NONE) {
       return error;
     }
   } else {
-    grpc_error *error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
     GRPC_CLOSURE_SCHED(exec_ctx, &s->reset_byte_stream, GRPC_ERROR_REF(error));
     return error;
   }

@@ -519,6 +519,17 @@ struct grpc_chttp2_stream {
   grpc_chttp2_write_cb *on_write_finished_cbs;
   grpc_chttp2_write_cb *finish_after_write;
   size_t sending_bytes;
+
+  /** Whether stream compression send is enabled or not */
+  bool stream_compression_recv_enabled;
+  /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
+   */
+  bool unprocessed_incoming_frames_decompressed;
+  /** Stream compression decompress context */
+  grpc_stream_compression_context *stream_decompression_ctx;
+
+  /** Temporary buffer storing decompressed data */
+  grpc_slice_buffer decompressed_data_buffer;
 };
 
 /** Transport writing call flow:
