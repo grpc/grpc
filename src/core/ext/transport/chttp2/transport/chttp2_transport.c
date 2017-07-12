@@ -668,6 +668,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
   grpc_chttp2_data_parser_init(&s->data_parser);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
+  grpc_slice_buffer_init(&s->compressed_data_buffer);
   grpc_slice_buffer_init(&s->decompressed_data_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   GRPC_CLOSURE_INIT(&s->complete_fetch_locked, complete_fetch_locked, s,
@@ -707,6 +708,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   grpc_slice_buffer_destroy_internal(exec_ctx,
                                      &s->unprocessed_incoming_frames_buffer);
   grpc_slice_buffer_destroy_internal(exec_ctx, &s->frame_storage);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &s->compressed_data_buffer);
   grpc_slice_buffer_destroy_internal(exec_ctx, &s->decompressed_data_buffer);
 
   grpc_chttp2_list_remove_stalled_by_transport(t, s);
@@ -758,6 +760,10 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
 
+  if (s->stream_compression_ctx != NULL) {
+    grpc_stream_compression_context_destroy(s->stream_compression_ctx);
+    s->stream_compression_ctx = NULL;
+  }
   if (s->stream_decompression_ctx != NULL) {
     grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
     s->stream_decompression_ctx = NULL;
