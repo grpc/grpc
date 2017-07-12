@@ -32,7 +32,8 @@ typedef struct grpc_stream_compression_context {
 
 typedef enum grpc_stream_compression_method {
   GRPC_STREAM_COMPRESSION_COMPRESS = 0,
-  GRPC_STREAM_COMPRESSION_DECOMPRESS
+  GRPC_STREAM_COMPRESSION_DECOMPRESS,
+  GRPC_STREAM_COMPRESSION_METHOD_COUNT
 } grpc_stream_compression_method;
 
 typedef enum grpc_stream_compression_flush {
