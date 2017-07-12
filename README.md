@@ -33,7 +33,7 @@ Libraries in different languages may be in different states of development. We a
 | NodeJS                  | [src/node](src/node)                | 1.0     |
 | Python                  | [src/python](src/python)            | 1.0     |
 | PHP                     | [src/php](src/php)                  | 1.0     |
-| HHVM                    | [src/hhvm](src/hhvm)                | 0.1     |
+| HHVM                    | [src/hhvm](src/hhvm)                | 0.9     |
 | C#                      | [src/csharp](src/csharp)            | 1.0     |
 | Objective-C             | [src/objective-c](src/objective-c)  | 1.0     |
 
