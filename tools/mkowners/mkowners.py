@@ -123,6 +123,9 @@ owners_data = new_owners_data
 # a CODEOWNERS file for GitHub
 #
 
+def full_dir(rules_dir, sub_path):
+  return os.path.join(rules_dir, sub_path) if rules_dir != '.' else sub_path
+
 def glob_intersect(g1, g2):
   if not g2:
     return all(c == '*' for c in g1)
@@ -136,17 +139,18 @@ def glob_intersect(g1, g2):
     return glob_intersect(t1, g2) or glob_intersect(g1, t2)
   return c1 == c2 and glob_intersect(t1, t2)
 
-def add_parent_to_globs(parent, globs):
+def add_parent_to_globs(parent, globs, globs_dir):
   if not parent: return
   for owners in owners_data:
     if owners.dir == parent:
       for directive in owners.directives:
         for dglob in directive.globs or ['**']:
           for gglob, glob in globs.items():
-            if glob_intersect(dglob, gglob):
+            if glob_intersect(full_dir(globs_dir, gglob),
+                              full_dir(owners.dir, dglob)):
               if directive.who not in glob:
                 glob.append(directive.who)
-      add_parent_to_globs(owners.parent, globs)
+      add_parent_to_globs(owners.parent, globs, globs_dir)
       return
   assert(False)
 
@@ -167,9 +171,8 @@ with open(args.out, 'w') as out:
         if glob not in globs:
           globs[glob] = []
         globs[glob].append(directive.who)
-    add_parent_to_globs(head.parent, globs)
+    add_parent_to_globs(head.parent, globs, head.dir)
     for glob, owners in globs.items():
-      out.write('%s %s\n' % (
-          os.path.join(head.dir, glob) if head.dir != '.' else glob,
-          ' '.join(owners)))
+      out.write('/%s %s\n' % (
+          full_dir(head.dir, glob), ' '.join(owners)))
     done.add(head.dir)
