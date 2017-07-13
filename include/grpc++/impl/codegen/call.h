@@ -295,7 +295,8 @@ class CallOpSendMessage {
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
+  return SerializationTraits<M, void>::Serialize(message, &send_buf_,
+                                                 &own_buf_);
 }
 
 template <class M>
