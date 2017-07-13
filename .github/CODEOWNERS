@@ -13,6 +13,7 @@
 /doc/interop-test-descriptions.md @ejona86 @a11r @nicolasnoble @ctiller
 /etc/** @jboeuf @nicolasnoble @a11r @ctiller
 /examples/node/** @murgatroid99 @a11r @nicolasnoble @ctiller
+/examples/python/** @nathanielmanistaatgoogle @kpayson64 @mehrdada
 /include/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
 /src/core/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
 /src/core/lib/iomgr/*_uv.c @murgatroid99 @ctiller @markdroth @dgquintas @a11r @nicolasnoble
@@ -22,7 +23,7 @@
 /src/node/** @murgatroid99 @a11r @nicolasnoble @ctiller
 /src/objective-c/** @muxi @makdharma @a11r @nicolasnoble @ctiller
 /src/php/** @stanley-cheung @murgatroid99 @a11r @nicolasnoble @ctiller
-/src/python/** @nathanielmanistaatgoogle @kpayson64 @a11r @nicolasnoble @ctiller
+/src/python/** @nathanielmanistaatgoogle @kpayson64 @mehrdada
 /src/ruby/** @apolcyn @murgatroid99 @a11r @nicolasnoble @ctiller
 /test/build/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
 /test/core/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
@@ -30,6 +31,7 @@
 /test/distrib/node/** @murgatroid99 @a11r @nicolasnoble @ctiller
 /tools/** @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
 /tools/codegen/core/** @ctiller @dgquintas @markdroth
+/tools/distrib/python/** @nathanielmanistaatgoogle @kpayson64 @mehrdada
 /tools/dockerfile/** @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
 /tools/run_tests/** @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
 /tools/run_tests/artifacts/*_node* @murgatroid99 @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
