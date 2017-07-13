@@ -20,7 +20,8 @@
 
 #include <grpc/support/log.h>
 
-grpc_tracer_flag grpc_call_combiner_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_call_combiner_trace =
+    GRPC_TRACER_INITIALIZER(false, "call_combiner");
 
 void grpc_call_combiner_init(grpc_call_combiner* call_combiner) {
   gpr_mpscq_init(&call_combiner->queue);

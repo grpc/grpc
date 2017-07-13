@@ -67,6 +67,14 @@
     'ldflags': [
         '-g',
     ],
+    'cflags_c': [
+      '-Werror',
+      '-std=c99'
+    ],
+    'cflags_cc': [
+      '-Werror',
+      '-std=c++11'
+    ],
     'include_dirs': [
       '.',
       'include'
@@ -164,6 +172,24 @@
           '<(node_root_dir)/deps/zlib',
           '<(node_root_dir)/deps/cares/include'
         ]
+      }],
+      ['OS == "mac"', {
+        'xcode_settings': {
+          'MACOSX_DEPLOYMENT_TARGET': '10.9'
+        },
+        'OTHER_CFLAGS': [
+            '-g',
+            '-Wall',
+            '-Wextra',
+            '-Werror',
+            '-Wno-long-long',
+            '-Wno-unused-parameter',
+            '-DOSATOMIC_USE_INLINED=1',
+        ],
+        'OTHER_CPLUSPLUSFLAGS': [
+          '-stdlib=libc++',
+          '-std=c++11'
+        ],
       }]
     ]
   },
@@ -171,12 +197,6 @@
     ['OS=="win" or runtime=="electron"', {
       'targets': [
         {
-          'cflags': [
-            '-std=c++11',
-            '-std=c99',
-            '-Wall',
-            '-Werror'
-          ],
           'target_name': 'boringssl',
           'product_prefix': 'lib',
           'type': 'static_library',
@@ -488,17 +508,6 @@
             'third_party/boringssl/ssl/tls_method.c',
             'third_party/boringssl/ssl/tls_record.c',
           ],
-          'conditions': [
-            ['OS=="mac"', {
-              'xcode_settings': {
-                'MACOSX_DEPLOYMENT_TARGET': '10.9',
-                'OTHER_CPLUSPLUSFLAGS': [
-                  '-stdlib=libc++',
-                  '-std=c++11'
-                ],
-              }
-            }],
-          ],
         },
       ],
     }],
@@ -536,11 +545,6 @@
       'targets': [
         # Only want to compile zlib under Windows
         {
-          'cflags': [
-            '-std=c99',
-            '-Wall',
-            '-Werror'
-          ],
           'target_name': 'z',
           'product_prefix': 'lib',
           'type': 'static_library',
@@ -569,11 +573,6 @@
   ],
   'targets': [
     {
-      'cflags': [
-        '-std=c99',
-        '-Wall',
-        '-Werror'
-      ],
       'target_name': 'gpr',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -627,20 +626,8 @@
         'src/core/lib/support/tmpfile_windows.c',
         'src/core/lib/support/wrap_memcpy.c',
       ],
-      "conditions": [
-        ['OS == "mac"', {
-          'xcode_settings': {
-            'MACOSX_DEPLOYMENT_TARGET': '10.9'
-          }
-        }]
-      ]
     },
     {
-      'cflags': [
-        '-std=c99',
-        '-Wall',
-        '-Werror'
-      ],
       'target_name': 'grpc',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -899,20 +886,12 @@
         'src/core/ext/filters/workarounds/workaround_utils.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
-      "conditions": [
-        ['OS == "mac"', {
-          'xcode_settings': {
-            'MACOSX_DEPLOYMENT_TARGET': '10.9'
-          }
-        }]
-      ]
     },
     {
       'include_dirs': [
         "<!(node -e \"require('nan')\")"
       ],
       'cflags': [
-        '-std=c++11',
         '-pthread',
         '-zdefs',
         '-Wno-error=deprecated-declarations'
@@ -922,15 +901,6 @@
           'dependencies': [
             "boringssl",
           ]
-        }],
-        ['OS=="mac"', {
-          'xcode_settings': {
-            'MACOSX_DEPLOYMENT_TARGET': '10.9',
-            'OTHER_CFLAGS': [
-              '-stdlib=libc++',
-              '-std=c++11'
-            ]
-          }
         }],
         ['OS=="win"', {
           'dependencies': [

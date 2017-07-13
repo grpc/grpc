@@ -11410,6 +11410,7 @@ target_link_libraries(qps_interarrival_test
   grpc
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -11761,6 +11762,7 @@ target_link_libraries(secure_sync_unary_ping_pong_test
   grpc
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

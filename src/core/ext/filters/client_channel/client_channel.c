@@ -52,7 +52,8 @@
 
 /* Client channel implementation */
 
-grpc_tracer_flag grpc_client_channel_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_client_channel_trace =
+    GRPC_TRACER_INITIALIZER(false, "client_channel");
 
 /*************************************************************************
  * METHOD-CONFIG TABLE
@@ -370,6 +371,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
             grpc_error_string(error));
   }
   // Extract the following fields from the resolver result, if non-NULL.
+  bool lb_policy_updated = false;
   char *lb_policy_name = NULL;
   bool lb_policy_name_changed = false;
   grpc_lb_policy *new_lb_policy = NULL;
@@ -424,6 +426,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         strcmp(chand->info_lb_policy_name, lb_policy_name) != 0;
     if (chand->lb_policy != NULL && !lb_policy_name_changed) {
       // Continue using the same LB policy.  Update with new addresses.
+      lb_policy_updated = true;
       grpc_lb_policy_update_locked(exec_ctx, chand->lb_policy, &lb_policy_args);
     } else {
       // Instantiate new LB policy.
@@ -569,8 +572,11 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       }
       watch_lb_policy_locked(exec_ctx, chand, new_lb_policy, state);
     }
-    set_channel_connectivity_state_locked(
-        exec_ctx, chand, state, GRPC_ERROR_REF(state_error), "new_lb+resolver");
+    if (!lb_policy_updated) {
+      set_channel_connectivity_state_locked(exec_ctx, chand, state,
+                                            GRPC_ERROR_REF(state_error),
+                                            "new_lb+resolver");
+    }
     grpc_resolver_next_locked(exec_ctx, chand->resolver,
                               &chand->resolver_result,
                               &chand->on_resolver_result_changed);
