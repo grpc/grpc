@@ -40,6 +40,7 @@
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/stats.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 using std::list;
 using std::thread;
@@ -172,13 +173,27 @@ static void postprocess_scenario_result(ScenarioResult* result) {
       sum(result->client_stats(), CliPollCount) / histogram.Count());
   result->mutable_summary()->set_server_polls_per_request(
       sum(result->server_stats(), SvrPollCount) / histogram.Count());
+
+  auto server_queries_per_cpu_sec =
+      histogram.Count() /
+      (sum(result->server_stats(), ServerSystemTime) +
+       sum(result->server_stats(), ServerUserTime));
+  auto client_queries_per_cpu_sec =
+      histogram.Count() /
+      (sum(result->client_stats(), SystemTime) +
+       sum(result->client_stats(), UserTime));
+
+  result->mutable_summary()->set_server_queries_per_cpu_sec(
+      server_queries_per_cpu_sec);
+  result->mutable_summary()->set_client_queries_per_cpu_sec(
+      client_queries_per_cpu_sec);
 }
 
 std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
     const ServerConfig& initial_server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
-    const char* qps_server_target_override) {
+    const char* qps_server_target_override, const char* credential_type) {
   // Log everything from the driver
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
 
@@ -214,7 +229,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
 
     int driver_port = grpc_pick_unused_port_or_die();
-    local_workers.emplace_back(new QpsWorker(driver_port));
+    local_workers.emplace_back(new QpsWorker(driver_port, 0, credential_type));
     char addr[256];
     sprintf(addr, "localhost:%d", driver_port);
     if (spawn_local_worker_count < 0) {
@@ -246,12 +261,15 @@ std::unique_ptr<ScenarioResult> RunScenario(
   };
   std::vector<ServerData> servers(num_servers);
   std::unordered_map<string, std::deque<int>> hosts_cores;
+  ChannelArguments channel_args;
 
   for (size_t i = 0; i < num_servers; i++) {
     gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
             workers[i].c_str(), i);
     servers[i].stub = WorkerService::NewStub(
-        CreateChannel(workers[i], InsecureChannelCredentials()));
+        CreateChannel(workers[i],
+                      GetCredentialsProvider()->GetChannelCredentials(
+                          credential_type, &channel_args)));
 
     ServerConfig server_config = initial_server_config;
     if (server_config.core_limit() != 0) {
@@ -298,7 +316,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
             worker.c_str(), i + num_servers);
     clients[i].stub = WorkerService::NewStub(
-        CreateChannel(worker, InsecureChannelCredentials()));
+        CreateChannel(worker,
+                      GetCredentialsProvider()->GetChannelCredentials(
+                          credential_type, &channel_args)));
     ClientConfig per_client_config = client_config;
 
     if (initial_client_config.core_limit() != 0) {
@@ -483,16 +503,20 @@ std::unique_ptr<ScenarioResult> RunScenario(
   return result;
 }
 
-bool RunQuit() {
+bool RunQuit(const char* credential_type) {
   // Get client, server lists
   bool result = true;
   auto workers = get_workers("QPS_WORKERS");
   if (workers.size() == 0) {
     return false;
   }
+
+  ChannelArguments channel_args;
   for (size_t i = 0; i < workers.size(); i++) {
     auto stub = WorkerService::NewStub(
-        CreateChannel(workers[i], InsecureChannelCredentials()));
+        CreateChannel(workers[i],
+                      GetCredentialsProvider()->GetChannelCredentials(
+                          credential_type, &channel_args)));
     Void dummy;
     grpc::ClientContext ctx;
     ctx.set_wait_for_ready(true);

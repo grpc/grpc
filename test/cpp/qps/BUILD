@@ -77,6 +77,7 @@ grpc_cc_library(
         "//src/proto/grpc/testing:services_proto",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -141,6 +142,7 @@ grpc_cc_binary(
         ":benchmark_config",
         ":driver_impl",
         "//:grpc++",
+        "//test/cpp/util:test_config",
     ],
     external_deps = [
         "gflags",

@@ -31,9 +31,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const grpc::testing::ClientConfig& client_config, size_t num_clients,
     const grpc::testing::ServerConfig& server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
-    const char* qps_server_target_override = "");
+    const char* qps_server_target_override = "",
+    const char* credential_type = "INSECURE_CREDENTIALS");
 
-bool RunQuit();
+bool RunQuit(const char* credential_type = "INSECURE_CREDENTIALS");
 }  // namespace testing
 }  // namespace grpc
 

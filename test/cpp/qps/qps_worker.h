@@ -33,7 +33,8 @@ class WorkerServiceImpl;
 
 class QpsWorker {
  public:
-  explicit QpsWorker(int driver_port, int server_port = 0);
+  explicit QpsWorker(int driver_port, int server_port = 0,
+                     const char* credential_type = "INSECURE_CREDENTIALS");
   ~QpsWorker();
 
   bool Done() const;
