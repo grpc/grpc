@@ -27,9 +27,7 @@
 namespace grpc {
 
 ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
-    : thd_mgr_(thd_mgr), thd_(&ThreadManager::WorkerThread::Run, this) {
-  GPR_ASSERT(thd_.joinable());
-}
+    : thd_mgr_(thd_mgr), thd_(&ThreadManager::WorkerThread::Run, this) {}
 
 void ThreadManager::WorkerThread::Run() {
   thd_mgr_->MainWorkLoop();
