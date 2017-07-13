@@ -265,7 +265,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->endpoint_reading = 1;
   t->next_stream_id = is_client ? 1 : 2;
   t->is_client = is_client;
-  t->local_window = DEFAULT_WINDOW;
   t->remote_window = DEFAULT_WINDOW;
   t->announced_window = DEFAULT_WINDOW;
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;

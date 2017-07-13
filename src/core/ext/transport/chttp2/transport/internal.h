@@ -337,17 +337,7 @@ struct grpc_chttp2_transport {
   /** Our bookkeeping for the remote peer's available window */
   int64_t remote_window;
 
-  /** Our bookkeeping for our window. Essentially this tracks available buffer
-   * space to hold data that peer sends to us. This is our local view of the
-   * window. It does not reflect how the remote peer sees it. */
-  int64_t local_window;
-
-  /** This is out window according to what we have sent to our remote peer. The
-   * difference between this and local_window is what we use to decide when
-   * to send WINDOW_UPDATE frames. */
-  int64_t announced_window;
-
-  /** calculating what we should give for incoming window:
+  /** calculating what we should give for local window:
       we track the total amount of flow control over initial window size
       across all streams: this is data that we want to receive right now (it
       has an outstanding read)
@@ -357,6 +347,11 @@ struct grpc_chttp2_transport {
       incoming_window = total_over - max(bdp - total_under, 0) */
   int64_t announced_stream_total_over_incoming_window;
   int64_t announced_stream_total_under_incoming_window;
+
+  /** This is out window according to what we have sent to our remote peer. The
+   * difference between this and target window is what we use to decide when
+   * to send WINDOW_UPDATE frames. */
+  int64_t announced_window;
 
   /* bdp estimation */
   grpc_bdp_estimator bdp_estimator;

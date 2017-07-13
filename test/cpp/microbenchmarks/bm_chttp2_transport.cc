@@ -522,7 +522,6 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
         if (!state.KeepRunning()) return;
         // force outgoing window to be yuge
         s.chttp2_stream()->local_window_delta = 1024 * 1024 * 1024;
-        f.chttp2_transport()->local_window = 1024 * 1024 * 1024;
         s.chttp2_stream()->announced_window_delta = 1024 * 1024 * 1024;
         f.chttp2_transport()->announced_window = 1024 * 1024 * 1024;
         received = 0;

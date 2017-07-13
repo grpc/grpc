@@ -27,11 +27,14 @@
 
 #include "src/core/lib/support/string.h"
 
+static uint32_t grpc_chttp2_target_announced_window(
+    const grpc_chttp2_transport* t);
+
 #ifndef NDEBUG
 
 typedef struct {
   int64_t remote_window;
-  int64_t local_window;
+  int64_t target_window;
   int64_t announced_window;
   int64_t remote_window_delta;
   int64_t local_window_delta;
@@ -41,7 +44,7 @@ typedef struct {
 static void pretrace(shadow_flow_control* sfc, grpc_chttp2_transport* t,
                      grpc_chttp2_stream* s) {
   sfc->remote_window = t->remote_window;
-  sfc->local_window = t->local_window;
+  sfc->target_window = grpc_chttp2_target_announced_window(t);
   sfc->announced_window = t->announced_window;
   if (s != NULL) {
     sfc->remote_window_delta = s->remote_window_delta;
@@ -69,7 +72,8 @@ static void posttrace(shadow_flow_control* sfc, grpc_chttp2_transport* t,
   uint32_t remote_window =
       t->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
   char* trw_str = fmt_str(sfc->remote_window, t->remote_window);
-  char* tlw_str = fmt_str(sfc->local_window, t->local_window);
+  char* tlw_str =
+      fmt_str(sfc->target_window, grpc_chttp2_target_announced_window(t));
   char* taw_str = fmt_str(sfc->announced_window, t->announced_window);
   char* srw_str;
   char* slw_str;
@@ -87,7 +91,7 @@ static void posttrace(shadow_flow_control* sfc, grpc_chttp2_transport* t,
     saw_str = gpr_leftpad("", ' ', 30);
   }
   gpr_log(GPR_DEBUG,
-          "%p[%u][%s] | %s | trw:%s, tlw:%s, taw:%s, srw:%s, slw:%s, saw:%s", t,
+          "%p[%u][%s] | %s | trw:%s, ttw:%s, taw:%s, srw:%s, slw:%s, saw:%s", t,
           s != NULL ? s->id : 0, t->is_client ? "cli" : "svr", reason, trw_str,
           tlw_str, taw_str, srw_str, slw_str, saw_str);
   gpr_free(trw_str);
@@ -177,10 +181,10 @@ grpc_error* grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s,
                                           int64_t incoming_frame_size) {
   PRETRACE(t, s);
-  if (incoming_frame_size > t->local_window) {
+  if (incoming_frame_size > t->announced_window) {
     char* msg;
     gpr_asprintf(&msg, "frame of size %d overflows local window of %" PRId64,
-                 t->incoming_frame_size, t->local_window);
+                 t->incoming_frame_size, t->announced_window);
     grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
@@ -228,7 +232,6 @@ grpc_error* grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport* t,
   }
 
   t->announced_window -= incoming_frame_size;
-  t->local_window -= incoming_frame_size;
 
   POSTTRACE(t, s, "  data recv");
   return GRPC_ERROR_NONE;
@@ -243,14 +246,11 @@ uint32_t grpc_chttp2_flowctl_maybe_send_transport_update(
   uint32_t threshold_to_send_transport_window_update =
       t->outbuf.count > 0 ? 3 * target_announced_window / 4
                           : target_announced_window / 2;
-  if (t->announced_window < t->local_window &&
-      t->announced_window <= threshold_to_send_transport_window_update &&
+  if (t->announced_window <= threshold_to_send_transport_window_update &&
       t->announced_window != target_announced_window) {
     uint32_t announce = (uint32_t)GPR_CLAMP(
         target_announced_window - t->announced_window, 0, UINT32_MAX);
     t->announced_window += announce;
-    t->local_window =
-        t->announced_window;  // announced should never be higher than local.
     POSTTRACE(t, NULL, "t updt sent");
     return announce;
   }
@@ -323,7 +323,6 @@ void grpc_chttp2_flowctl_incoming_bs_update(grpc_chttp2_transport* t,
     uint32_t add_max_recv_bytes =
         (uint32_t)(max_recv_bytes - s->local_window_delta);
     s->local_window_delta += add_max_recv_bytes;
-    s->t->local_window += add_max_recv_bytes;
   }
   POSTTRACE(t, s, "app st recv");
 }
