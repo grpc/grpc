@@ -16,6 +16,13 @@ licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
+package(
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
+
 grpc_cc_test(
     name = "alarm_cpp_test",
     srcs = ["alarm_cpp_test.cc"],

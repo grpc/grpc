@@ -27,7 +27,6 @@
 int grpc_tracer_set_enabled(const char *name, int enabled);
 
 typedef struct tracer {
-  const char *name;
   grpc_tracer_flag *flag;
   struct tracer *next;
 } tracer;
@@ -39,9 +38,8 @@ static tracer *tracers;
 #define TRACER_SET(flag, on) (flag).value = (on)
 #endif
 
-void grpc_register_tracer(const char *name, grpc_tracer_flag *flag) {
+void grpc_register_tracer(grpc_tracer_flag *flag) {
   tracer *t = gpr_malloc(sizeof(*t));
-  t->name = name;
   t->flag = flag;
   t->next = tracers;
   TRACER_SET(*flag, false);
@@ -93,6 +91,14 @@ static void parse(const char *s) {
   gpr_free(strings);
 }
 
+static void list_tracers() {
+  gpr_log(GPR_DEBUG, "available tracers:");
+  tracer *t;
+  for (t = tracers; t; t = t->next) {
+    gpr_log(GPR_DEBUG, "\t%s", t->flag->name);
+  }
+}
+
 void grpc_tracer_init(const char *env_var) {
   char *e = gpr_getenv(env_var);
   if (e != NULL) {
@@ -115,10 +121,18 @@ int grpc_tracer_set_enabled(const char *name, int enabled) {
     for (t = tracers; t; t = t->next) {
       TRACER_SET(*t->flag, enabled);
     }
+  } else if (0 == strcmp(name, "list_tracers")) {
+    list_tracers();
+  } else if (0 == strcmp(name, "refcount")) {
+    for (t = tracers; t; t = t->next) {
+      if (strstr(t->flag->name, "refcount") != NULL) {
+        TRACER_SET(*t->flag, enabled);
+      }
+    }
   } else {
     int found = 0;
     for (t = tracers; t; t = t->next) {
-      if (0 == strcmp(name, t->name)) {
+      if (0 == strcmp(name, t->flag->name)) {
         TRACER_SET(*t->flag, enabled);
         found = 1;
       }

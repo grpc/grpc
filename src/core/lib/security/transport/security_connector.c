@@ -45,7 +45,7 @@
 
 #ifndef NDEBUG
 grpc_tracer_flag grpc_trace_security_connector_refcount =
-    GRPC_TRACER_INITIALIZER(false);
+    GRPC_TRACER_INITIALIZER(false, "security_connector_refcount");
 #endif
 
 /* -- Constants. -- */
