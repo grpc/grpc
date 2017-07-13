@@ -141,7 +141,7 @@ def add_parent_to_globs(parent, globs):
   for owners in owners_data:
     if owners.dir == parent:
       for directive in owners.directives:
-        for dglob in directive.globs or ['*']:
+        for dglob in directive.globs or ['**']:
           for gglob, glob in globs.items():
             if glob_intersect(dglob, gglob):
               if directive.who not in glob:
@@ -163,7 +163,7 @@ with open(args.out, 'w') as out:
       continue
     globs = collections.OrderedDict()
     for directive in head.directives:
-      for glob in directive.globs or ['*']:
+      for glob in directive.globs or ['**']:
         if glob not in globs:
           globs[glob] = []
         globs[glob].append(directive.who)
