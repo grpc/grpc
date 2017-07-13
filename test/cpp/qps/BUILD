@@ -121,6 +121,7 @@ grpc_cc_binary(
         "//:gpr",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -131,6 +132,7 @@ grpc_cc_test(
     deps = [
         ":histogram",
         ":interarrival",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -141,6 +143,7 @@ grpc_cc_binary(
         ":benchmark_config",
         ":driver_impl",
         "//:grpc++",
+        "//test/cpp/util:test_config",
     ],
     external_deps = [
         "gflags",
@@ -154,6 +157,7 @@ grpc_cc_test(
         ":benchmark_config",
         ":driver_impl",
         ":qps_worker_impl",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -164,6 +168,7 @@ grpc_cc_test(
         ":benchmark_config",
         ":driver_impl",
         "//:grpc++",
+        "//test/cpp/util:test_config",
     ],
 )
 
