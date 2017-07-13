@@ -29,6 +29,7 @@
 #include "src/core/lib/support/env.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/subprocess.h"
+#include "test/cpp/util/test_config.h"
 
 using grpc::SubProcess;
 
@@ -75,6 +76,8 @@ static void LogStatus(int status, const char* label) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::InitTest(&argc, &argv, true);
+
   register_sighandler();
 
   std::string my_bin = argv[0];
