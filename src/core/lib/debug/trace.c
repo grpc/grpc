@@ -123,6 +123,12 @@ int grpc_tracer_set_enabled(const char *name, int enabled) {
     }
   } else if (0 == strcmp(name, "list_tracers")) {
     list_tracers();
+  } else if (0 == strcmp(name, "refcount")) {
+    for (t = tracers; t; t = t->next) {
+      if (strstr(t->flag->name, "refcount") != NULL) {
+        TRACER_SET(*t->flag, enabled);
+      }
+    }
   } else {
     int found = 0;
     for (t = tracers; t; t = t->next) {
