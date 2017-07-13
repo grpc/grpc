@@ -27,6 +27,7 @@
 /test/build/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
 /test/core/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
 /test/cpp/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
+/test/cpp/qps/** @vjpai @ctiller @markdroth @dgquintas @a11r @nicolasnoble
 /test/distrib/node/** @murgatroid99 @a11r @nicolasnoble @ctiller
 /tools/** @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
 /tools/codegen/core/** @ctiller @dgquintas @markdroth
