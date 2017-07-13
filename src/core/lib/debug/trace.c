@@ -91,6 +91,14 @@ static void parse(const char *s) {
   gpr_free(strings);
 }
 
+static void list_tracers() {
+  gpr_log(GPR_DEBUG, "available tracers:");
+  tracer *t;
+  for (t = tracers; t; t = t->next) {
+    gpr_log(GPR_DEBUG, "\t%s", t->flag->name);
+  }
+}
+
 void grpc_tracer_init(const char *env_var) {
   char *e = gpr_getenv(env_var);
   if (e != NULL) {
@@ -113,6 +121,8 @@ int grpc_tracer_set_enabled(const char *name, int enabled) {
     for (t = tracers; t; t = t->next) {
       TRACER_SET(*t->flag, enabled);
     }
+  } else if (0 == strcmp(name, "list_tracers")) {
+    list_tracers();
   } else {
     int found = 0;
     for (t = tracers; t; t = t->next) {
