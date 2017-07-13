@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -55,7 +40,9 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address *resolved_addr,
   GPR_ASSERT(resolved_addr != resolved_addr4_out);
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   struct sockaddr_in *addr4_out =
-      (struct sockaddr_in *)resolved_addr4_out->addr;
+      resolved_addr4_out == NULL
+          ? NULL
+          : (struct sockaddr_in *)resolved_addr4_out->addr;
   if (addr->sa_family == AF_INET6) {
     const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *)addr;
     if (memcmp(addr6->sin6_addr.s6_addr, kV4MappedPrefix,
@@ -162,6 +149,7 @@ int grpc_sockaddr_to_string(char **out,
   char ntop_buf[INET6_ADDRSTRLEN];
   const void *ip = NULL;
   int port;
+  uint32_t sin6_scope_id = 0;
   int ret;
 
   *out = NULL;
@@ -177,10 +165,19 @@ int grpc_sockaddr_to_string(char **out,
     const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *)addr;
     ip = &addr6->sin6_addr;
     port = ntohs(addr6->sin6_port);
+    sin6_scope_id = addr6->sin6_scope_id;
   }
   if (ip != NULL &&
       grpc_inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) != NULL) {
-    ret = gpr_join_host_port(out, ntop_buf, port);
+    if (sin6_scope_id != 0) {
+      char *host_with_scope;
+      /* Enclose sin6_scope_id with the format defined in RFC 6784 section 2. */
+      gpr_asprintf(&host_with_scope, "%s%%25%" PRIu32, ntop_buf, sin6_scope_id);
+      ret = gpr_join_host_port(out, host_with_scope, port);
+      gpr_free(host_with_scope);
+    } else {
+      ret = gpr_join_host_port(out, ntop_buf, port);
+    }
   } else {
     ret = gpr_asprintf(out, "(sockaddr family=%d)", addr->sa_family);
   }

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
- * All rights reserved.
+ * Copyright 2015-2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -93,8 +78,26 @@ GRPCAPI const char *grpc_version_string(void);
 /** Return a string specifying what the 'g' in gRPC stands for */
 GRPCAPI const char *grpc_g_stands_for(void);
 
+/** Returns the completion queue factory based on the attributes. MAY return a
+    NULL if no factory can be found */
+GRPCAPI const grpc_completion_queue_factory *
+grpc_completion_queue_factory_lookup(
+    const grpc_completion_queue_attributes *attributes);
+
+/** Helper function to create a completion queue with grpc_cq_completion_type
+    of GRPC_CQ_NEXT and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING */
+GRPCAPI grpc_completion_queue *grpc_completion_queue_create_for_next(
+    void *reserved);
+
+/** Helper function to create a completion queue with grpc_cq_completion_type
+    of GRPC_CQ_PLUCK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING */
+GRPCAPI grpc_completion_queue *grpc_completion_queue_create_for_pluck(
+    void *reserved);
+
 /** Create a completion queue */
-GRPCAPI grpc_completion_queue *grpc_completion_queue_create(void *reserved);
+GRPCAPI grpc_completion_queue *grpc_completion_queue_create(
+    const grpc_completion_queue_factory *factory,
+    const grpc_completion_queue_attributes *attributes, void *reserved);
 
 /** Blocks until an event is available, the completion queue is being shut down,
     or deadline is reached.
@@ -160,6 +163,12 @@ GRPCAPI void grpc_alarm_destroy(grpc_alarm *alarm);
 GRPCAPI grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel *channel, int try_to_connect);
 
+/** Number of active "external connectivity state watchers" attached to a
+ * channel.
+ * Useful for testing. **/
+GRPCAPI int grpc_channel_num_external_connectivity_watchers(
+    grpc_channel *channel);
+
 /** Watch for a change in connectivity state.
     Once the channel connectivity state is different from last_observed_state,
     tag will be enqueued on cq with success=1.
@@ -198,6 +207,10 @@ GRPCAPI grpc_call *grpc_channel_create_registered_call(
     grpc_completion_queue *completion_queue, void *registered_call_handle,
     gpr_timespec deadline, void *reserved);
 
+/** Allocate memory in the grpc_call arena: this memory is automatically
+    discarded at call completion */
+GRPCAPI void *grpc_call_arena_alloc(grpc_call *call, size_t size);
+
 /** Start a batch of operations defined in the array ops; when complete, post a
     completion of type 'tag' to the completion queue bound to the call.
     The order of ops specified in the batch has no significance.
@@ -228,12 +241,6 @@ GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call *call,
     related code. It must not be used for any authentication related
     functionality. Instead, use grpc_auth_context. */
 GRPCAPI char *grpc_call_get_peer(grpc_call *call);
-
-struct grpc_load_reporting_cost_context;
-
-/* Associate costs contained in \a cost_context to \a call. */
-GRPCAPI void grpc_call_set_load_reporting_cost_context(
-    grpc_call *call, struct grpc_load_reporting_cost_context *context);
 
 struct census_context;
 
@@ -271,7 +278,7 @@ GRPCAPI grpc_channel *grpc_lame_client_channel_create(
 /** Close and destroy a grpc channel */
 GRPCAPI void grpc_channel_destroy(grpc_channel *channel);
 
-/* Error handling for grpc_call
+/** Error handling for grpc_call
    Most grpc_call functions return a grpc_error. If the error is not GRPC_OK
    then the operation failed due to some unsatisfied precondition.
    If a grpc_call fails, it's guaranteed that no change to the call state
@@ -280,7 +287,7 @@ GRPCAPI void grpc_channel_destroy(grpc_channel *channel);
 /** Called by clients to cancel an RPC on the server.
     Can be called multiple times, from any thread.
     THREAD-SAFETY grpc_call_cancel and grpc_call_cancel_with_status
-    are thread-safe, and can be called at any point before grpc_call_destroy
+    are thread-safe, and can be called at any point before grpc_call_unref
     is called.*/
 GRPCAPI grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved);
 
@@ -295,9 +302,13 @@ GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                                      const char *description,
                                                      void *reserved);
 
-/** Destroy a call.
-    THREAD SAFETY: grpc_call_destroy is thread-compatible */
-GRPCAPI void grpc_call_destroy(grpc_call *call);
+/** Ref a call.
+    THREAD SAFETY: grpc_call_unref is thread-compatible */
+GRPCAPI void grpc_call_ref(grpc_call *call);
+
+/** Unref a call.
+    THREAD SAFETY: grpc_call_unref is thread-compatible */
+GRPCAPI void grpc_call_unref(grpc_call *call);
 
 /** Request notification of a new call.
     Once a call is received, a notification tagged with \a tag_new is added to
@@ -357,15 +368,6 @@ GRPCAPI grpc_server *grpc_server_create(const grpc_channel_args *args,
 GRPCAPI void grpc_server_register_completion_queue(grpc_server *server,
                                                    grpc_completion_queue *cq,
                                                    void *reserved);
-
-/** Register a non-listening completion queue with the server. This API is
-    similar to grpc_server_register_completion_queue except that the server will
-    not use this completion_queue to listen to any incoming channels.
-
-    Registering a non-listening completion queue will have negative performance
-    impact and hence this API is not recommended for production use cases. */
-GRPCAPI void grpc_server_register_non_listening_completion_queue(
-    grpc_server *server, grpc_completion_queue *q, void *reserved);
 
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.

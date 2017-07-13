@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -44,7 +29,7 @@
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
-#include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/slice/b64.h"
 #include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.
@@ -356,7 +341,7 @@ static int httpcli_get_google_keys_for_email(
                     "/robot/v1/metadata/x509/"
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                     "gserviceaccount.com") == 0);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -400,7 +385,7 @@ static int httpcli_get_custom_keys_for_email(
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "keys.bar.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/jwk/foo@bar.com") == 0);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -434,7 +419,7 @@ static int httpcli_get_jwk_set(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/oauth2/v3/certs") == 0);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -449,7 +434,7 @@ static int httpcli_get_openid_config(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(strcmp(request->http.path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_httpcli_set_override(httpcli_get_jwk_set,
                             httpcli_post_should_not_be_called);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -490,7 +475,7 @@ static int httpcli_get_bad_json(grpc_exec_ctx *exec_ctx,
                                 grpc_httpcli_response *response) {
   *response = http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
-  grpc_closure_sched(exec_ctx, on_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 

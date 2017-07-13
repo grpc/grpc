@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -46,7 +31,7 @@ var EventEmitter = require('events');
 var util = require('util');
 
 var express = require('express');
-var bodyParser = require('body-parser')
+var bodyParser = require('body-parser');
 
 function unaryCall(req, res) {
   var reqObj = req.body;
@@ -56,7 +41,7 @@ function unaryCall(req, res) {
 
 function BenchmarkServer(host, port, tls, generic, response_size) {
   var app = express();
-  app.use(bodyParser.json())
+  app.use(bodyParser.json());
   app.put('/serviceProto.BenchmarkService.service/unaryCall', unaryCall);
   this.input_host = host;
   this.input_port = port;
@@ -81,6 +66,7 @@ BenchmarkServer.prototype.start = function() {
   var self = this;
   this.server.listen(this.input_port, this.input_hostname, function() {
     self.last_wall_time = process.hrtime();
+    self.last_usage = process.cpuUsage();
     self.emit('started');
   });
 };
@@ -91,14 +77,15 @@ BenchmarkServer.prototype.getPort = function() {
 
 BenchmarkServer.prototype.mark = function(reset) {
   var wall_time_diff = process.hrtime(this.last_wall_time);
+  var usage_diff = process.cpuUsage(this.last_usage);
   if (reset) {
     this.last_wall_time = process.hrtime();
+    this.last_usage = process.cpuUsage();
   }
   return {
     time_elapsed: wall_time_diff[0] + wall_time_diff[1] / 1e9,
-    // Not sure how to measure these values
-    time_user: 0,
-    time_system: 0
+    time_user: usage_diff.user / 1000000,
+    time_system: usage_diff.system / 1000000
   };
 };
 

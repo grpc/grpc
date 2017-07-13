@@ -1,35 +1,69 @@
+[VARIABLES]
+
+# TODO(https://github.com/PyCQA/pylint/issues/1345): How does the inspection
+# not include "unused_" and "ignored_" by default?
+dummy-variables-rgx=^ignored_|^unused_
+
+[DESIGN]
+
+# NOTE(nathaniel): Not particularly attached to this value; it just seems to
+# be what works for us at the moment (excepting the dead-code-walking Beta
+# API).
+max-args=6
+
+[MISCELLANEOUS]
+
+# NOTE(nathaniel): We are big fans of "TODO(<issue link>): " and
+# "NOTE(<username or issue link>): ". We do not allow "TODO:",
+# "TODO(<username>):", "FIXME:", or anything else.
+notes=FIXME,XXX
+
 [MESSAGES CONTROL]
 
-#TODO: Enable missing-docstring
-#TODO: Enable too-few-public-methods
-#TODO: Enable too-many-arguments
-#TODO: Enable no-init
-#TODO: Enable duplicate-code
-#TODO: Enable invalid-name
-#TODO: Enable suppressed-message
-#TODO: Enable locally-disabled
-#TODO: Enable protected-access
-#TODO: Enable no-name-in-module
-#TODO: Enable unused-argument
-#TODO: Enable fixme
-#TODO: Enable wrong-import-order
-#TODO: Enable no-value-for-parameter
-#TODO: Enable cyclic-import
-#TODO: Enable unused-variable
-#TODO: Enable redefined-outer-name
-#TODO: Enable unused-import
-#TODO: Enable too-many-instance-attributes
-#TODO: Enable broad-except
-#TODO: Enable too-many-locals
-#TODO: Enable too-many-lines
-#TODO: Enable redefined-variable-type
-#TODO: Enable next-method-called
-#TODO: Enable import-error
-#TODO: Enable useless-else-on-loop
-#TODO: Enable too-many-return-statements
-#TODO: Enable too-many-nested-blocks
-#TODO: Enable super-init-not-called
-#TODO: Enable no-self-use
-#TODO: Enable no-member
-
-disable=missing-docstring,too-few-public-methods,too-many-arguments,no-init,duplicate-code,invalid-name,suppressed-message,locally-disabled,protected-access,no-name-in-module,unused-argument,fixme,wrong-import-order,no-value-for-parameter,cyclic-import,unused-variable,redefined-outer-name,unused-import,too-many-instance-attributes,broad-except,too-many-locals,too-many-lines,redefined-variable-type,next-method-called,import-error,useless-else-on-loop,too-many-return-statements,too-many-nested-blocks,super-init-not-called,no-self-use,no-member
+disable=
+	# TODO(https://github.com/PyCQA/pylint/issues/59#issuecomment-283774279):
+	# Enable cyclic-import after a 1.7-or-later pylint release that
+	# recognizes our disable=cyclic-import suppressions.
+	cyclic-import,
+	# TODO(https://github.com/grpc/grpc/issues/8622): Enable this after the
+	# Beta API is removed.
+	duplicate-code,
+	# TODO(https://github.com/grpc/grpc/issues/261): Doesn't seem to
+	# understand enum and concurrent.futures; look into this later with the
+	# latest pylint version.
+	import-error,
+	# TODO(https://github.com/grpc/grpc/issues/261): Enable this one.
+	# Should take a little configuration but not much.
+	invalid-name,
+	# TODO(https://github.com/grpc/grpc/issues/261): This doesn't seem to
+	# work for now? Try with a later pylint?
+	locally-disabled,
+	# NOTE(nathaniel): We don't write doc strings for most private code
+	# elements.
+	missing-docstring,
+	# NOTE(nathaniel): Our completely abstract interface classes don't have
+	# constructors.
+	no-init,
+	# TODO(https://github.com/grpc/grpc/issues/261): Doesn't yet play
+	# nicely with some of our code being implemented in Cython. Maybe in a
+	# later version?
+	no-name-in-module,
+	# TODO(https://github.com/grpc/grpc/issues/261): Suppress these where
+	# the odd shape of the authentication portion of the API forces them on
+	# us and enable everywhere else.
+	protected-access,
+	# NOTE(nathaniel): Pylint and I will probably never agree on this.
+	too-few-public-methods,
+	# NOTE(nathaniel): Pylint and I wil probably never agree on this for
+	# private classes. For public classes maybe?
+	too-many-instance-attributes,
+	# NOTE(nathaniel): Some of our modules have a lot of lines... of
+	# specification and documentation. Maybe if this were
+	# lines-of-code-based we would use it.
+	too-many-lines,
+	# TODO(https://github.com/grpc/grpc/issues/261): Maybe we could have
+	# this one if we extracted just a few more helper functions...
+	too-many-nested-blocks,
+	# NOTE(nathaniel): I have disputed the premise of this inspection from
+	# the beginning and will continue to do so until it goes away for good.
+	useless-else-on-loop,

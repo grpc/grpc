@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -58,7 +43,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
 
-extern int grpc_tcp_trace;
+extern grpc_tracer_flag grpc_tcp_trace;
 
 typedef struct {
   gpr_mu mu;
@@ -114,15 +99,15 @@ done:
 static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   int done;
   async_connect *ac = acp;
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str,
             str);
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
-    grpc_fd_shutdown(exec_ctx, ac->fd,
-                     GRPC_ERROR_CREATE("connect() timed out"));
+    grpc_fd_shutdown(exec_ctx, ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                           "connect() timed out"));
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -137,29 +122,7 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 grpc_endpoint *grpc_tcp_client_create_from_fd(
     grpc_exec_ctx *exec_ctx, grpc_fd *fd, const grpc_channel_args *channel_args,
     const char *addr_str) {
-  size_t tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
-  if (channel_args != NULL) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 ==
-          strcmp(channel_args->args[i].key, GRPC_ARG_TCP_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {(int)tcp_read_chunk_size, 1,
-                                        8 * 1024 * 1024};
-        tcp_read_chunk_size = (size_t)grpc_channel_arg_get_integer(
-            &channel_args->args[i], options);
-      } else if (0 ==
-                 strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
-        resource_quota = grpc_resource_quota_ref_internal(
-            channel_args->args[i].value.pointer.p);
-      }
-    }
-  }
-
-  grpc_endpoint *ep =
-      grpc_tcp_create(fd, resource_quota, tcp_read_chunk_size, addr_str);
-  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
-  return ep;
+  return grpc_tcp_create(exec_ctx, fd, channel_args, addr_str);
 }
 
 static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
@@ -174,7 +137,7 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 
   GRPC_ERROR_REF(error);
 
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: error=%s",
             ac->addr_str, str);
@@ -191,7 +154,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   gpr_mu_lock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
     error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                           grpc_slice_from_static_string("Timeout occurred"));
     goto finish;
   }
 
@@ -252,12 +216,17 @@ finish:
   gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
     char *error_descr;
-    gpr_asprintf(&error_descr, "Failed to connect to remote host: %s",
-                 grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION));
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, error_descr);
+    grpc_slice str;
+    bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
+    GPR_ASSERT(ret);
+    char *desc = grpc_slice_to_c_string(str);
+    gpr_asprintf(&error_descr, "Failed to connect to remote host: %s", desc);
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                               grpc_slice_from_copied_string(error_descr));
     gpr_free(error_descr);
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, ac->addr_str);
+    gpr_free(desc);
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
+                               grpc_slice_from_copied_string(ac->addr_str));
   }
   if (done) {
     gpr_mu_destroy(&ac->mu);
@@ -265,7 +234,7 @@ finish:
     grpc_channel_args_destroy(exec_ctx, ac->channel_args);
     gpr_free(ac);
   }
-  grpc_closure_sched(exec_ctx, closure, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
 }
 
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
@@ -294,7 +263,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   error = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
   if (error != GRPC_ERROR_NONE) {
-    grpc_closure_sched(exec_ctx, closure, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
     return;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
@@ -303,7 +272,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     addr = &addr4_copy;
   }
   if ((error = prepare_socket(addr, fd, channel_args)) != GRPC_ERROR_NONE) {
-    grpc_closure_sched(exec_ctx, closure, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
     return;
   }
 
@@ -321,13 +290,13 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   if (err >= 0) {
     *ep =
         grpc_tcp_client_create_from_fd(exec_ctx, fdobj, channel_args, addr_str);
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, "tcp_client_connect_error");
-    grpc_closure_sched(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"));
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"));
     goto done;
   }
 
@@ -342,17 +311,17 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   addr_str = NULL;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
-  grpc_closure_init(&ac->write_closure, on_writable, ac,
+  GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
                     grpc_schedule_on_exec_ctx);
   ac->channel_args = grpc_channel_args_copy(channel_args);
 
-  if (grpc_tcp_trace) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
-            ac->addr_str);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
+            ac->addr_str, fdobj);
   }
 
   gpr_mu_lock(&ac->mu);
-  grpc_closure_init(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &ac->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                   &ac->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));

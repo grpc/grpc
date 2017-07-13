@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -44,18 +29,18 @@ static grpc_error *recursively_find_error_with_field(grpc_error *error,
   }
   if (grpc_error_is_special(error)) return NULL;
   // Otherwise, search through its children.
-  intptr_t key = 0;
-  while (true) {
-    grpc_error *child_error = gpr_avl_get(error->errs, (void *)key++);
-    if (child_error == NULL) break;
-    grpc_error *result = recursively_find_error_with_field(child_error, which);
-    if (result != NULL) return result;
+  uint8_t slot = error->first_err;
+  while (slot != UINT8_MAX) {
+    grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
+    grpc_error *result = recursively_find_error_with_field(lerr->err, which);
+    if (result) return result;
+    slot = lerr->next;
   }
   return NULL;
 }
 
 void grpc_error_get_status(grpc_error *error, gpr_timespec deadline,
-                           grpc_status_code *code, const char **msg,
+                           grpc_status_code *code, grpc_slice *slice,
                            grpc_http2_error_code *http_error) {
   // Start with the parent error and recurse through the tree of children
   // until we find the first one that has a status code.
@@ -97,11 +82,11 @@ void grpc_error_get_status(grpc_error *error, gpr_timespec deadline,
 
   // If the error has a status message, use it.  Otherwise, fall back to
   // the error description.
-  if (msg != NULL) {
-    *msg = grpc_error_get_str(found_error, GRPC_ERROR_STR_GRPC_MESSAGE);
-    if (*msg == NULL && error != GRPC_ERROR_NONE) {
-      *msg = grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION);
-      if (*msg == NULL) *msg = "unknown error";  // Just in case.
+  if (slice != NULL) {
+    if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_GRPC_MESSAGE, slice)) {
+      if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION, slice)) {
+        *slice = grpc_slice_from_static_string("unknown error");
+      }
     }
   }
 
@@ -112,13 +97,13 @@ bool grpc_error_has_clear_grpc_status(grpc_error *error) {
   if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, NULL)) {
     return true;
   }
-  intptr_t key = 0;
-  while (true) {
-    grpc_error *child_error = gpr_avl_get(error->errs, (void *)key++);
-    if (child_error == NULL) break;
-    if (grpc_error_has_clear_grpc_status(child_error)) {
+  uint8_t slot = error->first_err;
+  while (slot != UINT8_MAX) {
+    grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
+    if (grpc_error_has_clear_grpc_status(lerr->err)) {
       return true;
     }
+    slot = lerr->next;
   }
   return false;
 }

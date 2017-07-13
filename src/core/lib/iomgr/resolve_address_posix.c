@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -73,14 +58,16 @@ static grpc_error *blocking_resolve_address_impl(
   /* parse name, splitting it into host and port parts */
   gpr_split_host_port(name, &host, &port);
   if (host == NULL) {
-    err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
-                             GRPC_ERROR_STR_TARGET_ADDRESS, name);
+    err = grpc_error_set_str(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
+        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto done;
   }
   if (port == NULL) {
     if (default_port == NULL) {
-      err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
-                               GRPC_ERROR_STR_TARGET_ADDRESS, name);
+      err = grpc_error_set_str(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
+          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
       goto done;
     }
     port = gpr_strdup(default_port);
@@ -112,11 +99,15 @@ static grpc_error *blocking_resolve_address_impl(
   if (s != 0) {
     err = grpc_error_set_str(
         grpc_error_set_str(
-            grpc_error_set_str(grpc_error_set_int(GRPC_ERROR_CREATE("OS Error"),
-                                                  GRPC_ERROR_INT_ERRNO, s),
-                               GRPC_ERROR_STR_OS_ERROR, gai_strerror(s)),
-            GRPC_ERROR_STR_SYSCALL, "getaddrinfo"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+            grpc_error_set_str(
+                grpc_error_set_int(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("OS Error"),
+                    GRPC_ERROR_INT_ERRNO, s),
+                GRPC_ERROR_STR_OS_ERROR,
+                grpc_slice_from_static_string(gai_strerror(s))),
+            GRPC_ERROR_STR_SYSCALL,
+            grpc_slice_from_static_string("getaddrinfo")),
+        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto done;
   }
 
@@ -163,7 +154,7 @@ typedef struct {
 static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp,
                               grpc_error *error) {
   request *r = rp;
-  grpc_closure_sched(
+  GRPC_CLOSURE_SCHED(
       exec_ctx, r->on_done,
       grpc_blocking_resolve_address(r->name, r->default_port, r->addrs_out));
   gpr_free(r->name);
@@ -184,13 +175,13 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addrs) {
   request *r = gpr_malloc(sizeof(request));
-  grpc_closure_init(&r->request_closure, do_request_thread, r,
+  GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r,
                     grpc_executor_scheduler);
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;
   r->addrs_out = addrs;
-  grpc_closure_sched(exec_ctx, &r->request_closure, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, &r->request_closure, GRPC_ERROR_NONE);
 }
 
 void (*grpc_resolve_address)(

@@ -1,31 +1,16 @@
-# Copyright 2016, Google Inc.
-# All rights reserved.
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
 import sys
@@ -39,11 +24,10 @@ from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
 from grpc.framework.foundation import callable_util
 
-_USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
+_USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
 
 _EMPTY_FLAGS = 0
 _INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
-_EMPTY_METADATA = cygrpc.Metadata(())
 
 _UNARY_UNARY_INITIAL_DUE = (cygrpc.OperationType.send_initial_metadata,
                             cygrpc.OperationType.send_message,
@@ -138,8 +122,8 @@ def _abort(state, code, details):
         state.code = code
         state.details = details
         if state.initial_metadata is None:
-            state.initial_metadata = _EMPTY_METADATA
-        state.trailing_metadata = _EMPTY_METADATA
+            state.initial_metadata = _common.EMPTY_METADATA
+        state.trailing_metadata = _common.EMPTY_METADATA
 
 
 def _handle_event(event, state, response_deserializer):
@@ -201,7 +185,7 @@ def _consume_request_iterator(request_iterator, state, call,
                 request = next(request_iterator)
             except StopIteration:
                 break
-            except Exception as e:
+            except Exception:  # pylint: disable=broad-except
                 logging.exception("Exception iterating requests!")
                 call.cancel()
                 _abort(state, grpc.StatusCode.UNKNOWN,
@@ -238,7 +222,7 @@ def _consume_request_iterator(request_iterator, state, call,
                     cygrpc.Operations(operations), event_handler)
                 state.due.add(cygrpc.OperationType.send_close_from_client)
 
-    def stop_consumption_thread(timeout):
+    def stop_consumption_thread(timeout):  # pylint: disable=unused-argument
         with state.condition:
             if state.code is None:
                 call.cancel()
@@ -388,13 +372,14 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
         with self._state.condition:
             while self._state.initial_metadata is None:
                 self._state.condition.wait()
-            return _common.application_metadata(self._state.initial_metadata)
+            return _common.to_application_metadata(self._state.initial_metadata)
 
     def trailing_metadata(self):
         with self._state.condition:
             while self._state.trailing_metadata is None:
                 self._state.condition.wait()
-            return _common.application_metadata(self._state.trailing_metadata)
+            return _common.to_application_metadata(
+                self._state.trailing_metadata)
 
     def code(self):
         with self._state.condition:
@@ -435,7 +420,7 @@ def _start_unary_request(request, timeout, request_serializer):
     deadline, deadline_timespec = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
     if serialized_request is None:
-        state = _RPCState((), _EMPTY_METADATA, _EMPTY_METADATA,
+        state = _RPCState((), _common.EMPTY_METADATA, _common.EMPTY_METADATA,
                           grpc.StatusCode.INTERNAL,
                           'Exception serializing request!')
         rendezvous = _Rendezvous(state, None, None, deadline)
@@ -474,7 +459,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             state = _RPCState(_UNARY_UNARY_INITIAL_DUE, None, None, None, None)
             operations = (
                 cygrpc.operation_send_initial_metadata(
-                    _common.cygrpc_metadata(metadata), _EMPTY_FLAGS),
+                    _common.to_cygrpc_metadata(metadata), _EMPTY_FLAGS),
                 cygrpc.operation_send_message(serialized_request, _EMPTY_FLAGS),
                 cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
                 cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),
@@ -564,7 +549,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                     )), event_handler)
                 operations = (
                     cygrpc.operation_send_initial_metadata(
-                        _common.cygrpc_metadata(metadata),
+                        _common.to_cygrpc_metadata(metadata),
                         _EMPTY_FLAGS), cygrpc.operation_send_message(
                             serialized_request, _EMPTY_FLAGS),
                     cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
@@ -604,7 +589,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                 None)
             operations = (
                 cygrpc.operation_send_initial_metadata(
-                    _common.cygrpc_metadata(metadata), _EMPTY_FLAGS),
+                    _common.to_cygrpc_metadata(metadata), _EMPTY_FLAGS),
                 cygrpc.operation_receive_message(_EMPTY_FLAGS),
                 cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),)
             call_error = call.start_client_batch(
@@ -658,7 +643,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                 event_handler)
             operations = (
                 cygrpc.operation_send_initial_metadata(
-                    _common.cygrpc_metadata(metadata), _EMPTY_FLAGS),
+                    _common.to_cygrpc_metadata(metadata), _EMPTY_FLAGS),
                 cygrpc.operation_receive_message(_EMPTY_FLAGS),
                 cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),)
             call_error = call.start_client_batch(
@@ -701,7 +686,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
                 event_handler)
             operations = (
                 cygrpc.operation_send_initial_metadata(
-                    _common.cygrpc_metadata(metadata), _EMPTY_FLAGS),
+                    _common.to_cygrpc_metadata(metadata), _EMPTY_FLAGS),
                 cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),)
             call_error = call.start_client_batch(
                 cygrpc.Operations(operations), event_handler)
@@ -736,7 +721,7 @@ def _run_channel_spin_thread(state):
                         state.managed_calls = None
                         return
 
-    def stop_channel_spin(timeout):
+    def stop_channel_spin(timeout):  # pylint: disable=unused-argument
         with state.lock:
             if state.managed_calls is not None:
                 for call in state.managed_calls:
@@ -786,7 +771,7 @@ def _channel_managed_call_management(state):
 class _ChannelConnectivityState(object):
 
     def __init__(self, channel):
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.channel = channel
         self.polling = False
         self.connectivity = None
@@ -864,7 +849,10 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
                     _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
                         connectivity])
                 if not state.delivering:
-                    callbacks = _deliveries(state)
+                    # NOTE(nathaniel): The field is only ever used as a
+                    # sequence so it's fine that both lists and tuples are
+                    # assigned to it.
+                    callbacks = _deliveries(state)  # pylint: disable=redefined-variable-type
                     if callbacks:
                         _spawn_delivery(state, callbacks)
 
@@ -877,12 +865,8 @@ def _moot(state):
 def _subscribe(state, callback, try_to_connect):
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
-
-            def cancel_all_subscriptions(timeout):
-                _moot(state)
-
             polling_thread = _common.CleanupThread(
-                cancel_all_subscriptions,
+                lambda timeout: _moot(state),
                 target=_poll_connectivity,
                 args=(state, state.channel, bool(try_to_connect)))
             polling_thread.start()
@@ -929,6 +913,11 @@ class Channel(grpc.Channel):
             _common.channel_args(_options(options)), credentials)
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
+
+        # TODO(https://github.com/grpc/grpc/issues/9884)
+        # Temporary work around UNAVAILABLE issues
+        # Remove this once c-core has retry support
+        _subscribe(self._connectivity_state, lambda *args: None, None)
 
     def subscribe(self, callback, try_to_connect=None):
         _subscribe(self._connectivity_state, callback, try_to_connect)

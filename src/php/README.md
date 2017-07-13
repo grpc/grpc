@@ -1,5 +1,5 @@
 
-#Overview
+# Overview
 
 This directory contains source code for PHP implementation of gRPC layered on
 shared C library.
@@ -13,12 +13,24 @@ shared C library.
 * `phpunit` (optional)
 
 **Install PHP and PECL on Ubuntu/Debian:**
+
+For PHP5:
+
 ```sh
-$ sudo apt-get install php5 php5-dev php-pear
+$ sudo apt-get install php5 php5-dev php-pear phpunit
+```
 
-OR
+For PHP7:
 
-$ sudo apt-get install php7.0 php7.0-dev php-pear
+```sh
+$ sudo apt-get install php7.0 php7.0-dev php-pear phpunit
+```
+
+**Install PHP and PECL on CentOS/RHEL 7:**
+```sh
+$ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+$ sudo rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+$ sudo yum install php56w php56w-devel php-pear phpunit gcc zlib-devel
 ```
 
 **Install PECL on Mac:**
@@ -52,6 +64,10 @@ This will compile and install the gRPC PHP extension into the standard PHP
 extension directory. You should be able to run the [unit tests](#unit-tests),
 with the PHP extension installed.
 
+Note: For users on CentOS/RHEL 6, unfortunately this step won't work. Please
+follow the instructions below to compile the extension from source.
+
+
 **Update php.ini**
 
 Add this line to your `php.ini` file, e.g. `/etc/php5/cli/php.ini`
@@ -84,7 +100,7 @@ the `composer` and `protoc` binaries. You can find out how to get these
 Clone this repository
 
 ```sh
-$ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
+$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 ```
 
 Build and install the gRPC C core library
@@ -113,7 +129,7 @@ $ sudo make install
 You will need the source code to run tests
 
 ```sh
-$ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
+$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 $ cd grpc
 $ git pull --recurse-submodules && git submodule update --init --recursive
 ```
@@ -142,7 +158,7 @@ $ composer install
 ### Protobuf compiler
 
 Again if you don't have it already, you need to install the protobuf compiler
-`protoc`, version 3.2.0+.
+`protoc`, version 3.1.0+ (the newer the better).
 
 If `protoc` hasn't been installed, you can download the `protoc` binaries from
 [the protocol buffers Github repository](https://github.com/google/protobuf/releases).
@@ -156,6 +172,28 @@ $ cd grpc/third_party/protobuf
 $ ./autogen.sh && ./configure && make
 $ sudo make install
 ```
+
+
+### Protobuf Runtime library
+
+There are two protobuf runtime libraries to choose from. They are idenfical in terms of APIs offered.
+
+1. C implementation (for better performance)
+
+``` sh
+$ sudo pecl install protobuf
+```
+
+2. PHP implementation (for easier installation)
+
+
+Add this to your `composer.json` file:
+
+```
+  "require": {
+    "google/protobuf": "^v3.3.0"
+  }
+``` 
 
 
 ### PHP Protoc Plugin

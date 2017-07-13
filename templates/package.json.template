@@ -5,7 +5,7 @@
     "version": "${settings.node_version}",
     "author": "Google Inc.",
     "description": "gRPC Library for Node",
-    "homepage": "http://www.grpc.io/",
+    "homepage": "https://grpc.io/",
     "repository": {
       "type": "git",
       "url": "https://github.com/grpc/grpc.git"
@@ -26,7 +26,7 @@
       "electron-build": "./node_modules/.bin/node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
       "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
       "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
-      "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build"
+      "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build --library=static_library"
     },
     "bundledDependencies": [
       "node-pre-gyp"
@@ -35,7 +35,7 @@
       "arguejs": "^0.2.3",
       "lodash": "^4.15.0",
       "nan": "^2.0.0",
-      "node-pre-gyp": "^0.6.0",
+      "node-pre-gyp": "^0.6.35",
       "protobufjs": "^5.0.0"
     },
     "devDependencies": {
@@ -54,11 +54,11 @@
       "poisson-process": "^0.2.1"
     },
     "engines": {
-      "node": ">=1.1.0"
+      "node": ">=4"
     },
     "binary": {
       "module_name": "grpc_node",
-      "module_path": "src/node/extension_binary",
+      "module_path": "src/node/extension_binary/{node_abi}-{platform}-{arch}",
       "host": "https://storage.googleapis.com/",
       "remote_path": "grpc-precompiled-binaries/node/{name}/v{version}",
       "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
@@ -81,7 +81,7 @@
       "binding.gyp"
     ],
     "main": "src/node/index.js",
-    "license": "BSD-3-Clause",
+    "license": "Apache-2.0",
     "jshintConfig": {
       "bitwise": true,
       "curly": true,

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -39,11 +24,19 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_uv.h"
+
+#include "src/core/lib/debug/trace.h"
+
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_fd_refcount =
+    GRPC_TRACER_INITIALIZER(false, "fd_refcount");
+#endif
 
 struct grpc_pollset {
   uv_timer_t timer;
@@ -57,23 +50,39 @@ int grpc_pollset_work_run_loop;
 
 gpr_mu grpc_polling_mu;
 
+/* This is used solely to kick the uv loop, by setting a callback to be run
+   immediately in the next loop iteration.
+   Note: In the future, if there is a bug that involves missing wakeups in the
+   future, try adding a uv_async_t to kick the loop differently */
+uv_timer_t *dummy_uv_handle;
+
 size_t grpc_pollset_size() { return sizeof(grpc_pollset); }
+
+void dummy_timer_cb(uv_timer_t *handle) {}
+
+void dummy_handle_close_cb(uv_handle_t *handle) { gpr_free(handle); }
 
 void grpc_pollset_global_init(void) {
   gpr_mu_init(&grpc_polling_mu);
+  dummy_uv_handle = gpr_malloc(sizeof(uv_timer_t));
+  uv_timer_init(uv_default_loop(), dummy_uv_handle);
   grpc_pollset_work_run_loop = 1;
 }
 
-void grpc_pollset_global_shutdown(void) { gpr_mu_destroy(&grpc_polling_mu); }
+void grpc_pollset_global_shutdown(void) {
+  gpr_mu_destroy(&grpc_polling_mu);
+  uv_close((uv_handle_t *)dummy_uv_handle, dummy_handle_close_cb);
+}
+
+static void timer_run_cb(uv_timer_t *timer) {}
+
+static void timer_close_cb(uv_handle_t *handle) { handle->data = (void *)1; }
 
 void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   *mu = &grpc_polling_mu;
-  memset(pollset, 0, sizeof(grpc_pollset));
   uv_timer_init(uv_default_loop(), &pollset->timer);
   pollset->shutting_down = 0;
 }
-
-static void timer_close_cb(uv_handle_t *handle) { handle->data = (void *)1; }
 
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure) {
@@ -82,11 +91,14 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (grpc_pollset_work_run_loop) {
     // Drain any pending UV callbacks without blocking
     uv_run(uv_default_loop(), UV_RUN_NOWAIT);
+  } else {
+    // kick the loop once
+    uv_timer_start(dummy_uv_handle, dummy_timer_cb, 0, 0);
   }
-  grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
 }
 
-void grpc_pollset_destroy(grpc_pollset *pollset) {
+void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   uv_close((uv_handle_t *)&pollset->timer, timer_close_cb);
   // timer.data is a boolean indicating that the timer has finished closing
   pollset->timer.data = (void *)0;
@@ -96,8 +108,6 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
     }
   }
 }
-
-static void timer_run_cb(uv_timer_t *timer) {}
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker_hdl,
@@ -131,6 +141,7 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 grpc_error *grpc_pollset_kick(grpc_pollset *pollset,
                               grpc_pollset_worker *specific_worker) {
+  uv_timer_start(dummy_uv_handle, dummy_timer_cb, 0, 0);
   return GRPC_ERROR_NONE;
 }
 

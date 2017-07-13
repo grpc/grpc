@@ -1,34 +1,19 @@
 
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -49,6 +34,8 @@ extern void authority_not_supported(grpc_end2end_test_config config);
 extern void authority_not_supported_pre_init(void);
 extern void bad_hostname(grpc_end2end_test_config config);
 extern void bad_hostname_pre_init(void);
+extern void bad_ping(grpc_end2end_test_config config);
+extern void bad_ping_pre_init(void);
 extern void binary_metadata(grpc_end2end_test_config config);
 extern void binary_metadata_pre_init(void);
 extern void call_creds(grpc_end2end_test_config config);
@@ -59,6 +46,8 @@ extern void cancel_after_client_done(grpc_end2end_test_config config);
 extern void cancel_after_client_done_pre_init(void);
 extern void cancel_after_invoke(grpc_end2end_test_config config);
 extern void cancel_after_invoke_pre_init(void);
+extern void cancel_after_round_trip(grpc_end2end_test_config config);
+extern void cancel_after_round_trip_pre_init(void);
 extern void cancel_before_invoke(grpc_end2end_test_config config);
 extern void cancel_before_invoke_pre_init(void);
 extern void cancel_in_a_vacuum(grpc_end2end_test_config config);
@@ -91,12 +80,18 @@ extern void idempotent_request(grpc_end2end_test_config config);
 extern void idempotent_request_pre_init(void);
 extern void invoke_large_request(grpc_end2end_test_config config);
 extern void invoke_large_request_pre_init(void);
+extern void keepalive_timeout(grpc_end2end_test_config config);
+extern void keepalive_timeout_pre_init(void);
 extern void large_metadata(grpc_end2end_test_config config);
 extern void large_metadata_pre_init(void);
 extern void load_reporting_hook(grpc_end2end_test_config config);
 extern void load_reporting_hook_pre_init(void);
 extern void max_concurrent_streams(grpc_end2end_test_config config);
 extern void max_concurrent_streams_pre_init(void);
+extern void max_connection_age(grpc_end2end_test_config config);
+extern void max_connection_age_pre_init(void);
+extern void max_connection_idle(grpc_end2end_test_config config);
+extern void max_connection_idle_pre_init(void);
 extern void max_message_length(grpc_end2end_test_config config);
 extern void max_message_length_pre_init(void);
 extern void negative_deadline(grpc_end2end_test_config config);
@@ -139,6 +134,8 @@ extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
 extern void trailing_metadata_pre_init(void);
+extern void workaround_cronet_compression(grpc_end2end_test_config config);
+extern void workaround_cronet_compression_pre_init(void);
 extern void write_buffering(grpc_end2end_test_config config);
 extern void write_buffering_pre_init(void);
 extern void write_buffering_at_end(grpc_end2end_test_config config);
@@ -150,11 +147,13 @@ void grpc_end2end_tests_pre_init(void) {
   grpc_summon_debugger_macros();
   authority_not_supported_pre_init();
   bad_hostname_pre_init();
+  bad_ping_pre_init();
   binary_metadata_pre_init();
   call_creds_pre_init();
   cancel_after_accept_pre_init();
   cancel_after_client_done_pre_init();
   cancel_after_invoke_pre_init();
+  cancel_after_round_trip_pre_init();
   cancel_before_invoke_pre_init();
   cancel_in_a_vacuum_pre_init();
   cancel_with_status_pre_init();
@@ -171,9 +170,12 @@ void grpc_end2end_tests_pre_init(void) {
   hpack_size_pre_init();
   idempotent_request_pre_init();
   invoke_large_request_pre_init();
+  keepalive_timeout_pre_init();
   large_metadata_pre_init();
   load_reporting_hook_pre_init();
   max_concurrent_streams_pre_init();
+  max_connection_age_pre_init();
+  max_connection_idle_pre_init();
   max_message_length_pre_init();
   negative_deadline_pre_init();
   network_status_change_pre_init();
@@ -195,6 +197,7 @@ void grpc_end2end_tests_pre_init(void) {
   simple_request_pre_init();
   streaming_error_response_pre_init();
   trailing_metadata_pre_init();
+  workaround_cronet_compression_pre_init();
   write_buffering_pre_init();
   write_buffering_at_end_pre_init();
 }
@@ -208,11 +211,13 @@ void grpc_end2end_tests(int argc, char **argv,
   if (argc <= 1) {
     authority_not_supported(config);
     bad_hostname(config);
+    bad_ping(config);
     binary_metadata(config);
     call_creds(config);
     cancel_after_accept(config);
     cancel_after_client_done(config);
     cancel_after_invoke(config);
+    cancel_after_round_trip(config);
     cancel_before_invoke(config);
     cancel_in_a_vacuum(config);
     cancel_with_status(config);
@@ -229,9 +234,12 @@ void grpc_end2end_tests(int argc, char **argv,
     hpack_size(config);
     idempotent_request(config);
     invoke_large_request(config);
+    keepalive_timeout(config);
     large_metadata(config);
     load_reporting_hook(config);
     max_concurrent_streams(config);
+    max_connection_age(config);
+    max_connection_idle(config);
     max_message_length(config);
     negative_deadline(config);
     network_status_change(config);
@@ -253,6 +261,7 @@ void grpc_end2end_tests(int argc, char **argv,
     simple_request(config);
     streaming_error_response(config);
     trailing_metadata(config);
+    workaround_cronet_compression(config);
     write_buffering(config);
     write_buffering_at_end(config);
     return;
@@ -265,6 +274,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("bad_hostname", argv[i])) {
       bad_hostname(config);
+      continue;
+    }
+    if (0 == strcmp("bad_ping", argv[i])) {
+      bad_ping(config);
       continue;
     }
     if (0 == strcmp("binary_metadata", argv[i])) {
@@ -285,6 +298,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("cancel_after_invoke", argv[i])) {
       cancel_after_invoke(config);
+      continue;
+    }
+    if (0 == strcmp("cancel_after_round_trip", argv[i])) {
+      cancel_after_round_trip(config);
       continue;
     }
     if (0 == strcmp("cancel_before_invoke", argv[i])) {
@@ -351,6 +368,10 @@ void grpc_end2end_tests(int argc, char **argv,
       invoke_large_request(config);
       continue;
     }
+    if (0 == strcmp("keepalive_timeout", argv[i])) {
+      keepalive_timeout(config);
+      continue;
+    }
     if (0 == strcmp("large_metadata", argv[i])) {
       large_metadata(config);
       continue;
@@ -361,6 +382,14 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("max_concurrent_streams", argv[i])) {
       max_concurrent_streams(config);
+      continue;
+    }
+    if (0 == strcmp("max_connection_age", argv[i])) {
+      max_connection_age(config);
+      continue;
+    }
+    if (0 == strcmp("max_connection_idle", argv[i])) {
+      max_connection_idle(config);
       continue;
     }
     if (0 == strcmp("max_message_length", argv[i])) {
@@ -445,6 +474,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("trailing_metadata", argv[i])) {
       trailing_metadata(config);
+      continue;
+    }
+    if (0 == strcmp("workaround_cronet_compression", argv[i])) {
+      workaround_cronet_compression(config);
       continue;
     }
     if (0 == strcmp("write_buffering", argv[i])) {

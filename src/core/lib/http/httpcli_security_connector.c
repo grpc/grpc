@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -40,14 +25,16 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security_adapter.h"
 
 typedef struct {
   grpc_channel_security_connector base;
-  tsi_ssl_handshaker_factory *handshaker_factory;
+  tsi_ssl_client_handshaker_factory *handshaker_factory;
   char *secure_peer_name;
 } grpc_httpcli_ssl_channel_security_connector;
 
@@ -56,7 +43,7 @@ static void httpcli_ssl_destroy(grpc_exec_ctx *exec_ctx,
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
-    tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
+    tsi_ssl_client_handshaker_factory_destroy(c->handshaker_factory);
   }
   if (c->secure_peer_name != NULL) gpr_free(c->secure_peer_name);
   gpr_free(sc);
@@ -69,7 +56,7 @@ static void httpcli_ssl_add_handshakers(grpc_exec_ctx *exec_ctx,
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   tsi_handshaker *handshaker = NULL;
   if (c->handshaker_factory != NULL) {
-    tsi_result result = tsi_ssl_handshaker_factory_create_handshaker(
+    tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         c->handshaker_factory, c->secure_peer_name, &handshaker);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
@@ -78,7 +65,8 @@ static void httpcli_ssl_add_handshakers(grpc_exec_ctx *exec_ctx,
   }
   grpc_handshake_manager_add(
       handshake_mgr,
-      grpc_security_handshaker_create(exec_ctx, handshaker, &sc->base));
+      grpc_security_handshaker_create(
+          exec_ctx, tsi_create_adapter_handshaker(handshaker), &sc->base));
 }
 
 static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
@@ -95,10 +83,10 @@ static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
     char *msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
                  c->secure_peer_name);
-    error = GRPC_ERROR_CREATE(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
   }
-  grpc_closure_sched(exec_ctx, on_peer_checked, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
@@ -106,9 +94,8 @@ static grpc_security_connector_vtable httpcli_ssl_vtable = {
     httpcli_ssl_destroy, httpcli_ssl_check_peer};
 
 static grpc_security_status httpcli_ssl_channel_security_connector_create(
-    grpc_exec_ctx *exec_ctx, const unsigned char *pem_root_certs,
-    size_t pem_root_certs_size, const char *secure_peer_name,
-    grpc_channel_security_connector **sc) {
+    grpc_exec_ctx *exec_ctx, const char *pem_root_certs,
+    const char *secure_peer_name, grpc_channel_security_connector **sc) {
   tsi_result result = TSI_OK;
   grpc_httpcli_ssl_channel_security_connector *c;
 
@@ -118,8 +105,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     return GRPC_SECURITY_ERROR;
   }
 
-  c = gpr_malloc(sizeof(grpc_httpcli_ssl_channel_security_connector));
-  memset(c, 0, sizeof(grpc_httpcli_ssl_channel_security_connector));
+  c = gpr_zalloc(sizeof(grpc_httpcli_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &httpcli_ssl_vtable;
@@ -127,8 +113,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     c->secure_peer_name = gpr_strdup(secure_peer_name);
   }
   result = tsi_create_ssl_client_handshaker_factory(
-      NULL, 0, NULL, 0, pem_root_certs, pem_root_certs_size, NULL, NULL, NULL,
-      0, &c->handshaker_factory);
+      NULL, pem_root_certs, NULL, NULL, 0, &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -173,11 +158,9 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
                           gpr_timespec deadline,
                           void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
                                           grpc_endpoint *endpoint)) {
-  grpc_channel_security_connector *sc = NULL;
-  const unsigned char *pem_root_certs = NULL;
   on_done_closure *c = gpr_malloc(sizeof(*c));
-  size_t pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
-  if (pem_root_certs == NULL || pem_root_certs_size == 0) {
+  const char *pem_root_certs = grpc_get_default_ssl_roots();
+  if (pem_root_certs == NULL) {
     gpr_log(GPR_ERROR, "Could not get default pem root certs.");
     on_done(exec_ctx, arg, NULL);
     gpr_free(c);
@@ -185,12 +168,13 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
   }
   c->func = on_done;
   c->arg = arg;
-  c->handshake_mgr = grpc_handshake_manager_create();
+  grpc_channel_security_connector *sc = NULL;
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
-                 exec_ctx, pem_root_certs, pem_root_certs_size, host, &sc) ==
-             GRPC_SECURITY_OK);
-  grpc_channel_security_connector_add_handshakers(exec_ctx, sc,
-                                                  c->handshake_mgr);
+                 exec_ctx, pem_root_certs, host, &sc) == GRPC_SECURITY_OK);
+  grpc_arg channel_arg = grpc_security_connector_to_arg(&sc->base);
+  grpc_channel_args args = {1, &channel_arg};
+  c->handshake_mgr = grpc_handshake_manager_create();
+  grpc_handshakers_add(exec_ctx, HANDSHAKER_CLIENT, &args, c->handshake_mgr);
   grpc_handshake_manager_do_handshake(
       exec_ctx, c->handshake_mgr, tcp, NULL /* channel_args */, deadline,
       NULL /* acceptor */, on_handshake_done, c /* user_data */);

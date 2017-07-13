@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -40,10 +25,15 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                          grpc_byte_stream *byte_stream, grpc_slice *slice,
-                          size_t max_size_hint, grpc_closure *on_complete) {
-  return byte_stream->next(exec_ctx, byte_stream, slice, max_size_hint,
-                           on_complete);
+                          grpc_byte_stream *byte_stream, size_t max_size_hint,
+                          grpc_closure *on_complete) {
+  return byte_stream->next(exec_ctx, byte_stream, max_size_hint, on_complete);
+}
+
+grpc_error *grpc_byte_stream_pull(grpc_exec_ctx *exec_ctx,
+                                  grpc_byte_stream *byte_stream,
+                                  grpc_slice *slice) {
+  return byte_stream->pull(exec_ctx, byte_stream, slice);
 }
 
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -53,16 +43,24 @@ void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
 
 /* slice_buffer_stream */
 
-static int slice_buffer_stream_next(grpc_exec_ctx *exec_ctx,
-                                    grpc_byte_stream *byte_stream,
-                                    grpc_slice *slice, size_t max_size_hint,
-                                    grpc_closure *on_complete) {
+static bool slice_buffer_stream_next(grpc_exec_ctx *exec_ctx,
+                                     grpc_byte_stream *byte_stream,
+                                     size_t max_size_hint,
+                                     grpc_closure *on_complete) {
+  grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
+  GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
+  return true;
+}
+
+static grpc_error *slice_buffer_stream_pull(grpc_exec_ctx *exec_ctx,
+                                            grpc_byte_stream *byte_stream,
+                                            grpc_slice *slice) {
   grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
   GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
   *slice =
       grpc_slice_ref_internal(stream->backing_buffer->slices[stream->cursor]);
   stream->cursor++;
-  return 1;
+  return GRPC_ERROR_NONE;
 }
 
 static void slice_buffer_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -75,6 +73,7 @@ void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
   stream->base.length = (uint32_t)slice_buffer->length;
   stream->base.flags = flags;
   stream->base.next = slice_buffer_stream_next;
+  stream->base.pull = slice_buffer_stream_pull;
   stream->base.destroy = slice_buffer_stream_destroy;
   stream->backing_buffer = slice_buffer;
   stream->cursor = 0;

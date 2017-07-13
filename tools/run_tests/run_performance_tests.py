@@ -1,32 +1,17 @@
-#!/usr/bin/env python2.7
-# Copyright 2016, Google Inc.
-# All rights reserved.
+#!/usr/bin/env python
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Run performance tests locally or remotely."""
 
@@ -46,6 +31,7 @@ import tempfile
 import time
 import traceback
 import uuid
+import six
 
 import performance.scenario_config as scenario_config
 import python_utils.jobset as jobset
@@ -101,7 +87,7 @@ def create_qpsworker_job(language, shortname=None, port=10000, remote_host=None,
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
     ssh_cmd = ['ssh']
     cmdline = ['timeout', '%s' % (worker_timeout + 30)] + cmdline
-    ssh_cmd.extend([str(user_at_host), 'cd ~/performance_workspace/grpc/ && %s' % ' '.join(cmdline)])
+    ssh_cmd.extend([str(user_at_host), 'cd ~/performance_workspace/grpc/ && tools/run_tests/start_port_server.py && %s' % ' '.join(cmdline)])
     cmdline = ssh_cmd
 
   jobspec = jobset.JobSpec(
@@ -197,7 +183,7 @@ def archive_repo(languages):
 
   jobset.message('START', 'Archiving local repository.', do_newline=True)
   num_failures, _ = jobset.run(
-      [archive_job], newline_on_success=True, maxjobs=1)
+      [archive_job], newline_on_success=True, maxjobs=1, clear_alarms=False)
   if num_failures == 0:
     jobset.message('SUCCESS',
                    'Archive with local repository created successfully.',
@@ -229,7 +215,7 @@ def prepare_remote_hosts(hosts, prepare_local=False):
             timeout_seconds=prepare_timeout))
   jobset.message('START', 'Preparing hosts.', do_newline=True)
   num_failures, _ = jobset.run(
-      prepare_jobs, newline_on_success=True, maxjobs=10)
+      prepare_jobs, newline_on_success=True, maxjobs=10, clear_alarms=False)
   if num_failures == 0:
     jobset.message('SUCCESS',
                    'Prepare step completed successfully.',
@@ -262,7 +248,7 @@ def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), bui
             timeout_seconds=build_timeout))
   jobset.message('START', 'Building.', do_newline=True)
   num_failures, _ = jobset.run(
-      build_jobs, newline_on_success=True, maxjobs=10)
+      build_jobs, newline_on_success=True, maxjobs=10, clear_alarms=False)
   if num_failures == 0:
     jobset.message('SUCCESS',
                    'Built successfully.',
@@ -428,7 +414,7 @@ def run_collect_perf_profile_jobs(hosts_and_base_names, scenario_name):
     perf_report_jobs.append(perf_report_processor_job(host, perf_base_name, output_filename))
 
   jobset.message('START', 'Collecting perf reports from qps workers', do_newline=True)
-  failures, _ = jobset.run(perf_report_jobs, newline_on_success=True, maxjobs=1)
+  failures, _ = jobset.run(perf_report_jobs, newline_on_success=True, maxjobs=1, clear_alarms=False)
   jobset.message('END', 'Collecting perf reports from qps workers', do_newline=True)
   return failures
 
@@ -502,8 +488,8 @@ args = argp.parse_args()
 
 languages = set(scenario_config.LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                      scenario_config.LANGUAGES.iterkeys() if x == 'all' else [x]
-                      for x in args.language))
+                      six.iterkeys(scenario_config.LANGUAGES) if x == 'all'
+                      else [x] for x in args.language))
 
 
 # Put together set of remote hosts where to run and build
@@ -570,10 +556,10 @@ for scenario in scenarios:
       jobs = [scenario.jobspec]
       if scenario.workers:
         jobs.append(create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host))
-      scenario_failures, resultset = jobset.run(jobs, newline_on_success=True, maxjobs=1)
+      scenario_failures, resultset = jobset.run(jobs, newline_on_success=True, maxjobs=1, clear_alarms=False)
       total_scenario_failures += scenario_failures
-      merged_resultset = dict(itertools.chain(merged_resultset.iteritems(),
-                                              resultset.iteritems()))
+      merged_resultset = dict(itertools.chain(six.iteritems(merged_resultset),
+                                              six.iteritems(resultset)))
     finally:
       # Consider qps workers that need to be killed as failures
       qps_workers_killed += finish_qps_workers(scenario.workers)

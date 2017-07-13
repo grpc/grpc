@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -133,7 +118,7 @@ static void server_weak_ref_shutdown(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void server_weak_ref_init(server_weak_ref *weak_ref) {
   weak_ref->server = NULL;
-  grpc_closure_init(&weak_ref->server_shutdown, server_weak_ref_shutdown,
+  GRPC_CLOSURE_INIT(&weak_ref->server_shutdown, server_weak_ref_shutdown,
                     weak_ref, grpc_schedule_on_exec_ctx);
 }
 
@@ -163,7 +148,8 @@ static void test_addr_init_str(test_addr *addr) {
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *pollset,
                        grpc_tcp_server_acceptor *acceptor) {
-  grpc_endpoint_shutdown(exec_ctx, tcp, GRPC_ERROR_CREATE("Connected"));
+  grpc_endpoint_shutdown(exec_ctx, tcp,
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(exec_ctx, tcp);
 
   on_connect_result temp_result;
@@ -285,7 +271,7 @@ static grpc_error *tcp_connect(grpc_exec_ctx *exec_ctx, const test_addr *remote,
   if (g_nconnects != nconnects_before + 1) {
     gpr_mu_unlock(g_mu);
     close(clifd);
-    return GRPC_ERROR_CREATE("Didn't connect");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Didn't connect");
   }
   close(clifd);
   *result = g_result;
@@ -443,7 +429,7 @@ static void test_connect(size_t num_connects,
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(p);
+  grpc_pollset_destroy(exec_ctx, p);
 }
 
 int main(int argc, char **argv) {
@@ -454,10 +440,11 @@ int main(int argc, char **argv) {
   const grpc_channel_args channel_args = {1, chan_args};
   struct ifaddrs *ifa = NULL;
   struct ifaddrs *ifa_it;
-  test_addrs dst_addrs;
+  // Zalloc dst_addrs to avoid oversized frames.
+  test_addrs *dst_addrs = gpr_zalloc(sizeof(*dst_addrs));
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = gpr_malloc(grpc_pollset_size());
+  g_pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
 
   test_no_op();
@@ -469,24 +456,25 @@ int main(int argc, char **argv) {
     gpr_log(GPR_ERROR, "getifaddrs: %s", strerror(errno));
     return EXIT_FAILURE;
   }
-  dst_addrs.naddrs = 0;
-  for (ifa_it = ifa; ifa_it != NULL && dst_addrs.naddrs < MAX_ADDRS;
+  dst_addrs->naddrs = 0;
+  for (ifa_it = ifa; ifa_it != NULL && dst_addrs->naddrs < MAX_ADDRS;
        ifa_it = ifa_it->ifa_next) {
     if (ifa_it->ifa_addr == NULL) {
       continue;
     } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
-      dst_addrs.addrs[dst_addrs.naddrs].addr.len = sizeof(struct sockaddr_in);
+      dst_addrs->addrs[dst_addrs->naddrs].addr.len = sizeof(struct sockaddr_in);
     } else if (ifa_it->ifa_addr->sa_family == AF_INET6) {
-      dst_addrs.addrs[dst_addrs.naddrs].addr.len = sizeof(struct sockaddr_in6);
+      dst_addrs->addrs[dst_addrs->naddrs].addr.len =
+          sizeof(struct sockaddr_in6);
     } else {
       continue;
     }
-    memcpy(dst_addrs.addrs[dst_addrs.naddrs].addr.addr, ifa_it->ifa_addr,
-           dst_addrs.addrs[dst_addrs.naddrs].addr.len);
+    memcpy(dst_addrs->addrs[dst_addrs->naddrs].addr.addr, ifa_it->ifa_addr,
+           dst_addrs->addrs[dst_addrs->naddrs].addr.len);
     GPR_ASSERT(
-        grpc_sockaddr_set_port(&dst_addrs.addrs[dst_addrs.naddrs].addr, 0));
-    test_addr_init_str(&dst_addrs.addrs[dst_addrs.naddrs]);
-    ++dst_addrs.naddrs;
+        grpc_sockaddr_set_port(&dst_addrs->addrs[dst_addrs->naddrs].addr, 0));
+    test_addr_init_str(&dst_addrs->addrs[dst_addrs->naddrs]);
+    ++dst_addrs->naddrs;
   }
   freeifaddrs(ifa);
   ifa = NULL;
@@ -495,20 +483,21 @@ int main(int argc, char **argv) {
   test_connect(1, NULL, NULL, false);
   test_connect(10, NULL, NULL, false);
 
-  /* Set dst_addrs.addrs[i].len=0 for dst_addrs that are unreachable with a "::"
-     listener. */
-  test_connect(1, NULL, &dst_addrs, true);
+  /* Set dst_addrs->addrs[i].len=0 for dst_addrs that are unreachable with a
+     "::" listener. */
+  test_connect(1, NULL, dst_addrs, true);
 
   /* Test connect(2) with dst_addrs. */
-  test_connect(1, &channel_args, &dst_addrs, false);
+  test_connect(1, &channel_args, dst_addrs, false);
   /* Test connect(2) with dst_addrs. */
-  test_connect(10, &channel_args, &dst_addrs, false);
+  test_connect(10, &channel_args, dst_addrs, false);
 
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
+  gpr_free(dst_addrs);
   gpr_free(g_pollset);
   return EXIT_SUCCESS;
 }

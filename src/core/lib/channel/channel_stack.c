@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -38,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int grpc_trace_channel = 0;
+grpc_tracer_flag grpc_trace_channel = GRPC_TRACER_INITIALIZER(false, "channel");
 
 /* Memory layouts.
 
@@ -166,40 +151,32 @@ void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
   }
 }
 
-grpc_error *grpc_call_stack_init(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
-    int initial_refs, grpc_iomgr_cb_func destroy, void *destroy_arg,
-    grpc_call_context_element *context, const void *transport_server_data,
-    grpc_slice path, gpr_timespec start_time, gpr_timespec deadline,
-    grpc_call_stack *call_stack) {
+grpc_error *grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_stack *channel_stack,
+                                 int initial_refs, grpc_iomgr_cb_func destroy,
+                                 void *destroy_arg,
+                                 const grpc_call_element_args *elem_args) {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
-  grpc_call_element_args args;
   size_t count = channel_stack->count;
   grpc_call_element *call_elems;
   char *user_data;
   size_t i;
 
-  call_stack->count = count;
-  GRPC_STREAM_REF_INIT(&call_stack->refcount, initial_refs, destroy,
+  elem_args->call_stack->count = count;
+  GRPC_STREAM_REF_INIT(&elem_args->call_stack->refcount, initial_refs, destroy,
                        destroy_arg, "CALL_STACK");
-  call_elems = CALL_ELEMS_FROM_STACK(call_stack);
+  call_elems = CALL_ELEMS_FROM_STACK(elem_args->call_stack);
   user_data = ((char *)call_elems) +
               ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
   grpc_error *first_error = GRPC_ERROR_NONE;
-  args.start_time = start_time;
   for (i = 0; i < count; i++) {
-    args.call_stack = call_stack;
-    args.server_transport_data = transport_server_data;
-    args.context = context;
-    args.path = path;
-    args.deadline = deadline;
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
     call_elems[i].call_data = user_data;
-    grpc_error *error =
-        call_elems[i].filter->init_call_elem(exec_ctx, &call_elems[i], &args);
+    grpc_error *error = call_elems[i].filter->init_call_elem(
+        exec_ctx, &call_elems[i], elem_args);
     if (error != GRPC_ERROR_NONE) {
       if (first_error == GRPC_ERROR_NONE) {
         first_error = error;
@@ -240,22 +217,23 @@ void grpc_call_stack_ignore_set_pollset_or_pollset_set(
 
 void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
                              const grpc_call_final_info *final_info,
-                             void *and_free_memory) {
+                             grpc_closure *then_schedule_closure) {
   grpc_call_element *elems = CALL_ELEMS_FROM_STACK(stack);
   size_t count = stack->count;
   size_t i;
 
   /* destroy per-filter data */
   for (i = 0; i < count; i++) {
-    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i], final_info,
-                                       i == count - 1 ? and_free_memory : NULL);
+    elems[i].filter->destroy_call_elem(
+        exec_ctx, &elems[i], final_info,
+        i == count - 1 ? then_schedule_closure : NULL);
   }
 }
 
 void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                       grpc_transport_stream_op *op) {
+                       grpc_transport_stream_op_batch *op) {
   grpc_call_element *next_elem = elem + 1;
-  next_elem->filter->start_transport_stream_op(exec_ctx, next_elem, op);
+  next_elem->filter->start_transport_stream_op_batch(exec_ctx, next_elem, op);
 }
 
 char *grpc_call_next_get_peer(grpc_exec_ctx *exec_ctx,
@@ -291,7 +269,8 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem) {
 void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *elem,
                                     grpc_error *error) {
-  grpc_transport_stream_op *op = grpc_make_transport_stream_op(NULL);
-  op->cancel_error = error;
-  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
+  grpc_transport_stream_op_batch *op = grpc_make_transport_stream_op(NULL);
+  op->cancel_stream = true;
+  op->payload->cancel_stream.cancel_error = error;
+  elem->filter->start_transport_stream_op_batch(exec_ctx, elem, op);
 }

@@ -1,46 +1,32 @@
-# Copyright 2015-2016, Google Inc.
-# All rights reserved.
+# Copyright 2015-2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Entry points into the Beta API of gRPC Python."""
 
 # threading is referenced from specification in this module.
-import abc
-import enum
 import threading  # pylint: disable=unused-import
 
-# cardinality and face are referenced from specification in this module.
+# interfaces, cardinality, and face are referenced from specification in this
+# module.
 import grpc
 from grpc import _auth
 from grpc.beta import _client_adaptations
 from grpc.beta import _server_adaptations
-from grpc.beta import interfaces
+from grpc.beta import interfaces  # pylint: disable=unused-import
 from grpc.framework.common import cardinality  # pylint: disable=unused-import
 from grpc.framework.interfaces.face import face  # pylint: disable=unused-import
+
+# pylint: disable=too-many-arguments
 
 ChannelCredentials = grpc.ChannelCredentials
 ssl_channel_credentials = grpc.ssl_channel_credentials
@@ -218,7 +204,7 @@ def dynamic_stub(channel, service, cardinalities, options=None):
   Returns:
     A face.DynamicStub with which RPCs can be invoked.
   """
-    effective_options = StubOptions() if options is None else options
+    effective_options = _EMPTY_STUB_OPTIONS if options is None else options
     return _client_adaptations.dynamic_stub(
         channel._channel,  # pylint: disable=protected-access
         service,

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -40,9 +25,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/murmur_hash.h"
@@ -78,16 +63,9 @@ static void server_setup_transport(void *ts, grpc_transport *transport) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-typedef struct {
-  grpc_bad_client_client_stream_validator validator;
-  grpc_slice_buffer incoming;
-  gpr_event read_done;
-} read_args;
-
 static void read_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  read_args *a = arg;
-  a->validator(&a->incoming);
-  gpr_event_set(&a->read_done, (void *)1);
+  gpr_event *read_done = arg;
+  gpr_event_set(read_done, (void *)1);
 }
 
 void grpc_run_bad_client_test(
@@ -104,6 +82,7 @@ void grpc_run_bad_client_test(
   grpc_slice_buffer outgoing;
   grpc_closure done_write_closure;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_completion_queue *shutdown_cq;
 
   hex = gpr_dump(client_payload, client_payload_length,
                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -117,14 +96,11 @@ void grpc_run_bad_client_test(
   grpc_init();
 
   /* Create endpoints */
-  grpc_resource_quota *resource_quota =
-      grpc_resource_quota_create("bad_client_test");
-  sfd = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, 65536);
-  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
+  sfd = grpc_iomgr_create_endpoint_pair("fixture", NULL);
 
   /* Create server, completion events */
   a.server = grpc_server_create(NULL, NULL);
-  a.cq = grpc_completion_queue_create(NULL);
+  a.cq = grpc_completion_queue_create_for_next(NULL);
   gpr_event_init(&a.done_thd);
   gpr_event_init(&a.done_write);
   a.validator = server_validator;
@@ -151,7 +127,7 @@ void grpc_run_bad_client_test(
 
   grpc_slice_buffer_init(&outgoing);
   grpc_slice_buffer_add(&outgoing, slice);
-  grpc_closure_init(&done_write_closure, done_write, &a,
+  GRPC_CLOSURE_INIT(&done_write_closure, done_write, &a,
                     grpc_schedule_on_exec_ctx);
 
   /* Write data */
@@ -163,8 +139,9 @@ void grpc_run_bad_client_test(
       gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(5)));
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
-    grpc_endpoint_shutdown(&exec_ctx, sfd.client,
-                           GRPC_ERROR_CREATE("Forced Disconnect"));
+    grpc_endpoint_shutdown(
+        &exec_ctx, sfd.client,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
     grpc_endpoint_destroy(&exec_ctx, sfd.client);
     grpc_exec_ctx_finish(&exec_ctx);
     sfd.client = NULL;
@@ -175,30 +152,46 @@ void grpc_run_bad_client_test(
   if (sfd.client != NULL) {
     // Validate client stream, if requested.
     if (client_validator != NULL) {
-      read_args args;
-      args.validator = client_validator;
-      grpc_slice_buffer_init(&args.incoming);
-      gpr_event_init(&args.read_done);
-      grpc_closure read_done_closure;
-      grpc_closure_init(&read_done_closure, read_done, &args,
-                        grpc_schedule_on_exec_ctx);
-      grpc_endpoint_read(&exec_ctx, sfd.client, &args.incoming,
-                         &read_done_closure);
-      grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(
-          gpr_event_wait(&args.read_done, grpc_timeout_seconds_to_deadline(5)));
-      grpc_slice_buffer_destroy_internal(&exec_ctx, &args.incoming);
+      gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+      grpc_slice_buffer incoming;
+      grpc_slice_buffer_init(&incoming);
+      // We may need to do multiple reads to read the complete server response.
+      while (true) {
+        gpr_event read_done_event;
+        gpr_event_init(&read_done_event);
+        grpc_closure read_done_closure;
+        GRPC_CLOSURE_INIT(&read_done_closure, read_done, &read_done_event,
+                          grpc_schedule_on_exec_ctx);
+        grpc_endpoint_read(&exec_ctx, sfd.client, &incoming,
+                           &read_done_closure);
+        grpc_exec_ctx_finish(&exec_ctx);
+        do {
+          GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
+          GPR_ASSERT(grpc_completion_queue_next(
+                         a.cq, grpc_timeout_milliseconds_to_deadline(100), NULL)
+                         .type == GRPC_QUEUE_TIMEOUT);
+        } while (!gpr_event_get(&read_done_event));
+        if (client_validator(&incoming)) break;
+        gpr_log(GPR_INFO,
+                "client validator failed; trying additional read "
+                "in case we didn't get all the data");
+      }
+      grpc_slice_buffer_destroy_internal(&exec_ctx, &incoming);
     }
     // Shutdown.
-    grpc_endpoint_shutdown(&exec_ctx, sfd.client,
-                           GRPC_ERROR_CREATE("Test Shutdown"));
+    grpc_endpoint_shutdown(
+        &exec_ctx, sfd.client,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
     grpc_endpoint_destroy(&exec_ctx, sfd.client);
     grpc_exec_ctx_finish(&exec_ctx);
   }
-  grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
+
+  shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+  grpc_server_shutdown_and_notify(a.server, shutdown_cq, NULL);
   GPR_ASSERT(grpc_completion_queue_pluck(
-                 a.cq, NULL, grpc_timeout_seconds_to_deadline(1), NULL)
+                 shutdown_cq, NULL, grpc_timeout_seconds_to_deadline(1), NULL)
                  .type == GRPC_OP_COMPLETE);
+  grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
   grpc_slice_buffer_destroy_internal(&exec_ctx, &outgoing);

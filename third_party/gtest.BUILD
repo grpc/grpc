@@ -1,11 +1,15 @@
 cc_library(
     name = "gtest",
     srcs = [
-        "src/gtest-all.cc",
+        "googletest/src/gtest-all.cc",
+	"googlemock/src/gmock-all.cc"
     ],
-    hdrs = glob(["include/**/*.h", "src/*.cc", "src/*.h"]),
+    hdrs = glob(["googletest/include/**/*.h", "googletest/src/*.cc", "googletest/src/*.h", "googlemock/include/**/*.h", "googlemock/src/*.cc", "googlemock/src/*.h"]),
     includes = [
-        "include", "."
+        "googletest",
+        "googletest/include",
+	"googlemock",
+	"googlemock/include",
     ],
     linkstatic = 1,
     visibility = [

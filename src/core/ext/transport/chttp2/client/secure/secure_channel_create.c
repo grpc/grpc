@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -38,9 +23,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/client_channel.h"
-#include "src/core/ext/client_channel/resolver_registry.h"
-#include "src/core/ext/client_channel/uri_parser.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -83,7 +68,7 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
   const char *server_uri_str = server_uri_arg->value.string;
   GPR_ASSERT(server_uri_str != NULL);
   grpc_uri *server_uri =
-      grpc_uri_parse(server_uri_str, true /* supress errors */);
+      grpc_uri_parse(exec_ctx, server_uri_str, true /* supress errors */);
   GPR_ASSERT(server_uri != NULL);
   const char *server_uri_path;
   server_uri_path =
@@ -96,7 +81,7 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
     const char *target_uri_str =
         grpc_get_subchannel_address_uri_arg(args->args);
     grpc_uri *target_uri =
-        grpc_uri_parse(target_uri_str, false /* suppress errors */);
+        grpc_uri_parse(exec_ctx, target_uri_str, false /* suppress errors */);
     GPR_ASSERT(target_uri != NULL);
     if (target_uri->path[0] != '\0') {  // "path" may be empty
       const grpc_slice key = grpc_slice_from_static_string(
@@ -178,11 +163,12 @@ static grpc_channel *client_channel_factory_create_channel(
     return NULL;
   }
   // Add channel arg containing the server URI.
-  grpc_arg arg;
-  arg.type = GRPC_ARG_STRING;
-  arg.key = GRPC_ARG_SERVER_URI;
-  arg.value.string = grpc_resolver_factory_add_default_prefix_if_needed(target);
-  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  grpc_arg arg = grpc_channel_arg_string_create(
+      GRPC_ARG_SERVER_URI,
+      grpc_resolver_factory_add_default_prefix_if_needed(exec_ctx, target));
+  const char *to_remove[] = {GRPC_ARG_SERVER_URI};
+  grpc_channel_args *new_args =
+      grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
   gpr_free(arg.value.string);
   grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
                                               GRPC_CLIENT_CHANNEL, NULL);

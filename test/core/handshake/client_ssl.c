@@ -1,35 +1,25 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
+
+#include "src/core/lib/iomgr/port.h"
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET
 
 #include <arpa/inet.h>
 #include <openssl/err.h>
@@ -49,9 +39,9 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define SSL_CERT_PATH "src/core/lib/tsi/test_creds/server1.pem"
-#define SSL_KEY_PATH "src/core/lib/tsi/test_creds/server1.key"
-#define SSL_CA_PATH "src/core/lib/tsi/test_creds/ca.pem"
+#define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
 // Arguments for TLS server thread.
 typedef struct {
@@ -141,7 +131,7 @@ static int alpn_select_cb(SSL *ssl, const uint8_t **out, uint8_t *out_len,
 
 // Minimal TLS server. This is largely based on the example at
 // https://wiki.openssl.org/index.php/Simple_TLS_Server and the gRPC core
-// internals in src/core/lib/tsi/ssl_transport_security.c.
+// internals in src/core/tsi/ssl_transport_security.c.
 static void server_thread(void *arg) {
   const server_args *args = (server_args *)arg;
 
@@ -167,7 +157,7 @@ static void server_thread(void *arg) {
   }
 
   // Set the cipher list to match the one expressed in
-  // src/core/lib/tsi/ssl_transport_security.c.
+  // src/core/tsi/ssl_transport_security.c.
   const char *cipher_list =
       "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
@@ -284,7 +274,8 @@ static bool client_ssl_test(char *server_alpn_preferred) {
   // completed and we know that the client's ALPN list satisfied the server.
   int retries = 10;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
+
   while (state != GRPC_CHANNEL_READY && retries-- > 0) {
     grpc_channel_watch_connectivity_state(
         channel, state, grpc_timeout_seconds_to_deadline(3), cq, NULL);
@@ -324,3 +315,9 @@ int main(int argc, char *argv[]) {
   GPR_ASSERT(!client_ssl_test("foo"));
   return 0;
 }
+
+#else /* GRPC_POSIX_SOCKET */
+
+int main(int argc, char **argv) { return 1; }
+
+#endif /* GRPC_POSIX_SOCKET */

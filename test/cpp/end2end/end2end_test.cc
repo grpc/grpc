@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -48,7 +33,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -58,6 +42,8 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+
+#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -451,7 +437,7 @@ class End2endServerTryCancelTest : public End2endTest {
     auto stream = stub_->ResponseStream(&context, request);
 
     int num_msgs_read = 0;
-    while (num_msgs_read < kNumResponseStreamsMsgs) {
+    while (num_msgs_read < kServerDefaultResponseStreamsToSend) {
       if (!stream->Read(&response)) {
         break;
       }
@@ -477,14 +463,14 @@ class End2endServerTryCancelTest : public End2endTest {
       case CANCEL_DURING_PROCESSING:
         // Server cancelled while writing messages. Client must have read less
         // than or equal to the expected number of messages
-        EXPECT_LE(num_msgs_read, kNumResponseStreamsMsgs);
+        EXPECT_LE(num_msgs_read, kServerDefaultResponseStreamsToSend);
         break;
 
       case CANCEL_AFTER_PROCESSING:
         // Even though the Server cancelled after writing all messages, the RPC
         // may be cancelled before the Client got a chance to read all the
         // messages.
-        EXPECT_LE(num_msgs_read, kNumResponseStreamsMsgs);
+        EXPECT_LE(num_msgs_read, kServerDefaultResponseStreamsToSend);
         break;
 
       default: {
@@ -702,6 +688,21 @@ TEST_P(End2endTest, RequestStreamOneRequest) {
   EXPECT_TRUE(s.ok());
 }
 
+TEST_P(End2endTest, RequestStreamOneRequestWithCoalescingApi) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  context.set_initial_metadata_corked(true);
+  auto stream = stub_->RequestStream(&context, &response);
+  request.set_message("hello");
+  stream->WriteLast(request, WriteOptions());
+  Status s = stream->Finish();
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+}
+
 TEST_P(End2endTest, RequestStreamTwoRequests) {
   ResetStub();
   EchoRequest request;
@@ -718,6 +719,22 @@ TEST_P(End2endTest, RequestStreamTwoRequests) {
   EXPECT_TRUE(s.ok());
 }
 
+TEST_P(End2endTest, RequestStreamTwoRequestsWithCoalescingApi) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  context.set_initial_metadata_corked(true);
+  auto stream = stub_->RequestStream(&context, &response);
+  request.set_message("hello");
+  EXPECT_TRUE(stream->Write(request));
+  stream->WriteLast(request, WriteOptions());
+  Status s = stream->Finish();
+  EXPECT_EQ(response.message(), "hellohello");
+  EXPECT_TRUE(s.ok());
+}
+
 TEST_P(End2endTest, ResponseStream) {
   ResetStub();
   EchoRequest request;
@@ -726,12 +743,52 @@ TEST_P(End2endTest, ResponseStream) {
   request.set_message("hello");
 
   auto stream = stub_->ResponseStream(&context, request);
+  for (int i = 0; i < kServerDefaultResponseStreamsToSend; ++i) {
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + grpc::to_string(i));
+  }
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+}
+
+TEST_P(End2endTest, ResponseStreamWithCoalescingApi) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+  context.AddMetadata(kServerUseCoalescingApi, "1");
+
+  auto stream = stub_->ResponseStream(&context, request);
+  for (int i = 0; i < kServerDefaultResponseStreamsToSend; ++i) {
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + grpc::to_string(i));
+  }
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+}
+
+// This was added to prevent regression from issue:
+// https://github.com/grpc/grpc/issues/11546
+TEST_P(End2endTest, ResponseStreamWithEverythingCoalesced) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+  context.AddMetadata(kServerUseCoalescingApi, "1");
+  // We will only send one message, forcing everything (init metadata, message,
+  // trailing) to be coalesced together.
+  context.AddMetadata(kServerResponseStreamsToSend, "1");
+
+  auto stream = stub_->ResponseStream(&context, request);
   EXPECT_TRUE(stream->Read(&response));
   EXPECT_EQ(response.message(), request.message() + "0");
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message() + "1");
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message() + "2");
+
   EXPECT_FALSE(stream->Read(&response));
 
   Status s = stream->Finish();
@@ -747,6 +804,32 @@ TEST_P(End2endTest, BidiStream) {
 
   auto stream = stub_->BidiStream(&context);
 
+  for (int i = 0; i < kServerDefaultResponseStreamsToSend; ++i) {
+    request.set_message(msg + grpc::to_string(i));
+    EXPECT_TRUE(stream->Write(request));
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message());
+  }
+
+  stream->WritesDone();
+  EXPECT_FALSE(stream->Read(&response));
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+}
+
+TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.AddMetadata(kServerFinishAfterNReads, "3");
+  context.set_initial_metadata_corked(true);
+  grpc::string msg("hello");
+
+  auto stream = stub_->BidiStream(&context);
+
   request.set_message(msg + "0");
   EXPECT_TRUE(stream->Write(request));
   EXPECT_TRUE(stream->Read(&response));
@@ -758,11 +841,35 @@ TEST_P(End2endTest, BidiStream) {
   EXPECT_EQ(response.message(), request.message());
 
   request.set_message(msg + "2");
-  EXPECT_TRUE(stream->Write(request));
+  stream->WriteLast(request, WriteOptions());
   EXPECT_TRUE(stream->Read(&response));
   EXPECT_EQ(response.message(), request.message());
 
-  stream->WritesDone();
+  EXPECT_FALSE(stream->Read(&response));
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+}
+
+// This was added to prevent regression from issue:
+// https://github.com/grpc/grpc/issues/11546
+TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.AddMetadata(kServerFinishAfterNReads, "1");
+  context.set_initial_metadata_corked(true);
+  grpc::string msg("hello");
+
+  auto stream = stub_->BidiStream(&context);
+
+  request.set_message(msg + "0");
+  stream->WriteLast(request, WriteOptions());
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message());
+
   EXPECT_FALSE(stream->Read(&response));
   EXPECT_FALSE(stream->Read(&response));
 
@@ -901,8 +1008,7 @@ TEST_P(End2endTest, RpcMaxMessageSize) {
   EchoRequest request;
   EchoResponse response;
   request.set_message(string(kMaxMessageSize_ * 2, 'a'));
-  // cancelled is not guaranteed to appear before the end of the service handler
-  request.mutable_param()->set_skip_cancelled_check(true);
+  request.mutable_param()->set_server_die(true);
 
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
@@ -1044,6 +1150,39 @@ TEST_P(End2endTest, BinaryTrailerTest) {
   // Parse the returned trailer into a DebugInfo proto.
   DebugInfo returned_info;
   EXPECT_TRUE(returned_info.ParseFromString(ToString(iter->second)));
+}
+
+TEST_P(End2endTest, ExpectErrorTest) {
+  ResetStub();
+
+  std::vector<ErrorStatus> expected_status;
+  expected_status.emplace_back();
+  expected_status.back().set_code(13);  // INTERNAL
+  expected_status.back().set_error_message("text error message");
+  expected_status.back().set_binary_error_details("text error details");
+  expected_status.emplace_back();
+  expected_status.back().set_code(13);  // INTERNAL
+  expected_status.back().set_error_message("text error message");
+  expected_status.back().set_binary_error_details(
+      "\x0\x1\x2\x3\x4\x5\x6\x8\x9\xA\xB");
+
+  for (auto iter = expected_status.begin(); iter != expected_status.end();
+       ++iter) {
+    EchoRequest request;
+    EchoResponse response;
+    ClientContext context;
+    request.set_message("Hello");
+    auto* error = request.mutable_param()->mutable_expected_error();
+    error->set_code(iter->code());
+    error->set_error_message(iter->error_message());
+    error->set_binary_error_details(iter->binary_error_details());
+
+    Status s = stub_->Echo(&context, request, &response);
+    EXPECT_FALSE(s.ok());
+    EXPECT_EQ(iter->code(), s.error_code());
+    EXPECT_EQ(iter->error_message(), s.error_message());
+    EXPECT_EQ(iter->binary_error_details(), s.error_details());
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////

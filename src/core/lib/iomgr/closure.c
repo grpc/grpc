@@ -1,49 +1,54 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include "src/core/lib/iomgr/closure.h"
 
+#include <assert.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/profiling/timers.h"
 
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_closure = GRPC_TRACER_INITIALIZER(false, "closure");
+#endif
+
+#ifndef NDEBUG
+grpc_closure *grpc_closure_init(const char *file, int line,
+                                grpc_closure *closure, grpc_iomgr_cb_func cb,
+                                void *cb_arg,
+                                grpc_closure_scheduler *scheduler) {
+#else
 grpc_closure *grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
                                 void *cb_arg,
                                 grpc_closure_scheduler *scheduler) {
+#endif
   closure->cb = cb;
   closure->cb_arg = cb_arg;
   closure->scheduler = scheduler;
+#ifndef NDEBUG
+  closure->scheduled = false;
+  closure->file_initiated = NULL;
+  closure->line_initiated = 0;
+  closure->run = false;
+  closure->file_created = file;
+  closure->line_created = line;
+#endif
   return closure;
 }
 
@@ -111,19 +116,40 @@ static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg,
   cb(exec_ctx, cb_arg, error);
 }
 
+#ifndef NDEBUG
+grpc_closure *grpc_closure_create(const char *file, int line,
+                                  grpc_iomgr_cb_func cb, void *cb_arg,
+                                  grpc_closure_scheduler *scheduler) {
+#else
 grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg,
                                   grpc_closure_scheduler *scheduler) {
+#endif
   wrapped_closure *wc = gpr_malloc(sizeof(*wc));
   wc->cb = cb;
   wc->cb_arg = cb_arg;
+#ifndef NDEBUG
+  grpc_closure_init(file, line, &wc->wrapper, closure_wrapper, wc, scheduler);
+#else
   grpc_closure_init(&wc->wrapper, closure_wrapper, wc, scheduler);
+#endif
   return &wc->wrapper;
 }
 
+#ifndef NDEBUG
+void grpc_closure_run(const char *file, int line, grpc_exec_ctx *exec_ctx,
+                      grpc_closure *c, grpc_error *error) {
+#else
 void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
                       grpc_error *error) {
+#endif
   GPR_TIMER_BEGIN("grpc_closure_run", 0);
   if (c != NULL) {
+#ifndef NDEBUG
+    c->file_initiated = file;
+    c->line_initiated = line;
+    c->run = true;
+#endif
+    assert(c->cb);
     c->scheduler->vtable->run(exec_ctx, c, error);
   } else {
     GRPC_ERROR_UNREF(error);
@@ -131,10 +157,23 @@ void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
   GPR_TIMER_END("grpc_closure_run", 0);
 }
 
+#ifndef NDEBUG
+void grpc_closure_sched(const char *file, int line, grpc_exec_ctx *exec_ctx,
+                        grpc_closure *c, grpc_error *error) {
+#else
 void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
                         grpc_error *error) {
+#endif
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
   if (c != NULL) {
+#ifndef NDEBUG
+    GPR_ASSERT(!c->scheduled);
+    c->scheduled = true;
+    c->file_initiated = file;
+    c->line_initiated = line;
+    c->run = false;
+#endif
+    assert(c->cb);
     c->scheduler->vtable->sched(exec_ctx, c, error);
   } else {
     GRPC_ERROR_UNREF(error);
@@ -142,10 +181,23 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
   GPR_TIMER_END("grpc_closure_sched", 0);
 }
 
+#ifndef NDEBUG
+void grpc_closure_list_sched(const char *file, int line,
+                             grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
+#else
 void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
+#endif
   grpc_closure *c = list->head;
   while (c != NULL) {
     grpc_closure *next = c->next_data.next;
+#ifndef NDEBUG
+    GPR_ASSERT(!c->scheduled);
+    c->scheduled = true;
+    c->file_initiated = file;
+    c->line_initiated = line;
+    c->run = false;
+#endif
+    assert(c->cb);
     c->scheduler->vtable->sched(exec_ctx, c, c->error_data.error);
     c = next;
   }

@@ -1,31 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Implementations of interoperability test methods."""
 
 import enum
@@ -33,14 +18,16 @@ import json
 import os
 import threading
 
-from oauth2client import client as oauth2client_client
-
+from google import auth as google_auth
+from google.auth import environment_vars as google_auth_environment_vars
+from google.auth.transport import grpc as google_auth_transport_grpc
+from google.auth.transport import requests as google_auth_transport_requests
 import grpc
 from grpc.beta import implementations
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 _INITIAL_METADATA_KEY = "x-grpc-test-echo-initial"
 _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"
@@ -66,7 +53,7 @@ def _maybe_echo_status_and_message(request, servicer_context):
         servicer_context.set_details(request.response_status.message)
 
 
-class TestService(test_pb2.TestServiceServicer):
+class TestService(test_pb2_grpc.TestServiceServicer):
 
     def EmptyCall(self, request, context):
         _maybe_echo_metadata(context)
@@ -401,8 +388,7 @@ def _compute_engine_creds(stub, args):
 
 
 def _oauth2_auth_token(stub, args):
-    json_key_filename = os.environ[
-        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     response = _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
@@ -414,8 +400,7 @@ def _oauth2_auth_token(stub, args):
 
 
 def _jwt_token_creds(stub, args):
-    json_key_filename = os.environ[
-        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     response = _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
@@ -424,15 +409,14 @@ def _jwt_token_creds(stub, args):
 
 
 def _per_rpc_creds(stub, args):
-    json_key_filename = os.environ[
-        oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+    json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
-    credentials = oauth2client_client.GoogleCredentials.get_application_default()
-    scoped_credentials = credentials.create_scoped([args.oauth_scope])
-    # TODO(https://github.com/grpc/grpc/issues/6799): Eliminate this last
-    # remaining use of the Beta API.
-    call_credentials = implementations.google_call_credentials(
-        scoped_credentials)
+    google_credentials, unused_project_id = google_auth.default(
+        scopes=[args.oauth_scope])
+    call_credentials = grpc.metadata_call_credentials(
+        google_auth_transport_grpc.AuthMetadataPlugin(
+            credentials=google_credentials,
+            request=google_auth_transport_requests.Request()))
     response = _large_unary_common_behavior(stub, True, False, call_credentials)
     if wanted_email != response.username:
         raise ValueError('expected username %s, got %s' %

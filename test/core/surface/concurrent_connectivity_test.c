@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -61,12 +46,20 @@
 #define DELAY_MILLIS 10
 #define POLL_MILLIS 3000
 
+#define NUM_OUTER_LOOPS_SHORT_TIMEOUTS 10
+#define NUM_INNER_LOOPS_SHORT_TIMEOUTS 100
+#define DELAY_MILLIS_SHORT_TIMEOUTS 1
+// in a successful test run, POLL_MILLIS should never be reached beause all runs
+// should
+// end after the shorter delay_millis
+#define POLL_MILLIS_SHORT_TIMEOUTS 30000
+
 static void *tag(int n) { return (void *)(uintptr_t)n; }
 static int detag(void *p) { return (int)(uintptr_t)p; }
 
 void create_loop_destroy(void *addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
-    grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+    grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
     grpc_channel *chan = grpc_insecure_channel_create((char *)addr, NULL, NULL);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
@@ -79,6 +72,8 @@ void create_loop_destroy(void *addr) {
           grpc_timeout_milliseconds_to_deadline(POLL_MILLIS);
       GPR_ASSERT(grpc_completion_queue_next(cq, poll_time, NULL).type ==
                  GRPC_OP_COMPLETE);
+      /* check that the watcher from "watch state" was free'd */
+      GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(chan) == 0);
     }
     grpc_channel_destroy(chan);
     grpc_completion_queue_destroy(cq);
@@ -109,9 +104,12 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *vargs, grpc_endpoint *tcp,
                        grpc_tcp_server_acceptor *acceptor) {
   gpr_free(acceptor);
   struct server_thread_args *args = (struct server_thread_args *)vargs;
-  grpc_endpoint_shutdown(exec_ctx, tcp, GRPC_ERROR_CREATE("Connected"));
+  grpc_endpoint_shutdown(exec_ctx, tcp,
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(exec_ctx, tcp);
+  gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
+  gpr_mu_unlock(args->mu);
 }
 
 void bad_server_thread(void *vargs) {
@@ -161,15 +159,14 @@ void bad_server_thread(void *vargs) {
 
 static void done_pollset_shutdown(grpc_exec_ctx *exec_ctx, void *pollset,
                                   grpc_error *error) {
-  grpc_pollset_destroy(pollset);
+  grpc_pollset_destroy(exec_ctx, pollset);
   gpr_free(pollset);
 }
 
-int main(int argc, char **argv) {
+int run_concurrent_connectivity_test() {
   struct server_thread_args args;
   memset(&args, 0, sizeof(args));
 
-  grpc_test_init(argc, argv);
   grpc_init();
 
   gpr_thd_id threads[NUM_THREADS];
@@ -195,7 +192,7 @@ int main(int argc, char **argv) {
   gpr_asprintf(&args.addr, "localhost:%d", port);
   args.server = grpc_server_create(NULL, NULL);
   grpc_server_add_insecure_http2_port(args.server, args.addr);
-  args.cq = grpc_completion_queue_create(NULL);
+  args.cq = grpc_completion_queue_create_for_next(NULL);
   grpc_server_register_completion_queue(args.server, args.cq, NULL);
   grpc_server_start(args.server);
   gpr_thd_new(&server, server_thread, &args, &options);
@@ -215,7 +212,7 @@ int main(int argc, char **argv) {
 
   /* Third round, bogus tcp server */
   gpr_log(GPR_DEBUG, "Wave 3");
-  args.pollset = gpr_malloc(grpc_pollset_size());
+  args.pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(args.pollset, &args.mu);
   gpr_event_init(&args.ready);
   gpr_thd_new(&server, bad_server_thread, &args, &options);
@@ -232,10 +229,66 @@ int main(int argc, char **argv) {
   gpr_thd_join(server);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_shutdown(&exec_ctx, args.pollset,
-                        grpc_closure_create(done_pollset_shutdown, args.pollset,
+                        GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
                                             grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_shutdown();
   return 0;
+}
+
+void watches_with_short_timeouts(void *addr) {
+  for (int i = 0; i < NUM_OUTER_LOOPS_SHORT_TIMEOUTS; ++i) {
+    grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
+    grpc_channel *chan = grpc_insecure_channel_create((char *)addr, NULL, NULL);
+
+    for (int j = 0; j < NUM_INNER_LOOPS_SHORT_TIMEOUTS; ++j) {
+      gpr_timespec later_time =
+          grpc_timeout_milliseconds_to_deadline(DELAY_MILLIS_SHORT_TIMEOUTS);
+      grpc_connectivity_state state =
+          grpc_channel_check_connectivity_state(chan, 0);
+      GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
+      grpc_channel_watch_connectivity_state(chan, state, later_time, cq, NULL);
+      gpr_timespec poll_time =
+          grpc_timeout_milliseconds_to_deadline(POLL_MILLIS_SHORT_TIMEOUTS);
+      grpc_event ev = grpc_completion_queue_next(cq, poll_time, NULL);
+      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+      GPR_ASSERT(ev.success == false);
+      /* check that the watcher from "watch state" was free'd */
+      GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(chan) == 0);
+    }
+    grpc_channel_destroy(chan);
+    grpc_completion_queue_destroy(cq);
+  }
+}
+
+// This test tries to catch deadlock situations.
+// With short timeouts on "watches" and long timeouts on cq next calls,
+// so that a QUEUE_TIMEOUT likely means that something is stuck.
+int run_concurrent_watches_with_short_timeouts_test() {
+  grpc_init();
+
+  gpr_thd_id threads[NUM_THREADS];
+
+  char *localhost = gpr_strdup("localhost:54321");
+  gpr_thd_options options = gpr_thd_options_default();
+  gpr_thd_options_set_joinable(&options);
+
+  for (size_t i = 0; i < NUM_THREADS; ++i) {
+    gpr_thd_new(&threads[i], watches_with_short_timeouts, localhost, &options);
+  }
+  for (size_t i = 0; i < NUM_THREADS; ++i) {
+    gpr_thd_join(threads[i]);
+  }
+  gpr_free(localhost);
+
+  grpc_shutdown();
+  return 0;
+}
+
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+
+  run_concurrent_connectivity_test();
+  run_concurrent_watches_with_short_timeouts_test();
 }

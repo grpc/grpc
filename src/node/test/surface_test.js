@@ -1,41 +1,28 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 'use strict';
 
 var assert = require('assert');
+var _ = require('lodash');
 
 var surface_client = require('../src/client.js');
+var common = require('../src/common');
 
 var ProtoBuf = require('protobufjs');
 
@@ -45,8 +32,8 @@ var math_proto = ProtoBuf.loadProtoFile(__dirname +
     '/../../proto/math/math.proto');
 
 var mathService = math_proto.lookup('math.Math');
-
-var _ = require('lodash');
+var mathServiceAttrs = grpc.loadObject(
+    mathService, common.defaultGrpcOptions).service;
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -85,11 +72,6 @@ describe('File loader', function() {
   it('Should load a json file with the json format', function() {
     assert.doesNotThrow(function() {
       grpc.load(__dirname + '/test_service.json', 'json');
-    });
-  });
-  it('Should fail to load a file with an unknown format', function() {
-    assert.throws(function() {
-      grpc.load(__dirname + '/test_service.proto', 'fake_format');
     });
   });
 });
@@ -132,13 +114,64 @@ describe('Server.prototype.addProtoService', function() {
   afterEach(function() {
     server.forceShutdown();
   });
-  it('Should succeed with a single service', function() {
+  it('Should succeed with a single proto service', function() {
     assert.doesNotThrow(function() {
       server.addProtoService(mathService, dummyImpls);
     });
   });
+  it('Should succeed with a single service attributes object', function() {
+    assert.doesNotThrow(function() {
+      server.addProtoService(mathServiceAttrs, dummyImpls);
+    });
+  });
+});
+describe('Server.prototype.addService', function() {
+  var server;
+  var dummyImpls = {
+    'div': function() {},
+    'divMany': function() {},
+    'fib': function() {},
+    'sum': function() {}
+  };
+  beforeEach(function() {
+    server = new grpc.Server();
+  });
+  afterEach(function() {
+    server.forceShutdown();
+  });
+  it('Should succeed with a single service', function() {
+    assert.doesNotThrow(function() {
+      server.addService(mathServiceAttrs, dummyImpls);
+    });
+  });
   it('Should fail with conflicting method names', function() {
-    server.addProtoService(mathService, dummyImpls);
+    server.addService(mathServiceAttrs, dummyImpls);
+    assert.throws(function() {
+      server.addService(mathServiceAttrs, dummyImpls);
+    });
+  });
+  it('Should allow method names as originally written', function() {
+    var altDummyImpls = {
+      'Div': function() {},
+      'DivMany': function() {},
+      'Fib': function() {},
+      'Sum': function() {}
+    };
+    assert.doesNotThrow(function() {
+      server.addProtoService(mathService, altDummyImpls);
+    });
+  });
+  it('Should have a conflict between name variations', function() {
+    /* This is really testing that both name variations are actually used,
+       by checking that the method actually gets registered, for the
+       corresponding function, in both cases */
+    var altDummyImpls = {
+      'Div': function() {},
+      'DivMany': function() {},
+      'Fib': function() {},
+      'Sum': function() {}
+    };
+    server.addProtoService(mathService, altDummyImpls);
     assert.throws(function() {
       server.addProtoService(mathService, dummyImpls);
     });
@@ -146,15 +179,15 @@ describe('Server.prototype.addProtoService', function() {
   it('Should fail if the server has been started', function() {
     server.start();
     assert.throws(function() {
-      server.addProtoService(mathService, dummyImpls);
+      server.addService(mathServiceAttrs, dummyImpls);
     });
   });
   describe('Default handlers', function() {
     var client;
     beforeEach(function() {
-      server.addProtoService(mathService, {});
+      server.addService(mathServiceAttrs, {});
       var port = server.bind('localhost:0', server_insecure_creds);
-      var Client = surface_client.makeProtobufClientConstructor(mathService);
+      var Client = grpc.loadObject(mathService);
       client = new Client('localhost:' + port,
                           grpc.credentials.createInsecure());
       server.start();
@@ -226,7 +259,7 @@ describe('waitForClientReady', function() {
     server = new grpc.Server();
     port = server.bind('localhost:0', grpc.ServerCredentials.createInsecure());
     server.start();
-    Client = surface_client.makeProtobufClientConstructor(mathService);
+    Client = grpc.loadObject(mathService);
   });
   beforeEach(function() {
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
@@ -285,14 +318,14 @@ describe('Echo service', function() {
   before(function() {
     var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
     var echo_service = test_proto.lookup('EchoService');
+    var Client = grpc.loadObject(echo_service);
     server = new grpc.Server();
-    server.addProtoService(echo_service, {
+    server.addService(Client.service, {
       echo: function(call, callback) {
         callback(null, call.request);
       }
     });
     var port = server.bind('localhost:0', server_insecure_creds);
-    var Client = surface_client.makeProtobufClientConstructor(echo_service);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
@@ -303,6 +336,13 @@ describe('Echo service', function() {
     client.echo({value: 'test value', value2: 3}, function(error, response) {
       assert.ifError(error);
       assert.deepEqual(response, {value: 'test value', value2: 3});
+      done();
+    });
+  });
+  it('Should convert an undefined argument to default values', function(done) {
+    client.echo(undefined, function(error, response) {
+      assert.ifError(error);
+      assert.deepEqual(response, {value: '', value2: 0});
       done();
     });
   });
@@ -408,8 +448,9 @@ describe('Echo metadata', function() {
   before(function() {
     var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
     var test_service = test_proto.lookup('TestService');
+    var Client = grpc.loadObject(test_service);
     server = new grpc.Server();
-    server.addProtoService(test_service, {
+    server.addService(Client.service, {
       unary: function(call, cb) {
         call.sendMetadata(call.metadata);
         cb(null, {});
@@ -434,7 +475,6 @@ describe('Echo metadata', function() {
       }
     });
     var port = server.bind('localhost:0', server_insecure_creds);
-    var Client = surface_client.makeProtobufClientConstructor(test_service);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
     metadata = new grpc.Metadata();
@@ -565,7 +605,114 @@ describe('Client malformed response handling', function() {
       }
     });
     var port = server.bind('localhost:0', server_insecure_creds);
-    var Client = surface_client.makeProtobufClientConstructor(test_service);
+    var Client = grpc.loadObject(test_service);
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
+    server.start();
+  });
+  after(function() {
+    server.forceShutdown();
+  });
+  it('should get an INTERNAL status with a unary call', function(done) {
+    client.unary({}, function(err, data) {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+  });
+  it('should get an INTERNAL status with a client stream call', function(done) {
+    var call = client.clientStream(function(err, data) {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+    call.write({});
+    call.end();
+  });
+  it('should get an INTERNAL status with a server stream call', function(done) {
+    var call = client.serverStream({});
+    call.on('data', function(){});
+    call.on('error', function(err) {
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+  });
+  it('should get an INTERNAL status with a bidi stream call', function(done) {
+    var call = client.bidiStream();
+    call.on('data', function(){});
+    call.on('error', function(err) {
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+    call.write({});
+    call.end();
+  });
+});
+describe('Server serialization failure handling', function() {
+  function serializeFail(obj) {
+    throw new Error('Serialization failed');
+  }
+  var client;
+  var server;
+  before(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_service = test_proto.lookup('TestService');
+    var malformed_test_service = {
+      unary: {
+        path: '/TestService/Unary',
+        requestStream: false,
+        responseStream: false,
+        requestDeserialize: _.identity,
+        responseSerialize: serializeFail
+      },
+      clientStream: {
+        path: '/TestService/ClientStream',
+        requestStream: true,
+        responseStream: false,
+        requestDeserialize: _.identity,
+        responseSerialize: serializeFail
+      },
+      serverStream: {
+        path: '/TestService/ServerStream',
+        requestStream: false,
+        responseStream: true,
+        requestDeserialize: _.identity,
+        responseSerialize: serializeFail
+      },
+      bidiStream: {
+        path: '/TestService/BidiStream',
+        requestStream: true,
+        responseStream: true,
+        requestDeserialize: _.identity,
+        responseSerialize: serializeFail
+      }
+    };
+    server = new grpc.Server();
+    server.addService(malformed_test_service, {
+      unary: function(call, cb) {
+        cb(null, {});
+      },
+      clientStream: function(stream, cb) {
+        stream.on('data', function() {/* Ignore requests */});
+        stream.on('end', function() {
+          cb(null, {});
+        });
+      },
+      serverStream: function(stream) {
+        stream.write({});
+        stream.end();
+      },
+      bidiStream: function(stream) {
+        stream.on('data', function() {
+          // Ignore requests
+          stream.write({});
+        });
+        stream.on('end', function() {
+          stream.end();
+        });
+      }
+    });
+    var port = server.bind('localhost:0', server_insecure_creds);
+    var Client = grpc.loadObject(test_service);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
@@ -608,18 +755,18 @@ describe('Client malformed response handling', function() {
   });
 });
 describe('Other conditions', function() {
-  var test_service;
   var Client;
   var client;
   var server;
   var port;
   before(function() {
     var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
-    test_service = test_proto.lookup('TestService');
+    var test_service = test_proto.lookup('TestService');
+    Client = grpc.loadObject(test_service);
     server = new grpc.Server();
     var trailer_metadata = new grpc.Metadata();
     trailer_metadata.add('trailer-present', 'yes');
-    server.addProtoService(test_service, {
+    server.addService(Client.service, {
       unary: function(call, cb) {
         var req = call.request;
         if (req.error) {
@@ -679,7 +826,6 @@ describe('Other conditions', function() {
       }
     });
     port = server.bind('localhost:0', server_insecure_creds);
-    Client = surface_client.makeProtobufClientConstructor(test_service);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
@@ -949,28 +1095,39 @@ describe('Other conditions', function() {
         done();
       });
     });
+    it('after the call has fully completed', function(done) {
+      var peer;
+      var call = client.unary({error: false}, function(err, data) {
+        assert.ifError(err);
+        setImmediate(function() {
+          assert.strictEqual(peer, call.getPeer());
+          done();
+        });
+      });
+      peer = call.getPeer();
+      assert.strictEqual(typeof peer, 'string');
+    });
   });
 });
 describe('Call propagation', function() {
   var proxy;
   var proxy_impl;
 
-  var test_service;
   var Client;
   var client;
   var server;
   before(function() {
     var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
-    test_service = test_proto.lookup('TestService');
+    var test_service = test_proto.lookup('TestService');
     server = new grpc.Server();
-    server.addProtoService(test_service, {
+    Client = grpc.loadObject(test_service);
+    server.addService(Client.service, {
       unary: function(call) {},
       clientStream: function(stream) {},
       serverStream: function(stream) {},
       bidiStream: function(stream) {}
     });
     var port = server.bind('localhost:0', server_insecure_creds);
-    Client = surface_client.makeProtobufClientConstructor(test_service);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
@@ -1005,7 +1162,7 @@ describe('Call propagation', function() {
         });
         call.cancel();
       };
-      proxy.addProtoService(test_service, proxy_impl);
+      proxy.addService(Client.service, proxy_impl);
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
@@ -1027,7 +1184,7 @@ describe('Call propagation', function() {
         });
         call.cancel();
       };
-      proxy.addProtoService(test_service, proxy_impl);
+      proxy.addService(Client.service, proxy_impl);
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
@@ -1047,7 +1204,7 @@ describe('Call propagation', function() {
         });
         call.cancel();
       };
-      proxy.addProtoService(test_service, proxy_impl);
+      proxy.addService(Client.service, proxy_impl);
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
@@ -1071,7 +1228,7 @@ describe('Call propagation', function() {
         });
         call.cancel();
       };
-      proxy.addProtoService(test_service, proxy_impl);
+      proxy.addService(Client.service, proxy_impl);
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
@@ -1102,7 +1259,7 @@ describe('Call propagation', function() {
           }
         });
       };
-      proxy.addProtoService(test_service, proxy_impl);
+      proxy.addService(Client.service, proxy_impl);
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
@@ -1126,7 +1283,7 @@ describe('Call propagation', function() {
           done();
         });
       };
-      proxy.addProtoService(test_service, proxy_impl);
+      proxy.addService(Client.service, proxy_impl);
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
@@ -1146,14 +1303,14 @@ describe('Cancelling surface client', function() {
   var server;
   before(function() {
     server = new grpc.Server();
-    server.addProtoService(mathService, {
+    server.addService(mathServiceAttrs, {
       'div': function(stream) {},
       'divMany': function(stream) {},
       'fib': function(stream) {},
       'sum': function(stream) {}
     });
     var port = server.bind('localhost:0', server_insecure_creds);
-    var Client = surface_client.makeProtobufClientConstructor(mathService);
+    var Client = surface_client.makeClientConstructor(mathServiceAttrs);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
@@ -1162,14 +1319,14 @@ describe('Cancelling surface client', function() {
   });
   it('Should correctly cancel a unary call', function(done) {
     var call = client.div({'divisor': 0, 'dividend': 0}, function(err, resp) {
-      assert.strictEqual(err.code, surface_client.status.CANCELLED);
+      assert.strictEqual(err.code, grpc.status.CANCELLED);
       done();
     });
     call.cancel();
   });
   it('Should correctly cancel a client stream call', function(done) {
     var call = client.sum(function(err, resp) {
-      assert.strictEqual(err.code, surface_client.status.CANCELLED);
+      assert.strictEqual(err.code, grpc.status.CANCELLED);
       done();
     });
     call.cancel();
@@ -1178,7 +1335,7 @@ describe('Cancelling surface client', function() {
     var call = client.fib({'limit': 5});
     call.on('data', function() {});
     call.on('error', function(error) {
-      assert.strictEqual(error.code, surface_client.status.CANCELLED);
+      assert.strictEqual(error.code, grpc.status.CANCELLED);
       done();
     });
     call.cancel();
@@ -1187,9 +1344,81 @@ describe('Cancelling surface client', function() {
     var call = client.divMany();
     call.on('data', function() {});
     call.on('error', function(error) {
-      assert.strictEqual(error.code, surface_client.status.CANCELLED);
+      assert.strictEqual(error.code, grpc.status.CANCELLED);
       done();
     });
     call.cancel();
+  });
+  it('Should be idempotent', function(done) {
+    var call = client.div({'divisor': 0, 'dividend': 0}, function(err, resp) {
+      assert.strictEqual(err.code, grpc.status.CANCELLED);
+      // Call asynchronously to try cancelling after call is fully completed
+      setImmediate(function() {
+        assert.doesNotThrow(function() {
+          call.cancel();
+        });
+        done();
+      });
+    });
+    call.cancel();
+  });
+});
+describe('Client reconnect', function() {
+  var server;
+  var Client;
+  var client;
+  var port;
+  beforeEach(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
+    var echo_service = test_proto.lookup('EchoService');
+    Client = grpc.loadObject(echo_service);
+    server = new grpc.Server();
+    server.addService(Client.service, {
+      echo: function(call, callback) {
+        callback(null, call.request);
+      }
+    });
+    port = server.bind('localhost:0', server_insecure_creds);
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
+    server.start();
+  });
+  afterEach(function() {
+    server.forceShutdown();
+  });
+  it('should reconnect after server restart', function(done) {
+    client.echo({value: 'test value', value2: 3}, function(error, response) {
+      assert.ifError(error);
+      assert.deepEqual(response, {value: 'test value', value2: 3});
+      server.tryShutdown(function() {
+        server = new grpc.Server();
+        server.addService(Client.service, {
+          echo: function(call, callback) {
+            callback(null, call.request);
+          }
+        });
+        server.bind('localhost:' + port, server_insecure_creds);
+        server.start();
+
+        /* We create a new client, that will not throw an error if the server
+         * is not immediately available. Instead, it will wait for the server
+         * to be available, then the call will complete. Once this happens, the
+         * original client should be able to make a new call and connect to the
+         * restarted server without having the call fail due to connection
+         * errors. */
+        var client2 = new Client('localhost:' + port,
+                                 grpc.credentials.createInsecure());
+        client2.echo({value: 'test', value2: 3}, function(error, response) {
+          assert.ifError(error);
+          client.echo(undefined, function(error, response) {
+            if (error) {
+              console.log(error);
+            }
+            assert.ifError(error);
+            assert.deepEqual(response, {value: '', value2: 0});
+            done();
+          });
+        });
+      });
+    });
   });
 });

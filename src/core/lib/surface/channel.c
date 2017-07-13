@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -68,6 +53,8 @@ struct grpc_channel {
   grpc_compression_options compression_options;
   grpc_mdelem default_authority;
 
+  gpr_atm call_size_estimate;
+
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
 
@@ -83,19 +70,10 @@ struct grpc_channel {
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error);
 
-grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
-                                  const grpc_channel_args *input_args,
-                                  grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport *optional_transport) {
-  grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
-  grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
-                                                   input_args);
-  grpc_channel_stack_builder_set_target(builder, target);
-  grpc_channel_stack_builder_set_transport(builder, optional_transport);
-  if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
-    grpc_channel_stack_builder_destroy(exec_ctx, builder);
-    return NULL;
-  }
+grpc_channel *grpc_channel_create_with_builder(
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder,
+    grpc_channel_stack_type channel_stack_type) {
+  char *target = gpr_strdup(grpc_channel_stack_builder_get_target(builder));
   grpc_channel_args *args = grpc_channel_args_copy(
       grpc_channel_stack_builder_get_channel_arguments(builder));
   grpc_channel *channel;
@@ -106,14 +84,19 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
             grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
+    gpr_free(target);
     goto done;
   }
 
   memset(channel, 0, sizeof(*channel));
-  channel->target = gpr_strdup(target);
+  channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
+
+  gpr_atm_no_barrier_store(
+      &channel->call_size_estimate,
+      (gpr_atm)CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size);
 
   grpc_compression_options_init(&channel->compression_options);
   for (size_t i = 0; i < args->num_args; i++) {
@@ -152,17 +135,20 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
       channel->compression_options.default_level.is_set = true;
-      GPR_ASSERT(args->args[i].value.integer >= 0 &&
-                 args->args[i].value.integer < GRPC_COMPRESS_LEVEL_COUNT);
       channel->compression_options.default_level.level =
-          (grpc_compression_level)args->args[i].value.integer;
+          (grpc_compression_level)grpc_channel_arg_get_integer(
+              &args->args[i],
+              (grpc_integer_options){GRPC_COMPRESS_LEVEL_NONE,
+                                     GRPC_COMPRESS_LEVEL_NONE,
+                                     GRPC_COMPRESS_LEVEL_COUNT - 1});
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
       channel->compression_options.default_algorithm.is_set = true;
-      GPR_ASSERT(args->args[i].value.integer >= 0 &&
-                 args->args[i].value.integer < GRPC_COMPRESS_ALGORITHMS_COUNT);
       channel->compression_options.default_algorithm.algorithm =
-          (grpc_compression_algorithm)args->args[i].value.integer;
+          (grpc_compression_algorithm)grpc_channel_arg_get_integer(
+              &args->args[i],
+              (grpc_integer_options){GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
+                                     GRPC_COMPRESS_ALGORITHMS_COUNT - 1});
     } else if (0 ==
                strcmp(args->args[i].key,
                       GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {
@@ -175,6 +161,55 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
 done:
   grpc_channel_args_destroy(exec_ctx, args);
   return channel;
+}
+
+grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
+                                  const grpc_channel_args *input_args,
+                                  grpc_channel_stack_type channel_stack_type,
+                                  grpc_transport *optional_transport) {
+  grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
+                                                   input_args);
+  grpc_channel_stack_builder_set_target(builder, target);
+  grpc_channel_stack_builder_set_transport(builder, optional_transport);
+  if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
+    grpc_channel_stack_builder_destroy(exec_ctx, builder);
+    return NULL;
+  }
+  return grpc_channel_create_with_builder(exec_ctx, builder,
+                                          channel_stack_type);
+}
+
+size_t grpc_channel_get_call_size_estimate(grpc_channel *channel) {
+#define ROUND_UP_SIZE 256
+  /* We round up our current estimate to the NEXT value of ROUND_UP_SIZE.
+     This ensures:
+      1. a consistent size allocation when our estimate is drifting slowly
+         (which is common) - which tends to help most allocators reuse memory
+      2. a small amount of allowed growth over the estimate without hitting
+         the arena size doubling case, reducing overall memory usage */
+  return ((size_t)gpr_atm_no_barrier_load(&channel->call_size_estimate) +
+          2 * ROUND_UP_SIZE) &
+         ~(size_t)(ROUND_UP_SIZE - 1);
+}
+
+void grpc_channel_update_call_size_estimate(grpc_channel *channel,
+                                            size_t size) {
+  size_t cur = (size_t)gpr_atm_no_barrier_load(&channel->call_size_estimate);
+  if (cur < size) {
+    /* size grew: update estimate */
+    gpr_atm_no_barrier_cas(&channel->call_size_estimate, (gpr_atm)cur,
+                           (gpr_atm)size);
+    /* if we lose: never mind, something else will likely update soon enough */
+  } else if (cur == size) {
+    /* no change: holding pattern */
+  } else if (cur > 0) {
+    /* size shrank: decrease estimate */
+    gpr_atm_no_barrier_cas(
+        &channel->call_size_estimate, (gpr_atm)cur,
+        (gpr_atm)(GPR_MIN(cur - 1, (255 * cur + size) / 256)));
+    /* if we lose: never mind, something else will likely update soon enough */
+  }
 }
 
 char *grpc_channel_get_target(grpc_channel *channel) {
@@ -310,7 +345,7 @@ grpc_call *grpc_channel_create_registered_call(
   return call;
 }
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define REF_REASON reason
 #define REF_ARG , const char *reason
 #else
@@ -348,7 +383,8 @@ void grpc_channel_destroy(grpc_channel *channel) {
   grpc_channel_element *elem;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (channel));
-  op->disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
+  op->disconnect_with_error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Destroyed");
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
   elem->filter->start_transport_op(&exec_ctx, elem, op);
 

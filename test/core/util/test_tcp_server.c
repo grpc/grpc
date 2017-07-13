@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -57,10 +42,10 @@ void test_tcp_server_init(test_tcp_server *server,
                           grpc_tcp_server_cb on_connect, void *user_data) {
   grpc_init();
   server->tcp_server = NULL;
-  grpc_closure_init(&server->shutdown_complete, on_server_destroyed, server,
+  GRPC_CLOSURE_INIT(&server->shutdown_complete, on_server_destroyed, server,
                     grpc_schedule_on_exec_ctx);
   server->shutdown = 0;
-  server->pollset = gpr_malloc(grpc_pollset_size());
+  server->pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(server->pollset, &server->mu);
   server->on_connect = on_connect;
   server->cb_data = user_data;
@@ -106,13 +91,17 @@ void test_tcp_server_poll(test_tcp_server *server, int seconds) {
 }
 
 static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
+static void finish_pollset(grpc_exec_ctx *exec_ctx, void *arg,
+                           grpc_error *error) {
+  grpc_pollset_destroy(exec_ctx, arg);
+}
 
 void test_tcp_server_destroy(test_tcp_server *server) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_timespec shutdown_deadline;
   grpc_closure do_nothing_cb;
   grpc_tcp_server_unref(&exec_ctx, server->tcp_server);
-  grpc_closure_init(&do_nothing_cb, do_nothing, NULL,
+  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, NULL,
                     grpc_schedule_on_exec_ctx);
   shutdown_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                    gpr_time_from_seconds(5, GPR_TIMESPAN));
@@ -120,9 +109,10 @@ void test_tcp_server_destroy(test_tcp_server *server) {
          gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
     test_tcp_server_poll(server, 1);
   }
-  grpc_pollset_shutdown(&exec_ctx, server->pollset, &do_nothing_cb);
+  grpc_pollset_shutdown(&exec_ctx, server->pollset,
+                        GRPC_CLOSURE_CREATE(finish_pollset, server->pollset,
+                                            grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_pollset_destroy(server->pollset);
   gpr_free(server->pollset);
   grpc_shutdown();
 }

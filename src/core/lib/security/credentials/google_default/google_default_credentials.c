@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -99,7 +84,7 @@ static void on_compute_engine_detection_http_response(grpc_exec_ctx *exec_ctx,
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, grpc_error *e) {
-  grpc_pollset_destroy(p);
+  grpc_pollset_destroy(exec_ctx, p);
 }
 
 static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
@@ -112,7 +97,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
      on compute engine. */
   gpr_timespec max_detection_delay = gpr_time_from_seconds(1, GPR_TIMESPAN);
 
-  grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &g_polling_mu);
   detector.pollent = grpc_polling_entity_create_from_pollset(pollset);
   detector.is_done = 0;
@@ -130,7 +115,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
   grpc_httpcli_get(
       exec_ctx, &context, &detector.pollent, resource_quota, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
-      grpc_closure_create(on_compute_engine_detection_http_response, &detector,
+      GRPC_CLOSURE_CREATE(on_compute_engine_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response);
   grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
@@ -155,7 +140,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
   gpr_mu_unlock(g_polling_mu);
 
   grpc_httpcli_context_destroy(exec_ctx, &context);
-  grpc_closure_init(&destroy_closure, destroy_pollset,
+  GRPC_CLOSURE_INIT(&destroy_closure, destroy_pollset,
                     grpc_polling_entity_pollset(&detector.pollent),
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(exec_ctx,
@@ -180,7 +165,7 @@ static grpc_error *create_default_creds_from_path(
   grpc_slice creds_data = grpc_empty_slice();
   grpc_error *error = GRPC_ERROR_NONE;
   if (creds_path == NULL) {
-    error = GRPC_ERROR_CREATE("creds_path unset");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("creds_path unset");
     goto end;
   }
   error = grpc_load_file(creds_path, 0, &creds_data);
@@ -190,10 +175,9 @@ static grpc_error *create_default_creds_from_path(
   json = grpc_json_parse_string_with_len(
       (char *)GRPC_SLICE_START_PTR(creds_data), GRPC_SLICE_LENGTH(creds_data));
   if (json == NULL) {
-    char *dump = grpc_dump_slice(creds_data, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
-                               GRPC_ERROR_STR_RAW_BYTES, dump);
-    gpr_free(dump);
+    error = grpc_error_set_str(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),
+        GRPC_ERROR_STR_RAW_BYTES, grpc_slice_ref_internal(creds_data));
     goto end;
   }
 
@@ -204,7 +188,7 @@ static grpc_error *create_default_creds_from_path(
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
             exec_ctx, key, grpc_max_auth_token_lifetime());
     if (result == NULL) {
-      error = GRPC_ERROR_CREATE(
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "grpc_service_account_jwt_access_credentials_create_from_auth_json_"
           "key failed");
     }
@@ -217,7 +201,7 @@ static grpc_error *create_default_creds_from_path(
     result =
         grpc_refresh_token_credentials_create_from_auth_refresh_token(token);
     if (result == NULL) {
-      error = GRPC_ERROR_CREATE(
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "grpc_refresh_token_credentials_create_from_auth_refresh_token "
           "failed");
     }
@@ -236,7 +220,8 @@ end:
 grpc_channel_credentials *grpc_google_default_credentials_create(void) {
   grpc_channel_credentials *result = NULL;
   grpc_call_credentials *call_creds = NULL;
-  grpc_error *error = GRPC_ERROR_CREATE("Failed to create Google credentials");
+  grpc_error *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Failed to create Google credentials");
   grpc_error *err;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -274,7 +259,8 @@ grpc_channel_credentials *grpc_google_default_credentials_create(void) {
       call_creds = grpc_google_compute_engine_credentials_create(NULL);
       if (call_creds == NULL) {
         error = grpc_error_add_child(
-            error, GRPC_ERROR_CREATE("Failed to get credentials from network"));
+            error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                       "Failed to get credentials from network"));
       }
     }
   }

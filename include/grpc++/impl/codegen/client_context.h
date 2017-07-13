@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -75,7 +60,18 @@ class Channel;
 class ChannelInterface;
 class CompletionQueue;
 class CallCredentials;
+class ClientContext;
+
+namespace internal {
 class RpcMethod;
+class CallOpClientRecvStatus;
+class CallOpRecvInitialMetadata;
+template <class InputMessage, class OutputMessage>
+Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
+                         ClientContext* context, const InputMessage& request,
+                         OutputMessage* result);
+}  // namespace internal
+
 template <class R>
 class ClientReader;
 template <class W>
@@ -151,6 +147,20 @@ namespace testing {
 class InteropClientContextInspector;
 }  // namespace testing
 
+/// A ClientContext allows the person implementing a service client to:
+///
+/// - Add custom metadata key-value pairs that will propagated to the server
+///   side.
+/// - Control call settings such as compression and authentication.
+/// - Initial and trailing metadata coming from the server.
+/// - Get performance metrics (ie, census).
+///
+/// Context settings are only relevant to the call they are invoked with, that
+/// is to say, they aren't sticky. Some of these settings, such as the
+/// compression options, can be made persistent at channel construction time
+/// (see \a grpc::CreateCustomChannel).
+///
+/// \warning ClientContext instances should \em not be reused across rpcs.
 class ClientContext {
  public:
   ClientContext();
@@ -178,9 +188,8 @@ class ClientContext {
   ///
   /// \param meta_key The metadata key. If \a meta_value is binary data, it must
   /// end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary, it must be
-  /// base64-encoding (see https://tools.ietf.org/html/rfc4648#section-4) and \a
-  /// meta_key must end in "-bin".
+  /// \param meta_value The metadata value. If its value is binary, the key name
+  /// must end in "-bin".
   void AddMetadata(const grpc::string& meta_key,
                    const grpc::string& meta_value);
 
@@ -222,13 +231,24 @@ class ClientContext {
     deadline_ = deadline_tp.raw_time();
   }
 
-  /// EXPERIMENTAL: Set this request to be idempotent
+  /// EXPERIMENTAL: Indicate that this request is idempotent.
+  /// By default, RPCs are assumed to <i>not</i> be idempotent.
+  ///
+  /// If true, the gRPC library assumes that it's safe to initiate
+  /// this RPC multiple times.
   void set_idempotent(bool idempotent) { idempotent_ = idempotent; }
 
-  /// EXPERIMENTAL: Set this request to be cacheable
+  /// EXPERIMENTAL: Set this request to be cacheable.
+  /// If set, grpc is free to use the HTTP GET verb for sending the request,
+  /// with the possibility of receiving a cached response.
   void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
 
-  /// EXPERIMENTAL: Trigger wait-for-ready or not on this request
+  /// EXPERIMENTAL: Trigger wait-for-ready or not on this request.
+  /// See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md.
+  /// If set, if an RPC is made when a channel's connectivity state is
+  /// TRANSIENT_FAILURE or CONNECTING, the call will not "fail fast",
+  /// and the channel will wait until the channel is READY before making the
+  /// call.
   void set_wait_for_ready(bool wait_for_ready) {
     wait_for_ready_ = wait_for_ready;
     wait_for_ready_explicitly_set_ = true;
@@ -266,7 +286,7 @@ class ClientContext {
   /// client’s identity, role, or whether it is authorized to make a particular
   /// call.
   ///
-  /// \see  http://www.grpc.io/docs/guides/auth.html
+  /// \see  https://grpc.io/docs/guides/auth.html
   void set_credentials(const std::shared_ptr<CallCredentials>& creds) {
     creds_ = creds;
   }
@@ -280,6 +300,17 @@ class ClientContext {
   ///
   /// \param algorithm The compression algorithm used for the client call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
+
+  /// Flag whether the initial metadata should be \a corked
+  ///
+  /// If \a corked is true, then the initial metadata will be coalesced with the
+  /// write of first message in the stream.
+  ///
+  /// \param corked The flag indicating whether the initial metadata is to be
+  /// corked or not.
+  void set_initial_metadata_corked(bool corked) {
+    initial_metadata_corked_ = corked;
+  }
 
   /// Return the peer uri in a string.
   ///
@@ -296,8 +327,9 @@ class ClientContext {
     return census_context_;
   }
 
-  /// Send a best-effort out-of-band cancel. The call could be in any stage.
-  /// e.g. if it is already finished, it may still return success.
+  /// Send a best-effort out-of-band cancel on the call associated with
+  /// this client context.  The call could be in any stage; e.g., if it is
+  /// already finished, it may still return success.
   ///
   /// There is no guarantee the call will be cancelled.
   void TryCancel();
@@ -314,8 +346,8 @@ class ClientContext {
   };
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
-  // Should be used for framework-level extensions only.
-  // Applications never need to call this method.
+  /// Should be used for framework-level extensions only.
+  /// Applications never need to call this method.
   grpc_call* c_call() { return call_; }
 
  private:
@@ -324,8 +356,8 @@ class ClientContext {
   ClientContext& operator=(const ClientContext&);
 
   friend class ::grpc::testing::InteropClientContextInspector;
-  friend class CallOpClientRecvStatus;
-  friend class CallOpRecvInitialMetadata;
+  friend class ::grpc::internal::CallOpClientRecvStatus;
+  friend class ::grpc::internal::CallOpRecvInitialMetadata;
   friend class Channel;
   template <class R>
   friend class ::grpc::ClientReader;
@@ -342,11 +374,10 @@ class ClientContext {
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(ChannelInterface* channel,
-                                  const RpcMethod& method,
-                                  ClientContext* context,
-                                  const InputMessage& request,
-                                  OutputMessage* result);
+  friend Status(::grpc::internal::BlockingUnaryCall)(
+      ChannelInterface* channel, const internal::RpcMethod& method,
+      ClientContext* context, const InputMessage& request,
+      OutputMessage* result);
 
   grpc_call* call() const { return call_; }
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
@@ -357,7 +388,8 @@ class ClientContext {
            (cacheable_ ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST : 0) |
            (wait_for_ready_explicitly_set_
                 ? GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
-                : 0);
+                : 0) |
+           (initial_metadata_corked_ ? GRPC_INITIAL_METADATA_CORKED : 0);
   }
 
   grpc::string authority() { return authority_; }
@@ -377,13 +409,14 @@ class ClientContext {
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
-  MetadataMap recv_initial_metadata_;
-  MetadataMap trailing_metadata_;
+  internal::MetadataMap recv_initial_metadata_;
+  internal::MetadataMap trailing_metadata_;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;
 
   grpc_compression_algorithm compression_algorithm_;
+  bool initial_metadata_corked_;
 };
 
 }  // namespace grpc

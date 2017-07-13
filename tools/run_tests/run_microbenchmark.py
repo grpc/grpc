@@ -1,32 +1,17 @@
-#!/usr/bin/env python2.7
-# Copyright 2017, Google Inc.
-# All rights reserved.
+#!/usr/bin/env python
+# Copyright 2017 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import cgi
 import multiprocessing
@@ -38,14 +23,16 @@ import argparse
 import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
 
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', 'profiling', 'microbenchmarks', 'bm_diff'))
+import bm_constants
+
 flamegraph_dir = os.path.join(os.path.expanduser('~'), 'FlameGraph')
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 if not os.path.exists('reports'):
   os.makedirs('reports')
 
-port_server_port = 32766
-start_port_server.start_port_server(port_server_port)
+start_port_server.start_port_server()
 
 def fnize(s):
   out = ''
@@ -110,8 +97,7 @@ def collect_latency(bm_name, args):
     if len(benchmarks) >= min(16, multiprocessing.cpu_count()):
       # run up to half the cpu count: each benchmark can use up to two cores
       # (one for the microbenchmark, one for the data flush)
-      jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2),
-                 add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+      jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2))
       jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
       jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
       benchmarks = []
@@ -119,8 +105,7 @@ def collect_latency(bm_name, args):
       cleanup = []
   # run the remaining benchmarks that weren't flushed
   if len(benchmarks):
-    jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2),
-               add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    jobset.run(benchmarks, maxjobs=max(1, multiprocessing.cpu_count()/2))
     jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
     jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
@@ -156,8 +141,7 @@ def collect_perf(bm_name, args):
     if len(benchmarks) >= 20:
       # run up to half the cpu count: each benchmark can use up to two cores
       # (one for the microbenchmark, one for the data flush)
-      jobset.run(benchmarks, maxjobs=1,
-                 add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+      jobset.run(benchmarks, maxjobs=1)
       jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
       jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
       benchmarks = []
@@ -165,26 +149,32 @@ def collect_perf(bm_name, args):
       cleanup = []
   # run the remaining benchmarks that weren't flushed
   if len(benchmarks):
-    jobset.run(benchmarks, maxjobs=1,
-               add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    jobset.run(benchmarks, maxjobs=1)
     jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
     jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
 
-def collect_summary(bm_name, args):
-  heading('Summary: %s' % bm_name)
+def run_summary(bm_name, cfg, base_json_name):
   subprocess.check_call(
       ['make', bm_name,
-       'CONFIG=counters', '-j', '%d' % multiprocessing.cpu_count()])
-  cmd = ['bins/counters/%s' % bm_name,
-         '--benchmark_out=out.json',
+       'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()])
+  cmd = ['bins/%s/%s' % (cfg, bm_name),
+         '--benchmark_out=%s.%s.json' % (base_json_name, cfg),
          '--benchmark_out_format=json']
   if args.summary_time is not None:
     cmd += ['--benchmark_min_time=%d' % args.summary_time]
-  text(subprocess.check_output(cmd))
+  return subprocess.check_output(cmd)
+
+def collect_summary(bm_name, args):
+  heading('Summary: %s [no counters]' % bm_name)
+  text(run_summary(bm_name, 'opt', bm_name))
+  heading('Summary: %s [with counters]' % bm_name)
+  text(run_summary(bm_name, 'counters', bm_name))
   if args.bigquery_upload:
-    with open('out.csv', 'w') as f:
-      f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py', 'out.json']))
-    subprocess.check_call(['bq', 'load', 'microbenchmarks.microbenchmarks', 'out.csv'])
+    with open('%s.csv' % bm_name, 'w') as f:
+      f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py',
+                                       '%s.counters.json' % bm_name,
+                                       '%s.opt.json' % bm_name]))
+    subprocess.check_call(['bq', 'load', 'microbenchmarks.microbenchmarks', '%s.csv' % bm_name])
 
 collectors = {
   'latency': collect_latency,
@@ -195,11 +185,12 @@ collectors = {
 argp = argparse.ArgumentParser(description='Collect data from microbenchmarks')
 argp.add_argument('-c', '--collect',
                   choices=sorted(collectors.keys()),
-                  nargs='+',
+                  nargs='*',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  default=['bm_fullstack', 'bm_closure', 'bm_cq'],
+                  choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                  default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
@@ -214,10 +205,13 @@ argp.add_argument('--summary_time',
                   help='Minimum time to run benchmarks for the summary collection')
 args = argp.parse_args()
 
-for bm_name in args.benchmarks:
+try:
   for collect in args.collect:
-    collectors[collect](bm_name, args)
-
-index_html += "</body>\n</html>\n"
-with open('reports/index.html', 'w') as f:
-  f.write(index_html)
+    for bm_name in args.benchmarks:
+      collectors[collect](bm_name, args)
+finally:
+  if not os.path.exists('reports'):
+    os.makedirs('reports')
+  index_html += "</body>\n</html>\n"
+  with open('reports/index.html', 'w') as f:
+    f.write(index_html)

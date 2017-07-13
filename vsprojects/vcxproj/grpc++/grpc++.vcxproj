@@ -270,6 +270,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\grpc++.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\health_check_service_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\call.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\channel_argument_option.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\client_unary_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\grpc_library.h" />
@@ -327,7 +328,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_helper.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h" />
@@ -338,6 +338,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
@@ -346,7 +347,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
@@ -366,6 +366,10 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\health\health.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\thread_manager\thread_manager.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
@@ -414,6 +418,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\channel_argument_option.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\create_default_thread_pool.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.cc">
@@ -447,6 +453,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\string_ref.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time_cc.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
     </ClCompile>

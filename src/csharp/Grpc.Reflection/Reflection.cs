@@ -70,7 +70,7 @@ namespace Grpc.Reflection.V1Alpha {
   }
   #region Messages
   /// <summary>
-  ///  The message sent by the client when calling ServerReflectionInfo method.
+  /// The message sent by the client when calling ServerReflectionInfo method.
   /// </summary>
   public sealed partial class ServerReflectionRequest : pb::IMessage<ServerReflectionRequest> {
     private static readonly pb::MessageParser<ServerReflectionRequest> _parser = new pb::MessageParser<ServerReflectionRequest>(() => new ServerReflectionRequest());
@@ -136,7 +136,7 @@ namespace Grpc.Reflection.V1Alpha {
     /// <summary>Field number for the "file_by_filename" field.</summary>
     public const int FileByFilenameFieldNumber = 3;
     /// <summary>
-    ///  Find a proto file by the file name.
+    /// Find a proto file by the file name.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string FileByFilename {
@@ -150,9 +150,9 @@ namespace Grpc.Reflection.V1Alpha {
     /// <summary>Field number for the "file_containing_symbol" field.</summary>
     public const int FileContainingSymbolFieldNumber = 4;
     /// <summary>
-    ///  Find the proto file that declares the given fully-qualified symbol name.
-    ///  This field should be a fully-qualified symbol name
-    ///  (e.g. &lt;package>.&lt;service>[.&lt;method>] or &lt;package>.&lt;type>).
+    /// Find the proto file that declares the given fully-qualified symbol name.
+    /// This field should be a fully-qualified symbol name
+    /// (e.g. &lt;package>.&lt;service>[.&lt;method>] or &lt;package>.&lt;type>).
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string FileContainingSymbol {
@@ -166,8 +166,8 @@ namespace Grpc.Reflection.V1Alpha {
     /// <summary>Field number for the "file_containing_extension" field.</summary>
     public const int FileContainingExtensionFieldNumber = 5;
     /// <summary>
-    ///  Find the proto file which defines an extension extending the given
-    ///  message type with the given field number.
+    /// Find the proto file which defines an extension extending the given
+    /// message type with the given field number.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Reflection.V1Alpha.ExtensionRequest FileContainingExtension {
@@ -181,14 +181,14 @@ namespace Grpc.Reflection.V1Alpha {
     /// <summary>Field number for the "all_extension_numbers_of_type" field.</summary>
     public const int AllExtensionNumbersOfTypeFieldNumber = 6;
     /// <summary>
-    ///  Finds the tag numbers used by all known extensions of the given message
-    ///  type, and appends them to ExtensionNumberResponse in an undefined order.
-    ///  Its corresponding method is best-effort: it's not guaranteed that the
-    ///  reflection service will implement this method, and it's not guaranteed
-    ///  that this method will provide all extensions. Returns
-    ///  StatusCode::UNIMPLEMENTED if it's not implemented.
-    ///  This field should be a fully-qualified type name. The format is
-    ///  &lt;package>.&lt;type>
+    /// Finds the tag numbers used by all known extensions of the given message
+    /// type, and appends them to ExtensionNumberResponse in an undefined order.
+    /// Its corresponding method is best-effort: it's not guaranteed that the
+    /// reflection service will implement this method, and it's not guaranteed
+    /// that this method will provide all extensions. Returns
+    /// StatusCode::UNIMPLEMENTED if it's not implemented.
+    /// This field should be a fully-qualified type name. The format is
+    /// &lt;package>.&lt;type>
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string AllExtensionNumbersOfType {
@@ -202,8 +202,8 @@ namespace Grpc.Reflection.V1Alpha {
     /// <summary>Field number for the "list_services" field.</summary>
     public const int ListServicesFieldNumber = 7;
     /// <summary>
-    ///  List the full names of registered services. The content will not be
-    ///  checked.
+    /// List the full names of registered services. The content will not be
+    /// checked.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string ListServices {
@@ -401,8 +401,8 @@ namespace Grpc.Reflection.V1Alpha {
   }
 
   /// <summary>
-  ///  The type name and extension number sent by the client when requesting
-  ///  file_containing_extension.
+  /// The type name and extension number sent by the client when requesting
+  /// file_containing_extension.
   /// </summary>
   public sealed partial class ExtensionRequest : pb::IMessage<ExtensionRequest> {
     private static readonly pb::MessageParser<ExtensionRequest> _parser = new pb::MessageParser<ExtensionRequest>(() => new ExtensionRequest());
@@ -441,7 +441,7 @@ namespace Grpc.Reflection.V1Alpha {
     public const int ContainingTypeFieldNumber = 1;
     private string containingType_ = "";
     /// <summary>
-    ///  Fully-qualified type name. The format should be &lt;package>.&lt;type>
+    /// Fully-qualified type name. The format should be &lt;package>.&lt;type>
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string ContainingType {
@@ -553,7 +553,7 @@ namespace Grpc.Reflection.V1Alpha {
   }
 
   /// <summary>
-  ///  The message sent by the server to answer ServerReflectionInfo method.
+  /// The message sent by the server to answer ServerReflectionInfo method.
   /// </summary>
   public sealed partial class ServerReflectionResponse : pb::IMessage<ServerReflectionResponse> {
     private static readonly pb::MessageParser<ServerReflectionResponse> _parser = new pb::MessageParser<ServerReflectionResponse>(() => new ServerReflectionResponse());
@@ -628,12 +628,12 @@ namespace Grpc.Reflection.V1Alpha {
     /// <summary>Field number for the "file_descriptor_response" field.</summary>
     public const int FileDescriptorResponseFieldNumber = 4;
     /// <summary>
-    ///  This message is used to answer file_by_filename, file_containing_symbol,
-    ///  file_containing_extension requests with transitive dependencies. As
-    ///  the repeated label is not allowed in oneof fields, we use a
-    ///  FileDescriptorResponse message to encapsulate the repeated fields.
-    ///  The reflection service is allowed to avoid sending FileDescriptorProtos
-    ///  that were previously sent in response to earlier requests in the stream.
+    /// This message is used to answer file_by_filename, file_containing_symbol,
+    /// file_containing_extension requests with transitive dependencies. As
+    /// the repeated label is not allowed in oneof fields, we use a
+    /// FileDescriptorResponse message to encapsulate the repeated fields.
+    /// The reflection service is allowed to avoid sending FileDescriptorProtos
+    /// that were previously sent in response to earlier requests in the stream.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Reflection.V1Alpha.FileDescriptorResponse FileDescriptorResponse {
@@ -647,7 +647,7 @@ namespace Grpc.Reflection.V1Alpha {
     /// <summary>Field number for the "all_extension_numbers_response" field.</summary>
     public const int AllExtensionNumbersResponseFieldNumber = 5;
     /// <summary>
-    ///  This message is used to answer all_extension_numbers_of_type requst.
+    /// This message is used to answer all_extension_numbers_of_type requst.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Reflection.V1Alpha.ExtensionNumberResponse AllExtensionNumbersResponse {
@@ -661,7 +661,7 @@ namespace Grpc.Reflection.V1Alpha {
     /// <summary>Field number for the "list_services_response" field.</summary>
     public const int ListServicesResponseFieldNumber = 6;
     /// <summary>
-    ///  This message is used to answer list_services request.
+    /// This message is used to answer list_services request.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Reflection.V1Alpha.ListServiceResponse ListServicesResponse {
@@ -675,7 +675,7 @@ namespace Grpc.Reflection.V1Alpha {
     /// <summary>Field number for the "error_response" field.</summary>
     public const int ErrorResponseFieldNumber = 7;
     /// <summary>
-    ///  This message is used when an error occurs.
+    /// This message is used when an error occurs.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Reflection.V1Alpha.ErrorResponse ErrorResponse {
@@ -893,9 +893,9 @@ namespace Grpc.Reflection.V1Alpha {
   }
 
   /// <summary>
-  ///  Serialized FileDescriptorProto messages sent by the server answering
-  ///  a file_by_filename, file_containing_symbol, or file_containing_extension
-  ///  request.
+  /// Serialized FileDescriptorProto messages sent by the server answering
+  /// a file_by_filename, file_containing_symbol, or file_containing_extension
+  /// request.
   /// </summary>
   public sealed partial class FileDescriptorResponse : pb::IMessage<FileDescriptorResponse> {
     private static readonly pb::MessageParser<FileDescriptorResponse> _parser = new pb::MessageParser<FileDescriptorResponse>(() => new FileDescriptorResponse());
@@ -935,9 +935,9 @@ namespace Grpc.Reflection.V1Alpha {
         = pb::FieldCodec.ForBytes(10);
     private readonly pbc::RepeatedField<pb::ByteString> fileDescriptorProto_ = new pbc::RepeatedField<pb::ByteString>();
     /// <summary>
-    ///  Serialized FileDescriptorProto messages. We avoid taking a dependency on
-    ///  descriptor.proto, which uses proto2 only features, by making them opaque
-    ///  bytes instead.
+    /// Serialized FileDescriptorProto messages. We avoid taking a dependency on
+    /// descriptor.proto, which uses proto2 only features, by making them opaque
+    /// bytes instead.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<pb::ByteString> FileDescriptorProto {
@@ -1012,8 +1012,8 @@ namespace Grpc.Reflection.V1Alpha {
   }
 
   /// <summary>
-  ///  A list of extension numbers sent by the server answering
-  ///  all_extension_numbers_of_type request.
+  /// A list of extension numbers sent by the server answering
+  /// all_extension_numbers_of_type request.
   /// </summary>
   public sealed partial class ExtensionNumberResponse : pb::IMessage<ExtensionNumberResponse> {
     private static readonly pb::MessageParser<ExtensionNumberResponse> _parser = new pb::MessageParser<ExtensionNumberResponse>(() => new ExtensionNumberResponse());
@@ -1052,8 +1052,8 @@ namespace Grpc.Reflection.V1Alpha {
     public const int BaseTypeNameFieldNumber = 1;
     private string baseTypeName_ = "";
     /// <summary>
-    ///  Full name of the base type, including the package name. The format
-    ///  is &lt;package>.&lt;type>
+    /// Full name of the base type, including the package name. The format
+    /// is &lt;package>.&lt;type>
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string BaseTypeName {
@@ -1158,7 +1158,7 @@ namespace Grpc.Reflection.V1Alpha {
   }
 
   /// <summary>
-  ///  A list of ServiceResponse sent by the server answering list_services request.
+  /// A list of ServiceResponse sent by the server answering list_services request.
   /// </summary>
   public sealed partial class ListServiceResponse : pb::IMessage<ListServiceResponse> {
     private static readonly pb::MessageParser<ListServiceResponse> _parser = new pb::MessageParser<ListServiceResponse>(() => new ListServiceResponse());
@@ -1198,8 +1198,8 @@ namespace Grpc.Reflection.V1Alpha {
         = pb::FieldCodec.ForMessage(10, global::Grpc.Reflection.V1Alpha.ServiceResponse.Parser);
     private readonly pbc::RepeatedField<global::Grpc.Reflection.V1Alpha.ServiceResponse> service_ = new pbc::RepeatedField<global::Grpc.Reflection.V1Alpha.ServiceResponse>();
     /// <summary>
-    ///  The information of each service may be expanded in the future, so we use
-    ///  ServiceResponse message to encapsulate it.
+    /// The information of each service may be expanded in the future, so we use
+    /// ServiceResponse message to encapsulate it.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Grpc.Reflection.V1Alpha.ServiceResponse> Service {
@@ -1274,8 +1274,8 @@ namespace Grpc.Reflection.V1Alpha {
   }
 
   /// <summary>
-  ///  The information of a single service used by ListServiceResponse to answer
-  ///  list_services request.
+  /// The information of a single service used by ListServiceResponse to answer
+  /// list_services request.
   /// </summary>
   public sealed partial class ServiceResponse : pb::IMessage<ServiceResponse> {
     private static readonly pb::MessageParser<ServiceResponse> _parser = new pb::MessageParser<ServiceResponse>(() => new ServiceResponse());
@@ -1313,8 +1313,8 @@ namespace Grpc.Reflection.V1Alpha {
     public const int NameFieldNumber = 1;
     private string name_ = "";
     /// <summary>
-    ///  Full name of a registered service, including its package name. The format
-    ///  is &lt;package>.&lt;service>
+    /// Full name of a registered service, including its package name. The format
+    /// is &lt;package>.&lt;service>
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Name {
@@ -1399,7 +1399,7 @@ namespace Grpc.Reflection.V1Alpha {
   }
 
   /// <summary>
-  ///  The error code and error message sent by the server when an error occurs.
+  /// The error code and error message sent by the server when an error occurs.
   /// </summary>
   public sealed partial class ErrorResponse : pb::IMessage<ErrorResponse> {
     private static readonly pb::MessageParser<ErrorResponse> _parser = new pb::MessageParser<ErrorResponse>(() => new ErrorResponse());
@@ -1438,7 +1438,7 @@ namespace Grpc.Reflection.V1Alpha {
     public const int ErrorCodeFieldNumber = 1;
     private int errorCode_;
     /// <summary>
-    ///  This field uses the error codes defined in grpc::StatusCode.
+    /// This field uses the error codes defined in grpc::StatusCode.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int ErrorCode {
