@@ -139,6 +139,7 @@ Object HHVM_METHOD(Call, startBatch,
   grpc_byte_buffer *message = nullptr;
   int cancelled;
   grpc_call_error error;
+  int fd = -1;
 
   grpc_metadata_array_init(&metadata);
   grpc_metadata_array_init(&trailing_metadata);
@@ -285,7 +286,6 @@ Object HHVM_METHOD(Call, startBatch,
     op_num++;
   }
 
-  int fd;
   if (expect_send_initial_metadata == true) {
     fd = eventfd(0, EFD_CLOEXEC);
     PluginGetMetdataFd::tl_obj.get()->setFd(fd);
@@ -324,7 +324,6 @@ Object HHVM_METHOD(Call, startBatch,
     plugin_get_metadata_params *params;
     read(fd, &params, sizeof(plugin_get_metadata_params *));
     PluginGetMetdataFd::tl_obj.get()->setFd(-1);
-    close(fd);
 
     plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
 
@@ -384,6 +383,9 @@ Object HHVM_METHOD(Call, startBatch,
   }
 
   cleanup:
+    if (fd != -1) {
+      close(fd);
+    }
     gpr_free(cq_pluck_params);
     for (int i = 0; i < metadata.count; i++) {
       grpc_slice_unref(metadata.metadata[i].key);
