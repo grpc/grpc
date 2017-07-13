@@ -2,7 +2,7 @@
 # Uses OWNERS files in different modules throughout the
 # repository as the source of truth for module ownership.
 * @a11r @nicolasnoble @ctiller
-bazel/* @nicolasnoble @a11r @ctiller
+bazel/* @nicolasnoble @dgquintas @ctiller
 cmake/* @jtattermusch @a11r @nicolasnoble @ctiller
 doc/PROTOCOL-HTTP2.md @ejona86 @a11r @nicolasnoble @ctiller
 doc/interop-test-descriptions.md @ejona86 @a11r @nicolasnoble @ctiller
