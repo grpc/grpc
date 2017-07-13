@@ -16,6 +16,9 @@ src/objective-c/** @muxi @makdharma @a11r @nicolasnoble @ctiller
 src/php/** @stanley-cheung @murgatroid99 @a11r @nicolasnoble @ctiller
 src/python/** @nathanielmanistaatgoogle @kpayson64 @a11r @nicolasnoble @ctiller
 src/ruby/** @apolcyn @murgatroid99 @a11r @nicolasnoble @ctiller
+test/build/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
+test/core/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
+test/cpp/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
 tools/** @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
 tools/codegen/core/** @ctiller @dgquintas @markdroth
 tools/dockerfile/** @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
