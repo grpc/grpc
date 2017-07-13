@@ -63,6 +63,11 @@ class Status {
   /// Is the status OK?
   bool ok() const { return code_ == StatusCode::OK; }
 
+  // Ignores any errors. This method does nothing except potentially suppress
+  // complaints from any tools that are checking that errors are not dropped on
+  // the floor.
+  void IgnoreError() const {}
+
  private:
   StatusCode code_;
   grpc::string error_message_;
