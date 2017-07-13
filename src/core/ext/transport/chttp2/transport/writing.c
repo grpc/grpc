@@ -131,7 +131,7 @@ static bool update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   *ctr += send_bytes;
   while (cb) {
     grpc_chttp2_write_cb *next = cb->next;
-    if (cb->call_at_byte <= s->flow_controlled_bytes_written) {
+    if (cb->call_at_byte <= *ctr) {
       sched_any = true;
       finish_write_cb(exec_ctx, t, s, cb, GRPC_ERROR_REF(error));
     } else {
