@@ -230,13 +230,14 @@ static void on_oauth2_token_fetcher_http_response(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&c->mu);
   // Invoke callbacks for all pending requests.
   while (pending_request != NULL) {
-    grpc_credentials_mdelem_list_add(pending_request->md_list, access_token_md);
-    GRPC_CLOSURE_SCHED(exec_ctx, pending_request->on_request_metadata,
-                       error == GRPC_ERROR_NONE
-                       ? error
-                       : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Error occured when fetching oauth2 token.",
-                             &error, 1));
+    if (status == GRPC_CREDENTIALS_OK) {
+      grpc_credentials_mdelem_list_add(pending_request->md_list,
+                                       access_token_md);
+    } else {
+      error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "Error occured when fetching oauth2 token.", &error, 1);
+    }
+    GRPC_CLOSURE_SCHED(exec_ctx, pending_request->on_request_metadata, error);
     grpc_oauth2_pending_get_request_metadata *prev = pending_request;
     pending_request = pending_request->next;
     gpr_free(prev);

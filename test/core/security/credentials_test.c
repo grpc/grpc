@@ -340,7 +340,6 @@ static void check_request_metadata(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_log(GPR_INFO, "actual_error: %s", grpc_error_string(error));
   if (state->expected_error == GRPC_ERROR_NONE) {
     GPR_ASSERT(error == GRPC_ERROR_NONE);
-    GRPC_ERROR_UNREF(state->expected_error);
   } else {
     grpc_slice expected_error;
     GPR_ASSERT(grpc_error_get_str(state->expected_error,
@@ -349,9 +348,13 @@ static void check_request_metadata(grpc_exec_ctx *exec_ctx, void *arg,
     GPR_ASSERT(
         grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
     GPR_ASSERT(grpc_slice_cmp(expected_error, actual_error) == 0);
+    GRPC_ERROR_UNREF(state->expected_error);
   }
+  gpr_log(GPR_INFO, "expected_size=%" PRIdPTR " actual_size=%" PRIdPTR,
+          state->expected_size, state->md_list.size);
   GPR_ASSERT(state->md_list.size == state->expected_size);
   check_metadata(state->expected, &state->md_list);
+  grpc_credentials_mdelem_list_destroy(exec_ctx, &state->md_list);
   gpr_free(state);
 }
 
@@ -825,6 +828,7 @@ static void test_jwt_creds_signing_failure(void) {
   run_request_metadata_test(&exec_ctx, creds, auth_md_ctx, state);
 
   gpr_free(json_key_string);
+  grpc_call_credentials_unref(&exec_ctx, creds);
   grpc_jwt_encode_and_sign_set_override(NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 }
