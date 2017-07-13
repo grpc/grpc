@@ -67,8 +67,14 @@ else
   BASE_IMAGE=${BASE_NAME}_base:`md5 -r tools/dockerfile/interoptest/$BASE_NAME/Dockerfile | cut -f1 -d\ `
 fi
 
-# Make sure base docker image has been built. Should be instantaneous if so.
-docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/interoptest/$BASE_NAME || exit $?
+if [ "$DOCKERHUB_ORGANIZATION" != "" ]
+then
+  DOCKER_IMAGE_NAME=$DOCKERHUB_ORGANIZATION/$BASE_IMAGE
+  docker pull $DOCKER_IMAGE_NAME
+else
+  # Make sure docker image has been built. Should be instantaneous if so.
+  docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/interoptest/$BASE_NAME || exit $?
+fi
 
 # Create a local branch so the child Docker script won't complain
 git branch -f jenkins-docker
