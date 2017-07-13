@@ -290,6 +290,8 @@ Object HHVM_METHOD(Call, startBatch,
   }
 
   if (expect_send_initial_metadata == true) {
+    // We do this above grpc_call_start_batch because it can also sometimes execute the callback
+    // from within itself and we need to have the fd setup by that point
     fd = eventfd(0, EFD_CLOEXEC);
     PluginGetMetadataFd::tl_obj.get()->setFd(fd);
   }
@@ -436,6 +438,9 @@ void *cq_pluck_async(void *params_ptr) {
 
   // An error occured if success = 0
   if (event.success == 0) {
+    // If there was an error then our callback wouldn't have been called but the main
+    // thread is still blocking on the read, so we need to unblock it somehow. We do
+    // this by writing nullptr to the fd which is then handled on the other side.
     write(params->fd, nullptr, sizeof(plugin_get_metadata_params *));
   }
 
