@@ -120,29 +120,27 @@ void grpc_init(void) {
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
-    grpc_register_tracer("api", &grpc_api_trace);
-    grpc_register_tracer("channel", &grpc_trace_channel);
-    grpc_register_tracer("connectivity_state", &grpc_connectivity_state_trace);
-    grpc_register_tracer("channel_stack_builder",
-                         &grpc_trace_channel_stack_builder);
-    grpc_register_tracer("http1", &grpc_http1_trace);
-    grpc_register_tracer("queue_pluck", &grpc_cq_pluck_trace);  // default on
-    grpc_register_tracer("combiner", &grpc_combiner_trace);
-    grpc_register_tracer("server_channel", &grpc_server_channel_trace);
-    grpc_register_tracer("bdp_estimator", &grpc_bdp_estimator_trace);
-    grpc_register_tracer("queue_timeout",
-                         &grpc_cq_event_timeout_trace);  // default on
-    grpc_register_tracer("op_failure", &grpc_trace_operation_failures);
-    grpc_register_tracer("resource_quota", &grpc_resource_quota_trace);
-    grpc_register_tracer("call_error", &grpc_call_error_trace);
+    grpc_register_tracer(&grpc_api_trace);
+    grpc_register_tracer(&grpc_trace_channel);
+    grpc_register_tracer(&grpc_connectivity_state_trace);
+    grpc_register_tracer(&grpc_trace_channel_stack_builder);
+    grpc_register_tracer(&grpc_http1_trace);
+    grpc_register_tracer(&grpc_cq_pluck_trace);  // default on
+    grpc_register_tracer(&grpc_combiner_trace);
+    grpc_register_tracer(&grpc_server_channel_trace);
+    grpc_register_tracer(&grpc_bdp_estimator_trace);
+    grpc_register_tracer(&grpc_cq_event_timeout_trace);  // default on
+    grpc_register_tracer(&grpc_trace_operation_failures);
+    grpc_register_tracer(&grpc_resource_quota_trace);
+    grpc_register_tracer(&grpc_call_error_trace);
 #ifndef NDEBUG
-    grpc_register_tracer("pending_tags", &grpc_trace_pending_tags);
-    grpc_register_tracer("queue_refcount", &grpc_trace_cq_refcount);
-    grpc_register_tracer("closure", &grpc_trace_closure);
-    grpc_register_tracer("error_refcount", &grpc_trace_error_refcount);
-    grpc_register_tracer("stream_refcount", &grpc_trace_stream_refcount);
-    grpc_register_tracer("fd_refcount", &grpc_trace_fd_refcount);
-    grpc_register_tracer("metadata", &grpc_trace_metadata);
+    grpc_register_tracer(&grpc_trace_pending_tags);
+    grpc_register_tracer(&grpc_trace_cq_refcount);
+    grpc_register_tracer(&grpc_trace_closure);
+    grpc_register_tracer(&grpc_trace_error_refcount);
+    grpc_register_tracer(&grpc_trace_stream_refcount);
+    grpc_register_tracer(&grpc_trace_fd_refcount);
+    grpc_register_tracer(&grpc_trace_metadata);
 #endif
     grpc_security_pre_init();
     grpc_iomgr_init(&exec_ctx);
