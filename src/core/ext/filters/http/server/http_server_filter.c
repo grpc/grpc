@@ -49,7 +49,6 @@ typedef struct call_data {
   /** Closure to call when we retrieve read message from the path URI
    */
   grpc_closure *recv_message_ready;
-  grpc_closure recv_message_ready_in_call_combiner;
   grpc_closure *on_complete;
   grpc_byte_stream **pp_recv_message;
   grpc_slice_buffer read_slice_buffer;
