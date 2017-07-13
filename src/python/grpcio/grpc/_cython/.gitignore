@@ -1,6 +1,0 @@
-cygrpc.c
-*.a
-*.so
-*.dll
-*.pyc
-*.pyd
