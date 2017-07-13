@@ -37,7 +37,8 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-grpc_tracer_flag grpc_lb_round_robin_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_lb_round_robin_trace =
+    GRPC_TRACER_INITIALIZER(false, "round_robin");
 
 /** List of entities waiting for a pick.
  *
@@ -158,6 +159,7 @@ static void rr_subchannel_list_destroy(grpc_exec_ctx *exec_ctx,
     if (sd->user_data != NULL) {
       GPR_ASSERT(sd->user_data_vtable != NULL);
       sd->user_data_vtable->destroy(exec_ctx, sd->user_data);
+      sd->user_data = NULL;
     }
   }
   gpr_free(subchannel_list->subchannels);
@@ -578,6 +580,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     if (sd->user_data != NULL) {
       GPR_ASSERT(sd->user_data_vtable != NULL);
       sd->user_data_vtable->destroy(exec_ctx, sd->user_data);
+      sd->user_data = NULL;
     }
     if (new_policy_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
       /* the policy is shutting down. Flush all the pending picks... */
@@ -866,7 +869,7 @@ static grpc_lb_policy_factory *round_robin_lb_factory_create() {
 
 void grpc_lb_policy_round_robin_init() {
   grpc_register_lb_policy(round_robin_lb_factory_create());
-  grpc_register_tracer("round_robin", &grpc_lb_round_robin_trace);
+  grpc_register_tracer(&grpc_lb_round_robin_trace);
 }
 
 void grpc_lb_policy_round_robin_shutdown() {}
