@@ -32,7 +32,8 @@
 #include "src/core/lib/transport/transport_impl.h"
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_stream_refcount = GRPC_TRACER_INITIALIZER(false, "stream_refcount");
+grpc_tracer_flag grpc_trace_stream_refcount =
+    GRPC_TRACER_INITIALIZER(false, "stream_refcount");
 #endif
 
 #ifndef NDEBUG

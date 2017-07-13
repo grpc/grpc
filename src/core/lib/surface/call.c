@@ -229,8 +229,10 @@ struct grpc_call {
   void *saved_receiving_stream_ready_bctlp;
 };
 
-grpc_tracer_flag grpc_call_error_trace = GRPC_TRACER_INITIALIZER(false, "call_error");
-grpc_tracer_flag grpc_compression_trace = GRPC_TRACER_INITIALIZER(false, "compression");
+grpc_tracer_flag grpc_call_error_trace =
+    GRPC_TRACER_INITIALIZER(false, "call_error");
+grpc_tracer_flag grpc_compression_trace =
+    GRPC_TRACER_INITIALIZER(false, "compression");
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)

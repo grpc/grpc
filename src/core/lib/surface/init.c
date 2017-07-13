@@ -123,15 +123,13 @@ void grpc_init(void) {
     grpc_register_tracer(&grpc_api_trace);
     grpc_register_tracer(&grpc_trace_channel);
     grpc_register_tracer(&grpc_connectivity_state_trace);
-    grpc_register_tracer(
-                         &grpc_trace_channel_stack_builder);
+    grpc_register_tracer(&grpc_trace_channel_stack_builder);
     grpc_register_tracer(&grpc_http1_trace);
     grpc_register_tracer(&grpc_cq_pluck_trace);  // default on
     grpc_register_tracer(&grpc_combiner_trace);
     grpc_register_tracer(&grpc_server_channel_trace);
     grpc_register_tracer(&grpc_bdp_estimator_trace);
-    grpc_register_tracer(
-                         &grpc_cq_event_timeout_trace);  // default on
+    grpc_register_tracer(&grpc_cq_event_timeout_trace);  // default on
     grpc_register_tracer(&grpc_trace_operation_failures);
     grpc_register_tracer(&grpc_resource_quota_trace);
     grpc_register_tracer(&grpc_call_error_trace);

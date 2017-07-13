@@ -29,7 +29,8 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 
-grpc_tracer_flag grpc_resource_quota_trace = GRPC_TRACER_INITIALIZER(false, "resource_quota");
+grpc_tracer_flag grpc_resource_quota_trace =
+    GRPC_TRACER_INITIALIZER(false, "resource_quota");
 
 #define MEMORY_USAGE_ESTIMATION_MAX 65536
 

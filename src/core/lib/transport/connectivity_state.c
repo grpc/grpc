@@ -24,7 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-grpc_tracer_flag grpc_connectivity_state_trace = GRPC_TRACER_INITIALIZER(false, "connectivity_state");
+grpc_tracer_flag grpc_connectivity_state_trace =
+    GRPC_TRACER_INITIALIZER(false, "connectivity_state");
 
 const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
   switch (state) {

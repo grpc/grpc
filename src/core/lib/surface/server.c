@@ -58,7 +58,8 @@ typedef struct registered_method registered_method;
 
 typedef enum { BATCH_CALL, REGISTERED_CALL } requested_call_type;
 
-grpc_tracer_flag grpc_server_channel_trace = GRPC_TRACER_INITIALIZER(false, "server_channel");
+grpc_tracer_flag grpc_server_channel_trace =
+    GRPC_TRACER_INITIALIZER(false, "server_channel");
 
 typedef struct requested_call {
   requested_call_type type;

@@ -35,10 +35,13 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/event_string.h"
 
-grpc_tracer_flag grpc_trace_operation_failures = GRPC_TRACER_INITIALIZER(false, "op_failure");
+grpc_tracer_flag grpc_trace_operation_failures =
+    GRPC_TRACER_INITIALIZER(false, "op_failure");
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_pending_tags = GRPC_TRACER_INITIALIZER(false, "pending_tags");
-grpc_tracer_flag grpc_trace_cq_refcount = GRPC_TRACER_INITIALIZER(false, "cq_refcount");
+grpc_tracer_flag grpc_trace_pending_tags =
+    GRPC_TRACER_INITIALIZER(false, "pending_tags");
+grpc_tracer_flag grpc_trace_cq_refcount =
+    GRPC_TRACER_INITIALIZER(false, "cq_refcount");
 #endif
 
 typedef struct {
@@ -343,8 +346,10 @@ static const cq_vtable g_cq_vtable[] = {
 #define POLLSET_FROM_CQ(cq) \
   ((grpc_pollset *)(cq->vtable->data_size + (char *)DATA_FROM_CQ(cq)))
 
-grpc_tracer_flag grpc_cq_pluck_trace = GRPC_TRACER_INITIALIZER(true, "queue_pluck");
-grpc_tracer_flag grpc_cq_event_timeout_trace = GRPC_TRACER_INITIALIZER(true, "queue_timeout");
+grpc_tracer_flag grpc_cq_pluck_trace =
+    GRPC_TRACER_INITIALIZER(true, "queue_pluck");
+grpc_tracer_flag grpc_cq_event_timeout_trace =
+    GRPC_TRACER_INITIALIZER(true, "queue_timeout");
 
 #define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
   if (GRPC_TRACER_ON(grpc_api_trace) &&                 \

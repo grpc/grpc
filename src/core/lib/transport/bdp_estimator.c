@@ -23,7 +23,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-grpc_tracer_flag grpc_bdp_estimator_trace = GRPC_TRACER_INITIALIZER(false, "bdp_estimator");
+grpc_tracer_flag grpc_bdp_estimator_trace =
+    GRPC_TRACER_INITIALIZER(false, "bdp_estimator");
 
 void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name) {
   estimator->estimate = 65536;

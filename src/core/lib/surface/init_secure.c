@@ -40,10 +40,8 @@ void grpc_security_pre_init(void) {
   grpc_register_tracer(&grpc_trace_secure_endpoint);
   grpc_register_tracer(&tsi_tracing_enabled);
 #ifndef NDEBUG
-  grpc_register_tracer(
-                       &grpc_trace_auth_context_refcount);
-  grpc_register_tracer(
-                       &grpc_trace_security_connector_refcount);
+  grpc_register_tracer(&grpc_trace_auth_context_refcount);
+  grpc_register_tracer(&grpc_trace_security_connector_refcount);
 #endif
 }
 

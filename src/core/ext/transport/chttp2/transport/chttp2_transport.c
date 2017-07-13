@@ -78,7 +78,8 @@ grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false, "http");
 grpc_tracer_flag grpc_flowctl_trace = GRPC_TRACER_INITIALIZER(false, "flowctl");
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_chttp2_refcount = GRPC_TRACER_INITIALIZER(false, "chttp2_refcount");
+grpc_tracer_flag grpc_trace_chttp2_refcount =
+    GRPC_TRACER_INITIALIZER(false, "chttp2_refcount");
 #endif
 
 static const grpc_transport_vtable vtable;
