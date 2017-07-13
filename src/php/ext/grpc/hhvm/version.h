@@ -20,6 +20,6 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define HHVM_GRPC_VERSION "0.1"
+#define HHVM_GRPC_VERSION "0.9"
 
 #endif /* VERSION_H */

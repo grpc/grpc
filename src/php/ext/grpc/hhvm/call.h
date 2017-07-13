@@ -59,6 +59,7 @@ typedef struct cq_pluck_async_params {
   void* tag;
   gpr_timespec deadline;
   void* reserved;
+  int fd;
 } cq_pluck_async_params;
 
 void HHVM_METHOD(Call, __construct,

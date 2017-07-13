@@ -139,6 +139,9 @@ Object HHVM_METHOD(Call, startBatch,
   grpc_byte_buffer *message = nullptr;
   int cancelled;
   grpc_call_error error;
+  grpc_event *event_ptr = nullptr;
+  grpc_event event;
+
   int fd = -1;
 
   grpc_metadata_array_init(&metadata);
@@ -301,38 +304,46 @@ Object HHVM_METHOD(Call, startBatch,
     goto cleanup;
   }
 
-  cq_pluck_async_params *cq_pluck_params;
-  cq_pluck_params = (cq_pluck_async_params *)gpr_zalloc(sizeof(cq_pluck_async_params));
-  cq_pluck_params->cq = CompletionQueue::tl_obj.get()->getQueue();
-  cq_pluck_params->tag = callData->getWrapped();
-  cq_pluck_params->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-  cq_pluck_params->reserved = nullptr;
-
   if (expect_send_initial_metadata == true) {
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
     // one thread. However gRPC calls call_credentials.cpp:plugin_get_metadata in a different thread
     // in many cases and that violates the thread safety within a request in HHVM and causes segfaults
-    // at any reasonable concurrency. Our workaround here is to use pass in a file descriptor that can be
+    // at any reasonable concurrency. Our workaround here is to pass in a file descriptor that can be
     // used by the concurrent thread to send back the parameters to this main thread so we can execute
     // it here.
+
+    cq_pluck_async_params *cq_pluck_params;
+    cq_pluck_params = (cq_pluck_async_params *)gpr_zalloc(sizeof(cq_pluck_async_params));
+    cq_pluck_params->cq = CompletionQueue::tl_obj.get()->getQueue();
+    cq_pluck_params->tag = callData->getWrapped();
+    cq_pluck_params->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+    cq_pluck_params->reserved = nullptr;
+    cq_pluck_params->fd = fd;
 
     pthread_t cq_pluck_thread_id;
     pthread_create(&cq_pluck_thread_id, NULL, cq_pluck_async, (void *)cq_pluck_params);
 
     // Block, wait for signal from callback
     plugin_get_metadata_params *params;
-    read(fd, &params, sizeof(plugin_get_metadata_params *));
+    int numBytes = read(fd, &params, sizeof(plugin_get_metadata_params *));
     PluginGetMetdataFd::tl_obj.get()->setFd(-1);
 
-    plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
-
-    gpr_free(params);
-
-    pthread_join(cq_pluck_thread_id, NULL);
+    if (numBytes > 0 && params != nullptr) {
+      plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
+      gpr_free(params);
+    }
+    pthread_join(cq_pluck_thread_id, (void **)&event_ptr);
+    event = *event_ptr;
   } else {
-    // If we don't actually expect a metadata callback then just run this in the same thread
-    cq_pluck_async((void *)cq_pluck_params);
+    event = grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), callData->getWrapped(),
+                                        gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  }
+
+  // An error occured if success = 0
+  if (event.success == 0) {
+    SystemLib::throwInvalidArgumentExceptionObject(folly::sformat("There was a problem with the request. Event error code: {}", (int)event.type));
+    goto cleanup;
   }
 
   for (int i = 0; i < op_num; i++) {
@@ -386,7 +397,9 @@ Object HHVM_METHOD(Call, startBatch,
     if (fd != -1) {
       close(fd);
     }
-    gpr_free(cq_pluck_params);
+    if (event_ptr != nullptr) {
+      gpr_free(event_ptr);
+    }
     for (int i = 0; i < metadata.count; i++) {
       grpc_slice_unref(metadata.metadata[i].key);
       grpc_slice_unref(metadata.metadata[i].value);
@@ -414,12 +427,23 @@ Object HHVM_METHOD(Call, startBatch,
 
 void *cq_pluck_async(void *params_ptr) {
   cq_pluck_async_params *params = (cq_pluck_async_params *)params_ptr;
+  grpc_event event;
+  grpc_event *event_copy = (grpc_event *)gpr_zalloc(sizeof(grpc_event));
+
 
   // This doesn't need a lock b/c we use a completion queue per HHVM request thread
-  grpc_completion_queue_pluck(params->cq, params->tag, params->deadline, params->reserved);
+  event = grpc_completion_queue_pluck(params->cq, params->tag, params->deadline, params->reserved);
 
-  return NULL;
+  // An error occured if success = 0
+  if (event.success == 0) {
+    write(params->fd, nullptr, sizeof(plugin_get_metadata_params *));
+  }
+
+  *event_copy = event;
+
+  return (void *)event_copy;
 }
+
 
 String HHVM_METHOD(Call, getPeer) {
   auto callData = Native::data<CallData>(this_);
