@@ -338,13 +338,12 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
   uint32_t target_announced_window = grpc_chttp2_target_announced_window(t);
   int64_t init_window =
       t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  if (t->announced_window < target_announced_window &&
-      t->announced_window < init_window / 2) {
+  if (t->announced_window < target_announced_window / 2) {
     action.send_transport_update = GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY;
   }
   if (s != NULL && !s->read_closed) {
     if ((int64_t)s->local_window_delta > (int64_t)s->announced_window_delta &&
-        (int64_t)s->announced_window_delta + init_window <= init_window / 2) {
+        (int64_t)s->announced_window_delta <= -init_window / 2) {
       action.send_stream_update = GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY;
     } else if (s->local_window_delta > s->announced_window_delta) {
       action.send_stream_update = GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE;
