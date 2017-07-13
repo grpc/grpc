@@ -861,21 +861,15 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_END("grpc_chttp2_initiate_write", 0);
 }
 
-void grpc_chttp2_become_writable(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-    grpc_chttp2_stream_write_type stream_write_type, const char *reason) {
+void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport *t,
+                                 grpc_chttp2_stream *s,
+                                 bool also_initiate_write, const char *reason) {
   if (!t->closed && grpc_chttp2_list_add_writable_stream(t, s)) {
     GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:become");
   }
-  switch (stream_write_type) {
-    case GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK:
-      break;
-    case GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED:
-      grpc_chttp2_initiate_write(exec_ctx, t, reason);
-      break;
-    case GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED:
-      grpc_chttp2_initiate_write(exec_ctx, t, reason);
-      break;
+  if (also_initiate_write) {
+    grpc_chttp2_initiate_write(exec_ctx, t, reason);
   }
 }
 
@@ -958,7 +952,7 @@ static void write_action_end_locked(grpc_exec_ctx *exec_ctx, void *tp,
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
       GPR_TIMER_MARK("state=writing_stale_no_poller", 0);
       set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING,
-                      "continue writing [!covered]");
+                      "continue writing");
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       GRPC_CLOSURE_RUN(
           exec_ctx,
@@ -1060,9 +1054,7 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
 
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
     post_destructive_reclaimer(exec_ctx, t);
-    grpc_chttp2_become_writable(exec_ctx, t, s,
-                                GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED,
-                                "new_stream");
+    grpc_chttp2_become_writable(exec_ctx, t, s, true, "new_stream");
   }
   /* cancel out streams that will never be started */
   while (t->next_stream_id >= MAX_CLIENT_STREAM_ID &&
@@ -1157,9 +1149,7 @@ static void maybe_become_writable_due_to_send_msg(grpc_exec_ctx *exec_ctx,
                                                   grpc_chttp2_stream *s) {
   if (s->id != 0 && (!s->write_buffering ||
                      s->flow_controlled_buffer.length > t->write_buffer_size)) {
-    grpc_chttp2_become_writable(exec_ctx, t, s,
-                                GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED,
-                                "op.send_message");
+    grpc_chttp2_become_writable(exec_ctx, t, s, true, "op.send_message");
   }
 }
 
@@ -1342,14 +1332,13 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
           }
         } else {
           GPR_ASSERT(s->id != 0);
-          grpc_chttp2_stream_write_type write_type =
-              GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
+          bool initiate_write = true;
           if (op->send_message &&
               (op->payload->send_message.send_message->flags &
                GRPC_WRITE_BUFFER_HINT)) {
-            write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
+            initiate_write = false;
           }
-          grpc_chttp2_become_writable(exec_ctx, t, s, write_type,
+          grpc_chttp2_become_writable(exec_ctx, t, s, initiate_write,
                                       "op.send_initial_metadata");
         }
       } else {
@@ -1443,8 +1432,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       } else if (s->id != 0) {
         /* TODO(ctiller): check if there's flow control for any outstanding
            bytes before going writable */
-        grpc_chttp2_become_writable(exec_ctx, t, s,
-                                    GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED,
+        grpc_chttp2_become_writable(exec_ctx, t, s, true,
                                     "op.send_trailing_metadata");
       }
     }
@@ -2289,9 +2277,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       if (t->initial_window_update > 0) {
         grpc_chttp2_stream *s;
         while (grpc_chttp2_list_pop_stalled_by_stream(t, &s)) {
-          grpc_chttp2_become_writable(
-              exec_ctx, t, s, GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
-              "unstalled");
+          grpc_chttp2_become_writable(exec_ctx, t, s, true, "unstalled");
         }
       }
       t->initial_window_update = 0;
@@ -2596,12 +2582,7 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
   if (s->incoming_window_delta < max_recv_bytes && !s->read_closed) {
     uint32_t add_max_recv_bytes =
         (uint32_t)(max_recv_bytes - s->incoming_window_delta);
-    grpc_chttp2_stream_write_type write_type =
-        GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED;
-    if (s->incoming_window_delta + initial_window_size <
-        (int64_t)have_already) {
-      write_type = GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED;
-    }
+    bool initiate_write = true;
     GRPC_CHTTP2_FLOW_CREDIT_STREAM_INCOMING_WINDOW_DELTA("op", t, s,
                                                          add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
@@ -2609,9 +2590,9 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
     if ((int64_t)s->incoming_window_delta + (int64_t)initial_window_size -
             (int64_t)s->announce_window >
         (int64_t)initial_window_size / 2) {
-      write_type = GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK;
+      initiate_write = false;
     }
-    grpc_chttp2_become_writable(exec_ctx, t, s, write_type,
+    grpc_chttp2_become_writable(exec_ctx, t, s, initiate_write,
                                 "read_incoming_stream");
   }
 }

@@ -98,9 +98,8 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
         GRPC_CHTTP2_FLOW_CREDIT_STREAM("parse", t, s, outgoing_window_delta,
                                        received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
-          grpc_chttp2_become_writable(
-              exec_ctx, t, s, GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
-              "stream.read_flow_control");
+          grpc_chttp2_become_writable(exec_ctx, t, s, true,
+                                      "stream.read_flow_control");
         }
       }
     } else {

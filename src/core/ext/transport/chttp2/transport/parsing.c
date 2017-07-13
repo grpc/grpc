@@ -106,7 +106,8 @@ grpc_error *grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
           return err;
         }
         ++cur;
-        ++t->deframe_state;
+        t->deframe_state =
+            (grpc_chttp2_deframe_transport_state)(1 + (int)t->deframe_state);
       }
       if (cur == end) {
         return GRPC_ERROR_NONE;
@@ -407,8 +408,7 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
         -(int64_t)t->settings[GRPC_SENT_SETTINGS]
                              [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
             2) {
-      grpc_chttp2_become_writable(exec_ctx, t, s,
-                                  GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
+      grpc_chttp2_become_writable(exec_ctx, t, s, true,
                                   "window-update-required");
     }
     s->received_bytes += incoming_frame_size;
@@ -470,7 +470,7 @@ static void free_timeout(void *p) { gpr_free(p); }
 
 static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
                               grpc_mdelem md) {
-  grpc_chttp2_transport *t = tp;
+  grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
   grpc_chttp2_stream *s = t->incoming_stream;
 
   GPR_TIMER_BEGIN("on_initial_header", 0);
@@ -494,11 +494,12 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
   }
 
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
-    gpr_timespec *cached_timeout = grpc_mdelem_get_user_data(md, free_timeout);
+    gpr_timespec *cached_timeout =
+        (gpr_timespec *)grpc_mdelem_get_user_data(md, free_timeout);
     gpr_timespec timeout;
     if (cached_timeout == NULL) {
       /* not already parsed: parse it now, and store the result away */
-      cached_timeout = gpr_malloc(sizeof(gpr_timespec));
+      cached_timeout = (gpr_timespec *)gpr_malloc(sizeof(gpr_timespec));
       if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), cached_timeout)) {
         char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
@@ -550,7 +551,7 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
 
 static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
                                grpc_mdelem md) {
-  grpc_chttp2_transport *t = tp;
+  grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
   grpc_chttp2_stream *s = t->incoming_stream;
 
   GPR_TIMER_BEGIN("on_trailing_header", 0);
