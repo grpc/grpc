@@ -37,6 +37,10 @@
 
 #define MAX_CREDENTIALS_METADATA_COUNT 4
 
+// Function type used for cancelling async operations.
+typedef void (*cancel_func)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                            grpc_error *error);
+
 /* We can have a per-call credentials. */
 typedef struct {
   grpc_call_credentials *creds;
@@ -55,6 +59,10 @@ typedef struct {
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   grpc_auth_metadata_context auth_md_context;
   grpc_closure closure;
+  // Either 0 (no cancellation and no async operation in flight),
+  // a cancel_func (if the lowest bit is 0),
+  // or a grpc_error* (if the lowest bit is 1).
+  gpr_atm cancellation_state;
 } call_data;
 
 /* We can have a per-channel credentials. */
@@ -62,6 +70,34 @@ typedef struct {
   grpc_channel_security_connector *security_connector;
   grpc_auth_context *auth_context;
 } channel_data;
+
+static void decode_cancel_state(gpr_atm cancel_state, cancel_func *func,
+                                grpc_error **error) {
+  if (cancel_state & 1) {
+    *error = GRPC_ERROR_REF((grpc_error *)(cancel_state & ~(gpr_atm)1));
+  } else if (cancel_state != 0) {
+    *func = (cancel_func)cancel_state;
+  }
+}
+
+static gpr_atm encode_cancel_state_error(grpc_error *error) {
+  return (gpr_atm)1 | (gpr_atm)error;
+}
+
+// Returns an error if the call has been cancelled.  Otherwise, sets the
+// cancellation function to be called upon cancellation.
+static grpc_error *set_cancel_func(call_data *calld, cancel_func func) {
+  // Decode original state.
+  gpr_atm original_state = gpr_atm_acq_load(&calld->cancellation_state);
+  grpc_error *original_error = GRPC_ERROR_NONE;
+  cancel_func original_func = NULL;
+  decode_cancel_state(original_state, &original_func, &original_error);
+  // If error is set, return it.
+  if (original_error != GRPC_ERROR_NONE) return original_error;
+  // Otherwise, store func.
+  gpr_atm_rel_store(&calld->cancellation_state, (gpr_atm)func);
+  return GRPC_ERROR_NONE;
+}
 
 static void reset_auth_metadata_context(
     grpc_auth_metadata_context *auth_md_context) {
@@ -145,6 +181,14 @@ void build_auth_metadata_context(grpc_security_connector *sc,
   gpr_free(host);
 }
 
+static void cancel_get_request_metadata(grpc_exec_ctx *exec_ctx,
+                                        grpc_call_element *elem,
+                                        grpc_error *error) {
+  call_data *calld = (call_data *)elem->call_data;
+  grpc_call_credentials_cancel_get_request_metadata(exec_ctx, calld->creds,
+                                                    &calld->md_list, error);
+}
+
 static void send_security_metadata(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
                                    grpc_transport_stream_op_batch *batch) {
@@ -183,6 +227,14 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
 
   build_auth_metadata_context(&chand->security_connector->base,
                               chand->auth_context, calld);
+
+  grpc_error *cancel_error =
+      set_cancel_func(calld, cancel_get_request_metadata);
+  if (cancel_error != GRPC_ERROR_NONE) {
+    grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, batch,
+                                                       cancel_error);
+    return;
+  }
   GPR_ASSERT(calld->pollent != NULL);
   GRPC_CLOSURE_INIT(&calld->closure, on_credentials_metadata, batch,
                     grpc_schedule_on_exec_ctx);
@@ -219,6 +271,14 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *arg,
   }
 }
 
+static void cancel_check_call_host(grpc_exec_ctx *exec_ctx,
+                                   grpc_call_element *elem, grpc_error *error) {
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
+  grpc_channel_security_connector_cancel_check_call_host(
+      exec_ctx, chand->security_connector, &calld->closure, error);
+}
+
 static void auth_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *batch) {
@@ -228,7 +288,35 @@ static void auth_start_transport_stream_op_batch(
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
 
-  if (!batch->cancel_stream) {
+  if (batch->cancel_stream) {
+    while (true) {
+      // Decode the original cancellation state.
+      gpr_atm original_state = gpr_atm_acq_load(&calld->cancellation_state);
+      grpc_error *cancel_error = GRPC_ERROR_NONE;
+      cancel_func func = NULL;
+      decode_cancel_state(original_state, &func, &cancel_error);
+      // If we had already set a cancellation error, there's nothing
+      // more to do.
+      if (cancel_error != GRPC_ERROR_NONE) {
+        GRPC_ERROR_UNREF(cancel_error);
+        break;
+      }
+      // If there's a cancel func, call it.
+      // Note that even if the cancel func has been changed by some
+      // other thread between when we decoded it and now, it will just
+      // be a no-op.
+      cancel_error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
+      if (func != NULL) {
+        func(exec_ctx, elem, GRPC_ERROR_REF(cancel_error));
+      }
+      // Encode the new error into cancellation state.
+      if (gpr_atm_full_cas(&calld->cancellation_state, original_state,
+                           encode_cancel_state_error(cancel_error))) {
+        break;  // Success.
+      }
+      // The cas failed, so try again.
+    }
+  } else {
     /* double checked lock over security context to ensure it's set once */
     if (gpr_atm_acq_load(&calld->security_context_set) == 0) {
       gpr_mu_lock(&calld->security_context_mu);
@@ -273,20 +361,26 @@ static void auth_start_transport_stream_op_batch(
       }
     }
     if (calld->have_host) {
-      char *call_host = grpc_slice_to_c_string(calld->host);
-      batch->handler_private.extra_arg = elem;
-      grpc_error *error = GRPC_ERROR_NONE;
-      if (grpc_channel_security_connector_check_call_host(
-              exec_ctx, chand->security_connector, call_host,
-              chand->auth_context,
-              GRPC_CLOSURE_INIT(&calld->closure, on_host_checked, batch,
-                                grpc_schedule_on_exec_ctx),
-              &error)) {
-        // Synchronous return; invoke on_host_checked() directly.
-        on_host_checked(exec_ctx, batch, error);
-        GRPC_ERROR_UNREF(error);
+      grpc_error *cancel_error = set_cancel_func(calld, cancel_check_call_host);
+      if (cancel_error != GRPC_ERROR_NONE) {
+        grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, batch,
+                                                           cancel_error);
+      } else {
+        char *call_host = grpc_slice_to_c_string(calld->host);
+        batch->handler_private.extra_arg = elem;
+        grpc_error *error = GRPC_ERROR_NONE;
+        if (grpc_channel_security_connector_check_call_host(
+                exec_ctx, chand->security_connector, call_host,
+                chand->auth_context,
+                GRPC_CLOSURE_INIT(&calld->closure, on_host_checked, batch,
+                                  grpc_schedule_on_exec_ctx),
+                &error)) {
+          // Synchronous return; invoke on_host_checked() directly.
+          on_host_checked(exec_ctx, batch, error);
+          GRPC_ERROR_UNREF(error);
+        }
+        gpr_free(call_host);
       }
-      gpr_free(call_host);
       GPR_TIMER_END("auth_start_transport_stream_op_batch", 0);
       return; /* early exit */
     }
