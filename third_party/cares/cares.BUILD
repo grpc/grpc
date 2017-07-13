@@ -3,6 +3,16 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "windows",
+    values = {"cpu": "x64_windows"},
+)
+
+config_setting(
+    name = "windows_msvc",
+    values = {"cpu": "x64_windows_msvc"},
+)
+
 cc_library(
     name = "ares",
     srcs = [
@@ -96,9 +106,15 @@ cc_library(
         "//visibility:public",
     ],
     copts = [
-        "-D_GNU_SOURCE",
         "-D_HAS_EXCEPTIONS=0",
         "-DNOMINMAX",
-        "-DHAVE_CONFIG_H",
-    ],
+    ] + select({
+        ":windows":[
+          "-DCARES_STATICLIB",
+          "-DWIN32_LEAN_AND_MEAN=1"],
+        ":windows_msvc":[
+          "-DCARES_STATICLIB",
+          "-DWIN32_LEAN_AND_MEAN=1"],
+        "//conditions:default": ["-D_GNU_SOURCE", "-DHAVE_CONFIG_H"]
+    })
 )
