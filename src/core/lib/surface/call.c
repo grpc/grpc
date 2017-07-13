@@ -1422,7 +1422,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   if (nops == 0) {
     if (!is_notify_tag_closure) {
-      GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag) == 0);
+      GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag));
       grpc_cq_end_op(exec_ctx, call->cq, notify_tag, GRPC_ERROR_NONE,
                      free_no_op_completion, NULL,
                      gpr_malloc(sizeof(grpc_cq_completion)));
@@ -1723,7 +1723,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   GRPC_CALL_INTERNAL_REF(call, "completion");
   if (!is_notify_tag_closure) {
-    GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag) == 0);
+    GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag));
   }
   gpr_ref_init(&bctl->steps_to_complete, num_completion_callbacks_needed);
 

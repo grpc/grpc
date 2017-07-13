@@ -83,7 +83,7 @@ static void BM_Pass1Cpp(benchmark::State& state) {
     grpc_cq_completion completion;
     DummyTag dummy_tag;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GPR_ASSERT(grpc_cq_begin_op(c_cq, &dummy_tag) == 0);
+    GPR_ASSERT(grpc_cq_begin_op(c_cq, &dummy_tag));
     grpc_cq_end_op(&exec_ctx, c_cq, &dummy_tag, GRPC_ERROR_NONE,
                    DoneWithCompletionOnStack, NULL, &completion);
     grpc_exec_ctx_finish(&exec_ctx);
@@ -103,7 +103,7 @@ static void BM_Pass1Core(benchmark::State& state) {
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GPR_ASSERT(grpc_cq_begin_op(cq, NULL) == 0);
+    GPR_ASSERT(grpc_cq_begin_op(cq, NULL));
     grpc_cq_end_op(&exec_ctx, cq, NULL, GRPC_ERROR_NONE,
                    DoneWithCompletionOnStack, NULL, &completion);
     grpc_exec_ctx_finish(&exec_ctx);
@@ -122,7 +122,7 @@ static void BM_Pluck1Core(benchmark::State& state) {
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GPR_ASSERT(grpc_cq_begin_op(cq, NULL) == 0);
+    GPR_ASSERT(grpc_cq_begin_op(cq, NULL));
     grpc_cq_end_op(&exec_ctx, cq, NULL, GRPC_ERROR_NONE,
                    DoneWithCompletionOnStack, NULL, &completion);
     grpc_exec_ctx_finish(&exec_ctx);

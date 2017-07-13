@@ -208,7 +208,7 @@ void grpc_channel_watch_connectivity_state(
       7, (channel, (int)last_observed_state, deadline.tv_sec, deadline.tv_nsec,
           (int)deadline.clock_type, cq, tag));
 
-  GPR_ASSERT(grpc_cq_begin_op(cq, tag) == 0);
+  GPR_ASSERT(grpc_cq_begin_op(cq, tag));
 
   gpr_mu_init(&w->mu);
   GRPC_CLOSURE_INIT(&w->on_complete, watch_complete, w,

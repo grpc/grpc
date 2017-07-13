@@ -144,7 +144,7 @@ static void test_cq_end_op(void) {
     cc = grpc_completion_queue_create(
         grpc_completion_queue_factory_lookup(&attr), &attr, NULL);
 
-    GPR_ASSERT(grpc_cq_begin_op(cc, tag) == 0);
+    GPR_ASSERT(grpc_cq_begin_op(cc, tag));
     grpc_cq_end_op(&exec_ctx, cc, tag, GRPC_ERROR_NONE,
                    do_nothing_end_completion, NULL, &completion);
 
@@ -233,7 +233,7 @@ static void test_pluck(void) {
         grpc_completion_queue_factory_lookup(&attr), &attr, NULL);
 
     for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-      GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]) == 0);
+      GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]));
       grpc_cq_end_op(&exec_ctx, cc, tags[i], GRPC_ERROR_NONE,
                      do_nothing_end_completion, NULL, &completions[i]);
     }
@@ -245,7 +245,7 @@ static void test_pluck(void) {
     }
 
     for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-      GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]) == 0);
+      GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]));
       grpc_cq_end_op(&exec_ctx, cc, tags[i], GRPC_ERROR_NONE,
                      do_nothing_end_completion, NULL, &completions[i]);
     }
