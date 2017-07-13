@@ -85,6 +85,11 @@ some configuration as environment variables that can be set.
   'all' can additionally be used to turn all traces on.
   Individual traces can be disabled by prefixing them with '-'.
 
+  'refcount' will turn on all of the tracers for refcount debugging.
+
+  if 'list_tracers' is present, then all of the available tracers will be
+  printed when the program starts up.
+
   Example:
   export GRPC_TRACE=all,-pending_tags
 
