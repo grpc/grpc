@@ -291,7 +291,7 @@ Object HHVM_METHOD(Call, startBatch,
 
   if (expect_send_initial_metadata == true) {
     fd = eventfd(0, EFD_CLOEXEC);
-    PluginGetMetdataFd::tl_obj.get()->setFd(fd);
+    PluginGetMetadataFd::tl_obj.get()->setFd(fd);
   }
 
   {
@@ -327,7 +327,7 @@ Object HHVM_METHOD(Call, startBatch,
     // Block, wait for signal from callback
     plugin_get_metadata_params *params;
     int numBytes = read(fd, &params, sizeof(plugin_get_metadata_params *));
-    PluginGetMetdataFd::tl_obj.get()->setFd(-1);
+    PluginGetMetadataFd::tl_obj.get()->setFd(-1);
 
     if (numBytes > 0 && params != nullptr) {
       plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);

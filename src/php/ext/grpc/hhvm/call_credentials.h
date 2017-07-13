@@ -47,14 +47,14 @@ class CallCredentialsData {
     grpc_call_credentials* getWrapped();
 };
 
-struct PluginGetMetdataFd {
-  PluginGetMetdataFd();
+struct PluginGetMetadataFd {
+  PluginGetMetadataFd();
   void setFd(int fd_);
   int getFd();
 
   int fd;
 
-  static DECLARE_THREAD_LOCAL(PluginGetMetdataFd, tl_obj);
+  static DECLARE_THREAD_LOCAL(PluginGetMetadataFd, tl_obj);
 };
 
 typedef struct plugin_get_metadata_params {
@@ -66,7 +66,7 @@ typedef struct plugin_get_metadata_params {
 
 typedef struct plugin_state {
   Variant callback;
-  PluginGetMetdataFd *fd_obj;
+  PluginGetMetadataFd *fd_obj;
 } plugin_state;
 
 Object HHVM_STATIC_METHOD(CallCredentials, createComposite,

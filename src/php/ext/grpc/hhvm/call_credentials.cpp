@@ -65,11 +65,11 @@ grpc_call_credentials* CallCredentialsData::getWrapped() {
   return wrapped;
 }
 
-IMPLEMENT_THREAD_LOCAL(PluginGetMetdataFd, PluginGetMetdataFd::tl_obj);
+IMPLEMENT_THREAD_LOCAL(PluginGetMetadataFd, PluginGetMetadataFd::tl_obj);
 
-PluginGetMetdataFd::PluginGetMetdataFd() {}
-void PluginGetMetdataFd::setFd(int fd_) { fd = fd_; }
-int PluginGetMetdataFd::getFd() { return fd; }
+PluginGetMetadataFd::PluginGetMetadataFd() {}
+void PluginGetMetadataFd::setFd(int fd_) { fd = fd_; }
+int PluginGetMetadataFd::getFd() { return fd; }
 
 /**
  * Create composite credentials from two existing credentials.
@@ -110,7 +110,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
   plugin_state *state;
   state = (plugin_state *)gpr_zalloc(sizeof(plugin_state));
   state->callback = callback;
-  state->fd_obj = PluginGetMetdataFd::tl_obj.get();
+  state->fd_obj = PluginGetMetadataFd::tl_obj.get();
 
   grpc_metadata_credentials_plugin plugin;
   plugin.get_metadata = plugin_get_metadata;
@@ -164,7 +164,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data) {
   plugin_state *state = (plugin_state *)ptr;
-  PluginGetMetdataFd *fd_obj = state->fd_obj;
+  PluginGetMetadataFd *fd_obj = state->fd_obj;
 
   plugin_get_metadata_params *params = (plugin_get_metadata_params *)gpr_zalloc(sizeof(plugin_get_metadata_params));
   params->ptr = ptr;
