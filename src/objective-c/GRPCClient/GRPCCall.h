@@ -140,6 +140,13 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
 };
 
 /**
+ * The protocol of an OAuth2 token object from which GRPCCall can acquire a token.
+ */
+@protocol GRPCAuthorizationProtocol
+- (void)getTokenWithHandler:(void (^)(NSString *token))hander;
+@end
+
+/**
  * Safety remark of a gRPC method as defined in RFC 2616 Section 9.1
  */
 typedef NS_ENUM(NSUInteger, GRPCCallSafety) {
@@ -214,6 +221,14 @@ extern id const kGRPCTrailersKey;
  * before -writesFinishedWithError: is sent to the writeable.
  */
 @property(atomic, readonly) NSDictionary *responseTrailers;
+
+/**
+ * The authorization token object to be used when starting the call. If the value is set to nil, no 
+ * oauth authentication will be used.
+ *
+ * Not compatible with property oauth2AccessToken in GRPCCall (OAuth2). Do not use both at the same time.
+ */
+@property(atomic, strong) id<GRPCAuthorizationProtocol> oauthToken;
 
 /**
  * The request writer has to write NSData objects into the provided Writeable. The server will
