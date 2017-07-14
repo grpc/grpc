@@ -38,10 +38,10 @@
 
 #include "src/core/lib/support/string.h"
 
-char *gpr_getenv_silent(const char *name, char** dst) {
- char* insecure_func_used = NULL;
- char* result = NULL;
- #if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
+const char *gpr_getenv_silent(const char *name, char **dst) {
+  const char *insecure_func_used = NULL;
+  char *result = NULL;
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
   typedef char *(*getenv_type)(const char *);
   static getenv_type getenv_func = NULL;
   /* Check to see which getenv variant is supported (go from most
@@ -65,11 +65,10 @@ char *gpr_getenv_silent(const char *name, char** dst) {
 }
 
 char *gpr_getenv(const char *name) {
-  char* result = NULL;
-  char* insecure_func_used = gpr_getenv_silent(name, &result);
+  char *result = NULL;
+  const char *insecure_func_used = gpr_getenv_silent(name, &result);
   if (insecure_func_used != NULL) {
-    gpr_log(GPR_DEBUG,
-            "Warning: insecure environment read function '%s' used",
+    gpr_log(GPR_DEBUG, "Warning: insecure environment read function '%s' used",
             insecure_func_used);
   }
   return result;

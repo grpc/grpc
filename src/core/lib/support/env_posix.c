@@ -29,7 +29,7 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/support/string.h"
 
-char *gpr_getenv_silent(const char *name, char **dst) {
+const char *gpr_getenv_silent(const char *name, char **dst) {
   *dst = gpr_getenv(name);
   return NULL;
 }

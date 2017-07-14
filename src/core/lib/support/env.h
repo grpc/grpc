@@ -40,7 +40,7 @@ void gpr_setenv(const char *name, const char *value);
    use an insecure version of the function. It is ONLY to be used to solve the
    problem in which we need to check an env variable to configure the verbosity
    level of logging. So DO NOT USE THIS. */
-char *gpr_getenv_silent(const char *name, char** dst);
+const char *gpr_getenv_silent(const char *name, char **dst);
 
 #ifdef __cplusplus
 }

@@ -65,7 +65,7 @@ void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
 
 void gpr_log_verbosity_init() {
   char *verbosity = NULL;
-  char *insecure_getenv = gpr_getenv_silent("GRPC_VERBOSITY", &verbosity);
+  const char *insecure_getenv = gpr_getenv_silent("GRPC_VERBOSITY", &verbosity);
 
   gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
   if (verbosity != NULL) {
@@ -84,8 +84,7 @@ void gpr_log_verbosity_init() {
   }
 
   if (insecure_getenv != NULL) {
-    gpr_log(GPR_DEBUG,
-            "Warning: insecure environment read function '%s' used",
+    gpr_log(GPR_DEBUG, "Warning: insecure environment read function '%s' used",
             insecure_getenv);
   }
 }

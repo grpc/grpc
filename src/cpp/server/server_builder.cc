@@ -250,7 +250,6 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       has_sync_methods && num_frequently_polled_cqs > 0;
 
   if (has_sync_methods) {
-
     grpc_cq_polling_type polling_type =
         is_hybrid_server ? GRPC_CQ_NON_POLLING : GRPC_CQ_DEFAULT_POLLING;
 
