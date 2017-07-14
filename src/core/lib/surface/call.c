@@ -486,9 +486,9 @@ static void release_call(grpc_exec_ctx *exec_ctx, void *call,
   grpc_call *c = call;
   grpc_channel *channel = c->channel;
   grpc_call_combiner_destroy(&c->call_combiner);
-  grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(c->arena));
   char *peer_string = (char *)gpr_atm_acq_load(&c->peer_string);
   gpr_free(peer_string);
+  grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(c->arena));
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
 }
 
