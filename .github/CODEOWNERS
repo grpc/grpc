@@ -2,35 +2,40 @@
 # Uses OWNERS files in different modules throughout the
 # repository as the source of truth for module ownership.
 /** @a11r @nicolasnoble @ctiller
-/binding.gyp @murgatroid99
-/Gemfile @murgatroid99
-/grpc.gemspec @murgatroid99
-/package.json @murgatroid99
-/Rakefile @murgatroid99
+/*.podspec @muxi @makdharma @a11r @nicolasnoble @ctiller
+/binding.gyp @murgatroid99 @a11r @nicolasnoble @ctiller
+/Gemfile @murgatroid99 @a11r @nicolasnoble @ctiller
+/grpc.gemspec @murgatroid99 @a11r @nicolasnoble @ctiller
+/package.json @murgatroid99 @a11r @nicolasnoble @ctiller
+/Rakefile @murgatroid99 @a11r @nicolasnoble @ctiller
+/grpc.bzl @muxi @makdharma @a11r @nicolasnoble @ctiller
 /bazel/** @nicolasnoble @dgquintas @ctiller
 /cmake/** @jtattermusch @a11r @nicolasnoble @ctiller
 /doc/PROTOCOL-HTTP2.md @ejona86 @a11r @nicolasnoble @ctiller
 /doc/interop-test-descriptions.md @ejona86 @a11r @nicolasnoble @ctiller
 /etc/** @jboeuf @nicolasnoble @a11r @ctiller
 /examples/node/** @murgatroid99 @a11r @nicolasnoble @ctiller
+/examples/objective-c/** @muxi @makdharma @a11r @nicolasnoble @ctiller
+/examples/python/** @nathanielmanistaatgoogle @kpayson64 @mehrdada
 /include/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
-/src/core/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
-/src/core/lib/iomgr/*_uv.c @murgatroid99 @ctiller @markdroth @dgquintas @a11r @nicolasnoble
-/src/core/lib/iomgr/*_uv.h @murgatroid99 @ctiller @markdroth @dgquintas @a11r @nicolasnoble
-/src/cpp/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
+/src/core/** @ctiller @markdroth @dgquintas
+/src/core/lib/iomgr/*_uv.c @murgatroid99 @ctiller @markdroth @dgquintas
+/src/core/lib/iomgr/*_uv.h @murgatroid99 @ctiller @markdroth @dgquintas
+/src/cpp/** @ctiller @markdroth @dgquintas
 /src/csharp/** @jtattermusch @apolcyn @a11r @nicolasnoble @ctiller
 /src/node/** @murgatroid99 @a11r @nicolasnoble @ctiller
 /src/objective-c/** @muxi @makdharma @a11r @nicolasnoble @ctiller
 /src/php/** @stanley-cheung @murgatroid99 @a11r @nicolasnoble @ctiller
-/src/python/** @nathanielmanistaatgoogle @kpayson64 @a11r @nicolasnoble @ctiller
+/src/python/** @nathanielmanistaatgoogle @kpayson64 @mehrdada
+/src/python/grpcio/grpc_core_dependencies.py @a11y @ctiller @nicolasnoble @nathanielmanistaatgoogle @kpayson64 @mehrdada
 /src/ruby/** @apolcyn @murgatroid99 @a11r @nicolasnoble @ctiller
 /test/build/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
-/test/core/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
-/test/cpp/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
+/test/core/** @ctiller @markdroth @dgquintas
+/test/cpp/** @ctiller @markdroth @dgquintas
+/test/cpp/qps/** @vjpai @ctiller @markdroth @dgquintas
 /test/distrib/node/** @murgatroid99 @a11r @nicolasnoble @ctiller
 /tools/** @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
 /tools/codegen/core/** @ctiller @dgquintas @markdroth
-/tools/dockerfile/** @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
-/tools/run_tests/** @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
+/tools/distrib/python/** @nathanielmanistaatgoogle @kpayson64 @mehrdada
 /tools/run_tests/artifacts/*_node* @murgatroid99 @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
 /tools/run_tests/helper_scripts/*_node* @murgatroid99 @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
