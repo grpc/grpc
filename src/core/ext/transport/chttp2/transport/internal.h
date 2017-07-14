@@ -238,10 +238,8 @@ typedef struct {
    * to send WINDOW_UPDATE frames. */
   int64_t announced_window;
 
-// pointer back to transport for tracing
-#ifndef NDEBUG
+  // read only pointer back to transport for certain data
   const grpc_chttp2_transport *t;
-#endif
 } grpc_chttp2_transport_flowctl;
 
 struct grpc_chttp2_transport {
@@ -457,10 +455,8 @@ typedef struct {
    * announced to the peer */
   int64_t announced_window_delta;
 
-// pointer back to stream for tracing
-#ifndef NDEBUG
+  // read only pointer back to stream for data
   const grpc_chttp2_stream *s;
-#endif
 } grpc_chttp2_stream_flowctl;
 
 struct grpc_chttp2_stream {
@@ -645,13 +641,10 @@ void grpc_chttp2_flowctl_sent_data(grpc_chttp2_transport_flowctl *tfc,
 // we have received data from the wire
 grpc_error *grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport_flowctl *tfc,
                                           grpc_chttp2_stream_flowctl *sfc,
-                                          int64_t incoming_frame_size,
-                                          uint32_t acked_init_window,
-                                          uint32_t sent_init_window);
+                                          int64_t incoming_frame_size);
 
 uint32_t grpc_chttp2_flowctl_maybe_send_transport_update(
-    grpc_chttp2_transport_flowctl *tfc, uint32_t acked_init_window,
-    bool has_outbuf);
+    grpc_chttp2_transport_flowctl *tfc);
 
 uint32_t grpc_chttp2_flowctl_maybe_send_stream_update(
     grpc_chttp2_transport_flowctl *tfc, grpc_chttp2_stream_flowctl *sfc);
@@ -668,7 +661,6 @@ void grpc_chttp2_flowctl_recv_stream_update(grpc_chttp2_transport_flowctl *tfc,
 // the application is asking for a certain amount of bytes
 void grpc_chttp2_flowctl_incoming_bs_update(grpc_chttp2_transport_flowctl *tfc,
                                             grpc_chttp2_stream_flowctl *sfc,
-                                            uint32_t initial_window_size,
                                             size_t max_size_hint,
                                             size_t have_already);
 
@@ -692,8 +684,7 @@ typedef struct {
 
 grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
     const grpc_chttp2_transport_flowctl *tfc,
-    const grpc_chttp2_stream_flowctl *sfc, bool stream_read_closed,
-    uint32_t acked_init_window);
+    const grpc_chttp2_stream_flowctl *sfc);
 
 void grpc_chttp2_flowctl_act_on_action(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_flowctl_action action,

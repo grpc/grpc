@@ -354,19 +354,12 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   grpc_error *err = GRPC_ERROR_NONE;
-  err = grpc_chttp2_flowctl_recv_data(
-      &t->flow_control, s == NULL ? NULL : &s->flow_control,
-      t->incoming_frame_size,
-      t->settings[GRPC_ACKED_SETTINGS]
-                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-      t->settings[GRPC_SENT_SETTINGS]
-                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+  err = grpc_chttp2_flowctl_recv_data(&t->flow_control,
+                                      s == NULL ? NULL : &s->flow_control,
+                                      t->incoming_frame_size);
   grpc_chttp2_flowctl_act_on_action(
       exec_ctx, grpc_chttp2_flowctl_get_action(
-                    &t->flow_control, s == NULL ? NULL : &s->flow_control,
-                    s == NULL ? false : s->read_closed,
-                    t->settings[GRPC_ACKED_SETTINGS]
-                               [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
+                    &t->flow_control, s == NULL ? NULL : &s->flow_control),
       t, s);
   if (err != GRPC_ERROR_NONE) {
     goto error_handler;

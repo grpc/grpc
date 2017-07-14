@@ -28,7 +28,7 @@
 #include "src/core/lib/support/string.h"
 
 static uint32_t grpc_chttp2_target_announced_window(
-    const grpc_chttp2_transport_flowctl* tfc, uint32_t acked_local_window);
+    const grpc_chttp2_transport_flowctl* tfc);
 
 #ifndef NDEBUG
 
@@ -45,9 +45,7 @@ static void pretrace(shadow_flow_control* shadow_fc,
                      grpc_chttp2_transport_flowctl* tfc,
                      grpc_chttp2_stream_flowctl* sfc) {
   shadow_fc->remote_window = tfc->remote_window;
-  shadow_fc->target_window = grpc_chttp2_target_announced_window(
-      tfc, tfc->t->settings[GRPC_ACKED_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+  shadow_fc->target_window = grpc_chttp2_target_announced_window(tfc);
   shadow_fc->announced_window = tfc->announced_window;
   if (sfc != NULL) {
     shadow_fc->remote_window_delta = sfc->remote_window_delta;
@@ -78,9 +76,8 @@ static void posttrace(shadow_flow_control* shadow_fc,
       tfc->t->settings[GRPC_PEER_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
   char* trw_str = fmt_str(shadow_fc->remote_window, tfc->remote_window);
-  char* tlw_str =
-      fmt_str(shadow_fc->target_window,
-              grpc_chttp2_target_announced_window(tfc, acked_local_window));
+  char* tlw_str = fmt_str(shadow_fc->target_window,
+                          grpc_chttp2_target_announced_window(tfc));
   char* taw_str = fmt_str(shadow_fc->announced_window, tfc->announced_window);
   char* srw_str;
   char* slw_str;
@@ -143,10 +140,12 @@ static void trace_action(grpc_chttp2_flowctl_action action) {
 
 /* How many bytes of incoming flow control would we like to advertise */
 static uint32_t grpc_chttp2_target_announced_window(
-    const grpc_chttp2_transport_flowctl* tfc, uint32_t acked_init_window) {
+    const grpc_chttp2_transport_flowctl* tfc) {
   return (uint32_t)GPR_MIN(
       (int64_t)((1u << 31) - 1),
-      tfc->announced_stream_total_over_incoming_window + acked_init_window);
+      tfc->announced_stream_total_over_incoming_window +
+          tfc->t->settings[GRPC_SENT_SETTINGS]
+                          [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
 }
 
 // we have sent data on the wire, we must track this in our bookkeeping for the
@@ -187,9 +186,13 @@ static void announced_window_delta_postupdate(
 // Returns an error if the incoming frame violates our flow control.
 grpc_error* grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport_flowctl* tfc,
                                           grpc_chttp2_stream_flowctl* sfc,
-                                          int64_t incoming_frame_size,
-                                          uint32_t acked_init_window,
-                                          uint32_t sent_init_window) {
+                                          int64_t incoming_frame_size) {
+  uint32_t sent_init_window =
+      tfc->t->settings[GRPC_SENT_SETTINGS]
+                      [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+  uint32_t acked_init_window =
+      tfc->t->settings[GRPC_ACKED_SETTINGS]
+                      [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
   PRETRACE(tfc, sfc);
   if (incoming_frame_size > tfc->announced_window) {
     char* msg;
@@ -244,14 +247,12 @@ grpc_error* grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport_flowctl* tfc,
 // Returns a non zero announce integer if we should send a transport window
 // update
 uint32_t grpc_chttp2_flowctl_maybe_send_transport_update(
-    grpc_chttp2_transport_flowctl* tfc, uint32_t acked_init_window,
-    bool has_outbuf) {
+    grpc_chttp2_transport_flowctl* tfc) {
   PRETRACE(tfc, NULL);
-  uint32_t target_announced_window =
-      grpc_chttp2_target_announced_window(tfc, acked_init_window);
+  uint32_t target_announced_window = grpc_chttp2_target_announced_window(tfc);
   uint32_t threshold_to_send_transport_window_update =
-      has_outbuf ? 3 * target_announced_window / 4
-                 : target_announced_window / 2;
+      tfc->t->outbuf.count > 0 ? 3 * target_announced_window / 4
+                               : target_announced_window / 2;
   if (tfc->announced_window <= threshold_to_send_transport_window_update &&
       tfc->announced_window != target_announced_window) {
     uint32_t announce = (uint32_t)GPR_CLAMP(
@@ -304,11 +305,13 @@ void grpc_chttp2_flowctl_recv_stream_update(grpc_chttp2_transport_flowctl* tfc,
 
 void grpc_chttp2_flowctl_incoming_bs_update(grpc_chttp2_transport_flowctl* tfc,
                                             grpc_chttp2_stream_flowctl* sfc,
-                                            uint32_t sent_init_window,
                                             size_t max_size_hint,
                                             size_t have_already) {
   PRETRACE(tfc, sfc);
   uint32_t max_recv_bytes;
+  uint32_t sent_init_window =
+      tfc->t->settings[GRPC_SENT_SETTINGS]
+                      [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
 
   /* clamp max recv hint to an allowable size */
   if (max_size_hint >= UINT32_MAX - sent_init_window) {
@@ -341,16 +344,17 @@ void grpc_chttp2_flowctl_destroy_stream(grpc_chttp2_transport_flowctl* tfc,
 
 grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
     const grpc_chttp2_transport_flowctl* tfc,
-    const grpc_chttp2_stream_flowctl* sfc, bool stream_read_closed,
-    uint32_t sent_init_window) {
+    const grpc_chttp2_stream_flowctl* sfc) {
   grpc_chttp2_flowctl_action action;
   memset(&action, 0, sizeof(action));
-  uint32_t target_announced_window =
-      grpc_chttp2_target_announced_window(tfc, sent_init_window);
+  uint32_t target_announced_window = grpc_chttp2_target_announced_window(tfc);
   if (tfc->announced_window < target_announced_window / 2) {
     action.send_transport_update = GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY;
   }
-  if (sfc != NULL && !stream_read_closed) {
+  if (sfc != NULL && !sfc->s->read_closed) {
+    uint32_t sent_init_window =
+        tfc->t->settings[GRPC_SENT_SETTINGS]
+                        [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     if ((int64_t)sfc->local_window_delta >
             (int64_t)sfc->announced_window_delta &&
         (int64_t)sfc->announced_window_delta + sent_init_window <=

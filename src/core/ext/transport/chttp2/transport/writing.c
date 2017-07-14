@@ -397,10 +397,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
   }
 
-  uint32_t transport_announce = grpc_chttp2_flowctl_maybe_send_transport_update(
-      &t->flow_control, t->settings[GRPC_ACKED_SETTINGS]
-                                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-      t->outbuf.count > 0);
+  uint32_t transport_announce =
+      grpc_chttp2_flowctl_maybe_send_transport_update(&t->flow_control);
   if (transport_announce) {
     maybe_initiate_ping(exec_ctx, t,
                         GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE);
