@@ -236,12 +236,6 @@ void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   next_elem->filter->start_transport_stream_op_batch(exec_ctx, next_elem, op);
 }
 
-char *grpc_call_next_get_peer(grpc_exec_ctx *exec_ctx,
-                              grpc_call_element *elem) {
-  grpc_call_element *next_elem = elem + 1;
-  return next_elem->filter->get_peer(exec_ctx, next_elem);
-}
-
 void grpc_channel_next_get_info(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem,
                                 const grpc_channel_info *channel_info) {

@@ -1049,15 +1049,6 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(error);
 }
 
-static char *cc_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  call_data *calld = elem->call_data;
-  if (calld->subchannel_call == NULL) {
-    return NULL;
-  } else {
-    return grpc_subchannel_call_get_peer(exec_ctx, calld->subchannel_call);
-  }
-}
-
 /** Return true if subchannel is available immediately (in which case
     subchannel_ready_locked() should not be called), or false otherwise (in
     which case subchannel_ready_locked() should be called when the subchannel
@@ -1518,7 +1509,6 @@ const grpc_channel_filter grpc_client_channel_filter = {
     sizeof(channel_data),
     cc_init_channel_elem,
     cc_destroy_channel_elem,
-    cc_get_peer,
     cc_get_channel_info,
     "client-channel",
 };

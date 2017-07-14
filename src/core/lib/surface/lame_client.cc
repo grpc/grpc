@@ -94,10 +94,6 @@ static void lame_start_transport_stream_op_batch(
       calld->call_combiner);
 }
 
-static char *lame_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  return NULL;
-}
-
 static void lame_get_channel_info(grpc_exec_ctx *exec_ctx,
                                   grpc_channel_element *elem,
                                   const grpc_channel_info *channel_info) {}
@@ -161,7 +157,6 @@ extern "C" const grpc_channel_filter grpc_lame_filter = {
     sizeof(grpc_core::ChannelData),
     grpc_core::init_channel_elem,
     grpc_core::destroy_channel_elem,
-    grpc_core::lame_get_peer,
     grpc_core::lame_get_channel_info,
     "lame-client",
 };

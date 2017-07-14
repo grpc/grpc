@@ -1347,6 +1347,10 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
             "send_initial_metadata_finished");
       }
     }
+    if (op_payload->send_initial_metadata.peer_string != NULL) {
+      gpr_atm_rel_store(op_payload->send_initial_metadata.peer_string,
+                        (gpr_atm)gpr_strdup(t->peer_string));
+    }
   }
 
   if (op->send_message) {
@@ -2951,14 +2955,6 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
 }
 
 /*******************************************************************************
- * INTEGRATION GLUE
- */
-
-static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
-  return gpr_strdup(((grpc_chttp2_transport *)t)->peer_string);
-}
-
-/*******************************************************************************
  * MONITORING
  */
 static grpc_endpoint *chttp2_get_endpoint(grpc_exec_ctx *exec_ctx,
@@ -2975,7 +2971,6 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              perform_transport_op,
                                              destroy_stream,
                                              destroy_transport,
-                                             chttp2_get_peer,
                                              chttp2_get_endpoint};
 
 grpc_transport *grpc_create_chttp2_transport(

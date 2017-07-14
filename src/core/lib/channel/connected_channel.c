@@ -190,11 +190,6 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static char *con_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  channel_data *chand = elem->channel_data;
-  return grpc_transport_get_peer(exec_ctx, chand->transport);
-}
-
 /* No-op. */
 static void con_get_channel_info(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem,
@@ -210,7 +205,6 @@ const grpc_channel_filter grpc_connected_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
-    con_get_peer,
     con_get_channel_info,
     "connected",
 };

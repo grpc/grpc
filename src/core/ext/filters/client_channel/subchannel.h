@@ -151,10 +151,6 @@ void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel_call *subchannel_call,
                                      grpc_transport_stream_op_batch *op);
 
-/** continue querying for peer */
-char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
-                                    grpc_subchannel_call *subchannel_call);
-
 /** Must be called once per call. Sets the 'then_schedule_closure' argument for
     call stack destruction. */
 void grpc_subchannel_call_set_cleanup_closure(

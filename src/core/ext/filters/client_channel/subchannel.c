@@ -723,13 +723,6 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
   GRPC_CALL_STACK_UNREF(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), REF_REASON);
 }
 
-char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
-                                    grpc_subchannel_call *call) {
-  grpc_call_stack *call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
-  grpc_call_element *top_elem = grpc_call_stack_element(call_stack, 0);
-  return top_elem->filter->get_peer(exec_ctx, top_elem);
-}
-
 void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel_call *call,
                                      grpc_transport_stream_op_batch *op) {

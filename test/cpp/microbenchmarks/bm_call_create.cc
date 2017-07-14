@@ -396,10 +396,6 @@ grpc_error *InitChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
 
 void DestroyChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem) {}
 
-char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  return gpr_strdup("peer");
-}
-
 void GetChannelInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                     const grpc_channel_info *channel_info) {}
 
@@ -412,7 +408,6 @@ static const grpc_channel_filter dummy_filter = {StartTransportStreamOp,
                                                  0,
                                                  InitChannelElem,
                                                  DestroyChannelElem,
-                                                 GetPeer,
                                                  GetChannelInfo,
                                                  "dummy_filter"};
 
@@ -459,11 +454,6 @@ void DestroyStream(grpc_exec_ctx *exec_ctx, grpc_transport *self,
 /* implementation of grpc_transport_destroy */
 void Destroy(grpc_exec_ctx *exec_ctx, grpc_transport *self) {}
 
-/* implementation of grpc_transport_get_peer */
-char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_transport *self) {
-  return gpr_strdup("transport_peer");
-}
-
 /* implementation of grpc_transport_get_endpoint */
 grpc_endpoint *GetEndpoint(grpc_exec_ctx *exec_ctx, grpc_transport *self) {
   return nullptr;
@@ -473,7 +463,7 @@ static const grpc_transport_vtable dummy_transport_vtable = {
     0,          "dummy_http2", InitStream,
     SetPollset, SetPollsetSet, PerformStreamOp,
     PerformOp,  DestroyStream, Destroy,
-    GetPeer,    GetEndpoint};
+    GetEndpoint};
 
 static grpc_transport dummy_transport = {&dummy_transport_vtable};
 
@@ -687,10 +677,6 @@ grpc_error *InitChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
 
 void DestroyChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem) {}
 
-char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  return gpr_strdup("peer");
-}
-
 void GetChannelInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                     const grpc_channel_info *channel_info) {}
 
@@ -704,7 +690,6 @@ static const grpc_channel_filter isolated_call_filter = {
     0,
     InitChannelElem,
     DestroyChannelElem,
-    GetPeer,
     GetChannelInfo,
     "isolated_call_filter"};
 }  // namespace isolated_call_filter

@@ -197,11 +197,6 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                     then_schedule_closure);
 }
 
-char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
-                              grpc_transport *transport) {
-  return transport->vtable->get_peer(exec_ctx, transport);
-}
-
 grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
                                            grpc_transport *transport) {
   return transport->vtable->get_endpoint(exec_ctx, transport);

@@ -153,6 +153,9 @@ struct grpc_transport_stream_op_batch_payload {
     /** Iff send_initial_metadata != NULL, flags associated with
         send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
     uint32_t send_initial_metadata_flags;
+    // If non-NULL, will be set by the transport to the peer string
+    // (a char*, which the caller takes ownership of).
+    gpr_atm *peer_string;
   } send_initial_metadata;
 
   struct {
@@ -323,10 +326,6 @@ void grpc_transport_close(grpc_transport *transport);
 
 /* Destroy the transport */
 void grpc_transport_destroy(grpc_exec_ctx *exec_ctx, grpc_transport *transport);
-
-/* Get the transports peer */
-char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
-                              grpc_transport *transport);
 
 /* Get the endpoint used by \a transport */
 grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,

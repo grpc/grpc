@@ -185,6 +185,9 @@ struct grpc_call {
      Element 0 is initial metadata, element 1 is trailing metadata. */
   grpc_metadata_array *buffered_metadata[2];
 
+  // A char* indicating the peer name.
+  gpr_atm peer_string;
+
   /* Packed received call statuses from various sources */
   gpr_atm status[STATUS_SOURCE_COUNT];
 
@@ -484,6 +487,8 @@ static void release_call(grpc_exec_ctx *exec_ctx, void *call,
   grpc_channel *channel = c->channel;
   grpc_call_combiner_destroy(&c->call_combiner);
   grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(c->arena));
+  char *peer_string = (char *)gpr_atm_acq_load(&c->peer_string);
+  gpr_free(peer_string);
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
 }
 
@@ -608,41 +613,12 @@ static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
                            GRPC_ERROR_NONE, "executing batch");
 }
 
-typedef struct {
-  char *result;
-  grpc_call_element *elem;
-  grpc_call_combiner *call_combiner;
-  grpc_closure closure;
-} get_peer_state;
-
-static void get_peer_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
-                                      grpc_error *ignored) {
-  get_peer_state *state = arg;
-  grpc_call_element *elem = state->elem;
-  state->result = elem->filter->get_peer(exec_ctx, elem);
-  GRPC_CALL_COMBINER_STOP(exec_ctx, state->call_combiner, "finished get_peer");
-}
-
 char *grpc_call_get_peer(grpc_call *call) {
-  grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
-  get_peer_state state;
-  state.result = NULL;
-  state.elem = elem;
-  state.call_combiner = &call->call_combiner;
-  GRPC_CLOSURE_INIT(&state.closure, get_peer_in_call_combiner, &state,
-                    grpc_schedule_on_exec_ctx);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GRPC_API_TRACE("grpc_call_get_peer(%p)", 1, (call));
-  GRPC_CALL_COMBINER_START(&exec_ctx, &call->call_combiner, &state.closure,
-                           GRPC_ERROR_NONE, "starting get_peer");
-  grpc_exec_ctx_finish(&exec_ctx);  // Ensures callback is complete.
-  if (state.result == NULL) {
-    state.result = grpc_channel_get_target(call->channel);
-  }
-  if (state.result == NULL) {
-    state.result = gpr_strdup("unknown");
-  }
-  return state.result;
+  char *peer_string = (char *)gpr_atm_acq_load(&call->peer_string);
+  if (peer_string != NULL) return gpr_strdup(peer_string);
+  peer_string = grpc_channel_get_target(call->channel);
+  if (peer_string != NULL) return peer_string;
+  return gpr_strdup("unknown");
 }
 
 grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
@@ -1574,6 +1550,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
         stream_op_payload->send_initial_metadata.send_initial_metadata_flags =
             op->flags;
+        stream_op_payload->send_initial_metadata.peer_string =
+            &call->peer_string;
         break;
       case GRPC_OP_SEND_MESSAGE:
         if (!are_write_flags_valid(op->flags)) {
