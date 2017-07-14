@@ -118,6 +118,7 @@ END2END_TESTS = {
         proxyable=False, exclude_iomgrs=['uv'], cpu_cost=LOWCPU),
     'max_message_length': default_test_options._replace(cpu_cost=LOWCPU),
     'negative_deadline': default_test_options,
+    'short_deadlines': default_test_options,
     'network_status_change': default_test_options._replace(cpu_cost=LOWCPU),
     'no_logging': default_test_options._replace(traceable=False),
     'no_op': default_test_options,

@@ -139,6 +139,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\server_finishes_request.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\short_deadlines.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\shutdown_finishes_calls.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

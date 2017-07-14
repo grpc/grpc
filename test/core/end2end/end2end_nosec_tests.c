@@ -116,6 +116,8 @@ extern void resource_quota_server(grpc_end2end_test_config config);
 extern void resource_quota_server_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
 extern void server_finishes_request_pre_init(void);
+extern void short_deadlines(grpc_end2end_test_config config);
+extern void short_deadlines_pre_init(void);
 extern void shutdown_finishes_calls(grpc_end2end_test_config config);
 extern void shutdown_finishes_calls_pre_init(void);
 extern void shutdown_finishes_tags(grpc_end2end_test_config config);
@@ -186,6 +188,7 @@ void grpc_end2end_tests_pre_init(void) {
   request_with_payload_pre_init();
   resource_quota_server_pre_init();
   server_finishes_request_pre_init();
+  short_deadlines_pre_init();
   shutdown_finishes_calls_pre_init();
   shutdown_finishes_tags_pre_init();
   simple_cacheable_request_pre_init();
@@ -249,6 +252,7 @@ void grpc_end2end_tests(int argc, char **argv,
     request_with_payload(config);
     resource_quota_server(config);
     server_finishes_request(config);
+    short_deadlines(config);
     shutdown_finishes_calls(config);
     shutdown_finishes_tags(config);
     simple_cacheable_request(config);
@@ -434,6 +438,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("server_finishes_request", argv[i])) {
       server_finishes_request(config);
+      continue;
+    }
+    if (0 == strcmp("short_deadlines", argv[i])) {
+      short_deadlines(config);
       continue;
     }
     if (0 == strcmp("shutdown_finishes_calls", argv[i])) {
