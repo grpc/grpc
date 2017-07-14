@@ -121,6 +121,10 @@ void grpc_set_event_engine_test_only(
   g_event_engine = ev_engine;
 }
 
+const grpc_event_engine_vtable *grpc_get_event_engine_test_only() {
+  return g_event_engine;
+}
+
 /* Call this only after calling grpc_event_engine_init() */
 const char *grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
