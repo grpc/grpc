@@ -34,7 +34,9 @@ void ThreadManager::WorkerThread::Run() {
   thd_mgr_->MarkAsCompleted(this);
 }
 
-ThreadManager::WorkerThread::~WorkerThread() { thd_.join(); }
+ThreadManager::WorkerThread::~WorkerThread() {
+  if (thd_.joinable()) thd_.join();
+}
 
 ThreadManager::ThreadManager(int min_pollers, int max_pollers)
     : shutdown_(false),
@@ -83,7 +85,7 @@ void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
 }
 
 void ThreadManager::CleanupCompletedThreads() {
-  std::list<WorkerThread*> completed_threads;
+  std::vector<WorkerThread*> completed_threads;
   {
     // swap out the completed threads list: allows other threads to clean up
     // more quickly
