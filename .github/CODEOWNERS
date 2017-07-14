@@ -2,11 +2,11 @@
 # Uses OWNERS files in different modules throughout the
 # repository as the source of truth for module ownership.
 /** @a11r @nicolasnoble @ctiller
-/binding.gyp @murgatroid99
-/Gemfile @murgatroid99
-/grpc.gemspec @murgatroid99
-/package.json @murgatroid99
-/Rakefile @murgatroid99
+/binding.gyp @murgatroid99 @a11r @nicolasnoble @ctiller
+/Gemfile @murgatroid99 @a11r @nicolasnoble @ctiller
+/grpc.gemspec @murgatroid99 @a11r @nicolasnoble @ctiller
+/package.json @murgatroid99 @a11r @nicolasnoble @ctiller
+/Rakefile @murgatroid99 @a11r @nicolasnoble @ctiller
 /bazel/** @nicolasnoble @dgquintas @ctiller
 /cmake/** @jtattermusch @a11r @nicolasnoble @ctiller
 /doc/PROTOCOL-HTTP2.md @ejona86 @a11r @nicolasnoble @ctiller

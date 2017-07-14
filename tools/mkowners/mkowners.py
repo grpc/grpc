@@ -126,30 +126,69 @@ owners_data = new_owners_data
 def full_dir(rules_dir, sub_path):
   return os.path.join(rules_dir, sub_path) if rules_dir != '.' else sub_path
 
-def glob_intersect(g1, g2):
-  if not g2:
-    return all(c == '*' for c in g1)
-  if not g1:
-    return all(c == '*' for c in g2)
-  c1, *t1 = g1
-  c2, *t2 = g2
-  if c1 == '*':
-    return glob_intersect(g1, t2) or glob_intersect(t1, g2)
-  if c2 == '*':
-    return glob_intersect(t1, g2) or glob_intersect(g1, t2)
-  return c1 == c2 and glob_intersect(t1, t2)
+# glob using git
+gg_cache = {}
+def git_glob(glob):
+  global gg_cache
+  if glob in gg_cache: return gg_cache[glob]
+  r = set(subprocess
+      .check_output(['git', 'ls-files', glob])
+      .decode('utf-8')
+      .strip()
+      .splitlines())
+  gg_cache[glob] = r
+  return r
+
+def expand_directives(root, directives):
+  globs = collections.OrderedDict()
+  # build a table of glob --> owners
+  for directive in directives:
+    for glob in directive.globs or ['**']:
+      if glob not in globs:
+        globs[glob] = []
+      if directive.who not in globs[glob]:
+        globs[glob].append(directive.who)
+  # expand owners for intersecting globs
+  sorted_globs = sorted(globs.keys(),
+                        key=lambda g: len(git_glob(os.path.join(root, g))),
+                        reverse=True)
+  out_globs = collections.OrderedDict()
+  for glob_add in sorted_globs:
+    who_add = globs[glob_add]
+    pre_items = [i for i in out_globs.items()]
+    out_globs[glob_add] = who_add.copy()
+    for glob_have, who_have in pre_items:
+      files_add = git_glob(full_dir(root, glob_add))
+      files_have = git_glob(full_dir(root, glob_have))
+      intersect = files_have.intersection(files_add)
+      if intersect:
+        for f in files_add:
+          if f not in intersect:
+            out_globs[os.path.relpath(f, start=root)] = who_add
+        for who in who_have:
+          if who not in out_globs[glob_add]:
+            out_globs[glob_add].append(who)
+  return out_globs
 
 def add_parent_to_globs(parent, globs, globs_dir):
   if not parent: return
   for owners in owners_data:
     if owners.dir == parent:
-      for directive in owners.directives:
-        for dglob in directive.globs or ['**']:
-          for gglob, glob in globs.items():
-            if glob_intersect(full_dir(globs_dir, gglob),
-                              full_dir(owners.dir, dglob)):
-              if directive.who not in glob:
-                glob.append(directive.who)
+      owners_globs = expand_directives(owners.dir, owners.directives)
+      for oglob, oglob_who in owners_globs.items():
+        for gglob, gglob_who in globs.items():
+          files_parent = git_glob(full_dir(owners.dir, oglob))
+          files_child = git_glob(full_dir(globs_dir, gglob))
+          intersect = files_parent.intersection(files_child)
+          gglob_who_orig = gglob_who.copy()
+          if intersect:
+            for f in files_child:
+              if f not in intersect:
+                who = gglob_who_orig.copy()
+                globs[os.path.relpath(f, start=globs_dir)] = who
+            for who in oglob_who:
+              if who not in gglob_who:
+                gglob_who.append(who)
       add_parent_to_globs(owners.parent, globs, globs_dir)
       return
   assert(False)
@@ -165,12 +204,7 @@ with open(args.out, 'w') as out:
     if head.parent and not head.parent in done:
       todo.append(head)
       continue
-    globs = collections.OrderedDict()
-    for directive in head.directives:
-      for glob in directive.globs or ['**']:
-        if glob not in globs:
-          globs[glob] = []
-        globs[glob].append(directive.who)
+    globs = expand_directives(head.dir, head.directives)
     add_parent_to_globs(head.parent, globs, head.dir)
     for glob, owners in globs.items():
       out.write('/%s %s\n' % (
