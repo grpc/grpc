@@ -35,6 +35,7 @@
 
 extern "C" {
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/filters/client_channel/subchannel_index.h"
 }
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -331,10 +332,14 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
   for (size_t i = 0; i < servers_.size(); ++i) {
     ports.emplace_back(servers_[i]->port_);
   }
-  for (size_t i = 0; i < 1000; ++i) {
-    std::random_shuffle(ports.begin(), ports.end());
-    SetNextResolution(ports);
-    if (i % 10 == 0) SendRpc();
+  for (const bool force_creation : {true, false}) {
+    grpc_subchannel_index_test_only_set_force_creation(force_creation);
+    gpr_log(GPR_INFO, "Force subchannel creation: %d", force_creation);
+    for (size_t i = 0; i < 1000; ++i) {
+      std::random_shuffle(ports.begin(), ports.end());
+      SetNextResolution(ports);
+      if (i % 10 == 0) SendRpc();
+    }
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("pick_first", channel_->GetLoadBalancingPolicyName());
