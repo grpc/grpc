@@ -367,34 +367,3 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
   TRACEACTION(action);
   return action;
 }
-
-void grpc_chttp2_flowctl_act_on_action(grpc_exec_ctx* exec_ctx,
-                                       grpc_chttp2_flowctl_action action,
-                                       grpc_chttp2_transport* t,
-                                       grpc_chttp2_stream* s) {
-  switch (action.send_stream_update) {
-    case GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED:
-      break;
-    case GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY:
-      grpc_chttp2_become_writable(exec_ctx, t, s,
-                                  GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED,
-                                  "immediate stream flowctl");
-      break;
-    case GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE:
-      grpc_chttp2_become_writable(exec_ctx, t, s,
-                                  GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK,
-                                  "queue stream flowctl");
-      break;
-  }
-  switch (action.send_transport_update) {
-    case GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED:
-      break;
-    case GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY:
-      grpc_chttp2_initiate_write(exec_ctx, t, "immediate transport flowctl");
-      break;
-    // this is the same as no action b/c every time the transport enters the
-    // writing path it will maybe do an update
-    case GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE:
-      break;
-  }
-}

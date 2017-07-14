@@ -1454,7 +1454,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       if (!s->read_closed) {
         grpc_chttp2_flowctl_incoming_bs_update(
             &t->flow_control, &s->flow_control, 5, already_received);
-        grpc_chttp2_flowctl_act_on_action(
+        grpc_chttp2_act_on_flowctl_action(
             exec_ctx,
             grpc_chttp2_flowctl_get_action(&t->flow_control, &s->flow_control),
             t, s);
@@ -2145,6 +2145,37 @@ static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
  * INPUT PROCESSING - PARSING
  */
 
+void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
+                                       grpc_chttp2_flowctl_action action,
+                                       grpc_chttp2_transport *t,
+                                       grpc_chttp2_stream *s) {
+  switch (action.send_stream_update) {
+    case GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED:
+      break;
+    case GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY:
+      grpc_chttp2_become_writable(exec_ctx, t, s,
+                                  GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED,
+                                  "immediate stream flowctl");
+      break;
+    case GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE:
+      grpc_chttp2_become_writable(exec_ctx, t, s,
+                                  GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK,
+                                  "queue stream flowctl");
+      break;
+  }
+  switch (action.send_transport_update) {
+    case GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED:
+      break;
+    case GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY:
+      grpc_chttp2_initiate_write(exec_ctx, t, "immediate transport flowctl");
+      break;
+    // this is the same as no action b/c every time the transport enters the
+    // writing path it will maybe do an update
+    case GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE:
+      break;
+  }
+}
+
 static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                        double bdp_dbl) {
   // initial window size bounded [1,2^31-1], but we set the min to 128.
@@ -2554,7 +2585,7 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
     grpc_chttp2_flowctl_incoming_bs_update(&t->flow_control, &s->flow_control,
                                            bs->next_action.max_size_hint,
                                            cur_length);
-    grpc_chttp2_flowctl_act_on_action(
+    grpc_chttp2_act_on_flowctl_action(
         exec_ctx,
         grpc_chttp2_flowctl_get_action(&t->flow_control, &s->flow_control), t,
         s);

@@ -643,9 +643,13 @@ grpc_error *grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport_flowctl *tfc,
                                           grpc_chttp2_stream_flowctl *sfc,
                                           int64_t incoming_frame_size);
 
+// returns an announce if we should send a transport update to our peer,
+// else returns zero
 uint32_t grpc_chttp2_flowctl_maybe_send_transport_update(
     grpc_chttp2_transport_flowctl *tfc);
 
+// returns an announce if we should send a stream update to our peer, else
+// returns zero
 uint32_t grpc_chttp2_flowctl_maybe_send_stream_update(
     grpc_chttp2_transport_flowctl *tfc, grpc_chttp2_stream_flowctl *sfc);
 
@@ -682,11 +686,14 @@ typedef struct {
   grpc_chttp2_flowctl_urgency send_transport_update;
 } grpc_chttp2_flowctl_action;
 
+// Reads the flow control data and returns and actionable struct that will tell
+// chttp2 exactly what it needs to do
 grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
     const grpc_chttp2_transport_flowctl *tfc,
     const grpc_chttp2_stream_flowctl *sfc);
 
-void grpc_chttp2_flowctl_act_on_action(grpc_exec_ctx *exec_ctx,
+// Takes in a flow control action and performs all the needed operations.
+void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_flowctl_action action,
                                        grpc_chttp2_transport *t,
                                        grpc_chttp2_stream *s);
