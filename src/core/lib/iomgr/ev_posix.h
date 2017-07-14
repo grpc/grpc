@@ -153,7 +153,9 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
 
-/* This should be used for testing purposes ONLY */
+/* WARNING: The following two functions should be used for testing purposes
+ * ONLY */
 void grpc_set_event_engine_test_only(const grpc_event_engine_vtable *);
+const grpc_event_engine_vtable *grpc_get_event_engine_test_only();
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */
