@@ -31,10 +31,11 @@
   ],
   "dependencies": {
     "arguejs": "^0.2.3",
-    "lodash": "^4.15.0",
-    "nan": "^2.0.0",
-    "node-pre-gyp": "^0.6.35",
-    "protobufjs": "^5.0.0"
+    "lodash": "^4.17.4",
+    "nan": "^2.6.2",
+    "node-gyp-install": "^2.2.0",
+    "node-pre-gyp": "^0.6.36",
+    "protobufjs": "^5.0.2"
   },
   "devDependencies": {
     "async": "^2.0.1",

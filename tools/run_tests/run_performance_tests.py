@@ -97,17 +97,20 @@ def create_qpsworker_job(language, shortname=None, port=10000, remote_host=None,
       verbose_success=True)
   return QpsWorkerJob(jobspec, language, host_and_port, perf_file_base_name)
 
+result_num = 0
 
 def create_scenario_jobspec(scenario_json, workers, remote_host=None,
                             bq_result_table=None, server_cpu_load=0):
   """Runs one scenario using QPS driver."""
+  global result_num
+  result_num += 1
   # setting QPS_WORKERS env variable here makes sure it works with SSH too.
   cmd = 'QPS_WORKERS="%s" ' % ','.join(workers)
   if bq_result_table:
     cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
   cmd += 'tools/run_tests/performance/run_qps_driver.sh '
   cmd += '--scenarios_json=%s ' % pipes.quote(json.dumps({'scenarios': [scenario_json]}))
-  cmd += '--scenario_result_file=scenario_result.json '
+  cmd += '--scenario_result_file=scenario_result%d.json ' % result_num
   if server_cpu_load != 0:
       cmd += '--search_param=offered_load --initial_search_value=1000 --targeted_cpu_load=%d --stride=500 --error_tolerance=0.01' % server_cpu_load
   if remote_host:
@@ -399,7 +402,7 @@ profile_output_files = []
 # Collect perf text reports and flamegraphs if perf_cmd was used
 # Note the base names of perf text reports are used when creating and processing
 # perf data. The scenario name uniqifies the output name in the final
-# perf reports directory. 
+# perf reports directory.
 # Alos, the perf profiles need to be fetched and processed after each scenario
 # in order to avoid clobbering the output files.
 def run_collect_perf_profile_jobs(hosts_and_base_names, scenario_name):

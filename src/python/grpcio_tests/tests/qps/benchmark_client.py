@@ -23,6 +23,7 @@ from six.moves import queue
 import grpc
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import services_pb2
+from tests.gapic.grpc.testing.gapic import benchmark_service_client
 from tests.unit import resources
 from tests.unit import test_common
 
@@ -59,6 +60,7 @@ class BenchmarkClient:
         if config.payload_config.WhichOneof('payload') == 'simple_params':
             self._generic = False
             self._stub = services_pb2.BenchmarkServiceStub(channel)
+            # self._stub = benchmark_service_client.BenchmarkServiceClient(channel=channel)
             payload = messages_pb2.Payload(
                 body='\0' * config.payload_config.simple_params.req_size)
             self._request = messages_pb2.SimpleRequest(
@@ -111,6 +113,7 @@ class UnarySyncBenchmarkClient(BenchmarkClient):
 
     def _dispatch_request(self):
         start_time = time.time()
+        # self._stub._unary_call(self._request)
         self._stub.UnaryCall(self._request, _TIMEOUT)
         end_time = time.time()
         self._handle_response(self, end_time - start_time)
@@ -121,6 +124,7 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
     def send_request(self):
         # Use the Future callback api to support multiple outstanding rpcs
         start_time = time.time()
+        # response_future = self._stub._unary_call.future(self._request)
         response_future = self._stub.UnaryCall.future(self._request, _TIMEOUT)
         response_future.add_done_callback(
             lambda resp: self._response_received(start_time, resp))
@@ -151,8 +155,9 @@ class _SyncStream(object):
 
     def start(self):
         self._is_streaming = True
-        response_stream = self._stub.StreamingCall(self._request_generator(),
-                                                   _TIMEOUT)
+        response_stream = self._stub.StreamingCall(self._request_generator(), _TIMEOUT)
+        # response_stream = self._stub.streaming_call(self._request_generator(),
+        #                                            _TIMEOUT)
         for _ in response_stream:
             self._handle_response(
                 self, time.time() - self._send_time_queue.get_nowait())
