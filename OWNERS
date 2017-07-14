@@ -5,3 +5,5 @@
 @ctiller
 
 @murgatroid99 binding.gyp Gemfile grpc.gemspec package.json Rakefile
+@muxi *.podspec grpc.bzl
+@makdharma *.podspec grpc.bzl
