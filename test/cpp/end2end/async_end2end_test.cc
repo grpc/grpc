@@ -1641,13 +1641,17 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // This is expected to succeed in all cases
     cli_stream->WritesDone(tag(7));
     verif.Expect(7, true);
-    got_tag = verif.Next(cq_.get(), ignore_cq_result);
+    // TODO(vjpai): Consider whether the following is too flexible
+    // or whether it should just be reset to ignore_cq_result
+    bool ignore_cq_wd_result =
+        ignore_cq_result || (server_try_cancel == CANCEL_BEFORE_PROCESSING);
+    got_tag = verif.Next(cq_.get(), ignore_cq_wd_result);
     GPR_ASSERT((got_tag == 7) || (got_tag == 11 && want_done_tag));
     if (got_tag == 11) {
       EXPECT_TRUE(srv_ctx.IsCancelled());
       want_done_tag = false;
       // Now get the other entry that we were waiting on
-      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 7);
+      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_wd_result), 7);
     }
 
     // This is expected to fail in all cases i.e for all values of
