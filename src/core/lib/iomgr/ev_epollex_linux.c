@@ -1049,8 +1049,8 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
     /* Introduce a spurious completion.
        If we do not, then it may be that the fd-specific epoll set consumed
        a completion without being polled, leading to a missed edge going up. */
-    grpc_lfev_set_ready(exec_ctx, &had_fd->read_closure);
-    grpc_lfev_set_ready(exec_ctx, &had_fd->write_closure);
+    grpc_lfev_set_ready(exec_ctx, &had_fd->read_closure, "read");
+    grpc_lfev_set_ready(exec_ctx, &had_fd->write_closure, "write");
     pollset_kick_all(exec_ctx, pollset);
     pollset->current_pollable = &pollset->pollable;
     if (append_error(&error, pollable_materialize(&pollset->pollable),
