@@ -152,11 +152,9 @@ def expand_directives(root, directives):
   sorted_globs = sorted(globs.keys(),
                         key=lambda g: len(git_glob(os.path.join(root, g))),
                         reverse=True)
-  print('sorted_globs: ', sorted_globs)
   out_globs = collections.OrderedDict()
   for glob_add in sorted_globs:
     who_add = globs[glob_add]
-    print('add: ', glob_add, who_add)
     pre_items = [i for i in out_globs.items()]
     out_globs[glob_add] = who_add.copy()
     for glob_have, who_have in pre_items:
@@ -166,7 +164,7 @@ def expand_directives(root, directives):
       if intersect:
         for f in files_add:
           if f not in intersect:
-            out_globs[os.path.relpath(root, f)] = who_add
+            out_globs[os.path.relpath(f, start=root)] = who_add
         for who in who_have:
           if who not in out_globs[glob_add]:
             out_globs[glob_add].append(who)
@@ -186,7 +184,8 @@ def add_parent_to_globs(parent, globs, globs_dir):
           if intersect:
             for f in files_child:
               if f not in intersect:
-                globs[f] = gglob_who_orig.copy()
+                who = gglob_who_orig.copy()
+                globs[os.path.relpath(f, start=globs_dir)] = who
             for who in oglob_who:
               if who not in gglob_who:
                 gglob_who.append(who)
