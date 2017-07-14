@@ -516,7 +516,7 @@ module GRPC
 
     # MultiReqView limits access to an ActiveCall's methods for use in
     # server client_streamer handlers.
-    MultiReqView = view_class(:cancelled?, :deadline, :each_queued_msg,
+    MultiReqView = view_class(:cancelled?, :deadline,
                               :each_remote_read, :metadata, :output_metadata,
                               :send_initial_metadata,
                               :metadata_to_send,

@@ -16,6 +16,13 @@ licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary")
 
+package(
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
+
 grpc_cc_library(
     name = "parse_json",
     srcs = ["parse_json.cc"],
@@ -51,9 +58,6 @@ grpc_cc_library(
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
-    ],
-    external_deps = [
-        "gtest",
     ],
 )
 
@@ -121,6 +125,7 @@ grpc_cc_binary(
         "//:gpr",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -131,6 +136,7 @@ grpc_cc_test(
     deps = [
         ":histogram",
         ":interarrival",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -141,6 +147,7 @@ grpc_cc_binary(
         ":benchmark_config",
         ":driver_impl",
         "//:grpc++",
+        "//test/cpp/util:test_config",
     ],
     external_deps = [
         "gflags",
@@ -154,6 +161,7 @@ grpc_cc_test(
         ":benchmark_config",
         ":driver_impl",
         ":qps_worker_impl",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -164,6 +172,7 @@ grpc_cc_test(
         ":benchmark_config",
         ":driver_impl",
         "//:grpc++",
+        "//test/cpp/util:test_config",
     ],
 )
 

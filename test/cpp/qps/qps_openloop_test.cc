@@ -24,6 +24,7 @@
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
+#include "test/cpp/util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -58,7 +59,7 @@ static void RunQPS() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::InitBenchmark(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
 
   grpc::testing::RunQPS();
 

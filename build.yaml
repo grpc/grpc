@@ -4162,6 +4162,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   platforms:
   - mac
   - linux
@@ -4280,6 +4281,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   platforms:
   - mac
   - linux

@@ -31,7 +31,7 @@
 
 #ifndef NDEBUG
 grpc_tracer_flag grpc_trace_auth_context_refcount =
-    GRPC_TRACER_INITIALIZER(false);
+    GRPC_TRACER_INITIALIZER(false, "auth_context_refcount");
 #endif
 
 /* --- grpc_call --- */
