@@ -33,6 +33,8 @@
 /** The default response size limit is 4MB. Set this to override that default. */
 + (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host;
 
++ (void)setHostnameOverride:(nonnull NSString *)hostnameOverride forHost:(nonnull NSString *)host;
+
 + (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE("The API for this feature is experimental, "
                                                       "and might be removed or modified at any "
                                                       "time.");
