@@ -676,6 +676,12 @@ class NodeLanguage:
         server_language='c++', async_server_threads=1)
 
     yield _ping_pong_scenario(
+        'node_to_cpp_protobuf_async_unary_qps', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        unconstrained_client='async',
+        server_language='c++', async_server_threads=1)
+
+    yield _ping_pong_scenario(
         'node_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         server_language='c++', async_server_threads=1)
@@ -731,6 +737,12 @@ class PythonLanguage:
         categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
+        'python_to_cpp_protobuf_sync_unary_qps', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
+        unconstrained_client='sync',
+        server_language='c++', async_server_threads=1)
+
+    yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
         client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
         server_language='c++', async_server_threads=1)
@@ -780,6 +792,12 @@ class RubyLanguage:
     yield _ping_pong_scenario(
         'ruby_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', async_server_threads=1)
+
+    yield _ping_pong_scenario(
+        'ruby_to_cpp_protobuf_sync_unary_qps', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        unconstrained_client='sync',
         server_language='c++', async_server_threads=1)
 
     yield _ping_pong_scenario(

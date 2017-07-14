@@ -20,7 +20,7 @@ cd $(dirname $0)/../../..
 export GOPATH=$(pwd)/../gopath
 
 # Get grpc-go and the dependencies but get rid of the upstream/master version
-go get google.golang.org/grpc
+go get google.golang.org/grpc github.com/googleapis/gax-go google.golang.org/api/option cloud.google.com/go/compute/metadata
 rm -rf "${GOPATH}/src/google.golang.org/grpc"
 
 # Get the revision of grpc-go we want to test
