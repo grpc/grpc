@@ -192,7 +192,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       &t->hpack_compressor,
       t->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
 
-  if (t->remote_window > 0) {
+  if (t->flow_control.remote_window > 0) {
     while (grpc_chttp2_list_pop_stalled_by_transport(t, &s)) {
       if (!t->closed && grpc_chttp2_list_add_writable_stream(t, s) &&
           stream_ref_if_not_destroyed(&s->refcount->refs)) {
@@ -222,7 +222,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         gpr_log(GPR_DEBUG, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t,
                 t->is_client ? "CLIENT" : "SERVER", s->id,
                 sent_initial_metadata, s->send_initial_metadata != NULL,
-                (int)(s->local_window_delta - s->announced_window_delta)));
+                (int)(s->flow_control.local_window_delta -
+                      s->flow_control.announced_window_delta)));
 
     grpc_mdelem *extra_headers_for_trailing_metadata[2];
     size_t num_extra_headers_for_trailing_metadata = 0;
@@ -279,7 +280,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       sent_initial_metadata = true;
     }
     /* send any window updates */
-    uint32_t stream_announce = grpc_chttp2_flowctl_maybe_send_stream_update(s);
+    uint32_t stream_announce = grpc_chttp2_flowctl_maybe_send_stream_update(
+        &t->flow_control, &s->flow_control);
     if (stream_announce > 0) {
       grpc_slice_buffer_add(
           &t->outbuf, grpc_chttp2_window_update_create(s->id, stream_announce,
@@ -297,13 +299,13 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       if (s->flow_controlled_buffer.length > 0) {
         uint32_t stream_remote_window = (uint32_t)GPR_MAX(
             0,
-            s->remote_window_delta +
+            s->flow_control.remote_window_delta +
                 (int64_t)t->settings[GRPC_PEER_SETTINGS]
                                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
-        uint32_t max_outgoing =
-            (uint32_t)GPR_MIN(t->settings[GRPC_PEER_SETTINGS]
-                                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-                              GPR_MIN(stream_remote_window, t->remote_window));
+        uint32_t max_outgoing = (uint32_t)GPR_MIN(
+            t->settings[GRPC_PEER_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+            GPR_MIN(stream_remote_window, t->flow_control.remote_window));
         if (max_outgoing > 0) {
           uint32_t send_bytes =
               (uint32_t)GPR_MIN(max_outgoing, s->flow_controlled_buffer.length);
@@ -316,7 +318,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, send_bytes,
                                   is_last_frame, &s->stats.outgoing,
                                   &t->outbuf);
-          grpc_chttp2_flowctl_sent_data(t, s, send_bytes);
+          grpc_chttp2_flowctl_sent_data(&t->flow_control, &s->flow_control,
+                                        send_bytes);
           t->ping_state.pings_before_data_required =
               t->ping_policy.max_pings_without_data;
           if (!t->is_client) {
@@ -339,7 +342,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:fork");
             grpc_chttp2_list_add_writable_stream(t, s);
           }
-        } else if (t->remote_window == 0) {
+        } else if (t->flow_control.remote_window == 0) {
           grpc_chttp2_list_add_stalled_by_transport(t, s);
           now_writing = true;
         } else if (stream_remote_window == 0) {
@@ -394,8 +397,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
   }
 
-  uint32_t transport_announce =
-      grpc_chttp2_flowctl_maybe_send_transport_update(t);
+  uint32_t transport_announce = grpc_chttp2_flowctl_maybe_send_transport_update(
+      &t->flow_control, t->settings[GRPC_ACKED_SETTINGS]
+                                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+      t->outbuf.count > 0);
   if (transport_announce) {
     maybe_initiate_ping(exec_ctx, t,
                         GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE);

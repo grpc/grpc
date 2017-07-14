@@ -265,8 +265,11 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->endpoint_reading = 1;
   t->next_stream_id = is_client ? 1 : 2;
   t->is_client = is_client;
-  t->remote_window = DEFAULT_WINDOW;
-  t->announced_window = DEFAULT_WINDOW;
+  t->flow_control.remote_window = DEFAULT_WINDOW;
+  t->flow_control.announced_window = DEFAULT_WINDOW;
+#ifndef NDEBUG
+  t->flow_control.t = t;
+#endif
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
   grpc_connectivity_state_init(
@@ -705,6 +708,10 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     post_destructive_reclaimer(exec_ctx, t);
   }
 
+#ifndef NDEBUG
+  s->flow_control.s = s;
+#endif
+
   GPR_TIMER_END("init_stream", 0);
 
   return 0;
@@ -753,7 +760,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GRPC_ERROR_UNREF(s->write_closed_error);
   GRPC_ERROR_UNREF(s->byte_stream_error);
 
-  grpc_chttp2_flowctl_destroy_stream(s);
+  grpc_chttp2_flowctl_destroy_stream(&t->flow_control, &s->flow_control);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "stream");
 
@@ -1449,9 +1456,20 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         already_received = s->frame_storage.length +
                            s->unprocessed_incoming_frames_buffer.length;
       }
-      grpc_chttp2_flowctl_incoming_bs_update(t, s, 5, already_received);
-      grpc_chttp2_flowctl_act_on_action(
-          exec_ctx, grpc_chttp2_flowctl_get_action(t, s), t, s);
+      if (!s->read_closed) {
+        grpc_chttp2_flowctl_incoming_bs_update(
+            &t->flow_control, &s->flow_control,
+            t->settings[GRPC_SENT_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+            5, already_received);
+        grpc_chttp2_flowctl_act_on_action(
+            exec_ctx,
+            grpc_chttp2_flowctl_get_action(
+                &t->flow_control, &s->flow_control, false,
+                t->settings[GRPC_SENT_SETTINGS]
+                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
+            t, s);
+      }
     }
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   }
@@ -2252,8 +2270,8 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     GPR_TIMER_END("reading_action.parse", 0);
 
     GPR_TIMER_BEGIN("post_parse_locked", 0);
-    if (t->initial_window_update != 0) {
-      if (t->initial_window_update > 0) {
+    if (t->flow_control.initial_window_update != 0) {
+      if (t->flow_control.initial_window_update > 0) {
         grpc_chttp2_stream *s;
         while (grpc_chttp2_list_pop_stalled_by_stream(t, &s)) {
           grpc_chttp2_become_writable(
@@ -2261,7 +2279,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
               "unstalled");
         }
       }
-      t->initial_window_update = 0;
+      t->flow_control.initial_window_update = 0;
     }
     GPR_TIMER_END("post_parse_locked", 0);
   }
@@ -2543,11 +2561,19 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s = bs->stream;
 
   size_t cur_length = s->frame_storage.length;
-  grpc_chttp2_flowctl_incoming_bs_update(t, s, bs->next_action.max_size_hint,
-                                         cur_length);
-  grpc_chttp2_flowctl_act_on_action(exec_ctx,
-                                    grpc_chttp2_flowctl_get_action(t, s), t, s);
-
+  if (!s->read_closed) {
+    grpc_chttp2_flowctl_incoming_bs_update(
+        &t->flow_control, &s->flow_control,
+        t->settings[GRPC_SENT_SETTINGS]
+                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+        bs->next_action.max_size_hint, cur_length);
+    grpc_chttp2_flowctl_act_on_action(
+        exec_ctx, grpc_chttp2_flowctl_get_action(
+                      &t->flow_control, &s->flow_control, false,
+                      t->settings[GRPC_SENT_SETTINGS]
+                                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
+        t, s);
+  }
   GPR_ASSERT(s->unprocessed_incoming_frames_buffer.length == 0);
   if (s->frame_storage.length > 0) {
     grpc_slice_buffer_swap(&s->frame_storage,
