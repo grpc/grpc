@@ -1671,9 +1671,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
         }
         if (s->stream_compression_recv_enabled &&
             !s->unprocessed_incoming_frames_decompressed) {
-          grpc_slice_buffer decompressed_data;
+          GPR_ASSERT(s->decompressed_data_buffer.length == 0);
           bool end_of_context;
-          grpc_slice_buffer_init(&decompressed_data);
           if (!s->stream_decompression_ctx) {
             s->stream_decompression_ctx =
                 grpc_stream_compression_context_create(
@@ -1681,17 +1680,18 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
           }
           if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                       &s->unprocessed_incoming_frames_buffer,
-                                      &decompressed_data, NULL, 5,
+                                      &s->decompressed_data_buffer, NULL, 5,
                                       &end_of_context)) {
             grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                                        &s->frame_storage);
             grpc_slice_buffer_reset_and_unref_internal(
                 exec_ctx, &s->unprocessed_incoming_frames_buffer);
-            s->seen_error = true;
+            error =
+                GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream decompression error.");
           } else {
             error = grpc_deframe_unprocessed_incoming_frames(
-                exec_ctx, &s->data_parser, s, &decompressed_data, NULL,
-                s->recv_message);
+                exec_ctx, &s->data_parser, s, &s->decompressed_data_buffer,
+                NULL, s->recv_message);
             if (end_of_context) {
               grpc_stream_compression_context_destroy(
                   s->stream_decompression_ctx);
@@ -1740,7 +1740,38 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
     }
     bool pending_data = s->pending_byte_stream ||
                         s->unprocessed_incoming_frames_buffer.length > 0;
-    if (s->read_closed && s->frame_storage.length == 0 &&
+    if (s->stream_compression_recv_enabled && s->read_closed &&
+        s->frame_storage.length > 0 &&
+        s->unprocessed_incoming_frames_buffer.length == 0 && !pending_data &&
+        !s->seen_error && s->recv_trailing_metadata_finished != NULL) {
+      /* Maybe some SYNC_FLUSH data is left in frame_storage. Consume them and
+       * maybe decompress the next 5 bytes in the stream. */
+      bool end_of_context;
+      if (!s->stream_decompression_ctx) {
+        s->stream_decompression_ctx =
+            grpc_stream_compression_context_create(
+                GRPC_STREAM_COMPRESSION_DECOMPRESS);
+      }
+      if (!grpc_stream_decompress(s->stream_decompression_ctx,
+                                  &s->frame_storage,
+                                  &s->unprocessed_incoming_frames_buffer,
+                                  NULL, 5, &end_of_context)) {
+        grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                                   &s->frame_storage);
+        grpc_slice_buffer_reset_and_unref_internal(
+            exec_ctx, &s->unprocessed_incoming_frames_buffer);
+        s->seen_error = true;
+      } else {
+        if (s->unprocessed_incoming_frames_buffer.length > 0) {
+          s->unprocessed_incoming_frames_decompressed = true;
+        }
+        if (end_of_context) {
+          grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
+          s->stream_decompression_ctx = NULL;
+        }
+      }
+    }
+    if (s->read_closed && s->frame_storage.length == 0 && s->unprocessed_incoming_frames_buffer.length == 0 &&
         (!pending_data || s->seen_error) &&
         s->recv_trailing_metadata_finished != NULL) {
       grpc_chttp2_incoming_metadata_buffer_publish(
