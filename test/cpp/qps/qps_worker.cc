@@ -265,7 +265,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port,
-                     const char* credential_type) {
+                     const grpc::string& credential_type) {
   impl_.reset(new WorkerServiceImpl(server_port, this));
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
@@ -273,9 +273,9 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   gpr_join_host_port(&server_address, "::", driver_port);
 
   ServerBuilder builder;
-  builder.AddListeningPort(server_address,
-                           GetCredentialsProvider()->GetServerCredentials(
-                               credential_type));
+  builder.AddListeningPort(
+      server_address,
+      GetCredentialsProvider()->GetServerCredentials(credential_type));
   builder.RegisterService(impl_.get());
 
   gpr_free(server_address);

@@ -33,8 +33,8 @@ class WorkerServiceImpl;
 
 class QpsWorker {
  public:
-  explicit QpsWorker(int driver_port, int server_port = 0,
-                     const char* credential_type = "INSECURE_CREDENTIALS");
+  explicit QpsWorker(int driver_port, int server_port,
+                     const grpc::string& credential_type);
   ~QpsWorker();
 
   bool Done() const;

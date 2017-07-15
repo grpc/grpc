@@ -31,6 +31,7 @@
 #include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/report.h"
 #include "test/cpp/util/test_config.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 DEFINE_string(scenarios_file, "",
               "JSON file containing an array of Scenario objects");
@@ -61,7 +62,7 @@ DEFINE_string(qps_server_target_override, "",
 
 DEFINE_string(json_file_out, "", "File to write the JSON output to.");
 
-DEFINE_string(credential_type, "INSECURE_CREDENTIALS",
+DEFINE_string(credential_type, grpc::testing::kInsecureCredentialsType,
               "Credential type for communication with workers");
 
 namespace grpc {
@@ -75,8 +76,7 @@ static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
                   scenario.server_config(), scenario.num_servers(),
                   scenario.warmup_seconds(), scenario.benchmark_seconds(),
                   scenario.spawn_local_worker_count(),
-                  FLAGS_qps_server_target_override.c_str(),
-                  FLAGS_credential_type.c_str());
+                  FLAGS_qps_server_target_override, FLAGS_credential_type);
 
   // Amend the result with scenario config. Eventually we should adjust
   // RunScenario contract so we don't need to touch the result here.
@@ -190,7 +190,7 @@ static bool QpsDriver() {
   } else if (scjson) {
     json = FLAGS_scenarios_json.c_str();
   } else if (FLAGS_quit) {
-    return RunQuit(FLAGS_credential_type.c_str());
+    return RunQuit(FLAGS_credential_type);
   }
 
   // Parse into an array of scenarios
