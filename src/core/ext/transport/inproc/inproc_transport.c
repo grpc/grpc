@@ -262,12 +262,8 @@ static void unref_stream(grpc_exec_ctx *exec_ctx, inproc_stream *s,
 static void really_destroy_stream(grpc_exec_ctx *exec_ctx, inproc_stream *s) {
   INPROC_LOG(GPR_DEBUG, "really_destroy_stream %p", s);
 
-  grpc_metadata_batch_destroy(exec_ctx, &s->to_read_initial_md);
   slice_buffer_list_destroy(exec_ctx, &s->to_read_message);
-  grpc_metadata_batch_destroy(exec_ctx, &s->to_read_trailing_md);
-  grpc_metadata_batch_destroy(exec_ctx, &s->write_buffer_initial_md);
   slice_buffer_list_destroy(exec_ctx, &s->write_buffer_message);
-  grpc_metadata_batch_destroy(exec_ctx, &s->write_buffer_trailing_md);
   GRPC_ERROR_UNREF(s->write_buffer_cancel_error);
   GRPC_ERROR_UNREF(s->cancel_self_error);
   GRPC_ERROR_UNREF(s->cancel_other_error);
@@ -299,6 +295,10 @@ static grpc_error *fill_in_metadata(grpc_exec_ctx *exec_ctx, inproc_stream *s,
                                     const grpc_metadata_batch *metadata,
                                     uint32_t flags, grpc_metadata_batch *out_md,
                                     uint32_t *outflags, bool *markfilled) {
+  if (GRPC_TRACER_ON(grpc_inproc_trace)) {
+    log_metadata(metadata, s->t->is_client, outflags != NULL);
+  }
+
   if (outflags != NULL) {
     *outflags = flags;
   }
@@ -430,6 +430,10 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
 static void close_stream_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s) {
   if (!s->closed) {
+    // Release the metadata that we would have written out
+    grpc_metadata_batch_destroy(exec_ctx, &s->write_buffer_initial_md);
+    grpc_metadata_batch_destroy(exec_ctx, &s->write_buffer_trailing_md);
+
     if (s->listed) {
       inproc_stream *p = s->stream_list_prev;
       inproc_stream *n = s->stream_list_next;
@@ -453,6 +457,10 @@ static void close_stream_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s) {
 static void close_other_side_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s,
                                     const char *reason) {
   if (s->other_side != NULL) {
+    // First release the metadata that came from the other side's arena
+    grpc_metadata_batch_destroy(exec_ctx, &s->to_read_initial_md);
+    grpc_metadata_batch_destroy(exec_ctx, &s->to_read_trailing_md);
+
     unref_stream(exec_ctx, s->other_side, reason);
     s->other_side_closed = true;
     s->other_side = NULL;
@@ -919,11 +927,13 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
         INPROC_LOG(GPR_DEBUG, "Extra initial metadata %p", s);
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Extra initial metadata");
       } else {
-        fill_in_metadata(
-            exec_ctx, s,
-            op->payload->send_initial_metadata.send_initial_metadata,
-            op->payload->send_initial_metadata.send_initial_metadata_flags,
-            dest, destflags, destfilled);
+        if (!other->closed) {
+          fill_in_metadata(
+              exec_ctx, s,
+              op->payload->send_initial_metadata.send_initial_metadata,
+              op->payload->send_initial_metadata.send_initial_metadata_flags,
+              dest, destflags, destfilled);
+        }
         if (s->t->is_client) {
           gpr_timespec *dl =
               (other == NULL) ? &s->write_buffer_deadline : &other->deadline;
@@ -959,10 +969,12 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
         INPROC_LOG(GPR_DEBUG, "Extra trailing metadata %p", s);
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Extra trailing metadata");
       } else {
-        fill_in_metadata(
-            exec_ctx, s,
-            op->payload->send_trailing_metadata.send_trailing_metadata, 0, dest,
-            NULL, destfilled);
+        if (!other->closed) {
+          fill_in_metadata(
+              exec_ctx, s,
+              op->payload->send_trailing_metadata.send_trailing_metadata, 0,
+              dest, NULL, destfilled);
+        }
         s->trailing_md_sent = true;
         if (!s->t->is_client && s->trailing_md_recvd &&
             s->recv_trailing_md_op) {
