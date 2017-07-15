@@ -22,6 +22,7 @@
 #include <memory>
 
 #include <grpc/support/atm.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
 
