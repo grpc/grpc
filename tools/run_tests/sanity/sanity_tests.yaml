@@ -4,6 +4,7 @@
 - script: tools/run_tests/sanity/check_sources_and_headers.py
 - script: tools/run_tests/sanity/check_submodules.sh
 - script: tools/run_tests/sanity/check_test_filtering.py
+- script: tools/run_tests/sanity/check_tracer_sanity.py
 - script: tools/run_tests/sanity/core_banned_functions.py
 - script: tools/buildgen/generate_projects.sh -j 3
   cpu_cost: 3
