@@ -40,6 +40,8 @@ struct grpc_subchannel_key {
 
 GPR_TLS_DECL(subchannel_index_exec_ctx);
 
+static bool g_force_creation = false;
+
 static void enter_ctx(grpc_exec_ctx *exec_ctx) {
   GPR_ASSERT(gpr_tls_get(&subchannel_index_exec_ctx) == 0);
   gpr_tls_set(&subchannel_index_exec_ctx, (intptr_t)exec_ctx);
@@ -84,6 +86,7 @@ static grpc_subchannel_key *subchannel_key_copy(grpc_subchannel_key *k) {
 
 int grpc_subchannel_key_compare(const grpc_subchannel_key *a,
                                 const grpc_subchannel_key *b) {
+  if (g_force_creation) return false;
   int c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
   if (c != 0) return c;
   if (a->args.filter_count > 0) {
@@ -249,4 +252,8 @@ void grpc_subchannel_index_unregister(grpc_exec_ctx *exec_ctx,
   }
 
   leave_ctx(exec_ctx);
+}
+
+void grpc_subchannel_index_test_only_set_force_creation(bool force_creation) {
+  g_force_creation = force_creation;
 }
