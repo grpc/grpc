@@ -30,17 +30,9 @@ for root, dirs, files in os.walk('src/core'):
     path = os.path.join(root, filename)
     if os.path.splitext(path)[1] != '.c': continue
     with open(path) as f:
-      text = f.readlines()
-    for i in range(len(text)):
-      if "grpc_tracer_flag" in text[i]:
-        line = text[i].replace('\n', ' ')
-        j = i
-        while ";" not in text[j]:
-            j += 1
-            line += text[j].replace('\n', ' ')
-        if "GRPC_TRACER_INITIALIZER" not in line: continue
-        t = pattern.search(line).group(2)
-        if t not in tracers: tracers.append(t)
+      text = f.read()
+    for o in pattern.findall(text):
+      tracers.append(o[1])
 
 with open('doc/environment_variables.md') as f:
  text = f.read()
