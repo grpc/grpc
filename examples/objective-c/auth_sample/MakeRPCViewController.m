@@ -26,6 +26,17 @@ NSString * const kTestScope = @"https://www.googleapis.com/auth/xapi.zoo";
 
 static NSString * const kTestHostAddress = @"grpc-test.sandbox.googleapis.com";
 
+@interface OAuthAuthenticator : NSObject<GRPCAuthorizationProtocol>
+@end
+
+@implementation OAuthAuthenticator
+- (void)getTokenWithHandler:(void (^)(NSString *token))handler {
+  NSString *token = GIDSignIn.sharedInstance.currentUser.authentication.accessToken;
+  handler(token);
+}
+
+@end
+
 // Category for RPC errors to create the descriptions as we want them to appear on our view.
 @interface NSError (AuthSample)
 - (NSString *)UIDescription;
@@ -59,7 +70,7 @@ static NSString * const kTestHostAddress = @"grpc-test.sandbox.googleapis.com";
 
   // Create a not-yet-started RPC. We want to set the request headers on this object before starting
   // it.
-  ProtoRPC *call =
+  GRPCProtoCall *call =
       [client RPCToUnaryCallWithRequest:request handler:^(AUTHResponse *response, NSError *error) {
         if (response) {
           // This test server responds with the email and scope of the access token it receives.
@@ -72,8 +83,7 @@ static NSString * const kTestHostAddress = @"grpc-test.sandbox.googleapis.com";
       }];
 
   // Set the access token to be used.
-  NSString *accessToken = GIDSignIn.sharedInstance.currentUser.authentication.accessToken;
-  call.requestHeaders[@"Authorization"] = [@"Bearer " stringByAppendingString:accessToken];
+  call.oauthToken = [[OAuthAuthenticator alloc] init];
 
   // Start the RPC.
   [call start];
