@@ -315,8 +315,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                        [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
             GPR_MIN(stream_outgoing_window, t->outgoing_window));
         if (max_outgoing > 0) {
-          bool is_last_data_frame;
-          bool is_last_frame;
+          bool is_last_data_frame = false;
+          bool is_last_frame = false;
           if (s->stream_compression_send_enabled) {
             while ((s->flow_controlled_buffer.length > 0 ||
                     s->compressed_data_buffer.length > 0) &&
