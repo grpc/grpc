@@ -132,7 +132,7 @@ static void dns_next_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
 
 static void dns_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
-  dns_resolver *r = arg;
+  dns_resolver *r = (dns_resolver *)arg;
 
   r->have_retry_timer = false;
   if (error == GRPC_ERROR_NONE) {
@@ -146,7 +146,7 @@ static void dns_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void dns_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_error *error) {
-  dns_resolver *r = arg;
+  dns_resolver *r = (dns_resolver *)arg;
   grpc_channel_args *result = NULL;
   GPR_ASSERT(r->resolving);
   r->resolving = false;
@@ -241,7 +241,7 @@ static grpc_resolver *dns_create(grpc_exec_ctx *exec_ctx,
   char *path = args->uri->path;
   if (path[0] == '/') ++path;
   // Create resolver.
-  dns_resolver *r = gpr_zalloc(sizeof(dns_resolver));
+  dns_resolver *r = (dns_resolver *)gpr_zalloc(sizeof(dns_resolver));
   grpc_resolver_init(&r->base, &dns_resolver_vtable, args->combiner);
   r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);

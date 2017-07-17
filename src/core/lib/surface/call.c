@@ -229,8 +229,10 @@ struct grpc_call {
   void *saved_receiving_stream_ready_bctlp;
 };
 
-grpc_tracer_flag grpc_call_error_trace = GRPC_TRACER_INITIALIZER(false);
-grpc_tracer_flag grpc_compression_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_call_error_trace =
+    GRPC_TRACER_INITIALIZER(false, "call_error");
+grpc_tracer_flag grpc_compression_trace =
+    GRPC_TRACER_INITIALIZER(false, "compression");
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
@@ -1504,7 +1506,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         /* TODO(ctiller): just make these the same variable? */
-        call->metadata_batch[0][0].deadline = call->send_deadline;
+        if (call->is_client) {
+          call->metadata_batch[0][0].deadline = call->send_deadline;
+        }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
         stream_op_payload->send_initial_metadata.send_initial_metadata_flags =

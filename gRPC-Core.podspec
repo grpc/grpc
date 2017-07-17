@@ -25,7 +25,7 @@ Pod::Spec.new do |s|
   version = '1.5.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
-  s.homepage = 'http://www.grpc.io'
+  s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
@@ -192,6 +192,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
                       'src/core/lib/support/spinlock.h',
+                      'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
                       'src/core/lib/support/thd_internal.h',
@@ -221,6 +222,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/log_windows.c',
                       'src/core/lib/support/mpscq.c',
                       'src/core/lib/support/murmur_hash.c',
+                      'src/core/lib/support/stack_lockfree.c',
                       'src/core/lib/support/string.c',
                       'src/core/lib/support/string_posix.c',
                       'src/core/lib/support/string_util_windows.c',
@@ -421,6 +423,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/uri_parser.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
+                      'src/core/ext/transport/inproc/inproc_transport.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
@@ -663,6 +666,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
+                      'src/core/ext/transport/inproc/inproc_plugin.c',
+                      'src/core/ext/transport/inproc/inproc_transport.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c',
@@ -713,6 +718,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
                               'src/core/lib/support/spinlock.h',
+                              'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
                               'src/core/lib/support/thd_internal.h',
@@ -897,6 +903,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/uri_parser.h',
                               'src/core/ext/filters/deadline/deadline_filter.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
+                              'src/core/ext/transport/inproc/inproc_transport.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',

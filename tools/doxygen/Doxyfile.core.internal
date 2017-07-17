@@ -1047,6 +1047,9 @@ src/core/ext/transport/chttp2/transport/stream_map.h \
 src/core/ext/transport/chttp2/transport/varint.c \
 src/core/ext/transport/chttp2/transport/varint.h \
 src/core/ext/transport/chttp2/transport/writing.c \
+src/core/ext/transport/inproc/inproc_plugin.c \
+src/core/ext/transport/inproc/inproc_transport.c \
+src/core/ext/transport/inproc/inproc_transport.h \
 src/core/lib/README.md \
 src/core/lib/channel/README.md \
 src/core/lib/channel/channel_args.c \
@@ -1304,6 +1307,8 @@ src/core/lib/support/mpscq.h \
 src/core/lib/support/murmur_hash.c \
 src/core/lib/support/murmur_hash.h \
 src/core/lib/support/spinlock.h \
+src/core/lib/support/stack_lockfree.c \
+src/core/lib/support/stack_lockfree.h \
 src/core/lib/support/string.c \
 src/core/lib/support/string.h \
 src/core/lib/support/string_posix.c \

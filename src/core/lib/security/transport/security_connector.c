@@ -45,7 +45,7 @@
 
 #ifndef NDEBUG
 grpc_tracer_flag grpc_trace_security_connector_refcount =
-    GRPC_TRACER_INITIALIZER(false);
+    GRPC_TRACER_INITIALIZER(false, "security_connector_refcount");
 #endif
 
 /* -- Constants. -- */
@@ -400,8 +400,7 @@ static void fake_channel_add_handshakers(
   grpc_handshake_manager_add(
       handshake_mgr,
       grpc_security_handshaker_create(
-          exec_ctx, tsi_create_adapter_handshaker(
-                        tsi_create_fake_handshaker(true /* is_client */)),
+          exec_ctx, tsi_create_fake_handshaker(true /* is_client */),
           &sc->base));
 }
 
@@ -411,8 +410,7 @@ static void fake_server_add_handshakers(grpc_exec_ctx *exec_ctx,
   grpc_handshake_manager_add(
       handshake_mgr,
       grpc_security_handshaker_create(
-          exec_ctx, tsi_create_adapter_handshaker(
-                        tsi_create_fake_handshaker(false /* is_client */)),
+          exec_ctx, tsi_create_fake_handshaker(false /* is_client */),
           &sc->base));
 }
 

@@ -23,6 +23,7 @@
 #include <grpc/support/histogram.h>
 
 #include "test/cpp/qps/interarrival.h"
+#include "test/cpp/util/test_config.h"
 
 using grpc::testing::RandomDistInterface;
 using grpc::testing::InterarrivalTimer;
@@ -50,6 +51,8 @@ static void RunTest(RandomDistInterface &&r, int threads, std::string title) {
 using grpc::testing::ExpDist;
 
 int main(int argc, char **argv) {
+  grpc::testing::InitTest(&argc, &argv, true);
+
   RunTest(ExpDist(10.0), 5, std::string("Exponential(10)"));
   return 0;
 }

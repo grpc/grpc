@@ -130,6 +130,13 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &jwt_vtable;
   c->key = key;
+  gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
+  if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
+    gpr_log(GPR_INFO,
+            "Cropping token lifetime to maximum allowed value (%d secs).",
+            (int)max_token_lifetime.tv_sec);
+    token_lifetime = grpc_max_auth_token_lifetime();
+  }
   c->jwt_lifetime = token_lifetime;
   gpr_mu_init(&c->cache_mu);
   jwt_reset_cache(exec_ctx, c);

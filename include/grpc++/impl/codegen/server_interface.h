@@ -28,21 +28,23 @@
 namespace grpc {
 
 class AsyncGenericService;
+class Channel;
 class GenericServerContext;
-class RpcService;
-class ServerAsyncStreamingInterface;
 class ServerCompletionQueue;
 class ServerContext;
 class ServerCredentials;
 class Service;
-class ThreadPoolInterface;
 
 extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// Models a gRPC server.
 ///
 /// Servers are configured and started via \a grpc::ServerBuilder.
-class ServerInterface : public CallHook {
+namespace internal {
+class ServerAsyncStreamingInterface;
+}  // namespace internal
+
+class ServerInterface : public internal::CallHook {
  public:
   virtual ~ServerInterface() {}
 
@@ -77,7 +79,7 @@ class ServerInterface : public CallHook {
   virtual void Wait() = 0;
 
  protected:
-  friend class Service;
+  friend class ::grpc::Service;
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
@@ -115,12 +117,13 @@ class ServerInterface : public CallHook {
 
   virtual grpc_server* server() = 0;
 
-  virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
+  virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
+                                internal::Call* call) = 0;
 
-  class BaseAsyncRequest : public CompletionQueueTag {
+  class BaseAsyncRequest : public internal::CompletionQueueTag {
    public:
     BaseAsyncRequest(ServerInterface* server, ServerContext* context,
-                     ServerAsyncStreamingInterface* stream,
+                     internal::ServerAsyncStreamingInterface* stream,
                      CompletionQueue* call_cq, void* tag,
                      bool delete_on_finalize);
     virtual ~BaseAsyncRequest();
@@ -130,7 +133,7 @@ class ServerInterface : public CallHook {
    protected:
     ServerInterface* const server_;
     ServerContext* const context_;
-    ServerAsyncStreamingInterface* const stream_;
+    internal::ServerAsyncStreamingInterface* const stream_;
     CompletionQueue* const call_cq_;
     void* const tag_;
     const bool delete_on_finalize_;
@@ -140,7 +143,7 @@ class ServerInterface : public CallHook {
   class RegisteredAsyncRequest : public BaseAsyncRequest {
    public:
     RegisteredAsyncRequest(ServerInterface* server, ServerContext* context,
-                           ServerAsyncStreamingInterface* stream,
+                           internal::ServerAsyncStreamingInterface* stream,
                            CompletionQueue* call_cq, void* tag);
 
     // uses BaseAsyncRequest::FinalizeResult
@@ -154,7 +157,7 @@ class ServerInterface : public CallHook {
    public:
     NoPayloadAsyncRequest(void* registered_method, ServerInterface* server,
                           ServerContext* context,
-                          ServerAsyncStreamingInterface* stream,
+                          internal::ServerAsyncStreamingInterface* stream,
                           CompletionQueue* call_cq,
                           ServerCompletionQueue* notification_cq, void* tag)
         : RegisteredAsyncRequest(server, context, stream, call_cq, tag) {
@@ -169,7 +172,7 @@ class ServerInterface : public CallHook {
    public:
     PayloadAsyncRequest(void* registered_method, ServerInterface* server,
                         ServerContext* context,
-                        ServerAsyncStreamingInterface* stream,
+                        internal::ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag,
                         Message* request)
@@ -195,7 +198,7 @@ class ServerInterface : public CallHook {
   class GenericAsyncRequest : public BaseAsyncRequest {
    public:
     GenericAsyncRequest(ServerInterface* server, GenericServerContext* context,
-                        ServerAsyncStreamingInterface* stream,
+                        internal::ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag,
                         bool delete_on_finalize);
@@ -207,8 +210,9 @@ class ServerInterface : public CallHook {
   };
 
   template <class Message>
-  void RequestAsyncCall(RpcServiceMethod* method, ServerContext* context,
-                        ServerAsyncStreamingInterface* stream,
+  void RequestAsyncCall(internal::RpcServiceMethod* method,
+                        ServerContext* context,
+                        internal::ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
@@ -218,8 +222,9 @@ class ServerInterface : public CallHook {
                                      message);
   }
 
-  void RequestAsyncCall(RpcServiceMethod* method, ServerContext* context,
-                        ServerAsyncStreamingInterface* stream,
+  void RequestAsyncCall(internal::RpcServiceMethod* method,
+                        ServerContext* context,
+                        internal::ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag) {
     GPR_CODEGEN_ASSERT(method);
@@ -228,7 +233,7 @@ class ServerInterface : public CallHook {
   }
 
   void RequestAsyncGenericCall(GenericServerContext* context,
-                               ServerAsyncStreamingInterface* stream,
+                               internal::ServerAsyncStreamingInterface* stream,
                                CompletionQueue* call_cq,
                                ServerCompletionQueue* notification_cq,
                                void* tag) {

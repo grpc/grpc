@@ -108,7 +108,7 @@ static void decrease_call_count(grpc_exec_ctx* exec_ctx, channel_data* chand) {
 
 static void start_max_idle_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
                                             grpc_error* error) {
-  channel_data* chand = arg;
+  channel_data* chand = (channel_data*)arg;
   /* Decrease call_count. If there are no active calls at this time,
      max_idle_timer will start here. If the number of active calls is not 0,
      max_idle_timer will start after all the active calls end. */
@@ -119,7 +119,7 @@ static void start_max_idle_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
 
 static void start_max_age_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
                                            grpc_error* error) {
-  channel_data* chand = arg;
+  channel_data* chand = (channel_data*)arg;
   gpr_mu_lock(&chand->max_age_timer_mu);
   chand->max_age_timer_pending = true;
   GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_age_timer");
@@ -140,7 +140,7 @@ static void start_max_age_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
 static void start_max_age_grace_timer_after_goaway_op(grpc_exec_ctx* exec_ctx,
                                                       void* arg,
                                                       grpc_error* error) {
-  channel_data* chand = arg;
+  channel_data* chand = (channel_data*)arg;
   gpr_mu_lock(&chand->max_age_timer_mu);
   chand->max_age_grace_timer_pending = true;
   GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_age_grace_timer");
@@ -156,7 +156,7 @@ static void start_max_age_grace_timer_after_goaway_op(grpc_exec_ctx* exec_ctx,
 
 static void close_max_idle_channel(grpc_exec_ctx* exec_ctx, void* arg,
                                    grpc_error* error) {
-  channel_data* chand = arg;
+  channel_data* chand = (channel_data*)arg;
   if (error == GRPC_ERROR_NONE) {
     /* Prevent the max idle timer from being set again */
     gpr_atm_no_barrier_fetch_add(&chand->call_count, 1);
@@ -176,7 +176,7 @@ static void close_max_idle_channel(grpc_exec_ctx* exec_ctx, void* arg,
 
 static void close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
                                   grpc_error* error) {
-  channel_data* chand = arg;
+  channel_data* chand = (channel_data*)arg;
   gpr_mu_lock(&chand->max_age_timer_mu);
   chand->max_age_timer_pending = false;
   gpr_mu_unlock(&chand->max_age_timer_mu);
@@ -200,7 +200,7 @@ static void close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
 
 static void force_close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
                                         grpc_error* error) {
-  channel_data* chand = arg;
+  channel_data* chand = (channel_data*)arg;
   gpr_mu_lock(&chand->max_age_timer_mu);
   chand->max_age_grace_timer_pending = false;
   gpr_mu_unlock(&chand->max_age_timer_mu);
@@ -220,7 +220,7 @@ static void force_close_max_age_channel(grpc_exec_ctx* exec_ctx, void* arg,
 
 static void channel_connectivity_changed(grpc_exec_ctx* exec_ctx, void* arg,
                                          grpc_error* error) {
-  channel_data* chand = arg;
+  channel_data* chand = (channel_data*)arg;
   if (chand->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
     grpc_transport_op* op = grpc_make_transport_op(NULL);
     op->on_connectivity_state_change = &chand->channel_connectivity_changed,
@@ -264,7 +264,7 @@ static int add_random_max_connection_age_jitter(int value) {
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  channel_data* chand = elem->channel_data;
+  channel_data* chand = (channel_data*)elem->channel_data;
   increase_call_count(exec_ctx, chand);
   return GRPC_ERROR_NONE;
 }
@@ -281,7 +281,7 @@ static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
-  channel_data* chand = elem->channel_data;
+  channel_data* chand = (channel_data*)elem->channel_data;
   gpr_mu_init(&chand->max_age_timer_mu);
   chand->max_age_timer_pending = false;
   chand->max_age_grace_timer_pending = false;

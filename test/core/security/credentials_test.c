@@ -770,6 +770,45 @@ static char *encode_and_sign_jwt_should_not_be_called(
   return NULL;
 }
 
+static grpc_service_account_jwt_access_credentials *creds_as_jwt(
+    grpc_call_credentials *creds) {
+  GPR_ASSERT(creds != NULL);
+  GPR_ASSERT(strcmp(creds->type, GRPC_CALL_CREDENTIALS_TYPE_JWT) == 0);
+  return (grpc_service_account_jwt_access_credentials *)creds;
+}
+
+static void test_jwt_creds_lifetime(void) {
+  char *json_key_string = test_json_key_str();
+
+  // Max lifetime.
+  grpc_call_credentials *jwt_creds =
+      grpc_service_account_jwt_access_credentials_create(
+          json_key_string, grpc_max_auth_token_lifetime(), NULL);
+  GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime,
+                          grpc_max_auth_token_lifetime()) == 0);
+  grpc_call_credentials_release(jwt_creds);
+
+  // Shorter lifetime.
+  gpr_timespec token_lifetime = {10, 0, GPR_TIMESPAN};
+  GPR_ASSERT(gpr_time_cmp(grpc_max_auth_token_lifetime(), token_lifetime) > 0);
+  jwt_creds = grpc_service_account_jwt_access_credentials_create(
+      json_key_string, token_lifetime, NULL);
+  GPR_ASSERT(
+      gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime, token_lifetime) == 0);
+  grpc_call_credentials_release(jwt_creds);
+
+  // Cropped lifetime.
+  gpr_timespec add_to_max = {10, 0, GPR_TIMESPAN};
+  token_lifetime = gpr_time_add(grpc_max_auth_token_lifetime(), add_to_max);
+  jwt_creds = grpc_service_account_jwt_access_credentials_create(
+      json_key_string, token_lifetime, NULL);
+  GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime,
+                          grpc_max_auth_token_lifetime()) == 0);
+  grpc_call_credentials_release(jwt_creds);
+
+  gpr_free(json_key_string);
+}
+
 static void test_jwt_creds_success(void) {
   char *json_key_string = test_json_key_str();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -1150,6 +1189,7 @@ int main(int argc, char **argv) {
   test_compute_engine_creds_failure();
   test_refresh_token_creds_success();
   test_refresh_token_creds_failure();
+  test_jwt_creds_lifetime();
   test_jwt_creds_success();
   test_jwt_creds_signing_failure();
   test_google_default_creds_auth_key();

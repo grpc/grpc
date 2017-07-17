@@ -99,6 +99,7 @@ filegroups:
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/spinlock.h
+  - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
   - src/core/lib/support/thd_internal.h
@@ -129,6 +130,7 @@ filegroups:
   - src/core/lib/support/log_windows.c
   - src/core/lib/support/mpscq.c
   - src/core/lib/support/murmur_hash.c
+  - src/core/lib/support/stack_lockfree.c
   - src/core/lib/support/string.c
   - src/core/lib/support/string_posix.c
   - src/core/lib/support/string_util_windows.c
@@ -841,6 +843,15 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2
   - grpc_http_filters
+- name: grpc_transport_inproc
+  headers:
+  - src/core/ext/transport/inproc/inproc_transport.h
+  src:
+  - src/core/ext/transport/inproc/inproc_plugin.c
+  - src/core/ext/transport/inproc/inproc_transport.c
+  plugin: grpc_inproc_plugin
+  uses:
+  - grpc_base
 - name: grpc_workaround_cronet_compression_filter
   headers:
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
@@ -1069,6 +1080,7 @@ libs:
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_transport_inproc
   - grpc_lb_policy_grpclb_secure
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -1172,6 +1184,7 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_transport_inproc
   - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
@@ -2118,6 +2131,15 @@ targets:
   language: c
   src:
   - test/core/support/spinlock_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_stack_lockfree_test
+  cpu_cost: 7
+  build: test
+  language: c
+  src:
+  - test/core/support/stack_lockfree_test.c
   deps:
   - gpr_test_util
   - gpr
@@ -4151,6 +4173,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   platforms:
   - mac
   - linux
@@ -4269,6 +4292,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   platforms:
   - mac
   - linux

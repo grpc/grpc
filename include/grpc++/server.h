@@ -95,6 +95,9 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
     return health_check_service_.get();
   }
 
+  /// Establish a channel for in-process communication
+  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
+
  private:
   friend class AsyncGenericService;
   friend class ServerBuilder;
@@ -172,7 +175,8 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// \param num_cqs How many completion queues does \a cqs hold.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
-  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
+  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
+                        internal::Call* call) override;
 
   void ShutdownInternal(gpr_timespec deadline) override;
 

@@ -106,6 +106,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/spinlock.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/thd_internal.h" role="src" />
@@ -135,6 +136,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/log_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_util_windows.c" role="src" />
@@ -367,6 +369,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h" role="src" />
@@ -613,6 +616,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_plugin.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c" role="src" />

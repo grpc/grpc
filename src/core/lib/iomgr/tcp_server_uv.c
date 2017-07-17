@@ -234,6 +234,7 @@ static void on_connect(uv_stream_t *server, int status) {
     sp->server->on_accept_cb(&exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
                              acceptor);
     grpc_exec_ctx_finish(&exec_ctx);
+    gpr_free(peer_name_string);
   }
 }
 
