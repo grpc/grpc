@@ -114,20 +114,21 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
 
 void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
                                              grpc_closure* closure) {
-  call_combiner->notify_on_cancel = closure;
+  gpr_atm_rel_store(&call_combiner->notify_on_cancel, (gpr_atm)closure);
 }
 
 void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
                                grpc_call_combiner* call_combiner,
                                grpc_error* error) {
-  if (call_combiner->notify_on_cancel != NULL) {
+  grpc_closure* notify_on_cancel =
+      (grpc_closure*)gpr_atm_acq_load(&call_combiner->notify_on_cancel);
+  if (notify_on_cancel != NULL) {
     if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
       gpr_log(GPR_DEBUG,
               "call_combiner=%p: scheduling notify_on_cancel callback=%p",
-              call_combiner, call_combiner->notify_on_cancel);
+              call_combiner, notify_on_cancel);
     }
-    GRPC_CLOSURE_SCHED(exec_ctx, call_combiner->notify_on_cancel,
-                       GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(exec_ctx, notify_on_cancel, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }

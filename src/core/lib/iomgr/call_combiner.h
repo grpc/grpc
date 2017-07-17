@@ -41,7 +41,7 @@ extern grpc_tracer_flag grpc_call_combiner_trace;
 typedef struct {
   gpr_atm size;  // size_t, num closures in queue or currently executing
   gpr_mpscq queue;
-  grpc_closure* notify_on_cancel;
+  gpr_atm notify_on_cancel; // grpc_closure*
 } grpc_call_combiner;
 
 // Assumes memory was initialized to zero.
