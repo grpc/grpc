@@ -36,6 +36,7 @@
 #include "hphp/util/process.h"
 
 #include <sys/eventfd.h>
+#include <sys/poll.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/grpc_security.h>
@@ -292,7 +293,7 @@ Object HHVM_METHOD(Call, startBatch,
   if (expect_send_initial_metadata == true) {
     // We do this above grpc_call_start_batch because it can also sometimes execute the callback
     // from within itself and we need to have the fd setup by that point
-    fd = eventfd(0, EFD_CLOEXEC);
+    fd = eventfd(0, EFD_CLOEXEC|EFD_NONBLOCK);
     PluginGetMetadataFd::tl_obj.get()->setFd(fd);
   }
 
@@ -327,13 +328,20 @@ Object HHVM_METHOD(Call, startBatch,
     pthread_create(&cq_pluck_thread_id, NULL, cq_pluck_async, (void *)cq_pluck_params);
 
     // Block, wait for signal from callback
-    plugin_get_metadata_params *params;
-    int numBytes = read(fd, &params, sizeof(plugin_get_metadata_params *));
-    PluginGetMetadataFd::tl_obj.get()->setFd(-1);
+    struct pollfd fds[] = {
+        { fd, POLLIN },
+    };
 
-    if (numBytes > 0 && params != nullptr) {
-      plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
-      gpr_free(params);
+    int r = poll(fds, 1, 30 * 1000); // Timeout after 30 seconds
+    if (r > 0) {
+      plugin_get_metadata_params *params;
+      int numBytes = read(fd, &params, sizeof(plugin_get_metadata_params *));
+      PluginGetMetadataFd::tl_obj.get()->setFd(-1);
+
+      if (numBytes > 0 && params != nullptr) {
+        plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
+        gpr_free(params);
+      }
     }
     pthread_join(cq_pluck_thread_id, (void **)&event_ptr);
     event = *event_ptr;
