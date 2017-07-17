@@ -1,8 +1,8 @@
 # Top level ownership
 
-@a11r
-@nicolasnoble
-@ctiller
+#@a11r
+#@nicolasnoble
+#@ctiller
 
 @murgatroid99 binding.gyp Gemfile grpc.gemspec package.json Rakefile
 @muxi *.podspec grpc.bzl
