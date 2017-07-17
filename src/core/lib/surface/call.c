@@ -606,8 +606,9 @@ static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
   GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner,
                     batch, grpc_schedule_on_exec_ctx);
   if (GRPC_TRACER_ON(grpc_trace_channel)) {
-    gpr_log(GPR_INFO, "executing batch: %s",
-            grpc_transport_stream_op_batch_string(batch));
+    char *batch_string = grpc_transport_stream_op_batch_string(batch);
+    gpr_log(GPR_INFO, "executing batch: %s", batch_string);
+    gpr_free(batch_string);
   }
   GRPC_CALL_COMBINER_START(exec_ctx, &call->call_combiner, start_batch_closure,
                            GRPC_ERROR_NONE, "executing batch");
