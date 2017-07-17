@@ -1225,10 +1225,6 @@ static void set_pollset_set(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   // Nothing to do here
 }
 
-static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
-  return gpr_strdup("inproc");
-}
-
 static grpc_endpoint *get_endpoint(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
   return NULL;
 }
@@ -1238,8 +1234,7 @@ static const grpc_transport_vtable inproc_vtable = {
     init_stream,           set_pollset,
     set_pollset_set,       perform_stream_op,
     perform_transport_op,  destroy_stream,
-    destroy_transport,     get_peer,
-    get_endpoint};
+    destroy_transport,     get_endpoint};
 
 /*******************************************************************************
  * GLOBAL INIT AND DESTROY
