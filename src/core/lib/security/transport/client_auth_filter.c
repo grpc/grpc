@@ -71,7 +71,7 @@ typedef struct {
 static void decode_cancel_state(gpr_atm cancel_state, grpc_closure **func,
                                 grpc_error **error) {
   if (cancel_state & 1) {
-    *error = GRPC_ERROR_REF((grpc_error *)(cancel_state & ~(gpr_atm)1));
+    *error = (grpc_error *)(cancel_state & ~(gpr_atm)1);
   } else if (cancel_state != 0) {
     *func = (grpc_closure *)cancel_state;
   }
@@ -92,7 +92,7 @@ static grpc_error *set_cancel_func(grpc_call_element *elem,
   grpc_closure *original_func = NULL;
   decode_cancel_state(original_state, &original_func, &original_error);
   // If error is set, return it.
-  if (original_error != GRPC_ERROR_NONE) return original_error;
+  if (original_error != GRPC_ERROR_NONE) return GRPC_ERROR_REF(original_error);
   // Otherwise, store func.
   GRPC_CLOSURE_INIT(&calld->cancel_closure, func, elem,
                     grpc_schedule_on_exec_ctx);
@@ -301,10 +301,7 @@ static void auth_start_transport_stream_op_batch(
       decode_cancel_state(original_state, &func, &cancel_error);
       // If we had already set a cancellation error, there's nothing
       // more to do.
-      if (cancel_error != GRPC_ERROR_NONE) {
-        GRPC_ERROR_UNREF(cancel_error);
-        break;
-      }
+      if (cancel_error != GRPC_ERROR_NONE) break;
       // If there's a cancel func, call it.
       // Note that even if the cancel func has been changed by some
       // other thread between when we decoded it and now, it will just
@@ -427,6 +424,11 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   }
   reset_auth_metadata_context(&calld->auth_md_context);
   gpr_mu_destroy(&calld->security_context_mu);
+  gpr_atm cancel_state = gpr_atm_acq_load(&calld->cancellation_state);
+  grpc_error *cancel_error = GRPC_ERROR_NONE;
+  grpc_closure *cancel_func = NULL;
+  decode_cancel_state(cancel_state, &cancel_func, &cancel_error);
+  GRPC_ERROR_UNREF(cancel_error);
 }
 
 /* Constructor for channel_data */
