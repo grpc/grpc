@@ -414,11 +414,16 @@ BENCHMARK_TEMPLATE(BM_StreamingPingPong, InProcessCHTTP2, NoOpMutator,
     ->Apply(StreamingPingPongArgs);
 BENCHMARK_TEMPLATE(BM_StreamingPingPong, TCP, NoOpMutator, NoOpMutator)
     ->Apply(StreamingPingPongArgs);
+BENCHMARK_TEMPLATE(BM_StreamingPingPong, InProcess, NoOpMutator, NoOpMutator)
+    ->Apply(StreamingPingPongArgs);
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, InProcessCHTTP2, NoOpMutator,
                    NoOpMutator)
     ->Range(0, 128 * 1024 * 1024);
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, TCP, NoOpMutator, NoOpMutator)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, InProcess, NoOpMutator,
+                   NoOpMutator)
     ->Range(0, 128 * 1024 * 1024);
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPong, MinInProcessCHTTP2, NoOpMutator,
@@ -426,11 +431,16 @@ BENCHMARK_TEMPLATE(BM_StreamingPingPong, MinInProcessCHTTP2, NoOpMutator,
     ->Apply(StreamingPingPongArgs);
 BENCHMARK_TEMPLATE(BM_StreamingPingPong, MinTCP, NoOpMutator, NoOpMutator)
     ->Apply(StreamingPingPongArgs);
+BENCHMARK_TEMPLATE(BM_StreamingPingPong, MinInProcess, NoOpMutator, NoOpMutator)
+    ->Apply(StreamingPingPongArgs);
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, MinInProcessCHTTP2, NoOpMutator,
                    NoOpMutator)
     ->Range(0, 128 * 1024 * 1024);
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, MinTCP, NoOpMutator, NoOpMutator)
+    ->Range(0, 128 * 1024 * 1024);
+BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, MinInProcess, NoOpMutator,
+                   NoOpMutator)
     ->Range(0, 128 * 1024 * 1024);
 
 // Generate Args for StreamingPingPongWithCoalescingApi benchmarks. Currently
@@ -457,6 +467,12 @@ BENCHMARK_TEMPLATE(BM_StreamingPingPongWithCoalescingApi, InProcessCHTTP2,
                    NoOpMutator, NoOpMutator)
     ->Apply(StreamingPingPongWithCoalescingApiArgs);
 BENCHMARK_TEMPLATE(BM_StreamingPingPongWithCoalescingApi, MinInProcessCHTTP2,
+                   NoOpMutator, NoOpMutator)
+    ->Apply(StreamingPingPongWithCoalescingApiArgs);
+BENCHMARK_TEMPLATE(BM_StreamingPingPongWithCoalescingApi, InProcess,
+                   NoOpMutator, NoOpMutator)
+    ->Apply(StreamingPingPongWithCoalescingApiArgs);
+BENCHMARK_TEMPLATE(BM_StreamingPingPongWithCoalescingApi, MinInProcess,
                    NoOpMutator, NoOpMutator)
     ->Apply(StreamingPingPongWithCoalescingApiArgs);
 

@@ -544,6 +544,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
       <Filter>src\core\ext\filters\deadline</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_plugin.c">
+      <Filter>src\core\ext\transport\inproc</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_transport.c">
+      <Filter>src\core\ext\transport\inproc</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\dns_resolver_ares.c">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClCompile>
@@ -1226,6 +1232,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h">
       <Filter>src\core\ext\filters\deadline</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_transport.h">
+      <Filter>src\core\ext\transport\inproc</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver.h">
       <Filter>src\core\ext\filters\client_channel\resolver\dns\c_ares</Filter>
     </ClInclude>
@@ -1468,6 +1477,9 @@
     </Filter>
     <Filter Include="src\core\ext\transport\chttp2\transport">
       <UniqueIdentifier>{45b20f28-376c-9dea-1800-8a0193411946}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\transport\inproc">
+      <UniqueIdentifier>{287a62fa-b646-5062-49c4-9e7bd5bc5b96}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{8bd5b461-bff8-6aa8-b5a6-85da2834eb8a}</UniqueIdentifier>

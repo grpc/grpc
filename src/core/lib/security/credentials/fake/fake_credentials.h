@@ -52,8 +52,8 @@ const char *grpc_fake_transport_get_expected_targets(
 
 typedef struct {
   grpc_call_credentials base;
-  grpc_credentials_md_store *md_store;
-  int is_async;
+  grpc_mdelem md;
+  bool is_async;
 } grpc_md_only_test_credentials;
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */

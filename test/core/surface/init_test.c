@@ -52,6 +52,13 @@ static void test_plugin() {
   GPR_ASSERT(g_flag == 2);
 }
 
+static void test_repeatedly() {
+  for (int i = 0; i < 100000; i++) {
+    grpc_init();
+    grpc_shutdown();
+  }
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test(1);
@@ -59,5 +66,6 @@ int main(int argc, char **argv) {
   test(3);
   test_mixed();
   test_plugin();
+  test_repeatedly();
   return 0;
 }

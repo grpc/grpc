@@ -52,8 +52,11 @@ typedef struct {
   grpc_polling_entity *pollent;
   gpr_atm security_context_set;
   gpr_mu security_context_mu;
+  grpc_credentials_mdelem_list md_list;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   grpc_auth_metadata_context auth_md_context;
+  grpc_closure async_cancel_closure;
+  grpc_closure async_result_closure;
 } call_data;
 
 /* We can have a per-channel credentials. */
@@ -87,89 +90,32 @@ static void add_error(grpc_error **combined, grpc_error *error) {
   *combined = grpc_error_add_child(*combined, error);
 }
 
-static void on_credentials_metadata_inner(
-    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *batch,
-    grpc_credentials_md *md_elems, size_t num_md,
-    grpc_credentials_status status, const char *error_details) {
+static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *arg,
+                                    grpc_error *input_error) {
+  grpc_transport_stream_op_batch *batch = (grpc_transport_stream_op_batch *)arg;
   grpc_call_element *elem = batch->handler_private.extra_arg;
   call_data *calld = elem->call_data;
+  grpc_call_combiner_set_notify_on_cancel(calld->call_combiner, NULL);
   reset_auth_metadata_context(&calld->auth_md_context);
-  grpc_error *error = GRPC_ERROR_NONE;
-  if (status != GRPC_CREDENTIALS_OK) {
-    error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            error_details != NULL && strlen(error_details) > 0
-                ? error_details
-                : "Credentials failed to get metadata."),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED);
-  } else {
-    GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
+  grpc_error *error = GRPC_ERROR_REF(input_error);
+  if (error == GRPC_ERROR_NONE) {
+    GPR_ASSERT(calld->md_list.size <= MAX_CREDENTIALS_METADATA_COUNT);
     GPR_ASSERT(batch->send_initial_metadata);
     grpc_metadata_batch *mdb =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    for (size_t i = 0; i < num_md; i++) {
-      add_error(&error,
-                grpc_metadata_batch_add_tail(
-                    exec_ctx, mdb, &calld->md_links[i],
-                    grpc_mdelem_from_slices(
-                        exec_ctx, grpc_slice_ref_internal(md_elems[i].key),
-                        grpc_slice_ref_internal(md_elems[i].value))));
+    for (size_t i = 0; i < calld->md_list.size; ++i) {
+      add_error(&error, grpc_metadata_batch_add_tail(
+                            exec_ctx, mdb, &calld->md_links[i],
+                            GRPC_MDELEM_REF(calld->md_list.md[i])));
     }
   }
   if (error == GRPC_ERROR_NONE) {
     grpc_call_next_op(exec_ctx, elem, batch);
   } else {
+    error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                               GRPC_STATUS_UNAUTHENTICATED);
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, batch, error,
                                                        calld->call_combiner);
-  }
-}
-
-typedef struct {
-  grpc_transport_stream_op_batch *batch;
-  grpc_credentials_md *md_elems;
-  size_t num_md;
-  grpc_credentials_status status;
-  const char *error_details;
-  grpc_closure closure;
-} on_credentials_metadata_state;
-
-static void on_credentials_metadata_in_call_combiner(grpc_exec_ctx *exec_ctx,
-                                                     void *arg,
-                                                     grpc_error *ignored) {
-  on_credentials_metadata_state *state = arg;
-  on_credentials_metadata_inner(exec_ctx, state->batch, state->md_elems,
-                                state->num_md, state->status,
-                                state->error_details);
-  gpr_free(state);
-}
-
-static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
-                                    grpc_credentials_md *md_elems,
-                                    size_t num_md,
-                                    grpc_credentials_status status,
-                                    const char *error_details) {
-  grpc_transport_stream_op_batch *batch =
-      (grpc_transport_stream_op_batch *)user_data;
-  grpc_call_element *elem = batch->handler_private.extra_arg;
-  call_data *calld = elem->call_data;
-  // If the credentials called outside of core, we need to re-enter the
-  // call combiner before calling on_credentials_metadata_inner().
-  // Otherwise, we invoke it directly.
-  if (grpc_call_credentials_calls_outside_of_core(calld->creds)) {
-    on_credentials_metadata_state *state = gpr_malloc(sizeof(*state));
-    state->batch = batch;
-    state->md_elems = md_elems;
-    state->num_md = num_md;
-    state->status = status;
-    state->error_details = error_details;
-    GRPC_CLOSURE_INIT(&state->closure, on_credentials_metadata_in_call_combiner,
-                      state, grpc_schedule_on_exec_ctx);
-    GRPC_CALL_COMBINER_START(
-        exec_ctx, calld->call_combiner, &state->closure, GRPC_ERROR_NONE,
-        "send_initial_metadata: got request metadata from call creds");
-  } else {
-    on_credentials_metadata_inner(exec_ctx, batch, md_elems, num_md, status,
-                                  error_details);
   }
 }
 
@@ -201,6 +147,15 @@ void build_auth_metadata_context(grpc_security_connector *sc,
       GRPC_AUTH_CONTEXT_REF(auth_context, "grpc_auth_metadata_context");
   gpr_free(service);
   gpr_free(host);
+}
+
+static void cancel_get_request_metadata(grpc_exec_ctx *exec_ctx,
+                                        void *arg, grpc_error *error) {
+  grpc_call_element *elem = (grpc_call_element *)arg;
+  call_data *calld = (call_data *)elem->call_data;
+  grpc_call_credentials_cancel_get_request_metadata(exec_ctx, calld->creds,
+                                                    &calld->md_list,
+                                                    GRPC_ERROR_REF(error));
 }
 
 static void send_security_metadata(grpc_exec_ctx *exec_ctx,
@@ -242,28 +197,32 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
 
   build_auth_metadata_context(&chand->security_connector->base,
                               chand->auth_context, calld);
+
   GPR_ASSERT(calld->pollent != NULL);
-  grpc_call_credentials_get_request_metadata(
-      exec_ctx, calld->creds, calld->pollent, calld->auth_md_context,
-      on_credentials_metadata, batch);
-  // If the credentials are calling outside of core (e.g., plugin
-  // credentials), then give up the call combiner here.  We will
-  // reacquire it when the callback returns.
-  if (grpc_call_credentials_calls_outside_of_core(calld->creds)) {
-    GRPC_CALL_COMBINER_STOP(
-        exec_ctx, calld->call_combiner,
-        "send_initial_metadata: getting request metadata from call creds");
+
+  GRPC_CLOSURE_INIT(&calld->async_cancel_closure, cancel_get_request_metadata,
+                    elem, grpc_schedule_on_exec_ctx);
+  grpc_call_combiner_set_notify_on_cancel(calld->call_combiner,
+                                          &calld->async_cancel_closure);
+  GRPC_CLOSURE_INIT(&calld->async_result_closure, on_credentials_metadata,
+                    batch, grpc_schedule_on_exec_ctx);
+  grpc_error *error = GRPC_ERROR_NONE;
+  if (grpc_call_credentials_get_request_metadata(
+          exec_ctx, calld->creds, calld->pollent, calld->auth_md_context,
+          &calld->md_list, &calld->async_result_closure, &error)) {
+    // Synchronous return; invoke on_credentials_metadata() directly.
+    on_credentials_metadata(exec_ctx, batch, error);
+    GRPC_ERROR_UNREF(error);
   }
 }
 
-static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
-                            grpc_security_status status) {
-  grpc_transport_stream_op_batch *batch =
-      (grpc_transport_stream_op_batch *)user_data;
+static void on_host_checked(grpc_exec_ctx *exec_ctx, void *arg,
+                            grpc_error *error) {
+  grpc_transport_stream_op_batch *batch = (grpc_transport_stream_op_batch *)arg;
   grpc_call_element *elem = batch->handler_private.extra_arg;
   call_data *calld = elem->call_data;
-
-  if (status == GRPC_SECURITY_OK) {
+  grpc_call_combiner_set_notify_on_cancel(calld->call_combiner, NULL);
+  if (error == GRPC_ERROR_NONE) {
     send_security_metadata(exec_ctx, elem, batch);
   } else {
     char *error_msg;
@@ -279,6 +238,16 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
         calld->call_combiner);
     gpr_free(error_msg);
   }
+}
+
+static void cancel_check_call_host(grpc_exec_ctx *exec_ctx, void *arg,
+                                   grpc_error *error) {
+  grpc_call_element *elem = (grpc_call_element *)arg;
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
+  grpc_channel_security_connector_cancel_check_call_host(
+      exec_ctx, chand->security_connector, &calld->async_result_closure,
+      GRPC_ERROR_REF(error));
 }
 
 static void auth_start_transport_stream_op_batch(
@@ -335,13 +304,22 @@ static void auth_start_transport_stream_op_batch(
       }
     }
     if (calld->have_host) {
-      char *call_host = grpc_slice_to_c_string(calld->host);
+      GRPC_CLOSURE_INIT(&calld->async_cancel_closure, cancel_check_call_host,
+                        elem, grpc_schedule_on_exec_ctx);
+      grpc_call_combiner_set_notify_on_cancel(calld->call_combiner,
+                                              &calld->async_cancel_closure);
       batch->handler_private.extra_arg = elem;
-// FIXME: can this call out to application?  if so, need to release call
-// combiner first and then re-acquire when we come back in
-      grpc_channel_security_connector_check_call_host(
-          exec_ctx, chand->security_connector, call_host, chand->auth_context,
-          on_host_checked, batch);
+      GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
+                        grpc_schedule_on_exec_ctx);
+      char *call_host = grpc_slice_to_c_string(calld->host);
+      grpc_error *error = GRPC_ERROR_NONE;
+      if (grpc_channel_security_connector_check_call_host(
+              exec_ctx, chand->security_connector, call_host,
+              chand->auth_context, &calld->async_result_closure, &error)) {
+        // Synchronous return; invoke on_host_checked() directly.
+        on_host_checked(exec_ctx, batch, error);
+        GRPC_ERROR_UNREF(error);
+      }
       gpr_free(call_host);
       GPR_TIMER_END("auth_start_transport_stream_op_batch", 0);
       return; /* early exit */
@@ -375,6 +353,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               grpc_closure *ignored) {
   call_data *calld = elem->call_data;
+  grpc_credentials_mdelem_list_destroy(exec_ctx, &calld->md_list);
   grpc_call_credentials_unref(exec_ctx, calld->creds);
   if (calld->have_host) {
     grpc_slice_unref_internal(exec_ctx, calld->host);

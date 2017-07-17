@@ -138,49 +138,39 @@ grpc_channel_credentials *grpc_channel_credentials_from_arg(
 grpc_channel_credentials *grpc_channel_credentials_find_in_args(
     const grpc_channel_args *args);
 
-/* --- grpc_credentials_md. --- */
+/* --- grpc_credentials_mdelem_list. --- */
 
 typedef struct {
-  grpc_slice key;
-  grpc_slice value;
-} grpc_credentials_md;
+  grpc_mdelem *md;
+  size_t size;
+} grpc_credentials_mdelem_list;
 
-typedef struct {
-  grpc_credentials_md *entries;
-  size_t num_entries;
-  size_t allocated;
-  gpr_refcount refcount;
-} grpc_credentials_md_store;
+/// Takes a new ref to \a md.
+void grpc_credentials_mdelem_list_add(grpc_credentials_mdelem_list *list,
+                                      grpc_mdelem md);
 
-grpc_credentials_md_store *grpc_credentials_md_store_create(
-    size_t initial_capacity);
+/// Appends all elements from \a src to \a dst, taking a new ref to each one.
+void grpc_credentials_mdelem_list_append(grpc_credentials_mdelem_list *dst,
+                                         grpc_credentials_mdelem_list *src);
 
-/* Will ref key and value. */
-void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
-                                   grpc_slice key, grpc_slice value);
-void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
-                                            const char *key, const char *value);
-grpc_credentials_md_store *grpc_credentials_md_store_ref(
-    grpc_credentials_md_store *store);
-void grpc_credentials_md_store_unref(grpc_exec_ctx *exec_ctx,
-                                     grpc_credentials_md_store *store);
+void grpc_credentials_mdelem_list_destroy(grpc_exec_ctx *exec_ctx,
+                                          grpc_credentials_mdelem_list *list);
 
 /* --- grpc_call_credentials. --- */
 
-/* error_details must be NULL if status is GRPC_CREDENTIALS_OK. */
-typedef void (*grpc_credentials_metadata_cb)(
-    grpc_exec_ctx *exec_ctx, void *user_data, grpc_credentials_md *md_elems,
-    size_t num_md, grpc_credentials_status status, const char *error_details);
-
 typedef struct {
   void (*destruct)(grpc_exec_ctx *exec_ctx, grpc_call_credentials *c);
-  void (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
+  bool (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
                                grpc_call_credentials *c,
                                grpc_polling_entity *pollent,
                                grpc_auth_metadata_context context,
-                               grpc_credentials_metadata_cb cb,
-                               void *user_data);
-  bool (*calls_outside_of_core)(grpc_call_credentials *c);
+                               grpc_credentials_mdelem_list *md_list,
+                               grpc_closure *on_request_metadata,
+                               grpc_error **error);
+  void (*cancel_get_request_metadata)(grpc_exec_ctx *exec_ctx,
+                                      grpc_call_credentials *c,
+                                      grpc_credentials_mdelem_list *md_list,
+                                      grpc_error *error);
 } grpc_call_credentials_vtable;
 
 struct grpc_call_credentials {
@@ -192,20 +182,28 @@ struct grpc_call_credentials {
 grpc_call_credentials *grpc_call_credentials_ref(grpc_call_credentials *creds);
 void grpc_call_credentials_unref(grpc_exec_ctx *exec_ctx,
                                  grpc_call_credentials *creds);
-void grpc_call_credentials_get_request_metadata(
+/// Returns true if completed synchronously, in which case \a error will
+/// be set to indicate the result.  Otherwise, \a on_request_metadata will
+/// be invoked asynchronously when complete.  \a md_list will be populated
+/// with the resulting metadata once complete.
+bool grpc_call_credentials_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
-    grpc_credentials_metadata_cb cb, void *user_data);
-// Returns true if the credentials call outside of core.  This can be
-// used by filter code to decide to give up locks before calling
-// grpc_call_credentials_get_request_metadata() and then reacquire
-// them when the callback returns.
-bool grpc_call_credentials_calls_outside_of_core(grpc_call_credentials *creds);
+    grpc_credentials_mdelem_list *md_list, grpc_closure *on_request_metadata,
+    grpc_error **error);
+
+/// Cancels a pending asynchronous operation started by
+/// grpc_call_credentials_get_request_metadata() with the corresponding
+/// value of \a md_list.
+void grpc_call_credentials_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
+    grpc_credentials_mdelem_list *md_list, grpc_error *error);
 
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */
 grpc_call_credentials *grpc_md_only_test_credentials_create(
-    const char *md_key, const char *md_value, int is_async);
+    grpc_exec_ctx *exec_ctx, const char *md_key, const char *md_value,
+    bool is_async);
 
 /* --- grpc_server_credentials. --- */
 
@@ -244,14 +242,11 @@ grpc_server_credentials *grpc_find_server_credentials_in_args(
 
 typedef struct {
   grpc_call_credentials *creds;
-  grpc_credentials_metadata_cb cb;
   grpc_http_response response;
-  void *user_data;
 } grpc_credentials_metadata_request;
 
 grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
-    grpc_call_credentials *creds, grpc_credentials_metadata_cb cb,
-    void *user_data);
+    grpc_call_credentials *creds);
 
 void grpc_credentials_metadata_request_destroy(
     grpc_exec_ctx *exec_ctx, grpc_credentials_metadata_request *r);

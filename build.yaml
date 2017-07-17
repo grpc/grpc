@@ -845,6 +845,15 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2
   - grpc_http_filters
+- name: grpc_transport_inproc
+  headers:
+  - src/core/ext/transport/inproc/inproc_transport.h
+  src:
+  - src/core/ext/transport/inproc/inproc_plugin.c
+  - src/core/ext/transport/inproc/inproc_transport.c
+  plugin: grpc_inproc_plugin
+  uses:
+  - grpc_base
 - name: grpc_workaround_cronet_compression_filter
   headers:
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
@@ -1073,6 +1082,7 @@ libs:
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_transport_inproc
   - grpc_lb_policy_grpclb_secure
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -1176,6 +1186,7 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_transport_inproc
   - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr

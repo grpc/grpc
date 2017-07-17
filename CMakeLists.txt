@@ -599,6 +599,7 @@ add_dependencies(buildtests_c h2_ssl_proxy_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_test)
 endif()
+add_dependencies(buildtests_c inproc_test)
 add_dependencies(buildtests_c h2_census_nosec_test)
 add_dependencies(buildtests_c h2_compress_nosec_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -619,6 +620,7 @@ add_dependencies(buildtests_c h2_sockpair_1byte_nosec_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_nosec_test)
 endif()
+add_dependencies(buildtests_c inproc_nosec_test)
 add_dependencies(buildtests_c api_fuzzer_one_entry)
 add_dependencies(buildtests_c client_fuzzer_one_entry)
 add_dependencies(buildtests_c hpack_parser_fuzzer_test_one_entry)
@@ -1152,6 +1154,8 @@ add_library(grpc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/transport/inproc/inproc_plugin.c
+  src/core/ext/transport/inproc/inproc_transport.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c
@@ -2045,6 +2049,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel_index.c
   src/core/ext/filters/client_channel/uri_parser.c
   src/core/ext/filters/deadline/deadline_filter.c
+  src/core/ext/transport/inproc/inproc_plugin.c
+  src/core/ext/transport/inproc/inproc_transport.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
@@ -13362,6 +13368,38 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(inproc_test
+  test/core/end2end/fixtures/inproc.c
+)
+
+
+target_include_directories(inproc_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(inproc_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(h2_census_nosec_test
   test/core/end2end/fixtures/h2_census.c
 )
@@ -13813,6 +13851,38 @@ target_link_libraries(h2_uds_nosec_test
 )
 
 endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(inproc_nosec_test
+  test/core/end2end/fixtures/inproc.c
+)
+
+
+target_include_directories(inproc_nosec_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(inproc_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_nosec_tests
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

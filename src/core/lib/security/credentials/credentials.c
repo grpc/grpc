@@ -38,13 +38,10 @@
 /* -- Common. -- */
 
 grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
-    grpc_call_credentials *creds, grpc_credentials_metadata_cb cb,
-    void *user_data) {
+    grpc_call_credentials *creds) {
   grpc_credentials_metadata_request *r =
       gpr_zalloc(sizeof(grpc_credentials_metadata_request));
   r->creds = grpc_call_credentials_ref(creds);
-  r->cb = cb;
-  r->user_data = user_data;
   return r;
 }
 
@@ -104,25 +101,25 @@ void grpc_call_credentials_release(grpc_call_credentials *creds) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void grpc_call_credentials_get_request_metadata(
+bool grpc_call_credentials_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
-    grpc_credentials_metadata_cb cb, void *user_data) {
+    grpc_credentials_mdelem_list *md_list, grpc_closure *on_request_metadata,
+    grpc_error **error) {
   if (creds == NULL || creds->vtable->get_request_metadata == NULL) {
-    if (cb != NULL) {
-      cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK, NULL);
-    }
-    return;
+    return true;
   }
-  creds->vtable->get_request_metadata(exec_ctx, creds, pollent, context, cb,
-                                      user_data);
+  return creds->vtable->get_request_metadata(
+      exec_ctx, creds, pollent, context, md_list, on_request_metadata, error);
 }
 
-bool grpc_call_credentials_calls_outside_of_core(grpc_call_credentials *creds) {
-  if (creds == NULL || creds->vtable->calls_outside_of_core == NULL) {
-    return false;
+void grpc_call_credentials_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
+    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+  if (creds == NULL || creds->vtable->cancel_get_request_metadata == NULL) {
+    return;
   }
-  return creds->vtable->calls_outside_of_core(creds);
+  creds->vtable->cancel_get_request_metadata(exec_ctx, creds, md_list, error);
 }
 
 grpc_security_status grpc_channel_credentials_create_security_connector(
