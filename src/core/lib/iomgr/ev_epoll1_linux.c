@@ -965,6 +965,7 @@ static void pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
 static void shutdown_engine(void) {
   fd_global_shutdown();
   pollset_global_shutdown();
+  close(g_epfd);
 }
 
 static const grpc_event_engine_vtable vtable = {
