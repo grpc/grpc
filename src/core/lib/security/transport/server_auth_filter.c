@@ -132,6 +132,8 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
   if (error == GRPC_ERROR_NONE) {
     if (chand->creds != NULL && chand->creds->processor.process != NULL) {
+// FIXME: need to add cancellation support here instead of yielding and
+// re-entering the call combiner each time
       // We're calling out to the application, so we need to exit and
       // then re-enter the call combiner.
       calld->md = metadata_batch_to_md_array(
