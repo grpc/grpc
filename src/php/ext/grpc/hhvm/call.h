@@ -25,6 +25,7 @@
 
 #include "hphp/runtime/ext/extension.h"
 #include "channel.h"
+#include "timeval.h"
 
 #include "grpc/grpc.h"
 
@@ -35,6 +36,7 @@ class CallData {
     grpc_call* wrapped{nullptr};
     bool owned = false;
     ChannelData* channelData{nullptr};
+    int32_t timeout;
   public:
     static Class* s_class;
     static const StaticString s_className;
@@ -50,6 +52,8 @@ class CallData {
     bool getOwned();
     void setChannelData(ChannelData* channelData_);
     void setOwned(bool owned_);
+    void setTimeout(int32_t timeout_);
+    int32_t getTimeout();
 };
 
 void *cq_pluck_async(void *params_ptr);

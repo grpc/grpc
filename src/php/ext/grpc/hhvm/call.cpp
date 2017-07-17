@@ -86,6 +86,14 @@ void CallData::setOwned(bool owned_) {
   owned = owned_;
 }
 
+void CallData::setTimeout(int32_t timeout_) {
+  timeout = timeout_;
+}
+
+int32_t CallData::getTimeout() {
+  return timeout;
+}
+
 void HHVM_METHOD(Call, __construct,
   const Object& channel_obj,
   const String& method,
@@ -102,6 +110,8 @@ void HHVM_METHOD(Call, __construct,
   callData->setChannelData(channelData);
 
   auto deadlineTimevalData = Native::data<TimevalData>(deadline_obj);
+  callData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(deadlineTimevalData->getWrapped(), GPR_TIMESPAN)));
+
   grpc_slice method_slice = grpc_slice_from_copied_string(method.c_str());
   grpc_slice host_slice = !host_override.isNull() ? grpc_slice_from_copied_string(host_override.toString().c_str())
                               : grpc_empty_slice();
@@ -331,8 +341,7 @@ Object HHVM_METHOD(Call, startBatch,
     struct pollfd fds[] = {
         { fd, POLLIN },
     };
-
-    int r = poll(fds, 1, 30 * 1000); // Timeout after 30 seconds
+    int r = poll(fds, 1, callData->getTimeout()); // Timeout after N seconds as defined by the application
     if (r > 0) {
       plugin_get_metadata_params *params;
       int numBytes = read(fd, &params, sizeof(plugin_get_metadata_params *));
