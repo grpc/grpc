@@ -1,32 +1,17 @@
 //
-// Copyright 2016, Google Inc.
-// All rights reserved.
+// Copyright 2016 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 
 #include "src/core/ext/filters/deadline/deadline_filter.h"
@@ -52,8 +37,8 @@
 // Timer callback.
 static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
                            grpc_error* error) {
-  grpc_call_element* elem = arg;
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_call_element* elem = (grpc_call_element*)arg;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   if (error != GRPC_ERROR_CANCELLED) {
     grpc_call_element_signal_error(
         exec_ctx, elem,
@@ -72,7 +57,7 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
   if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_MONOTONIC)) == 0) {
     return;
   }
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   grpc_deadline_timer_state cur_state;
   grpc_closure* closure = NULL;
 retry:
@@ -89,7 +74,7 @@ retry:
         // If we've already created and destroyed a timer, we always create a
         // new closure: we have no other guarantee that the inlined closure is
         // not in use (it may hold a pending call to timer_callback)
-        closure = grpc_closure_create(timer_callback, elem,
+        closure = GRPC_CLOSURE_CREATE(timer_callback, elem,
                                       grpc_schedule_on_exec_ctx);
       } else {
         goto retry;
@@ -100,7 +85,7 @@ retry:
                           GRPC_DEADLINE_STATE_INITIAL,
                           GRPC_DEADLINE_STATE_PENDING)) {
         closure =
-            grpc_closure_init(&deadline_state->timer_callback, timer_callback,
+            GRPC_CLOSURE_INIT(&deadline_state->timer_callback, timer_callback,
                               elem, grpc_schedule_on_exec_ctx);
       } else {
         goto retry;
@@ -127,10 +112,10 @@ static void cancel_timer_if_needed(grpc_exec_ctx* exec_ctx,
 
 // Callback run when the call is complete.
 static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
-  grpc_deadline_state* deadline_state = arg;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)arg;
   cancel_timer_if_needed(exec_ctx, deadline_state);
   // Invoke the next callback.
-  grpc_closure_run(exec_ctx, deadline_state->next_on_complete,
+  GRPC_CLOSURE_RUN(exec_ctx, deadline_state->next_on_complete,
                    GRPC_ERROR_REF(error));
 }
 
@@ -138,7 +123,7 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
                                   grpc_transport_stream_op_batch* op) {
   deadline_state->next_on_complete = op->on_complete;
-  grpc_closure_init(&deadline_state->on_complete, on_complete, deadline_state,
+  GRPC_CLOSURE_INIT(&deadline_state->on_complete, on_complete, deadline_state,
                     grpc_schedule_on_exec_ctx);
   op->on_complete = &deadline_state->on_complete;
 }
@@ -160,7 +145,7 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_call_stack* call_stack,
                               gpr_timespec deadline) {
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   deadline_state->call_stack = call_stack;
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
@@ -176,21 +161,21 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     struct start_timer_after_init_state* state = gpr_malloc(sizeof(*state));
     state->elem = elem;
     state->deadline = deadline;
-    grpc_closure_init(&state->closure, start_timer_after_init, state,
+    GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
-    grpc_closure_sched(exec_ctx, &state->closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, &state->closure, GRPC_ERROR_NONE);
   }
 }
 
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
                                  grpc_call_element* elem) {
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   cancel_timer_if_needed(exec_ctx, deadline_state);
 }
 
 void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                                gpr_timespec new_deadline) {
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   cancel_timer_if_needed(exec_ctx, deadline_state);
   start_timer_if_needed(exec_ctx, elem, new_deadline);
 }
@@ -198,7 +183,7 @@ void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 void grpc_deadline_state_client_start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op_batch* op) {
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   if (op->cancel_stream) {
     cancel_timer_if_needed(exec_ctx, deadline_state);
   } else {
@@ -271,8 +256,8 @@ static void client_start_transport_stream_op_batch(
 // Callback for receiving initial metadata on the server.
 static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
                                         grpc_error* error) {
-  grpc_call_element* elem = arg;
-  server_call_data* calld = elem->call_data;
+  grpc_call_element* elem = (grpc_call_element*)arg;
+  server_call_data* calld = (server_call_data*)elem->call_data;
   // Get deadline from metadata and start the timer if needed.
   start_timer_if_needed(exec_ctx, elem, calld->recv_initial_metadata->deadline);
   // Invoke the next callback.
@@ -284,7 +269,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
 static void server_start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op_batch* op) {
-  server_call_data* calld = elem->call_data;
+  server_call_data* calld = (server_call_data*)elem->call_data;
   if (op->cancel_stream) {
     cancel_timer_if_needed(exec_ctx, &calld->base.deadline_state);
   } else {
@@ -296,7 +281,7 @@ static void server_start_transport_stream_op_batch(
           op->payload->recv_initial_metadata.recv_initial_metadata_ready;
       calld->recv_initial_metadata =
           op->payload->recv_initial_metadata.recv_initial_metadata;
-      grpc_closure_init(&calld->recv_initial_metadata_ready,
+      GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                         recv_initial_metadata_ready, elem,
                         grpc_schedule_on_exec_ctx);
       op->payload->recv_initial_metadata.recv_initial_metadata_ready =
@@ -356,8 +341,8 @@ static bool maybe_add_deadline_filter(grpc_exec_ctx* exec_ctx,
                                       void* arg) {
   return grpc_deadline_checking_enabled(
              grpc_channel_stack_builder_get_channel_arguments(builder))
-             ? grpc_channel_stack_builder_prepend_filter(builder, arg, NULL,
-                                                         NULL)
+             ? grpc_channel_stack_builder_prepend_filter(
+                   builder, (const grpc_channel_filter*)arg, NULL, NULL)
              : true;
 }
 

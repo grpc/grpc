@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -74,7 +59,7 @@ typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 typedef size_t msg_iovlen_type;
 #endif
 
-grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false, "tcp");
 
 typedef struct {
   grpc_endpoint base;
@@ -178,15 +163,18 @@ static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   gpr_free(tcp);
 }
 
-/*#define GRPC_TCP_REFCOUNT_DEBUG*/
-#ifdef GRPC_TCP_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define TCP_UNREF(cl, tcp, reason) \
   tcp_unref((cl), (tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
                       const char *reason, const char *file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp,
-          reason, tcp->refcount.count, tcp->refcount.count - 1);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
+            val - 1);
+  }
   if (gpr_unref(&tcp->refcount)) {
     tcp_free(exec_ctx, tcp);
   }
@@ -194,8 +182,12 @@ static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 
 static void tcp_ref(grpc_tcp *tcp, const char *reason, const char *file,
                     int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP   ref %p : %s %d -> %d", tcp,
-          reason, tcp->refcount.count, tcp->refcount.count + 1);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
+            val + 1);
+  }
   gpr_ref(&tcp->refcount);
 }
 #else
@@ -236,7 +228,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 
   tcp->read_cb = NULL;
   tcp->incoming_buffer = NULL;
-  grpc_closure_run(exec_ctx, cb, error);
+  GRPC_CLOSURE_RUN(exec_ctx, cb, error);
 }
 
 #define MAX_READ_IOVEC 4
@@ -363,7 +355,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     tcp->finished_edge = false;
     grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
   } else {
-    grpc_closure_sched(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -480,7 +472,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
       gpr_log(GPR_DEBUG, "write: %s", str);
     }
 
-    grpc_closure_run(exec_ctx, cb, error);
+    GRPC_CLOSURE_RUN(exec_ctx, cb, error);
     TCP_UNREF(exec_ctx, tcp, "write");
   }
 }
@@ -506,7 +498,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb,
         grpc_fd_is_shutdown(tcp->em_fd)
             ? tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"),
@@ -530,7 +522,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
       const char *str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "write: %s", str);
     }
-    grpc_closure_sched(exec_ctx, cb, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
   }
 
   GPR_TIMER_END("tcp_write", 0);
@@ -558,26 +550,15 @@ static int tcp_get_fd(grpc_endpoint *ep) {
   return tcp->fd;
 }
 
-static grpc_workqueue *tcp_get_workqueue(grpc_endpoint *ep) {
-  grpc_tcp *tcp = (grpc_tcp *)ep;
-  return grpc_fd_get_workqueue(tcp->em_fd);
-}
-
 static grpc_resource_user *tcp_get_resource_user(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   return tcp->resource_user;
 }
 
-static const grpc_endpoint_vtable vtable = {tcp_read,
-                                            tcp_write,
-                                            tcp_get_workqueue,
-                                            tcp_add_to_pollset,
-                                            tcp_add_to_pollset_set,
-                                            tcp_shutdown,
-                                            tcp_destroy,
-                                            tcp_get_resource_user,
-                                            tcp_get_peer,
-                                            tcp_get_fd};
+static const grpc_endpoint_vtable vtable = {
+    tcp_read,     tcp_write,   tcp_add_to_pollset,    tcp_add_to_pollset_set,
+    tcp_shutdown, tcp_destroy, tcp_get_resource_user, tcp_get_peer,
+    tcp_get_fd};
 
 #define MAX_CHUNK_SIZE 32 * 1024 * 1024
 
@@ -642,9 +623,9 @@ grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *em_fd,
   gpr_ref_init(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
-  grpc_closure_init(&tcp->read_closure, tcp_handle_read, tcp,
+  GRPC_CLOSURE_INIT(&tcp->read_closure, tcp_handle_read, tcp,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&tcp->write_closure, tcp_handle_write, tcp,
+  GRPC_CLOSURE_INIT(&tcp->write_closure, tcp_handle_write, tcp,
                     grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);

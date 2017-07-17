@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -43,24 +28,33 @@
 
 namespace grpc {
 
-class Call;
 class CompletionQueue;
 class Server;
 class ServerInterface;
 class ServerCompletionQueue;
 class ServerContext;
 
+namespace internal {
+class Call;
 class ServerAsyncStreamingInterface {
  public:
   virtual ~ServerAsyncStreamingInterface() {}
 
+  /// Request notification of the sending of initial metadata to the client.
+  /// Completion will be notified by \a tag on the associated completion
+  /// queue. This call is optional, but if it is used, it cannot be used
+  /// concurrently with or after the \a Finish method.
+  ///
+  /// \param[in] tag Tag identifying this request.
   virtual void SendInitialMetadata(void* tag) = 0;
 
  private:
-  friend class ServerInterface;
+  friend class ::grpc::ServerInterface;
   virtual void BindCall(Call* call) = 0;
 };
+}  // namespace internal
 
+/// Desriptor of an RPC service and its various RPC methods
 class Service {
  public:
   Service() : server_(nullptr) {}
@@ -96,40 +90,38 @@ class Service {
  protected:
   template <class Message>
   void RequestAsyncUnary(int index, ServerContext* context, Message* request,
-                         ServerAsyncStreamingInterface* stream,
+                         internal::ServerAsyncStreamingInterface* stream,
                          CompletionQueue* call_cq,
                          ServerCompletionQueue* notification_cq, void* tag) {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag, request);
   }
-  void RequestAsyncClientStreaming(int index, ServerContext* context,
-                                   ServerAsyncStreamingInterface* stream,
-                                   CompletionQueue* call_cq,
-                                   ServerCompletionQueue* notification_cq,
-                                   void* tag) {
+  void RequestAsyncClientStreaming(
+      int index, ServerContext* context,
+      internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+      ServerCompletionQueue* notification_cq, void* tag) {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag);
   }
   template <class Message>
-  void RequestAsyncServerStreaming(int index, ServerContext* context,
-                                   Message* request,
-                                   ServerAsyncStreamingInterface* stream,
-                                   CompletionQueue* call_cq,
-                                   ServerCompletionQueue* notification_cq,
-                                   void* tag) {
+  void RequestAsyncServerStreaming(
+      int index, ServerContext* context, Message* request,
+      internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+      ServerCompletionQueue* notification_cq, void* tag) {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag, request);
   }
-  void RequestAsyncBidiStreaming(int index, ServerContext* context,
-                                 ServerAsyncStreamingInterface* stream,
-                                 CompletionQueue* call_cq,
-                                 ServerCompletionQueue* notification_cq,
-                                 void* tag) {
+  void RequestAsyncBidiStreaming(
+      int index, ServerContext* context,
+      internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+      ServerCompletionQueue* notification_cq, void* tag) {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag);
   }
 
-  void AddMethod(RpcServiceMethod* method) { methods_.emplace_back(method); }
+  void AddMethod(internal::RpcServiceMethod* method) {
+    methods_.emplace_back(method);
+  }
 
   void MarkMethodAsync(int index) {
     GPR_CODEGEN_ASSERT(
@@ -147,7 +139,7 @@ class Service {
     methods_[index].reset();
   }
 
-  void MarkMethodStreamed(int index, MethodHandler* streamed_method) {
+  void MarkMethodStreamed(int index, internal::MethodHandler* streamed_method) {
     GPR_CODEGEN_ASSERT(methods_[index] && methods_[index]->handler() &&
                        "Cannot mark an async or generic method Streamed");
     methods_[index]->SetHandler(streamed_method);
@@ -155,15 +147,15 @@ class Service {
     // From the server's point of view, streamed unary is a special
     // case of BIDI_STREAMING that has 1 read and 1 write, in that order,
     // and split server-side streaming is BIDI_STREAMING with 1 read and
-    // any number of writes, in that order
-    methods_[index]->SetMethodType(::grpc::RpcMethod::BIDI_STREAMING);
+    // any number of writes, in that order.
+    methods_[index]->SetMethodType(internal::RpcMethod::BIDI_STREAMING);
   }
 
  private:
   friend class Server;
   friend class ServerInterface;
   ServerInterface* server_;
-  std::vector<std::unique_ptr<RpcServiceMethod>> methods_;
+  std::vector<std::unique_ptr<internal::RpcServiceMethod>> methods_;
 };
 
 }  // namespace grpc

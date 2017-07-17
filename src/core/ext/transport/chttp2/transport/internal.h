@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -48,6 +33,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -73,7 +59,6 @@ typedef enum {
   GRPC_CHTTP2_WRITE_STATE_IDLE,
   GRPC_CHTTP2_WRITE_STATE_WRITING,
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
-  GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER,
 } grpc_chttp2_write_state;
 
 typedef enum {
@@ -81,6 +66,11 @@ typedef enum {
   GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
   GRPC_CHTTP2_PING_TYPE_COUNT /* must be last */
 } grpc_chttp2_ping_type;
+
+typedef enum {
+  GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
+  GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
+} grpc_chttp2_optimization_target;
 
 typedef enum {
   GRPC_CHTTP2_PCL_INITIATE = 0,
@@ -244,6 +234,8 @@ struct grpc_chttp2_transport {
 
   /** should we probe bdp? */
   bool enable_bdp_probe;
+
+  grpc_chttp2_optimization_target opt_target;
 
   /** various lists of streams */
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT];
@@ -458,12 +450,12 @@ struct grpc_chttp2_stream {
   grpc_slice fetching_slice;
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
-  bool complete_fetch_covered_by_poller;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
 
   grpc_metadata_batch *recv_initial_metadata;
   grpc_closure *recv_initial_metadata_ready;
+  bool *trailing_metadata_available;
   grpc_byte_stream **recv_message;
   grpc_closure *recv_message_ready;
   grpc_metadata_batch *recv_trailing_metadata;
@@ -549,8 +541,7 @@ struct grpc_chttp2_stream {
     The actual call chain is documented in the implementation of this function.
     */
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t,
-                                bool covered_by_poller, const char *reason);
+                                grpc_chttp2_transport *t, const char *reason);
 
 typedef enum {
   GRPC_CHTTP2_NOTHING_TO_WRITE,
@@ -766,7 +757,7 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_start_writing(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_CHTTP2_STREAM_REF(stream, reason) \
   grpc_chttp2_stream_ref(stream, reason)
 #define GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream, reason) \
@@ -782,8 +773,7 @@ void grpc_chttp2_stream_ref(grpc_chttp2_stream *s);
 void grpc_chttp2_stream_unref(grpc_exec_ctx *exec_ctx, grpc_chttp2_stream *s);
 #endif
 
-//#define GRPC_CHTTP2_REFCOUNTING_DEBUG 1
-#ifdef GRPC_CHTTP2_REFCOUNTING_DEBUG
+#ifndef NDEBUG
 #define GRPC_CHTTP2_REF_TRANSPORT(t, r) \
   grpc_chttp2_ref_transport(t, r, __FILE__, __LINE__)
 #define GRPC_CHTTP2_UNREF_TRANSPORT(cl, t, r) \

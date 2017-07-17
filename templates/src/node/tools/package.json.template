@@ -5,7 +5,7 @@
     "version": "${settings.node_version}",
     "author": "Google Inc.",
     "description": "Tools for developing with gRPC on Node.js",
-    "homepage": "http://www.grpc.io/",
+    "homepage": "https://grpc.io/",
     "repository": {
       "type": "git",
       "url": "https://github.com/grpc/grpc.git"

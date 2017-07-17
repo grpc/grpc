@@ -24,7 +24,8 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
 * **Method** →  ":method POST"
 * **Scheme** → ":scheme "  ("http" / "https")
-* **Path** → ":path"  {_path identifying method within exposed API_}
+* **Path** → ":path" "/" Service-Name "/" {_method name_}
+* **Service-Name** → {_IDL-specific service name_}
 * **Authority** → ":authority" {_virtual host name of authority_}
 * **TE** → "te" "trailers"  # Used to detect incompatible proxies
 * **Timeout** → "grpc-timeout" TimeoutValue TimeoutUnit
@@ -50,6 +51,13 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
 
 HTTP2 requires that reserved headers, ones starting with ":" appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
+
+Some gRPC implementations may allow the **Path** format shown above
+to be overridden, but this functionality is strongly discouraged.
+gRPC does not go out of its way to break users that are using this kind
+of override, but we do not actively support it, and some functionality
+(e.g., service config support) will not work when the path is not of
+the form shown above.
 
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 
@@ -238,10 +246,10 @@ If a detectable connection failure occurs on the client all calls will be closed
 
 ### Appendix A - GRPC for Protobuf
 
-The service interfaces declared by protobuf are easily mapped onto GRPC by code generation extensions to protoc. The following defines the mapping to be used
+The service interfaces declared by protobuf are easily mapped onto GRPC by
+code generation extensions to protoc. The following defines the mapping
+to be used.
 
-
-* **Path** → / Service-Name / {_method name_}
 * **Service-Name** → ?( {_proto package name_} "." ) {_service name_}
 * **Message-Type** → {_fully qualified proto message name_}
 * **Content-Type** → "application/grpc+proto"

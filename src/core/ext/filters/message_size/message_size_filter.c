@@ -1,32 +1,17 @@
 //
-// Copyright 2016, Google Inc.
-// All rights reserved.
+// Copyright 2016 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
@@ -75,7 +60,8 @@ static void* message_size_limits_create_from_json(const grpc_json* json) {
       if (max_response_message_bytes == -1) return NULL;
     }
   }
-  message_size_limits* value = gpr_malloc(sizeof(message_size_limits));
+  message_size_limits* value =
+      (message_size_limits*)gpr_malloc(sizeof(message_size_limits));
   value->max_send_size = max_request_message_bytes;
   value->max_recv_size = max_response_message_bytes;
   return value;
@@ -103,8 +89,8 @@ typedef struct channel_data {
 // receive message size.
 static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
                                grpc_error* error) {
-  grpc_call_element* elem = user_data;
-  call_data* calld = elem->call_data;
+  grpc_call_element* elem = (grpc_call_element*)user_data;
+  call_data* calld = (call_data*)elem->call_data;
   if (*calld->recv_message != NULL && calld->limits.max_recv_size >= 0 &&
       (*calld->recv_message)->length > (size_t)calld->limits.max_recv_size) {
     char* message_string;
@@ -125,14 +111,14 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
     GRPC_ERROR_REF(error);
   }
   // Invoke the next callback.
-  grpc_closure_run(exec_ctx, calld->next_recv_message_ready, error);
+  GRPC_CLOSURE_RUN(exec_ctx, calld->next_recv_message_ready, error);
 }
 
 // Start transport stream op.
 static void start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op_batch* op) {
-  call_data* calld = elem->call_data;
+  call_data* calld = (call_data*)elem->call_data;
   // Check max send message size.
   if (op->send_message && calld->limits.max_send_size >= 0 &&
       op->payload->send_message.send_message->length >
@@ -164,10 +150,10 @@ static void start_transport_stream_op_batch(
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  channel_data* chand = elem->channel_data;
-  call_data* calld = elem->call_data;
+  channel_data* chand = (channel_data*)elem->channel_data;
+  call_data* calld = (call_data*)elem->call_data;
   calld->next_recv_message_ready = NULL;
-  grpc_closure_init(&calld->recv_message_ready, recv_message_ready, elem,
+  GRPC_CLOSURE_INIT(&calld->recv_message_ready, recv_message_ready, elem,
                     grpc_schedule_on_exec_ctx);
   // Get max sizes from channel data, then merge in per-method config values.
   // Note: Per-method config is only available on the client, so we
@@ -175,8 +161,9 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
   // size to the receive limit.
   calld->limits = chand->limits;
   if (chand->method_limit_table != NULL) {
-    message_size_limits* limits = grpc_method_config_table_get(
-        exec_ctx, chand->method_limit_table, args->path);
+    message_size_limits* limits =
+        (message_size_limits*)grpc_method_config_table_get(
+            exec_ctx, chand->method_limit_table, args->path);
     if (limits != NULL) {
       if (limits->max_send_size >= 0 &&
           (limits->max_send_size < calld->limits.max_send_size ||
@@ -235,7 +222,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
-  channel_data* chand = elem->channel_data;
+  channel_data* chand = (channel_data*)elem->channel_data;
   chand->limits = get_message_size_limits(args->channel_args);
   // Get method config table from channel args.
   const grpc_arg* channel_arg =
@@ -258,7 +245,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
 // Destructor for channel_data.
 static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
                                  grpc_channel_element* elem) {
-  channel_data* chand = elem->channel_data;
+  channel_data* chand = (channel_data*)elem->channel_data;
   grpc_slice_hash_table_unref(exec_ctx, chand->method_limit_table);
 }
 

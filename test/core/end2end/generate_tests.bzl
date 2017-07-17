@@ -1,46 +1,36 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_sh_test", "grpc_cc_binary", "grpc_cc_library")
 
 """Generates the appropriate build.json data for all the end2end tests."""
 
 
 def fixture_options(fullstack=True, includes_proxy=False, dns_resolver=True,
-                    secure=True, tracing=False,
-                    platforms=['windows', 'linux', 'mac', 'posix']):
+                    name_resolution=True, secure=True, tracing=False,
+                    platforms=['windows', 'linux', 'mac', 'posix'],
+                    is_inproc=False, is_http2=True):
   return struct(
     fullstack=fullstack,
     includes_proxy=includes_proxy,
     dns_resolver=dns_resolver,
+    name_resolution=name_resolution,
     secure=secure,
     tracing=tracing,
+    is_inproc=is_inproc,
+    is_http2=is_http2
     #platforms=platforms
   )
 
@@ -56,6 +46,7 @@ END2END_FIXTURES = {
     'h2_full': fixture_options(),
     'h2_full+pipe': fixture_options(platforms=['linux']),
     'h2_full+trace': fixture_options(tracing=True),
+    'h2_full+workarounds': fixture_options(),
     'h2_http_proxy': fixture_options(),
     'h2_oauth2': fixture_options(),
     'h2_proxy': fixture_options(includes_proxy=True),
@@ -68,49 +59,60 @@ END2END_FIXTURES = {
     'h2_ssl_proxy': fixture_options(includes_proxy=True, secure=True),
     'h2_uds': fixture_options(dns_resolver=False,
                               platforms=['linux', 'mac', 'posix']),
+    'inproc': fixture_options(fullstack=False, dns_resolver=False,
+                              name_resolution=False, is_inproc=True,
+                              is_http2=False),
 }
 
 
-def test_options(needs_fullstack=False, needs_dns=False, proxyable=True,
-                 secure=False, traceable=False):
+def test_options(needs_fullstack=False, needs_dns=False, needs_names=False,
+                 proxyable=True, secure=False, traceable=False,
+                 exclude_inproc=False, needs_http2=False):
   return struct(
     needs_fullstack=needs_fullstack,
     needs_dns=needs_dns,
+    needs_names=needs_names,
     proxyable=proxyable,
     secure=secure,
-    traceable=traceable
+    traceable=traceable,
+    exclude_inproc=exclude_inproc,
+    needs_http2=needs_http2
   )
 
 
 # maps test names to options
 END2END_TESTS = {
-    'bad_hostname': test_options(),
-    'bad_ping': test_options(),
+    'bad_hostname': test_options(needs_names=True),
+    'bad_ping': test_options(needs_fullstack=True,proxyable=False),
     'binary_metadata': test_options(),
     'resource_quota_server': test_options(proxyable=False),
     'call_creds': test_options(secure=True),
     'cancel_after_accept': test_options(),
     'cancel_after_client_done': test_options(),
     'cancel_after_invoke': test_options(),
+    'cancel_after_round_trip': test_options(),
     'cancel_before_invoke': test_options(),
     'cancel_in_a_vacuum': test_options(),
     'cancel_with_status': test_options(),
-    'compressed_payload': test_options(proxyable=False),
-    'connectivity': test_options(needs_fullstack=True, proxyable=False),
-    'default_host': test_options(needs_fullstack=True, needs_dns=True),
-    'disappearing_server': test_options(needs_fullstack=True),
+    'compressed_payload': test_options(proxyable=False, exclude_inproc=True),
+    'connectivity': test_options(needs_fullstack=True, needs_names=True,
+                                 proxyable=False),
+    'default_host': test_options(needs_fullstack=True, needs_dns=True,
+                                 needs_names=True),
+    'disappearing_server': test_options(needs_fullstack=True,needs_names=True),
     'empty_batch': test_options(),
     'filter_causes_close': test_options(),
     'filter_call_init_fails': test_options(),
-    'graceful_server_shutdown': test_options(),
-    'hpack_size': test_options(proxyable=False, traceable=False),
+    'graceful_server_shutdown': test_options(exclude_inproc=True),
+    'hpack_size': test_options(proxyable=False, traceable=False,
+                               exclude_inproc=True),
     'high_initial_seqno': test_options(),
     'idempotent_request': test_options(),
     'invoke_large_request': test_options(),
-    'keepalive_timeout': test_options(proxyable=False),
+    'keepalive_timeout': test_options(proxyable=False, needs_http2=True),
     'large_metadata': test_options(),
-    'max_concurrent_streams': test_options(proxyable=False),
-    'max_connection_age': test_options(),
+    'max_concurrent_streams': test_options(proxyable=False, exclude_inproc=True),
+    'max_connection_age': test_options(exclude_inproc=True),
     'max_connection_idle': test_options(needs_fullstack=True, proxyable=False),
     'max_message_length': test_options(),
     'negative_deadline': test_options(),
@@ -135,6 +137,7 @@ END2END_TESTS = {
     'trailing_metadata': test_options(),
     'authority_not_supported': test_options(),
     'filter_latency': test_options(),
+    'workaround_cronet_compression': test_options(),
     'write_buffering': test_options(),
     'write_buffering_at_end': test_options(),
 }
@@ -147,17 +150,26 @@ def compatible(fopt, topt):
   if topt.needs_dns:
     if not fopt.dns_resolver:
       return False
+  if topt.needs_names:
+    if not fopt.name_resolution:
+      return False
   if not topt.proxyable:
     if fopt.includes_proxy:
       return False
   if not topt.traceable:
     if fopt.tracing:
       return False
+  if topt.exclude_inproc:
+    if fopt.is_inproc:
+      return False
+  if topt.needs_http2:
+    if not fopt.is_http2:
+      return False
   return True
 
 
 def grpc_end2end_tests():
-  native.cc_library(
+  grpc_cc_library(
     name = 'end2end_tests',
     srcs = ['end2end_tests.c', 'end2end_test_utils.c'] + [
              'tests/%s.c' % t
@@ -166,31 +178,32 @@ def grpc_end2end_tests():
       'tests/cancel_test_helpers.h',
       'end2end_tests.h'
     ],
-    copts = ['-std=c99'],
+    language = "C",
     deps = [
       ':cq_verifier',
       ':ssl_test_data',
-      ':fake_resolver',
       ':http_proxy',
       ':proxy',
-      '//test/core/util:grpc_test_util',
-      '//:grpc',
-      '//test/core/util:gpr_test_util',
-      '//:gpr',
     ]
   )
 
   for f, fopt in END2END_FIXTURES.items():
-    native.cc_binary(
+    grpc_cc_binary(
       name = '%s_test' % f,
       srcs = ['fixtures/%s.c' % f],
-      copts = ['-std=c99'],
-      deps = [':end2end_tests']
+      language = "C",
+      deps = [
+        ':end2end_tests',
+        '//test/core/util:grpc_test_util',
+        '//:grpc',
+        '//test/core/util:gpr_test_util',
+        '//:gpr',
+      ],
     )
     for t, topt in END2END_TESTS.items():
       #print(compatible(fopt, topt), f, t, fopt, topt)
       if not compatible(fopt, topt): continue
-      native.sh_test(
+      grpc_sh_test(
         name = '%s_test@%s' % (f, t),
         srcs = ['end2end_test.sh'],
         args = ['$(location %s_test)' % f, t],

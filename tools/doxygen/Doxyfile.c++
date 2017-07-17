@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.4.0-dev
+PROJECT_NUMBER         = 1.5.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -792,7 +792,9 @@ doc/service_config.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/stress_test_framework.md \
+doc/unit_testing.md \
 doc/wait-for-ready.md \
+doc/workarounds.md \
 include/grpc++/alarm.h \
 include/grpc++/channel.h \
 include/grpc++/client_context.h \
@@ -869,12 +871,6 @@ include/grpc++/support/string_ref.h \
 include/grpc++/support/stub_options.h \
 include/grpc++/support/sync_stream.h \
 include/grpc++/support/time.h \
-include/grpc/byte_buffer.h \
-include/grpc/byte_buffer_reader.h \
-include/grpc/compression.h \
-include/grpc/grpc.h \
-include/grpc/grpc_posix.h \
-include/grpc/grpc_security_constants.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -893,11 +889,7 @@ include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
-include/grpc/impl/codegen/sync_windows.h \
-include/grpc/load_reporting.h \
-include/grpc/slice.h \
-include/grpc/slice_buffer.h \
-include/grpc/status.h
+include/grpc/impl/codegen/sync_windows.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

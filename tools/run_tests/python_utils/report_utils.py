@@ -1,31 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Generate XML and HTML test reports."""
 
@@ -37,6 +22,7 @@ try:
   from mako import exceptions
 except (ImportError):
   pass  # Mako not installed but it is ok.
+import datetime
 import os
 import string
 import xml.etree.cElementTree as ET
@@ -58,12 +44,29 @@ def _filter_msg(msg, output_format):
     return msg
 
 
-def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
+def new_junit_xml_tree():
+  return ET.ElementTree(ET.Element('testsuites'))
+
+def render_junit_xml_report(resultset, report_file, suite_package='grpc',
                             suite_name='tests'):
   """Generate JUnit-like XML report."""
-  root = ET.Element('testsuites')
-  testsuite = ET.SubElement(root, 'testsuite', id='1', package=suite_package,
-                            name=suite_name)
+  tree = new_junit_xml_tree()
+  append_junit_xml_results(tree, resultset, suite_package, suite_name, '1')
+  create_xml_report_file(tree, report_file)
+
+def create_xml_report_file(tree, report_file):
+  """Generate JUnit-like report file from xml tree ."""
+  # ensure the report directory exists
+  report_dir = os.path.dirname(os.path.abspath(report_file))
+  if not os.path.exists(report_dir):
+    os.makedirs(report_dir)
+  tree.write(report_file, encoding='UTF-8')
+
+def append_junit_xml_results(tree, resultset, suite_package, suite_name, id):
+  """Append a JUnit-like XML report tree with test results as a new suite."""
+  testsuite = ET.SubElement(tree.getroot(), 'testsuite',
+                            id=id, package=suite_package, name=suite_name,
+                            timestamp=datetime.datetime.now().isoformat())
   failure_count  = 0
   error_count = 0
   for shortname, results in six.iteritems(resultset):
@@ -82,13 +85,6 @@ def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
         ET.SubElement(xml_test, 'skipped', message='Skipped')
   testsuite.set('failures', str(failure_count))
   testsuite.set('errors', str(error_count))
-  # ensure the report directory exists
-  report_dir = os.path.dirname(os.path.abspath(xml_report))
-  if not os.path.exists(report_dir):
-    os.makedirs(report_dir)
-  tree = ET.ElementTree(root)
-  tree.write(xml_report, encoding='UTF-8')
-
 
 def render_interop_html_report(
   client_langs, server_langs, test_cases, auth_test_cases, http2_cases,

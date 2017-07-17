@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -47,7 +32,6 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/tls.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
@@ -57,6 +41,8 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+
+#include <gtest/gtest.h>
 
 #ifdef GRPC_POSIX_SOCKET
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -210,7 +196,7 @@ bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
 
 // This class disables the server builder plugins that may add sync services to
 // the server. If there are sync services, UnimplementedRpc test will triger
-// the sync unkown rpc routine on the server side, rather than the async one
+// the sync unknown rpc routine on the server side, rather than the async one
 // that needs to be tested here.
 class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
  public:
@@ -226,14 +212,16 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
 
 class TestScenario {
  public:
-  TestScenario(bool non_block, const grpc::string& creds_type, bool hcs,
-               const grpc::string& content)
+  TestScenario(bool non_block, bool inproc_stub, const grpc::string& creds_type,
+               bool hcs, const grpc::string& content)
       : disable_blocking(non_block),
+        inproc(inproc_stub),
         health_check_service(hcs),
         credentials_type(creds_type),
         message_content(content) {}
   void Log() const;
   bool disable_blocking;
+  bool inproc;
   bool health_check_service;
   // Although the below grpc::string's are logically const, we can't declare
   // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
@@ -246,6 +234,7 @@ static std::ostream& operator<<(std::ostream& out,
                                 const TestScenario& scenario) {
   return out << "TestScenario{disable_blocking="
              << (scenario.disable_blocking ? "true" : "false")
+             << ", inproc=" << (scenario.inproc ? "true" : "false")
              << ", credentials='" << scenario.credentials_type
              << ", health_check_service="
              << (scenario.health_check_service ? "true" : "false")
@@ -308,7 +297,9 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
-        CreateCustomChannel(server_address_.str(), channel_creds, args);
+        !(GetParam().inproc)
+            ? CreateCustomChannel(server_address_.str(), channel_creds, args)
+            : server_->InProcessChannel(args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -526,7 +517,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
   // up until server read is initiated. For write of send_request smaller than
   // the flow control window size, the request can take the free ride with
   // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking)
         .Expect(2, true)
         .Expect(3, true)
@@ -537,7 +528,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
   } else {
     Verifier(GetParam().disable_blocking)
@@ -821,7 +812,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
   // up until server read is initiated. For write of send_request smaller than
   // the flow control window size, the request can take the free ride with
   // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking)
         .Expect(2, true)
         .Expect(3, true)
@@ -832,7 +823,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
   } else {
     Verifier(GetParam().disable_blocking)
@@ -889,7 +880,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
   // up until server read is initiated. For write of send_request smaller than
   // the flow control window size, the request can take the free ride with
   // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking)
         .Expect(2, true)
         .Expect(3, true)
@@ -900,7 +891,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536) {
+  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
     Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
   } else {
     Verifier(GetParam().disable_blocking)
@@ -1237,7 +1228,9 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
-      CreateCustomChannel(server_address_.str(), channel_creds, args);
+      !(GetParam().inproc)
+          ? CreateCustomChannel(server_address_.str(), channel_creds, args)
+          : server_->InProcessChannel(args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
   EchoRequest send_request;
@@ -1648,13 +1641,17 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // This is expected to succeed in all cases
     cli_stream->WritesDone(tag(7));
     verif.Expect(7, true);
-    got_tag = verif.Next(cq_.get(), ignore_cq_result);
+    // TODO(vjpai): Consider whether the following is too flexible
+    // or whether it should just be reset to ignore_cq_result
+    bool ignore_cq_wd_result =
+        ignore_cq_result || (server_try_cancel == CANCEL_BEFORE_PROCESSING);
+    got_tag = verif.Next(cq_.get(), ignore_cq_wd_result);
     GPR_ASSERT((got_tag == 7) || (got_tag == 11 && want_done_tag));
     if (got_tag == 11) {
       EXPECT_TRUE(srv_ctx.IsCancelled());
       want_done_tag = false;
       // Now get the other entry that we were waiting on
-      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 7);
+      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_wd_result), 7);
     }
 
     // This is expected to fail in all cases i.e for all values of
@@ -1746,8 +1743,14 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   std::vector<grpc::string> credentials_types;
   std::vector<grpc::string> messages;
 
-  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
-                                                      nullptr) != nullptr) {
+  auto insec_ok = [] {
+    // Only allow insecure credentials type when it is registered with the
+    // provider. User may create providers that do not have insecure.
+    return GetCredentialsProvider()->GetChannelCredentials(
+               kInsecureCredentialsType, nullptr) != nullptr;
+  };
+
+  if (insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
   auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
@@ -1766,14 +1769,21 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
     messages.push_back(big_msg);
   }
 
-  for (auto health_check_service : {false, true}) {
-    for (auto cred = credentials_types.begin(); cred != credentials_types.end();
-         ++cred) {
-      for (auto msg = messages.begin(); msg != messages.end(); msg++) {
-        scenarios.emplace_back(false, *cred, health_check_service, *msg);
+  // TODO (sreek) Renable tests with health check service after the issue
+  // https://github.com/grpc/grpc/issues/11223 is resolved
+  for (auto health_check_service : {false}) {
+    for (auto msg = messages.begin(); msg != messages.end(); msg++) {
+      for (auto cred = credentials_types.begin();
+           cred != credentials_types.end(); ++cred) {
+        scenarios.emplace_back(false, false, *cred, health_check_service, *msg);
         if (test_disable_blocking) {
-          scenarios.emplace_back(true, *cred, health_check_service, *msg);
+          scenarios.emplace_back(true, false, *cred, health_check_service,
+                                 *msg);
         }
+      }
+      if (insec_ok()) {
+        scenarios.emplace_back(false, true, kInsecureCredentialsType,
+                               health_check_service, *msg);
       }
     }
   }

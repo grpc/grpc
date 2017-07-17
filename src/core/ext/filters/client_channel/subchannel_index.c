@@ -1,33 +1,18 @@
 //
 //
-// Copyright 2016, Google Inc.
-// All rights reserved.
+// Copyright 2016 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 //
 
@@ -50,11 +35,12 @@ static gpr_avl g_subchannel_index;
 static gpr_mu g_mu;
 
 struct grpc_subchannel_key {
-  grpc_connector *connector;
   grpc_subchannel_args args;
 };
 
 GPR_TLS_DECL(subchannel_index_exec_ctx);
+
+static bool g_force_creation = false;
 
 static void enter_ctx(grpc_exec_ctx *exec_ctx) {
   GPR_ASSERT(gpr_tls_get(&subchannel_index_exec_ctx) == 0);
@@ -73,10 +59,9 @@ static grpc_exec_ctx *current_ctx() {
 }
 
 static grpc_subchannel_key *create_key(
-    grpc_connector *connector, const grpc_subchannel_args *args,
+    const grpc_subchannel_args *args,
     grpc_channel_args *(*copy_channel_args)(const grpc_channel_args *args)) {
   grpc_subchannel_key *k = gpr_malloc(sizeof(*k));
-  k->connector = grpc_connector_ref(connector);
   k->args.filter_count = args->filter_count;
   if (k->args.filter_count > 0) {
     k->args.filters =
@@ -91,19 +76,18 @@ static grpc_subchannel_key *create_key(
 }
 
 grpc_subchannel_key *grpc_subchannel_key_create(
-    grpc_connector *connector, const grpc_subchannel_args *args) {
-  return create_key(connector, args, grpc_channel_args_normalize);
+    const grpc_subchannel_args *args) {
+  return create_key(args, grpc_channel_args_normalize);
 }
 
 static grpc_subchannel_key *subchannel_key_copy(grpc_subchannel_key *k) {
-  return create_key(k->connector, &k->args, grpc_channel_args_copy);
+  return create_key(&k->args, grpc_channel_args_copy);
 }
 
-static int subchannel_key_compare(grpc_subchannel_key *a,
-                                  grpc_subchannel_key *b) {
-  int c = GPR_ICMP(a->connector, b->connector);
-  if (c != 0) return c;
-  c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
+int grpc_subchannel_key_compare(const grpc_subchannel_key *a,
+                                const grpc_subchannel_key *b) {
+  if (g_force_creation) return false;
+  int c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
   if (c != 0) return c;
   if (a->args.filter_count > 0) {
     c = memcmp(a->args.filters, b->args.filters,
@@ -115,7 +99,6 @@ static int subchannel_key_compare(grpc_subchannel_key *a,
 
 void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
                                  grpc_subchannel_key *k) {
-  grpc_connector_unref(exec_ctx, k->connector);
   gpr_free((grpc_channel_args *)k->args.filters);
   grpc_channel_args_destroy(exec_ctx, (grpc_channel_args *)k->args.args);
   gpr_free(k);
@@ -128,7 +111,7 @@ static void sck_avl_destroy(void *p) {
 static void *sck_avl_copy(void *p) { return subchannel_key_copy(p); }
 
 static long sck_avl_compare(void *a, void *b) {
-  return subchannel_key_compare(a, b);
+  return grpc_subchannel_key_compare(a, b);
 }
 
 static void scv_avl_destroy(void *p) {
@@ -183,8 +166,11 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
   enter_ctx(exec_ctx);
 
   grpc_subchannel *c = NULL;
+  bool need_to_unref_constructed;
 
   while (c == NULL) {
+    need_to_unref_constructed = false;
+
     // Compare and swap loop:
     // - take a reference to the current index
     gpr_mu_lock(&g_mu);
@@ -194,8 +180,11 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
     // - Check to see if a subchannel already exists
     c = gpr_avl_get(index, key);
     if (c != NULL) {
+      c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "index_register");
+    }
+    if (c != NULL) {
       // yes -> we're done
-      GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, constructed, "index_register");
+      need_to_unref_constructed = true;
     } else {
       // no -> update the avl and compare/swap
       gpr_avl updated =
@@ -218,6 +207,10 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
   }
 
   leave_ctx(exec_ctx);
+
+  if (need_to_unref_constructed) {
+    GRPC_SUBCHANNEL_UNREF(exec_ctx, constructed, "index_register");
+  }
 
   return c;
 }
@@ -259,4 +252,8 @@ void grpc_subchannel_index_unregister(grpc_exec_ctx *exec_ctx,
   }
 
   leave_ctx(exec_ctx);
+}
+
+void grpc_subchannel_index_test_only_set_force_creation(bool force_creation) {
+  g_force_creation = force_creation;
 }
