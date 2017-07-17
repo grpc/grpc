@@ -36,7 +36,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
@@ -421,6 +423,13 @@ void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
 }
 
 grpc_server* Server::c_server() { return server_; }
+
+std::shared_ptr<Channel> Server::InProcessChannel(
+    const ChannelArguments& args) {
+  grpc_channel_args channel_args = args.c_channel_args();
+  return CreateChannelInternal(
+      "inproc", grpc_inproc_channel_create(server_, &channel_args, nullptr));
+}
 
 static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
     internal::RpcServiceMethod* method) {

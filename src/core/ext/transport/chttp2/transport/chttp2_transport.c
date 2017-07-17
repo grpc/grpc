@@ -33,6 +33,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -1228,7 +1229,7 @@ static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
 static void log_metadata(const grpc_metadata_batch *md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
-  for (grpc_linked_mdelem *md = md_batch->list.head; md != md_batch->list.tail;
+  for (grpc_linked_mdelem *md = md_batch->list.head; md != NULL;
        md = md->next) {
     char *key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
     char *value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
