@@ -222,8 +222,8 @@ static void on_oauth2_token_fetcher_http_response(grpc_exec_ctx *exec_ctx,
   c->access_token_md = GRPC_MDELEM_REF(access_token_md);
   c->token_expiration =
       status == GRPC_CREDENTIALS_OK
-      ? gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), token_lifetime)
-      : gpr_inf_past(GPR_CLOCK_REALTIME);
+          ? gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), token_lifetime)
+          : gpr_inf_past(GPR_CLOCK_REALTIME);
   grpc_oauth2_pending_get_request_metadata *pending_request =
       c->pending_requests;
   c->pending_requests = NULL;

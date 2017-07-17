@@ -184,13 +184,12 @@ void build_auth_metadata_context(grpc_security_connector *sc,
   gpr_free(host);
 }
 
-static void cancel_get_request_metadata(grpc_exec_ctx *exec_ctx,
-                                        void *arg, grpc_error *error) {
+static void cancel_get_request_metadata(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error) {
   grpc_call_element *elem = (grpc_call_element *)arg;
   call_data *calld = (call_data *)elem->call_data;
-  grpc_call_credentials_cancel_get_request_metadata(exec_ctx, calld->creds,
-                                                    &calld->md_list,
-                                                    GRPC_ERROR_REF(error));
+  grpc_call_credentials_cancel_get_request_metadata(
+      exec_ctx, calld->creds, &calld->md_list, GRPC_ERROR_REF(error));
 }
 
 static void send_security_metadata(grpc_exec_ctx *exec_ctx,
@@ -232,8 +231,7 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
   build_auth_metadata_context(&chand->security_connector->base,
                               chand->auth_context, calld);
 
-  grpc_error *cancel_error =
-      set_cancel_func(elem, cancel_get_request_metadata);
+  grpc_error *cancel_error = set_cancel_func(elem, cancel_get_request_metadata);
   if (cancel_error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, batch,
                                                        cancel_error);
