@@ -101,11 +101,9 @@ int main(int argc, char **argv) {
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
     grpc_pollset_worker *worker = NULL;
-    if (!GRPC_LOG_IF_ERROR(
-            "pollset_work",
-            grpc_pollset_work(&exec_ctx, sync.pollset, &worker,
-                              gpr_now(GPR_CLOCK_MONOTONIC),
-                              gpr_inf_future(GPR_CLOCK_MONOTONIC))))
+    if (!GRPC_LOG_IF_ERROR("pollset_work",
+                           grpc_pollset_work(&exec_ctx, sync.pollset, &worker,
+                                             GRPC_MILLIS_INF_FUTURE)))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
     grpc_exec_ctx_flush(&exec_ctx);
