@@ -95,7 +95,7 @@ static void on_md_processing_done_inner(
     grpc_error *error) {
   call_data *calld = elem->call_data;
   grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
-  grpc_call_combiner_set_notify_on_cancel(calld->call_combiner, NULL);
+  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != NULL && num_response_md > 0) {
     gpr_log(GPR_INFO,
@@ -169,7 +169,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
       // to drop the call combiner early if we get cancelled.
       GRPC_CLOSURE_INIT(&calld->cancel_closure, cancel_call, elem,
                         grpc_schedule_on_exec_ctx);
-      grpc_call_combiner_set_notify_on_cancel(calld->call_combiner,
+      grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
                                               &calld->cancel_closure);
       GRPC_CALL_STACK_REF(calld->owning_call, "server_auth_metadata");
       calld->md = metadata_batch_to_md_array(

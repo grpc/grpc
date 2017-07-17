@@ -23,12 +23,24 @@
 grpc_tracer_flag grpc_call_combiner_trace =
     GRPC_TRACER_INITIALIZER(false, "call_combiner");
 
+static grpc_error* decode_cancel_state_error(gpr_atm cancel_state) {
+  if (cancel_state & 1) {
+    return (grpc_error *)(cancel_state & ~(gpr_atm)1);
+  }
+  return GRPC_ERROR_NONE;
+}
+
+static gpr_atm encode_cancel_state_error(grpc_error *error) {
+  return (gpr_atm)1 | (gpr_atm)error;
+}
+
 void grpc_call_combiner_init(grpc_call_combiner* call_combiner) {
   gpr_mpscq_init(&call_combiner->queue);
 }
 
 void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner) {
   gpr_mpscq_destroy(&call_combiner->queue);
+  GRPC_ERROR_UNREF(decode_cancel_state_error(call_combiner->cancel_state));
 }
 
 #ifndef NDEBUG
@@ -112,23 +124,48 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
   }
 }
 
-void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
+void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
+                                             grpc_call_combiner* call_combiner,
                                              grpc_closure* closure) {
-  gpr_atm_rel_store(&call_combiner->notify_on_cancel, (gpr_atm)closure);
+  while (true) {
+    // Decode original state.
+    gpr_atm original_state = gpr_atm_acq_load(&call_combiner->cancel_state);
+    grpc_error* original_error = decode_cancel_state_error(original_state);
+    // If error is set, invoke the cancellation closure immediately.
+    // Otherwise, store the new closure.
+    if (original_error != GRPC_ERROR_NONE) {
+      GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_REF(original_error));
+      break;
+    } else {
+      if (gpr_atm_full_cas(&call_combiner->cancel_state, original_state,
+                           (gpr_atm)closure)) {
+        break;
+      }
+    }
+    // cas failed, try again.
+  }
 }
 
 void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
                                grpc_call_combiner* call_combiner,
                                grpc_error* error) {
-  grpc_closure* notify_on_cancel =
-      (grpc_closure*)gpr_atm_acq_load(&call_combiner->notify_on_cancel);
-  if (notify_on_cancel != NULL) {
-    if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
-      gpr_log(GPR_DEBUG,
-              "call_combiner=%p: scheduling notify_on_cancel callback=%p",
-              call_combiner, notify_on_cancel);
+  while (true) {
+    gpr_atm original_state = gpr_atm_acq_load(&call_combiner->cancel_state);
+    grpc_error* original_error = decode_cancel_state_error(original_state);
+    if (original_error != GRPC_ERROR_NONE) break;
+    if (gpr_atm_full_cas(&call_combiner->cancel_state, original_state,
+                         (gpr_atm)encode_cancel_state_error(error))) {
+      if (original_state != 0) {
+        grpc_closure* notify_on_cancel = (grpc_closure*)original_state;
+        if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
+          gpr_log(GPR_DEBUG,
+                  "call_combiner=%p: scheduling notify_on_cancel callback=%p",
+                  call_combiner, notify_on_cancel);
+        }
+        GRPC_CLOSURE_SCHED(exec_ctx, notify_on_cancel, GRPC_ERROR_REF(error));
+      }
+      break;
     }
-    GRPC_CLOSURE_SCHED(exec_ctx, notify_on_cancel, GRPC_ERROR_REF(error));
+    // cas failed, try again.
   }
-  GRPC_ERROR_UNREF(error);
 }

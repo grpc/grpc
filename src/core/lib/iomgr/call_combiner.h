@@ -41,7 +41,10 @@ extern grpc_tracer_flag grpc_call_combiner_trace;
 typedef struct {
   gpr_atm size;  // size_t, num closures in queue or currently executing
   gpr_mpscq queue;
-  gpr_atm notify_on_cancel; // grpc_closure*
+  // Either 0 (if not cancelled and no cancellation closure set),
+  // a grpc_closure* (if the lowest bit is 0),
+  // or a grpc_error* (if the lowest bit is 1).
+  gpr_atm cancel_state;
 } grpc_call_combiner;
 
 // Assumes memory was initialized to zero.
@@ -85,10 +88,12 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
 #endif
 
 /// Tells \a call_combiner to invoke \a closure when
-/// grpc_call_combiner_cancel() is called.  If \a closure is NULL, then
-/// no closure will be invoked on cancellation.
-/// Note: Caller must hold call_combiner before calling this.
-void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
+/// grpc_call_combiner_cancel() is called.  If grpc_call_combiner_cancel()
+/// was previously called, \a closure will be invoked immediately.
+/// If \a closure is NULL, then no closure will be invoked on
+/// cancellation; this effectively unregisters the previously set closure.
+void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
+                                             grpc_call_combiner* call_combiner,
                                              grpc_closure* closure);
 
 /// Indicates that the call has been cancelled.

@@ -294,9 +294,12 @@ static void fail_send_message_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                      void *arg,
                                                      grpc_error *ignored) {
   call_data *calld = arg;
-  grpc_transport_stream_op_batch_finish_with_failure(
-      exec_ctx, calld->pending_send_message_batch,
-      GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
+  if (calld->pending_send_message_batch != NULL) {
+    grpc_transport_stream_op_batch_finish_with_failure(
+        exec_ctx, calld->pending_send_message_batch,
+        GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
+    calld->pending_send_message_batch = NULL;
+  }
 }
 
 static void compress_start_transport_stream_op_batch(
@@ -361,6 +364,8 @@ static void compress_start_transport_stream_op_batch(
     //    completed asynchronously.  In this case, we give up the call
     //    combiner and will re-enter it once the compression is completed
     //    to send the batch down.
+// FIXME: should we actually give up the call combiner in case 3?  or
+// would it be better to use the call combiner cancellation hook somehow?
     GPR_ASSERT(calld->pending_send_message_batch == NULL);
     calld->pending_send_message_batch = batch;
     if (calld->send_initial_metadata_state == INITIAL_METADATA_UNSEEN ||

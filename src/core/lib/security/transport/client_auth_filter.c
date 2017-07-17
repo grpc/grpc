@@ -95,7 +95,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_transport_stream_op_batch *batch = (grpc_transport_stream_op_batch *)arg;
   grpc_call_element *elem = batch->handler_private.extra_arg;
   call_data *calld = elem->call_data;
-  grpc_call_combiner_set_notify_on_cancel(calld->call_combiner, NULL);
+  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
   reset_auth_metadata_context(&calld->auth_md_context);
   grpc_error *error = GRPC_ERROR_REF(input_error);
   if (error == GRPC_ERROR_NONE) {
@@ -200,10 +200,6 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
 
   GPR_ASSERT(calld->pollent != NULL);
 
-  GRPC_CLOSURE_INIT(&calld->async_cancel_closure, cancel_get_request_metadata,
-                    elem, grpc_schedule_on_exec_ctx);
-  grpc_call_combiner_set_notify_on_cancel(calld->call_combiner,
-                                          &calld->async_cancel_closure);
   GRPC_CLOSURE_INIT(&calld->async_result_closure, on_credentials_metadata,
                     batch, grpc_schedule_on_exec_ctx);
   grpc_error *error = GRPC_ERROR_NONE;
@@ -213,6 +209,12 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
     // Synchronous return; invoke on_credentials_metadata() directly.
     on_credentials_metadata(exec_ctx, batch, error);
     GRPC_ERROR_UNREF(error);
+  } else {
+    // Async return; register cancellation closure with call combiner.
+    GRPC_CLOSURE_INIT(&calld->async_cancel_closure, cancel_get_request_metadata,
+                      elem, grpc_schedule_on_exec_ctx);
+    grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
+                                            &calld->async_cancel_closure);
   }
 }
 
@@ -221,7 +223,7 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_transport_stream_op_batch *batch = (grpc_transport_stream_op_batch *)arg;
   grpc_call_element *elem = batch->handler_private.extra_arg;
   call_data *calld = elem->call_data;
-  grpc_call_combiner_set_notify_on_cancel(calld->call_combiner, NULL);
+  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
   if (error == GRPC_ERROR_NONE) {
     send_security_metadata(exec_ctx, elem, batch);
   } else {
@@ -304,10 +306,6 @@ static void auth_start_transport_stream_op_batch(
       }
     }
     if (calld->have_host) {
-      GRPC_CLOSURE_INIT(&calld->async_cancel_closure, cancel_check_call_host,
-                        elem, grpc_schedule_on_exec_ctx);
-      grpc_call_combiner_set_notify_on_cancel(calld->call_combiner,
-                                              &calld->async_cancel_closure);
       batch->handler_private.extra_arg = elem;
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
@@ -319,6 +317,12 @@ static void auth_start_transport_stream_op_batch(
         // Synchronous return; invoke on_host_checked() directly.
         on_host_checked(exec_ctx, batch, error);
         GRPC_ERROR_UNREF(error);
+      } else {
+        // Async return; register cancellation closure with call combiner.
+        GRPC_CLOSURE_INIT(&calld->async_cancel_closure, cancel_check_call_host,
+                          elem, grpc_schedule_on_exec_ctx);
+        grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
+                                                &calld->async_cancel_closure);
       }
       gpr_free(call_host);
       GPR_TIMER_END("auth_start_transport_stream_op_batch", 0);

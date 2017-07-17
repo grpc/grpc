@@ -1107,7 +1107,7 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
     channel_data *chand = elem->channel_data;
     call_data *calld = elem->call_data;
     grpc_call_combiner_set_notify_on_cancel(
-        calld->deadline_state.call_combiner, NULL);
+        exec_ctx, calld->deadline_state.call_combiner, NULL);
     if (error != GRPC_ERROR_NONE) {
       if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
         gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver failed to return data",
@@ -1144,7 +1144,7 @@ static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
   grpc_closure_list_append(&chand->waiting_for_resolver_result_closures,
                            &args->closure, GRPC_ERROR_NONE);
   grpc_call_combiner_set_notify_on_cancel(
-      calld->deadline_state.call_combiner,
+      exec_ctx, calld->deadline_state.call_combiner,
       GRPC_CLOSURE_INIT(&calld->cancel_closure,
                         pick_after_resolver_result_cancel_locked,
                         elem, grpc_combiner_scheduler(chand->combiner)));
@@ -1180,7 +1180,8 @@ static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed asynchronously",
             chand, calld);
   }
-  grpc_call_combiner_set_notify_on_cancel(calld->deadline_state.call_combiner,
+  grpc_call_combiner_set_notify_on_cancel(exec_ctx,
+                                          calld->deadline_state.call_combiner,
                                           NULL);
   GPR_ASSERT(calld->lb_policy != NULL);
   GRPC_LB_POLICY_UNREF(exec_ctx, calld->lb_policy, "pick_subchannel");
@@ -1214,11 +1215,11 @@ static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed synchronously",
               chand, calld);
     }
-    GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "pick_subchannel");
+    GRPC_LB_POLICY_UNREF(exec_ctx, calld->lb_policy, "pick_subchannel");
     calld->lb_policy = NULL;
   } else {
     grpc_call_combiner_set_notify_on_cancel(
-        calld->deadline_state.call_combiner,
+        exec_ctx, calld->deadline_state.call_combiner,
         GRPC_CLOSURE_INIT(&calld->cancel_closure, pick_callback_cancel_locked,
                           elem, grpc_combiner_scheduler(chand->combiner)));
   }
@@ -1282,6 +1283,7 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
   // If this is a cancellation, cancel the pending pick (if any) and
   // fail any pending batches.
   if (batch->cancel_stream) {
+// FIXME: do we want to reset this, or just stick with the original value?
     if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
@@ -1311,6 +1313,7 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
       // Pick was returned synchronously.
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
       if (calld->connected_subchannel == NULL) {
+// FIXME: do we want to reset this, or just stick with the original value?
         if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
         calld->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Call dropped by load balancing policy");
