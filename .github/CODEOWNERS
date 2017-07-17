@@ -18,9 +18,12 @@
 /examples/objective-c/** @muxi @makdharma @a11r @nicolasnoble @ctiller
 /examples/python/** @nathanielmanistaatgoogle @kpayson64 @mehrdada
 /include/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
+/src/compiler/cpp* @vjpai @a11r @nicolasnoble @ctiller
 /src/core/** @ctiller @markdroth @dgquintas
-/src/core/lib/iomgr/*_uv.c @murgatroid99 @ctiller @markdroth @dgquintas
-/src/core/lib/iomgr/*_uv.h @murgatroid99 @ctiller @markdroth @dgquintas
+/src/core/ext/transport/inproc/** @vjpai @ctiller @markdroth @dgquintas
+/src/core/lib/iomgr/** @sreecha @ctiller @markdroth @dgquintas
+/src/core/lib/iomgr/*_uv.c @murgatroid99 @sreecha @ctiller @markdroth @dgquintas
+/src/core/lib/iomgr/*_uv.h @murgatroid99 @sreecha @ctiller @markdroth @dgquintas
 /src/cpp/** @ctiller @markdroth @dgquintas
 /src/csharp/** @jtattermusch @apolcyn @a11r @nicolasnoble @ctiller
 /src/node/** @murgatroid99 @a11r @nicolasnoble @ctiller
@@ -32,6 +35,7 @@
 /test/build/** @ctiller @markdroth @dgquintas @a11r @nicolasnoble
 /test/core/** @ctiller @markdroth @dgquintas
 /test/cpp/** @ctiller @markdroth @dgquintas
+/test/cpp/end2end/** @vjpai @yang-g @ctiller @markdroth @dgquintas
 /test/cpp/qps/** @vjpai @ctiller @markdroth @dgquintas
 /test/distrib/node/** @murgatroid99 @a11r @nicolasnoble @ctiller
 /tools/** @matt-kwong @jtattermusch @nicolasnoble @a11r @ctiller
