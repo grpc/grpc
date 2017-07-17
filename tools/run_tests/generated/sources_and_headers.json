@@ -2173,6 +2173,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "stream_compression_test", 
+    "src": [
+      "test/core/compression/stream_compression_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "stream_owned_slice_test", 
     "src": [
       "test/core/transport/stream_owned_slice_test.c"
@@ -7672,6 +7689,7 @@
       "src/core/lib/channel/handshaker_registry.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
+      "src/core/lib/compression/stream_compression.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
@@ -7806,6 +7824,8 @@
       "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
       "src/core/lib/compression/message_compress.h", 
+      "src/core/lib/compression/stream_compression.c", 
+      "src/core/lib/compression/stream_compression.h", 
       "src/core/lib/http/format_request.c", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.c", 

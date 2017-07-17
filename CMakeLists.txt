@@ -528,6 +528,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c socket_utils_test)
 endif()
 add_dependencies(buildtests_c status_conversion_test)
+add_dependencies(buildtests_c stream_compression_test)
 add_dependencies(buildtests_c stream_owned_slice_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c tcp_client_posix_test)
@@ -954,6 +955,7 @@ add_library(grpc
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1295,6 +1297,7 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1614,6 +1617,7 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1876,6 +1880,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2534,6 +2539,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -8171,6 +8177,37 @@ target_include_directories(status_conversion_test
 )
 
 target_link_libraries(status_conversion_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(stream_compression_test
+  test/core/compression/stream_compression_test.c
+)
+
+
+target_include_directories(stream_compression_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(stream_compression_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc

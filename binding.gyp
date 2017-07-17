@@ -645,6 +645,7 @@
         'src/core/lib/channel/handshaker_registry.c',
         'src/core/lib/compression/compression.c',
         'src/core/lib/compression/message_compress.c',
+        'src/core/lib/compression/stream_compression.c',
         'src/core/lib/http/format_request.c',
         'src/core/lib/http/httpcli.c',
         'src/core/lib/http/parser.c',
