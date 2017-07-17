@@ -559,8 +559,6 @@
   PC_REQUIRES_GRPC =
   PC_LIBS_GRPC =
 
-  CPPFLAGS += -Ithird_party/nanopb
-
   ifeq ($(HAS_SYSTEM_ZLIB),false)
   ifeq ($(HAS_EMBEDDED_ZLIB), true)
   EMBED_ZLIB ?= true
