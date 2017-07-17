@@ -50,6 +50,7 @@ some configuration as environment variables that can be set.
   - channel_stack_builder - traces information about channel stacks being built
   - http - traces state in the http2 transport engine
   - http1 - traces HTTP/1.x operations performed by gRPC
+  - inproc - traces the in-process transport
   - flowctl - traces http2 flow control
   - op_failure - traces error information when failure is pushed onto a
     completion queue
