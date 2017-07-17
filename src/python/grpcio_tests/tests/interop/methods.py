@@ -344,11 +344,11 @@ def _unimplemented_service(unimplemented_service_stub):
 
 def _custom_metadata(stub):
     initial_metadata_value = "test_initial_metadata_value"
-    trailing_metadata_value = "\x0a\x0b\x0a\x0b\x0a\x0b"
+    unary_trailing_metadata_value = "\xab\xab\xab\xab"
     metadata = ((_INITIAL_METADATA_KEY, initial_metadata_value),
-                (_TRAILING_METADATA_KEY, trailing_metadata_value))
+                (_TRAILING_METADATA_KEY, unary_trailing_metadata_value))
 
-    def _validate_metadata(response):
+    def _validate_metadata(response, trailing_metadata_value):
         initial_metadata = dict(response.initial_metadata())
         if initial_metadata[_INITIAL_METADATA_KEY] != initial_metadata_value:
             raise ValueError('expected initial metadata %s, got %s' %
@@ -366,9 +366,12 @@ def _custom_metadata(stub):
         response_size=1,
         payload=messages_pb2.Payload(body=b'\x00'))
     response_future = stub.UnaryCall.future(request, metadata=metadata)
-    _validate_metadata(response_future)
+    _validate_metadata(response_future, unary_trailing_metadata_value)
 
     # Testing with FullDuplexCall
+    duplex_trailing_metadata_value = "\xab\xab\xab"
+    metadata = ((_INITIAL_METADATA_KEY, initial_metadata_value),
+                (_TRAILING_METADATA_KEY, duplex_trailing_metadata_value))
     with _Pipe() as pipe:
         response_iterator = stub.FullDuplexCall(pipe, metadata=metadata)
         request = messages_pb2.StreamingOutputCallRequest(
@@ -377,7 +380,7 @@ def _custom_metadata(stub):
         pipe.add(request)  # Sends the request
         next(response_iterator)  # Causes server to send trailing metadata
     # Dropping out of the with block closes the pipe
-    _validate_metadata(response_iterator)
+    _validate_metadata(response_iterator, duplex_trailing_metadata_value)
 
 
 def _compute_engine_creds(stub, args):

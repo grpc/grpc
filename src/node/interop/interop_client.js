@@ -288,7 +288,7 @@ function customMetadata(client, done) {
   done = multiDone(done, 5);
   var metadata = new grpc.Metadata();
   metadata.set(ECHO_INITIAL_KEY, 'test_initial_metadata_value');
-  metadata.set(ECHO_TRAILING_KEY, new Buffer('ababab', 'hex'));
+  metadata.set(ECHO_TRAILING_KEY, new Buffer('abababab', 'hex'));
   var arg = {
     response_type: 'COMPRESSABLE',
     response_size: 314159,
@@ -316,9 +316,11 @@ function customMetadata(client, done) {
   unary.on('status', function(status) {
     var echo_trailer = status.metadata.get(ECHO_TRAILING_KEY);
     assert(echo_trailer.length > 0);
-    assert.strictEqual(echo_trailer[0].toString('hex'), 'ababab');
+    assert.strictEqual(echo_trailer[0].toString('hex'), 'abababab');
     done();
   });
+
+  metadata.set(ECHO_TRAILING_KEY, new Buffer('ababab', 'hex'));
   var stream = client.fullDuplexCall(metadata);
   stream.on('metadata', function(metadata) {
     assert.deepEqual(metadata.get(ECHO_INITIAL_KEY),

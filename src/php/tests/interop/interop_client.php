@@ -401,7 +401,7 @@ function customMetadata($stub)
     $ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
     $ECHO_INITIAL_VALUE = 'test_initial_metadata_value';
     $ECHO_TRAILING_KEY = 'x-grpc-test-echo-trailing-bin';
-    $ECHO_TRAILING_VALUE = 'ababab';
+    $ECHO_TRAILING_VALUE = 'abababab';
     $request_len = 271828;
     $response_len = 314159;
 
@@ -436,6 +436,8 @@ function customMetadata($stub)
         $trailing_metadata[$ECHO_TRAILING_KEY][0] === $ECHO_TRAILING_VALUE,
         'Incorrect trailing metadata value');
 
+    $ECHO_TRAILING_VALUE = 'ababab';
+    $metadata[$ECHO_TRAILING_KEY][0] = $ECHO_TRAILING_VALUE
     $streaming_call = $stub->FullDuplexCall($metadata);
 
     $streaming_request = new Grpc\Testing\StreamingOutputCallRequest();
