@@ -1567,7 +1567,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
   EXPECT_EQ(s.error_message(),
             grpc::string("Getting metadata from plugin failed with error: ") +
-            kTestCredsPluginErrorMsg);
+                kTestCredsPluginErrorMsg);
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
