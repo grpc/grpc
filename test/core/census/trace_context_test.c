@@ -42,10 +42,10 @@
 #include "src/core/ext/census/resource.h"
 #include "test/core/util/test_config.h"
 
-#include "src/core/ext/census/gen/trace_context.pb.h"
-#include "src/core/ext/census/trace_context.h"
 #include <nanopb/pb_decode.h>
 #include <nanopb/pb_encode.h>
+#include "src/core/ext/census/gen/trace_context.pb.h"
+#include "src/core/ext/census/trace_context.h"
 
 #define BUF_SIZE 256
 

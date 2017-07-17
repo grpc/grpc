@@ -38,10 +38,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/cpp/server/health/default_health_check_service.h"
-#include "src/cpp/server/health/health.pb.h"
 #include <nanopb/pb_decode.h>
 #include <nanopb/pb_encode.h>
+#include "src/cpp/server/health/default_health_check_service.h"
+#include "src/cpp/server/health/health.pb.h"
 
 namespace grpc {
 namespace {
