@@ -53,8 +53,8 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
 static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   gpr_timespec deadline) {
-  deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
-  if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_MONOTONIC)) == 0) {
+  grpc_millis deadline_millis = grpc_timespec_to_millis(deadline);
+  if (deadline_millis == GRPC_MILLIS_INF_FUTURE) {
     return;
   }
   grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
@@ -94,8 +94,7 @@ retry:
   }
   GPR_ASSERT(closure);
   GRPC_CALL_STACK_REF(deadline_state->call_stack, "deadline_timer");
-  grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, closure,
-                  gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(exec_ctx, &deadline_state->timer, deadline_millis, closure);
 }
 
 // Cancels the deadline timer.

@@ -16,13 +16,13 @@ if (PHP_GRPC != "no") {
     "src\\php\\ext\\grpc\\server.c " +
     "src\\php\\ext\\grpc\\server_credentials.c " +
     "src\\php\\ext\\grpc\\timeval.c " +
+    "src\\core\\lib\\backoff\\backoff.c " +
     "src\\core\\lib\\profiling\\basic_timers.c " +
     "src\\core\\lib\\profiling\\stap_timers.c " +
     "src\\core\\lib\\support\\alloc.c " +
     "src\\core\\lib\\support\\arena.c " +
     "src\\core\\lib\\support\\atm.c " +
     "src\\core\\lib\\support\\avl.c " +
-    "src\\core\\lib\\support\\backoff.c " +
     "src\\core\\lib\\support\\cmdline.c " +
     "src\\core\\lib\\support\\cpu_iphone.c " +
     "src\\core\\lib\\support\\cpu_linux.c " +
@@ -690,6 +690,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\inproc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\backoff");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\channel");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\compression");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\debug");

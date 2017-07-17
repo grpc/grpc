@@ -105,7 +105,7 @@ static bool wait_loop(int deadline_seconds, gpr_event *ev) {
     deadline_seconds--;
 
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_timer_check(&exec_ctx, gpr_now(GPR_CLOCK_MONOTONIC), NULL);
+    grpc_timer_check(&exec_ctx, NULL);
     grpc_exec_ctx_finish(&exec_ctx);
   }
   return false;

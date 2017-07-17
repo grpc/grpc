@@ -233,14 +233,13 @@ static void test_add_abunch_to_md_store(void) {
 static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &exec_ctx, &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_OK);
-  GPR_ASSERT(token_lifetime.tv_sec == 3599);
-  GPR_ASSERT(token_lifetime.tv_nsec == 0);
+  GPR_ASSERT(token_lifetime == 3599 * GPR_MS_PER_SEC);
   GPR_ASSERT(token_md->num_entries == 1);
   GPR_ASSERT(grpc_slice_str_cmp(token_md->entries[0].key, "authorization") ==
              0);
@@ -255,7 +254,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
 static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(401, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -268,7 +267,7 @@ static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
 static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response = http_response(200, "");
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &exec_ctx, &response, &token_md, &token_lifetime) ==
@@ -280,7 +279,7 @@ static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
 static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -296,7 +295,7 @@ static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
 static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response = http_response(200,
                                                  "{"
                                                  " \"expires_in\":3599, "
@@ -311,7 +310,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -328,7 +327,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
     void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials_md_store *token_md = NULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -579,7 +578,7 @@ static void validate_compute_engine_http_request(
 
 static int compute_engine_httpcli_get_success_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
   *response = http_response(200, valid_oauth2_json_response);
@@ -589,7 +588,7 @@ static int compute_engine_httpcli_get_success_override(
 
 static int compute_engine_httpcli_get_failure_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
   *response = http_response(403, "Not Authorized.");
@@ -599,7 +598,7 @@ static int compute_engine_httpcli_get_failure_override(
 
 static int httpcli_post_should_not_be_called(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    const char *body_bytes, size_t body_size, gpr_timespec deadline,
+    const char *body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure *on_done, grpc_httpcli_response *response) {
   GPR_ASSERT("HTTP POST should not be called" == NULL);
   return 1;
@@ -607,7 +606,7 @@ static int httpcli_post_should_not_be_called(
 
 static int httpcli_get_should_not_be_called(grpc_exec_ctx *exec_ctx,
                                             const grpc_httpcli_request *request,
-                                            gpr_timespec deadline,
+                                            grpc_millis deadline,
                                             grpc_closure *on_done,
                                             grpc_httpcli_response *response) {
   GPR_ASSERT("HTTP GET should not be called" == NULL);
@@ -682,7 +681,7 @@ static void validate_refresh_token_http_request(
 
 static int refresh_token_httpcli_post_success(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    const char *body, size_t body_size, gpr_timespec deadline,
+    const char *body, size_t body_size, grpc_millis deadline,
     grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(200, valid_oauth2_json_response);
@@ -692,7 +691,7 @@ static int refresh_token_httpcli_post_success(
 
 static int refresh_token_httpcli_post_failure(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    const char *body, size_t body_size, gpr_timespec deadline,
+    const char *body, size_t body_size, grpc_millis deadline,
     grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(403, "Not Authorized.");
@@ -968,7 +967,7 @@ static void test_google_default_creds_refresh_token(void) {
 
 static int default_creds_gce_detection_httpcli_get_success_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   *response = http_response(200, "");
   grpc_http_header *headers = gpr_malloc(sizeof(*headers) * 1);
@@ -1030,7 +1029,7 @@ static void test_google_default_creds_gce(void) {
 
 static int default_creds_gce_detection_httpcli_get_failure_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   /* No magic header. */
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);

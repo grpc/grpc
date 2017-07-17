@@ -24,11 +24,11 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/support/backoff.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 
@@ -67,7 +67,7 @@ typedef struct {
   grpc_timer retry_timer;
   grpc_closure on_retry;
   /** retry backoff state */
-  gpr_backoff backoff_state;
+  grpc_backoff backoff_state;
 
   /** currently resolving addresses */
   grpc_resolved_addresses *addresses;
@@ -110,7 +110,7 @@ static void dns_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
                                          grpc_resolver *resolver) {
   dns_resolver *r = (dns_resolver *)resolver;
   if (!r->resolving) {
-    gpr_backoff_reset(&r->backoff_state);
+    grpc_backoff_reset(&r->backoff_state);
     dns_start_resolving_locked(exec_ctx, r);
   }
 }
@@ -123,7 +123,7 @@ static void dns_next_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
   r->next_completion = on_complete;
   r->target_result = target_result;
   if (r->resolved_version == 0 && !r->resolving) {
-    gpr_backoff_reset(&r->backoff_state);
+    grpc_backoff_reset(&r->backoff_state);
     dns_start_resolving_locked(exec_ctx, r);
   } else {
     dns_maybe_finish_next_locked(exec_ctx, r);
@@ -164,23 +164,21 @@ static void dns_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_resolved_addresses_destroy(r->addresses);
     grpc_lb_addresses_destroy(exec_ctx, addresses);
   } else {
-    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
-    gpr_timespec timeout = gpr_time_sub(next_try, now);
+    grpc_millis next_try = grpc_backoff_step(exec_ctx, &r->backoff_state);
+    grpc_millis timeout = next_try - grpc_exec_ctx_now(exec_ctx);
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
     GPR_ASSERT(!r->have_retry_timer);
     r->have_retry_timer = true;
     GRPC_RESOLVER_REF(&r->base, "retry-timer");
-    if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) > 0) {
-      gpr_log(GPR_DEBUG, "retrying in %" PRId64 ".%09d seconds", timeout.tv_sec,
-              timeout.tv_nsec);
+    if (timeout > 0) {
+      gpr_log(GPR_DEBUG, "retrying in %" PRIdPTR " milliseconds", timeout);
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
     GRPC_CLOSURE_INIT(&r->on_retry, dns_on_retry_timer_locked, r,
                       grpc_combiner_scheduler(r->base.combiner));
-    grpc_timer_init(exec_ctx, &r->retry_timer, next_try, &r->on_retry, now);
+    grpc_timer_init(exec_ctx, &r->retry_timer, next_try, &r->on_retry);
   }
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);
@@ -251,11 +249,11 @@ static grpc_resolver *dns_create(grpc_exec_ctx *exec_ctx,
     grpc_pollset_set_add_pollset_set(exec_ctx, r->interested_parties,
                                      args->pollset_set);
   }
-  gpr_backoff_init(&r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS,
-                   GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER,
-                   GRPC_DNS_RECONNECT_JITTER,
-                   GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
-                   GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
+  grpc_backoff_init(&r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS,
+                    GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER,
+                    GRPC_DNS_RECONNECT_JITTER,
+                    GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
+                    GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   return &r->base;
 }
 

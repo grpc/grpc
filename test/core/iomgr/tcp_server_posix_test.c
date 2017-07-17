@@ -230,7 +230,8 @@ static void test_no_op_with_port_and_start(void) {
 
 static grpc_error *tcp_connect(grpc_exec_ctx *exec_ctx, const test_addr *remote,
                                on_connect_result *result) {
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  grpc_millis deadline =
+      grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(10));
   int clifd;
   int nconnects_before;
   const struct sockaddr *remote_addr =
@@ -253,11 +254,10 @@ static grpc_error *tcp_connect(grpc_exec_ctx *exec_ctx, const test_addr *remote,
   }
   gpr_log(GPR_DEBUG, "wait");
   while (g_nconnects == nconnects_before &&
-         gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
+         deadline > grpc_exec_ctx_now(exec_ctx)) {
     grpc_pollset_worker *worker = NULL;
     grpc_error *err;
-    if ((err = grpc_pollset_work(exec_ctx, g_pollset, &worker,
-                                 gpr_now(GPR_CLOCK_MONOTONIC), deadline)) !=
+    if ((err = grpc_pollset_work(exec_ctx, g_pollset, &worker, deadline)) !=
         GRPC_ERROR_NONE) {
       gpr_mu_unlock(g_mu);
       close(clifd);

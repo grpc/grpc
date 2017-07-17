@@ -30,13 +30,13 @@
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/support/backoff.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -118,7 +118,7 @@ struct grpc_subchannel {
   /** next connect attempt time */
   grpc_millis next_attempt;
   /** backoff state */
-  gpr_backoff backoff_state;
+  grpc_backoff backoff_state;
   /** do we have an active alarm? */
   bool have_alarm;
   /** have we started the backoff loop */
@@ -363,7 +363,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
       }
     }
   }
-  gpr_backoff_init(
+  grpc_backoff_init(
       &c->backoff_state, initial_backoff_ms,
       fixed_reconnect_backoff ? 1.0
                               : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
@@ -427,8 +427,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   }
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
-    c->next_attempt =
-        gpr_backoff_step(&c->backoff_state, gpr_now(GPR_CLOCK_MONOTONIC));
+    c->next_attempt = grpc_backoff_step(exec_ctx, &c->backoff_state);
     continue_connect_locked(exec_ctx, c);
     gpr_mu_unlock(&c->mu);
   } else {
@@ -465,21 +464,20 @@ static void maybe_start_connecting_locked(grpc_exec_ctx *exec_ctx,
 
   if (!c->backoff_begun) {
     c->backoff_begun = true;
-    c->next_attempt = gpr_backoff_begin(&c->backoff_state, now);
+    c->next_attempt = grpc_backoff_begin(exec_ctx, &c->backoff_state);
     continue_connect_locked(exec_ctx, c);
   } else {
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = true;
-    gpr_timespec time_til_next = gpr_time_sub(c->next_attempt, now);
-    if (gpr_time_cmp(time_til_next, gpr_time_0(time_til_next.clock_type)) <=
-        0) {
+    const grpc_millis time_til_next =
+        c->next_attempt - grpc_exec_ctx_now(exec_ctx);
+    if (time_til_next <= 0) {
       gpr_log(GPR_INFO, "Retry immediately");
     } else {
-      gpr_log(GPR_INFO, "Retry in %" PRId64 ".%09d seconds",
-              time_til_next.tv_sec, time_til_next.tv_nsec);
+      gpr_log(GPR_INFO, "Retry in %" PRIdPTR " milliseconds", time_til_next);
     }
     GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
-    grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, &c->on_alarm, now);
+    grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, &c->on_alarm);
   }
 }
 

@@ -176,7 +176,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
       begin_test(config, "read_and_write_test", slice_size);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_millis deadline =
-      grpc_timespec_to_millis(&exec_ctx, grpc_timeout_seconds_to_deadline(20));
+      grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(20));
   gpr_log(GPR_DEBUG, "num_bytes=%" PRIuPTR " write_size=%" PRIuPTR
                      " slice_size=%" PRIuPTR " shutdown=%d",
           num_bytes, write_size, slice_size, shutdown);
@@ -261,7 +261,7 @@ static void wait_for_fail_count(grpc_exec_ctx *exec_ctx, int *fail_count,
   grpc_exec_ctx_flush(exec_ctx);
   gpr_mu_lock(g_mu);
   grpc_millis deadline =
-      grpc_timespec_to_millis(exec_ctx, grpc_timeout_seconds_to_deadline(10));
+      grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(10));
   while (grpc_exec_ctx_now(exec_ctx) < deadline &&
          *fail_count < want_fail_count) {
     grpc_pollset_worker *worker = NULL;

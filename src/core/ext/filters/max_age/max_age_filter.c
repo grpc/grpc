@@ -56,11 +56,11 @@ typedef struct channel_data {
      max_connection_idle */
   grpc_timer max_idle_timer;
   /* Allowed max time a channel may have no outstanding rpcs */
-  gpr_timespec max_connection_idle;
+  grpc_millis max_connection_idle;
   /* Allowed max time a channel may exist */
-  gpr_timespec max_connection_age;
+  grpc_millis max_connection_age;
   /* Allowed grace period after the channel reaches its max age */
-  gpr_timespec max_connection_age_grace;
+  grpc_millis max_connection_age_grace;
   /* Closure to run when the channel's idle duration reaches max_connection_idle
      and should be closed gracefully */
   grpc_closure close_max_idle_channel;
@@ -99,10 +99,9 @@ static void increase_call_count(grpc_exec_ctx* exec_ctx, channel_data* chand) {
 static void decrease_call_count(grpc_exec_ctx* exec_ctx, channel_data* chand) {
   if (gpr_atm_full_fetch_add(&chand->call_count, -1) == 1) {
     GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_idle_timer");
-    grpc_timer_init(
-        exec_ctx, &chand->max_idle_timer,
-        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), chand->max_connection_idle),
-        &chand->close_max_idle_channel, gpr_now(GPR_CLOCK_MONOTONIC));
+    grpc_timer_init(exec_ctx, &chand->max_idle_timer,
+                    grpc_exec_ctx_now(exec_ctx) + chand->max_connection_idle,
+                    &chand->close_max_idle_channel);
   }
 }
 
@@ -123,10 +122,9 @@ static void start_max_age_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
   gpr_mu_lock(&chand->max_age_timer_mu);
   chand->max_age_timer_pending = true;
   GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_age_timer");
-  grpc_timer_init(
-      exec_ctx, &chand->max_age_timer,
-      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), chand->max_connection_age),
-      &chand->close_max_age_channel, gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(exec_ctx, &chand->max_age_timer,
+                  grpc_exec_ctx_now(exec_ctx) + chand->max_connection_age,
+                  &chand->close_max_age_channel);
   gpr_mu_unlock(&chand->max_age_timer_mu);
   grpc_transport_op* op = grpc_make_transport_op(NULL);
   op->on_connectivity_state_change = &chand->channel_connectivity_changed,
@@ -145,10 +143,8 @@ static void start_max_age_grace_timer_after_goaway_op(grpc_exec_ctx* exec_ctx,
   chand->max_age_grace_timer_pending = true;
   GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_age_grace_timer");
   grpc_timer_init(exec_ctx, &chand->max_age_grace_timer,
-                  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               chand->max_connection_age_grace),
-                  &chand->force_close_max_age_channel,
-                  gpr_now(GPR_CLOCK_MONOTONIC));
+                  grpc_exec_ctx_now(exec_ctx) + chand->max_connection_age_grace,
+                  &chand->force_close_max_age_channel);
   gpr_mu_unlock(&chand->max_age_timer_mu);
   GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->channel_stack,
                            "max_age start_max_age_grace_timer_after_goaway_op");
@@ -288,29 +284,23 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
   chand->channel_stack = args->channel_stack;
   chand->max_connection_age =
       DEFAULT_MAX_CONNECTION_AGE_MS == INT_MAX
-          ? gpr_inf_future(GPR_TIMESPAN)
-          : gpr_time_from_millis(add_random_max_connection_age_jitter(
-                                     DEFAULT_MAX_CONNECTION_AGE_MS),
-                                 GPR_TIMESPAN);
+          ? GRPC_MILLIS_INF_FUTURE
+          : add_random_max_connection_age_jitter(DEFAULT_MAX_CONNECTION_AGE_MS);
   chand->max_connection_age_grace =
       DEFAULT_MAX_CONNECTION_AGE_GRACE_MS == INT_MAX
-          ? gpr_inf_future(GPR_TIMESPAN)
-          : gpr_time_from_millis(DEFAULT_MAX_CONNECTION_AGE_GRACE_MS,
-                                 GPR_TIMESPAN);
-  chand->max_connection_idle =
-      DEFAULT_MAX_CONNECTION_IDLE_MS == INT_MAX
-          ? gpr_inf_future(GPR_TIMESPAN)
-          : gpr_time_from_millis(DEFAULT_MAX_CONNECTION_IDLE_MS, GPR_TIMESPAN);
+          ? GRPC_MILLIS_INF_FUTURE
+          : DEFAULT_MAX_CONNECTION_AGE_GRACE_MS;
+  chand->max_connection_idle = DEFAULT_MAX_CONNECTION_IDLE_MS == INT_MAX
+                                   ? GRPC_MILLIS_INF_FUTURE
+                                   : DEFAULT_MAX_CONNECTION_IDLE_MS;
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (0 == strcmp(args->channel_args->args[i].key,
                     GRPC_ARG_MAX_CONNECTION_AGE_MS)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i], MAX_CONNECTION_AGE_INTEGER_OPTIONS);
       chand->max_connection_age =
-          value == INT_MAX
-              ? gpr_inf_future(GPR_TIMESPAN)
-              : gpr_time_from_millis(
-                    add_random_max_connection_age_jitter(value), GPR_TIMESPAN);
+          value == INT_MAX ? GRPC_MILLIS_INF_FUTURE
+                           : add_random_max_connection_age_jitter(value);
     } else if (0 == strcmp(args->channel_args->args[i].key,
                            GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS)) {
       const int value = grpc_channel_arg_get_integer(
@@ -318,15 +308,13 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
           (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_GRACE_MS, 0,
                                  INT_MAX});
       chand->max_connection_age_grace =
-          value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
-                           : gpr_time_from_millis(value, GPR_TIMESPAN);
+          value == INT_MAX ? GRPC_MILLIS_INF_FUTURE : value;
     } else if (0 == strcmp(args->channel_args->args[i].key,
                            GRPC_ARG_MAX_CONNECTION_IDLE_MS)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i], MAX_CONNECTION_IDLE_INTEGER_OPTIONS);
       chand->max_connection_idle =
-          value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
-                           : gpr_time_from_millis(value, GPR_TIMESPAN);
+          value == INT_MAX ? GRPC_MILLIS_INF_FUTURE : value;
     }
   }
   GRPC_CLOSURE_INIT(&chand->close_max_idle_channel, close_max_idle_channel,
@@ -349,8 +337,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                     channel_connectivity_changed, chand,
                     grpc_schedule_on_exec_ctx);
 
-  if (gpr_time_cmp(chand->max_connection_age, gpr_inf_future(GPR_TIMESPAN)) !=
-      0) {
+  if (chand->max_connection_age != GRPC_MILLIS_INF_FUTURE) {
     /* When the channel reaches its max age, we send down an op with
        goaway_error set.  However, we can't send down any ops until after the
        channel stack is fully initialized.  If we start the timer here, we have
@@ -367,8 +354,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
   /* Initialize the number of calls as 1, so that the max_idle_timer will not
      start until start_max_idle_timer_after_init is invoked. */
   gpr_atm_rel_store(&chand->call_count, 1);
-  if (gpr_time_cmp(chand->max_connection_idle, gpr_inf_future(GPR_TIMESPAN)) !=
-      0) {
+  if (chand->max_connection_idle != GRPC_MILLIS_INF_FUTURE) {
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_idle_timer_after_init");
     GRPC_CLOSURE_SCHED(exec_ctx, &chand->start_max_idle_timer_after_init,

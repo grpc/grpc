@@ -110,7 +110,7 @@ static grpc_error *non_polling_poller_work(grpc_exec_ctx *exec_ctx,
   }
   w.kicked = false;
   gpr_timespec deadline_ts =
-      grpc_millis_to_timespec(exec_ctx, deadline, GPR_CLOCK_REALTIME);
+      grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME);
   while (!npp->shutdown && !w.kicked &&
          !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts))
     ;
@@ -815,18 +815,17 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
 
   GRPC_CQ_INTERNAL_REF(cq, "next");
 
+  grpc_millis deadline_millis = grpc_timespec_to_millis(deadline);
   cq_is_finished_arg is_finished_arg = {
       .last_seen_things_queued_ever =
           gpr_atm_no_barrier_load(&cqd->things_queued_ever),
       .cq = cq,
-      .deadline = 0,
+      .deadline = deadline_millis,
       .stolen_completion = NULL,
       .tag = NULL,
       .first_loop = true};
   grpc_exec_ctx exec_ctx =
       GRPC_EXEC_CTX_INITIALIZER(0, cq_is_next_finished, &is_finished_arg);
-  grpc_millis deadline_millis = is_finished_arg.deadline =
-      grpc_timespec_to_millis(&exec_ctx, deadline);
   for (;;) {
     grpc_millis iteration_deadline = deadline_millis;
 
@@ -1047,22 +1046,19 @@ static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
 
   dump_pending_tags(cq);
 
-  deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
-
   GRPC_CQ_INTERNAL_REF(cq, "pluck");
   gpr_mu_lock(cq->mu);
+  grpc_millis deadline_millis = grpc_timespec_to_millis(deadline);
   cq_is_finished_arg is_finished_arg = {
       .last_seen_things_queued_ever =
           gpr_atm_no_barrier_load(&cqd->things_queued_ever),
       .cq = cq,
-      .deadline = 0,
+      .deadline = deadline_millis,
       .stolen_completion = NULL,
       .tag = tag,
       .first_loop = true};
   grpc_exec_ctx exec_ctx =
       GRPC_EXEC_CTX_INITIALIZER(0, cq_is_pluck_finished, &is_finished_arg);
-  grpc_millis deadline_millis = is_finished_arg.deadline =
-      grpc_timespec_to_millis(&exec_ctx, deadline);
   for (;;) {
     if (is_finished_arg.stolen_completion != NULL) {
       gpr_mu_unlock(cq->mu);

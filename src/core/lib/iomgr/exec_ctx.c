@@ -137,11 +137,15 @@ void grpc_exec_ctx_invalidate_now(grpc_exec_ctx *exec_ctx) {
   exec_ctx->now_is_valid = false;
 }
 
-gpr_timespec grpc_millis_to_timespec(grpc_exec_ctx *exec_ctx,
-                                     grpc_millis millis,
+gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
                                      gpr_clock_type clock_type) {
   return gpr_time_add(gpr_convert_clock_type(g_start_time, clock_type),
                       gpr_time_from_millis(millis, GPR_TIMESPAN));
+}
+
+grpc_millis grpc_timespec_to_millis(gpr_timespec ts) {
+  return timespec_to_atm_round_down(
+      gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {

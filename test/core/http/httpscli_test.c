@@ -35,8 +35,8 @@ static grpc_httpcli_context g_context;
 static gpr_mu *g_mu;
 static grpc_polling_entity g_pops;
 
-static gpr_timespec n_seconds_time(int seconds) {
-  return grpc_timeout_seconds_to_deadline(seconds);
+static grpc_millis n_seconds_time(int seconds) {
+  return grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void on_finish(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -87,8 +87,7 @@ static void test_get(int port) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops),
-                          &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                          n_seconds_time(1))));
+                          &worker, n_seconds_time(1))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -130,8 +129,7 @@ static void test_post(int port) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops),
-                          &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                          n_seconds_time(1))));
+                          &worker, n_seconds_time(1))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);

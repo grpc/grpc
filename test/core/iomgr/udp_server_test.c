@@ -226,7 +226,7 @@ static void test_receive(int number_of_clients) {
   grpc_udp_server *s = grpc_udp_server_create(NULL);
   int i;
   int number_of_reads_before;
-  gpr_timespec deadline;
+  grpc_millis deadline;
   grpc_pollset *pollsets[1];
   LOG_TEST("test_receive");
   gpr_log(GPR_INFO, "clients=%d", number_of_clients);
@@ -252,7 +252,7 @@ static void test_receive(int number_of_clients) {
   gpr_mu_lock(g_mu);
 
   for (i = 0; i < number_of_clients; i++) {
-    deadline = grpc_timeout_seconds_to_deadline(10);
+    deadline = grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(10));
 
     number_of_reads_before = g_number_of_reads;
     /* Create a socket, send a packet to the UDP server. */
@@ -262,14 +262,13 @@ static void test_receive(int number_of_clients) {
                        (socklen_t)resolved_addr.len) == 0);
     GPR_ASSERT(5 == write(clifd, "hello", 5));
     while (g_number_of_reads == number_of_reads_before &&
-           gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
+           deadline > grpc_exec_ctx_now(&exec_ctx)) {
       grpc_pollset_worker *worker = NULL;
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "pollset_work",
-          grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                            gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+          grpc_pollset_work(&exec_ctx, g_pollset, &worker, deadline)));
       gpr_mu_unlock(g_mu);
-      grpc_exec_ctx_finish(&exec_ctx);
+      grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(g_mu);
     }
     GPR_ASSERT(g_number_of_reads == number_of_reads_before + 1);

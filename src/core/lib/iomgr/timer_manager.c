@@ -188,7 +188,7 @@ static bool wait_until(grpc_exec_ctx *exec_ctx, grpc_millis next) {
     }
 
     gpr_cv_wait(&g_cv_wait, &g_mu,
-                grpc_millis_to_timespec(exec_ctx, next, GPR_CLOCK_REALTIME));
+                grpc_millis_to_timespec(next, GPR_CLOCK_REALTIME));
 
     if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
       gpr_log(GPR_DEBUG, "wait ended: was_timed:%d kicked:%d",

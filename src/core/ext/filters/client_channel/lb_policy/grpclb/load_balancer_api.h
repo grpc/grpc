@@ -81,8 +81,7 @@ void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist *serverlist);
 int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
                                  const grpc_grpclb_duration *rhs);
 
-gpr_timespec grpc_grpclb_duration_to_timespec(
-    grpc_grpclb_duration *duration_pb);
+grpc_millis grpc_grpclb_duration_to_millis(grpc_grpclb_duration *duration_pb);
 
 /** Destroy \a initial_response */
 void grpc_grpclb_initial_response_destroy(

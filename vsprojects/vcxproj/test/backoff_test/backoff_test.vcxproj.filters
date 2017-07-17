@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\backoff\backoff_test.c">
+      <Filter>test\core\backoff</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{05e21e2a-bc8e-8c99-d00c-486e055f3b4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{42a371ec-543d-205f-0fbc-7ba3d2b2deca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\backoff">
+      <UniqueIdentifier>{467ad11c-0245-020b-4558-5b324ac725be}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

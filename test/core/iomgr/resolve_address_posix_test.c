@@ -70,35 +70,32 @@ void args_finish(grpc_exec_ctx *exec_ctx, args_struct *args) {
   gpr_free(args->pollset);
 }
 
-static gpr_timespec n_sec_deadline(int seconds) {
-  return gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                      gpr_time_from_seconds(seconds, GPR_TIMESPAN));
+static grpc_millis n_sec_deadline(int seconds) {
+  return grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void actually_poll(void *argsp) {
   args_struct *args = argsp;
-  gpr_timespec deadline = n_sec_deadline(10);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_millis deadline = n_sec_deadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
       break;
     }
-    gpr_timespec time_left =
-        gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
-            time_left.tv_sec, time_left.tv_nsec);
-    GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
+    grpc_millis time_left = deadline - grpc_exec_ctx_now(&exec_ctx);
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRIdPTR, done, time_left);
+    GPR_ASSERT(time_left >= 0);
     grpc_pollset_worker *worker = NULL;
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     gpr_mu_lock(args->mu);
-    GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(&exec_ctx, args->pollset, &worker,
-                          gpr_now(GPR_CLOCK_REALTIME), n_sec_deadline(1)));
+    GRPC_LOG_IF_ERROR("pollset_work",
+                      grpc_pollset_work(&exec_ctx, args->pollset, &worker,
+                                        n_sec_deadline(1)));
     gpr_mu_unlock(args->mu);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_exec_ctx_flush(&exec_ctx);
   }
   gpr_event_set(&args->ev, (void *)1);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void poll_pollset_until_request_done(args_struct *args) {

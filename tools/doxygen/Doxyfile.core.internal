@@ -1051,6 +1051,8 @@ src/core/ext/transport/inproc/inproc_plugin.c \
 src/core/ext/transport/inproc/inproc_transport.c \
 src/core/ext/transport/inproc/inproc_transport.h \
 src/core/lib/README.md \
+src/core/lib/backoff/backoff.c \
+src/core/lib/backoff/backoff.h \
 src/core/lib/channel/README.md \
 src/core/lib/channel/channel_args.c \
 src/core/lib/channel/channel_args.h \
@@ -1284,8 +1286,6 @@ src/core/lib/support/atomic.h \
 src/core/lib/support/atomic_with_atm.h \
 src/core/lib/support/atomic_with_std.h \
 src/core/lib/support/avl.c \
-src/core/lib/support/backoff.c \
-src/core/lib/support/backoff.h \
 src/core/lib/support/block_annotate.h \
 src/core/lib/support/cmdline.c \
 src/core/lib/support/cpu_iphone.c \

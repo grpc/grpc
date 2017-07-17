@@ -39,13 +39,13 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server.c \
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
+    src/core/lib/backoff/backoff.c \
     src/core/lib/profiling/basic_timers.c \
     src/core/lib/profiling/stap_timers.c \
     src/core/lib/support/alloc.c \
     src/core/lib/support/arena.c \
     src/core/lib/support/atm.c \
     src/core/lib/support/avl.c \
-    src/core/lib/support/backoff.c \
     src/core/lib/support/cmdline.c \
     src/core/lib/support/cpu_iphone.c \
     src/core/lib/support/cpu_linux.c \
@@ -677,6 +677,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/inproc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
