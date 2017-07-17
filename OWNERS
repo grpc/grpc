@@ -1,9 +1,11 @@
 # Top level ownership
 
-#@a11r
-#@nicolasnoble
-#@ctiller
+# nothing listed here until GitHub CODEOWNERS gets better
+# we need:
+# 1. owners to be able to self-approve
+# 2. authors to be able to select approvers
 
-@murgatroid99 binding.gyp Gemfile grpc.gemspec package.json Rakefile
-@muxi *.podspec grpc.bzl
-@makdharma *.podspec grpc.bzl
+@markdroth **/OWNERS
+@nicolasnoble **/OWNERS
+@ctiller **/OWNERS
+
