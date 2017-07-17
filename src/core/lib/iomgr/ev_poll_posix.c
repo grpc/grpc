@@ -960,7 +960,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
          even going into the blocking annotation if possible */
       GRPC_SCHEDULING_START_BLOCKING_REGION;
       r = grpc_poll_function(pfds, pfd_count, timeout);
-      GRPC_SCHEDULING_END_BLOCKING_REGION;
+      GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);
 
       if (r < 0) {
         if (errno != EINTR) {

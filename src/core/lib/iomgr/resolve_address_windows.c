@@ -86,7 +86,7 @@ static grpc_error *blocking_resolve_address_impl(
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);
   if (s != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "getaddrinfo");
     goto done;

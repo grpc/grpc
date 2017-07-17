@@ -817,7 +817,7 @@ static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     r = epoll_wait(p->epfd, pollset->events, MAX_EPOLL_EVENTS, timeout);
   } while (r < 0 && errno == EINTR);
   if (timeout != 0) {
-    GRPC_SCHEDULING_END_BLOCKING_REGION;
+    GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);
   }
 
   if (r < 0) return GRPC_OS_ERROR(errno, "epoll_wait");

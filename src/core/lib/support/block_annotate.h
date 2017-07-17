@@ -26,8 +26,12 @@
 #define GRPC_SCHEDULING_START_BLOCKING_REGION \
   do {                                        \
   } while (0)
-#define GRPC_SCHEDULING_END_BLOCKING_REGION \
-  do {                                      \
+#define GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX \
+  do {                                                  \
+  } while (0)
+#define GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(ec) \
+  do {                                                        \
+    grpc_exec_ctx_invalidate_now((ec));                       \
   } while (0)
 
 #endif /* GRPC_CORE_LIB_SUPPORT_BLOCK_ANNOTATE_H */

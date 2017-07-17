@@ -778,7 +778,7 @@ static void do_epoll_wait(grpc_exec_ctx *exec_ctx, int epoll_fd, epoll_set *eps,
   acquire_epoll_lease(eps);
   ep_rv = epoll_wait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms);
   release_epoll_lease(eps);
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);
 
   if (ep_rv < 0) {
     gpr_asprintf(&err_msg,

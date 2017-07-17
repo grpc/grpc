@@ -81,7 +81,7 @@ static grpc_error *blocking_resolve_address_impl(
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
 
   if (s != 0) {
     /* Retry if well-known service name is recognized */
@@ -90,7 +90,7 @@ static grpc_error *blocking_resolve_address_impl(
       if (strcmp(port, svc[i][0]) == 0) {
         GRPC_SCHEDULING_START_BLOCKING_REGION;
         s = getaddrinfo(host, svc[i][1], &hints, &result);
-        GRPC_SCHEDULING_END_BLOCKING_REGION;
+        GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
         break;
       }
     }

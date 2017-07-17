@@ -1309,7 +1309,7 @@ static bool acquire_polling_lease(grpc_pollset_worker *worker,
       struct timespec sigwait_timeout = millis_to_timespec(timeout_ms);
       GRPC_SCHEDULING_START_BLOCKING_REGION;
       ret = sigtimedwait(&g_wakeup_sig_set, NULL, &sigwait_timeout);
-      GRPC_SCHEDULING_END_BLOCKING_REGION;
+      GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);
     }
 
     if (ret == -1) {

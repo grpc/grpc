@@ -72,6 +72,6 @@ end:
     GRPC_ERROR_UNREF(error);
     error = error_out;
   }
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
   return error;
 }

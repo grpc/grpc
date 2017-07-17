@@ -1240,7 +1240,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   ep_rv =
       epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms, sig_mask);
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);
   if (ep_rv < 0) {
     if (errno != EINTR) {
       gpr_asprintf(&err_msg,

@@ -94,7 +94,7 @@ void gpr_sleep_until(gpr_timespec until) {
     GPR_ASSERT((sleep_millis >= 0) && (sleep_millis <= INT_MAX));
     GRPC_SCHEDULING_START_BLOCKING_REGION;
     Sleep((DWORD)sleep_millis);
-    GRPC_SCHEDULING_END_BLOCKING_REGION;
+    GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
   }
 }
 
