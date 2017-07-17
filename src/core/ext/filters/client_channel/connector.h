@@ -34,7 +34,7 @@ typedef struct {
   /** set of pollsets interested in this connection */
   grpc_pollset_set *interested_parties;
   /** deadline for connection */
-  gpr_timespec deadline;
+  grpc_millis deadline;
   /** channel arguments (to be passed to transport) */
   const grpc_channel_args *channel_args;
 } grpc_connect_in_args;

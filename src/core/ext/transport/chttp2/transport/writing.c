@@ -261,8 +261,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         t->ping_state.pings_before_data_required =
             t->ping_policy.max_pings_without_data;
         if (!t->is_client) {
-          t->ping_recv_state.last_ping_recv_time =
-              gpr_inf_past(GPR_CLOCK_MONOTONIC);
+          t->ping_recv_state.last_ping_recv_time = 0;
           t->ping_recv_state.ping_strikes = 0;
         }
       } else {

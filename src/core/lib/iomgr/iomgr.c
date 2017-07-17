@@ -47,14 +47,8 @@ void grpc_iomgr_init(grpc_exec_ctx *exec_ctx) {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_exec_ctx_global_init();
-<<<<<<< HEAD
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_timer_list_init(&exec_ctx);
-  grpc_exec_ctx_finish(&exec_ctx);
-=======
   grpc_executor_init(exec_ctx);
-  grpc_timer_list_init(gpr_now(GPR_CLOCK_MONOTONIC));
->>>>>>> 4708a21c8144f9fed3c90ea8fa153aa20302a1d7
+  grpc_timer_list_init(exec_ctx);
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = "root";
   grpc_network_status_init();

@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 static void on_server_destroyed(grpc_exec_ctx *exec_ctx, void *data,
                                 grpc_error *error) {
@@ -78,14 +79,13 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
 
 void test_tcp_server_poll(test_tcp_server *server, int seconds) {
   grpc_pollset_worker *worker = NULL;
-  gpr_timespec deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_seconds(seconds, GPR_TIMESPAN));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_millis deadline = grpc_timespec_to_millis(
+      &exec_ctx, grpc_timeout_seconds_to_deadline(seconds));
   gpr_mu_lock(server->mu);
-  GRPC_LOG_IF_ERROR("pollset_work",
-                    grpc_pollset_work(&exec_ctx, server->pollset, &worker,
-                                      gpr_now(GPR_CLOCK_MONOTONIC), deadline));
+  GRPC_LOG_IF_ERROR(
+      "pollset_work",
+      grpc_pollset_work(&exec_ctx, server->pollset, &worker, deadline));
   gpr_mu_unlock(server->mu);
   grpc_exec_ctx_finish(&exec_ctx);
 }

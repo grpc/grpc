@@ -186,8 +186,8 @@ static void watcher_timer_init(grpc_exec_ctx *exec_ctx, void *arg,
   watcher_timer_init_arg *wa = (watcher_timer_init_arg *)arg;
 
   grpc_timer_init(exec_ctx, &wa->w->alarm,
-                  gpr_convert_clock_type(wa->deadline, GPR_CLOCK_MONOTONIC),
-                  &wa->w->on_timeout, gpr_now(GPR_CLOCK_MONOTONIC));
+                  grpc_timespec_to_millis(exec_ctx, wa->deadline),
+                  &wa->w->on_timeout);
   gpr_free(wa);
 }
 
