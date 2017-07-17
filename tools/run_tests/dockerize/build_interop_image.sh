@@ -81,6 +81,22 @@ git branch -f jenkins-docker
 
 CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 
+# build_interop.sh could be missing from old git tree and we will have issue unless we find the proper
+# build_interop.sh to use in such case.
+if ! [ -e $GRPC_ROOT/tools/dockerfile/interoptest/$BASE_NAME/build_interop.sh ]; then
+  # The best we can do is to use the runtime agonistic version of the setup, 
+  # i.e ignoring "_debian8" part of "grpc_interop_cxx_debian8".
+  ALT_BASE_NAME=${BASE_NAME%_*}
+  echo "Using build_interop.sh from $ALT_BASE_NAME instead."
+  cp -r $GRPC_ROOT/tools/dockerfile/interoptest/$ALT_BASE_NAME \
+    $GRPC_ROOT/tools/dockerfile/interoptest/$BASE_NAME
+  function cleanup {
+    echo "Clean up build_interop.sh from current repo."
+    rm -rf $GRPC_ROOT/tools/dockerfile/interoptest/$BASE_NAME
+  }
+  trap cleanup EXIT
+fi
+
 # Prepare image for interop tests, commit it on success.
 (docker run \
   -e CCACHE_DIR=/tmp/ccache \
