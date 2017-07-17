@@ -54,6 +54,7 @@ some configuration as environment variables that can be set.
   - op_failure - traces error information when failure is pushed onto a
     completion queue
   - round_robin - traces the round_robin load balancing policy
+  - pick_first - traces the pick first load balancing policy
   - resource_quota - trace resource quota objects internals
   - glb - traces the grpclb load balancer
   - queue_pluck
@@ -64,6 +65,7 @@ some configuration as environment variables that can be set.
   - timer_check - more detailed trace of timer logic in grpc internals
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
+  - tsi - traces tsi transport security
 
   The following tracers will only run in binaries built in DEBUG mode. This is
   accomplished by invoking `CONFIG=dbg make <target>`
@@ -76,6 +78,7 @@ some configuration as environment variables that can be set.
   - stream_refcount
   - workqueue_refcount
   - fd_refcount
+  - cq_refcount
   - auth_context_refcount
   - security_connector_refcount
   - resolver_refcount
