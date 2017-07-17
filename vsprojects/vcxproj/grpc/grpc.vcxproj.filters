@@ -535,6 +535,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
       <Filter>src\core\tsi</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
       <Filter>src\core\tsi</Filter>
     </ClCompile>
@@ -1311,6 +1314,9 @@
       <Filter>src\core\lib\security\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h">
