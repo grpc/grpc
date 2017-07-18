@@ -32,7 +32,7 @@ gpr_avl gpr_avl_create(const gpr_avl_vtable *vtable) {
   return out;
 }
 
-static gpr_avl_node *ref_node(gpr_avl_node *node, void *user_data) {
+static gpr_avl_node *ref_node(gpr_avl_node *node) {
   if (node) {
     gpr_ref(&node->refs);
   }
@@ -122,11 +122,10 @@ int gpr_avl_maybe_get(gpr_avl avl, void *key, void **value, void *user_data) {
 static gpr_avl_node *rotate_left(const gpr_avl_vtable *vtable, void *key,
                                  void *value, gpr_avl_node *left,
                                  gpr_avl_node *right, void *user_data) {
-  gpr_avl_node *n =
-      new_node(vtable->copy_key(right->key, user_data),
-               vtable->copy_value(right->value, user_data),
-               new_node(key, value, left, ref_node(right->left, user_data)),
-               ref_node(right->right, user_data));
+  gpr_avl_node *n = new_node(vtable->copy_key(right->key, user_data),
+                             vtable->copy_value(right->value, user_data),
+                             new_node(key, value, left, ref_node(right->left)),
+                             ref_node(right->right));
   unref_node(vtable, right, user_data);
   return n;
 }
@@ -136,9 +135,8 @@ static gpr_avl_node *rotate_right(const gpr_avl_vtable *vtable, void *key,
                                   gpr_avl_node *right, void *user_data) {
   gpr_avl_node *n =
       new_node(vtable->copy_key(left->key, user_data),
-               vtable->copy_value(left->value, user_data),
-               ref_node(left->left, user_data),
-               new_node(key, value, ref_node(left->right, user_data), right));
+               vtable->copy_value(left->value, user_data), ref_node(left->left),
+               new_node(key, value, ref_node(left->right), right));
   unref_node(vtable, left, user_data);
   return n;
 }
@@ -147,14 +145,13 @@ static gpr_avl_node *rotate_left_right(const gpr_avl_vtable *vtable, void *key,
                                        void *value, gpr_avl_node *left,
                                        gpr_avl_node *right, void *user_data) {
   /* rotate_right(..., rotate_left(left), right) */
-  gpr_avl_node *n = new_node(
-      vtable->copy_key(left->right->key, user_data),
-      vtable->copy_value(left->right->value, user_data),
-      new_node(vtable->copy_key(left->key, user_data),
-               vtable->copy_value(left->value, user_data),
-               ref_node(left->left, user_data),
-               ref_node(left->right->left, user_data)),
-      new_node(key, value, ref_node(left->right->right, user_data), right));
+  gpr_avl_node *n =
+      new_node(vtable->copy_key(left->right->key, user_data),
+               vtable->copy_value(left->right->value, user_data),
+               new_node(vtable->copy_key(left->key, user_data),
+                        vtable->copy_value(left->value, user_data),
+                        ref_node(left->left), ref_node(left->right->left)),
+               new_node(key, value, ref_node(left->right->right), right));
   unref_node(vtable, left, user_data);
   return n;
 }
@@ -163,14 +160,13 @@ static gpr_avl_node *rotate_right_left(const gpr_avl_vtable *vtable, void *key,
                                        void *value, gpr_avl_node *left,
                                        gpr_avl_node *right, void *user_data) {
   /* rotate_left(..., left, rotate_right(right)) */
-  gpr_avl_node *n = new_node(
-      vtable->copy_key(right->left->key, user_data),
-      vtable->copy_value(right->left->value, user_data),
-      new_node(key, value, left, ref_node(right->left->left, user_data)),
-      new_node(vtable->copy_key(right->key, user_data),
-               vtable->copy_value(right->value, user_data),
-               ref_node(right->left->right, user_data),
-               ref_node(right->right, user_data)));
+  gpr_avl_node *n =
+      new_node(vtable->copy_key(right->left->key, user_data),
+               vtable->copy_value(right->left->value, user_data),
+               new_node(key, value, left, ref_node(right->left->left)),
+               new_node(vtable->copy_key(right->key, user_data),
+                        vtable->copy_value(right->value, user_data),
+                        ref_node(right->left->right), ref_node(right->right)));
   unref_node(vtable, right, user_data);
   return n;
 }
@@ -208,19 +204,17 @@ static gpr_avl_node *add_key(const gpr_avl_vtable *vtable, gpr_avl_node *node,
   }
   cmp = vtable->compare_keys(node->key, key, user_data);
   if (cmp == 0) {
-    return new_node(key, value, ref_node(node->left, user_data),
-                    ref_node(node->right, user_data));
+    return new_node(key, value, ref_node(node->left), ref_node(node->right));
   } else if (cmp > 0) {
     return rebalance(vtable, vtable->copy_key(node->key, user_data),
                      vtable->copy_value(node->value, user_data),
                      add_key(vtable, node->left, key, value, user_data),
-                     ref_node(node->right, user_data), user_data);
+                     ref_node(node->right), user_data);
   } else {
-    return rebalance(vtable, vtable->copy_key(node->key, user_data),
-                     vtable->copy_value(node->value, user_data),
-                     ref_node(node->left, user_data),
-                     add_key(vtable, node->right, key, value, user_data),
-                     user_data);
+    return rebalance(
+        vtable, vtable->copy_key(node->key, user_data),
+        vtable->copy_value(node->value, user_data), ref_node(node->left),
+        add_key(vtable, node->right, key, value, user_data), user_data);
   }
 }
 
@@ -256,34 +250,32 @@ static gpr_avl_node *remove_key(const gpr_avl_vtable *vtable,
   cmp = vtable->compare_keys(node->key, key, user_data);
   if (cmp == 0) {
     if (node->left == NULL) {
-      return ref_node(node->right, user_data);
+      return ref_node(node->right);
     } else if (node->right == NULL) {
-      return ref_node(node->left, user_data);
+      return ref_node(node->left);
     } else if (node->left->height < node->right->height) {
       gpr_avl_node *h = in_order_head(node->right);
-      return rebalance(vtable, vtable->copy_key(h->key, user_data),
-                       vtable->copy_value(h->value, user_data),
-                       ref_node(node->left, user_data),
-                       remove_key(vtable, node->right, h->key, user_data),
-                       user_data);
+      return rebalance(
+          vtable, vtable->copy_key(h->key, user_data),
+          vtable->copy_value(h->value, user_data), ref_node(node->left),
+          remove_key(vtable, node->right, h->key, user_data), user_data);
     } else {
       gpr_avl_node *h = in_order_tail(node->left);
       return rebalance(vtable, vtable->copy_key(h->key, user_data),
                        vtable->copy_value(h->value, user_data),
                        remove_key(vtable, node->left, h->key, user_data),
-                       ref_node(node->right, user_data), user_data);
+                       ref_node(node->right), user_data);
     }
   } else if (cmp > 0) {
     return rebalance(vtable, vtable->copy_key(node->key, user_data),
                      vtable->copy_value(node->value, user_data),
                      remove_key(vtable, node->left, key, user_data),
-                     ref_node(node->right, user_data), user_data);
+                     ref_node(node->right), user_data);
   } else {
-    return rebalance(vtable, vtable->copy_key(node->key, user_data),
-                     vtable->copy_value(node->value, user_data),
-                     ref_node(node->left, user_data),
-                     remove_key(vtable, node->right, key, user_data),
-                     user_data);
+    return rebalance(
+        vtable, vtable->copy_key(node->key, user_data),
+        vtable->copy_value(node->value, user_data), ref_node(node->left),
+        remove_key(vtable, node->right, key, user_data), user_data);
   }
 }
 
@@ -296,7 +288,7 @@ gpr_avl gpr_avl_remove(gpr_avl avl, void *key, void *user_data) {
 }
 
 gpr_avl gpr_avl_ref(gpr_avl avl, void *user_data) {
-  ref_node(avl.root, user_data);
+  ref_node(avl.root);
   return avl;
 }
 
