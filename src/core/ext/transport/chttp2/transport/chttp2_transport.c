@@ -878,10 +878,11 @@ static grpc_closure_scheduler *write_scheduler(grpc_chttp2_transport *t,
                                                bool early_results_scheduled) {
   switch (t->opt_target) {
     case GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY:
-      return grpc_executor_scheduler;
+      return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
     case GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT:
-      return early_results_scheduled ? grpc_executor_scheduler
-                                     : grpc_schedule_on_exec_ctx;
+      return early_results_scheduled
+                 ? grpc_executor_scheduler(GRPC_EXECUTOR_SHORT)
+                 : grpc_schedule_on_exec_ctx;
   }
   GPR_UNREACHABLE_CODE(return NULL);
 }
@@ -919,8 +920,6 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
         exec_ctx, t, r.partial ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE
                                : GRPC_CHTTP2_WRITE_STATE_WRITING,
         begin_writing_desc(r.partial, scheduler == grpc_schedule_on_exec_ctx));
-    GPR_ASSERT(scheduler == grpc_schedule_on_exec_ctx ||
-               scheduler == grpc_executor_scheduler);
     GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_INIT(&t->write_action,
                                                    write_action, t, scheduler),
                        GRPC_ERROR_NONE);

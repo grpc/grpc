@@ -181,7 +181,7 @@ static void executor_thread(void *arg) {
 }
 
 static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                          grpc_error *error) {
+                          grpc_error *error, bool is_short) {
   size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
   if (cur_thread_count == 0) {
     if (GRPC_TRACER_ON(executor_trace)) {
@@ -221,7 +221,27 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   }
 }
 
-static const grpc_closure_scheduler_vtable executor_vtable = {
-    executor_push, executor_push, "executor"};
-static grpc_closure_scheduler executor_scheduler = {&executor_vtable};
-grpc_closure_scheduler *grpc_executor_scheduler = &executor_scheduler;
+static void executor_push_short(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                                grpc_error *error) {
+  executor_push(exec_ctx, closure, error, true);
+}
+
+static void executor_push_long(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                               grpc_error *error) {
+  executor_push(exec_ctx, closure, error, false);
+}
+
+static const grpc_closure_scheduler_vtable executor_vtable_short = {
+    executor_push_short, executor_push_short, "executor"};
+static grpc_closure_scheduler executor_scheduler_short = {
+    &executor_vtable_short};
+
+static const grpc_closure_scheduler_vtable executor_vtable_long = {
+    executor_push_long, executor_push_long, "executor"};
+static grpc_closure_scheduler executor_scheduler_long = {&executor_vtable_long};
+
+grpc_closure_scheduler *grpc_executor_scheduler(
+    grpc_executor_job_length length) {
+  return length == GRPC_EXECUTOR_SHORT ? &executor_scheduler_short
+                                       : &executor_scheduler_long;
+}

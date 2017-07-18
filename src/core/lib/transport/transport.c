@@ -72,7 +72,8 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
          cope with.
          Throw this over to the executor (on a core-owned thread) and process it
          there. */
-      refcount->destroy.scheduler = grpc_executor_scheduler;
+      refcount->destroy.scheduler =
+          grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
     }
     GRPC_CLOSURE_SCHED(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE);
   }

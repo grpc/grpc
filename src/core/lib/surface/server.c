@@ -1116,9 +1116,11 @@ void grpc_server_start(grpc_server *server) {
 
   server_ref(server);
   server->starting = true;
-  GRPC_CLOSURE_SCHED(&exec_ctx, GRPC_CLOSURE_CREATE(start_listeners, server,
-                                                    grpc_executor_scheduler),
-                     GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(
+      &exec_ctx,
+      GRPC_CLOSURE_CREATE(start_listeners, server,
+                          grpc_executor_scheduler(GRPC_EXECUTOR_SHORT)),
+      GRPC_ERROR_NONE);
 
   grpc_exec_ctx_finish(&exec_ctx);
 }
