@@ -415,6 +415,36 @@ static NSString * const kBearerPrefix = @"Bearer ";
 
 #pragma mark GRXWriter implementation
 
+- (void)startCallWithWriteable:(id<GRXWriteable>)writeable {
+  _responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable
+                                                           dispatchQueue:_responseQueue];
+
+  _wrappedCall = [[GRPCWrappedCall alloc] initWithHost:_host
+                                            serverName:_serverName
+                                                  path:_path];
+  NSAssert(_wrappedCall, @"Error allocating RPC objects. Low memory?");
+
+  [self sendHeaders:_requestHeaders];
+  [self invokeCall];
+
+  // TODO(jcanizales): Extract this logic somewhere common.
+  NSString *host = [NSURL URLWithString:[@"https://" stringByAppendingString:_host]].host;
+  if (!host) {
+    // TODO(jcanizales): Check this on init.
+    [NSException raise:NSInvalidArgumentException format:@"host of %@ is nil", _host];
+  }
+  _connectivityMonitor = [GRPCConnectivityMonitor monitorWithHost:host];
+  __weak typeof(self) weakSelf = self;
+  void (^handler)() = ^{
+    typeof(self) strongSelf = weakSelf;
+    [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                    code:GRPCErrorCodeUnavailable
+                                                userInfo:@{ NSLocalizedDescriptionKey : @"Connectivity lost." }]];
+  };
+  [_connectivityMonitor handleLossWithHandler:handler
+                      wifiStatusChangeHandler:nil];
+}
+
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
   @synchronized(self) {
     _state = GRXWriterStateStarted;
@@ -427,41 +457,9 @@ static NSString * const kBearerPrefix = @"Bearer ";
   // that the life of the instance is determined by this retain cycle.
   _retainSelf = self;
 
-  __weak typeof(self) weakSelf = self;
-  void (^performCall)() = ^{
-    typeof(self) strongSelf = weakSelf;
-    if (strongSelf) {
-      strongSelf->_responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable
-                                                                           dispatchQueue:strongSelf->_responseQueue];
-
-      strongSelf->_wrappedCall = [[GRPCWrappedCall alloc] initWithHost:strongSelf->_host
-                                                            serverName:strongSelf->_serverName
-                                                                  path:strongSelf->_path];
-      NSAssert(_wrappedCall, @"Error allocating RPC objects. Low memory?");
-
-      [strongSelf sendHeaders:_requestHeaders];
-      [strongSelf invokeCall];
-
-      // TODO(jcanizales): Extract this logic somewhere common.
-      NSString *host = [NSURL URLWithString:[@"https://" stringByAppendingString:strongSelf->_host]].host;
-      if (!host) {
-        // TODO(jcanizales): Check this on init.
-        [NSException raise:NSInvalidArgumentException format:@"host of %@ is nil", strongSelf->_host];
-      }
-      strongSelf->_connectivityMonitor = [GRPCConnectivityMonitor monitorWithHost:host];
-      void (^handler)() = ^{
-        typeof(self) strongSelf = weakSelf;
-        [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                        code:GRPCErrorCodeUnavailable
-                                                    userInfo:@{ NSLocalizedDescriptionKey : @"Connectivity lost." }]];
-      };
-      [_connectivityMonitor handleLossWithHandler:handler
-                          wifiStatusChangeHandler:nil];
-    }
-  };
-
   if (self.oauthToken != nil) {
     self.isWaitingForToken = YES;
+    __weak typeof(self) weakSelf = self;
     [self.oauthToken getTokenWithHandler:^(NSString *token){
       typeof(self) strongSelf = weakSelf;
       if (strongSelf && strongSelf.isWaitingForToken) {
@@ -469,12 +467,12 @@ static NSString * const kBearerPrefix = @"Bearer ";
           NSString *t = [kBearerPrefix stringByAppendingString:token];
           strongSelf.requestHeaders[kAuthorizationHeader] = t;
         }
-        performCall();
+        [strongSelf startCallWithWriteable:writeable];
         strongSelf.isWaitingForToken = NO;
       }
     }];
   } else {
-    performCall();
+    [self startCallWithWriteable:writeable];
   }
 }
 
