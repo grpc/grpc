@@ -1322,11 +1322,18 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   if (call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
       call->receiving_stream == NULL) {
     process_data_after_md(exec_ctx, bctlp);
-    GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner,
-                            "recv_message_ready");
   } else {
     call->saved_receiving_stream_ready_bctlp = bctlp;
   }
+}
+
+static void receiving_stream_ready_in_call_combiner(grpc_exec_ctx *exec_ctx,
+                                                    void *bctlp,
+                                                    grpc_error *error) {
+  batch_control *bctl = bctlp;
+  grpc_call *call = bctl->call;
+  receiving_stream_ready(exec_ctx, bctlp, error);
+  GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "recv_message_ready");
 }
 
 static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
@@ -1702,8 +1709,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         stream_op->recv_message = true;
         call->receiving_buffer = op->data.recv_message.recv_message;
         stream_op_payload->recv_message.recv_message = &call->receiving_stream;
-        GRPC_CLOSURE_INIT(&call->receiving_stream_ready, receiving_stream_ready,
-                          bctl, grpc_schedule_on_exec_ctx);
+        GRPC_CLOSURE_INIT(&call->receiving_stream_ready,
+                          receiving_stream_ready_in_call_combiner, bctl,
+                          grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_message.recv_message_ready =
             &call->receiving_stream_ready;
         num_completion_callbacks_needed++;
