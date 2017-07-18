@@ -30,24 +30,24 @@
 static void iam_destruct(grpc_exec_ctx *exec_ctx,
                          grpc_call_credentials *creds) {
   grpc_google_iam_credentials *c = (grpc_google_iam_credentials *)creds;
-  grpc_credentials_mdelem_list_destroy(exec_ctx, &c->md_list);
+  grpc_credentials_mdelem_array_destroy(exec_ctx, &c->md_array);
 }
 
 static bool iam_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                      grpc_call_credentials *creds,
                                      grpc_polling_entity *pollent,
                                      grpc_auth_metadata_context context,
-                                     grpc_credentials_mdelem_list *md_list,
+                                     grpc_credentials_mdelem_array *md_array,
                                      grpc_closure *on_request_metadata,
                                      grpc_error **error) {
   grpc_google_iam_credentials *c = (grpc_google_iam_credentials *)creds;
-  grpc_credentials_mdelem_list_append(md_list, &c->md_list);
+  grpc_credentials_mdelem_array_append(md_array, &c->md_array);
   return true;
 }
 
 static void iam_cancel_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
-    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+    grpc_credentials_mdelem_array *md_array, grpc_error *error) {
   GRPC_ERROR_UNREF(error);
 }
 
@@ -72,13 +72,13 @@ grpc_call_credentials *grpc_google_iam_credentials_create(
       &exec_ctx,
       grpc_slice_from_static_string(GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY),
       grpc_slice_from_copied_string(token));
-  grpc_credentials_mdelem_list_add(&c->md_list, md);
+  grpc_credentials_mdelem_array_add(&c->md_array, md);
   GRPC_MDELEM_UNREF(&exec_ctx, md);
   md = grpc_mdelem_from_slices(
       &exec_ctx,
       grpc_slice_from_static_string(GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY),
       grpc_slice_from_copied_string(authority_selector));
-  grpc_credentials_mdelem_list_add(&c->md_list, md);
+  grpc_credentials_mdelem_array_add(&c->md_array, md);
   GRPC_MDELEM_UNREF(&exec_ctx, md);
   grpc_exec_ctx_finish(&exec_ctx);
   return &c->base;

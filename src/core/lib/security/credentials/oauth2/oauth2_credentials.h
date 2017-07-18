@@ -60,7 +60,7 @@ typedef void (*grpc_fetch_oauth2_func)(grpc_exec_ctx *exec_ctx,
                                        gpr_timespec deadline);
 
 typedef struct grpc_oauth2_pending_get_request_metadata {
-  grpc_credentials_mdelem_list *md_list;
+  grpc_credentials_mdelem_array *md_array;
   grpc_closure *on_request_metadata;
   struct grpc_oauth2_pending_get_request_metadata *next;
 } grpc_oauth2_pending_get_request_metadata;

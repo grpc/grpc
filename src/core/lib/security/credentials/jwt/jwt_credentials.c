@@ -51,7 +51,7 @@ static bool jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                      grpc_call_credentials *creds,
                                      grpc_polling_entity *pollent,
                                      grpc_auth_metadata_context context,
-                                     grpc_credentials_mdelem_list *md_list,
+                                     grpc_credentials_mdelem_array *md_array,
                                      grpc_closure *on_request_metadata,
                                      grpc_error **error) {
   grpc_service_account_jwt_access_credentials *c =
@@ -99,7 +99,7 @@ static bool jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
   }
 
   if (!GRPC_MDISNULL(jwt_md)) {
-    grpc_credentials_mdelem_list_add(md_list, jwt_md);
+    grpc_credentials_mdelem_array_add(md_array, jwt_md);
     GRPC_MDELEM_UNREF(exec_ctx, jwt_md);
   } else {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT.");
@@ -109,7 +109,7 @@ static bool jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
 
 static void jwt_cancel_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
-    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+    grpc_credentials_mdelem_array *md_array, grpc_error *error) {
   GRPC_ERROR_UNREF(error);
 }
 

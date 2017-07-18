@@ -143,37 +143,37 @@ static grpc_httpcli_response http_response(int status, const char *body) {
 
 /* -- Tests. -- */
 
-static void test_empty_md_list(void) {
+static void test_empty_md_array(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_credentials_mdelem_list md_list;
-  memset(&md_list, 0, sizeof(md_list));
-  GPR_ASSERT(md_list.md == NULL);
-  GPR_ASSERT(md_list.size == 0);
-  grpc_credentials_mdelem_list_destroy(&exec_ctx, &md_list);
+  grpc_credentials_mdelem_array md_array;
+  memset(&md_array, 0, sizeof(md_array));
+  GPR_ASSERT(md_array.md == NULL);
+  GPR_ASSERT(md_array.size == 0);
+  grpc_credentials_mdelem_array_destroy(&exec_ctx, &md_array);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void test_add_to_empty_md_list(void) {
+static void test_add_to_empty_md_array(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_credentials_mdelem_list md_list;
-  memset(&md_list, 0, sizeof(md_list));
+  grpc_credentials_mdelem_array md_array;
+  memset(&md_array, 0, sizeof(md_array));
   const char *key = "hello";
   const char *value = "there blah blah blah blah blah blah blah";
   grpc_mdelem md =
       grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_copied_string(key),
                               grpc_slice_from_copied_string(value));
-  grpc_credentials_mdelem_list_add(&md_list, md);
-  GPR_ASSERT(md_list.size == 1);
-  GPR_ASSERT(grpc_mdelem_eq(md, md_list.md[0]));
+  grpc_credentials_mdelem_array_add(&md_array, md);
+  GPR_ASSERT(md_array.size == 1);
+  GPR_ASSERT(grpc_mdelem_eq(md, md_array.md[0]));
   GRPC_MDELEM_UNREF(&exec_ctx, md);
-  grpc_credentials_mdelem_list_destroy(&exec_ctx, &md_list);
+  grpc_credentials_mdelem_array_destroy(&exec_ctx, &md_array);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void test_add_abunch_to_md_list(void) {
+static void test_add_abunch_to_md_array(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_credentials_mdelem_list md_list;
-  memset(&md_list, 0, sizeof(md_list));
+  grpc_credentials_mdelem_array md_array;
+  memset(&md_array, 0, sizeof(md_array));
   const char *key = "hello";
   const char *value = "there blah blah blah blah blah blah blah";
   grpc_mdelem md =
@@ -181,13 +181,13 @@ static void test_add_abunch_to_md_list(void) {
                               grpc_slice_from_copied_string(value));
   size_t num_entries = 1000;
   for (size_t i = 0; i < num_entries; ++i) {
-    grpc_credentials_mdelem_list_add(&md_list, md);
+    grpc_credentials_mdelem_array_add(&md_array, md);
   }
   for (size_t i = 0; i < num_entries; ++i) {
-    GPR_ASSERT(grpc_mdelem_eq(md_list.md[i], md));
+    GPR_ASSERT(grpc_mdelem_eq(md_array.md[i], md));
   }
   GRPC_MDELEM_UNREF(&exec_ctx, md);
-  grpc_credentials_mdelem_list_destroy(&exec_ctx, &md_list);
+  grpc_credentials_mdelem_array_destroy(&exec_ctx, &md_array);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -308,24 +308,24 @@ typedef struct {
   grpc_error *expected_error;
   const expected_md *expected;
   size_t expected_size;
-  grpc_credentials_mdelem_list md_list;
+  grpc_credentials_mdelem_array md_array;
   grpc_closure on_request_metadata;
   grpc_call_credentials *creds;
 } request_metadata_state;
 
 static void check_metadata(const expected_md *expected,
-                           grpc_credentials_mdelem_list *md_list) {
-  for (size_t i = 0; i < md_list->size; ++i) {
+                           grpc_credentials_mdelem_array *md_array) {
+  for (size_t i = 0; i < md_array->size; ++i) {
     size_t j;
-    for (j = 0; j < md_list->size; ++j) {
+    for (j = 0; j < md_array->size; ++j) {
       if (0 ==
-          grpc_slice_str_cmp(GRPC_MDKEY(md_list->md[j]), expected[i].key)) {
-        GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(md_list->md[j]),
+          grpc_slice_str_cmp(GRPC_MDKEY(md_array->md[j]), expected[i].key)) {
+        GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(md_array->md[j]),
                                       expected[i].value) == 0);
         break;
       }
     }
-    if (j == md_list->size) {
+    if (j == md_array->size) {
       gpr_log(GPR_ERROR, "key %s not found", expected[i].key);
       GPR_ASSERT(0);
     }
@@ -351,10 +351,10 @@ static void check_request_metadata(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_ERROR_UNREF(state->expected_error);
   }
   gpr_log(GPR_INFO, "expected_size=%" PRIdPTR " actual_size=%" PRIdPTR,
-          state->expected_size, state->md_list.size);
-  GPR_ASSERT(state->md_list.size == state->expected_size);
-  check_metadata(state->expected, &state->md_list);
-  grpc_credentials_mdelem_list_destroy(exec_ctx, &state->md_list);
+          state->expected_size, state->md_array.size);
+  GPR_ASSERT(state->md_array.size == state->expected_size);
+  check_metadata(state->expected, &state->md_array);
+  grpc_credentials_mdelem_array_destroy(exec_ctx, &state->md_array);
   gpr_free(state);
 }
 
@@ -376,7 +376,7 @@ static void run_request_metadata_test(grpc_exec_ctx *exec_ctx,
                                       request_metadata_state *state) {
   grpc_error *error = GRPC_ERROR_NONE;
   if (grpc_call_credentials_get_request_metadata(
-          exec_ctx, creds, NULL, auth_md_ctx, &state->md_list,
+          exec_ctx, creds, NULL, auth_md_ctx, &state->md_array,
           &state->on_request_metadata, &error)) {
     // Synchronous result.  Invoke the callback directly.
     check_request_metadata(exec_ctx, state, error);
@@ -1170,9 +1170,9 @@ static void test_channel_creds_duplicate_without_call_creds(void) {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
-  test_empty_md_list();
-  test_add_to_empty_md_list();
-  test_add_abunch_to_md_list();
+  test_empty_md_array();
+  test_add_to_empty_md_array();
+  test_add_abunch_to_md_array();
   test_oauth2_token_fetcher_creds_parsing_ok();
   test_oauth2_token_fetcher_creds_parsing_bad_http_status();
   test_oauth2_token_fetcher_creds_parsing_empty_http_body();

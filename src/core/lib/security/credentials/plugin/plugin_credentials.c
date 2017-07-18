@@ -106,7 +106,7 @@ static void plugin_md_request_metadata_ready(void *request,
           grpc_mdelem mdelem = grpc_mdelem_from_slices(
               &exec_ctx, grpc_slice_ref_internal(md[i].key),
               grpc_slice_ref_internal(md[i].value));
-          grpc_credentials_mdelem_list_add(r->md_list, mdelem);
+          grpc_credentials_mdelem_array_add(r->md_array, mdelem);
           GRPC_MDELEM_UNREF(&exec_ctx, mdelem);
         }
         GRPC_CLOSURE_SCHED(&exec_ctx, r->on_request_metadata, GRPC_ERROR_NONE);
@@ -121,7 +121,7 @@ static bool plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                         grpc_call_credentials *creds,
                                         grpc_polling_entity *pollent,
                                         grpc_auth_metadata_context context,
-                                        grpc_credentials_mdelem_list *md_list,
+                                        grpc_credentials_mdelem_array *md_array,
                                         grpc_closure *on_request_metadata,
                                         grpc_error **error) {
   grpc_plugin_credentials *c = (grpc_plugin_credentials *)creds;
@@ -131,7 +131,7 @@ static bool plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
         (grpc_plugin_credentials_pending_request *)gpr_zalloc(
             sizeof(*pending_request));
     pending_request->creds = c;
-    pending_request->md_list = md_list;
+    pending_request->md_array = md_array;
     pending_request->on_request_metadata = on_request_metadata;
     // Add it to the pending list.
     gpr_mu_lock(&c->mu);
@@ -152,13 +152,13 @@ static bool plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
 
 static void plugin_cancel_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
-    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+    grpc_credentials_mdelem_array *md_array, grpc_error *error) {
   grpc_plugin_credentials *c = (grpc_plugin_credentials *)creds;
   gpr_mu_lock(&c->mu);
   for (grpc_plugin_credentials_pending_request *pending_request =
            c->pending_requests;
        pending_request != NULL; pending_request = pending_request->next) {
-    if (pending_request->md_list == md_list) {
+    if (pending_request->md_array == md_array) {
       pending_request->cancelled = true;
       GRPC_CLOSURE_SCHED(exec_ctx, pending_request->on_request_metadata,
                          GRPC_ERROR_REF(error));

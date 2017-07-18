@@ -104,10 +104,10 @@ static void md_only_test_destruct(grpc_exec_ctx *exec_ctx,
 static bool md_only_test_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_list *md_list, grpc_closure *on_request_metadata,
+    grpc_credentials_mdelem_array *md_array, grpc_closure *on_request_metadata,
     grpc_error **error) {
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
-  grpc_credentials_mdelem_list_add(md_list, c->md);
+  grpc_credentials_mdelem_array_add(md_array, c->md);
   if (c->is_async) {
     GRPC_CLOSURE_SCHED(exec_ctx, on_request_metadata, GRPC_ERROR_NONE);
     return false;
@@ -117,7 +117,7 @@ static bool md_only_test_get_request_metadata(
 
 static void md_only_test_cancel_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
-    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+    grpc_credentials_mdelem_array *md_array, grpc_error *error) {
   GRPC_ERROR_UNREF(error);
 }
 

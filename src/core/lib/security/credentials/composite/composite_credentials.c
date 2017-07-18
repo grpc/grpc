@@ -34,7 +34,7 @@ typedef struct {
   size_t creds_index;
   grpc_polling_entity *pollent;
   grpc_auth_metadata_context auth_md_context;
-  grpc_credentials_mdelem_list *md_list;
+  grpc_credentials_mdelem_array *md_array;
   grpc_closure *on_request_metadata;
   grpc_closure internal_on_request_metadata;
 } grpc_composite_call_credentials_metadata_context;
@@ -59,7 +59,7 @@ static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *arg,
           ctx->composite_creds->inner.creds_array[ctx->creds_index++];
       if (grpc_call_credentials_get_request_metadata(
               exec_ctx, inner_creds, ctx->pollent, ctx->auth_md_context,
-              ctx->md_list, &ctx->internal_on_request_metadata, &error)) {
+              ctx->md_array, &ctx->internal_on_request_metadata, &error)) {
         // Synchronous response, so call ourselves recursively.
         composite_call_metadata_cb(exec_ctx, arg, error);
         GRPC_ERROR_UNREF(error);
@@ -75,7 +75,7 @@ static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *arg,
 static bool composite_call_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context auth_md_context,
-    grpc_credentials_mdelem_list *md_list, grpc_closure *on_request_metadata,
+    grpc_credentials_mdelem_array *md_array, grpc_closure *on_request_metadata,
     grpc_error **error) {
   grpc_composite_call_credentials *c = (grpc_composite_call_credentials *)creds;
   grpc_composite_call_credentials_metadata_context *ctx;
@@ -83,7 +83,7 @@ static bool composite_call_get_request_metadata(
   ctx->composite_creds = c;
   ctx->pollent = pollent;
   ctx->auth_md_context = auth_md_context;
-  ctx->md_list = md_list;
+  ctx->md_array = md_array;
   ctx->on_request_metadata = on_request_metadata;
   GRPC_CLOSURE_INIT(&ctx->internal_on_request_metadata,
                     composite_call_metadata_cb, ctx, grpc_schedule_on_exec_ctx);
@@ -92,7 +92,7 @@ static bool composite_call_get_request_metadata(
         ctx->composite_creds->inner.creds_array[ctx->creds_index++];
     if (grpc_call_credentials_get_request_metadata(
             exec_ctx, inner_creds, ctx->pollent, ctx->auth_md_context,
-            ctx->md_list, &ctx->internal_on_request_metadata, error)) {
+            ctx->md_array, &ctx->internal_on_request_metadata, error)) {
       if (*error != GRPC_ERROR_NONE) break;
     } else {
       break;
@@ -112,11 +112,11 @@ static bool composite_call_get_request_metadata(
 
 static void composite_call_cancel_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
-    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+    grpc_credentials_mdelem_array *md_array, grpc_error *error) {
   grpc_composite_call_credentials *c = (grpc_composite_call_credentials *)creds;
   for (size_t i = 0; i < c->inner.num_creds; ++i) {
     grpc_call_credentials_cancel_get_request_metadata(
-        exec_ctx, c->inner.creds_array[i], md_list, GRPC_ERROR_REF(error));
+        exec_ctx, c->inner.creds_array[i], md_array, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
