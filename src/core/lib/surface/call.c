@@ -1322,10 +1322,11 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   if (call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
       call->receiving_stream == NULL) {
     process_data_after_md(exec_ctx, bctlp);
+    GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner,
+                            "recv_message_ready");
   } else {
     call->saved_receiving_stream_ready_bctlp = bctlp;
   }
-  GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "recv_message_ready");
 }
 
 static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
