@@ -28,7 +28,7 @@
 extern gpr_thd_id grpc_init_thread;
 
 #ifdef GRPC_UV_THREAD_CHECK
-#define GRPC_ASSERT_SAME_THREAD()               \
+#define GRPC_ASSERT_SAME_THREAD() \
   GPR_ASSERT(gpr_thd_currentid() == grpc_init_thread)
 #else
 #define GRPC_ASSERT_SAME_THREAD()
