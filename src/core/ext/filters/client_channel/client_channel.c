@@ -808,8 +808,8 @@ typedef struct client_channel_call_data {
   // The code in deadline_filter.c requires this to be the first field.
   // TODO(roth): This is slightly sub-optimal in that grpc_deadline_state
   // and this struct both independently store a pointer to the call
-  // stack.  If/when we have time, find a way to avoid this without breaking
-  // the grpc_deadline_state abstraction.
+  // stack and the call combiner.  If/when we have time, find a way to avoid
+  // this without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state;
 
   grpc_slice path;  // Request path.
@@ -817,6 +817,7 @@ typedef struct client_channel_call_data {
   gpr_timespec deadline;
   grpc_call_stack *owning_call;
   gpr_arena *arena;
+  grpc_call_combiner *call_combiner;
 
   grpc_server_retry_throttle_data *retry_throttle_data;
   method_parameters *method_params;
@@ -870,7 +871,7 @@ static void fail_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
   grpc_transport_stream_op_batch_finish_with_failure(
       exec_ctx,
       calld->waiting_for_pick_batches[calld->waiting_for_pick_batches_count],
-      GRPC_ERROR_REF(error), calld->deadline_state.call_combiner);
+      GRPC_ERROR_REF(error), calld->call_combiner);
 }
 
 static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
@@ -887,7 +888,7 @@ static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
     GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner[i],
                       fail_pending_batch_in_call_combiner, calld,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CALL_COMBINER_START(exec_ctx, calld->deadline_state.call_combiner,
+    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
                              &calld->handle_pending_batch_in_call_combiner[i],
                              GRPC_ERROR_REF(error),
                              "waiting_for_pick_batches_fail");
@@ -895,9 +896,9 @@ static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
   if (calld->initial_metadata_batch != NULL) {
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, calld->initial_metadata_batch, GRPC_ERROR_REF(error),
-        calld->deadline_state.call_combiner);
+        calld->call_combiner);
   } else {
-    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->deadline_state.call_combiner,
+    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
                             "waiting_for_pick_batches_fail");
   }
   GRPC_ERROR_UNREF(error);
@@ -926,7 +927,7 @@ static void waiting_for_pick_batches_resume(grpc_exec_ctx *exec_ctx,
     GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner[i],
                       run_pending_batch_in_call_combiner, calld,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CALL_COMBINER_START(exec_ctx, calld->deadline_state.call_combiner,
+    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
                              &calld->handle_pending_batch_in_call_combiner[i],
                              GRPC_ERROR_NONE,
                              "waiting_for_pick_batches_resume");
@@ -983,7 +984,7 @@ static void create_subchannel_call_locked(grpc_exec_ctx *exec_ctx,
       .deadline = calld->deadline,
       .arena = calld->arena,
       .context = calld->subchannel_call_context,
-      .call_combiner = calld->deadline_state.call_combiner};
+      .call_combiner = calld->call_combiner};
   grpc_error *new_error = grpc_connected_subchannel_create_call(
       exec_ctx, calld->connected_subchannel, &call_args,
       &calld->subchannel_call);
@@ -1106,8 +1107,8 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
     grpc_call_element *elem = args->elem;
     channel_data *chand = elem->channel_data;
     call_data *calld = elem->call_data;
-    grpc_call_combiner_set_notify_on_cancel(
-        exec_ctx, calld->deadline_state.call_combiner, NULL);
+    grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
+                                            NULL);
     if (error != GRPC_ERROR_NONE) {
       if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
         gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver failed to return data",
@@ -1144,7 +1145,7 @@ static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
   grpc_closure_list_append(&chand->waiting_for_resolver_result_closures,
                            &args->closure, GRPC_ERROR_NONE);
   grpc_call_combiner_set_notify_on_cancel(
-      exec_ctx, calld->deadline_state.call_combiner,
+      exec_ctx, calld->call_combiner,
       GRPC_CLOSURE_INIT(&calld->cancel_closure,
                         pick_after_resolver_result_cancel_locked,
                         elem, grpc_combiner_scheduler(chand->combiner)));
@@ -1180,8 +1181,7 @@ static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed asynchronously",
             chand, calld);
   }
-  grpc_call_combiner_set_notify_on_cancel(exec_ctx,
-                                          calld->deadline_state.call_combiner,
+  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
                                           NULL);
   GPR_ASSERT(calld->lb_policy != NULL);
   GRPC_LB_POLICY_UNREF(exec_ctx, calld->lb_policy, "pick_subchannel");
@@ -1219,7 +1219,7 @@ static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
     calld->lb_policy = NULL;
   } else {
     grpc_call_combiner_set_notify_on_cancel(
-        exec_ctx, calld->deadline_state.call_combiner,
+        exec_ctx, calld->call_combiner,
         GRPC_CLOSURE_INIT(&calld->cancel_closure, pick_callback_cancel_locked,
                           elem, grpc_combiner_scheduler(chand->combiner)));
   }
@@ -1387,8 +1387,7 @@ static void cc_start_transport_stream_op_batch(
               chand, calld, grpc_error_string(calld->error));
     }
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, batch, GRPC_ERROR_REF(calld->error),
-        calld->deadline_state.call_combiner);
+        exec_ctx, batch, GRPC_ERROR_REF(calld->error), calld->call_combiner);
     goto done;
   }
   if (calld->subchannel_call != NULL) {
@@ -1424,7 +1423,7 @@ static void cc_start_transport_stream_op_batch(
               "chand=%p calld=%p: saved batch, yeilding call combiner",
               chand, calld);
     }
-    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->deadline_state.call_combiner,
+    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
                             "batch does not include send_initial_metadata");
   }
 done:
@@ -1443,6 +1442,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
   calld->owning_call = args->call_stack;
   calld->arena = args->arena;
+  calld->call_combiner = args->call_combiner;
   if (chand->deadline_checking_enabled) {
     grpc_deadline_state_init(exec_ctx, elem, args->call_stack,
                              args->call_combiner, calld->deadline);
