@@ -27,8 +27,8 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-set PATH=C:\%1;C:\%1\scripts;C:\msys64\mingw%2\bin;%PATH%
+@rem set path to python & mingw compiler
+set PATH=C:\%1;C:\%1\scripts;C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 
 pip install --upgrade six
 pip install --upgrade setuptools
