@@ -26,7 +26,7 @@ struct grpc_plugin_credentials;
 typedef struct grpc_plugin_credentials_pending_request {
   bool cancelled;
   struct grpc_plugin_credentials *creds;
-  grpc_credentials_mdelem_list *md_list;
+  grpc_credentials_mdelem_array *md_array;
   grpc_closure *on_request_metadata;
   struct grpc_plugin_credentials_pending_request *prev;
   struct grpc_plugin_credentials_pending_request *next;

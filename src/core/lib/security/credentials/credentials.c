@@ -104,22 +104,22 @@ void grpc_call_credentials_release(grpc_call_credentials *creds) {
 bool grpc_call_credentials_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_list *md_list, grpc_closure *on_request_metadata,
+    grpc_credentials_mdelem_array *md_array, grpc_closure *on_request_metadata,
     grpc_error **error) {
   if (creds == NULL || creds->vtable->get_request_metadata == NULL) {
     return true;
   }
   return creds->vtable->get_request_metadata(
-      exec_ctx, creds, pollent, context, md_list, on_request_metadata, error);
+      exec_ctx, creds, pollent, context, md_array, on_request_metadata, error);
 }
 
 void grpc_call_credentials_cancel_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
-    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+    grpc_credentials_mdelem_array *md_array, grpc_error *error) {
   if (creds == NULL || creds->vtable->cancel_get_request_metadata == NULL) {
     return;
   }
-  creds->vtable->cancel_get_request_metadata(exec_ctx, creds, md_list, error);
+  creds->vtable->cancel_get_request_metadata(exec_ctx, creds, md_array, error);
 }
 
 grpc_security_status grpc_channel_credentials_create_security_connector(

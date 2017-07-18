@@ -231,8 +231,8 @@ static void on_oauth2_token_fetcher_http_response(grpc_exec_ctx *exec_ctx,
   // Invoke callbacks for all pending requests.
   while (pending_request != NULL) {
     if (status == GRPC_CREDENTIALS_OK) {
-      grpc_credentials_mdelem_list_add(pending_request->md_list,
-                                       access_token_md);
+      grpc_credentials_mdelem_array_add(pending_request->md_array,
+                                        access_token_md);
     } else {
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occured when fetching oauth2 token.", &error, 1);
@@ -250,7 +250,7 @@ static void on_oauth2_token_fetcher_http_response(grpc_exec_ctx *exec_ctx,
 static bool oauth2_token_fetcher_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_list *md_list, grpc_closure *on_request_metadata,
+    grpc_credentials_mdelem_array *md_array, grpc_closure *on_request_metadata,
     grpc_error **error) {
   grpc_oauth2_token_fetcher_credentials *c =
       (grpc_oauth2_token_fetcher_credentials *)creds;
@@ -267,7 +267,7 @@ static bool oauth2_token_fetcher_get_request_metadata(
   }
   if (!GRPC_MDISNULL(cached_access_token_md)) {
     gpr_mu_unlock(&c->mu);
-    grpc_credentials_mdelem_list_add(md_list, cached_access_token_md);
+    grpc_credentials_mdelem_array_add(md_array, cached_access_token_md);
     GRPC_MDELEM_UNREF(exec_ctx, cached_access_token_md);
     return true;
   }
@@ -276,7 +276,7 @@ static bool oauth2_token_fetcher_get_request_metadata(
   grpc_oauth2_pending_get_request_metadata *pending_request =
       (grpc_oauth2_pending_get_request_metadata *)gpr_malloc(
           sizeof(*pending_request));
-  pending_request->md_list = md_list;
+  pending_request->md_array = md_array;
   pending_request->on_request_metadata = on_request_metadata;
   pending_request->next = c->pending_requests;
   c->pending_requests = pending_request;
@@ -298,7 +298,7 @@ static bool oauth2_token_fetcher_get_request_metadata(
 
 static void oauth2_token_fetcher_cancel_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
-    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+    grpc_credentials_mdelem_array *md_array, grpc_error *error) {
   grpc_oauth2_token_fetcher_credentials *c =
       (grpc_oauth2_token_fetcher_credentials *)creds;
   gpr_mu_lock(&c->mu);
@@ -306,12 +306,14 @@ static void oauth2_token_fetcher_cancel_get_request_metadata(
   grpc_oauth2_pending_get_request_metadata *pending_request =
       c->pending_requests;
   while (pending_request != NULL) {
-    if (pending_request->md_list == md_list) {
+    if (pending_request->md_array == md_array) {
+      // Remove matching pending request from the list.
       if (prev != NULL) {
         prev->next = pending_request->next;
       } else {
         c->pending_requests = pending_request->next;
       }
+      // Invoke the callback immediately with an error.
       GRPC_CLOSURE_SCHED(exec_ctx, pending_request->on_request_metadata,
                          GRPC_ERROR_REF(error));
       gpr_free(pending_request);
@@ -483,16 +485,16 @@ static void access_token_destruct(grpc_exec_ctx *exec_ctx,
 static bool access_token_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_list *md_list, grpc_closure *on_request_metadata,
+    grpc_credentials_mdelem_array *md_array, grpc_closure *on_request_metadata,
     grpc_error **error) {
   grpc_access_token_credentials *c = (grpc_access_token_credentials *)creds;
-  grpc_credentials_mdelem_list_add(md_list, c->access_token_md);
+  grpc_credentials_mdelem_array_add(md_array, c->access_token_md);
   return true;
 }
 
 static void access_token_cancel_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
-    grpc_credentials_mdelem_list *md_list, grpc_error *error) {
+    grpc_credentials_mdelem_array *md_array, grpc_error *error) {
   GRPC_ERROR_UNREF(error);
 }
 

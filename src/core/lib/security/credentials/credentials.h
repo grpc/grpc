@@ -138,23 +138,23 @@ grpc_channel_credentials *grpc_channel_credentials_from_arg(
 grpc_channel_credentials *grpc_channel_credentials_find_in_args(
     const grpc_channel_args *args);
 
-/* --- grpc_credentials_mdelem_list. --- */
+/* --- grpc_credentials_mdelem_array. --- */
 
 typedef struct {
   grpc_mdelem *md;
   size_t size;
-} grpc_credentials_mdelem_list;
+} grpc_credentials_mdelem_array;
 
 /// Takes a new ref to \a md.
-void grpc_credentials_mdelem_list_add(grpc_credentials_mdelem_list *list,
-                                      grpc_mdelem md);
+void grpc_credentials_mdelem_array_add(grpc_credentials_mdelem_array *list,
+                                       grpc_mdelem md);
 
 /// Appends all elements from \a src to \a dst, taking a new ref to each one.
-void grpc_credentials_mdelem_list_append(grpc_credentials_mdelem_list *dst,
-                                         grpc_credentials_mdelem_list *src);
+void grpc_credentials_mdelem_array_append(grpc_credentials_mdelem_array *dst,
+                                          grpc_credentials_mdelem_array *src);
 
-void grpc_credentials_mdelem_list_destroy(grpc_exec_ctx *exec_ctx,
-                                          grpc_credentials_mdelem_list *list);
+void grpc_credentials_mdelem_array_destroy(grpc_exec_ctx *exec_ctx,
+                                           grpc_credentials_mdelem_array *list);
 
 /* --- grpc_call_credentials. --- */
 
@@ -164,12 +164,12 @@ typedef struct {
                                grpc_call_credentials *c,
                                grpc_polling_entity *pollent,
                                grpc_auth_metadata_context context,
-                               grpc_credentials_mdelem_list *md_list,
+                               grpc_credentials_mdelem_array *md_array,
                                grpc_closure *on_request_metadata,
                                grpc_error **error);
   void (*cancel_get_request_metadata)(grpc_exec_ctx *exec_ctx,
                                       grpc_call_credentials *c,
-                                      grpc_credentials_mdelem_list *md_list,
+                                      grpc_credentials_mdelem_array *md_array,
                                       grpc_error *error);
 } grpc_call_credentials_vtable;
 
@@ -182,22 +182,23 @@ struct grpc_call_credentials {
 grpc_call_credentials *grpc_call_credentials_ref(grpc_call_credentials *creds);
 void grpc_call_credentials_unref(grpc_exec_ctx *exec_ctx,
                                  grpc_call_credentials *creds);
+
 /// Returns true if completed synchronously, in which case \a error will
 /// be set to indicate the result.  Otherwise, \a on_request_metadata will
-/// be invoked asynchronously when complete.  \a md_list will be populated
+/// be invoked asynchronously when complete.  \a md_array will be populated
 /// with the resulting metadata once complete.
 bool grpc_call_credentials_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_list *md_list, grpc_closure *on_request_metadata,
+    grpc_credentials_mdelem_array *md_array, grpc_closure *on_request_metadata,
     grpc_error **error);
 
 /// Cancels a pending asynchronous operation started by
 /// grpc_call_credentials_get_request_metadata() with the corresponding
-/// value of \a md_list.
+/// value of \a md_array.
 void grpc_call_credentials_cancel_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
-    grpc_credentials_mdelem_list *md_list, grpc_error *error);
+    grpc_credentials_mdelem_array *md_array, grpc_error *error);
 
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */

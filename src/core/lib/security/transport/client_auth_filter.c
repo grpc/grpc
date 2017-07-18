@@ -52,7 +52,7 @@ typedef struct {
   grpc_polling_entity *pollent;
   gpr_atm security_context_set;
   gpr_mu security_context_mu;
-  grpc_credentials_mdelem_list md_list;
+  grpc_credentials_mdelem_array md_array;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   grpc_auth_metadata_context auth_md_context;
   grpc_closure async_cancel_closure;
@@ -99,14 +99,14 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *arg,
   reset_auth_metadata_context(&calld->auth_md_context);
   grpc_error *error = GRPC_ERROR_REF(input_error);
   if (error == GRPC_ERROR_NONE) {
-    GPR_ASSERT(calld->md_list.size <= MAX_CREDENTIALS_METADATA_COUNT);
+    GPR_ASSERT(calld->md_array.size <= MAX_CREDENTIALS_METADATA_COUNT);
     GPR_ASSERT(batch->send_initial_metadata);
     grpc_metadata_batch *mdb =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    for (size_t i = 0; i < calld->md_list.size; ++i) {
+    for (size_t i = 0; i < calld->md_array.size; ++i) {
       add_error(&error, grpc_metadata_batch_add_tail(
                             exec_ctx, mdb, &calld->md_links[i],
-                            GRPC_MDELEM_REF(calld->md_list.md[i])));
+                            GRPC_MDELEM_REF(calld->md_array.md[i])));
     }
   }
   if (error == GRPC_ERROR_NONE) {
@@ -154,7 +154,7 @@ static void cancel_get_request_metadata(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call_element *elem = (grpc_call_element *)arg;
   call_data *calld = (call_data *)elem->call_data;
   grpc_call_credentials_cancel_get_request_metadata(
-      exec_ctx, calld->creds, &calld->md_list, GRPC_ERROR_REF(error));
+      exec_ctx, calld->creds, &calld->md_array, GRPC_ERROR_REF(error));
 }
 
 static void send_security_metadata(grpc_exec_ctx *exec_ctx,
@@ -204,7 +204,7 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
   grpc_error *error = GRPC_ERROR_NONE;
   if (grpc_call_credentials_get_request_metadata(
           exec_ctx, calld->creds, calld->pollent, calld->auth_md_context,
-          &calld->md_list, &calld->async_result_closure, &error)) {
+          &calld->md_array, &calld->async_result_closure, &error)) {
     // Synchronous return; invoke on_credentials_metadata() directly.
     on_credentials_metadata(exec_ctx, batch, error);
     GRPC_ERROR_UNREF(error);
@@ -356,7 +356,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               grpc_closure *ignored) {
   call_data *calld = elem->call_data;
-  grpc_credentials_mdelem_list_destroy(exec_ctx, &calld->md_list);
+  grpc_credentials_mdelem_array_destroy(exec_ctx, &calld->md_array);
   grpc_call_credentials_unref(exec_ctx, calld->creds);
   if (calld->have_host) {
     grpc_slice_unref_internal(exec_ctx, calld->host);

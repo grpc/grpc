@@ -37,7 +37,7 @@ typedef struct {
   grpc_polling_entity pops;
   bool is_done;
 
-  grpc_credentials_mdelem_list md_list;
+  grpc_credentials_mdelem_array md_array;
   grpc_closure on_request_metadata;
 } synchronizer;
 
@@ -48,8 +48,8 @@ static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *arg,
     fprintf(stderr, "Fetching token failed: %s\n", grpc_error_string(error));
   } else {
     char *token;
-    GPR_ASSERT(sync->md_list.size == 1);
-    token = grpc_slice_to_c_string(GRPC_MDVALUE(sync->md_list.md[0]));
+    GPR_ASSERT(sync->md_array.size == 1);
+    token = grpc_slice_to_c_string(GRPC_MDVALUE(sync->md_array.md[0]));
     printf("\nGot token: %s\n\n", token);
     gpr_free(token);
   }
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
   grpc_error *error = GRPC_ERROR_NONE;
   if (grpc_call_credentials_get_request_metadata(
           &exec_ctx, ((grpc_composite_channel_credentials *)creds)->call_creds,
-          &sync.pops, context, &sync.md_list, &sync.on_request_metadata,
+          &sync.pops, context, &sync.md_array, &sync.on_request_metadata,
           &error)) {
     // Synchronous response.  Invoke callback directly.
     on_metadata_response(&exec_ctx, &sync, error);
