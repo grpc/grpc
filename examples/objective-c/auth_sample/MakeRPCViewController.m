@@ -83,7 +83,7 @@ static NSString * const kTestHostAddress = @"grpc-test.sandbox.googleapis.com";
       }];
 
   // Set the access token to be used.
-  call.oauthToken = [[OAuthAuthenticator alloc] init];
+  call.tokenProvider = [[OAuthAuthenticator alloc] init];
 
   // Start the RPC.
   [call start];
