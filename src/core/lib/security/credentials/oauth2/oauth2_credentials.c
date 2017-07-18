@@ -307,11 +307,13 @@ static void oauth2_token_fetcher_cancel_get_request_metadata(
       c->pending_requests;
   while (pending_request != NULL) {
     if (pending_request->md_array == md_array) {
+      // Remove matching pending request from the list.
       if (prev != NULL) {
         prev->next = pending_request->next;
       } else {
         c->pending_requests = pending_request->next;
       }
+      // Invoke the callback immediately with an error.
       GRPC_CLOSURE_SCHED(exec_ctx, pending_request->on_request_metadata,
                          GRPC_ERROR_REF(error));
       gpr_free(pending_request);

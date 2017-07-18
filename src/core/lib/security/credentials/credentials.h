@@ -182,6 +182,7 @@ struct grpc_call_credentials {
 grpc_call_credentials *grpc_call_credentials_ref(grpc_call_credentials *creds);
 void grpc_call_credentials_unref(grpc_exec_ctx *exec_ctx,
                                  grpc_call_credentials *creds);
+
 /// Returns true if completed synchronously, in which case \a error will
 /// be set to indicate the result.  Otherwise, \a on_request_metadata will
 /// be invoked asynchronously when complete.  \a md_array will be populated

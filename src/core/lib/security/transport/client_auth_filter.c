@@ -70,6 +70,8 @@ typedef struct {
 
 static void decode_cancel_state(gpr_atm cancel_state, grpc_closure **func,
                                 grpc_error **error) {
+  // If the lowest bit is 1, the value is a grpc_error*.
+  // Otherwise, if non-zdero, the value is a grpc_closure*.
   if (cancel_state & 1) {
     *error = (grpc_error *)(cancel_state & ~(gpr_atm)1);
   } else if (cancel_state != 0) {
@@ -78,6 +80,7 @@ static void decode_cancel_state(gpr_atm cancel_state, grpc_closure **func,
 }
 
 static gpr_atm encode_cancel_state_error(grpc_error *error) {
+  // Set the lowest bit to 1 to indicate that it's an error.
   return (gpr_atm)1 | (gpr_atm)error;
 }
 

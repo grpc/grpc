@@ -153,6 +153,7 @@ void grpc_channel_security_connector_cancel_check_call_host(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
     grpc_closure *on_call_host_checked, grpc_error *error) {
   if (sc == NULL || sc->cancel_check_call_host == NULL) {
+    GRPC_ERROR_UNREF(error);
     return;
   }
   sc->cancel_check_call_host(exec_ctx, sc, on_call_host_checked, error);

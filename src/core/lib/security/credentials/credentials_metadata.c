@@ -25,9 +25,11 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 static void mdelem_list_ensure_capacity(grpc_credentials_mdelem_array *list,
-                                        size_t space_needed) {
-  size_t target_size = list->size + space_needed;
-  size_t new_size = list->size == 0 ? 2 : list->size * 2;
+                                        size_t additional_space_needed) {
+  size_t target_size = list->size + additional_space_needed;
+  // Find the next power of two greater than the target size (i.e.,
+  // whenever we add more space, we double what we already have).
+  size_t new_size = 2;
   while (new_size < target_size) {
     new_size *= 2;
   }
