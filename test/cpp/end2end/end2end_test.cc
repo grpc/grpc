@@ -193,10 +193,11 @@ class TestServiceImplDupPkg
 
 class TestScenario {
  public:
-  TestScenario(bool proxy, const grpc::string& creds_type)
-      : use_proxy(proxy), credentials_type(creds_type) {}
+  TestScenario(bool proxy, bool inproc_stub, const grpc::string& creds_type)
+      : use_proxy(proxy), inproc(inproc_stub), credentials_type(creds_type) {}
   void Log() const;
   bool use_proxy;
+  bool inproc;
   // Although the below grpc::string is logically const, we can't declare
   // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
   // manage vector insertion using a copy constructor
@@ -206,8 +207,9 @@ class TestScenario {
 static std::ostream& operator<<(std::ostream& out,
                                 const TestScenario& scenario) {
   return out << "TestScenario{use_proxy="
-             << (scenario.use_proxy ? "true" : "false") << ", credentials='"
-             << scenario.credentials_type << "'}";
+             << (scenario.use_proxy ? "true" : "false")
+             << ", inproc=" << (scenario.inproc ? "true" : "false")
+             << ", credentials='" << scenario.credentials_type << "'}";
 }
 
 void TestScenario::Log() const {
@@ -273,7 +275,13 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       args.SetUserAgentPrefix(user_agent_prefix_);
     }
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
-    channel_ = CreateCustomChannel(server_address_.str(), channel_creds, args);
+
+    if (!GetParam().inproc) {
+      channel_ =
+          CreateCustomChannel(server_address_.str(), channel_creds, args);
+    } else {
+      channel_ = server_->InProcessChannel(args);
+    }
   }
 
   void ResetStub() {
@@ -633,6 +641,10 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
 }
 
 TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
+  // User-Agent is an HTTP header for HTTP transports only
+  if (GetParam().inproc) {
+    return;
+  }
   user_agent_prefix_ = "custom_prefix";
   ResetStub();
   EchoRequest request;
@@ -1065,6 +1077,10 @@ TEST_P(End2endTest, SimultaneousReadWritesDone) {
 }
 
 TEST_P(End2endTest, ChannelState) {
+  if (GetParam().inproc) {
+    return;
+  }
+
   ResetStub();
   // Start IDLE
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
@@ -1088,7 +1104,8 @@ TEST_P(End2endTest, ChannelState) {
 
 // Takes 10s.
 TEST_P(End2endTest, ChannelStateTimeout) {
-  if (GetParam().credentials_type != kInsecureCredentialsType) {
+  if ((GetParam().credentials_type != kInsecureCredentialsType) ||
+      GetParam().inproc) {
     return;
   }
   int port = grpc_pick_unused_port_or_die();
@@ -1669,51 +1686,56 @@ TEST_P(ResourceQuotaEnd2endTest, SimpleRequest) {
 
 std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                                               bool test_insecure,
-                                              bool test_secure) {
+                                              bool test_secure,
+                                              bool test_inproc) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
   if (test_secure) {
     credentials_types =
         GetCredentialsProvider()->GetSecureCredentialsTypeList();
   }
-  if (test_insecure) {
-    // Only add insecure credentials type when it is registered with the
+  auto insec_ok = [] {
+    // Only allow insecure credentials type when it is registered with the
     // provider. User may create providers that do not have insecure.
-    if (GetCredentialsProvider()->GetChannelCredentials(
-            kInsecureCredentialsType, nullptr) != nullptr) {
-      credentials_types.push_back(kInsecureCredentialsType);
-    }
+    return GetCredentialsProvider()->GetChannelCredentials(
+               kInsecureCredentialsType, nullptr) != nullptr;
+  };
+  if (test_insecure && insec_ok()) {
+    credentials_types.push_back(kInsecureCredentialsType);
   }
   GPR_ASSERT(!credentials_types.empty());
   for (auto it = credentials_types.begin(); it != credentials_types.end();
        ++it) {
-    scenarios.emplace_back(false, *it);
+    scenarios.emplace_back(false, false, *it);
     if (use_proxy) {
-      scenarios.emplace_back(true, *it);
+      scenarios.emplace_back(true, false, *it);
     }
+  }
+  if (test_inproc && insec_ok()) {
+    scenarios.emplace_back(false, true, kInsecureCredentialsType);
   }
   return scenarios;
 }
 
 INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                true)));
+                                                                true, true)));
 
 INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                true)));
+                                                                true, true)));
 
 INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(true, true,
-                                                                true)));
+                                                                true, false)));
 
 INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, false,
-                                                                true)));
+                                                                true, false)));
 
 INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                true)));
+                                                                true, true)));
 
 }  // namespace
 }  // namespace testing

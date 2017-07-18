@@ -239,6 +239,7 @@ static VALUE grpc_rb_call_credentials_compose(int argc, VALUE *argv,
                                               VALUE self) {
   grpc_call_credentials *creds;
   grpc_call_credentials *other;
+  grpc_call_credentials *prev = NULL;
   VALUE mark;
   if (argc == 0) {
     return self;
@@ -249,6 +250,10 @@ static VALUE grpc_rb_call_credentials_compose(int argc, VALUE *argv,
     rb_ary_push(mark, argv[i]);
     other = grpc_rb_get_wrapped_call_credentials(argv[i]);
     creds = grpc_composite_call_credentials_create(creds, other, NULL);
+    if (prev != NULL) {
+      grpc_call_credentials_release(prev);
+    }
+    prev = creds;
   }
   return grpc_rb_wrap_call_credentials(creds, mark);
 }

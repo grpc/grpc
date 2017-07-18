@@ -50,18 +50,23 @@ some configuration as environment variables that can be set.
   - channel_stack_builder - traces information about channel stacks being built
   - http - traces state in the http2 transport engine
   - http1 - traces HTTP/1.x operations performed by gRPC
+  - inproc - traces the in-process transport
   - flowctl - traces http2 flow control
   - op_failure - traces error information when failure is pushed onto a
     completion queue
   - round_robin - traces the round_robin load balancing policy
+  - pick_first - traces the pick first load balancing policy
+  - resource_quota - trace resource quota objects internals
   - glb - traces the grpclb load balancer
   - queue_pluck
   - queue_timeout
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
   - timer - timers (alarms) in the grpc internals
+  - timer_check - more detailed trace of timer logic in grpc internals
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
+  - tsi - traces tsi transport security
 
   The following tracers will only run in binaries built in DEBUG mode. This is
   accomplished by invoking `CONFIG=dbg make <target>`
@@ -74,6 +79,7 @@ some configuration as environment variables that can be set.
   - stream_refcount
   - workqueue_refcount
   - fd_refcount
+  - cq_refcount
   - auth_context_refcount
   - security_connector_refcount
   - resolver_refcount
@@ -82,6 +88,11 @@ some configuration as environment variables that can be set.
 
   'all' can additionally be used to turn all traces on.
   Individual traces can be disabled by prefixing them with '-'.
+
+  'refcount' will turn on all of the tracers for refcount debugging.
+
+  if 'list_tracers' is present, then all of the available tracers will be
+  printed when the program starts up.
 
   Example:
   export GRPC_TRACE=all,-pending_tags

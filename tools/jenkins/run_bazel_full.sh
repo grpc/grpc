@@ -20,6 +20,4 @@ set -ex -o igncr || set -ex
 
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
 export DOCKER_RUN_SCRIPT=tools/jenkins/run_bazel_full_in_docker.sh
-# Warn PR author if they make a change to the bazel directory
-tools/run_tests/python_utils/check_bazel_dir.py
 exec tools/run_tests/dockerize/build_and_run_docker.sh

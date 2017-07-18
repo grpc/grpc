@@ -39,10 +39,11 @@
 #include "src/core/lib/support/env.h"
 
 grpc_tracer_flag grpc_polling_trace =
-    GRPC_TRACER_INITIALIZER(false); /* Disabled by default */
+    GRPC_TRACER_INITIALIZER(false, "polling"); /* Disabled by default */
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_fd_refcount = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_fd_refcount =
+    GRPC_TRACER_INITIALIZER(false, "fd_refcount");
 #endif
 
 /** Default poll() function - a pointer so that it can be overridden by some
@@ -120,11 +121,15 @@ void grpc_set_event_engine_test_only(
   g_event_engine = ev_engine;
 }
 
+const grpc_event_engine_vtable *grpc_get_event_engine_test_only() {
+  return g_event_engine;
+}
+
 /* Call this only after calling grpc_event_engine_init() */
 const char *grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
-  grpc_register_tracer("polling", &grpc_polling_trace);
+  grpc_register_tracer(&grpc_polling_trace);
 
   char *s = gpr_getenv("GRPC_POLL_STRATEGY");
   if (s == NULL) {

@@ -31,7 +31,7 @@ gpr_thd_id grpc_init_thread;
 void grpc_iomgr_platform_init(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_global_init();
-  grpc_register_tracer("tcp", &grpc_tcp_trace);
+  grpc_register_tracer(&grpc_tcp_trace);
   grpc_executor_set_threading(&exec_ctx, false);
   grpc_init_thread = gpr_thd_currentid();
   grpc_exec_ctx_finish(&exec_ctx);

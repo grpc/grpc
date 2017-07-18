@@ -180,7 +180,8 @@ class RubyArtifact:
     # We are using a custom workspace instead.
     return create_jobspec(self.name,
                           ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
-                          use_workspace=True)
+                          use_workspace=True,
+                          timeout_seconds=45*60)
 
 
 class CSharpExtArtifact:

@@ -31,6 +31,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
       <Filter>src\core\lib\compression</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\stream_compression.c">
+      <Filter>src\core\lib\compression</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\format_request.c">
       <Filter>src\core\lib\http</Filter>
     </ClCompile>
@@ -535,6 +538,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
       <Filter>src\core\tsi</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
       <Filter>src\core\tsi</Filter>
     </ClCompile>
@@ -627,6 +633,12 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create_posix.c">
       <Filter>src\core\ext\transport\chttp2\client\insecure</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_plugin.c">
+      <Filter>src\core\ext\transport\inproc</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_transport.c">
+      <Filter>src\core\ext\transport\inproc</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\client_load_reporting_filter.c">
       <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb</Filter>
@@ -876,6 +888,9 @@
       <Filter>src\core\lib\compression</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.h">
+      <Filter>src\core\lib\compression</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\stream_compression.h">
       <Filter>src\core\lib\compression</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h">
@@ -1310,6 +1325,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
@@ -1387,6 +1405,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h">
       <Filter>src\core\ext\transport\chttp2\client</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_transport.h">
+      <Filter>src\core\ext\transport\inproc</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\client_load_reporting_filter.h">
       <Filter>src\core\ext\filters\client_channel\lb_policy\grpclb</Filter>
@@ -1636,6 +1657,9 @@
     </Filter>
     <Filter Include="src\core\ext\transport\chttp2\transport">
       <UniqueIdentifier>{6f34254e-e69f-c9b4-156d-5024bade5408}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\transport\inproc">
+      <UniqueIdentifier>{fb9e878e-fc50-40af-7646-074229a9d676}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{5b2ded3f-84a5-f6b4-2060-286c7d1dc945}</UniqueIdentifier>

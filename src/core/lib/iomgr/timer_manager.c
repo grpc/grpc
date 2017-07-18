@@ -56,7 +56,7 @@ static gpr_timespec g_timed_waiter_deadline;
 // generation counter to track which thread is waiting for the next timer
 static uint64_t g_timed_waiter_generation;
 
-static void timer_thread(void *unused);
+static void timer_thread(void *completed_thread_ptr);
 
 static void gc_completed_threads(void) {
   if (g_completed_threads != NULL) {
@@ -81,10 +81,17 @@ static void start_timer_thread_and_unlock(void) {
   if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
     gpr_log(GPR_DEBUG, "Spawn timer thread");
   }
-  gpr_thd_id thd;
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&opt);
-  gpr_thd_new(&thd, timer_thread, NULL, &opt);
+  completed_thread *ct = gpr_malloc(sizeof(*ct));
+  // The call to gpr_thd_new() has to be under the same lock used by
+  // gc_completed_threads(), particularly due to ct->t, which is written here
+  // (internally by gpr_thd_new) and read there. Otherwise it's possible for ct
+  // to leak through g_completed_threads and be freed in gc_completed_threads()
+  // before "&ct->t" is written to, causing a use-after-free.
+  gpr_mu_lock(&g_mu);
+  gpr_thd_new(&ct->t, timer_thread, ct, &opt);
+  gpr_mu_unlock(&g_mu);
 }
 
 void grpc_timer_manager_tick() {
@@ -245,7 +252,7 @@ static void timer_main_loop(grpc_exec_ctx *exec_ctx) {
   }
 }
 
-static void timer_thread_cleanup(void) {
+static void timer_thread_cleanup(completed_thread *ct) {
   gpr_mu_lock(&g_mu);
   // terminate the thread: drop the waiter count, thread count, and let whomever
   // stopped the threading stuff know that we're done
@@ -254,8 +261,6 @@ static void timer_thread_cleanup(void) {
   if (0 == g_thread_count) {
     gpr_cv_signal(&g_cv_shutdown);
   }
-  completed_thread *ct = gpr_malloc(sizeof(*ct));
-  ct->t = gpr_thd_currentid();
   ct->next = g_completed_threads;
   g_completed_threads = ct;
   gpr_mu_unlock(&g_mu);
@@ -264,14 +269,14 @@ static void timer_thread_cleanup(void) {
   }
 }
 
-static void timer_thread(void *unused) {
+static void timer_thread(void *completed_thread_ptr) {
   // this threads exec_ctx: we try to run things through to completion here
   // since it's easy to spin up new threads
   grpc_exec_ctx exec_ctx =
       GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
   timer_main_loop(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
-  timer_thread_cleanup();
+  timer_thread_cleanup(completed_thread_ptr);
 }
 
 static void start_threads(void) {
