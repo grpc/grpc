@@ -69,8 +69,8 @@ fi
 
 if [ "$DOCKERHUB_ORGANIZATION" != "" ]
 then
-  DOCKER_IMAGE_NAME=$DOCKERHUB_ORGANIZATION/$BASE_IMAGE
-  docker pull $DOCKER_IMAGE_NAME
+  BASE_IMAGE=$DOCKERHUB_ORGANIZATION/$BASE_IMAGE
+  docker pull $BASE_IMAGE
 else
   # Make sure docker image has been built. Should be instantaneous if so.
   docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/interoptest/$BASE_NAME || exit $?
