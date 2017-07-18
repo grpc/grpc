@@ -147,7 +147,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\constant_time_test.cc">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\constant_time_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

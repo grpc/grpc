@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\newhope\newhope_vectors_test.cc">
+      <Filter>third_party\boringssl\crypto\newhope</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{678cf897-2d02-4bb5-1872-b6d6d61c528f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{3cc5b2df-8409-e2e8-9504-748004a314f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{2a4fb92f-e756-007b-f6fc-d8f55fee6096}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\newhope">
+      <UniqueIdentifier>{09155346-c8e7-ffdb-7791-4f623ac5d521}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\newhope\newhope_test.cc">
+      <Filter>third_party\boringssl\crypto\newhope</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{f6eddde4-4559-9adb-797f-897631281a89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{81b307de-7498-3465-2ad4-7b634bf4788a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{af9d3e32-2f0f-f0f3-f63f-4a8bd7f07c46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\newhope">
+      <UniqueIdentifier>{ea48f773-5060-8693-62ef-f257ccd47b21}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
