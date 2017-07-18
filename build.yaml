@@ -4473,7 +4473,7 @@ configs:
   asan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS -Ithird_party/nanopb
     CXX: clang++
     LD: clang++
     LDFLAGS: -fsanitize=address
@@ -4485,7 +4485,7 @@ configs:
   asan-noleaks:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS -Ithird_party/nanopb
     CXX: clang++
     LD: clang++
     LDFLAGS: -fsanitize=address
@@ -4496,7 +4496,7 @@ configs:
   asan-trace-cmp:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address
-      -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+      -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS -Ithird_party/nanopb
     CXX: clang++
     LD: clang++
     LDFLAGS: -fsanitize=address
@@ -4506,37 +4506,37 @@ configs:
       ASAN_OPTIONS: detect_leaks=1:color=always
       LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
   basicprof:
-    CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
+    CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC -Ithird_party/nanopb
     DEFINES: NDEBUG
   c++-compat:
-    CFLAGS: -Wc++-compat
-    CPPFLAGS: -O0
+    CFLAGS: -Wc++-compat -Ithird_party/nanopb
+    CPPFLAGS: -O0 -Ithird_party/nanopb
     DEFINES: _DEBUG DEBUG
   counters:
-    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
+    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS -Ithird_party/nanopb
     DEFINES: NDEBUG
   dbg:
-    CPPFLAGS: -O0
+    CPPFLAGS: -O0 -Ithird_party/nanopb
     CXXFLAGS: -fno-exceptions
     DEFINES: _DEBUG DEBUG
   gcov:
     CC: gcc
-    CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+    CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type -Ithird_party/nanopb
     CXX: g++
     DEFINES: _DEBUG DEBUG GPR_GCOV
     LD: gcc
     LDFLAGS: -fprofile-arcs -ftest-coverage -rdynamic
     LDXX: g++
   helgrind:
-    CPPFLAGS: -O0
+    CPPFLAGS: -O0 -Ithird_party/nanopb
     DEFINES: _DEBUG DEBUG
     LDFLAGS: -rdynamic
     valgrind: --tool=helgrind
   lto:
-    CPPFLAGS: -O2
+    CPPFLAGS: -O2 -Ithird_party/nanopb
     DEFINES: NDEBUG
   memcheck:
-    CPPFLAGS: -O0
+    CPPFLAGS: -O0 -Ithird_party/nanopb
     DEFINES: _DEBUG DEBUG
     LDFLAGS: -rdynamic
     valgrind: --tool=memcheck --leak-check=full
@@ -4545,6 +4545,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins
       -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
       -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -Ithird_party/nanopb
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang++
@@ -4553,20 +4554,20 @@ configs:
     LDXX: clang++
     compile_the_world: true
   mutrace:
-    CPPFLAGS: -O3 -fno-omit-frame-pointer
+    CPPFLAGS: -O3 -fno-omit-frame-pointer -Ithird_party/nanopb
     DEFINES: NDEBUG
     LDFLAGS: -rdynamic
   opt:
-    CPPFLAGS: -O2
+    CPPFLAGS: -O2 -Ithird_party/nanopb
     CXXFLAGS: -fno-exceptions
     DEFINES: NDEBUG
   stapprof:
-    CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
+    CPPFLAGS: -O2 -DGRPC_STAP_PROFILER -Ithird_party/nanopb
     DEFINES: NDEBUG
   tsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
+      -DGPR_NO_DIRECT_SYSCALLS -Ithird_party/nanopb
     CXX: clang++
     DEFINES: GRPC_TSAN
     LD: clang++
@@ -4578,7 +4579,7 @@ configs:
   ubsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -Wvarargs
+      -Wno-unused-command-line-argument -Wvarargs -Ithird_party/nanopb
     CXX: clang++
     DEFINES: NDEBUG GRPC_UBSAN
     LD: clang++
