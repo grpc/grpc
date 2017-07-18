@@ -49,7 +49,7 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     srcs = srcs,
     hdrs = hdrs + public_hdrs,
     deps = deps + ["//external:" + dep for dep in external_deps],
-    copts = copts,
+    copts = copts + ["-Ithird_party/nanopb"],
     visibility = visibility,
     testonly = testonly,
     linkopts = ["-pthread"],
@@ -89,7 +89,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     args = args,
     data = data,
     deps = deps + ["//external:" + dep for dep in external_deps],
-    copts = copts,
+    copts = copts + ["-Ithird_party/nanopb"],
     linkopts = ["-pthread"],
   )
 
@@ -105,7 +105,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     testonly = testonly,
     linkshared = linkshared,
     deps = deps + ["//external:" + dep for dep in external_deps],
-    copts = copts,
+    copts = copts + ["-Ithird_party/nanopb"],
     linkopts = ["-pthread"],
   )
 
