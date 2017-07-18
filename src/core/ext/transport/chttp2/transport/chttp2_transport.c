@@ -886,6 +886,21 @@ static grpc_closure_scheduler *write_scheduler(grpc_chttp2_transport *t,
   GPR_UNREACHABLE_CODE(return NULL);
 }
 
+#define WRITE_STATE_TUPLE_TO_INT(p, i) (2 * (int)(p) + (int)(i))
+static const char *begin_writing_desc(bool partial, bool inlined) {
+  switch (WRITE_STATE_TUPLE_TO_INT(partial, inlined)) {
+    case WRITE_STATE_TUPLE_TO_INT(false, false):
+      return "begin write in background";
+    case WRITE_STATE_TUPLE_TO_INT(false, true):
+      return "begin write in current thread";
+    case WRITE_STATE_TUPLE_TO_INT(true, false):
+      return "begin partial write in background";
+    case WRITE_STATE_TUPLE_TO_INT(true, true):
+      return "begin partial write in current thread";
+  }
+  GPR_UNREACHABLE_CODE(return "bad state tuple");
+}
+
 static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
                                       grpc_error *error_ignored) {
   GPR_TIMER_BEGIN("write_action_begin_locked", 0);
@@ -898,15 +913,17 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
     r = grpc_chttp2_begin_write(exec_ctx, t);
   }
   if (r.writing) {
-    set_write_state(exec_ctx, t,
-                    r.partial ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE
-                              : GRPC_CHTTP2_WRITE_STATE_WRITING,
-                    r.partial ? "begin writing partial" : "begin writing");
-    GRPC_CLOSURE_SCHED(
-        exec_ctx,
-        GRPC_CLOSURE_INIT(&t->write_action, write_action, t,
-                          write_scheduler(t, r.early_results_scheduled)),
-        GRPC_ERROR_NONE);
+    grpc_closure_scheduler *scheduler =
+        write_scheduler(t, r.early_results_scheduled);
+    set_write_state(
+        exec_ctx, t, r.partial ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE
+                               : GRPC_CHTTP2_WRITE_STATE_WRITING,
+        begin_writing_desc(r.partial, scheduler == grpc_schedule_on_exec_ctx));
+    GPR_ASSERT(scheduler == grpc_schedule_on_exec_ctx ||
+               scheduler == grpc_executor_scheduler);
+    GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_INIT(&t->write_action,
+                                                   write_action, t, scheduler),
+                       GRPC_ERROR_NONE);
   } else {
     set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_IDLE,
                     "begin writing nothing");
@@ -918,6 +935,7 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
 static void write_action(grpc_exec_ctx *exec_ctx, void *gt, grpc_error *error) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   GPR_TIMER_BEGIN("write_action", 0);
+  gpr_log(GPR_DEBUG, "W:%p write_action", t);
   grpc_endpoint_write(
       exec_ctx, t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end_locked, t,
@@ -1104,12 +1122,14 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
   if (GRPC_TRACER_ON(grpc_http_trace)) {
     const char *errstr = grpc_error_string(error);
-    gpr_log(GPR_DEBUG,
-            "complete_closure_step: %p refs=%d flags=0x%04x desc=%s err=%s",
-            closure,
-            (int)(closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT),
-            (int)(closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT),
-            desc, errstr);
+    gpr_log(
+        GPR_DEBUG,
+        "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
+        "write_state=%s",
+        t, closure,
+        (int)(closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT),
+        (int)(closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT), desc,
+        errstr, write_state_name(t->write_state));
   }
   if (error != GRPC_ERROR_NONE) {
     if (closure->error_data.error == GRPC_ERROR_NONE) {
