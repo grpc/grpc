@@ -1124,6 +1124,7 @@ add_library(grpc
   src/core/lib/security/util/json_util.c
   src/core/lib/surface/init_secure.c
   src/core/tsi/fake_transport_security.c
+  src/core/tsi/gts_transport_security.c
   src/core/tsi/ssl_transport_security.c
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c
@@ -1490,6 +1491,7 @@ add_library(grpc_cronet
   src/core/lib/security/util/json_util.c
   src/core/lib/surface/init_secure.c
   src/core/tsi/fake_transport_security.c
+  src/core/tsi/gts_transport_security.c
   src/core/tsi/ssl_transport_security.c
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c

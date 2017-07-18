@@ -3064,6 +3064,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/tsi/fake_transport_security.c \
+    src/core/tsi/gts_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
@@ -3428,6 +3429,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/tsi/fake_transport_security.c \
+    src/core/tsi/gts_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
@@ -19174,6 +19176,7 @@ src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_cronet_plugin_registry.c: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry.c: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
+src/core/tsi/gts_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security_adapter.c: $(OPENSSL_DEP)

@@ -455,6 +455,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h" />
@@ -878,6 +879,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_secure.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
     </ClCompile>
