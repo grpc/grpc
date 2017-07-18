@@ -371,7 +371,7 @@ describe('client credentials', function() {
       assert(err);
       assert.strictEqual(err.message,
                          'Getting metadata from plugin failed with error: ' +
-                         'Authentication error');
+                         'Authentication failure');
       done();
     });
   });
