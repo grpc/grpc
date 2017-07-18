@@ -402,6 +402,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\stats.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\stats_data.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.h" />
@@ -741,6 +743,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport_op_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\stats.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\stats_data.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
     </ClCompile>

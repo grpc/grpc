@@ -7691,6 +7691,7 @@
     "deps": [
       "gpr", 
       "grpc_codegen", 
+      "grpc_stats", 
       "grpc_trace"
     ], 
     "headers": [
@@ -8547,6 +8548,26 @@
     "src": [
       "src/core/ext/filters/workarounds/workaround_utils.c", 
       "src/core/ext/filters/workarounds/workaround_utils.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr"
+    ], 
+    "headers": [
+      "src/core/lib/debug/stats.h", 
+      "src/core/lib/debug/stats_data.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_stats", 
+    "src": [
+      "src/core/lib/debug/stats.c", 
+      "src/core/lib/debug/stats.h", 
+      "src/core/lib/debug/stats_data.c", 
+      "src/core/lib/debug/stats_data.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

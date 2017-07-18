@@ -762,6 +762,8 @@
         'src/core/lib/transport/transport.c',
         'src/core/lib/transport/transport_op_string.c',
         'src/core/lib/debug/trace.c',
+        'src/core/lib/debug/stats.c',
+        'src/core/lib/debug/stats_data.c',
         'src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c',
         'src/core/ext/transport/chttp2/transport/bin_decoder.c',
         'src/core/ext/transport/chttp2/transport/bin_encoder.c',

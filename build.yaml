@@ -422,6 +422,7 @@ filegroups:
   uses:
   - grpc_codegen
   - grpc_trace
+  - grpc_stats
 - name: grpc_client_channel
   headers:
   - src/core/ext/filters/client_channel/client_channel.h
@@ -679,6 +680,15 @@ filegroups:
   - src/core/ext/filters/workarounds/workaround_utils.c
   uses:
   - grpc_base
+- name: grpc_stats
+  headers:
+  - src/core/lib/debug/stats.h
+  - src/core/lib/debug/stats_data.h
+  src:
+  - src/core/lib/debug/stats.c
+  - src/core/lib/debug/stats_data.c
+  deps:
+  - gpr
 - name: grpc_test_util_base
   build: test
   headers:

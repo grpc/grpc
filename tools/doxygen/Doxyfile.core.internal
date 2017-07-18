@@ -1073,6 +1073,10 @@ src/core/lib/compression/message_compress.c \
 src/core/lib/compression/message_compress.h \
 src/core/lib/compression/stream_compression.c \
 src/core/lib/compression/stream_compression.h \
+src/core/lib/debug/stats.c \
+src/core/lib/debug/stats.h \
+src/core/lib/debug/stats_data.c \
+src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.c \
 src/core/lib/debug/trace.h \
 src/core/lib/http/format_request.c \

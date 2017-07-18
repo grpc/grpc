@@ -307,6 +307,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\stats.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\stats_data.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\client_certs.c">
@@ -600,6 +602,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport_op_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\stats.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\stats_data.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
