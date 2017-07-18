@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_uv.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_uv.h"
@@ -123,6 +124,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
   (void)channel_args;
   (void)interested_parties;
+
+  GRPC_ASSERT_SAME_THREAD();
 
   if (channel_args != NULL) {
     for (size_t i = 0; i < channel_args->num_args; i++) {

@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_uv.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -174,6 +175,8 @@ static grpc_error *blocking_resolve_address_impl(
   grpc_error *err;
   int retry_status;
 
+  GRPC_ASSERT_SAME_THREAD();
+
   req.addrinfo = NULL;
 
   err = try_split_host_port(name, default_port, &host, &port);
@@ -228,6 +231,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   char *port = NULL;
   grpc_error *err;
   int s;
+  GRPC_ASSERT_SAME_THREAD();
   err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
     GRPC_CLOSURE_SCHED(exec_ctx, on_done, err);

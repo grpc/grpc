@@ -208,6 +208,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iomgr.h )
   s.files += %w( src/core/lib/iomgr/iomgr_internal.h )
   s.files += %w( src/core/lib/iomgr/iomgr_posix.h )
+  s.files += %w( src/core/lib/iomgr/iomgr_uv.h )
   s.files += %w( src/core/lib/iomgr/is_epollexclusive_available.h )
   s.files += %w( src/core/lib/iomgr/load_file.h )
   s.files += %w( src/core/lib/iomgr/lockfree_event.h )

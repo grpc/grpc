@@ -30,6 +30,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_uv.h"
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/tcp_uv.h"
@@ -183,6 +184,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_tcp *tcp = (grpc_tcp *)ep;
   int status;
   grpc_error *error = GRPC_ERROR_NONE;
+  GRPC_ASSERT_SAME_THREAD();
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
@@ -236,6 +238,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   unsigned int i;
   grpc_slice *slice;
   uv_write_t *write_req;
+  GRPC_ASSERT_SAME_THREAD();
 
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     size_t j;

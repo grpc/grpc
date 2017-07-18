@@ -28,6 +28,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_uv.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -107,6 +108,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
+  GRPC_ASSERT_SAME_THREAD();
   gpr_ref(&s->refs);
   return s;
 }
@@ -173,6 +175,7 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 }
 
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
+  GRPC_ASSERT_SAME_THREAD();
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
     grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -335,6 +338,8 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
   int status;
   grpc_error *error = GRPC_ERROR_NONE;
 
+  GRPC_ASSERT_SAME_THREAD();
+
   if (s->tail != NULL) {
     port_index = s->tail->port_index + 1;
   }
@@ -415,6 +420,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *server,
   grpc_tcp_listener *sp;
   (void)pollsets;
   (void)pollset_count;
+  GRPC_ASSERT_SAME_THREAD();
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "SERVER_START %p", server);
   }
