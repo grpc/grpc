@@ -789,7 +789,6 @@ static void server_mutate_op(grpc_call_element *elem,
 static void server_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   server_mutate_op(elem, op);
   grpc_call_next_op(exec_ctx, elem, op);
 }

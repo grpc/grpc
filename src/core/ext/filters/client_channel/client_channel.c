@@ -1366,10 +1366,6 @@ static void cc_start_transport_stream_op_batch(
     grpc_transport_stream_op_batch *batch) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace) ||
-      GRPC_TRACER_ON(grpc_trace_channel)) {
-    grpc_call_log_op(GPR_INFO, elem, batch);
-  }
   if (chand->deadline_checking_enabled) {
     grpc_deadline_state_client_start_transport_stream_op_batch(exec_ctx, elem,
                                                                batch);

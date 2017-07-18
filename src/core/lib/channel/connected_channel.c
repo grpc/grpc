@@ -97,7 +97,6 @@ static void con_start_transport_stream_op_batch(
     grpc_transport_stream_op_batch *batch) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
   if (batch->recv_initial_metadata) {
     callback_state *state = &calld->recv_initial_metadata_ready;
     intercept_callback(

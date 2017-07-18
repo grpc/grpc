@@ -377,7 +377,6 @@ static void hs_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   GPR_TIMER_BEGIN("hs_start_transport_stream_op_batch", 0);
   grpc_error *error = hs_mutate_op(exec_ctx, elem, op);
   if (error != GRPC_ERROR_NONE) {

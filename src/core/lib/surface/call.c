@@ -486,8 +486,7 @@ static void release_call(grpc_exec_ctx *exec_ctx, void *call,
   grpc_call *c = call;
   grpc_channel *channel = c->channel;
   grpc_call_combiner_destroy(&c->call_combiner);
-  char *peer_string = (char *)gpr_atm_acq_load(&c->peer_string);
-  gpr_free(peer_string);
+  gpr_free((char *)c->peer_string);
   grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(c->arena));
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
 }
@@ -593,6 +592,7 @@ static void execute_batch_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call *call = batch->handler_private.extra_arg;
   GPR_TIMER_BEGIN("execute_batch", 0);
   grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
+  GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
   elem->filter->start_transport_stream_op_batch(exec_ctx, elem, batch);
   GPR_TIMER_END("execute_batch", 0);
 }
@@ -605,11 +605,6 @@ static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
   batch->handler_private.extra_arg = call;
   GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner,
                     batch, grpc_schedule_on_exec_ctx);
-  if (GRPC_TRACER_ON(grpc_trace_channel)) {
-    char *batch_string = grpc_transport_stream_op_batch_string(batch);
-    gpr_log(GPR_INFO, "executing batch: %s", batch_string);
-    gpr_free(batch_string);
-  }
   GRPC_CALL_COMBINER_START(exec_ctx, &call->call_combiner, start_batch_closure,
                            GRPC_ERROR_NONE, "executing batch");
 }

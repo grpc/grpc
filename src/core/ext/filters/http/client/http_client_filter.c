@@ -420,7 +420,6 @@ static void hc_start_transport_stream_op_batch(
     grpc_transport_stream_op_batch *op) {
   call_data *calld = elem->call_data;
   GPR_TIMER_BEGIN("hc_start_transport_stream_op_batch", 0);
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   grpc_error *error = hc_mutate_op(exec_ctx, elem, op);
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, op, error,
