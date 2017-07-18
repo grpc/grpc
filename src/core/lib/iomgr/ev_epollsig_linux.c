@@ -25,6 +25,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <poll.h>
 #include <pthread.h>
 #include <signal.h>
@@ -1088,30 +1089,16 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   pollset->shutdown_done = NULL;
 }
 
-/* Convert a timespec to milliseconds:
-   - Very small or negative poll times are clamped to zero to do a non-blocking
-     poll (which becomes spin polling)
-   - Other small values are rounded up to one millisecond
-   - Longer than a millisecond polls are rounded up to the next nearest
-     millisecond to avoid spinning
-   - Infinite timeouts are converted to -1 */
-static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
-                                           gpr_timespec now) {
-  gpr_timespec timeout;
-  static const int64_t max_spin_polling_us = 10;
-  if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
-    return -1;
-  }
-
-  if (gpr_time_cmp(deadline, gpr_time_add(now, gpr_time_from_micros(
-                                                   max_spin_polling_us,
-                                                   GPR_TIMESPAN))) <= 0) {
+static int poll_deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
+                                           grpc_millis millis) {
+  if (millis == GRPC_MILLIS_INF_FUTURE) return -1;
+  grpc_millis delta = millis - grpc_exec_ctx_now(exec_ctx);
+  if (delta > INT_MAX)
+    return INT_MAX;
+  else if (delta < 0)
     return 0;
-  }
-  timeout = gpr_time_sub(deadline, now);
-  int millis = gpr_time_to_millis(gpr_time_add(
-      timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
-  return millis >= 1 ? millis : 1;
+  else
+    return (int)delta;
 }
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
@@ -1307,10 +1294,10 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
    ensure that it is held by the time the function returns */
 static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker **worker_hdl,
-                                gpr_timespec now, gpr_timespec deadline) {
+                                grpc_millis deadline) {
   GPR_TIMER_BEGIN("pollset_work", 0);
   grpc_error *error = GRPC_ERROR_NONE;
-  int timeout_ms = poll_deadline_to_millis_timeout(deadline, now);
+  int timeout_ms = poll_deadline_to_millis_timeout(exec_ctx, deadline);
 
   sigset_t new_mask;
 

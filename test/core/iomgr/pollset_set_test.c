@@ -202,7 +202,7 @@ static void pollset_set_test_basic() {
    */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_worker *worker;
-  gpr_timespec deadline;
+  grpc_millis deadline;
 
   test_fd tfds[10];
   test_pollset pollsets[3];
@@ -255,10 +255,10 @@ static void pollset_set_test_basic() {
     make_test_fds_readable(tfds, num_fds);
 
     gpr_mu_lock(pollsets[i].mu);
-    deadline = grpc_timeout_milliseconds_to_deadline(2);
+    deadline =
+        grpc_timespec_to_millis(grpc_timeout_milliseconds_to_deadline(2));
     GPR_ASSERT(GRPC_ERROR_NONE ==
-               grpc_pollset_work(&exec_ctx, pollsets[i].ps, &worker,
-                                 gpr_now(GPR_CLOCK_MONOTONIC), deadline));
+               grpc_pollset_work(&exec_ctx, pollsets[i].ps, &worker, deadline));
     gpr_mu_unlock(pollsets[i].mu);
 
     grpc_exec_ctx_flush(&exec_ctx);
@@ -307,7 +307,7 @@ void pollset_set_test_dup_fds() {
    */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_worker *worker;
-  gpr_timespec deadline;
+  grpc_millis deadline;
 
   test_fd tfds[3];
   test_pollset pollset;
@@ -337,10 +337,9 @@ void pollset_set_test_dup_fds() {
   make_test_fds_readable(tfds, num_fds);
 
   gpr_mu_lock(pollset.mu);
-  deadline = grpc_timeout_milliseconds_to_deadline(2);
+  deadline = grpc_timespec_to_millis(grpc_timeout_milliseconds_to_deadline(2));
   GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_pollset_work(&exec_ctx, pollset.ps, &worker,
-                               gpr_now(GPR_CLOCK_MONOTONIC), deadline));
+             grpc_pollset_work(&exec_ctx, pollset.ps, &worker, deadline));
   gpr_mu_unlock(pollset.mu);
   grpc_exec_ctx_flush(&exec_ctx);
 
@@ -380,7 +379,7 @@ void pollset_set_test_empty_pollset() {
    */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_worker *worker;
-  gpr_timespec deadline;
+  grpc_millis deadline;
 
   test_fd tfds[3];
   test_pollset pollsets[2];
@@ -406,10 +405,9 @@ void pollset_set_test_empty_pollset() {
   make_test_fds_readable(tfds, num_fds);
 
   gpr_mu_lock(pollsets[0].mu);
-  deadline = grpc_timeout_milliseconds_to_deadline(2);
+  deadline = grpc_timespec_to_millis(grpc_timeout_milliseconds_to_deadline(2));
   GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_pollset_work(&exec_ctx, pollsets[0].ps, &worker,
-                               gpr_now(GPR_CLOCK_MONOTONIC), deadline));
+             grpc_pollset_work(&exec_ctx, pollsets[0].ps, &worker, deadline));
   gpr_mu_unlock(pollsets[0].mu);
   grpc_exec_ctx_flush(&exec_ctx);
 

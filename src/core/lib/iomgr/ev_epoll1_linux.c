@@ -25,6 +25,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <poll.h>
 #include <pthread.h>
 #include <string.h>
@@ -444,30 +445,24 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 #define MAX_EPOLL_EVENTS 100
 
-static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
-                                           gpr_timespec now) {
-  gpr_timespec timeout;
-  if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
-    return -1;
-  }
-
-  if (gpr_time_cmp(deadline, now) <= 0) {
+static int poll_deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
+                                           grpc_millis millis) {
+  if (millis == GRPC_MILLIS_INF_FUTURE) return -1;
+  grpc_millis delta = millis - grpc_exec_ctx_now(exec_ctx);
+  if (delta > INT_MAX)
+    return INT_MAX;
+  else if (delta < 0)
     return 0;
-  }
-
-  static const gpr_timespec round_up = {
-      .clock_type = GPR_TIMESPAN, .tv_sec = 0, .tv_nsec = GPR_NS_PER_MS - 1};
-  timeout = gpr_time_sub(deadline, now);
-  int millis = gpr_time_to_millis(gpr_time_add(timeout, round_up));
-  return millis >= 1 ? millis : 1;
+  else
+    return (int)delta;
 }
 
 static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                                 gpr_timespec now, gpr_timespec deadline) {
+                                 grpc_millis deadline) {
   struct epoll_event events[MAX_EPOLL_EVENTS];
   static const char *err_desc = "pollset_poll";
 
-  int timeout = poll_deadline_to_millis_timeout(deadline, now);
+  int timeout = poll_deadline_to_millis_timeout(exec_ctx, deadline);
 
   if (timeout != 0) {
     GRPC_SCHEDULING_START_BLOCKING_REGION;
@@ -505,9 +500,10 @@ static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   return error;
 }
 
-static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
-                         grpc_pollset_worker **worker_hdl, gpr_timespec *now,
-                         gpr_timespec deadline) {
+static bool begin_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                         grpc_pollset_worker *worker,
+                         grpc_pollset_worker **worker_hdl,
+                         grpc_millis deadline) {
   if (worker_hdl != NULL) *worker_hdl = worker;
   worker->initialized_cv = false;
   worker->kick_state = UNKICKED;
@@ -562,12 +558,13 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
     gpr_cv_init(&worker->cv);
     while (worker->kick_state == UNKICKED &&
            pollset->shutdown_closure == NULL) {
-      if (gpr_cv_wait(&worker->cv, &pollset->mu, deadline) &&
+      if (gpr_cv_wait(&worker->cv, &pollset->mu,
+                      grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)) &&
           worker->kick_state == UNKICKED) {
         worker->kick_state = KICKED;
       }
     }
-    *now = gpr_now(now->clock_type);
+    grpc_exec_ctx_invalidate_now(exec_ctx);
   }
 
   return worker->kick_state == DESIGNATED_POLLER &&
@@ -694,7 +691,7 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
    ensure that it is held by the time the function returns */
 static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker **worker_hdl,
-                                gpr_timespec now, gpr_timespec deadline) {
+                                grpc_millis deadline) {
   grpc_pollset_worker worker;
   grpc_error *error = GRPC_ERROR_NONE;
   static const char *err_desc = "pollset_work";
@@ -703,13 +700,12 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     return GRPC_ERROR_NONE;
   }
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)pollset);
-  if (begin_worker(pollset, &worker, worker_hdl, &now, deadline)) {
+  if (begin_worker(exec_ctx, pollset, &worker, worker_hdl, deadline)) {
     gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
     GPR_ASSERT(!pollset->shutdown_closure);
     GPR_ASSERT(!pollset->seen_inactive);
     gpr_mu_unlock(&pollset->mu);
-    append_error(&error, pollset_epoll(exec_ctx, pollset, now, deadline),
-                 err_desc);
+    append_error(&error, pollset_epoll(exec_ctx, pollset, deadline), err_desc);
     gpr_mu_lock(&pollset->mu);
     gpr_tls_set(&g_current_thread_worker, 0);
   }

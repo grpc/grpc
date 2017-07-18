@@ -236,10 +236,8 @@ static void test_threading_loop(void *arg) {
     grpc_pollset_worker *worker;
     gpr_mu_lock(shared->mu);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(&exec_ctx, shared->pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC),
-                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+        "pollset_work", grpc_pollset_work(&exec_ctx, shared->pollset, &worker,
+                                          GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(shared->mu);
     grpc_exec_ctx_finish(&exec_ctx);
   }

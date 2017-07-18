@@ -1196,30 +1196,16 @@ static struct timespec millis_to_timespec(int millis) {
   return linux_ts;
 }
 
-/* Convert a timespec to milliseconds:
-   - Very small or negative poll times are clamped to zero to do a non-blocking
-     poll (which becomes spin polling)
-   - Other small values are rounded up to one millisecond
-   - Longer than a millisecond polls are rounded up to the next nearest
-     millisecond to avoid spinning
-   - Infinite timeouts are converted to -1 */
-static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
-                                           gpr_timespec now) {
-  gpr_timespec timeout;
-  static const int64_t max_spin_polling_us = 10;
-  if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
-    return -1;
-  }
-
-  if (gpr_time_cmp(deadline, gpr_time_add(now, gpr_time_from_micros(
-                                                   max_spin_polling_us,
-                                                   GPR_TIMESPAN))) <= 0) {
+static int poll_deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
+                                           grpc_millis millis) {
+  if (millis == GRPC_MILLIS_INF_FUTURE) return -1;
+  grpc_millis delta = millis - grpc_exec_ctx_now(exec_ctx);
+  if (delta > INT_MAX)
+    return INT_MAX;
+  else if (delta < 0)
     return 0;
-  }
-  timeout = gpr_time_sub(deadline, now);
-  int millis = gpr_time_to_millis(gpr_time_add(
-      timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
-  return millis >= 1 ? millis : 1;
+  else
+    return (int)delta;
 }
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
@@ -1287,10 +1273,9 @@ static void pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->po.mu);
 }
 
-/* NOTE: This function may modify 'now' */
-static bool acquire_polling_lease(grpc_pollset_worker *worker,
-                                  polling_island *pi, gpr_timespec deadline,
-                                  gpr_timespec *now) {
+static bool acquire_polling_lease(grpc_exec_ctx *exec_ctx,
+                                  grpc_pollset_worker *worker,
+                                  polling_island *pi, grpc_millis *deadline) {
   bool is_lease_acquired = false;
 
   gpr_mu_lock(&pi->worker_list_mu);  //  LOCK
@@ -1302,7 +1287,7 @@ static bool acquire_polling_lease(grpc_pollset_worker *worker,
 
     bool is_timeout = false;
     int ret;
-    int timeout_ms = poll_deadline_to_millis_timeout(deadline, *now);
+    int timeout_ms = poll_deadline_to_millis_timeout(exec_ctx, *deadline);
     if (timeout_ms == -1) {
       ret = sigwaitinfo(&g_wakeup_sig_set, NULL);
     } else {
@@ -1325,18 +1310,13 @@ static bool acquire_polling_lease(grpc_pollset_worker *worker,
       }
     }
 
-    /* Did the worker come out of sigtimedwait due to a thread that just
-       exited epoll and kicking it (in release_polling_lease function). */
-    bool is_polling_turn = gpr_atm_acq_load(&worker->is_polling_turn);
-
     /* Did the worker come out of sigtimedwait due to a thread alerting it that
        some completion event was (likely) available in the completion queue */
     bool is_kicked = gpr_atm_no_barrier_load(&worker->is_kicked);
 
     if (is_kicked || is_timeout) {
-      *now = deadline; /* Essentially make the epoll timeout = 0 */
-    } else if (is_polling_turn) {
-      *now = gpr_now(GPR_CLOCK_MONOTONIC); /* Reduce the epoll timeout */
+      *deadline = grpc_exec_ctx_now(
+          exec_ctx); /* Essentially make the epoll timeout = 0 */
     }
 
     gpr_mu_lock(&pi->worker_list_mu);  // LOCK
@@ -1376,11 +1356,11 @@ static void release_polling_lease(polling_island *pi, grpc_error **error) {
 static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
                                    grpc_pollset *pollset, polling_island *pi,
                                    grpc_pollset_worker *worker,
-                                   gpr_timespec now, gpr_timespec deadline,
-                                   sigset_t *sig_mask, grpc_error **error) {
+                                   grpc_millis deadline, sigset_t *sig_mask,
+                                   grpc_error **error) {
   /* Only g_max_pollers_per_pi threads can be doing polling in parallel.
      If we cannot get a lease, we cannot continue to do epoll_pwait() */
-  if (!acquire_polling_lease(worker, pi, deadline, &now)) {
+  if (!acquire_polling_lease(exec_ctx, worker, pi, &deadline)) {
     return;
   }
 
@@ -1390,12 +1370,12 @@ static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
   const char *err_desc = "pollset_work_and_unlock";
 
   /* timeout_ms is the time between 'now' and 'deadline' */
-  int timeout_ms = poll_deadline_to_millis_timeout(deadline, now);
+  int timeout_ms = poll_deadline_to_millis_timeout(exec_ctx, deadline);
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   ep_rv =
       epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms, sig_mask);
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);
 
   /* Give back the lease right away so that some other thread can enter */
   release_polling_lease(pi, error);
@@ -1450,8 +1430,8 @@ static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
 static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
                                     grpc_pollset *pollset,
                                     grpc_pollset_worker *worker,
-                                    gpr_timespec now, gpr_timespec deadline,
-                                    sigset_t *sig_mask, grpc_error **error) {
+                                    grpc_millis deadline, sigset_t *sig_mask,
+                                    grpc_error **error) {
   int epoll_fd = -1;
   polling_island *pi = NULL;
   GPR_TIMER_BEGIN("pollset_work_and_unlock", 0);
@@ -1499,7 +1479,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&pollset->po.mu);
 
   g_current_thread_polling_island = pi;
-  pollset_do_epoll_pwait(exec_ctx, epoll_fd, pollset, pi, worker, now, deadline,
+  pollset_do_epoll_pwait(exec_ctx, epoll_fd, pollset, pi, worker, deadline,
                          sig_mask, error);
   g_current_thread_polling_island = NULL;
 
@@ -1521,7 +1501,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
    ensure that it is held by the time the function returns */
 static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker **worker_hdl,
-                                gpr_timespec now, gpr_timespec deadline) {
+                                grpc_millis deadline) {
   GPR_TIMER_BEGIN("pollset_work", 0);
   grpc_error *error = GRPC_ERROR_NONE;
 
@@ -1577,7 +1557,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
     push_front_worker(pollset, &worker); /* Add worker to pollset */
 
-    pollset_work_and_unlock(exec_ctx, pollset, &worker, now, deadline,
+    pollset_work_and_unlock(exec_ctx, pollset, &worker, deadline,
                             &g_orig_sigmask, &error);
     grpc_exec_ctx_flush(exec_ctx);
 

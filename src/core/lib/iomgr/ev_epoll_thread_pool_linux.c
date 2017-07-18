@@ -838,7 +838,7 @@ static void epoll_set_work(grpc_exec_ctx *exec_ctx, epoll_set *eps,
    ensure that it is held by the time the function returns */
 static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker **worker_hdl,
-                                gpr_timespec now, gpr_timespec deadline) {
+                                grpc_millis deadline) {
   GPR_TIMER_BEGIN("pollset_work", 0);
   grpc_error *error = GRPC_ERROR_NONE;
 
@@ -861,7 +861,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     push_front_worker(pollset, &worker);
 
     gpr_cv_wait(&worker.kick_cv, &pollset->mu,
-                gpr_convert_clock_type(deadline, GPR_CLOCK_REALTIME));
+                grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME));
     /* pollset->mu locked here */
 
     remove_worker(pollset, &worker);

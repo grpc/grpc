@@ -225,7 +225,8 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
     return;
   }
 
-  grpc_time_averaged_stats_add_sample(&shard->stats, (deadline - now) / 1000.0);
+  grpc_time_averaged_stats_add_sample(&shard->stats,
+                                      (double)(deadline - now) / 1000.0);
   if (deadline < shard->queue_deadline_cap) {
     is_first_timer = grpc_timer_heap_add(&shard->heap, timer);
   } else {
