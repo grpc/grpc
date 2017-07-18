@@ -185,6 +185,8 @@ struct grpc_call {
      Element 0 is initial metadata, element 1 is trailing metadata. */
   grpc_metadata_array *buffered_metadata[2];
 
+  grpc_metadata compression_md;
+
   // A char* indicating the peer name.
   gpr_atm peer_string;
 
@@ -1455,9 +1457,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   int num_completion_callbacks_needed = 1;
   grpc_call_error error = GRPC_CALL_OK;
 
-  // sent_initial_metadata guards against variable reuse.
-  grpc_metadata compression_md;
-
   GPR_TIMER_BEGIN("grpc_call_start_batch", 0);
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, notify_tag);
 
@@ -1505,7 +1504,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         /* process compression level */
-        memset(&compression_md, 0, sizeof(compression_md));
+        memset(&call->compression_md, 0, sizeof(call->compression_md));
         size_t additional_metadata_count = 0;
         grpc_compression_level effective_compression_level;
         bool level_set = false;
@@ -1527,8 +1526,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
                   call, effective_compression_level);
           // the following will be picked up by the compress filter and used as
           // the call's compression algorithm.
-          compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
-          compression_md.value = grpc_compression_algorithm_slice(calgo);
+          call->compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+          call->compression_md.value = grpc_compression_algorithm_slice(calgo);
           additional_metadata_count++;
         }
 
@@ -1542,7 +1541,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         if (!prepare_application_metadata(
                 exec_ctx, call, (int)op->data.send_initial_metadata.count,
                 op->data.send_initial_metadata.metadata, 0, call->is_client,
-                &compression_md, (int)additional_metadata_count)) {
+                &call->compression_md, (int)additional_metadata_count)) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
