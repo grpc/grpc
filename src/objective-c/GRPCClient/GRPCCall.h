@@ -228,7 +228,7 @@ extern id const kGRPCTrailersKey;
  *
  * Not compatible with property oauth2AccessToken in GRPCCall (OAuth2). Do not use both at the same time.
  */
-@property(atomic, strong) id<GRPCAuthorizationProtocol> oauthToken;
+@property(atomic, strong) id<GRPCAuthorizationProtocol> tokenProvider;
 
 /**
  * The request writer has to write NSData objects into the provided Writeable. The server will

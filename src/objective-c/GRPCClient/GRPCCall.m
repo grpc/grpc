@@ -457,10 +457,10 @@ static NSString * const kBearerPrefix = @"Bearer ";
   // that the life of the instance is determined by this retain cycle.
   _retainSelf = self;
 
-  if (self.oauthToken != nil) {
+  if (self.tokenProvider != nil) {
     self.isWaitingForToken = YES;
     __weak typeof(self) weakSelf = self;
-    [self.oauthToken getTokenWithHandler:^(NSString *token){
+    [self.tokenProvider getTokenWithHandler:^(NSString *token){
       typeof(self) strongSelf = weakSelf;
       if (strongSelf && strongSelf.isWaitingForToken) {
         if (token) {
