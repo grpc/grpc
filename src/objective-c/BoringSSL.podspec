@@ -167,7 +167,6 @@ Pod::Spec.new do |s|
       #include "hkdf.h"
       #include "md4.h"
       #include "md5.h"
-      #include "newhope.h"
       #include "obj_mac.h"
       #include "objects.h"
       #include "opensslv.h"
@@ -181,7 +180,6 @@ Pod::Spec.new do |s|
       #include "ripemd.h"
       #include "safestack.h"
       #include "srtp.h"
-      #include "time_support.h"
       #include "x509.h"
       #include "x509v3.h"
     EOF
