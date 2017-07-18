@@ -120,10 +120,15 @@ struct grpc_pollset {
   bool reassigning_neighbourhood;
   grpc_pollset_worker *root_worker;
   bool kicked_without_poller;
+
+  /* Set to true if the pollset is observed to have no workers available to
+   * poll */
   bool seen_inactive;
-  bool shutting_down;          /* Is the pollset shutting down ? */
-  bool finish_shutdown_called; /* Is the 'finish_shutdown_locked()' called ? */
+  bool shutting_down;             /* Is the pollset shutting down ? */
   grpc_closure *shutdown_closure; /* Called after after shutdown is complete */
+
+  /* Number of workers who are *about-to* attach themselves to the pollset
+   * worker list */
   int begin_refs;
 
   grpc_pollset *next;
@@ -294,12 +299,6 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
   grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
-
-  /* Note, it is possible that fd_become_readable might be called twice with
-     different 'notifier's when an fd becomes readable and it is in two epoll
-     sets (This can happen briefly during polling island merges). In such cases
-     it does not really matter which notifer is set as the read_notifier_pollset
-     (They would both point to the same polling island anyway) */
   /* Use release store to match with acquire load in fd_get_read_notifier */
   gpr_atm_rel_store(&fd->read_notifier_pollset, (gpr_atm)notifier);
 }
@@ -442,13 +441,16 @@ static grpc_error *pollset_kick_all(grpc_pollset *pollset) {
         case DESIGNATED_POLLER:
           SET_KICK_STATE(worker, KICKED);
           append_error(&error, grpc_wakeup_fd_wakeup(&global_wakeup_fd),
-                       "pollset_shutdown");
+                       "pollset_kick_all");
           break;
       }
 
       worker = worker->next;
     } while (worker != pollset->root_worker);
   }
+  // TODO: sreek.  Check if we need to set 'kicked_without_poller' to true here
+  // in the else case
+
   return error;
 }
 
@@ -577,6 +579,11 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
       pollset->seen_inactive = false;
       if (neighbourhood->active_root == NULL) {
         neighbourhood->active_root = pollset->next = pollset->prev = pollset;
+        /* TODO: sreek. Why would this worker state be other than UNKICKED
+         * here ? (since the worker isn't added to the pollset yet, there is no
+         * way it can be "found" by other threads to get kicked). */
+
+        /* If there is no designated poller, make this the designated poller */
         if (worker->kick_state == UNKICKED &&
             gpr_atm_no_barrier_cas(&g_active_poller, 0, (gpr_atm)worker)) {
           SET_KICK_STATE(worker, DESIGNATED_POLLER);
@@ -605,8 +612,11 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
                 pollset, worker, kick_state_string(worker->kick_state),
                 pollset->shutting_down);
       }
+
       if (gpr_cv_wait(&worker->cv, &pollset->mu, deadline) &&
           worker->kick_state == UNKICKED) {
+        /* If gpr_cv_wait returns true (i.e a timeout), pretend that the worker
+           received a kick */
         SET_KICK_STATE(worker, KICKED);
       }
     }
