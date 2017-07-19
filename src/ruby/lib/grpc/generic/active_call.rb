@@ -61,7 +61,7 @@ module GRPC
     extend Forwardable
     attr_reader :deadline, :metadata_sent, :metadata_to_send
     def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=,
-                   :peer, :peer_cert, :trailing_metadata
+                   :peer, :peer_cert, :trailing_metadata, :status
 
     # client_invoke begins a client invocation.
     #
@@ -120,6 +120,8 @@ module GRPC
       @input_stream_done = false
       @call_finished = false
       @call_finished_mu = Mutex.new
+      @client_call_executed = false
+      @client_call_executed_mu = Mutex.new
     end
 
     # Sends the initial metadata that has yet to be sent.
@@ -342,6 +344,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def request_response(req, metadata: {})
+      raise_error_if_already_executed
       ops = {
         SEND_MESSAGE => @marshal.call(req),
         SEND_CLOSE_FROM_CLIENT => nil,
@@ -384,6 +387,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def client_streamer(requests, metadata: {})
+      raise_error_if_already_executed
       begin
         merge_metadata_and_send_if_not_already_sent(metadata)
         requests.each { |r| @call.run_batch(SEND_MESSAGE => @marshal.call(r)) }
@@ -426,6 +430,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator|nil] a response Enumerator
     def server_streamer(req, metadata: {})
+      raise_error_if_already_executed
       ops = {
         SEND_MESSAGE => @marshal.call(req),
         SEND_CLOSE_FROM_CLIENT => nil
@@ -483,6 +488,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator, nil] a response Enumerator
     def bidi_streamer(requests, metadata: {}, &blk)
+      raise_error_if_already_executed
       # Metadata might have already been sent if this is an operation view
       merge_metadata_and_send_if_not_already_sent(metadata)
       bd = BidiCall.new(@call,
@@ -585,6 +591,15 @@ module GRPC
     # a list, multiple metadata for its key are sent
     def start_call(metadata = {})
       merge_metadata_to_send(metadata) && send_initial_metadata
+    end
+
+    def raise_error_if_already_executed
+      @client_call_executed_mu.synchronize do
+        if @client_call_executed
+          fail GRPC::Core::CallError, 'attempting to re-run a call'
+        end
+        @client_call_executed = true
+      end
     end
 
     def self.view_class(*visible_methods)
