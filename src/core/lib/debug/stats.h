@@ -32,10 +32,9 @@ extern grpc_stats_data *grpc_stats_per_cpu_storage;
 #define GRPC_THREAD_STATS_DATA(exec_ctx) \
   (&grpc_stats_per_cpu_storage[(exec_ctx)->starting_cpu])
 
-#define GRPC_STATS_INC_COUNTER(exec_ctx, ctr)                    \
-  (gpr_atm_no_barrier_fetch_add(                                 \
-       &GRPC_THREAD_STATS_DATA((exec_ctx))->counters[(ctr)], 1), \
-   0)
+#define GRPC_STATS_INC_COUNTER(exec_ctx, ctr) \
+  (gpr_atm_no_barrier_fetch_add(              \
+      &GRPC_THREAD_STATS_DATA((exec_ctx))->counters[(ctr)], 1))
 
 void grpc_stats_init(void);
 void grpc_stats_shutdown(void);
