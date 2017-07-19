@@ -630,17 +630,20 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
   }
 
   /* We release pollset lock in this function at a couple of places:
-   *   1. Brielfly when assigning pollset to a neighbourhood
+   *   1. Briefly when assigning pollset to a neighbourhood
    *   2. When doing gpr_cv_wait()
    * It is possible that 'kicked_without_poller' was set to true during (1) and
    * 'shutting_down' is set to true during (1) or (2). If either of them is
    * true, this worker cannot do polling */
-
   /* TODO(sreek): Perhaps there is a better way to handle kicked_without_poller
    * case; especially when the worker is the DESIGNATED_POLLER */
 
-  return worker->kick_state == DESIGNATED_POLLER && !pollset->shutting_down &&
-         !pollset->kicked_without_poller;
+  if (pollset->kicked_without_poller) {
+    pollset->kicked_without_poller = false;
+    return false;
+  }
+
+  return worker->kick_state == DESIGNATED_POLLER && !pollset->shutting_down;
 }
 
 static bool check_neighbourhood_for_available_poller(
