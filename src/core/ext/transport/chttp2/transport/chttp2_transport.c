@@ -2714,7 +2714,7 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
       if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                   &s->unprocessed_incoming_frames_buffer,
                                   &s->decompressed_data_buffer, NULL,
-                                  ~(size_t)0, &end_of_context)) {
+                                  MAX_SIZE_T, &end_of_context)) {
         error =
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream decompression error.");
         return error;

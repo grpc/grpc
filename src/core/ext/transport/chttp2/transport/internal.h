@@ -635,6 +635,7 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
                                        grpc_error *error, const char *desc);
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
+#define MAX_SIZE_T (~(size_t)0)
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
