@@ -37,8 +37,9 @@ int grpc_status_to_http2_error(grpc_status_code status) {
   }
 }
 
-grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
-                                                 gpr_timespec deadline) {
+grpc_status_code grpc_http2_error_to_grpc_status(grpc_exec_ctx *exec_ctx,
+                                                 grpc_http2_error_code error,
+                                                 grpc_millis deadline) {
   switch (error) {
     case GRPC_HTTP2_NO_ERROR:
       /* should never be received */
@@ -46,7 +47,7 @@ grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
     case GRPC_HTTP2_CANCEL:
       /* http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
        * exceeded */
-      return gpr_time_cmp(gpr_now(deadline.clock_type), deadline) >= 0
+      return grpc_exec_ctx_now(exec_ctx) > deadline
                  ? GRPC_STATUS_DEADLINE_EXCEEDED
                  : GRPC_STATUS_CANCELLED;
     case GRPC_HTTP2_ENHANCE_YOUR_CALM:

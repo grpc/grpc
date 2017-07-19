@@ -103,7 +103,7 @@ typedef struct {
   grpc_polling_entity *pollent;
   grpc_slice path;
   gpr_timespec start_time;
-  gpr_timespec deadline;
+  grpc_millis deadline;
   gpr_arena *arena;
   grpc_call_context_element *context;
 } grpc_connected_subchannel_call_args;

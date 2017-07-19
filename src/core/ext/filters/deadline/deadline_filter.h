@@ -50,7 +50,7 @@ typedef struct grpc_deadline_state {
 // assumes elem->call_data is zero'd
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_call_stack* call_stack,
-                              gpr_timespec deadline);
+                              grpc_millis deadline);
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
                                  grpc_call_element* elem);
 
@@ -62,7 +62,7 @@ void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
 // process of being reset, which means that attempting to increase the
 // deadline may result in the timer being called twice.
 void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                               gpr_timespec new_deadline);
+                               grpc_millis new_deadline);
 
 // To be called from the client-side filter's start_transport_stream_op_batch()
 // method.  Ensures that the deadline timer is cancelled when the call

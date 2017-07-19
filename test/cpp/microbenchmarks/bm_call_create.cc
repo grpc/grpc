@@ -563,7 +563,7 @@ static void BM_IsolatedFilter(benchmark::State &state) {
   grpc_exec_ctx_flush(&exec_ctx);
   grpc_call_stack *call_stack = static_cast<grpc_call_stack *>(
       gpr_zalloc(channel_stack->call_stack_size));
-  gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
   gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
   grpc_call_final_info final_info;

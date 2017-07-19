@@ -130,7 +130,7 @@ static void test_create_channel_stack(void) {
       .context = NULL,
       .path = path,
       .start_time = gpr_now(GPR_CLOCK_MONOTONIC),
-      .deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC),
+      .deadline = GRPC_MILLIS_INF_FUTURE,
       .arena = NULL};
   grpc_error *error = grpc_call_stack_init(&exec_ctx, channel_stack, 1,
                                            free_call, call_stack, &args);

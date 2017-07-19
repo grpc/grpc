@@ -29,7 +29,7 @@ void grpc_chttp2_incoming_metadata_buffer_init(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_arena *arena) {
   buffer->arena = arena;
   grpc_metadata_batch_init(&buffer->batch);
-  buffer->batch.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  buffer->batch.deadline = GRPC_MILLIS_INF_FUTURE;
 }
 
 void grpc_chttp2_incoming_metadata_buffer_destroy(
@@ -61,7 +61,7 @@ grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(
 }
 
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
-    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline) {
+    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_millis deadline) {
   buffer->batch.deadline = deadline;
 }
 

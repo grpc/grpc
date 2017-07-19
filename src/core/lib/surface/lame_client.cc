@@ -73,7 +73,7 @@ static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   mdb->list.head = &calld->status;
   mdb->list.tail = &calld->details;
   mdb->list.count = 2;
-  mdb->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  mdb->deadline = GRPC_MILLIS_INF_FUTURE;
 }
 
 static void lame_start_transport_stream_op_batch(

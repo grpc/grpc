@@ -136,7 +136,7 @@ struct call_data {
   bool host_set;
   grpc_slice path;
   grpc_slice host;
-  gpr_timespec deadline;
+  grpc_millis deadline;
 
   grpc_completion_queue *cq_new;
 
@@ -489,11 +489,13 @@ static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
       GPR_ASSERT(calld->path_set);
       rc->data.batch.details->host = grpc_slice_ref_internal(calld->host);
       rc->data.batch.details->method = grpc_slice_ref_internal(calld->path);
-      rc->data.batch.details->deadline = calld->deadline;
+      rc->data.batch.details->deadline =
+          grpc_millis_to_timespec(calld->deadline, GPR_CLOCK_REALTIME);
       rc->data.batch.details->flags = calld->recv_initial_metadata_flags;
       break;
     case REGISTERED_CALL:
-      *rc->data.registered.deadline = calld->deadline;
+      *rc->data.registered.deadline =
+          grpc_millis_to_timespec(calld->deadline, GPR_CLOCK_REALTIME);
       if (rc->data.registered.optional_payload) {
         *rc->data.registered.optional_payload = calld->payload;
         calld->payload = NULL;
@@ -734,7 +736,7 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
                                             grpc_error *error) {
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
-  gpr_timespec op_deadline;
+  grpc_millis op_deadline;
 
   if (error == GRPC_ERROR_NONE) {
     GPR_ASSERT(calld->recv_initial_metadata->idx.named.path != NULL);
@@ -754,7 +756,7 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
     GRPC_ERROR_REF(error);
   }
   op_deadline = calld->recv_initial_metadata->deadline;
-  if (0 != gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
+  if (op_deadline != GRPC_MILLIS_INF_FUTURE) {
     calld->deadline = op_deadline;
   }
   if (calld->host_set && calld->path_set) {
@@ -829,7 +831,7 @@ static void accept_stream(grpc_exec_ctx *exec_ctx, void *cd,
   memset(&args, 0, sizeof(args));
   args.channel = chand->channel;
   args.server_transport_data = transport_server_data;
-  args.send_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  args.send_deadline = GRPC_MILLIS_INF_FUTURE;
   grpc_call *call;
   grpc_error *error = grpc_call_create(exec_ctx, &args, &call);
   grpc_call_element *elem =
@@ -877,7 +879,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   memset(calld, 0, sizeof(call_data));
-  calld->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  calld->deadline = GRPC_MILLIS_INF_FUTURE;
   calld->call = grpc_call_from_top_element(elem);
   gpr_mu_init(&calld->mu_state);
 

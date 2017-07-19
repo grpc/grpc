@@ -1352,12 +1352,10 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
    * glb_policy->base.interested_parties, which is comprised of the polling
    * entities from \a client_channel. */
   grpc_slice host = grpc_slice_from_copied_string(glb_policy->server_name);
-  gpr_timespec deadline =
+  grpc_millis deadline =
       glb_policy->lb_call_timeout_ms == 0
-          ? gpr_inf_future(GPR_CLOCK_MONOTONIC)
-          : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_millis(glb_policy->lb_call_timeout_ms,
-                                              GPR_TIMESPAN));
+          ? GRPC_MILLIS_INF_FUTURE
+          : grpc_exec_ctx_now(exec_ctx) + glb_policy->lb_call_timeout_ms;
   glb_policy->lb_call = grpc_channel_create_pollset_set_call(
       exec_ctx, glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
       glb_policy->base.interested_parties,

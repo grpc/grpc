@@ -68,7 +68,7 @@ typedef enum {
 
 typedef struct {
   gpr_refcount refs;
-  gpr_timespec timeout;
+  grpc_millis timeout;
   wait_for_ready_value wait_for_ready;
 } method_parameters;
 
@@ -98,17 +98,18 @@ static bool parse_wait_for_ready(grpc_json *field,
   return true;
 }
 
-static bool parse_timeout(grpc_json *field, gpr_timespec *timeout) {
+static bool parse_timeout(grpc_json *field, grpc_millis *timeout) {
   if (field->type != GRPC_JSON_STRING) return false;
   size_t len = strlen(field->value);
   if (field->value[len - 1] != 's') return false;
   char *buf = gpr_strdup(field->value);
   buf[len - 1] = '\0';  // Remove trailing 's'.
   char *decimal_point = strchr(buf, '.');
+  int nanos = 0;
   if (decimal_point != NULL) {
     *decimal_point = '\0';
-    timeout->tv_nsec = gpr_parse_nonnegative_int(decimal_point + 1);
-    if (timeout->tv_nsec == -1) {
+    nanos = gpr_parse_nonnegative_int(decimal_point + 1);
+    if (nanos == -1) {
       gpr_free(buf);
       return false;
     }
@@ -127,24 +128,25 @@ static bool parse_timeout(grpc_json *field, gpr_timespec *timeout) {
         gpr_free(buf);
         return false;
     }
-    timeout->tv_nsec *= multiplier;
+    nanos *= multiplier;
   }
-  timeout->tv_sec = gpr_parse_nonnegative_int(buf);
+  int seconds = gpr_parse_nonnegative_int(buf);
   gpr_free(buf);
-  if (timeout->tv_sec == -1) return false;
+  if (seconds == -1) return false;
+  *timeout = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
   return true;
 }
 
 static void *method_parameters_create_from_json(const grpc_json *json) {
   wait_for_ready_value wait_for_ready = WAIT_FOR_READY_UNSET;
-  gpr_timespec timeout = {0, 0, GPR_TIMESPAN};
+  grpc_millis timeout = 0;
   for (grpc_json *field = json->child; field != NULL; field = field->next) {
     if (field->key == NULL) continue;
     if (strcmp(field->key, "waitForReady") == 0) {
       if (wait_for_ready != WAIT_FOR_READY_UNSET) return NULL;  // Duplicate.
       if (!parse_wait_for_ready(field, &wait_for_ready)) return NULL;
     } else if (strcmp(field->key, "timeout") == 0) {
-      if (timeout.tv_sec > 0 || timeout.tv_nsec > 0) return NULL;  // Duplicate.
+      if (timeout > 0) return NULL;  // Duplicate.
       if (!parse_timeout(field, &timeout)) return NULL;
     }
   }
@@ -814,7 +816,7 @@ typedef struct client_channel_call_data {
 
   grpc_slice path;  // Request path.
   gpr_timespec call_start_time;
-  gpr_timespec deadline;
+  grpc_millis deadline;
   grpc_server_retry_throttle_data *retry_throttle_data;
   method_parameters *method_params;
 
@@ -952,11 +954,11 @@ static void apply_service_config_to_call_locked(grpc_exec_ctx *exec_ctx,
       // If the deadline from the service config is shorter than the one
       // from the client API, reset the deadline timer.
       if (chand->deadline_checking_enabled &&
-          gpr_time_cmp(calld->method_params->timeout,
-                       gpr_time_0(GPR_TIMESPAN)) != 0) {
-        const gpr_timespec per_method_deadline =
-            gpr_time_add(calld->call_start_time, calld->method_params->timeout);
-        if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
+          calld->method_params->timeout != 0) {
+        const grpc_millis per_method_deadline =
+            grpc_timespec_to_millis(calld->call_start_time) +
+            calld->method_params->timeout;
+        if (per_method_deadline < calld->deadline) {
           calld->deadline = per_method_deadline;
           grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
         }
@@ -1026,7 +1028,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
             "Cancelled before creating subchannel", child_errors,
             GPR_ARRAY_SIZE(child_errors));
     /* if due to deadline, attach the deadline exceeded status to the error */
-    if (gpr_time_cmp(calld->deadline, gpr_now(GPR_CLOCK_MONOTONIC)) < 0) {
+    if (calld->deadline < grpc_exec_ctx_now(exec_ctx)) {
       cancellation_error =
           grpc_error_set_int(cancellation_error, GRPC_ERROR_INT_GRPC_STATUS,
                              GRPC_STATUS_DEADLINE_EXCEEDED);
@@ -1440,7 +1442,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   // Initialize data members.
   calld->path = grpc_slice_ref_internal(args->path);
   calld->call_start_time = args->start_time;
-  calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
+  calld->deadline = args->deadline;
   calld->owning_call = args->call_stack;
   calld->arena = args->arena;
   if (chand->deadline_checking_enabled) {

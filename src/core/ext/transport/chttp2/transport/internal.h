@@ -499,7 +499,7 @@ struct grpc_chttp2_stream {
   grpc_error *byte_stream_error; /* protected by t combiner */
   bool received_last_frame;      /* protected by t combiner */
 
-  gpr_timespec deadline;
+  grpc_millis deadline;
 
   /** saw some stream level error */
   grpc_error *forced_close_error;

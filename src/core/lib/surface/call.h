@@ -49,7 +49,7 @@ typedef struct grpc_call_create_args {
   grpc_mdelem *add_initial_metadata;
   size_t add_initial_metadata_count;
 
-  gpr_timespec send_deadline;
+  grpc_millis send_deadline;
 } grpc_call_create_args;
 
 /* Create a new call based on \a args.

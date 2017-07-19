@@ -117,11 +117,9 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   gpr_mu* mu;
   grpc_pollset_init(ps, &mu);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  gpr_timespec now = gpr_time_0(GPR_CLOCK_MONOTONIC);
-  gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
   gpr_mu_lock(mu);
   while (state.KeepRunning()) {
-    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, now, deadline));
+    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, 0));
   }
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
@@ -223,8 +221,6 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   gpr_mu* mu;
   grpc_pollset_init(ps, &mu);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  gpr_timespec now = gpr_time_0(GPR_CLOCK_MONOTONIC);
-  gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   grpc_wakeup_fd wakeup_fd;
   GRPC_ERROR_UNREF(grpc_wakeup_fd_init(&wakeup_fd));
   grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read");
@@ -245,7 +241,8 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_fd_notify_on_read(&exec_ctx, wakeup, continue_closure);
   gpr_mu_lock(mu);
   while (!done) {
-    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, now, deadline));
+    GRPC_ERROR_UNREF(
+        grpc_pollset_work(&exec_ctx, ps, NULL, GRPC_MILLIS_INF_FUTURE));
   }
   grpc_fd_orphan(&exec_ctx, wakeup, NULL, NULL, "done");
   wakeup_fd.read_fd = 0;

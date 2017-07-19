@@ -676,7 +676,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
   grpc_chttp2_data_parser_init(&s->data_parser);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
-  s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  s->deadline = GRPC_MILLIS_INF_FUTURE;
   GRPC_CLOSURE_INIT(&s->complete_fetch_locked, complete_fetch_locked, s,
                     grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&s->unprocessed_incoming_frames_buffer);
@@ -1276,8 +1276,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         t->settings[GRPC_PEER_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
     if (t->is_client) {
-      s->deadline =
-          gpr_time_min(s->deadline, s->send_initial_metadata->deadline);
+      s->deadline = GPR_MIN(s->deadline, s->send_initial_metadata->deadline);
     }
     if (metadata_size > metadata_peer_limit) {
       grpc_chttp2_cancel_stream(
@@ -1473,16 +1472,14 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   if (!t->is_client) {
     if (op->send_initial_metadata) {
-      gpr_timespec deadline =
+      grpc_millis deadline =
           op->payload->send_initial_metadata.send_initial_metadata->deadline;
-      GPR_ASSERT(0 ==
-                 gpr_time_cmp(gpr_inf_future(deadline.clock_type), deadline));
+      GPR_ASSERT(deadline == GRPC_MILLIS_INF_FUTURE);
     }
     if (op->send_trailing_metadata) {
-      gpr_timespec deadline =
+      grpc_millis deadline =
           op->payload->send_trailing_metadata.send_trailing_metadata->deadline;
-      GPR_ASSERT(0 ==
-                 gpr_time_cmp(gpr_inf_future(deadline.clock_type), deadline));
+      GPR_ASSERT(deadline == GRPC_MILLIS_INF_FUTURE);
     }
   }
 
@@ -1556,8 +1553,8 @@ static void send_goaway(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED;
   grpc_http2_error_code http_error;
   grpc_slice slice;
-  grpc_error_get_status(error, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL,
-                        &slice, &http_error);
+  grpc_error_get_status(exec_ctx, error, GRPC_MILLIS_INF_FUTURE, NULL, &slice,
+                        &http_error);
   grpc_chttp2_goaway_append(t->last_new_stream_id, (uint32_t)http_error,
                             grpc_slice_ref_internal(slice), &t->qbuf);
   grpc_chttp2_initiate_write(exec_ctx, t, "goaway_sent");
@@ -1786,7 +1783,8 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
   if (!s->read_closed || !s->write_closed) {
     if (s->id != 0) {
       grpc_http2_error_code http_error;
-      grpc_error_get_status(due_to_error, s->deadline, NULL, NULL, &http_error);
+      grpc_error_get_status(exec_ctx, due_to_error, s->deadline, NULL, NULL,
+                            &http_error);
       grpc_slice_buffer_add(
           &t->qbuf, grpc_chttp2_rst_stream_create(s->id, (uint32_t)http_error,
                                                   &s->stats.outgoing));
@@ -1803,7 +1801,7 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_chttp2_stream *s, grpc_error *error) {
   grpc_status_code status;
   grpc_slice slice;
-  grpc_error_get_status(error, s->deadline, &status, &slice, NULL);
+  grpc_error_get_status(exec_ctx, error, s->deadline, &status, &slice, NULL);
 
   if (status != GRPC_STATUS_OK) {
     s->seen_error = true;
@@ -1960,7 +1958,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   uint32_t len = 0;
   grpc_status_code grpc_status;
   grpc_slice slice;
-  grpc_error_get_status(error, s->deadline, &grpc_status, &slice, NULL);
+  grpc_error_get_status(exec_ctx, error, s->deadline, &grpc_status, &slice,
+                        NULL);
 
   GPR_ASSERT(grpc_status >= 0 && (int)grpc_status < 100);
 

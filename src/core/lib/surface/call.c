@@ -202,7 +202,7 @@ struct grpc_call {
      server, it's trailing metadata */
   grpc_linked_mdelem send_extra_metadata[MAX_SEND_EXTRA_METADATA_COUNT];
   int send_extra_metadata_count;
-  gpr_timespec send_deadline;
+  grpc_millis send_deadline;
 
   grpc_slice_buffer_stream sending_stream;
 
@@ -252,7 +252,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call_stack,
                          grpc_error *error);
 static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                                   grpc_error *error);
-static void get_final_status(grpc_call *call,
+static void get_final_status(grpc_exec_ctx *exec_ctx, grpc_call *call,
                              void (*set_value)(grpc_status_code code,
                                                void *user_data),
                              void *set_value_user_data, grpc_slice *details);
@@ -334,11 +334,10 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   }
   for (i = 0; i < 2; i++) {
     for (j = 0; j < 2; j++) {
-      call->metadata_batch[i][j].deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+      call->metadata_batch[i][j].deadline = GRPC_MILLIS_INF_FUTURE;
     }
   }
-  gpr_timespec send_deadline =
-      gpr_convert_clock_type(args->send_deadline, GPR_CLOCK_MONOTONIC);
+  grpc_millis send_deadline = args->send_deadline;
 
   bool immediately_cancel = false;
 
@@ -356,10 +355,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
     gpr_mu_lock(&pc->child_list_mu);
 
     if (args->propagation_mask & GRPC_PROPAGATE_DEADLINE) {
-      send_deadline = gpr_time_min(
-          gpr_convert_clock_type(send_deadline,
-                                 args->parent_call->send_deadline.clock_type),
-          args->parent_call->send_deadline);
+      send_deadline = GPR_MIN(send_deadline, args->parent_call->send_deadline);
     }
     /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
      * GRPC_PROPAGATE_STATS_CONTEXT */
@@ -511,8 +507,8 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
     GRPC_CQ_INTERNAL_UNREF(exec_ctx, c->cq, "bind");
   }
 
-  get_final_status(call, set_status_value_directly, &c->final_info.final_status,
-                   NULL);
+  get_final_status(exec_ctx, call, set_status_value_directly,
+                   &c->final_info.final_status, NULL);
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
 
@@ -662,13 +658,16 @@ static void cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
  * FINAL STATUS CODE MANIPULATION
  */
 
-static bool get_final_status_from(
-    grpc_call *call, grpc_error *error, bool allow_ok_status,
-    void (*set_value)(grpc_status_code code, void *user_data),
-    void *set_value_user_data, grpc_slice *details) {
+static bool get_final_status_from(grpc_exec_ctx *exec_ctx, grpc_call *call,
+                                  grpc_error *error, bool allow_ok_status,
+                                  void (*set_value)(grpc_status_code code,
+                                                    void *user_data),
+                                  void *set_value_user_data,
+                                  grpc_slice *details) {
   grpc_status_code code;
   grpc_slice slice = grpc_empty_slice();
-  grpc_error_get_status(error, call->send_deadline, &code, &slice, NULL);
+  grpc_error_get_status(exec_ctx, error, call->send_deadline, &code, &slice,
+                        NULL);
   if (code == GRPC_STATUS_OK && !allow_ok_status) {
     return false;
   }
@@ -680,7 +679,7 @@ static bool get_final_status_from(
   return true;
 }
 
-static void get_final_status(grpc_call *call,
+static void get_final_status(grpc_exec_ctx *exec_ctx, grpc_call *call,
                              void (*set_value)(grpc_status_code code,
                                                void *user_data),
                              void *set_value_user_data, grpc_slice *details) {
@@ -705,8 +704,9 @@ static void get_final_status(grpc_call *call,
     for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
       if (status[i].is_set &&
           grpc_error_has_clear_grpc_status(status[i].error)) {
-        if (get_final_status_from(call, status[i].error, allow_ok_status != 0,
-                                  set_value, set_value_user_data, details)) {
+        if (get_final_status_from(exec_ctx, call, status[i].error,
+                                  allow_ok_status != 0, set_value,
+                                  set_value_user_data, details)) {
           return;
         }
       }
@@ -714,8 +714,9 @@ static void get_final_status(grpc_call *call,
     /* If no clearly defined status exists, search for 'anything' */
     for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
       if (status[i].is_set) {
-        if (get_final_status_from(call, status[i].error, allow_ok_status != 0,
-                                  set_value, set_value_user_data, details)) {
+        if (get_final_status_from(exec_ctx, call, status[i].error,
+                                  allow_ok_status != 0, set_value,
+                                  set_value_user_data, details)) {
           return;
         }
       }
@@ -1146,11 +1147,11 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
     }
 
     if (call->is_client) {
-      get_final_status(call, set_status_value_directly,
+      get_final_status(exec_ctx, call, set_status_value_directly,
                        call->final_op.client.status,
                        call->final_op.client.status_details);
     } else {
-      get_final_status(call, set_cancelled_value,
+      get_final_status(exec_ctx, call, set_cancelled_value,
                        call->final_op.server.cancelled, NULL);
     }
 
@@ -1371,11 +1372,8 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     validate_filtered_metadata(exec_ctx, bctl);
     GPR_TIMER_END("validate_filtered_metadata", 0);
 
-    if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
-            0 &&
-        !call->is_client) {
-      call->send_deadline =
-          gpr_convert_clock_type(md->deadline, GPR_CLOCK_MONOTONIC);
+    if (md->deadline != GRPC_MILLIS_INF_FUTURE && !call->is_client) {
+      call->send_deadline = md->deadline;
     }
   }
 

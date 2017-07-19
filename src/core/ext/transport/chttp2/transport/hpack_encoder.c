@@ -515,12 +515,12 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
 #define TIMEOUT_KEY "grpc-timeout"
 
 static void deadline_enc(grpc_exec_ctx *exec_ctx,
-                         grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
+                         grpc_chttp2_hpack_compressor *c, grpc_millis deadline,
                          framer_state *st) {
   char timeout_str[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem mdelem;
-  grpc_http2_encode_timeout(
-      gpr_time_sub(deadline, gpr_now(deadline.clock_type)), timeout_str);
+  grpc_http2_encode_timeout(deadline - grpc_exec_ctx_now(exec_ctx),
+                            timeout_str);
   mdelem = grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_TIMEOUT,
                                    grpc_slice_from_copied_string(timeout_str));
   hpack_enc(exec_ctx, c, mdelem, st);
@@ -639,8 +639,8 @@ void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
   for (grpc_linked_mdelem *l = metadata->list.head; l; l = l->next) {
     hpack_enc(exec_ctx, c, l->md, &st);
   }
-  gpr_timespec deadline = metadata->deadline;
-  if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) != 0) {
+  grpc_millis deadline = metadata->deadline;
+  if (deadline != GRPC_MILLIS_INF_FUTURE) {
     deadline_enc(exec_ctx, c, deadline, &st);
   }
 

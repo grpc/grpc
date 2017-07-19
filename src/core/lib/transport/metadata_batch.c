@@ -74,7 +74,7 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch *batch) {
 
 void grpc_metadata_batch_init(grpc_metadata_batch *batch) {
   memset(batch, 0, sizeof(*batch));
-  batch->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  batch->deadline = GRPC_MILLIS_INF_FUTURE;
 }
 
 void grpc_metadata_batch_destroy(grpc_exec_ctx *exec_ctx,
@@ -268,9 +268,7 @@ void grpc_metadata_batch_clear(grpc_exec_ctx *exec_ctx,
 }
 
 bool grpc_metadata_batch_is_empty(grpc_metadata_batch *batch) {
-  return batch->list.head == NULL &&
-         gpr_time_cmp(gpr_inf_future(batch->deadline.clock_type),
-                      batch->deadline) == 0;
+  return batch->list.head == NULL && batch->deadline == GRPC_MILLIS_INF_FUTURE;
 }
 
 size_t grpc_metadata_batch_size(grpc_metadata_batch *batch) {

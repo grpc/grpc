@@ -150,7 +150,7 @@ typedef struct inproc_stream {
   grpc_metadata_batch write_buffer_initial_md;
   bool write_buffer_initial_md_filled;
   uint32_t write_buffer_initial_md_flags;
-  gpr_timespec write_buffer_deadline;
+  grpc_millis write_buffer_deadline;
   slice_buffer_list write_buffer_message;
   grpc_metadata_batch write_buffer_trailing_md;
   bool write_buffer_trailing_md_filled;
@@ -180,7 +180,7 @@ typedef struct inproc_stream {
   grpc_error *cancel_self_error;
   grpc_error *cancel_other_error;
 
-  gpr_timespec deadline;
+  grpc_millis deadline;
 
   bool listed;
   struct inproc_stream *stream_list_prev;
@@ -358,8 +358,8 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   s->cancel_self_error = GRPC_ERROR_NONE;
   s->cancel_other_error = GRPC_ERROR_NONE;
   s->write_buffer_cancel_error = GRPC_ERROR_NONE;
-  s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  s->write_buffer_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  s->deadline = GRPC_MILLIS_INF_FUTURE;
+  s->write_buffer_deadline = GRPC_MILLIS_INF_FUTURE;
 
   s->stream_list_prev = NULL;
   gpr_mu_lock(&t->mu->mu);
@@ -402,7 +402,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                        cs->write_buffer_initial_md_flags,
                        &s->to_read_initial_md, &s->to_read_initial_md_flags,
                        &s->to_read_initial_md_filled);
-      s->deadline = gpr_time_min(s->deadline, cs->write_buffer_deadline);
+      s->deadline = GPR_MIN(s->deadline, cs->write_buffer_deadline);
       grpc_metadata_batch_clear(exec_ctx, &cs->write_buffer_initial_md);
       cs->write_buffer_initial_md_filled = false;
     }
@@ -935,10 +935,10 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
               dest, destflags, destfilled);
         }
         if (s->t->is_client) {
-          gpr_timespec *dl =
+          grpc_millis *dl =
               (other == NULL) ? &s->write_buffer_deadline : &other->deadline;
-          *dl = gpr_time_min(*dl, op->payload->send_initial_metadata
-                                      .send_initial_metadata->deadline);
+          *dl = GPR_MIN(*dl, op->payload->send_initial_metadata
+                                 .send_initial_metadata->deadline);
           s->initial_md_sent = true;
         }
       }

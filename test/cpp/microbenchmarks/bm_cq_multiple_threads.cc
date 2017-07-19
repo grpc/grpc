@@ -70,9 +70,9 @@ static void cq_done_cb(grpc_exec_ctx* exec_ctx, void* done_arg,
 /* Queues a completion tag if deadline is > 0.
  * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
 static grpc_error* pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
-                                grpc_pollset_worker** worker, gpr_timespec now,
-                                gpr_timespec deadline) {
-  if (gpr_time_cmp(deadline, gpr_time_0(GPR_CLOCK_MONOTONIC)) == 0) {
+                                grpc_pollset_worker** worker,
+                                grpc_millis deadline) {
+  if (deadline == 0) {
     gpr_log(GPR_DEBUG, "no-op");
     return GRPC_ERROR_NONE;
   }
