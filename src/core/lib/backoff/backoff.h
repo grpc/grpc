@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_BACKOFF_H
-#define GRPC_CORE_LIB_SUPPORT_BACKOFF_H
+#ifndef GRPC_CORE_LIB_BACKOFF_BACKOFF_H
+#define GRPC_CORE_LIB_BACKOFF_BACKOFF_H
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -54,4 +54,4 @@ grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
 /// instead
 void grpc_backoff_reset(grpc_backoff *backoff);
 
-#endif /* GRPC_CORE_LIB_SUPPORT_BACKOFF_H */
+#endif /* GRPC_CORE_LIB_BACKOFF_BACKOFF_H */
